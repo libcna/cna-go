@@ -1,46 +1,46 @@
 # CNA-Go
 
-CNA-Go is the Go language binding for [CNA](https://github.com/openeggbert/cna),
-the native C++ XNA-inspired game framework. It is intended to provide familiar
-`Game`, `GraphicsDevice`, `Texture2D`, `SpriteBatch`, content, and input concepts
-through an idiomatic Go API while all engine and renderer work remains in CNA.
+CNA-Go exposes [CNA](https://github.com/openeggbert/cna) to Go while preserving
+the CNA and XNA 4.0 namespace hierarchy in import paths.
 
 ```text
-Go game → CNA-Go → CNA stable C ABI → CNA C++ → native renderer
+Go game
+   ↓
+Microsoft/Xna/Framework compatibility packages
+   ↓
+CNA/Framework packages
+   ↓
+CNA/Interop → stable CNA C ABI → CNA C++
 ```
 
 ## Status
 
-**Early scaffold.** This first commit establishes project documentation, local
-value types, the Go lifecycle shape, tests, and the private interop boundary.
-It does not yet run a game: the stable CNA C ABI it must bind to has not been
-implemented in `openeggbert/cna` yet. `cna.Run` therefore returns
-`cna.ErrNativeUnavailable` explicitly.
+**Early scaffold.** The namespace/package layout and first local values exist.
+The native C ABI is not implemented upstream yet, so the binding does not run a
+game today.
 
-## Design direction
+## Package roots
 
-- Preserve CNA/XNA concepts, but use Go interfaces and `error` values.
-- Keep math and other small value operations in Go.
-- Hide opaque native handles in `internal/interop`.
-- Give every owned native resource an explicit, idempotent `Close` method.
-- Use UTF-8, fixed-width ABI types, input snapshots, and batched boundary calls.
-- Keep Sharp Runtime completely private to the native CNA implementation.
+- `github.com/openeggbert/cna-go/CNA/Framework`
+- `github.com/openeggbert/cna-go/CNA/Framework/Graphics`
+- `github.com/openeggbert/cna-go/CNA/Framework/Input`
+- `github.com/openeggbert/cna-go/CNA/Framework/Content`
+- `github.com/openeggbert/cna-go/Microsoft/Xna/Framework`
+- matching `Graphics`, `Input`, and `Content` compatibility packages
+- `CNA/Interop`, reserved for the low-level C ABI mapping
 
-See [the architecture](docs/architecture.md) and [implementation plan](plan.md)
-for the boundaries and phased roadmap.
+Go does not have C# namespaces. The import path preserves the hierarchy, while
+the local package identifier remains the legal Go identifier `framework`.
 
-## Development
+```go
+import xna "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 
-The scaffold has no third-party Go dependencies:
-
-```bash
-go test ./...
+position := xna.Vector2{X: 100, Y: 100}
+color := xna.CornflowerBlue
 ```
 
-Go 1.22 or newer is required. A C/C++ toolchain and a CNA native library will
-become requirements only when the cgo layer is implemented.
+See [architecture](docs/architecture.md) and [plan](plan.md).
 
 ## License
 
 CNA-Go is licensed under the [Microsoft Public License](LICENSE), matching CNA.
-See [NOTICE.md](NOTICE.md) for compatibility and attribution notices.

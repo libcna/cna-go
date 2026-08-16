@@ -1,31 +1,23 @@
 # Architecture
 
 ```text
-Go game
-   ↓
-github.com/openeggbert/cna-go/cna (idiomatic public API)
-   ↓
-internal/interop (private cgo layer)
-   ↓
+Microsoft/Xna/Framework[/Graphics|Input|Content]
+                         ↓
+CNA/Framework[/Graphics|Input|Content]
+                         ↓
+CNA/Interop
+                         ↓
 CNA stable C ABI
-   ↓
-CNA C++ core → Sharp Runtime, subsystems, renderers
+                         ↓
+CNA C++ core
 ```
 
-The public API preserves CNA/XNA concepts while following Go conventions:
-the game lifecycle is an interface, failures are `error` values, and native
-resources will implement explicit `Close` methods. Finalizers may eventually
-act as a diagnostic safety net, never as the primary GPU-resource lifecycle.
+The `Microsoft/Xna/Framework` import tree is the XNA 4.0 compatibility surface.
+`CNA/Framework` is the CNA-native public surface. The compatibility layer may
+alias types only where their contracts are genuinely identical; otherwise it
+owns facade types and explicit conversions.
 
-Pure values such as `Vector2`, `Color`, and future matrix types live entirely
-in Go. Native objects such as textures and sprite batches will keep opaque CNA
-handles private. Strings cross the ABI as UTF-8; callbacks use C function
-pointers plus rooted caller context; input crosses as snapshots; bulk drawing
-and uploads are batched.
-
-Sharp Runtime is below the C ABI. Go code never links to it or relies on its
-types, ownership model, exceptions, or binary layout.
-
-The native layer is deliberately empty until `openeggbert/cna` publishes the
-canonical ABI headers. This avoids freezing guessed declarations into a public
-Go module.
+`CNA/Interop` is the only package allowed to map native symbols. Raw pointers,
+handles, result codes, C++ exceptions, and Sharp Runtime types must not leak to
+either public tree. Pure values remain in Go, native resources own opaque
+handles, input crosses as snapshots, and repetitive work crosses in batches.

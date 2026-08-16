@@ -1,4 +1,4 @@
-package cna
+package framework
 
 // Color stores non-premultiplied red, green, blue, and alpha channels.
 type Color struct {
