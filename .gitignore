@@ -1,0 +1,19 @@
+# Go build and test output
+/bin/
+/dist/
+*.test
+*.out
+coverage.*
+
+# Native CNA binaries are packaged artifacts, not source
+/runtimes/
+*.dll
+*.dylib
+*.so
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
