@@ -1,5 +1,8 @@
 # CNA-Go
 
+> **Status: In progress - ZATÍM NEFUNKČNÍ**
+
+
 CNA-Go exposes [CNA](https://github.com/openeggbert/cna) to Go through packages
 matching the XNA 4.0 namespace hierarchy.
 
