@@ -1,32 +1,30 @@
 # CNA-Go implementation plan
 
-**Status:** corrected namespace scaffold in place
+**Status:** XNA namespace scaffold in place
 
 **Date:** 2026-08-16
 
-## Phase 0 — namespace scaffold
+## Phase 0 — repository scaffold
 
-- [x] Establish `CNA/Framework` and `Microsoft/Xna/Framework` import roots.
-- [x] Reserve matching `Graphics`, `Input`, and `Content` subpackages.
-- [x] Reserve `CNA/Interop` for the stable C ABI mapping.
+- [x] Establish `Microsoft/Xna/Framework` plus `Graphics`, `Input`, and
+      `Content` compatibility packages.
+- [x] Keep ABI code under private `internal/interop`.
 - [x] Add initial `Game`, `GameTime`, `Vector2`, and `Color` shapes.
+- [x] Remove the invalid invented `CNA/Framework` package tree.
 
 ## Phase 1 — canonical ABI
 
-- [ ] Generate or audit interop from headers owned by `openeggbert/cna`.
-- [ ] Add ABI-version checks, UTF-8, structured errors, opaque handles,
-      callback context, ownership, threading, and shutdown rules.
+- [ ] Generate or audit interop only from headers owned by `openeggbert/cna`.
+- [ ] Add version checks, errors, UTF-8, opaque handles, callbacks, ownership,
+      threading, and shutdown.
 
-## Phase 2 — first playable XNA-style loop
+## Phase 2 — playable compatibility slice
 
-- [ ] Add graphics device, texture, sprite batch, content, and keyboard types
-      under both public trees.
-- [ ] Run a CNA-backed game that clears, loads/draws a texture, reads Escape,
-      and shuts down cleanly.
+- [ ] Add graphics device, texture, sprite batch, content, and keyboard types.
+- [ ] Run a CNA-backed XNA-style game loop.
 
 ## Invariants
 
-1. Public hierarchy follows CNA and `Microsoft.Xna.Framework` concepts.
-2. CNA C++ remains the only engine implementation.
-3. Only the stable CNA C ABI crosses the language boundary.
-4. Sharp Runtime and C++ ABI details remain native implementation details.
+1. XNA types follow the `Microsoft.Xna.Framework` hierarchy.
+2. No public namespace/package is invented without a native counterpart.
+3. CNA C++ remains canonical and only its stable C ABI crosses the boundary.

@@ -1,23 +1,21 @@
 # Architecture
 
 ```text
-Microsoft/Xna/Framework[/Graphics|Input|Content]
-                         ↓
-CNA/Framework[/Graphics|Input|Content]
-                         ↓
-CNA/Interop
-                         ↓
+Microsoft/Xna/Framework compatibility packages
+                       ↓
+internal/interop (private cgo boundary)
+                       ↓
 CNA stable C ABI
-                         ↓
-CNA C++ core
+                       ↓
+CNA C++: Microsoft::Xna::Framework
 ```
 
-The `Microsoft/Xna/Framework` import tree is the XNA 4.0 compatibility surface.
-`CNA/Framework` is the CNA-native public surface. The compatibility layer may
-alias types only where their contracts are genuinely identical; otherwise it
-owns facade types and explicit conversions.
+The public package tree mirrors XNA 4.0. `internal/interop` is the only package
+allowed to map C symbols, result codes, handles, callbacks, UTF-8, ownership,
+threading, and shutdown. Go's `internal` rule prevents applications from using
+that boundary directly.
 
-`CNA/Interop` is the only package allowed to map native symbols. Raw pointers,
-handles, result codes, C++ exceptions, and Sharp Runtime types must not leak to
-either public tree. Pure values remain in Go, native resources own opaque
-handles, input crosses as snapshots, and repetitive work crosses in batches.
+Pure values remain in Go. Native-backed objects eventually own opaque handles.
+No `CNA/Framework` layer exists because CNA C++ has no `CNA::Framework`
+namespace. A future public CNA package is valid only for concrete native
+extensions that actually exist under `CNA::...`.

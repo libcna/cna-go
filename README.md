@@ -1,36 +1,24 @@
 # CNA-Go
 
-CNA-Go exposes [CNA](https://github.com/openeggbert/cna) to Go while preserving
-the CNA and XNA 4.0 namespace hierarchy in import paths.
+CNA-Go exposes [CNA](https://github.com/openeggbert/cna) to Go through packages
+matching the XNA 4.0 namespace hierarchy.
 
 ```text
 Go game
    ↓
-Microsoft/Xna/Framework compatibility packages
+Microsoft/Xna/Framework[/Graphics|Input|Content]
    ↓
-CNA/Framework packages
+internal/interop
    ↓
-CNA/Interop → stable CNA C ABI → CNA C++
+CNA stable C ABI
+   ↓
+CNA C++ Microsoft::Xna::Framework implementation
 ```
 
 ## Status
 
-**Early scaffold.** The namespace/package layout and first local values exist.
-The native C ABI is not implemented upstream yet, so the binding does not run a
-game today.
-
-## Package roots
-
-- `github.com/openeggbert/cna-go/CNA/Framework`
-- `github.com/openeggbert/cna-go/CNA/Framework/Graphics`
-- `github.com/openeggbert/cna-go/CNA/Framework/Input`
-- `github.com/openeggbert/cna-go/CNA/Framework/Content`
-- `github.com/openeggbert/cna-go/Microsoft/Xna/Framework`
-- matching `Graphics`, `Input`, and `Content` compatibility packages
-- `CNA/Interop`, reserved for the low-level C ABI mapping
-
-Go does not have C# namespaces. The import path preserves the hierarchy, while
-the local package identifier remains the legal Go identifier `framework`.
+**Early scaffold.** The compatibility package layout and first local values
+exist. Native execution waits for the canonical C ABI in `openeggbert/cna`.
 
 ```go
 import xna "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
@@ -38,6 +26,11 @@ import xna "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 position := xna.Vector2{X: 100, Y: 100}
 color := xna.CornflowerBlue
 ```
+
+Go has no C# namespaces, so the import path preserves the hierarchy and the
+local package identifier is `framework`. There is deliberately no invented
+`CNA/Framework` public package. CNA-specific extensions will be added only when
+they mirror real native `CNA::...` APIs.
 
 See [architecture](docs/architecture.md) and [plan](plan.md).
 

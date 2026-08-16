@@ -1,6 +1,6 @@
 package framework
 
-// Vector2 is a two-dimensional vector implemented entirely in Go.
+// Vector2 is a two-dimensional XNA vector implemented entirely in Go.
 type Vector2 struct {
 	X float32
 	Y float32
