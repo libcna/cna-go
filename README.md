@@ -1,6 +1,6 @@
 # CNA-Go
 
-> **Status: In progress - ZATÍM NEFUNKČNÍ**
+> **Status: In progress - NOT YET FUNCTIONAL**
 
 
 CNA-Go exposes [CNA](https://github.com/openeggbert/cna) to Go through packages
