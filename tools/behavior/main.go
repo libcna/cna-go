@@ -266,6 +266,79 @@ func runCorpus() corpusReport {
 	singularUnproject := viewport.Unproject(framework.Vector3{X: 100, Y: 50, Z: 0.5}, framework.MatrixIdentity(), framework.MatrixIdentity(), framework.Matrix{})
 	check("viewport.unproject.singular", "VIEWPORT", "0xffc00000,0xffc00000,0xffc00000", floatBits(singularUnproject.X, singularUnproject.Y, singularUnproject.Z))
 
+	check("vertex-element.enums.format", "VERTEX_ELEMENT_ENUMS", "0,1,2,3,4,5,6,7,8,9,10,11", fmt.Sprintf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+		graphics.VertexElementFormatSingle,
+		graphics.VertexElementFormatVector2,
+		graphics.VertexElementFormatVector3,
+		graphics.VertexElementFormatVector4,
+		graphics.VertexElementFormatColor,
+		graphics.VertexElementFormatByte4,
+		graphics.VertexElementFormatShort2,
+		graphics.VertexElementFormatShort4,
+		graphics.VertexElementFormatNormalizedShort2,
+		graphics.VertexElementFormatNormalizedShort4,
+		graphics.VertexElementFormatHalfVector2,
+		graphics.VertexElementFormatHalfVector4,
+	))
+	check("vertex-element.enums.usage", "VERTEX_ELEMENT_ENUMS", "0,1,2,3,4,5,6,7,8,9,10,11,12", fmt.Sprintf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+		graphics.VertexElementUsagePosition,
+		graphics.VertexElementUsageColor,
+		graphics.VertexElementUsageTextureCoordinate,
+		graphics.VertexElementUsageNormal,
+		graphics.VertexElementUsageBinormal,
+		graphics.VertexElementUsageTangent,
+		graphics.VertexElementUsageBlendIndices,
+		graphics.VertexElementUsageBlendWeight,
+		graphics.VertexElementUsageDepth,
+		graphics.VertexElementUsageFog,
+		graphics.VertexElementUsagePointSize,
+		graphics.VertexElementUsageSample,
+		graphics.VertexElementUsageTessellateFactor,
+	))
+
+	var zeroVertexElement graphics.VertexElement
+	constructedZeroVertexElement := graphics.NewVertexElement(0, graphics.VertexElementFormatSingle, graphics.VertexElementUsagePosition, 0)
+	check("vertex-element.zero.getters", "VERTEX_ELEMENT", "0,0,0,0", fmt.Sprintf("%d,%d,%d,%d", zeroVertexElement.Offset(), zeroVertexElement.VertexElementFormat(), zeroVertexElement.VertexElementUsage(), zeroVertexElement.UsageIndex()))
+	check("vertex-element.zero.constructor-equivalence", "VERTEX_ELEMENT", "true,2147483647,{Offset:0 Format:Single Usage:Position UsageIndex:0}", fmt.Sprintf("%t,%d,%s", zeroVertexElement.Equals(constructedZeroVertexElement), zeroVertexElement.GetHashCode(), zeroVertexElement.ToString()))
+
+	ordinaryVertexElement := graphics.NewVertexElement(12, graphics.VertexElementFormatVector3, graphics.VertexElementUsageTextureCoordinate, 7)
+	check("vertex-element.constructor", "VERTEX_ELEMENT", "12,2,2,7", fmt.Sprintf("%d,%d,%d,%d", ordinaryVertexElement.Offset(), ordinaryVertexElement.VertexElementFormat(), ordinaryVertexElement.VertexElementUsage(), ordinaryVertexElement.UsageIndex()))
+	offsetVertexElement := ordinaryVertexElement
+	offsetVertexElement.SetOffset(13)
+	check("vertex-element.copy.offset", "VERTEX_ELEMENT", "12,13", fmt.Sprintf("%d,%d", ordinaryVertexElement.Offset(), offsetVertexElement.Offset()))
+	formatVertexElement := ordinaryVertexElement
+	formatVertexElement.SetVertexElementFormat(graphics.VertexElementFormatHalfVector4)
+	check("vertex-element.copy.format", "VERTEX_ELEMENT", "2,11", fmt.Sprintf("%d,%d", ordinaryVertexElement.VertexElementFormat(), formatVertexElement.VertexElementFormat()))
+	usageVertexElement := ordinaryVertexElement
+	usageVertexElement.SetVertexElementUsage(graphics.VertexElementUsageTangent)
+	check("vertex-element.copy.usage", "VERTEX_ELEMENT", "2,5", fmt.Sprintf("%d,%d", ordinaryVertexElement.VertexElementUsage(), usageVertexElement.VertexElementUsage()))
+	indexVertexElement := ordinaryVertexElement
+	indexVertexElement.SetUsageIndex(8)
+	check("vertex-element.copy.usage-index", "VERTEX_ELEMENT", "7,8", fmt.Sprintf("%d,%d", ordinaryVertexElement.UsageIndex(), indexVertexElement.UsageIndex()))
+
+	unknownVertexElement := graphics.NewVertexElement(123, graphics.VertexElementFormat(12345), graphics.VertexElementUsage(-23456), -456)
+	check("vertex-element.undefined.storage", "VERTEX_ELEMENT", "123,12345,-23456,-456", fmt.Sprintf("%d,%d,%d,%d", unknownVertexElement.Offset(), unknownVertexElement.VertexElementFormat(), unknownVertexElement.VertexElementUsage(), unknownVertexElement.UsageIndex()))
+	boundaryVertexElement := graphics.NewVertexElement(math.MinInt32, graphics.VertexElementFormatHalfVector4, graphics.VertexElementUsageTessellateFactor, math.MaxInt32)
+	check("vertex-element.int32-boundaries", "VERTEX_ELEMENT", "-2147483648,2147483647", fmt.Sprintf("%d,%d", boundaryVertexElement.Offset(), boundaryVertexElement.UsageIndex()))
+	check("vertex-element.equals-object", "VERTEX_ELEMENT", "true,false,false,false", fmt.Sprintf("%t,%t,%t,%t", ordinaryVertexElement.Equals(ordinaryVertexElement), ordinaryVertexElement.Equals(&ordinaryVertexElement), ordinaryVertexElement.Equals(nil), ordinaryVertexElement.Equals(int32(12))))
+	check("vertex-element.equals-field-differences", "VERTEX_ELEMENT", "false,false,false,false", fmt.Sprintf("%t,%t,%t,%t", ordinaryVertexElement.Equals(offsetVertexElement), ordinaryVertexElement.Equals(formatVertexElement), ordinaryVertexElement.Equals(usageVertexElement), ordinaryVertexElement.Equals(indexVertexElement)))
+	unknownVertexElementCopy := unknownVertexElement
+	check("vertex-element.equals-undefined", "VERTEX_ELEMENT", true, unknownVertexElement.Equals(unknownVertexElementCopy))
+	check("vertex-element.operators", "VERTEX_ELEMENT", "true,true", fmt.Sprintf("%t,%t", graphics.VertexElementOperatorEqualityByVertexElementAndVertexElement(ordinaryVertexElement, ordinaryVertexElement), graphics.VertexElementOperatorInequalityByVertexElementAndVertexElement(ordinaryVertexElement, offsetVertexElement)))
+
+	check("vertex-element.hash.zero-fallback", "VERTEX_ELEMENT", int32(math.MaxInt32), zeroVertexElement.GetHashCode())
+	check("vertex-element.hash.ordinary", "VERTEX_ELEMENT", int32(11), ordinaryVertexElement.GetHashCode())
+	check("vertex-element.hash.negative", "VERTEX_ELEMENT", int32(3), graphics.NewVertexElement(-16, graphics.VertexElementFormatHalfVector4, graphics.VertexElementUsageTangent, -3).GetHashCode())
+	check("vertex-element.hash.undefined", "VERTEX_ELEMENT", int32(27162), unknownVertexElement.GetHashCode())
+	check("vertex-element.hash.boundaries", "VERTEX_ELEMENT", int32(-8), boundaryVertexElement.GetHashCode())
+	check("vertex-element.hash.nonzero-collision", "VERTEX_ELEMENT", int32(math.MaxInt32), graphics.NewVertexElement(1, graphics.VertexElementFormatVector3, graphics.VertexElementUsageNormal, 0).GetHashCode())
+
+	check("vertex-element.string.zero", "VERTEX_ELEMENT", "{Offset:0 Format:Single Usage:Position UsageIndex:0}", zeroVertexElement.ToString())
+	check("vertex-element.string.ordinary", "VERTEX_ELEMENT", "{Offset:12 Format:Vector3 Usage:TextureCoordinate UsageIndex:7}", ordinaryVertexElement.ToString())
+	check("vertex-element.string.negative", "VERTEX_ELEMENT", "{Offset:-16 Format:HalfVector4 Usage:Tangent UsageIndex:-3}", graphics.NewVertexElement(-16, graphics.VertexElementFormatHalfVector4, graphics.VertexElementUsageTangent, -3).ToString())
+	check("vertex-element.string.undefined", "VERTEX_ELEMENT", "{Offset:123 Format:12345 Usage:-23456 UsageIndex:-456}", unknownVertexElement.ToString())
+	check("vertex-element.string.boundaries", "VERTEX_ELEMENT", "{Offset:-2147483648 Format:HalfVector4 Usage:TessellateFactor UsageIndex:2147483647}", boundaryVertexElement.ToString())
+
 	check("curve.enums.continuity", "CURVE_ENUMS", "0,1", fmt.Sprintf("%d,%d", framework.CurveContinuitySmooth, framework.CurveContinuityStep))
 	check("curve.enums.tangent", "CURVE_ENUMS", "0,1,2", fmt.Sprintf("%d,%d,%d", framework.CurveTangentFlat, framework.CurveTangentLinear, framework.CurveTangentSmooth))
 	check("curve.enums.loop", "CURVE_ENUMS", "0,1,2,3,4", fmt.Sprintf("%d,%d,%d,%d,%d", framework.CurveLoopTypeConstant, framework.CurveLoopTypeCycle, framework.CurveLoopTypeCycleOffset, framework.CurveLoopTypeOscillate, framework.CurveLoopTypeLinear))

@@ -2,23 +2,17 @@
 
 ## Current state
 
-Foundation Milestones 1 through 4 are complete. Milestone 1 established the
+Foundation Milestones 1 through 5 are complete. Milestone 1 established the
 real CNA C-ABI runtime architecture. Milestone 2 completed managed geometry,
 Color, and Viewport. Milestone 3 completed Curve and the collection/iterator
-projection. Milestone 4 adds no C function and completes exactly the managed
-PackedVector family:
+projection. Milestone 4 completed the two PackedVector interfaces and all
+seventeen concrete packed value structs. Milestone 5 adds no C function and
+completes exactly this managed descriptor closure:
 
 ```text
-IPackedVector                 IPackedVectorOfTPacked[TPacked]
-Alpha8                        Bgr565
-Bgra4444                      Bgra5551
-Byte4                         HalfSingle
-HalfVector2                   HalfVector4
-NormalizedByte2              NormalizedByte4
-NormalizedShort2             NormalizedShort4
-Rg32                          Rgba1010102
-Rgba64                        Short2
-Short4
+Microsoft.Xna.Framework.Graphics.VertexElement
+Microsoft.Xna.Framework.Graphics.VertexElementFormat
+Microsoft.Xna.Framework.Graphics.VertexElementUsage
 ```
 
 Preserve these invariants:
@@ -30,58 +24,33 @@ Preserve these invariants:
 - native resources route only through canonical CNA C ABI 0.7.0;
 - absent API remains structurally measured, never hidden by a fake or no-op.
 
-## Foundation 4 language projection
+## Foundation 5 projection and behavior
 
-The declared closure has 171 XNA source members and 189 mapped Go members.
-The generic collision rule preserves `IPackedVector` and maps
-`IPackedVector<TPacked>` to `IPackedVectorOfTPacked[TPacked]`. General owner
-generic substitution maps CLR `!n` to the nth declared parameter, so the
-generic property is exactly:
+The exact closure has three types, 37 XNA source identities, and 39 mapped Go
+identities. `VertexElementFormat` and `VertexElementUsage` are non-flags named
+`int32` types with explicit raw constants. No `iota`, validation, or public enum
+string methods were added. Arbitrary CLR enum values remain representable.
 
-```go
-PackedValue() TPacked
-SetPackedValue(TPacked)
+`VertexElement` is a private-state Go value struct. Its one public constructor
+stores the four input values without validation. Four writable CLR properties
+expand to four value-received getters and four pointer-received setters. The
+natural Go zero value is the descriptor `(0, Single, Position, 0)`, but there
+is no invented parameterless XNA constructor. Struct copies have independent
+mutable state.
+
+The unique `Equals(Object)` identity maps to `Equals(any)`; no typed
+`Equals(VertexElement)` member exists. Equality and both named operators
+compare all four stored values. The exact XNA hash is the XOR of the four
+sequential 32-bit words, with `Int32.MaxValue` substituted when the XOR is
+zero. Exact string form is:
+
+```text
+{Offset:<offset> Format:<format> Usage:<usage> UsageIndex:<usageIndex>}
 ```
 
-Both interfaces are pure managed value interfaces; none of their methods gain
-synthetic `error` results. The generic interface embeds `IPackedVector`.
-
-All seventeen concrete XNA structs remain Go value structs with one private
-fixed-width packed integer. Getters and converters use value receivers;
-`SetPackedValue` and `PackFromVector4` use pointer receivers. Compiler
-`go/types` evidence proves that every `*T` satisfies the exact constructed
-`IPackedVectorOfTPacked[uint8|uint16|uint32|uint64]` and transitively
-`IPackedVector`, while `T` does not satisfy the mutable interface.
-
-Explicit CLR implementations require 25 measured Go witnesses: seventeen
-`PackFromVector4` methods and eight reduced-format `ToVector4` methods. They are
-reported separately and do not inflate target member counts. Missing/wrong
-witnesses fail interface/signature checks; bogus public methods remain
-`UNEXPECTED_MEMBER`. `ALLOWLIST_ENTRIES` remains zero.
-
-## Packed behavior
-
-UNorm, SNorm, raw unsigned, and raw signed paths preserve XNA binary32
-scale/clamp order followed by `System.Math.Round` midpoint-to-even behavior.
-NaN maps to zero; infinities map to the appropriate clamp endpoint before
-integer conversion. Direct `PackedValue` assignment is bit-transparent.
-
-SNorm `-1` packs to `-127` or `-32767`; a directly assigned signed minimum
-still decodes to `-1`. Byte4 is raw `[0,255]` numeric data. Short2/Short4 are
-raw signed Int16 data with complete `[-32768,32767]` clamping and exact
-two's-complement lanes.
-
-XNA half conversion is intentionally non-IEEE at exponent 31. All 65,536 bit
-patterns decode to finite binary32 values and round-trip. `0x7C00` decodes to
-65536 and `0x7FFF` to 131008. Float infinity and NaN saturate to signed
-`0x7FFF`, discarding payload/signaling state while retaining sign. Signed zero,
-subnormals, threshold-adjacent values, and ties are exact.
-
-Equality and both operators compare packed bits. Hashes are the packed value
-for widths through 32 bits and low32 XOR high32 for 64 bits. Non-half strings
-are fixed-width uppercase packed hex; half values delegate to XNA Single/Vector
-string formatting. Full layouts and fixtures are in
-`docs/packed-vector-evidence.md`.
+Known enums render their XNA names; undefined values render signed decimal.
+Exact IL evidence, fixtures, enum tables, and the local strict-zero matrix are
+in `docs/vertex-element-evidence.md`.
 
 ## Structural scoreboard
 
@@ -91,14 +60,14 @@ and contains 257 types / 2,964 members. The formal Go projection remains 257
 types / 3,243 members.
 
 ```text
-TARGET_TYPES=54
-TARGET_MEMBERS=1278
-TOTAL_DIAGNOSTICS=383
-MISSING_TYPE=203
+TARGET_TYPES=57
+TARGET_MEMBERS=1317
+TOTAL_DIAGNOSTICS=380
+MISSING_TYPE=200
 MISSING_MEMBER=180
-COMPLETE_TYPES=48
+COMPLETE_TYPES=51
 PARTIAL_TYPES=6
-MISSING_TYPES=203
+MISSING_TYPES=200
 
 INTERFACE_WITNESS_PROJECTIONS=25
 PACKFROMVECTOR4_WITNESS_PROJECTIONS=17
@@ -108,46 +77,50 @@ TOVECTOR4_WITNESS_PROJECTIONS=8
 Every unexpected-symbol, kind, base/interface, field/property, method,
 parameter/return/error, overload/generic, enum/flags, event/operator/ref-out/
 language, internal-type/raw-handle/public-FFI leak, allowlist, and unmeasured
-counter is zero. All nineteen PackedVector types have zero local diagnostics.
+counter is zero. All three Foundation 5 types have zero local diagnostics:
+
+```text
+VertexElement       source=10 expected-go=14 target-go=14 kind=struct
+VertexElementFormat source=13 expected-go=12 target-go=12 kind=named-int32-enum
+VertexElementUsage  source=14 expected-go=13 target-go=13 kind=named-int32-enum
+```
 
 The exact remaining partial types are unchanged:
 
-- `Microsoft.Xna.Framework.Game`
-- `Microsoft.Xna.Framework.GraphicsDeviceManager`
-- `Microsoft.Xna.Framework.Graphics.GraphicsDevice`
-- `Microsoft.Xna.Framework.Graphics.SpriteBatch`
-- `Microsoft.Xna.Framework.Graphics.Texture2D`
-- `Microsoft.Xna.Framework.Input.Keyboard`
+- `Microsoft.Xna.Framework.Game` (39)
+- `Microsoft.Xna.Framework.GraphicsDeviceManager` (42)
+- `Microsoft.Xna.Framework.Graphics.GraphicsDevice` (70)
+- `Microsoft.Xna.Framework.Graphics.SpriteBatch` (16)
+- `Microsoft.Xna.Framework.Graphics.Texture2D` (12)
+- `Microsoft.Xna.Framework.Input.Keyboard` (1)
 
-Their 180 missing members are unchanged native/runtime work.
-`Keyboard.GetState(PlayerIndex)` remains absent.
+Their combined 180 missing members are unchanged.
 
-## Behavioral evidence
+## Behavioral and verifier evidence
 
-The managed `PURE_XNA_DERIVED` corpus now has 201 observations, 201 assertions,
-and zero failures. Foundation 4 contributes 59 observations:
+The managed corpus is `PURE_XNA_DERIVED` with 227 observations, 227
+assertions, and zero failures. Foundation 5 contributes:
 
 ```text
-PACKED_INTERFACE=8
-PACKED_ALPHA=7
-PACKED_16BIT_COLOR=6
-PACKED_BYTE4=4
-PACKED_HALF=16
-PACKED_NORMALIZED_BYTE=4
-PACKED_NORMALIZED_SHORT=4
-PACKED_RG_RGBA=6
-PACKED_SHORT=4
+VERTEX_ELEMENT_ENUMS=2
+VERTEX_ELEMENT=24
 ```
 
-The generated exhaustive report has 262,400 iterations and zero failures:
-Alpha8 256; Bgr565, Bgra4444, Bgra5551, and HalfSingle 65,536 each.
+The verifier has 47 mutation cases. Foundation 5 adds 15 cases spanning the
+wrong struct kind, property-vs-field projection, missing/wrong setters,
+constructor order and enum types, unexpected typed equality, both operators,
+enum values, and non-flags status. Property expansion is compiler-measured;
+`ALLOWLIST_ENTRIES=0` and `UNMEASURED_STRUCTURAL_CATEGORY=0`.
 
-## ABI and native regression
+The PackedVector exhaustive report remains 262,400 iterations with zero
+failures, and all 25 compiler-measured interface witnesses remain present.
+
+## ABI, native, and template regression
 
 The admitted native library remains the exact HEADLESS/NULL-audio ABI 0.7.0
 artifact with SHA-256
 `e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f`.
-Milestone 4 leaves every ABI count unchanged:
+Milestone 5 leaves every ABI count unchanged:
 
 ```text
 BOUND_FUNCTIONS=23
@@ -168,9 +141,10 @@ sanitizers remain `NOT_RUN`.
 
 The maintained `cna-go-template` source is unchanged at commit
 `65254848d9fac02ace934db3879106834bafca97`. Its test, vet, race, build,
-trimpath, exact 60-Draw, and exact 600-Draw gates pass against the same admitted
-library. Visible rendering remains backend-blocked; no native runtime or
-hardware capability claim changed.
+trimpath, exact 60-Draw, and exact 600-Draw gates pass against the admitted
+library. No renderer, GPU, vertex declaration/buffer, or draw capability was
+claimed. The capability inventory records only the narrow managed descriptor
+classification.
 
 ## Re-running gates
 
@@ -185,7 +159,7 @@ go test -race ./...
 go build ./...
 go build -trimpath ./...
 go run ./tools/api_compat --mode report
-go run ./tools/api_compat --mode strict       # expected 383 missing diagnostics
+go run ./tools/api_compat --mode strict       # expected 380 missing diagnostics
 go run ./tools/api_compat --mode leak-only
 go run ./tools/behavior
 go run ./tools/packed_vector_qualify
@@ -196,27 +170,32 @@ git diff --check
 ```
 
 Source-artifact and isolated-consumer qualification use a deterministic archive
-of the exact worktree, not the development checkout. The external milestone
-handoff records the archive filename, SHA-256, entry count, two-pass
+of the exact worktree, not bare HEAD or the development checkout. The external
+milestone handoff records the archive filename, SHA-256, entry count, two-pass
 determinism, audit counters, and isolated 60/600 results so the hash is not
 recursively embedded in the archive it describes.
 
 ## One next dependency-complete milestone
 
-The freshly regenerated missing inventory selects exactly the managed
-vertex-element descriptor closure:
+The freshly regenerated inventory and pinned public signatures select exactly:
 
 ```text
-Microsoft.Xna.Framework.Graphics.VertexElement
-Microsoft.Xna.Framework.Graphics.VertexElementFormat
-Microsoft.Xna.Framework.Graphics.VertexElementUsage
+Microsoft.Xna.Framework.PlayerIndex
+Microsoft.Xna.Framework.Input.Keyboard.GetState(PlayerIndex)
 ```
 
-The pinned contract currently gives three types, 37 source identities, and 39
-mapped Go identities. Recompute those counts before implementation. Do not mix
-that milestone with `IVertexType`, native `VertexDeclaration`/buffers, Design,
-Content/XNB, Effects/3D, native partial cleanup, or another family.
+`PlayerIndex` is a standalone non-flags `Int32` enum (`One=0`, `Two=1`,
+`Three=2`, `Four=3`). It is the sole missing public-signature dependency of the
+sole remaining `Keyboard` member. Direct XNA IL confirms that the player-index
+overload does not consume its argument; it reads the same process keyboard
+state used by the existing no-argument path. This next milestone can therefore
+complete `Keyboard` without adding a CNA ABI function. Recompute its exact
+source/Go closure before implementation.
+
+Do not mix that milestone with GamePad, `IVertexType`, `VertexDeclaration`,
+vertex structs/buffers, native GraphicsDevice expansion, Design, Content/XNB,
+Effects/3D, or another family. No next-milestone code has been started here.
 
 ```text
-FOUNDATION_MILESTONE_4_COMPLETE=true
+FOUNDATION_MILESTONE_5_COMPLETE=true
 ```

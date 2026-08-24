@@ -177,7 +177,33 @@ type report struct {
 	InterfaceWitnessProjections  []interfaceWitnessProjection  `json:"interfaceWitnessProjections,omitempty"`
 	PackedInterfaceConformance   []packedInterfaceConformance  `json:"packedInterfaceConformance,omitempty"`
 	PackedVectorTypeMeasurements []packedVectorTypeMeasurement `json:"packedVectorTypeMeasurements,omitempty"`
+	VertexElementClosure         vertexElementClosure          `json:"vertexElementClosure"`
 	Metadata                     reportMetadata                `json:"metadata"`
+}
+
+type vertexElementClosure struct {
+	SourceTypes        int                            `json:"sourceTypes"`
+	SourceIdentities   int                            `json:"sourceIdentities"`
+	MappedGoIdentities int                            `json:"mappedGoIdentities"`
+	TargetTypes        int                            `json:"targetTypes"`
+	TargetGoIdentities int                            `json:"targetGoIdentities"`
+	WritableProperties int                            `json:"writableProperties"`
+	ProjectedAccessors int                            `json:"projectedAccessors"`
+	LocalDiagnostics   int                            `json:"localDiagnostics"`
+	Status             string                         `json:"status"`
+	TypeMeasurements   []vertexElementTypeMeasurement `json:"typeMeasurements"`
+}
+
+type vertexElementTypeMeasurement struct {
+	XNA               string `json:"xna"`
+	GoName            string `json:"goName"`
+	SourceMembers     int    `json:"sourceMembers"`
+	ExpectedGoMembers int    `json:"expectedGoMembers"`
+	TargetGoMembers   int    `json:"targetGoMembers"`
+	LocalDiagnostics  int    `json:"localDiagnostics"`
+	ExpectedKind      string `json:"expectedKind"`
+	ActualKind        string `json:"actualKind"`
+	ActualUnderlying  string `json:"actualUnderlying,omitempty"`
 }
 
 type interfaceWitnessProjection struct {

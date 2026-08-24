@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations",
   "summary": {
-    "OBSERVATIONS": 201,
-    "ASSERTIONS": 201,
+    "OBSERVATIONS": 227,
+    "ASSERTIONS": 227,
     "FAILURES": 0
   },
   "observations": [
@@ -656,6 +656,188 @@
       "group": "VIEWPORT",
       "expected": "0xffc00000,0xffc00000,0xffc00000",
       "actual": "0xffc00000,0xffc00000,0xffc00000",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.enums.format",
+      "group": "VERTEX_ELEMENT_ENUMS",
+      "expected": "0,1,2,3,4,5,6,7,8,9,10,11",
+      "actual": "0,1,2,3,4,5,6,7,8,9,10,11",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.enums.usage",
+      "group": "VERTEX_ELEMENT_ENUMS",
+      "expected": "0,1,2,3,4,5,6,7,8,9,10,11,12",
+      "actual": "0,1,2,3,4,5,6,7,8,9,10,11,12",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.zero.getters",
+      "group": "VERTEX_ELEMENT",
+      "expected": "0,0,0,0",
+      "actual": "0,0,0,0",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.zero.constructor-equivalence",
+      "group": "VERTEX_ELEMENT",
+      "expected": "true,2147483647,{Offset:0 Format:Single Usage:Position UsageIndex:0}",
+      "actual": "true,2147483647,{Offset:0 Format:Single Usage:Position UsageIndex:0}",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.constructor",
+      "group": "VERTEX_ELEMENT",
+      "expected": "12,2,2,7",
+      "actual": "12,2,2,7",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.copy.offset",
+      "group": "VERTEX_ELEMENT",
+      "expected": "12,13",
+      "actual": "12,13",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.copy.format",
+      "group": "VERTEX_ELEMENT",
+      "expected": "2,11",
+      "actual": "2,11",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.copy.usage",
+      "group": "VERTEX_ELEMENT",
+      "expected": "2,5",
+      "actual": "2,5",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.copy.usage-index",
+      "group": "VERTEX_ELEMENT",
+      "expected": "7,8",
+      "actual": "7,8",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.undefined.storage",
+      "group": "VERTEX_ELEMENT",
+      "expected": "123,12345,-23456,-456",
+      "actual": "123,12345,-23456,-456",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.int32-boundaries",
+      "group": "VERTEX_ELEMENT",
+      "expected": "-2147483648,2147483647",
+      "actual": "-2147483648,2147483647",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.equals-object",
+      "group": "VERTEX_ELEMENT",
+      "expected": "true,false,false,false",
+      "actual": "true,false,false,false",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.equals-field-differences",
+      "group": "VERTEX_ELEMENT",
+      "expected": "false,false,false,false",
+      "actual": "false,false,false,false",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.equals-undefined",
+      "group": "VERTEX_ELEMENT",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "vertex-element.operators",
+      "group": "VERTEX_ELEMENT",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.hash.zero-fallback",
+      "group": "VERTEX_ELEMENT",
+      "expected": 2147483647,
+      "actual": 2147483647,
+      "passed": true
+    },
+    {
+      "id": "vertex-element.hash.ordinary",
+      "group": "VERTEX_ELEMENT",
+      "expected": 11,
+      "actual": 11,
+      "passed": true
+    },
+    {
+      "id": "vertex-element.hash.negative",
+      "group": "VERTEX_ELEMENT",
+      "expected": 3,
+      "actual": 3,
+      "passed": true
+    },
+    {
+      "id": "vertex-element.hash.undefined",
+      "group": "VERTEX_ELEMENT",
+      "expected": 27162,
+      "actual": 27162,
+      "passed": true
+    },
+    {
+      "id": "vertex-element.hash.boundaries",
+      "group": "VERTEX_ELEMENT",
+      "expected": -8,
+      "actual": -8,
+      "passed": true
+    },
+    {
+      "id": "vertex-element.hash.nonzero-collision",
+      "group": "VERTEX_ELEMENT",
+      "expected": 2147483647,
+      "actual": 2147483647,
+      "passed": true
+    },
+    {
+      "id": "vertex-element.string.zero",
+      "group": "VERTEX_ELEMENT",
+      "expected": "{Offset:0 Format:Single Usage:Position UsageIndex:0}",
+      "actual": "{Offset:0 Format:Single Usage:Position UsageIndex:0}",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.string.ordinary",
+      "group": "VERTEX_ELEMENT",
+      "expected": "{Offset:12 Format:Vector3 Usage:TextureCoordinate UsageIndex:7}",
+      "actual": "{Offset:12 Format:Vector3 Usage:TextureCoordinate UsageIndex:7}",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.string.negative",
+      "group": "VERTEX_ELEMENT",
+      "expected": "{Offset:-16 Format:HalfVector4 Usage:Tangent UsageIndex:-3}",
+      "actual": "{Offset:-16 Format:HalfVector4 Usage:Tangent UsageIndex:-3}",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.string.undefined",
+      "group": "VERTEX_ELEMENT",
+      "expected": "{Offset:123 Format:12345 Usage:-23456 UsageIndex:-456}",
+      "actual": "{Offset:123 Format:12345 Usage:-23456 UsageIndex:-456}",
+      "passed": true
+    },
+    {
+      "id": "vertex-element.string.boundaries",
+      "group": "VERTEX_ELEMENT",
+      "expected": "{Offset:-2147483648 Format:HalfVector4 Usage:TessellateFactor UsageIndex:2147483647}",
+      "actual": "{Offset:-2147483648 Format:HalfVector4 Usage:TessellateFactor UsageIndex:2147483647}",
       "passed": true
     },
     {

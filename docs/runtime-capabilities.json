@@ -4,7 +4,7 @@
   "qualified_platform": "linux/amd64 (HEADLESS renderer, NULL audio)",
   "capabilities": [
     {"id":"xna-package-mapping","capability":"XNA namespace/package mapping","status":"VERIFIED_MANAGED","evidence":"tools/api_compat and docs/xna-go-mapping.md","notes":"Case-preserving import paths; consumer aliases are not API."},
-    {"id":"pure-value-foundation","capability":"Managed Foundation closures","status":"VERIFIED_MANAGED","evidence":"API compatibility, behavior corpus, and family evidence reports","notes":"Geometry/transform, Color, Viewport, Curve, and PackedVector closures are locally strict-zero; six native/runtime types remain explicitly partial."},
+    {"id":"pure-value-foundation","capability":"Managed Foundation closures","status":"VERIFIED_MANAGED","evidence":"API compatibility, behavior corpus, and family evidence reports","notes":"Geometry/transform, Color, Viewport, Curve, PackedVector, and VertexElement closures are locally strict-zero; six native/runtime types remain explicitly partial."},
     {"id":"game-lifecycle","capability":"Native Game lifecycle","status":"VERIFIED_NATIVE","evidence":"60/600 canary and native stress","notes":"CNA drives Initialize, LoadContent, Update, Draw, UnloadContent, and Exiting."},
     {"id":"callback-containment","capability":"Go callback error/panic containment","status":"VERIFIED_NATIVE","evidence":"20 returned-error and 20 panic subprocess cycles","notes":"No panic or Go error crosses C; Run returns the stored Go failure."},
     {"id":"owner-os-thread","capability":"Owner OS-thread policy","status":"VERIFIED_NATIVE","evidence":"native stress wrong-thread rejection and owner retry","notes":"Run locks one OS thread through native destroy and callback-handle deletion."},
@@ -24,6 +24,7 @@
     {"id":"touch","capability":"Touch input","status":"UNIMPLEMENTED_CNA_GO","evidence":"strict structural report","notes":"Deferred."},
     {"id":"design","capability":"Design-time APIs","status":"UNIMPLEMENTED_CNA_GO","evidence":"strict structural report","notes":"Deferred."},
     {"id":"packed-vector","capability":"PackedVector family","status":"VERIFIED_MANAGED","evidence":"docs/packed-vector-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus","notes":"Complete 19-type managed closure; no CNA ABI route or runtime/hardware claim."},
+    {"id":"vertex-element-descriptor","capability":"VertexElement descriptor values","status":"VERIFIED_MANAGED","evidence":"docs/vertex-element-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus","notes":"Complete three-type managed descriptor closure; no VertexDeclaration, buffer, draw, GPU, CNA ABI, or hardware capability claim."},
     {"id":"game-inheritance","capability":"CLR Game subclassing syntax","status":"LANGUAGE_MAPPING_LIMITATION","evidence":"docs/xna-go-mapping.md","notes":"Go uses a concrete Game host plus an explicit GameCallbacks adapter."},
     {"id":"linux-amd64","capability":"Linux amd64 runtime","status":"VERIFIED_NATIVE","evidence":"exact ABI 0.7 native gates, stress, and canary","notes":"Requires cgo, a C compiler at build time, and a separately supplied CNA shared library."},
     {"id":"windows","capability":"Windows runtime","status":"PLATFORM_PENDING","evidence":"no Windows loader or runtime qualification","notes":"Go target compilation is not CNA runtime evidence."},

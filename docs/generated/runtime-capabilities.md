@@ -4,7 +4,7 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 
 - Profile: CNA-Go Foundation 1 / XNA 4.0 Windows runtime mapping
 - Qualified platform: linux/amd64 (HEADLESS renderer, NULL audio)
-- Capability rows: 30
+- Capability rows: 31
 
 | Status | Capability | Evidence | Notes |
 |---|---|---|---|
@@ -25,7 +25,8 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 | `UNIMPLEMENTED_CNA_GO` | Touch input | strict structural report | Deferred. |
 | `UPSTREAM_CNA_BLOCKED` | Native sanitizer evidence | qualified library is not instrumented | NATIVE_SANITIZER_STATUS=NOT_RUN; no leak-freedom claim. |
 | `VERIFIED_MANAGED` | PackedVector family | docs/packed-vector-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete 19-type managed closure; no CNA ABI route or runtime/hardware claim. |
-| `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, and PackedVector closures are locally strict-zero; six native/runtime types remain explicitly partial. |
+| `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, PackedVector, and VertexElement closures are locally strict-zero; six native/runtime types remain explicitly partial. |
+| `VERIFIED_MANAGED` | VertexElement descriptor values | docs/vertex-element-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete three-type managed descriptor closure; no VertexDeclaration, buffer, draw, GPU, CNA ABI, or hardware capability claim. |
 | `VERIFIED_MANAGED` | XNA namespace/package mapping | tools/api_compat and docs/xna-go-mapping.md | Case-preserving import paths; consumer aliases are not API. |
 | `VERIFIED_NATIVE` | Go callback error/panic containment | 20 returned-error and 20 panic subprocess cycles | No panic or Go error crosses C; Run returns the stored Go failure. |
 | `VERIFIED_NATIVE` | GraphicsDevice.Clear | 60/600 canary | Routes through cna_graphics_device_clear_rgba. |

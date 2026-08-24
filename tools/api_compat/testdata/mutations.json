@@ -30,5 +30,20 @@
   {"id":"bogus-packed-interface-witness","mutation":"bogus_packed_witness","category":"UNEXPECTED_MEMBER"},
   {"id":"wrong-packed-value-setter-type","mutation":"wrong_packed_setter","category":"PARAMETER_MAPPING_MISMATCH"},
   {"id":"missing-generic-interface-inheritance","mutation":"missing_packed_inheritance","category":"INTERFACE_MAPPING_MISMATCH"},
-  {"id":"wrong-packed-generic-interface-name","mutation":"wrong_packed_generic_name","category":"MISSING_TYPE"}
+  {"id":"wrong-packed-generic-interface-name","mutation":"wrong_packed_generic_name","category":"MISSING_TYPE"},
+  {"id":"vertex-element-wrong-type-kind","mutation":"vertex_wrong_kind","category":"TYPE_KIND_MISMATCH"},
+  {"id":"vertex-element-offset-exposed-as-field","mutation":"vertex_offset_exposed_field","category":"PROPERTY_MAPPING_MISMATCH"},
+  {"id":"vertex-element-missing-offset-setter","mutation":"vertex_missing_offset_setter","category":"MISSING_MEMBER"},
+  {"id":"vertex-element-wrong-offset-type","mutation":"vertex_wrong_offset_type","category":"RETURN_MAPPING_MISMATCH"},
+  {"id":"vertex-element-missing-format-setter","mutation":"vertex_missing_format_setter","category":"MISSING_MEMBER"},
+  {"id":"vertex-element-wrong-format-property-type","mutation":"vertex_wrong_format_property_type","category":"PARAMETER_MAPPING_MISMATCH"},
+  {"id":"vertex-element-missing-usage-index-setter","mutation":"vertex_missing_usage_index_setter","category":"MISSING_MEMBER"},
+  {"id":"vertex-element-constructor-parameter-order","mutation":"vertex_constructor_parameter_order","category":"PARAMETER_MAPPING_MISMATCH"},
+  {"id":"vertex-element-constructor-wrong-enum-type","mutation":"vertex_constructor_wrong_enum_type","category":"PARAMETER_MAPPING_MISMATCH"},
+  {"id":"vertex-element-unexpected-typed-equals","mutation":"vertex_unexpected_typed_equals","category":"UNEXPECTED_MEMBER"},
+  {"id":"vertex-element-missing-equality-operator","mutation":"vertex_missing_equality_operator","category":"MISSING_MEMBER"},
+  {"id":"vertex-element-missing-inequality-operator","mutation":"vertex_missing_inequality_operator","category":"MISSING_MEMBER"},
+  {"id":"vertex-element-format-wrong-enum-value","mutation":"vertex_format_wrong_enum_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"vertex-element-usage-wrong-enum-value","mutation":"vertex_usage_wrong_enum_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"vertex-element-enum-accidentally-flags","mutation":"vertex_enum_accidentally_flags","category":"FLAGS_MAPPING_MISMATCH"}
 ]

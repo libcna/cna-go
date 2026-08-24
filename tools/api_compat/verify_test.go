@@ -8,6 +8,7 @@ import (
 	"go/types"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -188,6 +189,101 @@ func TestPackedVectorMappedContract(t *testing.T) {
 	setter := surface.Members[symbolKey{Package: generic.PackagePath, Receiver: generic.GoName, Name: "SetPackedValue"}]
 	if getter == nil || setter == nil || getter.ErrorAdded || setter.ErrorAdded || !equalStrings(getter.Results, []string{"TPacked"}) || !equalStrings(setter.Parameters, []string{"TPacked"}) || len(setter.Results) != 0 {
 		t.Fatalf("generic PackedValue projection = getter %+v setter %+v", getter, setter)
+	}
+}
+
+func TestVertexElementMappedContract(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const prefix = "Microsoft.Xna.Framework.Graphics."
+	want := map[string]struct {
+		source int
+		mapped int
+		kind   string
+	}{
+		prefix + "VertexElement":       {10, 14, "struct"},
+		prefix + "VertexElementFormat": {13, 12, "enum"},
+		prefix + "VertexElementUsage":  {14, 13, "enum"},
+	}
+	sourceTotal, mappedTotal := 0, 0
+	for identity, expected := range want {
+		mapped := surface.typeForXNA(identity)
+		if mapped == nil {
+			t.Fatalf("%s was not mapped", identity)
+		}
+		if mapped.SourceMembers != expected.source || len(mapped.Members) != expected.mapped || mapped.Kind != expected.kind {
+			t.Fatalf("%s = source %d mapped %d kind %s, want %+v", identity, mapped.SourceMembers, len(mapped.Members), mapped.Kind, expected)
+		}
+		sourceTotal += mapped.SourceMembers
+		mappedTotal += len(mapped.Members)
+	}
+	if sourceTotal != 37 || mappedTotal != 39 {
+		t.Fatalf("vertex closure totals = source %d mapped %d", sourceTotal, mappedTotal)
+	}
+
+	vertex := surface.typeForXNA(prefix + "VertexElement")
+	constructor := surface.Members[symbolKey{Package: vertex.PackagePath, Name: "NewVertexElement"}]
+	if constructor == nil || !equalStrings(constructor.Parameters, []string{"int32", "VertexElementFormat", "VertexElementUsage", "int32"}) ||
+		!equalStrings(constructor.Results, []string{"VertexElement"}) || constructor.ErrorAdded {
+		t.Fatalf("constructor projection = %+v", constructor)
+	}
+	for _, property := range []struct {
+		name       string
+		mappedType string
+	}{
+		{"Offset", "int32"},
+		{"VertexElementFormat", "VertexElementFormat"},
+		{"VertexElementUsage", "VertexElementUsage"},
+		{"UsageIndex", "int32"},
+	} {
+		getter := surface.Members[symbolKey{Package: vertex.PackagePath, Receiver: vertex.GoName, Name: property.name}]
+		setter := surface.Members[symbolKey{Package: vertex.PackagePath, Receiver: vertex.GoName, Name: "Set" + property.name}]
+		if getter == nil || setter == nil || !equalStrings(getter.Results, []string{property.mappedType}) ||
+			!equalStrings(setter.Parameters, []string{property.mappedType}) || len(setter.Results) != 0 || getter.ErrorAdded || setter.ErrorAdded {
+			t.Fatalf("%s projection = getter %+v setter %+v", property.name, getter, setter)
+		}
+	}
+	if surface.Members[symbolKey{Package: vertex.PackagePath, Receiver: vertex.GoName, Name: "EqualsByVertexElement"}] != nil {
+		t.Fatal("invented typed Equals(VertexElement) projection")
+	}
+	equalsObject := surface.Members[symbolKey{Package: vertex.PackagePath, Receiver: vertex.GoName, Name: "Equals"}]
+	if equalsObject == nil || !equalStrings(equalsObject.Parameters, []string{"any"}) || !equalStrings(equalsObject.Results, []string{"bool"}) || equalsObject.ErrorAdded {
+		t.Fatalf("unique Equals(Object) projection = %+v", equalsObject)
+	}
+}
+
+func TestVertexElementCurrentSurfaceAndLocalClosure(t *testing.T) {
+	reference := loadPinnedContract(t)
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("type errors: %v", actual.TypeErrors)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	closure := result.VertexElementClosure
+	if closure.Status != "PASS" || closure.SourceTypes != 3 || closure.SourceIdentities != 37 || closure.MappedGoIdentities != 39 ||
+		closure.TargetTypes != 3 || closure.TargetGoIdentities != 39 || closure.WritableProperties != 4 || closure.ProjectedAccessors != 8 ||
+		closure.LocalDiagnostics != 0 || len(closure.TypeMeasurements) != 3 {
+		t.Fatalf("vertex closure = %+v", closure)
+	}
+	for _, row := range closure.TypeMeasurements {
+		if row.LocalDiagnostics != 0 || row.TargetGoMembers != row.ExpectedGoMembers {
+			t.Fatalf("vertex type row = %+v", row)
+		}
 	}
 }
 
@@ -421,13 +517,114 @@ func TestMutationFixtures(t *testing.T) {
 	for _, fixture := range fixtures {
 		fixture := fixture
 		t.Run(fixture.ID, func(t *testing.T) {
-			expected, actual := mutationCase(fixture.Mutation)
+			var expected *expectedSurface
+			var actual *actualSurface
+			if strings.HasPrefix(fixture.Mutation, "vertex_") {
+				expected, actual = vertexElementMutationCase(t, fixture.Mutation)
+			} else {
+				expected, actual = mutationCase(fixture.Mutation)
+			}
 			result := verify(expected, actual, 0, "report", "contract", "mapping")
 			if result.Summary[fixture.Category] == 0 {
 				t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
 			}
 		})
 	}
+}
+
+func vertexElementMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := &expectedSurface{
+		Types:              make(map[symbolKey]*expectedType),
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     3,
+		ReferenceMembers:   37,
+		ExpectedGoTypes:    3,
+		ExpectedGoMembers:  39,
+	}
+	actual := &actualSurface{
+		Types:       make(map[symbolKey]*actualType),
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, identity := range vertexElementClosureTypes {
+		fullType := full.typeForXNA(identity)
+		copiedType := *fullType
+		copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+		expected.Types[copiedType.Key] = &copiedType
+		actualKind, underlying := "struct", "struct{}"
+		if copiedType.Kind == "enum" {
+			actualKind, underlying = "named", "int32"
+		}
+		actual.Types[copiedType.Key] = &actualType{Key: copiedType.Key, Kind: actualKind, Underlying: underlying, FlagsMarker: copiedType.Flags}
+		for _, memberKey := range copiedType.Members {
+			fullMember := full.Members[memberKey]
+			copiedMember := *fullMember
+			copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+			copiedMember.Results = append([]string(nil), fullMember.Results...)
+			expected.Members[memberKey] = &copiedMember
+			actualMember := &actualMember{
+				Key:        memberKey,
+				Kind:       copiedMember.GoKind,
+				Parameters: append([]string(nil), copiedMember.Parameters...),
+				Results:    append([]string(nil), copiedMember.Results...),
+			}
+			if copiedMember.EnumValue != nil {
+				value := *copiedMember.EnumValue
+				actualMember.Value = &value
+			}
+			actual.Members[memberKey] = actualMember
+		}
+	}
+
+	const pkg = modulePath + "/Microsoft/Xna/Framework/Graphics"
+	vertexTypeKey := symbolKey{Package: pkg, Name: "VertexElement"}
+	member := func(receiver, name string) symbolKey { return symbolKey{Package: pkg, Receiver: receiver, Name: name} }
+	function := func(name string) symbolKey { return symbolKey{Package: pkg, Name: name} }
+	switch mutation {
+	case "vertex_wrong_kind":
+		actual.Types[vertexTypeKey].Kind = "interface"
+	case "vertex_offset_exposed_field":
+		actual.Members[member("VertexElement", "Offset")].Kind = "field"
+	case "vertex_missing_offset_setter":
+		delete(actual.Members, member("VertexElement", "SetOffset"))
+	case "vertex_wrong_offset_type":
+		actual.Members[member("VertexElement", "Offset")].Results = []string{"uint32"}
+	case "vertex_missing_format_setter":
+		delete(actual.Members, member("VertexElement", "SetVertexElementFormat"))
+	case "vertex_wrong_format_property_type":
+		actual.Members[member("VertexElement", "SetVertexElementFormat")].Parameters = []string{"VertexElementUsage"}
+	case "vertex_missing_usage_index_setter":
+		delete(actual.Members, member("VertexElement", "SetUsageIndex"))
+	case "vertex_constructor_parameter_order":
+		actual.Members[function("NewVertexElement")].Parameters = []string{"int32", "VertexElementUsage", "VertexElementFormat", "int32"}
+	case "vertex_constructor_wrong_enum_type":
+		actual.Members[function("NewVertexElement")].Parameters = []string{"int32", "VertexElementUsage", "VertexElementUsage", "int32"}
+	case "vertex_unexpected_typed_equals":
+		key := member("VertexElement", "EqualsByVertexElement")
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Parameters: []string{"VertexElement"}, Results: []string{"bool"}}
+	case "vertex_missing_equality_operator":
+		delete(actual.Members, function("VertexElementOperatorEqualityByVertexElementAndVertexElement"))
+	case "vertex_missing_inequality_operator":
+		delete(actual.Members, function("VertexElementOperatorInequalityByVertexElementAndVertexElement"))
+	case "vertex_format_wrong_enum_value":
+		wrong := "12"
+		actual.Members[function("VertexElementFormatHalfVector4")].Value = &wrong
+	case "vertex_usage_wrong_enum_value":
+		wrong := "13"
+		actual.Members[function("VertexElementUsageTessellateFactor")].Value = &wrong
+	case "vertex_enum_accidentally_flags":
+		actual.Types[symbolKey{Package: pkg, Name: "VertexElementFormat"}].FlagsMarker = true
+	default:
+		t.Fatalf("unknown vertex mutation %q", mutation)
+	}
+	return expected, actual
 }
 
 func mutationCase(mutation string) (*expectedSurface, *actualSurface) {

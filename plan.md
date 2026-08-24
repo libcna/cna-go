@@ -240,6 +240,50 @@ The normal strict verifier remains red only for 203 genuinely missing types and
 FOUNDATION_MILESTONE_4_COMPLETE=true
 ```
 
+## Foundation 5 managed VertexElement policy
+
+Foundation 5 completes exactly `Graphics.VertexElement`,
+`VertexElementFormat`, and `VertexElementUsage`. The closure has 37 source
+identities and 39 mapped Go identities. Both enums are explicit non-flags
+named `int32` values; arbitrary underlying values remain representable and are
+never constructor/setter validation failures.
+
+`VertexElement` is a private-state Go value struct. Its natural zero value is
+the Single/Position descriptor at offset and usage index zero, but no fake
+parameterless XNA constructor is added. Four writable source properties expand
+to four value-received getters and four pointer-received setters. Copies have
+independent property state.
+
+The unique object equality method maps to `Equals(any)`; there is no typed
+`Equals(VertexElement)` source identity or Go alias. Both mapped operators
+compare all four fields. `GetHashCode` reproduces XNA `SmartGetHashCode`: XOR
+the four sequential 32-bit words and return `Int32.MaxValue` when the XOR is
+zero. `ToString` preserves exact labels/order/punctuation, declared enum names,
+and signed-decimal fallback for undefined non-flags enum values. Exact IL,
+fixtures, and the local matrix are in `docs/vertex-element-evidence.md`.
+
+## Foundation 5 qualification evidence
+
+- [x] Regenerate the exact three-type, 37-source-member/39-Go-member closure.
+- [x] Complete all three types with compiler-measured local strict zero.
+- [x] Preserve all 25 PackedVector interface witnesses and exhaustive evidence.
+- [x] Mutation-test property projection, constructor signatures, operators,
+      enum values/flags, and the absence of typed `Equals(VertexElement)`.
+- [x] Grow the PURE_XNA_DERIVED corpus from 201 to 227 assertions with zero failures.
+- [x] Preserve every global mismatch, leak, allowlist, and unmeasured counter at zero.
+- [x] Keep all CNA ABI measurements and symbols unchanged.
+- [x] Requalify Go tests, vet, race, build, trimpath, native stress, and the unchanged maintained template.
+- [x] Produce an audited deterministic source artifact and qualify an isolated consumer from it.
+
+The normal strict verifier remains red only for 200 genuinely missing types and
+180 members on the same six deferred native/runtime partial types. This
+milestone adds no `IVertexType`, `VertexDeclaration`, vertex struct/buffer,
+draw/GPU route, or CNA ABI function.
+
+```text
+FOUNDATION_MILESTONE_5_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -249,10 +293,11 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 4 qualification, the freshly regenerated inventory selects
-exactly the managed vertex-element descriptor closure:
-`Microsoft.Xna.Framework.Graphics.VertexElement`, `VertexElementFormat`, and
-`VertexElementUsage`. Recompute its three-type, 37-source-member/39-Go-member
-projection before implementation. Do not mix it with `IVertexType`, native
-`VertexDeclaration`/buffer work, Design, Content, Effects/3D, or partial
-runtime cleanup.
+The regenerated scoreboard and public-signature dependency graph select one
+next closure: the standalone non-flags `PlayerIndex` enum plus the sole missing
+`Keyboard.GetState(PlayerIndex)` overload. Direct XNA IL shows that the
+overload ignores its player argument and reads the same process keyboard state
+as the existing route, so this can complete `Keyboard` without a CNA ABI
+addition. Recompute that closure before implementation. Do not mix it with
+GamePad, `IVertexType`, `VertexDeclaration`, Design, Content, Effects/3D, or
+unrelated native partial cleanup.

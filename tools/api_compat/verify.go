@@ -9,6 +9,12 @@ import (
 
 const packedVectorNamespace = "Microsoft.Xna.Framework.Graphics.PackedVector."
 
+var vertexElementClosureTypes = []string{
+	"Microsoft.Xna.Framework.Graphics.VertexElement",
+	"Microsoft.Xna.Framework.Graphics.VertexElementFormat",
+	"Microsoft.Xna.Framework.Graphics.VertexElementUsage",
+}
+
 var adapterTypes = map[string]bool{
 	"EventSubscription": true,
 	"GameCallbacks":     true,
@@ -126,6 +132,9 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 			continue
 		}
 		addDiagnostic(&result, diagnostic{Category: "UNEXPECTED_MEMBER", Go: key.String(), Message: "exported member does not map to the selected XNA profile or a declared language adapter"})
+		if owner := expectedTypeForActualMember(expected, key); owner != nil {
+			typeDiagnostics[owner.XNA]++
+		}
 		_ = am
 	}
 
@@ -163,6 +172,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 		}
 		result.PackedVectorTypeMeasurements = append(result.PackedVectorTypeMeasurements, measurement)
 	}
+	result.VertexElementClosure = measureVertexElementClosure(expected, actual, typeDiagnostics)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -194,6 +204,57 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+func expectedTypeForActualMember(expected *expectedSurface, key symbolKey) *expectedType {
+	if key.Receiver == "" {
+		return nil
+	}
+	return expected.Types[symbolKey{Package: key.Package, Name: key.Receiver}]
+}
+
+func measureVertexElementClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) vertexElementClosure {
+	measurement := vertexElementClosure{
+		SourceTypes:        len(vertexElementClosureTypes),
+		WritableProperties: 4,
+		ProjectedAccessors: 8,
+		Status:             "FAIL",
+	}
+	for _, identity := range vertexElementClosureTypes {
+		owner := expected.typeForXNA(identity)
+		if owner == nil {
+			continue
+		}
+		row := vertexElementTypeMeasurement{
+			XNA:               owner.XNA,
+			GoName:            owner.GoName,
+			SourceMembers:     owner.SourceMembers,
+			ExpectedGoMembers: len(owner.Members),
+			LocalDiagnostics:  typeDiagnostics[owner.XNA],
+			ExpectedKind:      owner.Kind,
+			ActualKind:        "missing",
+		}
+		measurement.SourceIdentities += row.SourceMembers
+		measurement.MappedGoIdentities += row.ExpectedGoMembers
+		measurement.LocalDiagnostics += row.LocalDiagnostics
+		if target := actual.Types[owner.Key]; target != nil {
+			measurement.TargetTypes++
+			row.ActualKind = target.Kind
+			row.ActualUnderlying = target.Underlying
+			for _, memberKey := range owner.Members {
+				if actual.Members[memberKey] != nil {
+					row.TargetGoMembers++
+				}
+			}
+			measurement.TargetGoIdentities += row.TargetGoMembers
+		}
+		measurement.TypeMeasurements = append(measurement.TypeMeasurements, row)
+	}
+	if measurement.SourceTypes == 3 && measurement.SourceIdentities == 37 && measurement.MappedGoIdentities == 39 &&
+		measurement.TargetTypes == 3 && measurement.TargetGoIdentities == 39 && measurement.LocalDiagnostics == 0 {
+		measurement.Status = "PASS"
+	}
+	return measurement
 }
 
 func measureDirectInterfaceInheritance(result *report, actual *actualSurface, owner *expectedType, target *actualType) {
