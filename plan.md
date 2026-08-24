@@ -30,6 +30,10 @@ the managed GraphicsDeviceManager.SupportedOrientations property slice.
 **Foundation 8 status:** qualified for exactly the pure managed Graphics
 BufferUsage flags enum, with no buffer class, device member, or ABI expansion.
 
+**Foundation 9 status:** qualified for exactly the pure managed Graphics
+ClearOptions flags enum, including the no-declared-zero mapping edge case,
+with no GraphicsDevice member, clear behavior, or ABI expansion.
+
 This file is normative. `NEXT.md` is the resumable handoff; generated reports
 are evidence and must not replace the rules here.
 
@@ -412,6 +416,46 @@ Exact evidence is in `docs/buffer-usage-evidence.md`.
 FOUNDATION_MILESTONE_8_COMPLETE=true
 ```
 
+## Foundation 9 ClearOptions policy
+
+Foundation 9 completes exactly
+`Microsoft.Xna.Framework.Graphics.ClearOptions`. It is a `[Flags]` named
+`int32` enum with explicit `Target=1`, `DepthBuffer=2`, and `Stencil=4`
+constants. The synthetic CLR `value__` field is excluded, so four source
+identities project to exactly three Go identities.
+
+Unlike previously selected flags enums, the pinned metadata declares no
+zero-valued literal. Raw zero remains the unnamed natural Go zero value; the
+binding does not synthesize `None`, `Default`, `All`, or any other constant.
+The complete signed `int32` domain remains representable without validation or
+masking, and ordinary Go bitwise operations preserve declared and unknown bits.
+
+The type is pure managed metadata in the root Graphics package. It does not
+implement either `GraphicsDevice.Clear(ClearOptions, ...)` overload, any other
+GraphicsDevice member, render-target/depth/stencil clearing, renderer state,
+or a CNA/native route. The five native/runtime partial types are untouched.
+
+## Foundation 9 qualification evidence
+
+- [x] Independently confirm the exact four-source-identity/three-Go-identity contract.
+- [x] Complete ClearOptions with compiler-measured local strict zero.
+- [x] Preserve the unnamed zero value, explicit 1/2/4 literals, combinations,
+      arbitrary signed raw bits, and typed OR/AND without helper surface.
+- [x] Harden the general flags rule and reject invented named zero/all constants.
+- [x] Grow verifier mutations from 85 to 99 without an allowlist or special case.
+- [x] Grow the behavior corpus from 247 to 256 assertions with explicit XNA/Go provenance and zero failures.
+- [x] Preserve all five partial types and their combined 177 missing members.
+- [x] Preserve every mismatch, leak, allowlist, unmeasured, interface-witness, and CNA ABI counter.
+- [x] Requalify Go, native stress, unchanged template, deterministic artifact, and isolated-consumer gates.
+
+Normal strict verification remains red only for 196 genuinely missing types
+and 177 members on five explicitly deferred native/runtime partial types.
+Exact evidence is in `docs/clear-options-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_9_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -421,8 +465,9 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 8, regenerate the scoreboard and dependency graph before
+After Foundation 9, regenerate the scoreboard and dependency graph before
 selecting one next closure. Do not infer that GamePad is next merely because
 PlayerIndex now exists, do not automatically continue GraphicsDeviceManager,
 do not infer that a buffer class is next merely because BufferUsage now exists,
-and do not combine independent families.
+do not infer that a Clear overload is next merely because ClearOptions now
+exists, and do not combine independent families.

@@ -25,6 +25,7 @@ const (
 	graphicsManagerIdentity    = "Microsoft.Xna.Framework.GraphicsDeviceManager"
 	supportedOrientationsName  = "SupportedOrientations"
 	bufferUsageIdentity        = "Microsoft.Xna.Framework.Graphics.BufferUsage"
+	clearOptionsIdentity       = "Microsoft.Xna.Framework.Graphics.ClearOptions"
 )
 
 var adapterTypes = map[string]bool{
@@ -188,6 +189,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.PlayerIndexKeyboardClosure = measurePlayerIndexKeyboardClosure(expected, actual, typeDiagnostics)
 	result.DisplayOrientationClosure = measureDisplayOrientationClosure(expected, actual, typeDiagnostics)
 	result.BufferUsageClosure = measureBufferUsageClosure(expected, actual, typeDiagnostics)
+	result.ClearOptionsClosure = measureClearOptionsClosure(expected, actual, typeDiagnostics)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -219,6 +221,94 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+func measureClearOptionsClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) clearOptionsClosure {
+	measurement := clearOptionsClosure{
+		SourceTypes:          1,
+		ExpectedKind:         "enum",
+		ActualKind:           "missing",
+		UnderlyingType:       "missing",
+		TargetValue:          "missing",
+		DepthBufferValue:     "missing",
+		StencilValue:         "missing",
+		ValueStorageExcluded: true,
+		Status:               "FAIL",
+	}
+	owner := expected.typeForXNA(clearOptionsIdentity)
+	if owner == nil {
+		return measurement
+	}
+	measurement.SourceIdentities = owner.SourceMembers
+	measurement.ExpectedGoIdentities = len(owner.Members)
+	measurement.LocalDiagnostics = typeDiagnostics[owner.XNA]
+	measurement.NamedZeroMember = enumHasNamedZero(expected, owner)
+	if target := actual.Types[owner.Key]; target != nil {
+		measurement.TargetTypes = 1
+		measurement.ActualKind = target.Kind
+		measurement.UnderlyingType = target.Underlying
+		measurement.Flags = target.FlagsMarker
+	}
+	for _, key := range owner.Members {
+		member := expected.Members[key]
+		actualMember := actual.Members[key]
+		if actualMember == nil {
+			continue
+		}
+		measurement.TargetGoIdentities++
+		value := "missing"
+		if actualMember.Value != nil {
+			value = normalizeInteger(*actualMember.Value)
+		}
+		switch member.GoName {
+		case "ClearOptionsTarget":
+			measurement.TargetValue = value
+		case "ClearOptionsDepthBuffer":
+			measurement.DepthBufferValue = value
+		case "ClearOptionsStencil":
+			measurement.StencilValue = value
+		}
+	}
+	for key := range actual.Members {
+		if key.Package != owner.PackagePath || !strings.HasPrefix(key.Name, owner.GoName) {
+			continue
+		}
+		suffix := strings.TrimPrefix(key.Name, owner.GoName)
+		switch {
+		case strings.EqualFold(suffix, "value__"):
+			measurement.ValueStorageExcluded = false
+		case suffix == "None":
+			measurement.ClearOptionsNonePresent = true
+		case suffix == "Default":
+			measurement.ClearOptionsDefaultPresent = true
+		case suffix == "All":
+			measurement.ClearOptionsAllPresent = true
+		}
+	}
+	if measurement.SourceIdentities == 4 && measurement.ExpectedGoIdentities == 3 &&
+		measurement.TargetTypes == 1 && measurement.TargetGoIdentities == 3 && measurement.LocalDiagnostics == 0 &&
+		measurement.ActualKind == "named" && measurement.UnderlyingType == "int32" && measurement.Flags &&
+		measurement.TargetValue == "1" && measurement.DepthBufferValue == "2" && measurement.StencilValue == "4" &&
+		measurement.ValueStorageExcluded && !measurement.NamedZeroMember && !measurement.ClearOptionsNonePresent &&
+		!measurement.ClearOptionsDefaultPresent && !measurement.ClearOptionsAllPresent {
+		measurement.Status = "PASS"
+	}
+	return measurement
+}
+
+// enumHasNamedZero measures the source-declared enum literals. The Go zero
+// value is always representable and does not require a synthetic CLR name.
+func enumHasNamedZero(expected *expectedSurface, owner *expectedType) bool {
+	if owner == nil || owner.Kind != "enum" {
+		return false
+	}
+	for _, key := range owner.Members {
+		member := expected.Members[key]
+		if member != nil && member.EnumValue != nil && normalizeInteger(*member.EnumValue) == "0" {
+			return true
+		}
+	}
+	return false
 }
 
 func measureBufferUsageClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) bufferUsageClosure {

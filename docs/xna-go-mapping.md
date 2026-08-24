@@ -39,7 +39,10 @@ interfaces when their contract can be represented. CLR enums map to named
 `int32` types because all enums in the selected profile have `System.Int32`
 underlying storage. Every literal has an explicit raw constant; `iota` is not
 used. Flags types remain named integers and the verifier checks both their raw
-values and `[Flags]` classification. Delegates map to named function types.
+values and `[Flags]` classification. A flags enum does not require a declared
+zero literal: Go's zero value remains representable as raw zero, but the
+mapping never synthesizes `None`, `Default`, or another name absent from CLR
+metadata. Delegates map to named function types.
 
 The core BCL projection is fixed-width: `Single` is `float32`, `Double` is
 `float64`, signed and unsigned integers preserve their width, `Boolean` is

@@ -83,5 +83,19 @@
   {"id":"buffer-usage-write-only-missing","mutation":"buffer_usage_missing_write_only","category":"MISSING_MEMBER"},
   {"id":"buffer-usage-value-storage-projected","mutation":"buffer_usage_value_storage_projected","category":"UNEXPECTED_MEMBER"},
   {"id":"buffer-usage-extra-public-constant","mutation":"buffer_usage_extra_constant","category":"UNEXPECTED_MEMBER"},
-  {"id":"buffer-usage-exported-helper-method","mutation":"buffer_usage_exported_helper","category":"UNEXPECTED_MEMBER"}
+  {"id":"buffer-usage-exported-helper-method","mutation":"buffer_usage_exported_helper","category":"UNEXPECTED_MEMBER"},
+  {"id":"clear-options-missing","mutation":"clear_options_missing","category":"MISSING_TYPE"},
+  {"id":"clear-options-wrong-package","mutation":"clear_options_wrong_package","category":"MISSING_TYPE"},
+  {"id":"clear-options-wrong-kind","mutation":"clear_options_wrong_kind","category":"TYPE_KIND_MISMATCH"},
+  {"id":"clear-options-wrong-underlying-type","mutation":"clear_options_wrong_underlying_type","category":"TYPE_KIND_MISMATCH"},
+  {"id":"clear-options-missing-flags-marker","mutation":"clear_options_missing_flags_marker","category":"FLAGS_MAPPING_MISMATCH"},
+  {"id":"clear-options-flags-false","mutation":"clear_options_flags_false","category":"FLAGS_MAPPING_MISMATCH"},
+  {"id":"clear-options-target-wrong-value","mutation":"clear_options_wrong_target_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"clear-options-depth-buffer-wrong-value","mutation":"clear_options_wrong_depth_buffer_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"clear-options-stencil-wrong-value","mutation":"clear_options_wrong_stencil_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"clear-options-stencil-missing","mutation":"clear_options_missing_stencil","category":"MISSING_MEMBER"},
+  {"id":"clear-options-value-storage-projected","mutation":"clear_options_value_storage_projected","category":"UNEXPECTED_MEMBER"},
+  {"id":"clear-options-invented-none","mutation":"clear_options_invented_none","category":"UNEXPECTED_MEMBER"},
+  {"id":"clear-options-invented-all","mutation":"clear_options_invented_all","category":"UNEXPECTED_MEMBER"},
+  {"id":"clear-options-exported-helper-method","mutation":"clear_options_exported_helper","category":"UNEXPECTED_MEMBER"}
 ]

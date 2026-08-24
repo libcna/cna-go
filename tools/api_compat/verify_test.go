@@ -340,6 +340,77 @@ func TestBufferUsageMappedContract(t *testing.T) {
 	}
 }
 
+func TestClearOptionsMappedContract(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	options := surface.typeForXNA(clearOptionsIdentity)
+	if options == nil || options.Kind != "enum" || !options.Flags || options.SourceMembers != 4 || len(options.Members) != 3 {
+		t.Fatalf("ClearOptions projection = %+v", options)
+	}
+	for name, value := range map[string]string{"Target": "1", "DepthBuffer": "2", "Stencil": "4"} {
+		member := surface.Members[symbolKey{Package: options.PackagePath, Name: "ClearOptions" + name}]
+		if member == nil || member.GoKind != "const" || member.EnumValue == nil || *member.EnumValue != value || !equalStrings(member.Results, []string{"ClearOptions"}) {
+			t.Fatalf("ClearOptions%s projection = %+v", name, member)
+		}
+	}
+	for _, name := range []string{"Value__", "value__", "None", "Default", "All"} {
+		if surface.Members[symbolKey{Package: options.PackagePath, Name: "ClearOptions" + name}] != nil {
+			t.Fatalf("undeclared ClearOptions%s was projected", name)
+		}
+	}
+	if enumHasNamedZero(surface, options) {
+		t.Fatal("ClearOptions unexpectedly has a source-declared zero literal")
+	}
+}
+
+func TestFlagsEnumWithoutNamedZeroIsValidGenerically(t *testing.T) {
+	int32Type := "System.Int32"
+	enumType := "Microsoft.Xna.Framework.Graphics.ProbeFlagsNoZero"
+	reference := contract{
+		SchemaVersion: 2,
+		Profile:       "XNA 4.0 Windows runtime",
+		Types: []contractType{{
+			Name: enumType, Kind: "enum", Flags: true, Sealed: true,
+			UnderlyingType: &int32Type,
+			Members: []contractMember{
+				{Kind: "field", Name: "value__", Type: &int32Type},
+				{Kind: "field", Name: "First", Type: &enumType, Static: true, Constant: true, Value: json.RawMessage(`"1"`)},
+				{Kind: "field", Name: "Second", Type: &enumType, Static: true, Constant: true, Value: json.RawMessage(`"2"`)},
+				{Kind: "field", Name: "Third", Type: &enumType, Static: true, Constant: true, Value: json.RawMessage(`"4"`)},
+			},
+		}},
+	}
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	owner := expected.typeForXNA(enumType)
+	if owner == nil || owner.SourceMembers != 4 || len(owner.Members) != 3 || enumHasNamedZero(expected, owner) {
+		t.Fatalf("generic no-zero flags projection = %+v", owner)
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			owner.Key: {Key: owner.Key, Kind: "named", Underlying: "int32", FlagsMarker: true},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, key := range owner.Members {
+		member := expected.Members[key]
+		value := *member.EnumValue
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{owner.GoName}, Value: &value}
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	if result.Summary["TOTAL_DIAGNOSTICS"] != 0 || result.Summary["FLAGS_MAPPING_MISMATCH"] != 0 || result.Summary["ENUM_VALUE_MISMATCH"] != 0 {
+		t.Fatalf("generic no-zero flags enum failed verification: %v", result.Summary)
+	}
+}
+
 func TestFlagsDirectiveRequiresExactMarker(t *testing.T) {
 	exact := &ast.CommentGroup{List: []*ast.Comment{{Text: "// xna:flags"}}}
 	if !hasDirectiveNamed("xna:flags", exact) {
@@ -377,6 +448,34 @@ func TestBufferUsageCurrentSurfaceAndLocalClosure(t *testing.T) {
 		closure.ActualKind != "named" || closure.UnderlyingType != "int32" || !closure.Flags || closure.NoneValue != "0" ||
 		closure.WriteOnlyValue != "1" || !closure.ValueStorageExcluded {
 		t.Fatalf("BufferUsage closure = %+v", closure)
+	}
+}
+
+func TestClearOptionsCurrentSurfaceAndLocalClosure(t *testing.T) {
+	reference := loadPinnedContract(t)
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("type errors: %v", actual.TypeErrors)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	closure := result.ClearOptionsClosure
+	if closure.Status != "PASS" || closure.SourceTypes != 1 || closure.SourceIdentities != 4 || closure.ExpectedGoIdentities != 3 ||
+		closure.TargetTypes != 1 || closure.TargetGoIdentities != 3 || closure.LocalDiagnostics != 0 || closure.ExpectedKind != "enum" ||
+		closure.ActualKind != "named" || closure.UnderlyingType != "int32" || !closure.Flags || closure.TargetValue != "1" ||
+		closure.DepthBufferValue != "2" || closure.StencilValue != "4" || !closure.ValueStorageExcluded || closure.NamedZeroMember ||
+		closure.ClearOptionsNonePresent || closure.ClearOptionsDefaultPresent || closure.ClearOptionsAllPresent {
+		t.Fatalf("ClearOptions closure = %+v", closure)
 	}
 }
 
@@ -704,7 +803,9 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "buffer_usage_") {
+			if strings.HasPrefix(fixture.Mutation, "clear_options_") {
+				expected, actual = clearOptionsMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "buffer_usage_") {
 				expected, actual = bufferUsageMutationCase(t, fixture.Mutation)
 			} else if strings.HasPrefix(fixture.Mutation, "display_orientation_") || strings.HasPrefix(fixture.Mutation, "graphics_manager_orientation_") {
 				expected, actual = displayOrientationMutationCase(t, fixture.Mutation)
@@ -721,6 +822,99 @@ func TestMutationFixtures(t *testing.T) {
 			}
 		})
 	}
+}
+
+func clearOptionsMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(clearOptionsIdentity)
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   4,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  3,
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			copiedType.Key: {Key: copiedType.Key, Kind: "named", Underlying: "int32", FlagsMarker: true},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		value := *copiedMember.EnumValue
+		actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "const", Results: []string{"ClearOptions"}, Value: &value}
+	}
+
+	const graphicsPackage = modulePath + "/Microsoft/Xna/Framework/Graphics"
+	const frameworkPackage = modulePath + "/Microsoft/Xna/Framework"
+	typeKey := symbolKey{Package: graphicsPackage, Name: "ClearOptions"}
+	constant := func(name string) symbolKey { return symbolKey{Package: graphicsPackage, Name: "ClearOptions" + name} }
+	switch mutation {
+	case "clear_options_missing":
+		delete(actual.Types, typeKey)
+	case "clear_options_wrong_package":
+		movedType := *actual.Types[typeKey]
+		delete(actual.Types, typeKey)
+		movedType.Key.Package = frameworkPackage
+		actual.Types[movedType.Key] = &movedType
+		for _, name := range []string{"Target", "DepthBuffer", "Stencil"} {
+			key := constant(name)
+			movedMember := *actual.Members[key]
+			delete(actual.Members, key)
+			movedMember.Key.Package = frameworkPackage
+			actual.Members[movedMember.Key] = &movedMember
+		}
+	case "clear_options_wrong_kind":
+		actual.Types[typeKey].Kind = "struct"
+	case "clear_options_wrong_underlying_type":
+		actual.Types[typeKey].Underlying = "uint32"
+	case "clear_options_missing_flags_marker", "clear_options_flags_false":
+		actual.Types[typeKey].FlagsMarker = false
+	case "clear_options_wrong_target_value":
+		wrong := "2"
+		actual.Members[constant("Target")].Value = &wrong
+	case "clear_options_wrong_depth_buffer_value":
+		wrong := "3"
+		actual.Members[constant("DepthBuffer")].Value = &wrong
+	case "clear_options_wrong_stencil_value":
+		wrong := "8"
+		actual.Members[constant("Stencil")].Value = &wrong
+	case "clear_options_missing_stencil":
+		delete(actual.Members, constant("Stencil"))
+	case "clear_options_value_storage_projected":
+		key := constant("Value__")
+		value := "0"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"int32"}, Value: &value}
+	case "clear_options_invented_none":
+		key := constant("None")
+		value := "0"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"ClearOptions"}, Value: &value}
+	case "clear_options_invented_all":
+		key := constant("All")
+		value := "7"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"ClearOptions"}, Value: &value}
+	case "clear_options_exported_helper":
+		key := symbolKey{Package: graphicsPackage, Receiver: "ClearOptions", Name: "String"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"string"}}
+	default:
+		t.Fatalf("unknown ClearOptions mutation %q", mutation)
+	}
+	return expected, actual
 }
 
 func bufferUsageMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {

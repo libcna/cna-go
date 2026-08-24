@@ -15,6 +15,7 @@
     "class": "go-struct-pointer-facade",
     "interface": "go-structural-interface",
     "enum": "named-int32",
+    "flagsZeroMemberRule": "raw-zero-is-representable-but-no-None-Default-or-other-named-zero-is-synthesized",
     "delegate": "named-func"
   },
   "genericParameters": {

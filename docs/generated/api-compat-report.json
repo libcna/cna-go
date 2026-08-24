@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 55,
+    "COMPLETE_TYPES": 56,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 197,
-    "MISSING_TYPES": 197,
+    "MISSING_TYPE": 196,
+    "MISSING_TYPES": 196,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1330,
-    "TARGET_TYPES": 60,
-    "TOTAL_DIAGNOSTICS": 374,
+    "TARGET_MEMBERS": 1333,
+    "TARGET_TYPES": 61,
+    "TOTAL_DIAGNOSTICS": 373,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -618,12 +618,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.BlendState",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:BlendState",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ClearOptions",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ClearOptions",
       "message": "mapped Go type is absent"
     },
     {
@@ -2304,6 +2298,7 @@
     "Microsoft.Xna.Framework.DisplayOrientation",
     "Microsoft.Xna.Framework.GameTime",
     "Microsoft.Xna.Framework.Graphics.BufferUsage",
+    "Microsoft.Xna.Framework.Graphics.ClearOptions",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
@@ -2613,7 +2608,6 @@
     "Microsoft.Xna.Framework.Graphics.Blend",
     "Microsoft.Xna.Framework.Graphics.BlendFunction",
     "Microsoft.Xna.Framework.Graphics.BlendState",
-    "Microsoft.Xna.Framework.Graphics.ClearOptions",
     "Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
     "Microsoft.Xna.Framework.Graphics.CompareFunction",
     "Microsoft.Xna.Framework.Graphics.CubeMapFace",
@@ -3474,9 +3468,30 @@
     "valueStorageExcluded": true,
     "status": "PASS"
   },
+  "clearOptionsClosure": {
+    "sourceTypes": 1,
+    "sourceIdentities": 4,
+    "expectedGoIdentities": 3,
+    "targetTypes": 1,
+    "targetGoIdentities": 3,
+    "localDiagnostics": 0,
+    "expectedKind": "enum",
+    "actualKind": "named",
+    "underlyingType": "int32",
+    "flags": true,
+    "targetValue": "1",
+    "depthBufferValue": "2",
+    "stencilValue": "4",
+    "valueStorageExcluded": true,
+    "namedZeroMember": false,
+    "clearOptionsNonePresent": false,
+    "clearOptionsDefaultPresent": false,
+    "clearOptionsAllPresent": false,
+    "status": "PASS"
+  },
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "c9788d7c62ceb78f8236ba28289c2984a88b2378fcaecc020c9209e36bc00702",
+    "mappingSha256": "9055788ecf1b55f64e2ccb5174a261dbfd4cd343dc48d02e82a80d757f7f5468",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

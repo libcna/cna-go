@@ -181,7 +181,30 @@ type report struct {
 	PlayerIndexKeyboardClosure   playerIndexKeyboardClosure    `json:"playerIndexKeyboardClosure"`
 	DisplayOrientationClosure    displayOrientationClosure     `json:"displayOrientationGraphicsManagerClosure"`
 	BufferUsageClosure           bufferUsageClosure            `json:"bufferUsageClosure"`
+	ClearOptionsClosure          clearOptionsClosure           `json:"clearOptionsClosure"`
 	Metadata                     reportMetadata                `json:"metadata"`
+}
+
+type clearOptionsClosure struct {
+	SourceTypes                int    `json:"sourceTypes"`
+	SourceIdentities           int    `json:"sourceIdentities"`
+	ExpectedGoIdentities       int    `json:"expectedGoIdentities"`
+	TargetTypes                int    `json:"targetTypes"`
+	TargetGoIdentities         int    `json:"targetGoIdentities"`
+	LocalDiagnostics           int    `json:"localDiagnostics"`
+	ExpectedKind               string `json:"expectedKind"`
+	ActualKind                 string `json:"actualKind"`
+	UnderlyingType             string `json:"underlyingType"`
+	Flags                      bool   `json:"flags"`
+	TargetValue                string `json:"targetValue"`
+	DepthBufferValue           string `json:"depthBufferValue"`
+	StencilValue               string `json:"stencilValue"`
+	ValueStorageExcluded       bool   `json:"valueStorageExcluded"`
+	NamedZeroMember            bool   `json:"namedZeroMember"`
+	ClearOptionsNonePresent    bool   `json:"clearOptionsNonePresent"`
+	ClearOptionsDefaultPresent bool   `json:"clearOptionsDefaultPresent"`
+	ClearOptionsAllPresent     bool   `json:"clearOptionsAllPresent"`
+	Status                     string `json:"status"`
 }
 
 type bufferUsageClosure struct {

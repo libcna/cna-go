@@ -137,6 +137,21 @@ func runCorpus() corpusReport {
 	checkGoProjection("buffer-usage.arbitrary-raw-values", "BUFFER_USAGE", "2,3,1048576,-1", fmt.Sprintf("%d,%d,%d,%d", graphics.BufferUsage(2), graphics.BufferUsage(3), graphics.BufferUsage(1<<20), graphics.BufferUsage(-1)))
 	checkGoProjection("buffer-usage.bitwise-composition", "BUFFER_USAGE", "1,1,3", fmt.Sprintf("%d,%d,%d", graphics.BufferUsageNone|graphics.BufferUsageWriteOnly, graphics.BufferUsageWriteOnly|graphics.BufferUsageWriteOnly, graphics.BufferUsage(2)|graphics.BufferUsageWriteOnly))
 
+	check("clear-options.raw-values", "CLEAR_OPTIONS", "1,2,4", fmt.Sprintf("%d,%d,%d", graphics.ClearOptionsTarget, graphics.ClearOptionsDepthBuffer, graphics.ClearOptionsStencil))
+	clearOptionsKind := reflect.TypeOf(graphics.ClearOptionsTarget).Kind()
+	check("clear-options.underlying-system-int32", "CLEAR_OPTIONS", "System.Int32", map[reflect.Kind]string{reflect.Int32: "System.Int32"}[clearOptionsKind])
+	clearOptionsPowersOfTwo := graphics.ClearOptionsTarget != 0 && graphics.ClearOptionsTarget&(graphics.ClearOptionsTarget-1) == 0 &&
+		graphics.ClearOptionsDepthBuffer != 0 && graphics.ClearOptionsDepthBuffer&(graphics.ClearOptionsDepthBuffer-1) == 0 &&
+		graphics.ClearOptionsStencil != 0 && graphics.ClearOptionsStencil&(graphics.ClearOptionsStencil-1) == 0
+	check("clear-options.flags-metadata-shape", "CLEAR_OPTIONS", true, clearOptionsPowersOfTwo)
+	check("clear-options.no-declared-zero-literal", "CLEAR_OPTIONS", true, graphics.ClearOptionsTarget != 0 && graphics.ClearOptionsDepthBuffer != 0 && graphics.ClearOptionsStencil != 0)
+	var zeroClearOptions graphics.ClearOptions
+	checkGoProjection("clear-options.unnamed-zero-value", "CLEAR_OPTIONS", int32(0), int32(zeroClearOptions))
+	checkGoProjection("clear-options.declared-combinations", "CLEAR_OPTIONS", "3,5,6,7", fmt.Sprintf("%d,%d,%d,%d", graphics.ClearOptionsTarget|graphics.ClearOptionsDepthBuffer, graphics.ClearOptionsTarget|graphics.ClearOptionsStencil, graphics.ClearOptionsDepthBuffer|graphics.ClearOptionsStencil, graphics.ClearOptionsTarget|graphics.ClearOptionsDepthBuffer|graphics.ClearOptionsStencil))
+	checkGoProjection("clear-options.arbitrary-raw-values", "CLEAR_OPTIONS", "0,8,1048576,-1", fmt.Sprintf("%d,%d,%d,%d", graphics.ClearOptions(0), graphics.ClearOptions(8), graphics.ClearOptions(1<<20), graphics.ClearOptions(-1)))
+	checkGoProjection("clear-options.bitwise-or", "CLEAR_OPTIONS", "3,9", fmt.Sprintf("%d,%d", graphics.ClearOptionsTarget|graphics.ClearOptionsDepthBuffer, graphics.ClearOptions(8)|graphics.ClearOptionsTarget))
+	checkGoProjection("clear-options.bitwise-and", "CLEAR_OPTIONS", "4,0", fmt.Sprintf("%d,%d", graphics.ClearOptions(7)&graphics.ClearOptionsStencil, graphics.ClearOptions(2)&graphics.ClearOptionsTarget))
+
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))
 	check("math.lerp", "MathHelper", bits(4), bits(framework.MathHelperLerp(2, 10, 0.25)))
