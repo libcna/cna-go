@@ -86,8 +86,10 @@ func gameTimeFromInterop(value interop.FrameTime) GameTime {
 
 // GraphicsDeviceManager owns the Game's canonical native graphics manager.
 type GraphicsDeviceManager struct {
-	runtime  *interop.Runtime
-	resource *interop.Resource
+	runtime               *interop.Runtime
+	resource              *interop.Resource
+	supportedOrientations DisplayOrientation
+	isDeviceDirty         bool
 }
 
 // NewGraphicsDeviceManager maps the XNA constructor and must be called from a
@@ -100,9 +102,26 @@ func NewGraphicsDeviceManager(game *Game) (*GraphicsDeviceManager, error) {
 	if err != nil {
 		return nil, err
 	}
-	manager := &GraphicsDeviceManager{runtime: game.runtime, resource: resource}
+	manager := &GraphicsDeviceManager{
+		runtime:               game.runtime,
+		resource:              resource,
+		supportedOrientations: DisplayOrientationDefault,
+		isDeviceDirty:         false,
+	}
 	interop.RegisterOwner(manager, manager.runtime, manager.resource)
 	return manager, nil
+}
+
+// SupportedOrientations returns the exact stored XNA orientation flags.
+func (m *GraphicsDeviceManager) SupportedOrientations() DisplayOrientation {
+	return m.supportedOrientations
+}
+
+// SetSupportedOrientations stores the exact flags and always marks future
+// device configuration dirty, matching the XNA setter.
+func (m *GraphicsDeviceManager) SetSupportedOrientations(value DisplayOrientation) {
+	m.supportedOrientations = value
+	m.isDeviceDirty = true
 }
 
 // Dispose releases the owned manager. The native handle is retained if CNA

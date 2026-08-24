@@ -24,6 +24,9 @@ descriptor closure.
 **Foundation 6 status:** qualified for the root PlayerIndex enum and the final
 Keyboard overload through the unchanged process keyboard route.
 
+**Foundation 7 status:** qualified for the DisplayOrientation flags enum and
+the managed GraphicsDeviceManager.SupportedOrientations property slice.
+
 This file is normative. `NEXT.md` is the resumable handoff; generated reports
 are evidence and must not replace the rules here.
 
@@ -330,6 +333,47 @@ deferred native/runtime partial types. Exact evidence is in
 FOUNDATION_MILESTONE_6_COMPLETE=true
 ```
 
+## Foundation 7 DisplayOrientation and SupportedOrientations policy
+
+Foundation 7 completes exactly `Microsoft.Xna.Framework.DisplayOrientation`
+and the getter/setter projection of
+`GraphicsDeviceManager.SupportedOrientations`. `DisplayOrientation` is a root
+Framework `[Flags]` named `int32` enum with explicit `Default=0`,
+`LandscapeLeft=1`, `LandscapeRight=2`, and `Portrait=4` values. Named
+combinations and arbitrary raw bits remain representable without validation.
+
+Hash-matched XNA Windows IL proves that the manager constructor leaves both
+`supportedOrientations` and `isDeviceDirty` at CLR zero initialization. The
+getter only loads the orientation field. The setter always stores the exact
+value and always sets dirty true, including for a same-value assignment; it
+contains no comparison, validation, call, eager window/device application, or
+throw path. CNA-Go preserves those two private managed fields independently of
+native resource lifetime and adds no synthetic accessor error.
+
+## Foundation 7 qualification evidence
+
+- [x] Complete the exact six-source-identity/six-Go-identity closure.
+- [x] Complete DisplayOrientation with local strict zero and general flags policy.
+- [x] Measure the selected GDM getter/setter slice at zero local diagnostics.
+- [x] Preserve GDM as partial while reducing its missing members from 42 to 40.
+- [x] Qualify default, exact-bit storage, combinations, unknown bits, same-value
+      dirty behavior, changed-value dirty behavior, multiple setters, and
+      post-disposal managed access.
+- [x] Grow the PURE_XNA_DERIVED corpus from 234 to 242 assertions with zero failures.
+- [x] Grow verifier mutations from 58 to 73 focused cases.
+- [x] Preserve every mismatch, leak, allowlist, and unmeasured counter at zero.
+- [x] Keep all CNA ABI measurements and symbols unchanged.
+- [x] Requalify Go, native stress, unchanged template, artifact, and isolated-consumer gates.
+
+GraphicsDeviceManager remains honestly partial with 40 missing members. No
+other property, `ApplyChanges`, GameWindow orientation behavior, or platform
+rotation claim is included. Exact IL and lifecycle evidence is in
+`docs/display-orientation-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_7_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -339,6 +383,7 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 6, regenerate the scoreboard and dependency graph before
+After Foundation 7, regenerate the scoreboard and dependency graph before
 selecting one next closure. Do not infer that GamePad is next merely because
-PlayerIndex now exists, and do not combine independent families.
+PlayerIndex now exists, do not automatically continue GraphicsDeviceManager,
+and do not combine independent families.

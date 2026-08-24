@@ -56,5 +56,20 @@
   {"id":"keyboard-player-index-parameter-int32","mutation":"keyboard_player_index_parameter_int32","category":"PARAMETER_MAPPING_MISMATCH"},
   {"id":"keyboard-player-index-wrong-return","mutation":"keyboard_player_index_wrong_return","category":"RETURN_MAPPING_MISMATCH"},
   {"id":"keyboard-player-index-missing-error","mutation":"keyboard_player_index_missing_error","category":"ERROR_MAPPING_MISMATCH"},
-  {"id":"keyboard-player-index-wrong-overload-name","mutation":"keyboard_player_index_wrong_overload_name","category":"OVERLOAD_MAPPING_MISMATCH"}
+  {"id":"keyboard-player-index-wrong-overload-name","mutation":"keyboard_player_index_wrong_overload_name","category":"OVERLOAD_MAPPING_MISMATCH"},
+  {"id":"display-orientation-wrong-type-kind","mutation":"display_orientation_wrong_kind","category":"TYPE_KIND_MISMATCH"},
+  {"id":"display-orientation-wrong-underlying-type","mutation":"display_orientation_wrong_underlying_type","category":"TYPE_KIND_MISMATCH"},
+  {"id":"display-orientation-missing-flags","mutation":"display_orientation_missing_flags","category":"FLAGS_MAPPING_MISMATCH"},
+  {"id":"display-orientation-wrong-default-value","mutation":"display_orientation_wrong_default_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"display-orientation-wrong-portrait-value","mutation":"display_orientation_wrong_portrait_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"display-orientation-missing-landscape-right","mutation":"display_orientation_missing_landscape_right","category":"MISSING_MEMBER"},
+  {"id":"graphics-manager-orientation-missing-getter","mutation":"graphics_manager_orientation_missing_getter","category":"MISSING_MEMBER"},
+  {"id":"graphics-manager-orientation-missing-setter","mutation":"graphics_manager_orientation_missing_setter","category":"MISSING_MEMBER"},
+  {"id":"graphics-manager-orientation-getter-wrong-type","mutation":"graphics_manager_orientation_getter_wrong_type","category":"RETURN_MAPPING_MISMATCH"},
+  {"id":"graphics-manager-orientation-setter-wrong-type","mutation":"graphics_manager_orientation_setter_wrong_type","category":"PARAMETER_MAPPING_MISMATCH"},
+  {"id":"graphics-manager-orientation-setter-returns-error","mutation":"graphics_manager_orientation_setter_returns_error","category":"ERROR_MAPPING_MISMATCH"},
+  {"id":"graphics-manager-orientation-mapped-static","mutation":"graphics_manager_orientation_static","category":"MISSING_MEMBER"},
+  {"id":"graphics-manager-orientation-read-only","mutation":"graphics_manager_orientation_read_only","category":"MISSING_MEMBER"},
+  {"id":"graphics-manager-orientation-moved-to-graphics-package","mutation":"graphics_manager_orientation_moved_to_graphics","category":"MISSING_MEMBER"},
+  {"id":"graphics-manager-orientation-public-dirty-helper","mutation":"graphics_manager_orientation_public_dirty","category":"UNEXPECTED_MEMBER"}
 ]

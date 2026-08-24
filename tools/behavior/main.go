@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
@@ -96,6 +97,31 @@ func runCorpus() corpusReport {
 		sameError := noPlayerError != nil && err != nil && noPlayerError.Error() == err.Error()
 		check("keyboard.player-index."+fixture.name, "KEYBOARD_PLAYER_INDEX", "true,true", fmt.Sprintf("%t,%t", state == noPlayerState, sameError))
 	}
+
+	check("display-orientation.raw-values", "DISPLAY_ORIENTATION", "0,1,2,4", fmt.Sprintf("%d,%d,%d,%d", framework.DisplayOrientationDefault, framework.DisplayOrientationLandscapeLeft, framework.DisplayOrientationLandscapeRight, framework.DisplayOrientationPortrait))
+	landscape := framework.DisplayOrientationLandscapeLeft | framework.DisplayOrientationLandscapeRight
+	leftPortrait := framework.DisplayOrientationLandscapeLeft | framework.DisplayOrientationPortrait
+	allOrientations := landscape | framework.DisplayOrientationPortrait
+	check("display-orientation.flags-combinations", "DISPLAY_ORIENTATION", "3,5,7", fmt.Sprintf("%d,%d,%d", landscape, leftPortrait, allOrientations))
+	check("display-orientation.unknown-raw-bit", "DISPLAY_ORIENTATION", int32(1<<20), int32(framework.DisplayOrientation(1<<20)))
+
+	managerDirty := func(manager *framework.GraphicsDeviceManager) bool {
+		return reflect.ValueOf(manager).Elem().FieldByName("isDeviceDirty").Bool()
+	}
+	manager := &framework.GraphicsDeviceManager{}
+	check("graphics-manager-orientation.initial-state", "GRAPHICS_MANAGER_ORIENTATION", "0,false", fmt.Sprintf("%d,%t", manager.SupportedOrientations(), managerDirty(manager)))
+	manager.SetSupportedOrientations(framework.DisplayOrientationDefault)
+	check("graphics-manager-orientation.same-value-dirty", "GRAPHICS_MANAGER_ORIENTATION", "0,true", fmt.Sprintf("%d,%t", manager.SupportedOrientations(), managerDirty(manager)))
+	changedManager := &framework.GraphicsDeviceManager{}
+	changedManager.SetSupportedOrientations(leftPortrait)
+	check("graphics-manager-orientation.changed-value-dirty", "GRAPHICS_MANAGER_ORIENTATION", "5,true", fmt.Sprintf("%d,%t", changedManager.SupportedOrientations(), managerDirty(changedManager)))
+	changedManager.SetSupportedOrientations(framework.DisplayOrientationLandscapeRight)
+	changedManager.SetSupportedOrientations(framework.DisplayOrientation(1 << 20))
+	check("graphics-manager-orientation.multiple-assignment", "GRAPHICS_MANAGER_ORIENTATION", "1048576,true", fmt.Sprintf("%d,%t", changedManager.SupportedOrientations(), managerDirty(changedManager)))
+	postDisposeManager := &framework.GraphicsDeviceManager{}
+	_ = postDisposeManager.Dispose(true)
+	postDisposeManager.SetSupportedOrientations(landscape)
+	check("graphics-manager-orientation.post-disposal-managed-state", "GRAPHICS_MANAGER_ORIENTATION", "3,true", fmt.Sprintf("%d,%t", postDisposeManager.SupportedOrientations(), managerDirty(postDisposeManager)))
 
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))

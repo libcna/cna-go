@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations",
   "summary": {
-    "OBSERVATIONS": 234,
-    "ASSERTIONS": 234,
+    "OBSERVATIONS": 242,
+    "ASSERTIONS": 242,
     "FAILURES": 0
   },
   "observations": [
@@ -54,6 +54,62 @@
       "group": "KEYBOARD_PLAYER_INDEX",
       "expected": "true,true",
       "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "display-orientation.raw-values",
+      "group": "DISPLAY_ORIENTATION",
+      "expected": "0,1,2,4",
+      "actual": "0,1,2,4",
+      "passed": true
+    },
+    {
+      "id": "display-orientation.flags-combinations",
+      "group": "DISPLAY_ORIENTATION",
+      "expected": "3,5,7",
+      "actual": "3,5,7",
+      "passed": true
+    },
+    {
+      "id": "display-orientation.unknown-raw-bit",
+      "group": "DISPLAY_ORIENTATION",
+      "expected": 1048576,
+      "actual": 1048576,
+      "passed": true
+    },
+    {
+      "id": "graphics-manager-orientation.initial-state",
+      "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "expected": "0,false",
+      "actual": "0,false",
+      "passed": true
+    },
+    {
+      "id": "graphics-manager-orientation.same-value-dirty",
+      "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "expected": "0,true",
+      "actual": "0,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-manager-orientation.changed-value-dirty",
+      "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "expected": "5,true",
+      "actual": "5,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-manager-orientation.multiple-assignment",
+      "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "expected": "1048576,true",
+      "actual": "1048576,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-manager-orientation.post-disposal-managed-state",
+      "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "expected": "3,true",
+      "actual": "3,true",
       "passed": true
     },
     {

@@ -1,7 +1,7 @@
 # CNA-Go
 
 > **Status:** early, measured binding foundation — functional for the qualified
-> Foundation 1 runtime and Foundation 2/3/4/5/6 managed/API closures, far from full
+> Foundation 1 runtime and Foundation 2/3/4/5/6/7 managed/API closures, far from full
 > XNA compatibility.
 
 CNA-Go maps Microsoft XNA Framework 4.0 namespaces to Go import paths and
@@ -25,8 +25,8 @@ nor native handles.
 
 The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,243 expected Go members. The current target has 58 types and 1,322 members:
-53 types are complete, five native/runtime types are partial, and 199 are
+3,243 expected Go members. The current target has 59 types and 1,328 members:
+54 types are complete, five native/runtime types are partial, and 198 are
 missing. The strict verifier remains red because most XNA surface is
 intentionally absent. Every mismatch, leak, allowlist, and unmeasured-category
 gate is green.
@@ -99,6 +99,18 @@ ABI expansion:
 - Keyboard moves from partial to complete, with a 234-observation corpus and
   zero failures.
 
+Foundation 7 completes DisplayOrientation and one exact managed
+GraphicsDeviceManager property slice without ABI expansion:
+
+- `[Flags]` `DisplayOrientation` uses exact explicit `int32` values 0, 1, 2,
+  and 4 while preserving combinations and unknown raw bits;
+- `SupportedOrientations()` and `SetSupportedOrientations(DisplayOrientation)`
+  store managed configuration with no synthetic error or native call;
+- direct XNA IL proves constructor defaults and that every setter stores the
+  exact value and marks private device state dirty, including same-value sets;
+- GraphicsDeviceManager remains partial with 40 missing members, and the
+  managed corpus reaches 242 observations with zero failures.
+
 See [geometry and transform evidence](docs/geometry-transform-evidence.md) for
 the computed closure, mapping decisions, conventions, and local strict-zero
 matrix.
@@ -117,6 +129,10 @@ fixtures, and local strict-zero matrix.
 See [PlayerIndex and Keyboard evidence](docs/player-index-keyboard-evidence.md)
 for the enum table, direct unused-argument IL proof, shared runtime route, and
 local strict-zero matrix.
+
+See [DisplayOrientation evidence](docs/display-orientation-evidence.md) for the
+flags contract, constructor/getter/setter IL, private dirty-state behavior,
+lifecycle evidence, and selected property-slice measurement.
 
 The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
@@ -164,7 +180,7 @@ go run ./tools/native_stress
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its 378 missing-surface diagnostics are the work queue, not a
+surface exists; its 375 missing-surface diagnostics are the work queue, not a
 compatibility claim.
 The native ABI and stress commands require the qualified native environment.
 

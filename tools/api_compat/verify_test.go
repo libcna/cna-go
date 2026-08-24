@@ -289,6 +289,65 @@ func TestPlayerIndexKeyboardMappedContract(t *testing.T) {
 	}
 }
 
+func TestDisplayOrientationGraphicsManagerMappedContract(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	display := surface.typeForXNA(displayOrientationIdentity)
+	if display == nil || display.Kind != "enum" || !display.Flags || display.SourceMembers != 5 || len(display.Members) != 4 {
+		t.Fatalf("DisplayOrientation projection = %+v", display)
+	}
+	for name, value := range map[string]string{"Default": "0", "LandscapeLeft": "1", "LandscapeRight": "2", "Portrait": "4"} {
+		member := surface.Members[symbolKey{Package: display.PackagePath, Name: "DisplayOrientation" + name}]
+		if member == nil || member.GoKind != "const" || member.EnumValue == nil || *member.EnumValue != value || !equalStrings(member.Results, []string{"DisplayOrientation"}) {
+			t.Fatalf("DisplayOrientation%s projection = %+v", name, member)
+		}
+	}
+
+	manager := surface.typeForXNA(graphicsManagerIdentity)
+	getter := surface.Members[symbolKey{Package: manager.PackagePath, Receiver: manager.GoName, Name: supportedOrientationsName}]
+	setter := surface.Members[symbolKey{Package: manager.PackagePath, Receiver: manager.GoName, Name: "Set" + supportedOrientationsName}]
+	if getter == nil || setter == nil || getter.SourceKind != "property" || setter.SourceKind != "property" ||
+		!equalStrings(getter.Results, []string{"DisplayOrientation"}) || len(getter.Parameters) != 0 || getter.ErrorAdded ||
+		!equalStrings(setter.Parameters, []string{"DisplayOrientation"}) || len(setter.Results) != 0 || setter.ErrorAdded {
+		t.Fatalf("SupportedOrientations projection = getter %+v setter %+v", getter, setter)
+	}
+}
+
+func TestDisplayOrientationGraphicsManagerCurrentSurfaceAndSelectedClosure(t *testing.T) {
+	reference := loadPinnedContract(t)
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("type errors: %v", actual.TypeErrors)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	closure := result.DisplayOrientationClosure
+	if closure.Status != "PASS" || closure.SourceTypes != 2 || closure.SourceIdentities != 6 || closure.MappedGoIdentities != 6 ||
+		closure.TargetTypes != 2 || closure.TargetGoIdentities != 6 || closure.DisplayOrientationLocalDiagnostics != 0 ||
+		closure.SupportedPropertyLocalDiagnostics != 0 || closure.GraphicsManagerRemainingMissing != 40 || len(closure.SliceMeasurements) != 2 {
+		t.Fatalf("DisplayOrientation/GDM closure = %+v", closure)
+	}
+	for _, row := range closure.SliceMeasurements {
+		if row.LocalDiagnostics != 0 || row.TargetGoMembers != row.ExpectedGoMembers {
+			t.Fatalf("DisplayOrientation/GDM slice row = %+v", row)
+		}
+	}
+}
+
 func TestPlayerIndexKeyboardCurrentSurfaceAndLocalClosure(t *testing.T) {
 	reference := loadPinnedContract(t)
 	expected, err := buildExpected(reference)
@@ -582,7 +641,9 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "player_index_") || strings.HasPrefix(fixture.Mutation, "keyboard_player_index_") {
+			if strings.HasPrefix(fixture.Mutation, "display_orientation_") || strings.HasPrefix(fixture.Mutation, "graphics_manager_orientation_") {
+				expected, actual = displayOrientationMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "player_index_") || strings.HasPrefix(fixture.Mutation, "keyboard_player_index_") {
 				expected, actual = playerIndexKeyboardMutationCase(t, fixture.Mutation)
 			} else if strings.HasPrefix(fixture.Mutation, "vertex_") {
 				expected, actual = vertexElementMutationCase(t, fixture.Mutation)
@@ -595,6 +656,127 @@ func TestMutationFixtures(t *testing.T) {
 			}
 		})
 	}
+}
+
+func displayOrientationMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := &expectedSurface{
+		Types:              make(map[symbolKey]*expectedType),
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     2,
+		ReferenceMembers:   6,
+		ExpectedGoTypes:    2,
+		ExpectedGoMembers:  6,
+	}
+	actual := &actualSurface{
+		Types:       make(map[symbolKey]*actualType),
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+
+	copyType := func(owner *expectedType, sourceMembers int, include func(*expectedMember) bool) {
+		copiedType := *owner
+		copiedType.SourceMembers = sourceMembers
+		copiedType.Members = nil
+		for _, memberKey := range owner.Members {
+			fullMember := full.Members[memberKey]
+			if !include(fullMember) {
+				continue
+			}
+			copiedMember := *fullMember
+			copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+			copiedMember.Results = append([]string(nil), fullMember.Results...)
+			expected.Members[memberKey] = &copiedMember
+			copiedType.Members = append(copiedType.Members, memberKey)
+			actualMember := &actualMember{
+				Key:        memberKey,
+				Kind:       copiedMember.GoKind,
+				Parameters: append([]string(nil), copiedMember.Parameters...),
+				Results:    append([]string(nil), copiedMember.Results...),
+			}
+			if copiedMember.EnumValue != nil {
+				value := *copiedMember.EnumValue
+				actualMember.Value = &value
+			}
+			actual.Members[memberKey] = actualMember
+		}
+		expected.Types[copiedType.Key] = &copiedType
+		actualKind, underlying := "struct", "struct{}"
+		if copiedType.Kind == "enum" {
+			actualKind, underlying = "named", "int32"
+		}
+		actual.Types[copiedType.Key] = &actualType{Key: copiedType.Key, Kind: actualKind, Underlying: underlying, FlagsMarker: copiedType.Flags}
+	}
+
+	display := full.typeForXNA(displayOrientationIdentity)
+	copyType(display, 5, func(*expectedMember) bool { return true })
+	manager := full.typeForXNA(graphicsManagerIdentity)
+	copyType(manager, 1, func(member *expectedMember) bool {
+		return member.SourceKind == "property" && strings.Contains(member.XNA, "::"+supportedOrientationsName+"(")
+	})
+
+	const frameworkPackage = modulePath + "/Microsoft/Xna/Framework"
+	const graphicsPackage = frameworkPackage + "/Graphics"
+	displayType := symbolKey{Package: frameworkPackage, Name: "DisplayOrientation"}
+	displayConstant := func(name string) symbolKey {
+		return symbolKey{Package: frameworkPackage, Name: "DisplayOrientation" + name}
+	}
+	getter := symbolKey{Package: frameworkPackage, Receiver: "GraphicsDeviceManager", Name: supportedOrientationsName}
+	setter := symbolKey{Package: frameworkPackage, Receiver: "GraphicsDeviceManager", Name: "Set" + supportedOrientationsName}
+
+	switch mutation {
+	case "display_orientation_wrong_kind":
+		actual.Types[displayType].Kind = "struct"
+	case "display_orientation_wrong_underlying_type":
+		actual.Types[displayType].Underlying = "uint32"
+	case "display_orientation_missing_flags":
+		actual.Types[displayType].FlagsMarker = false
+	case "display_orientation_wrong_default_value":
+		wrong := "1"
+		actual.Members[displayConstant("Default")].Value = &wrong
+	case "display_orientation_wrong_portrait_value":
+		wrong := "8"
+		actual.Members[displayConstant("Portrait")].Value = &wrong
+	case "display_orientation_missing_landscape_right":
+		delete(actual.Members, displayConstant("LandscapeRight"))
+	case "graphics_manager_orientation_missing_getter":
+		delete(actual.Members, getter)
+	case "graphics_manager_orientation_missing_setter", "graphics_manager_orientation_read_only":
+		delete(actual.Members, setter)
+	case "graphics_manager_orientation_getter_wrong_type":
+		actual.Members[getter].Results = []string{"int32"}
+	case "graphics_manager_orientation_setter_wrong_type":
+		actual.Members[setter].Parameters = []string{"int32"}
+	case "graphics_manager_orientation_setter_returns_error":
+		actual.Members[setter].Results = []string{"error"}
+	case "graphics_manager_orientation_static":
+		member := actual.Members[getter]
+		delete(actual.Members, getter)
+		wrong := symbolKey{Package: frameworkPackage, Name: "GraphicsDeviceManagerSupportedOrientations"}
+		member.Key = wrong
+		actual.Members[wrong] = member
+	case "graphics_manager_orientation_moved_to_graphics":
+		for _, key := range []symbolKey{getter, setter} {
+			member := actual.Members[key]
+			delete(actual.Members, key)
+			wrong := key
+			wrong.Package = graphicsPackage
+			member.Key = wrong
+			actual.Members[wrong] = member
+		}
+	case "graphics_manager_orientation_public_dirty":
+		wrong := symbolKey{Package: frameworkPackage, Receiver: "GraphicsDeviceManager", Name: "Dirty"}
+		actual.Members[wrong] = &actualMember{Key: wrong, Kind: "method", Results: []string{"bool"}}
+	default:
+		t.Fatalf("unknown DisplayOrientation/GDM mutation %q", mutation)
+	}
+	return expected, actual
 }
 
 func playerIndexKeyboardMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {

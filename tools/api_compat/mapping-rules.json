@@ -69,6 +69,10 @@
     "voidNativeFailure": "error-only-result",
     "valueNativeFailure": "value-then-error",
     "pureValueOperation": "no-added-error-unless-authoritative-managed-argument-failure-is-projected",
+    "managedStoredMember": "no-added-error-when-reference-IL-only-reads-or-writes-managed-state",
+    "managedStoredMemberIdentities": [
+      "Microsoft.Xna.Framework.GraphicsDeviceManager.SupportedOrientations"
+    ],
     "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
     "panicPolicy": "programmer-invariant-only-never-native-runtime-failure"
   },

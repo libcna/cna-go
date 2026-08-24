@@ -195,11 +195,32 @@ func runChild(scenario string, index int) error {
 
 func (g *stressGame) Initialize(host *framework.Game) error {
 	manager, err := framework.NewGraphicsDeviceManager(host)
+	if err != nil {
+		return err
+	}
 	g.manager = manager
-	return err
+	if got := manager.SupportedOrientations(); got != framework.DisplayOrientationDefault {
+		return fmt.Errorf("initial SupportedOrientations = %d, want Default", got)
+	}
+	configured := framework.DisplayOrientationLandscapeLeft | framework.DisplayOrientationPortrait
+	manager.SetSupportedOrientations(configured)
+	if got := manager.SupportedOrientations(); got != configured {
+		return fmt.Errorf("Initialize SupportedOrientations = %d, want %d", got, configured)
+	}
+	return nil
 }
 
 func (g *stressGame) LoadContent(_ *framework.Game) error {
+	configured := framework.DisplayOrientationLandscapeLeft | framework.DisplayOrientationPortrait
+	if got := g.manager.SupportedOrientations(); got != configured {
+		return fmt.Errorf("LoadContent SupportedOrientations = %d, want %d", got, configured)
+	}
+	g.manager.SetSupportedOrientations(configured)
+	unknown := framework.DisplayOrientation(1 << 20)
+	g.manager.SetSupportedOrientations(unknown)
+	if got := g.manager.SupportedOrientations(); got != unknown {
+		return fmt.Errorf("raw SupportedOrientations = %d, want %d", got, unknown)
+	}
 	if err := verifyKeyboardPlayerIndexSnapshots(); err != nil {
 		return err
 	}
@@ -317,7 +338,14 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 
 func (g *stressGame) UnloadContent(_ *framework.Game) error {
 	if g.manager != nil {
-		return g.manager.Dispose(true)
+		if err := g.manager.Dispose(true); err != nil {
+			return err
+		}
+		postDispose := framework.DisplayOrientationLandscapeLeft | framework.DisplayOrientationLandscapeRight
+		g.manager.SetSupportedOrientations(postDispose)
+		if got := g.manager.SupportedOrientations(); got != postDispose {
+			return fmt.Errorf("post-disposal SupportedOrientations = %d, want %d", got, postDispose)
+		}
 	}
 	return nil
 }

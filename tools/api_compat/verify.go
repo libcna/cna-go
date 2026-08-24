@@ -20,6 +20,12 @@ var playerIndexKeyboardClosureTypes = []string{
 	"Microsoft.Xna.Framework.Input.Keyboard",
 }
 
+const (
+	displayOrientationIdentity = "Microsoft.Xna.Framework.DisplayOrientation"
+	graphicsManagerIdentity    = "Microsoft.Xna.Framework.GraphicsDeviceManager"
+	supportedOrientationsName  = "SupportedOrientations"
+)
+
 var adapterTypes = map[string]bool{
 	"EventSubscription": true,
 	"GameCallbacks":     true,
@@ -179,6 +185,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.VertexElementClosure = measureVertexElementClosure(expected, actual, typeDiagnostics)
 	result.PlayerIndexKeyboardClosure = measurePlayerIndexKeyboardClosure(expected, actual, typeDiagnostics)
+	result.DisplayOrientationClosure = measureDisplayOrientationClosure(expected, actual, typeDiagnostics)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -210,6 +217,90 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+func measureDisplayOrientationClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) displayOrientationClosure {
+	measurement := displayOrientationClosure{SourceTypes: 2, Status: "FAIL"}
+
+	display := expected.typeForXNA(displayOrientationIdentity)
+	if display != nil {
+		row := displayOrientationSliceMeasurement{
+			XNA:               display.XNA,
+			GoName:            display.GoName,
+			Scope:             "complete type",
+			SourceMembers:     display.SourceMembers,
+			ExpectedGoMembers: len(display.Members),
+			LocalDiagnostics:  typeDiagnostics[display.XNA],
+			ExpectedKind:      display.Kind,
+			ActualKind:        "missing",
+		}
+		measurement.SourceIdentities += row.SourceMembers
+		measurement.MappedGoIdentities += row.ExpectedGoMembers
+		measurement.DisplayOrientationLocalDiagnostics = row.LocalDiagnostics
+		if target := actual.Types[display.Key]; target != nil {
+			measurement.TargetTypes++
+			row.ActualKind = target.Kind
+			row.ActualUnderlying = target.Underlying
+			for _, key := range display.Members {
+				if actual.Members[key] != nil {
+					row.TargetGoMembers++
+				}
+			}
+			measurement.TargetGoIdentities += row.TargetGoMembers
+		}
+		measurement.SliceMeasurements = append(measurement.SliceMeasurements, row)
+	}
+
+	manager := expected.typeForXNA(graphicsManagerIdentity)
+	if manager != nil {
+		row := displayOrientationSliceMeasurement{
+			XNA:               manager.XNA + "." + supportedOrientationsName,
+			GoName:            manager.GoName + "." + supportedOrientationsName,
+			Scope:             "selected property getter and setter",
+			SourceMembers:     1,
+			ExpectedGoMembers: 2,
+			ExpectedKind:      "property",
+			ActualKind:        "missing",
+		}
+		measurement.SourceIdentities += row.SourceMembers
+		measurement.MappedGoIdentities += row.ExpectedGoMembers
+		if target := actual.Types[manager.Key]; target != nil {
+			measurement.TargetTypes++
+			row.ActualKind = "property"
+		}
+		for _, key := range manager.Members {
+			member := expected.Members[key]
+			if member == nil {
+				continue
+			}
+			if member.SourceKind == "property" && strings.Contains(member.XNA, "::"+supportedOrientationsName+"(") {
+				actualMember := actual.Members[key]
+				if actualMember == nil {
+					row.LocalDiagnostics++
+					continue
+				}
+				row.TargetGoMembers++
+				local := report{Summary: make(map[string]int)}
+				compareMember(&local, member, actualMember)
+				row.LocalDiagnostics += len(local.Diagnostics)
+				continue
+			}
+			if actual.Members[key] == nil {
+				measurement.GraphicsManagerRemainingMissing++
+			}
+		}
+		measurement.TargetGoIdentities += row.TargetGoMembers
+		measurement.SupportedPropertyLocalDiagnostics = row.LocalDiagnostics
+		measurement.SliceMeasurements = append(measurement.SliceMeasurements, row)
+	}
+
+	if measurement.SourceIdentities == 6 && measurement.MappedGoIdentities == 6 &&
+		measurement.TargetTypes == 2 && measurement.TargetGoIdentities == 6 &&
+		measurement.DisplayOrientationLocalDiagnostics == 0 && measurement.SupportedPropertyLocalDiagnostics == 0 &&
+		measurement.GraphicsManagerRemainingMissing == 40 {
+		measurement.Status = "PASS"
+	}
+	return measurement
 }
 
 func measurePlayerIndexKeyboardClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) playerIndexKeyboardClosure {

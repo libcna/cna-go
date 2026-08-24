@@ -160,6 +160,15 @@ nil `CompareTo` operand, or invalid tangent key index returns `error`; it does
 not leak a Go slice-bounds or nil-pointer panic. Panics are reserved for
 violated internal invariants and are contained at every C callback boundary.
 
+A native-backed class owner does not by itself make every property fallible.
+When direct reference IL proves that a member only reads or writes managed
+state, that member gains no synthetic `error` and does not enter the native
+boundary. `GraphicsDeviceManager.SupportedOrientations` is the first measured
+case: its getter returns one stored `DisplayOrientation`, while its setter
+stores the exact bits and marks private future device configuration dirty.
+Construction and disposal remain fallible native operations, but this stored
+property remains managed before and after native resource disposal.
+
 An `out T` parameter is removed from the input list and appended to Go results.
 For the conventional `TryX` pattern the value precedes the final `bool`. A
 mutable `ref T` input maps to `*T`. Source direction remains in the overload

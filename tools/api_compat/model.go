@@ -179,7 +179,34 @@ type report struct {
 	PackedVectorTypeMeasurements []packedVectorTypeMeasurement `json:"packedVectorTypeMeasurements,omitempty"`
 	VertexElementClosure         vertexElementClosure          `json:"vertexElementClosure"`
 	PlayerIndexKeyboardClosure   playerIndexKeyboardClosure    `json:"playerIndexKeyboardClosure"`
+	DisplayOrientationClosure    displayOrientationClosure     `json:"displayOrientationGraphicsManagerClosure"`
 	Metadata                     reportMetadata                `json:"metadata"`
+}
+
+type displayOrientationClosure struct {
+	SourceTypes                        int                                  `json:"sourceTypes"`
+	SourceIdentities                   int                                  `json:"sourceIdentities"`
+	MappedGoIdentities                 int                                  `json:"mappedGoIdentities"`
+	TargetTypes                        int                                  `json:"targetTypes"`
+	TargetGoIdentities                 int                                  `json:"targetGoIdentities"`
+	DisplayOrientationLocalDiagnostics int                                  `json:"displayOrientationLocalDiagnostics"`
+	SupportedPropertyLocalDiagnostics  int                                  `json:"supportedOrientationsLocalDiagnostics"`
+	GraphicsManagerRemainingMissing    int                                  `json:"graphicsDeviceManagerRemainingMissingMembers"`
+	Status                             string                               `json:"status"`
+	SliceMeasurements                  []displayOrientationSliceMeasurement `json:"sliceMeasurements"`
+}
+
+type displayOrientationSliceMeasurement struct {
+	XNA               string `json:"xna"`
+	GoName            string `json:"goName"`
+	Scope             string `json:"scope"`
+	SourceMembers     int    `json:"sourceMembers"`
+	ExpectedGoMembers int    `json:"expectedGoMembers"`
+	TargetGoMembers   int    `json:"targetGoMembers"`
+	LocalDiagnostics  int    `json:"localDiagnostics"`
+	ExpectedKind      string `json:"expectedKind"`
+	ActualKind        string `json:"actualKind"`
+	ActualUnderlying  string `json:"actualUnderlying,omitempty"`
 }
 
 type playerIndexKeyboardClosure struct {

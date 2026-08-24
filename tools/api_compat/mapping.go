@@ -93,6 +93,15 @@ var managedFallibleMembers = map[string]map[string]bool{
 	},
 }
 
+// managedStoredMembers identifies members on otherwise native-backed class
+// facades whose reference implementation is only managed field access. These
+// members must not gain a synthetic runtime error result.
+var managedStoredMembers = map[string]map[string]bool{
+	"Microsoft.Xna.Framework.GraphicsDeviceManager": {
+		"property|SupportedOrientations": true,
+	},
+}
+
 func buildExpected(c contract) (*expectedSurface, error) {
 	s := &expectedSurface{
 		Types:              make(map[symbolKey]*expectedType),
@@ -539,6 +548,9 @@ func genericTypeArgument(raw, prefix string) (string, bool) {
 func isFallible(t contractType, m contractMember) bool {
 	if managedTypes[t.Name] || managedPureValueInterfaces[t.Name] || t.Kind == "enum" {
 		return managedFallibleMembers[t.Name][m.Kind+"|"+m.Name]
+	}
+	if managedStoredMembers[t.Name][m.Kind+"|"+m.Name] {
+		return false
 	}
 	if m.Kind == "field" || m.Name == "ToString" || m.Name == "GetHashCode" || strings.HasPrefix(m.Name, "op_") {
 		return false
