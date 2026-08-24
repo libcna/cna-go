@@ -63,6 +63,52 @@ func TestNullableMappingKeepsInputReturnOutAndErrorDistinct(t *testing.T) {
 	}
 }
 
+func TestCurveFamilyMappedContract(t *testing.T) {
+	data, err := os.ReadFile("reference/xna40-windows-runtime-contract.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reference contract
+	if err := json.Unmarshal(data, &reference); err != nil {
+		t.Fatal(err)
+	}
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]int{
+		"Microsoft.Xna.Framework.Curve":              13,
+		"Microsoft.Xna.Framework.CurveKey":           19,
+		"Microsoft.Xna.Framework.CurveKeyCollection": 14,
+		"Microsoft.Xna.Framework.CurveContinuity":    2,
+		"Microsoft.Xna.Framework.CurveLoopType":      5,
+		"Microsoft.Xna.Framework.CurveTangent":       3,
+	}
+	for identity, members := range want {
+		mapped := surface.typeForXNA(identity)
+		if mapped == nil {
+			t.Fatalf("%s was not mapped", identity)
+		}
+		if len(mapped.Members) != members {
+			t.Fatalf("%s mapped members = %d, want %d", identity, len(mapped.Members), members)
+		}
+	}
+	collection := surface.typeForXNA("Microsoft.Xna.Framework.CurveKeyCollection")
+	if !containsInterfacePrefix(collection.Interfaces, "System.Collections.Generic.ICollection`1[") ||
+		!containsInterfacePrefix(collection.AllInterfaces, "System.Collections.Generic.IEnumerable`1[") {
+		t.Fatalf("collection interfaces = direct %v all %v", collection.Interfaces, collection.AllInterfaces)
+	}
+	getEnumerator := surface.Members[symbolKey{Package: collection.PackagePath, Receiver: collection.GoName, Name: "GetEnumerator"}]
+	if getEnumerator == nil || !equalStrings(getEnumerator.Results, []string{"Iterator[*CurveKey]"}) {
+		t.Fatalf("GetEnumerator results = %v", getEnumerator)
+	}
+	item := surface.Members[symbolKey{Package: collection.PackagePath, Receiver: collection.GoName, Name: "Item"}]
+	setItem := surface.Members[symbolKey{Package: collection.PackagePath, Receiver: collection.GoName, Name: "SetItem"}]
+	if item == nil || setItem == nil || !equalStrings(item.Results, []string{"*CurveKey", "error"}) || !equalStrings(setItem.Results, []string{"error"}) {
+		t.Fatalf("indexer projection = getter %v setter %v", item, setItem)
+	}
+}
+
 func stringPointer(value string) *string { return &value }
 
 func TestMutationFixtures(t *testing.T) {
@@ -165,6 +211,9 @@ func mutationCase(mutation string) (*expectedSurface, *actualSurface) {
 		actual.Types[wrong] = &actualType{Key: wrong, Kind: "struct"}
 	case "wrong_generic":
 		et.GenericParameter = []string{"T"}
+	case "wrong_collection_interface":
+		et.Kind = "class"
+		et.AllInterfaces = []string{"System.Collections.Generic.ICollection`1[Microsoft.Xna.Framework.Probe]"}
 	case "wrong_event":
 		em.SourceKind, em.GoKind, em.GoName = "event", "method", "AddChangedHandler"
 		delete(expected.Members, memberKey)

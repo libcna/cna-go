@@ -265,5 +265,161 @@ func runCorpus() corpusReport {
 	singularUnproject := viewport.Unproject(framework.Vector3{X: 100, Y: 50, Z: 0.5}, framework.MatrixIdentity(), framework.MatrixIdentity(), framework.Matrix{})
 	check("viewport.unproject.singular", "VIEWPORT", "0xffc00000,0xffc00000,0xffc00000", floatBits(singularUnproject.X, singularUnproject.Y, singularUnproject.Z))
 
+	check("curve.enums.continuity", "CURVE_ENUMS", "0,1", fmt.Sprintf("%d,%d", framework.CurveContinuitySmooth, framework.CurveContinuityStep))
+	check("curve.enums.tangent", "CURVE_ENUMS", "0,1,2", fmt.Sprintf("%d,%d,%d", framework.CurveTangentFlat, framework.CurveTangentLinear, framework.CurveTangentSmooth))
+	check("curve.enums.loop", "CURVE_ENUMS", "0,1,2,3,4", fmt.Sprintf("%d,%d,%d,%d,%d", framework.CurveLoopTypeConstant, framework.CurveLoopTypeCycle, framework.CurveLoopTypeCycleOffset, framework.CurveLoopTypeOscillate, framework.CurveLoopTypeLinear))
+
+	curveKey := framework.NewCurveKeyBySingleAndSingle(1, 2)
+	check("curve.key.defaults", "CURVE_KEY", "0x00000000,0x00000000,0", fmt.Sprintf("%s,%s,%d", bits(curveKey.TangentIn()), bits(curveKey.TangentOut()), curveKey.Continuity()))
+	fullCurveKey := framework.NewCurveKeyBySingleAndSingleAndSingleAndSingleAndCurveContinuity(1, 2, 3, 4, framework.CurveContinuityStep)
+	curveKeyClone := fullCurveKey.Clone()
+	check("curve.key.clone.identity", "CURVE_KEY", true, curveKeyClone != fullCurveKey && curveKeyClone.EqualsByCurveKey(fullCurveKey))
+	curveKeyClone.SetValue(9)
+	check("curve.key.clone.independent", "CURVE_KEY", "0x40000000,0x41100000", floatBits(fullCurveKey.Value(), curveKeyClone.Value()))
+	comparisonLess, comparisonLessError := fullCurveKey.CompareTo(framework.NewCurveKeyBySingleAndSingle(2, 0))
+	comparisonEqual, comparisonEqualError := fullCurveKey.CompareTo(framework.NewCurveKeyBySingleAndSingle(1, 99))
+	check("curve.key.compare.finite", "CURVE_KEY", "-1,0,true", fmt.Sprintf("%d,%d,%t", comparisonLess, comparisonEqual, comparisonLessError == nil && comparisonEqualError == nil))
+	comparisonNaN, comparisonNaNError := framework.NewCurveKeyBySingleAndSingle(float32(math.NaN()), 1).CompareTo(framework.NewCurveKeyBySingleAndSingle(float32(math.NaN()), 1))
+	check("curve.key.compare.nan", "CURVE_KEY", "0,true", fmt.Sprintf("%d,%t", comparisonNaN, comparisonNaNError == nil))
+	comparisonNaNFinite, _ := framework.NewCurveKeyBySingleAndSingle(float32(math.NaN()), 1).CompareTo(framework.NewCurveKeyBySingleAndSingle(0, 1))
+	comparisonFiniteNaN, _ := framework.NewCurveKeyBySingleAndSingle(0, 1).CompareTo(framework.NewCurveKeyBySingleAndSingle(float32(math.NaN()), 1))
+	check("curve.key.compare.nan-order", "CURVE_KEY", "-1,1", fmt.Sprintf("%d,%d", comparisonNaNFinite, comparisonFiniteNaN))
+	check("curve.key.nan.equality", "CURVE_KEY", false, framework.NewCurveKeyBySingleAndSingle(float32(math.NaN()), 1).EqualsByCurveKey(framework.NewCurveKeyBySingleAndSingle(float32(math.NaN()), 1)))
+	check("curve.key.hash", "CURVE_KEY", int32(4194305), fullCurveKey.GetHashCode())
+	check("curve.key.operators", "CURVE_KEY", "true,true", fmt.Sprintf("%t,%t", framework.CurveKeyOperatorEqualityByCurveKeyAndCurveKey(fullCurveKey, fullCurveKey.Clone()), framework.CurveKeyOperatorInequalityByCurveKeyAndCurveKey(nil, fullCurveKey)))
+	_, comparisonNilError := fullCurveKey.CompareTo(nil)
+	check("curve.key.compare.nil-error", "CURVE_KEY", true, comparisonNilError != nil)
+
+	mustAddCurveKey := func(collection *framework.CurveKeyCollection, key *framework.CurveKey) {
+		if err := collection.Add(key); err != nil {
+			panic(err)
+		}
+	}
+	mustCurveKeyAt := func(collection *framework.CurveKeyCollection, index int32) *framework.CurveKey {
+		key, err := collection.Item(index)
+		if err != nil {
+			panic(err)
+		}
+		return key
+	}
+	curveCollection := framework.NewCurveKeyCollection()
+	duplicateA := framework.NewCurveKeyBySingleAndSingle(1, 10)
+	duplicateB := framework.NewCurveKeyBySingleAndSingle(1, 20)
+	mustAddCurveKey(curveCollection, framework.NewCurveKeyBySingleAndSingle(2, 30))
+	mustAddCurveKey(curveCollection, duplicateA)
+	mustAddCurveKey(curveCollection, framework.NewCurveKeyBySingleAndSingle(0, 0))
+	mustAddCurveKey(curveCollection, duplicateB)
+	check("curve.collection.order", "CURVE_COLLECTION", "0x00000000,0x3f800000,0x3f800000,0x40000000", floatBits(mustCurveKeyAt(curveCollection, 0).Position(), mustCurveKeyAt(curveCollection, 1).Position(), mustCurveKeyAt(curveCollection, 2).Position(), mustCurveKeyAt(curveCollection, 3).Position()))
+	check("curve.collection.duplicate-identity", "CURVE_COLLECTION", true, mustCurveKeyAt(curveCollection, 1) == duplicateA && mustCurveKeyAt(curveCollection, 2) == duplicateB)
+	duplicateA.SetValue(11)
+	equalDuplicate := framework.NewCurveKeyBySingleAndSingle(1, 11)
+	check("curve.collection.value-equality", "CURVE_COLLECTION", "true,1", fmt.Sprintf("%t,%d", curveCollection.Contains(equalDuplicate), curveCollection.IndexOf(equalDuplicate)))
+	replacement := framework.NewCurveKeyBySingleAndSingle(3, 40)
+	if err := curveCollection.SetItem(0, replacement); err != nil {
+		panic(err)
+	}
+	check("curve.collection.item-reorders", "CURVE_COLLECTION", "0x3f800000,0x3f800000,0x40000000,0x40400000", floatBits(mustCurveKeyAt(curveCollection, 0).Position(), mustCurveKeyAt(curveCollection, 1).Position(), mustCurveKeyAt(curveCollection, 2).Position(), mustCurveKeyAt(curveCollection, 3).Position()))
+	samePosition := framework.NewCurveKeyBySingleAndSingle(3, 41)
+	if err := curveCollection.SetItem(3, samePosition); err != nil {
+		panic(err)
+	}
+	check("curve.collection.item-identity", "CURVE_COLLECTION", true, mustCurveKeyAt(curveCollection, 3) == samePosition)
+	_, negativeItemError := curveCollection.Item(-1)
+	setEndError := curveCollection.SetItem(curveCollection.Count(), samePosition)
+	removeNegativeError := curveCollection.RemoveAt(-1)
+	check("curve.collection.index-errors", "CURVE_COLLECTION", "true,true,true", fmt.Sprintf("%t,%t,%t", negativeItemError != nil, setEndError != nil, removeNegativeError != nil))
+	destination := make([]*framework.CurveKey, 6)
+	copyError := curveCollection.CopyTo(destination, 1)
+	check("curve.collection.copyto", "CURVE_COLLECTION", true, copyError == nil && destination[1] == duplicateA && destination[4] == samePosition)
+	check("curve.collection.copyto-errors", "CURVE_COLLECTION", true, curveCollection.CopyTo(nil, 0) != nil && curveCollection.CopyTo(make([]*framework.CurveKey, 4), 1) != nil)
+	collectionClone := curveCollection.Clone()
+	check("curve.collection.clone-depth", "CURVE_COLLECTION", true, collectionClone != curveCollection && mustCurveKeyAt(collectionClone, 0) == mustCurveKeyAt(curveCollection, 0))
+	iterator := curveCollection.GetEnumerator()
+	firstEnumerated, firstEnumeratedOK, firstEnumeratedError := iterator.Next()
+	mustAddCurveKey(curveCollection, framework.NewCurveKeyBySingleAndSingle(4, 50))
+	_, _, invalidatedError := iterator.Next()
+	check("curve.collection.enumerator-invalidation", "CURVE_COLLECTION", true, firstEnumerated == duplicateA && firstEnumeratedOK && firstEnumeratedError == nil && invalidatedError != nil)
+	check("curve.collection.remove-equal", "CURVE_COLLECTION", true, curveCollection.Remove(equalDuplicate) && !curveCollection.Contains(equalDuplicate))
+	curveCollection.Clear()
+	check("curve.collection.clear-readonly", "CURVE_COLLECTION", "0,false", fmt.Sprintf("%d,%t", curveCollection.Count(), curveCollection.IsReadOnly()))
+
+	tangentCurve := framework.NewCurve()
+	for _, pair := range [][2]float32{{0, 0}, {1, 10}, {3, 30}} {
+		mustAddCurveKey(tangentCurve.Keys(), framework.NewCurveKeyBySingleAndSingle(pair[0], pair[1]))
+	}
+	if err := tangentCurve.ComputeTangentByInt32AndCurveTangent(1, framework.CurveTangentFlat); err != nil {
+		panic(err)
+	}
+	check("curve.tangent.flat", "CURVE_TANGENTS", "0x00000000,0x00000000", floatBits(mustCurveKeyAt(tangentCurve.Keys(), 1).TangentIn(), mustCurveKeyAt(tangentCurve.Keys(), 1).TangentOut()))
+	if err := tangentCurve.ComputeTangentByInt32AndCurveTangent(1, framework.CurveTangentLinear); err != nil {
+		panic(err)
+	}
+	check("curve.tangent.linear", "CURVE_TANGENTS", "0x41200000,0x41a00000", floatBits(mustCurveKeyAt(tangentCurve.Keys(), 1).TangentIn(), mustCurveKeyAt(tangentCurve.Keys(), 1).TangentOut()))
+	tangentCurve.ComputeTangentsByCurveTangent(framework.CurveTangentSmooth)
+	check("curve.tangent.smooth-first", "CURVE_TANGENTS", "0x00000000,0x41200000", floatBits(mustCurveKeyAt(tangentCurve.Keys(), 0).TangentIn(), mustCurveKeyAt(tangentCurve.Keys(), 0).TangentOut()))
+	check("curve.tangent.smooth-middle", "CURVE_TANGENTS", "0x41200000,0x41a00000", floatBits(mustCurveKeyAt(tangentCurve.Keys(), 1).TangentIn(), mustCurveKeyAt(tangentCurve.Keys(), 1).TangentOut()))
+	check("curve.tangent.smooth-last", "CURVE_TANGENTS", "0x41a00000,0x00000000", floatBits(mustCurveKeyAt(tangentCurve.Keys(), 2).TangentIn(), mustCurveKeyAt(tangentCurve.Keys(), 2).TangentOut()))
+	if err := tangentCurve.ComputeTangentByInt32AndCurveTangentAndCurveTangent(1, framework.CurveTangentFlat, framework.CurveTangentSmooth); err != nil {
+		panic(err)
+	}
+	check("curve.tangent.mixed", "CURVE_TANGENTS", "0x00000000,0x41a00000", floatBits(mustCurveKeyAt(tangentCurve.Keys(), 1).TangentIn(), mustCurveKeyAt(tangentCurve.Keys(), 1).TangentOut()))
+	check("curve.tangent.invalid-index", "CURVE_TANGENTS", true, tangentCurve.ComputeTangentByInt32AndCurveTangent(-1, framework.CurveTangentFlat) != nil)
+
+	emptyCurve := framework.NewCurve()
+	check("curve.evaluate.empty", "CURVE_EVALUATE", "0x00000000", bits(emptyCurve.Evaluate(5)))
+	check("curve.evaluate.defaults", "CURVE_EVALUATE", "0,0,true", fmt.Sprintf("%d,%d,%t", emptyCurve.PreLoop(), emptyCurve.PostLoop(), emptyCurve.IsConstant()))
+	singleCurve := framework.NewCurve()
+	mustAddCurveKey(singleCurve.Keys(), framework.NewCurveKeyBySingleAndSingle(2, 7))
+	check("curve.evaluate.single", "CURVE_EVALUATE", "0x40e00000,0x40e00000,0x40e00000", floatBits(singleCurve.Evaluate(-1), singleCurve.Evaluate(2), singleCurve.Evaluate(9)))
+	hermiteCurve := framework.NewCurve()
+	mustAddCurveKey(hermiteCurve.Keys(), framework.NewCurveKeyBySingleAndSingle(0, 0))
+	mustAddCurveKey(hermiteCurve.Keys(), framework.NewCurveKeyBySingleAndSingle(1, 10))
+	check("curve.evaluate.hermite", "CURVE_EVALUATE", "0x3fc80000", bits(hermiteCurve.Evaluate(0.25)))
+	asymmetricCurve := framework.NewCurve()
+	mustAddCurveKey(asymmetricCurve.Keys(), framework.NewCurveKeyBySingleAndSingleAndSingleAndSingle(0, 0, 99, 4))
+	mustAddCurveKey(asymmetricCurve.Keys(), framework.NewCurveKeyBySingleAndSingleAndSingleAndSingle(2, 10, -2, 77))
+	check("curve.evaluate.hermite-asymmetric", "CURVE_EVALUATE", "0x40b80000", bits(asymmetricCurve.Evaluate(1)))
+	stepCurve := framework.NewCurve()
+	mustAddCurveKey(stepCurve.Keys(), framework.NewCurveKeyBySingleAndSingleAndSingleAndSingleAndCurveContinuity(0, 2, 0, 0, framework.CurveContinuityStep))
+	mustAddCurveKey(stepCurve.Keys(), framework.NewCurveKeyBySingleAndSingle(1, 9))
+	check("curve.evaluate.step", "CURVE_EVALUATE", "0x40000000,0x41100000", floatBits(stepCurve.Evaluate(0.999), stepCurve.Evaluate(1)))
+	duplicateCurve := framework.NewCurve()
+	mustAddCurveKey(duplicateCurve.Keys(), framework.NewCurveKeyBySingleAndSingle(1, 10))
+	mustAddCurveKey(duplicateCurve.Keys(), framework.NewCurveKeyBySingleAndSingle(1, 20))
+	check("curve.evaluate.duplicate", "CURVE_EVALUATE", "0x41200000", bits(duplicateCurve.Evaluate(1)))
+	curveClone := hermiteCurve.Clone()
+	check("curve.evaluate.clone-depth", "CURVE_EVALUATE", true, curveClone != hermiteCurve && curveClone.Keys() != hermiteCurve.Keys() && mustCurveKeyAt(curveClone.Keys(), 0) == mustCurveKeyAt(hermiteCurve.Keys(), 0))
+
+	newLoopCurve := func() *framework.Curve {
+		curve := framework.NewCurve()
+		mustAddCurveKey(curve.Keys(), framework.NewCurveKeyBySingleAndSingle(5, 0))
+		mustAddCurveKey(curve.Keys(), framework.NewCurveKeyBySingleAndSingle(7, 10))
+		return curve
+	}
+	constantLoop := newLoopCurve()
+	check("curve.loop.constant", "CURVE_LOOPS", "0x00000000,0x41200000", floatBits(constantLoop.Evaluate(4), constantLoop.Evaluate(8)))
+	cycleLoop := newLoopCurve()
+	cycleLoop.SetPreLoop(framework.CurveLoopTypeCycle)
+	cycleLoop.SetPostLoop(framework.CurveLoopTypeCycle)
+	check("curve.loop.cycle", "CURVE_LOOPS", "0x40a00000,0x40a00000", floatBits(cycleLoop.Evaluate(4), cycleLoop.Evaluate(8)))
+	offsetLoop := newLoopCurve()
+	offsetLoop.SetPreLoop(framework.CurveLoopTypeCycleOffset)
+	offsetLoop.SetPostLoop(framework.CurveLoopTypeCycleOffset)
+	check("curve.loop.cycle-offset", "CURVE_LOOPS", "0xc0a00000,0x41700000", floatBits(offsetLoop.Evaluate(4), offsetLoop.Evaluate(8)))
+	oscillateLoop := newLoopCurve()
+	oscillateLoop.SetPreLoop(framework.CurveLoopTypeOscillate)
+	oscillateLoop.SetPostLoop(framework.CurveLoopTypeOscillate)
+	check("curve.loop.oscillate", "CURVE_LOOPS", "0x40a00000,0x40a00000", floatBits(oscillateLoop.Evaluate(4), oscillateLoop.Evaluate(8)))
+	linearLoop := newLoopCurve()
+	mustCurveKeyAt(linearLoop.Keys(), 0).SetTangentIn(2)
+	mustCurveKeyAt(linearLoop.Keys(), 1).SetTangentOut(3)
+	linearLoop.SetPreLoop(framework.CurveLoopTypeLinear)
+	linearLoop.SetPostLoop(framework.CurveLoopTypeLinear)
+	check("curve.loop.linear", "CURVE_LOOPS", "0xc0000000,0x41800000", floatBits(linearLoop.Evaluate(4), linearLoop.Evaluate(9)))
+	check("curve.loop.negative-cycle", "CURVE_LOOPS", "0x41200000", bits(cycleLoop.Evaluate(3)))
+	check("curve.loop.negative-cycle-offset", "CURVE_LOOPS", "0xc1200000", bits(offsetLoop.Evaluate(3)))
+	check("curve.loop.negative-oscillate", "CURVE_LOOPS", "0x41200000", bits(oscillateLoop.Evaluate(3)))
+	check("curve.loop.multiple-offset", "CURVE_LOOPS", "0xc1a00000,0x41a00000", floatBits(offsetLoop.Evaluate(1), offsetLoop.Evaluate(9)))
+
 	return report
 }

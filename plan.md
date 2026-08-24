@@ -11,6 +11,10 @@ genuine missing surface.
 **Foundation 2 status:** qualified for the managed geometry/transform closure,
 including its recursive Plane/Ray/bounds dependencies, then Color and Viewport.
 
+**Foundation 3 status:** qualified for the complete managed Curve family,
+including reference-class identity, the formal BCL collection projection, and
+binary32 tangent/evaluation/loop behavior.
+
 This file is normative. `NEXT.md` is the resumable handoff; generated reports
 are evidence and must not replace the rules here.
 
@@ -149,6 +153,49 @@ The normal strict verifier remains red only for 228 genuinely missing types and
 FOUNDATION_MILESTONE_2_COMPLETE=true
 ```
 
+## Foundation 3 managed Curve policy
+
+Foundation 3 completes exactly `Curve`, `CurveKeyCollection`, `CurveKey`,
+`CurveLoopType`, `CurveTangent`, and `CurveContinuity`. The three classes are
+pointer facades over private managed state; the enums are explicit named
+`int32` values. Curve keys remain references at every collection and clone
+boundary required by XNA.
+
+Generic BCL collection interfaces do not introduce fake public BCL packages.
+`ICollection<T>` is measured as the concrete XNA collection method set.
+`IEnumerable<T>` and `IEnumerator<T>` use the separately measured generic
+`Iterator<T>` language adapter, whose `Next` result separates value presence
+from mutation failure. Managed argument/index failures use Go `error`, never a
+slice-bounds panic.
+
+The reference algorithms retain sorted duplicate insertion, shallow collection
+clone depth, binary32 tangent operation order, the double segment-position
+intermediate, Hermite/Step interpolation, and the negative-cycle decrement
+rule. Exact evidence is in `docs/curve-evidence.md`.
+
+## Foundation 3 qualification evidence
+
+- [x] Regenerate the exact six-type dependency closure and 56-member Go projection.
+- [x] Complete all six types with local strict zero and no new partial type.
+- [x] Formalize and mutation-test ICollection/IEnumerable/IEnumerator projection.
+- [x] Qualify key constructors, identity, clone, equality, hash, operators, and NaN ordering.
+- [x] Qualify sorted insertion, duplicate keys, indexer repositioning, CopyTo, shallow clone, and fail-fast iteration.
+- [x] Qualify Curve defaults, Keys identity, IsConstant, and shallow-key Curve clone.
+- [x] Qualify Flat/Linear/Smooth/mixed tangents and repeated whole-curve computation.
+- [x] Qualify empty/single evaluation, segment boundaries, Step, Hermite, all loops, and negative cycles.
+- [x] Grow the PURE_XNA_DERIVED corpus from 93 to 142 assertions with zero failures.
+- [x] Preserve every global mismatch, leak, allowlist, and unmeasured counter at zero.
+- [x] Keep all CNA ABI measurements and symbols unchanged.
+- [x] Requalify Go tests, vet, race, build, trimpath, native stress, and the unchanged maintained template.
+- [x] Produce an audited deterministic source artifact and qualify an isolated consumer from it.
+
+The normal strict verifier remains red only for 222 genuinely missing types and
+180 members on the same six deferred native/runtime partial types:
+
+```text
+FOUNDATION_MILESTONE_3_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -158,10 +205,9 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 2 qualification, the next scoreboard-selected managed closure
-is exactly `Curve`, `CurveKeyCollection`, `CurveKey`, `CurveLoopType`,
-`CurveTangent`, and `CurveContinuity`. `Curve` directly introduces its
-collection and two enums; the collection introduces `CurveKey`; the key
-introduces `CurveContinuity`. Recompute this choice from the then-current pinned
-contract before implementation. Do not mix it with Content, Effects/3D,
-PackedVector, Design, or native runtime cleanup.
+After Foundation 3 qualification, the next scoreboard-selected managed closure
+is exactly the `Microsoft.Xna.Framework.Graphics.PackedVector` family: its two
+interfaces and seventeen concrete packed value types. Recompute that closure
+from the then-current pinned contract before implementation and finish it as
+one bit-exact dependency-complete milestone. Do not mix it with Design,
+Content, Effects/3D, or native runtime cleanup.

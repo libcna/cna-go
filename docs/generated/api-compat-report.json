@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "profile": "XNA 4.0 Windows runtime",
-  "mode": "strict",
+  "mode": "report",
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 23,
+    "COMPLETE_TYPES": 29,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -19,8 +19,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 180,
-    "MISSING_TYPE": 228,
-    "MISSING_TYPES": 228,
+    "MISSING_TYPE": 222,
+    "MISSING_TYPES": 222,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PARAMETER_MAPPING_MISMATCH": 0,
@@ -32,9 +32,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1033,
-    "TARGET_TYPES": 29,
-    "TOTAL_DIAGNOSTICS": 408,
+    "TARGET_MEMBERS": 1089,
+    "TARGET_TYPES": 35,
+    "TOTAL_DIAGNOSTICS": 402,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
     "UNEXPECTED_TYPE": 0,
@@ -225,42 +225,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Content.ResourceContentManager",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ResourceContentManager",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Curve",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Curve",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.CurveContinuity",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:CurveContinuity",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.CurveKey",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:CurveKey",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.CurveKeyCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:CurveKeyCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.CurveLoopType",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:CurveLoopType",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.CurveTangent",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:CurveTangent",
       "message": "mapped Go type is absent"
     },
     {
@@ -2496,6 +2460,12 @@
     "Microsoft.Xna.Framework.BoundingSphere",
     "Microsoft.Xna.Framework.Color",
     "Microsoft.Xna.Framework.ContainmentType",
+    "Microsoft.Xna.Framework.Curve",
+    "Microsoft.Xna.Framework.CurveContinuity",
+    "Microsoft.Xna.Framework.CurveKey",
+    "Microsoft.Xna.Framework.CurveKeyCollection",
+    "Microsoft.Xna.Framework.CurveLoopType",
+    "Microsoft.Xna.Framework.CurveTangent",
     "Microsoft.Xna.Framework.GameTime",
     "Microsoft.Xna.Framework.Graphics.SpriteEffects",
     "Microsoft.Xna.Framework.Graphics.SpriteSortMode",
@@ -2765,12 +2735,6 @@
     "Microsoft.Xna.Framework.Content.ContentTypeReaderManager",
     "Microsoft.Xna.Framework.Content.ContentTypeReader`1",
     "Microsoft.Xna.Framework.Content.ResourceContentManager",
-    "Microsoft.Xna.Framework.Curve",
-    "Microsoft.Xna.Framework.CurveContinuity",
-    "Microsoft.Xna.Framework.CurveKey",
-    "Microsoft.Xna.Framework.CurveKeyCollection",
-    "Microsoft.Xna.Framework.CurveLoopType",
-    "Microsoft.Xna.Framework.CurveTangent",
     "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
     "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
     "Microsoft.Xna.Framework.Design.ColorConverter",
@@ -2965,7 +2929,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "ebc0a98cd2c6058c9135cc0bd6ab4372f4ef81ce365bc544c4617b232655b66d",
+    "mappingSha256": "5f741220e7a947a7c5c20d079746cc848fa0f26429b58ea5fc7f10a2a5087a6a",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

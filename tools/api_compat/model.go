@@ -72,6 +72,7 @@ type expectedType struct {
 	Flags            bool
 	BaseType         string
 	Interfaces       []string
+	AllInterfaces    []string
 	GenericParameter []string
 	Members          []symbolKey
 }

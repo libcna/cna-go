@@ -66,6 +66,31 @@ C-call-duration storage before native dispatch. A later API whose observable
 contract requires seeking must use `io.ReadSeeker`; it may not silently widen
 this rule for existing functions.
 
+### BCL collection interfaces
+
+Generic BCL collection interfaces do not create public `System.Collections`
+packages and do not add XNA types. `ICollection<T>` projects to the ordinary
+method set on the concrete XNA collection: `Count`, `IsReadOnly`, `Add`,
+`Clear`, `Contains`, `CopyTo`, `Remove`, and the inherited enumeration route.
+The verifier measures that method set against the source interface relationship.
+
+`IEnumerable<T>`, non-generic `IEnumerable`, and `IEnumerator<T>` use one
+measured Go-language adapter:
+
+```go
+type Iterator[T any] interface {
+    Next() (value T, ok bool, err error)
+}
+```
+
+An XNA `GetEnumerator()` therefore returns `Iterator[T]`. Each call creates a
+fresh cursor in source order. The cursor does not expose or snapshot a backing
+slice. If the collection changes after cursor creation, the next call returns
+an error, reproducing versioned fail-fast enumeration without a Go panic. The
+`bool` means that a value was produced; `error` remains a separate failure
+channel. This cursor mapping preserves the module's Go 1.22 language baseline
+while still representing mutation failure.
+
 ## Fields and properties
 
 A public instance CLR field maps to an exported Go struct field where the type
@@ -121,8 +146,11 @@ fallible operation returns `error`, and a value-producing fallible operation
 returns `(T, error)`. Error is a language-added result and does not count as an
 extra XNA member. Pure value operations do not add an error unless authoritative
 XNA behavior exposes an argument failure that cannot be represented by the
-input type. Panics are reserved for violated internal invariants and are
-contained at every C callback boundary.
+input type. The same rule applies to completely managed class facades: an
+invalid collection index, nil key insertion, insufficient `CopyTo` storage,
+nil `CompareTo` operand, or invalid tangent key index returns `error`; it does
+not leak a Go slice-bounds or nil-pointer panic. Panics are reserved for
+violated internal invariants and are contained at every C callback boundary.
 
 An `out T` parameter is removed from the input list and appended to Go results.
 For the conventional `TryX` pattern the value precedes the final `bool`. A
@@ -199,5 +227,6 @@ accessors, and expands 49 events into 98 add/remove accessors:
 EXPECTED_GO_MEMBERS = 2964 - 49 - 840 + 1119 - 49 + 98 = 3243
 ```
 
-Language adapter types and error results are measured separately and do not
+Language adapter types (`EventSubscription`, `GameCallbacks`, `Iterator<T>`,
+and `TimeSpan`) and error results are measured separately and do not
 inflate these XNA counts.

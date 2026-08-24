@@ -17,6 +17,7 @@
   {"id":"wrong-ref-out","mutation":"wrong_ref_out","category":"REF_OUT_MAPPING_MISMATCH"},
   {"id":"wrong-nested-flattening","mutation":"wrong_nested","category":"MISSING_TYPE"},
   {"id":"wrong-generic-collision","mutation":"wrong_generic","category":"GENERIC_MAPPING_MISMATCH"},
+  {"id":"wrong-collection-interface","mutation":"wrong_collection_interface","category":"INTERFACE_MAPPING_MISMATCH"},
   {"id":"wrong-event-mapping","mutation":"wrong_event","category":"EVENT_MAPPING_MISMATCH"},
   {"id":"unexpected-public-symbol","mutation":"unexpected","category":"UNEXPECTED_MEMBER"},
   {"id":"raw-pointer-leak","mutation":"pointer_leak","category":"PUBLIC_NATIVE_FFI_LEAK"},

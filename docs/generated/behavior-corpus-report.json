@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations",
   "summary": {
-    "OBSERVATIONS": 93,
-    "ASSERTIONS": 93,
+    "OBSERVATIONS": 142,
+    "ASSERTIONS": 142,
     "FAILURES": 0
   },
   "observations": [
@@ -656,6 +656,349 @@
       "group": "VIEWPORT",
       "expected": "0xffc00000,0xffc00000,0xffc00000",
       "actual": "0xffc00000,0xffc00000,0xffc00000",
+      "passed": true
+    },
+    {
+      "id": "curve.enums.continuity",
+      "group": "CURVE_ENUMS",
+      "expected": "0,1",
+      "actual": "0,1",
+      "passed": true
+    },
+    {
+      "id": "curve.enums.tangent",
+      "group": "CURVE_ENUMS",
+      "expected": "0,1,2",
+      "actual": "0,1,2",
+      "passed": true
+    },
+    {
+      "id": "curve.enums.loop",
+      "group": "CURVE_ENUMS",
+      "expected": "0,1,2,3,4",
+      "actual": "0,1,2,3,4",
+      "passed": true
+    },
+    {
+      "id": "curve.key.defaults",
+      "group": "CURVE_KEY",
+      "expected": "0x00000000,0x00000000,0",
+      "actual": "0x00000000,0x00000000,0",
+      "passed": true
+    },
+    {
+      "id": "curve.key.clone.identity",
+      "group": "CURVE_KEY",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.key.clone.independent",
+      "group": "CURVE_KEY",
+      "expected": "0x40000000,0x41100000",
+      "actual": "0x40000000,0x41100000",
+      "passed": true
+    },
+    {
+      "id": "curve.key.compare.finite",
+      "group": "CURVE_KEY",
+      "expected": "-1,0,true",
+      "actual": "-1,0,true",
+      "passed": true
+    },
+    {
+      "id": "curve.key.compare.nan",
+      "group": "CURVE_KEY",
+      "expected": "0,true",
+      "actual": "0,true",
+      "passed": true
+    },
+    {
+      "id": "curve.key.compare.nan-order",
+      "group": "CURVE_KEY",
+      "expected": "-1,1",
+      "actual": "-1,1",
+      "passed": true
+    },
+    {
+      "id": "curve.key.nan.equality",
+      "group": "CURVE_KEY",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "curve.key.hash",
+      "group": "CURVE_KEY",
+      "expected": 4194305,
+      "actual": 4194305,
+      "passed": true
+    },
+    {
+      "id": "curve.key.operators",
+      "group": "CURVE_KEY",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "curve.key.compare.nil-error",
+      "group": "CURVE_KEY",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.collection.order",
+      "group": "CURVE_COLLECTION",
+      "expected": "0x00000000,0x3f800000,0x3f800000,0x40000000",
+      "actual": "0x00000000,0x3f800000,0x3f800000,0x40000000",
+      "passed": true
+    },
+    {
+      "id": "curve.collection.duplicate-identity",
+      "group": "CURVE_COLLECTION",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.collection.value-equality",
+      "group": "CURVE_COLLECTION",
+      "expected": "true,1",
+      "actual": "true,1",
+      "passed": true
+    },
+    {
+      "id": "curve.collection.item-reorders",
+      "group": "CURVE_COLLECTION",
+      "expected": "0x3f800000,0x3f800000,0x40000000,0x40400000",
+      "actual": "0x3f800000,0x3f800000,0x40000000,0x40400000",
+      "passed": true
+    },
+    {
+      "id": "curve.collection.item-identity",
+      "group": "CURVE_COLLECTION",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.collection.index-errors",
+      "group": "CURVE_COLLECTION",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "curve.collection.copyto",
+      "group": "CURVE_COLLECTION",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.collection.copyto-errors",
+      "group": "CURVE_COLLECTION",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.collection.clone-depth",
+      "group": "CURVE_COLLECTION",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.collection.enumerator-invalidation",
+      "group": "CURVE_COLLECTION",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.collection.remove-equal",
+      "group": "CURVE_COLLECTION",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.collection.clear-readonly",
+      "group": "CURVE_COLLECTION",
+      "expected": "0,false",
+      "actual": "0,false",
+      "passed": true
+    },
+    {
+      "id": "curve.tangent.flat",
+      "group": "CURVE_TANGENTS",
+      "expected": "0x00000000,0x00000000",
+      "actual": "0x00000000,0x00000000",
+      "passed": true
+    },
+    {
+      "id": "curve.tangent.linear",
+      "group": "CURVE_TANGENTS",
+      "expected": "0x41200000,0x41a00000",
+      "actual": "0x41200000,0x41a00000",
+      "passed": true
+    },
+    {
+      "id": "curve.tangent.smooth-first",
+      "group": "CURVE_TANGENTS",
+      "expected": "0x00000000,0x41200000",
+      "actual": "0x00000000,0x41200000",
+      "passed": true
+    },
+    {
+      "id": "curve.tangent.smooth-middle",
+      "group": "CURVE_TANGENTS",
+      "expected": "0x41200000,0x41a00000",
+      "actual": "0x41200000,0x41a00000",
+      "passed": true
+    },
+    {
+      "id": "curve.tangent.smooth-last",
+      "group": "CURVE_TANGENTS",
+      "expected": "0x41a00000,0x00000000",
+      "actual": "0x41a00000,0x00000000",
+      "passed": true
+    },
+    {
+      "id": "curve.tangent.mixed",
+      "group": "CURVE_TANGENTS",
+      "expected": "0x00000000,0x41a00000",
+      "actual": "0x00000000,0x41a00000",
+      "passed": true
+    },
+    {
+      "id": "curve.tangent.invalid-index",
+      "group": "CURVE_TANGENTS",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.evaluate.empty",
+      "group": "CURVE_EVALUATE",
+      "expected": "0x00000000",
+      "actual": "0x00000000",
+      "passed": true
+    },
+    {
+      "id": "curve.evaluate.defaults",
+      "group": "CURVE_EVALUATE",
+      "expected": "0,0,true",
+      "actual": "0,0,true",
+      "passed": true
+    },
+    {
+      "id": "curve.evaluate.single",
+      "group": "CURVE_EVALUATE",
+      "expected": "0x40e00000,0x40e00000,0x40e00000",
+      "actual": "0x40e00000,0x40e00000,0x40e00000",
+      "passed": true
+    },
+    {
+      "id": "curve.evaluate.hermite",
+      "group": "CURVE_EVALUATE",
+      "expected": "0x3fc80000",
+      "actual": "0x3fc80000",
+      "passed": true
+    },
+    {
+      "id": "curve.evaluate.hermite-asymmetric",
+      "group": "CURVE_EVALUATE",
+      "expected": "0x40b80000",
+      "actual": "0x40b80000",
+      "passed": true
+    },
+    {
+      "id": "curve.evaluate.step",
+      "group": "CURVE_EVALUATE",
+      "expected": "0x40000000,0x41100000",
+      "actual": "0x40000000,0x41100000",
+      "passed": true
+    },
+    {
+      "id": "curve.evaluate.duplicate",
+      "group": "CURVE_EVALUATE",
+      "expected": "0x41200000",
+      "actual": "0x41200000",
+      "passed": true
+    },
+    {
+      "id": "curve.evaluate.clone-depth",
+      "group": "CURVE_EVALUATE",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "curve.loop.constant",
+      "group": "CURVE_LOOPS",
+      "expected": "0x00000000,0x41200000",
+      "actual": "0x00000000,0x41200000",
+      "passed": true
+    },
+    {
+      "id": "curve.loop.cycle",
+      "group": "CURVE_LOOPS",
+      "expected": "0x40a00000,0x40a00000",
+      "actual": "0x40a00000,0x40a00000",
+      "passed": true
+    },
+    {
+      "id": "curve.loop.cycle-offset",
+      "group": "CURVE_LOOPS",
+      "expected": "0xc0a00000,0x41700000",
+      "actual": "0xc0a00000,0x41700000",
+      "passed": true
+    },
+    {
+      "id": "curve.loop.oscillate",
+      "group": "CURVE_LOOPS",
+      "expected": "0x40a00000,0x40a00000",
+      "actual": "0x40a00000,0x40a00000",
+      "passed": true
+    },
+    {
+      "id": "curve.loop.linear",
+      "group": "CURVE_LOOPS",
+      "expected": "0xc0000000,0x41800000",
+      "actual": "0xc0000000,0x41800000",
+      "passed": true
+    },
+    {
+      "id": "curve.loop.negative-cycle",
+      "group": "CURVE_LOOPS",
+      "expected": "0x41200000",
+      "actual": "0x41200000",
+      "passed": true
+    },
+    {
+      "id": "curve.loop.negative-cycle-offset",
+      "group": "CURVE_LOOPS",
+      "expected": "0xc1200000",
+      "actual": "0xc1200000",
+      "passed": true
+    },
+    {
+      "id": "curve.loop.negative-oscillate",
+      "group": "CURVE_LOOPS",
+      "expected": "0x41200000",
+      "actual": "0x41200000",
+      "passed": true
+    },
+    {
+      "id": "curve.loop.multiple-offset",
+      "group": "CURVE_LOOPS",
+      "expected": "0xc1a00000,0x41a00000",
+      "actual": "0xc1a00000,0x41a00000",
       "passed": true
     }
   ]

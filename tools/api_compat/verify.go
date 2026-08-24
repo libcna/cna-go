@@ -9,6 +9,7 @@ import (
 var adapterTypes = map[string]bool{
 	"EventSubscription": true,
 	"GameCallbacks":     true,
+	"Iterator":          true,
 	"TimeSpan":          true,
 }
 
@@ -94,6 +95,9 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 			compareMember(&result, em, am)
 			typeDiagnostics[et.XNA] += len(result.Diagnostics) - before
 		}
+		before := len(result.Diagnostics)
+		measureCollectionInterfaceProjection(&result, expected, actual, et)
+		typeDiagnostics[et.XNA] += len(result.Diagnostics) - before
 	}
 
 	for key, at := range actual.Types {
@@ -133,6 +137,64 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["MISSING_TYPES"] = len(result.MissingTypes)
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+func measureCollectionInterfaceProjection(result *report, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+	if !containsInterfacePrefix(owner.AllInterfaces, "System.Collections.Generic.ICollection`1[") {
+		return
+	}
+
+	required := []string{"Add", "Clear", "Contains", "CopyTo", "Remove", "Count", "IsReadOnly", "GetEnumerator"}
+	for _, name := range required {
+		found := false
+		for _, key := range owner.Members {
+			member := expected.Members[key]
+			if member.GoName == name {
+				_, found = actual.Members[key]
+				break
+			}
+		}
+		if !found {
+			addDiagnostic(result, diagnostic{
+				Category: "INTERFACE_MAPPING_MISMATCH",
+				XNA:      owner.XNA,
+				Go:       owner.Key.String(),
+				Message:  "ICollection<T> projection is missing " + name,
+			})
+			return
+		}
+	}
+
+	iteratorKey := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "Iterator"}
+	iterator, ok := actual.Types[iteratorKey]
+	if !ok || iterator.Kind != "interface" || !equalStrings(iterator.TypeParameters, []string{"T"}) {
+		addDiagnostic(result, diagnostic{
+			Category: "INTERFACE_MAPPING_MISMATCH",
+			XNA:      owner.XNA,
+			Go:       iteratorKey.String(),
+			Message:  "IEnumerator<T> must use the measured generic Iterator<T> adapter",
+		})
+		return
+	}
+	nextKey := symbolKey{Package: iteratorKey.Package, Receiver: "Iterator", Name: "Next"}
+	next, ok := actual.Members[nextKey]
+	if !ok || len(next.Parameters) != 0 || !equalStrings(next.Results, []string{"T", "bool", "error"}) {
+		addDiagnostic(result, diagnostic{
+			Category: "INTERFACE_MAPPING_MISMATCH",
+			XNA:      owner.XNA,
+			Go:       nextKey.String(),
+			Message:  "Iterator<T>.Next must return (T, bool, error)",
+		})
+	}
+}
+
+func containsInterfacePrefix(interfaces []string, prefix string) bool {
+	for _, value := range interfaces {
+		if strings.HasPrefix(value, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func typeKindMatches(expected *expectedType, actual *actualType) bool {

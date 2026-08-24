@@ -46,21 +46,42 @@ var operatorNames = map[string]string{
 }
 
 var managedTypes = map[string]bool{
-	"Microsoft.Xna.Framework.MathHelper":      true,
-	"Microsoft.Xna.Framework.Vector2":         true,
-	"Microsoft.Xna.Framework.Vector3":         true,
-	"Microsoft.Xna.Framework.Vector4":         true,
-	"Microsoft.Xna.Framework.Quaternion":      true,
-	"Microsoft.Xna.Framework.Matrix":          true,
-	"Microsoft.Xna.Framework.Color":           true,
-	"Microsoft.Xna.Framework.Point":           true,
-	"Microsoft.Xna.Framework.Rectangle":       true,
-	"Microsoft.Xna.Framework.Ray":             true,
-	"Microsoft.Xna.Framework.Plane":           true,
-	"Microsoft.Xna.Framework.BoundingBox":     true,
-	"Microsoft.Xna.Framework.BoundingSphere":  true,
-	"Microsoft.Xna.Framework.BoundingFrustum": true,
-	"Microsoft.Xna.Framework.GameTime":        true,
+	"Microsoft.Xna.Framework.MathHelper":         true,
+	"Microsoft.Xna.Framework.Vector2":            true,
+	"Microsoft.Xna.Framework.Vector3":            true,
+	"Microsoft.Xna.Framework.Vector4":            true,
+	"Microsoft.Xna.Framework.Quaternion":         true,
+	"Microsoft.Xna.Framework.Matrix":             true,
+	"Microsoft.Xna.Framework.Color":              true,
+	"Microsoft.Xna.Framework.Point":              true,
+	"Microsoft.Xna.Framework.Rectangle":          true,
+	"Microsoft.Xna.Framework.Ray":                true,
+	"Microsoft.Xna.Framework.Plane":              true,
+	"Microsoft.Xna.Framework.BoundingBox":        true,
+	"Microsoft.Xna.Framework.BoundingSphere":     true,
+	"Microsoft.Xna.Framework.BoundingFrustum":    true,
+	"Microsoft.Xna.Framework.GameTime":           true,
+	"Microsoft.Xna.Framework.Curve":              true,
+	"Microsoft.Xna.Framework.CurveKey":           true,
+	"Microsoft.Xna.Framework.CurveKeyCollection": true,
+	"Microsoft.Xna.Framework.CurveContinuity":    true,
+	"Microsoft.Xna.Framework.CurveLoopType":      true,
+	"Microsoft.Xna.Framework.CurveTangent":       true,
+}
+
+var managedFallibleMembers = map[string]map[string]bool{
+	"Microsoft.Xna.Framework.Curve": {
+		"method|ComputeTangent": true,
+	},
+	"Microsoft.Xna.Framework.CurveKey": {
+		"method|CompareTo": true,
+	},
+	"Microsoft.Xna.Framework.CurveKeyCollection": {
+		"method|Add":      true,
+		"method|CopyTo":   true,
+		"method|RemoveAt": true,
+		"property|Item":   true,
+	},
 }
 
 func buildExpected(c contract) (*expectedSurface, error) {
@@ -94,6 +115,7 @@ func buildExpected(c contract) (*expectedSurface, error) {
 			Key: key, XNA: t.Name, GoName: goName, PackagePath: pkg,
 			Kind: t.Kind, Flags: t.Flags, BaseType: valueOrEmpty(t.BaseType),
 			Interfaces:       append([]string(nil), t.DirectInterfaces...),
+			AllInterfaces:    append([]string(nil), t.Interfaces...),
 			GenericParameter: genericNames,
 		}
 	}
@@ -441,6 +463,13 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 	if strings.HasSuffix(raw, "[]") {
 		return "[]" + mapType(s, byIdentity, owner, strings.TrimSuffix(raw, "[]"))
 	}
+	if inner, ok := genericTypeArgument(raw, "System.Collections.Generic.IEnumerator`1["); ok {
+		name := "Iterator"
+		if owner.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
+			name = "framework.Iterator"
+		}
+		return name + "[" + mapType(s, byIdentity, owner, inner) + "]"
+	}
 	if mapped, ok := bclTypes[raw]; ok {
 		return mapped
 	}
@@ -481,9 +510,16 @@ func nullableInner(raw string) (string, bool) {
 	return strings.TrimSuffix(strings.TrimPrefix(raw, "System.Nullable`1["), "]"), true
 }
 
+func genericTypeArgument(raw, prefix string) (string, bool) {
+	if !strings.HasPrefix(raw, prefix) || !strings.HasSuffix(raw, "]") {
+		return "", false
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(raw, prefix), "]"), true
+}
+
 func isFallible(t contractType, m contractMember) bool {
 	if managedTypes[t.Name] || t.Kind == "enum" {
-		return false
+		return managedFallibleMembers[t.Name][m.Kind+"|"+m.Name]
 	}
 	if m.Kind == "field" || m.Name == "ToString" || m.Name == "GetHashCode" || strings.HasPrefix(m.Name, "op_") {
 		return false

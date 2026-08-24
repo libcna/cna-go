@@ -62,8 +62,19 @@
     "nativeRuntimeFailure": "error-final-result",
     "voidNativeFailure": "error-only-result",
     "valueNativeFailure": "value-then-error",
-    "pureValueOperation": "no-added-error",
+    "pureValueOperation": "no-added-error-unless-authoritative-managed-argument-failure-is-projected",
+    "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
     "panicPolicy": "programmer-invariant-only-never-native-runtime-failure"
+  },
+  "collectionInterfaces": {
+    "System.Collections.Generic.ICollection<T>": "concrete-go-method-set-on-the-xna-collection-no-fake-bcl-package",
+    "System.Collections.Generic.IEnumerable<T>": "GetEnumerator-returning-Iterator<T>",
+    "System.Collections.IEnumerable": "satisfied-by-the-same-generic-GetEnumerator-projection",
+    "System.Collections.Generic.IEnumerator<T>": "Iterator<T>",
+    "iteratorMethod": "Next()-(T,bool,error)",
+    "enumerationOrder": "source-order",
+    "mutationPolicy": "versioned-fail-fast-error-on-next",
+    "sliceExposure": "forbidden"
   },
   "bcl": {
     "System.Boolean": "bool",
@@ -101,6 +112,7 @@
   "languageAdapters": [
     "EventSubscription",
     "GameCallbacks",
+    "Iterator<T>",
     "TimeSpan"
   ],
   "crossPackageCycleRule": "when an ancestor namespace member returns a descendant namespace type that imports ancestor values, project the accessor as a descendant-package function named OwnerTypeMember"

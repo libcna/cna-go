@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 )
@@ -23,6 +24,30 @@ func singleHashCode(value float32) int32 {
 		return 0
 	}
 	return int32(math.Float32bits(value))
+}
+
+// compareSingle reproduces System.Single.CompareTo, including its total-order
+// treatment of NaN as preceding every non-NaN value and equal to another NaN.
+func compareSingle(left, right float32) int32 {
+	switch {
+	case left < right:
+		return -1
+	case left > right:
+		return 1
+	case left == right:
+		return 0
+	case math.IsNaN(float64(left)):
+		if math.IsNaN(float64(right)) {
+			return 0
+		}
+		return -1
+	default:
+		return 1
+	}
+}
+
+func curveArgumentError(message string) error {
+	return fmt.Errorf("curve argument: %s", message)
 }
 
 func formatSingle(value float32) string {
