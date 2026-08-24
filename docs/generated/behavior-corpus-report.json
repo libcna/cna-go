@@ -2,11 +2,60 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations",
   "summary": {
-    "OBSERVATIONS": 227,
-    "ASSERTIONS": 227,
+    "OBSERVATIONS": 234,
+    "ASSERTIONS": 234,
     "FAILURES": 0
   },
   "observations": [
+    {
+      "id": "player-index.defined-raw-values",
+      "group": "PLAYER_INDEX",
+      "expected": "0,1,2,3",
+      "actual": "0,1,2,3",
+      "passed": true
+    },
+    {
+      "id": "player-index.undefined-raw-value",
+      "group": "PLAYER_INDEX",
+      "expected": 12345,
+      "actual": 12345,
+      "passed": true
+    },
+    {
+      "id": "keyboard.player-index.one",
+      "group": "KEYBOARD_PLAYER_INDEX",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "keyboard.player-index.two",
+      "group": "KEYBOARD_PLAYER_INDEX",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "keyboard.player-index.three",
+      "group": "KEYBOARD_PLAYER_INDEX",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "keyboard.player-index.four",
+      "group": "KEYBOARD_PLAYER_INDEX",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "keyboard.player-index.undefined",
+      "group": "KEYBOARD_PLAYER_INDEX",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
     {
       "id": "math.clamp.low",
       "group": "MathHelper",

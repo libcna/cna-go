@@ -25,7 +25,7 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 | `UNIMPLEMENTED_CNA_GO` | Touch input | strict structural report | Deferred. |
 | `UPSTREAM_CNA_BLOCKED` | Native sanitizer evidence | qualified library is not instrumented | NATIVE_SANITIZER_STATUS=NOT_RUN; no leak-freedom claim. |
 | `VERIFIED_MANAGED` | PackedVector family | docs/packed-vector-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete 19-type managed closure; no CNA ABI route or runtime/hardware claim. |
-| `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, PackedVector, and VertexElement closures are locally strict-zero; six native/runtime types remain explicitly partial. |
+| `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, PackedVector, VertexElement, and PlayerIndex closures are locally strict-zero; five native/runtime types remain explicitly partial. |
 | `VERIFIED_MANAGED` | VertexElement descriptor values | docs/vertex-element-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete three-type managed descriptor closure; no VertexDeclaration, buffer, draw, GPU, CNA ABI, or hardware capability claim. |
 | `VERIFIED_MANAGED` | XNA namespace/package mapping | tools/api_compat and docs/xna-go-mapping.md | Case-preserving import paths; consumer aliases are not API. |
 | `VERIFIED_NATIVE` | Go callback error/panic containment | 20 returned-error and 20 panic subprocess cycles | No panic or Go error crosses C; Run returns the stored Go failure. |
@@ -33,7 +33,7 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 | `VERIFIED_NATIVE` | Native Game lifecycle | 60/600 canary and native stress | CNA drives Initialize, LoadContent, Update, Draw, UnloadContent, and Exiting. |
 | `VERIFIED_NATIVE` | Game recreation and generation rejection | 20 isolated Game recreation cycles | Each Run gets a new generation; stale facades reject deterministically. |
 | `VERIFIED_NATIVE` | GraphicsDevice | 60/600 canary | Borrowed from the Game-owned GraphicsDeviceManager; never synthetic. |
-| `VERIFIED_NATIVE` | Keyboard state | 60/600 native callback polling | Exact XNA Keys raw values and native CNA keyboard snapshot; HEADLESS naturally reports no keys. |
+| `VERIFIED_NATIVE` | Keyboard state | 60/600 native callback polling and PlayerIndex overload stress | Both GetState overloads use the same existing CNA process-keyboard snapshot; PlayerIndex is ignored as in XNA IL, and HEADLESS naturally reports no keys. |
 | `VERIFIED_NATIVE` | Linux amd64 runtime | exact ABI 0.7 native gates, stress, and canary | Requires cgo, a C compiler at build time, and a separately supplied CNA shared library. |
 | `VERIFIED_NATIVE` | Owner OS-thread policy | native stress wrong-thread rejection and owner retry | Run locks one OS thread through native destroy and callback-handle deletion. |
 | `VERIFIED_NATIVE` | SpriteBatch 2D draw closure | 60/600 scaled draw canary and 20 lifetime cycles | Begin, one exact scaled Draw overload, End, and Dispose are real; the XNA type is partial. |

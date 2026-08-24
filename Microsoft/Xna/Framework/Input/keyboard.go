@@ -3,6 +3,7 @@ package input
 import (
 	"errors"
 
+	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	"github.com/openeggbert/cna-go/internal/interop"
 )
 
@@ -36,6 +37,14 @@ func NewKeyboardState(keys []Keys) KeyboardState {
 }
 
 func KeyboardGetStateByNone() (KeyboardState, error) {
+	return keyboardGetState()
+}
+
+func KeyboardGetStateByPlayerIndex(_ framework.PlayerIndex) (KeyboardState, error) {
+	return keyboardGetState()
+}
+
+func keyboardGetState() (KeyboardState, error) {
 	runtime, ok := interop.CurrentRuntime()
 	if !ok {
 		return KeyboardState{}, errors.New("KeyboardGetState requires an active Game")

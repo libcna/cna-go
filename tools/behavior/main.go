@@ -12,6 +12,7 @@ import (
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
+	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
 )
 
 type observation struct {
@@ -76,6 +77,25 @@ func runCorpus() corpusReport {
 		return strings.Join(result, ",")
 	}
 	packed := func(value uint32) string { return fmt.Sprintf("0x%08x", value) }
+
+	check("player-index.defined-raw-values", "PLAYER_INDEX", "0,1,2,3", fmt.Sprintf("%d,%d,%d,%d", framework.PlayerIndexOne, framework.PlayerIndexTwo, framework.PlayerIndexThree, framework.PlayerIndexFour))
+	check("player-index.undefined-raw-value", "PLAYER_INDEX", int32(12345), int32(framework.PlayerIndex(12345)))
+
+	noPlayerState, noPlayerError := input.KeyboardGetStateByNone()
+	for _, fixture := range []struct {
+		name  string
+		value framework.PlayerIndex
+	}{
+		{"one", framework.PlayerIndexOne},
+		{"two", framework.PlayerIndexTwo},
+		{"three", framework.PlayerIndexThree},
+		{"four", framework.PlayerIndexFour},
+		{"undefined", framework.PlayerIndex(12345)},
+	} {
+		state, err := input.KeyboardGetStateByPlayerIndex(fixture.value)
+		sameError := noPlayerError != nil && err != nil && noPlayerError.Error() == err.Error()
+		check("keyboard.player-index."+fixture.name, "KEYBOARD_PLAYER_INDEX", "true,true", fmt.Sprintf("%t,%t", state == noPlayerState, sameError))
+	}
 
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))

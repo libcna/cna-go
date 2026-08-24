@@ -18,6 +18,7 @@ import (
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
+	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
 	"github.com/openeggbert/cna-go/internal/interop"
 )
 
@@ -154,7 +155,13 @@ func runChild(scenario string, index int) error {
 	if err != nil {
 		return err
 	}
+	if err := verifyKeyboardUnavailable("before Game.Run"); err != nil {
+		return err
+	}
 	err = host.Run()
+	if unavailableErr := verifyKeyboardUnavailable("after Game shutdown"); unavailableErr != nil {
+		return unavailableErr
+	}
 	switch scenario {
 	case "success":
 		game.result.GameCycles = 1
@@ -193,6 +200,9 @@ func (g *stressGame) Initialize(host *framework.Game) error {
 }
 
 func (g *stressGame) LoadContent(_ *framework.Game) error {
+	if err := verifyKeyboardPlayerIndexSnapshots(); err != nil {
+		return err
+	}
 	device, err := graphics.GraphicsDeviceManagerGraphicsDevice(g.manager)
 	if err != nil {
 		return err
@@ -244,6 +254,50 @@ func (g *stressGame) LoadContent(_ *framework.Game) error {
 		g.result.GCStressPoints++
 	}
 	return nil
+}
+
+func verifyKeyboardPlayerIndexSnapshots() error {
+	baseline, err := input.KeyboardGetStateByNone()
+	if err != nil {
+		return fmt.Errorf("read process keyboard baseline: %w", err)
+	}
+	for _, playerIndex := range playerIndexFixtures() {
+		state, err := input.KeyboardGetStateByPlayerIndex(playerIndex)
+		if err != nil {
+			return fmt.Errorf("read process keyboard state for PlayerIndex(%d): %w", playerIndex, err)
+		}
+		if !input.KeyboardStateOperatorEqualityByKeyboardStateAndKeyboardState(baseline, state) {
+			return fmt.Errorf("PlayerIndex(%d) selected a different keyboard snapshot", playerIndex)
+		}
+	}
+	return nil
+}
+
+func verifyKeyboardUnavailable(stage string) error {
+	baseline, baselineError := input.KeyboardGetStateByNone()
+	if baselineError == nil {
+		return fmt.Errorf("KeyboardGetStateByNone unexpectedly succeeded %s", stage)
+	}
+	for _, playerIndex := range playerIndexFixtures() {
+		state, err := input.KeyboardGetStateByPlayerIndex(playerIndex)
+		if err == nil {
+			return fmt.Errorf("KeyboardGetStateByPlayerIndex(%d) unexpectedly succeeded %s", playerIndex, stage)
+		}
+		if state != baseline || err.Error() != baselineError.Error() {
+			return fmt.Errorf("KeyboardGetStateByPlayerIndex(%d) used a different unavailable-runtime path %s", playerIndex, stage)
+		}
+	}
+	return nil
+}
+
+func playerIndexFixtures() []framework.PlayerIndex {
+	return []framework.PlayerIndex{
+		framework.PlayerIndexOne,
+		framework.PlayerIndexTwo,
+		framework.PlayerIndexThree,
+		framework.PlayerIndexFour,
+		framework.PlayerIndex(12345),
+	}
 }
 
 func (g *stressGame) Update(_ *framework.Game, _ framework.GameTime) error {

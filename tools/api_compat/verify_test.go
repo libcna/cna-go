@@ -256,6 +256,69 @@ func TestVertexElementMappedContract(t *testing.T) {
 	}
 }
 
+func TestPlayerIndexKeyboardMappedContract(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	playerIndex := surface.typeForXNA("Microsoft.Xna.Framework.PlayerIndex")
+	if playerIndex == nil || playerIndex.Kind != "enum" || playerIndex.Flags || playerIndex.SourceMembers != 5 || len(playerIndex.Members) != 4 {
+		t.Fatalf("PlayerIndex projection = %+v", playerIndex)
+	}
+	for name, value := range map[string]string{"One": "0", "Two": "1", "Three": "2", "Four": "3"} {
+		member := surface.Members[symbolKey{Package: playerIndex.PackagePath, Name: "PlayerIndex" + name}]
+		if member == nil || member.GoKind != "const" || member.EnumValue == nil || *member.EnumValue != value || !equalStrings(member.Results, []string{"PlayerIndex"}) {
+			t.Fatalf("PlayerIndex%s projection = %+v", name, member)
+		}
+	}
+
+	keyboard := surface.typeForXNA("Microsoft.Xna.Framework.Input.Keyboard")
+	if keyboard == nil || keyboard.Kind != "class" || keyboard.SourceMembers != 2 || len(keyboard.Members) != 2 {
+		t.Fatalf("Keyboard projection = %+v", keyboard)
+	}
+	none := surface.Members[symbolKey{Package: keyboard.PackagePath, Name: "KeyboardGetStateByNone"}]
+	byPlayerIndex := surface.Members[symbolKey{Package: keyboard.PackagePath, Name: "KeyboardGetStateByPlayerIndex"}]
+	if none == nil || !none.OverloadMapped || len(none.Parameters) != 0 || !equalStrings(none.Results, []string{"KeyboardState", "error"}) || !none.ErrorAdded {
+		t.Fatalf("Keyboard.GetState() projection = %+v", none)
+	}
+	if byPlayerIndex == nil || !byPlayerIndex.OverloadMapped || !equalStrings(byPlayerIndex.Parameters, []string{"framework.PlayerIndex"}) ||
+		!equalStrings(byPlayerIndex.Results, []string{"KeyboardState", "error"}) || !byPlayerIndex.ErrorAdded {
+		t.Fatalf("Keyboard.GetState(PlayerIndex) projection = %+v", byPlayerIndex)
+	}
+}
+
+func TestPlayerIndexKeyboardCurrentSurfaceAndLocalClosure(t *testing.T) {
+	reference := loadPinnedContract(t)
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("type errors: %v", actual.TypeErrors)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	closure := result.PlayerIndexKeyboardClosure
+	if closure.Status != "PASS" || closure.SourceTypes != 2 || closure.SourceIdentities != 7 || closure.MappedGoIdentities != 6 ||
+		closure.TargetTypes != 2 || closure.TargetGoIdentities != 6 || closure.LocalDiagnostics != 0 || len(closure.TypeMeasurements) != 2 {
+		t.Fatalf("PlayerIndex/Keyboard closure = %+v", closure)
+	}
+	for _, row := range closure.TypeMeasurements {
+		if row.LocalDiagnostics != 0 || row.TargetGoMembers != row.ExpectedGoMembers {
+			t.Fatalf("PlayerIndex/Keyboard type row = %+v", row)
+		}
+	}
+}
+
 func TestVertexElementCurrentSurfaceAndLocalClosure(t *testing.T) {
 	reference := loadPinnedContract(t)
 	expected, err := buildExpected(reference)
@@ -519,7 +582,9 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "vertex_") {
+			if strings.HasPrefix(fixture.Mutation, "player_index_") || strings.HasPrefix(fixture.Mutation, "keyboard_player_index_") {
+				expected, actual = playerIndexKeyboardMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "vertex_") {
 				expected, actual = vertexElementMutationCase(t, fixture.Mutation)
 			} else {
 				expected, actual = mutationCase(fixture.Mutation)
@@ -530,6 +595,96 @@ func TestMutationFixtures(t *testing.T) {
 			}
 		})
 	}
+}
+
+func playerIndexKeyboardMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := &expectedSurface{
+		Types:              make(map[symbolKey]*expectedType),
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     2,
+		ReferenceMembers:   7,
+		ExpectedGoTypes:    2,
+		ExpectedGoMembers:  6,
+	}
+	actual := &actualSurface{
+		Types:       make(map[symbolKey]*actualType),
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, identity := range playerIndexKeyboardClosureTypes {
+		fullType := full.typeForXNA(identity)
+		copiedType := *fullType
+		copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+		expected.Types[copiedType.Key] = &copiedType
+		actualKind, underlying := "struct", "struct{}"
+		if copiedType.Kind == "enum" {
+			actualKind, underlying = "named", "int32"
+		}
+		actual.Types[copiedType.Key] = &actualType{Key: copiedType.Key, Kind: actualKind, Underlying: underlying, FlagsMarker: copiedType.Flags}
+		for _, memberKey := range copiedType.Members {
+			fullMember := full.Members[memberKey]
+			copiedMember := *fullMember
+			copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+			copiedMember.Results = append([]string(nil), fullMember.Results...)
+			expected.Members[memberKey] = &copiedMember
+			actualMember := &actualMember{
+				Key:        memberKey,
+				Kind:       copiedMember.GoKind,
+				Parameters: append([]string(nil), copiedMember.Parameters...),
+				Results:    append([]string(nil), copiedMember.Results...),
+			}
+			if copiedMember.EnumValue != nil {
+				value := *copiedMember.EnumValue
+				actualMember.Value = &value
+			}
+			actual.Members[memberKey] = actualMember
+		}
+	}
+
+	const frameworkPackage = modulePath + "/Microsoft/Xna/Framework"
+	const inputPackage = frameworkPackage + "/Input"
+	playerType := symbolKey{Package: frameworkPackage, Name: "PlayerIndex"}
+	playerConstant := func(name string) symbolKey { return symbolKey{Package: frameworkPackage, Name: "PlayerIndex" + name} }
+	keyboardFunction := func(name string) symbolKey { return symbolKey{Package: inputPackage, Name: name} }
+	overload := keyboardFunction("KeyboardGetStateByPlayerIndex")
+	switch mutation {
+	case "player_index_wrong_kind":
+		actual.Types[playerType].Kind = "struct"
+	case "player_index_wrong_underlying_type":
+		actual.Types[playerType].Underlying = "uint32"
+	case "player_index_accidentally_flags":
+		actual.Types[playerType].FlagsMarker = true
+	case "player_index_wrong_one_value":
+		wrong := "1"
+		actual.Members[playerConstant("One")].Value = &wrong
+	case "player_index_wrong_four_value":
+		wrong := "4"
+		actual.Members[playerConstant("Four")].Value = &wrong
+	case "player_index_missing_four":
+		delete(actual.Members, playerConstant("Four"))
+	case "keyboard_player_index_missing_overload":
+		delete(actual.Members, overload)
+	case "keyboard_player_index_parameter_int32":
+		actual.Members[overload].Parameters = []string{"int32"}
+	case "keyboard_player_index_wrong_return":
+		actual.Members[overload].Results = []string{"int32", "error"}
+	case "keyboard_player_index_missing_error":
+		actual.Members[overload].Results = []string{"KeyboardState"}
+	case "keyboard_player_index_wrong_overload_name":
+		delete(actual.Members, overload)
+		wrong := keyboardFunction("KeyboardGetStateByInt32")
+		actual.Members[wrong] = &actualMember{Key: wrong, Kind: "func", Parameters: []string{"framework.PlayerIndex"}, Results: []string{"KeyboardState", "error"}}
+	default:
+		t.Fatalf("unknown PlayerIndex/Keyboard mutation %q", mutation)
+	}
+	return expected, actual
 }
 
 func vertexElementMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {

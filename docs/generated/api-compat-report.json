@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 51,
+    "COMPLETE_TYPES": 53,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -19,14 +19,14 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 180,
-    "MISSING_TYPE": 200,
-    "MISSING_TYPES": 200,
+    "MISSING_MEMBER": 179,
+    "MISSING_TYPE": 199,
+    "MISSING_TYPES": 199,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
     "PARAMETER_MAPPING_MISMATCH": 0,
-    "PARTIAL_TYPES": 6,
+    "PARTIAL_TYPES": 5,
     "PROPERTY_MAPPING_MISMATCH": 0,
     "PUBLIC_NATIVE_FFI_LEAK": 0,
     "RAW_HANDLE_LEAK": 0,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1317,
-    "TARGET_TYPES": 57,
-    "TOTAL_DIAGNOSTICS": 380,
+    "TARGET_MEMBERS": 1322,
+    "TARGET_TYPES": 58,
+    "TOTAL_DIAGNOSTICS": 378,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -2073,12 +2073,6 @@
       "message": "mapped Go type is absent"
     },
     {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Input.Keyboard::GetState(Microsoft.Xna.Framework.PlayerIndex)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:KeyboardGetStateByPlayerIndex",
-      "message": "mapped Go member is absent"
-    },
-    {
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.Mouse",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:Mouse",
@@ -2290,12 +2284,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.PlayerIndex",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:PlayerIndex",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:PreparingDeviceSettingsEventArgs",
       "message": "mapped Go type is absent"
@@ -2364,12 +2352,14 @@
     "Microsoft.Xna.Framework.Graphics.VertexElementUsage",
     "Microsoft.Xna.Framework.Graphics.Viewport",
     "Microsoft.Xna.Framework.Input.KeyState",
+    "Microsoft.Xna.Framework.Input.Keyboard",
     "Microsoft.Xna.Framework.Input.KeyboardState",
     "Microsoft.Xna.Framework.Input.Keys",
     "Microsoft.Xna.Framework.MathHelper",
     "Microsoft.Xna.Framework.Matrix",
     "Microsoft.Xna.Framework.Plane",
     "Microsoft.Xna.Framework.PlaneIntersectionType",
+    "Microsoft.Xna.Framework.PlayerIndex",
     "Microsoft.Xna.Framework.Point",
     "Microsoft.Xna.Framework.Quaternion",
     "Microsoft.Xna.Framework.Ray",
@@ -2587,13 +2577,6 @@
         "Microsoft.Xna.Framework.GraphicsDeviceManager::ToggleFullScreen() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.ToggleFullScreen"
       ],
       "diagnostics": 42
-    },
-    {
-      "xna": "Microsoft.Xna.Framework.Input.Keyboard",
-      "missingMembers": [
-        "Microsoft.Xna.Framework.Input.Keyboard::GetState(Microsoft.Xna.Framework.PlayerIndex) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:KeyboardGetStateByPlayerIndex"
-      ],
-      "diagnostics": 1
     }
   ],
   "missingTypes": [
@@ -2791,7 +2774,6 @@
     "Microsoft.Xna.Framework.Media.VideoPlayer",
     "Microsoft.Xna.Framework.Media.VideoSoundtrackType",
     "Microsoft.Xna.Framework.Media.VisualizationData",
-    "Microsoft.Xna.Framework.PlayerIndex",
     "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
     "Microsoft.Xna.Framework.Storage.StorageContainer",
     "Microsoft.Xna.Framework.Storage.StorageDevice",
@@ -3430,6 +3412,39 @@
         "expectedKind": "enum",
         "actualKind": "named",
         "actualUnderlying": "int32"
+      }
+    ]
+  },
+  "playerIndexKeyboardClosure": {
+    "sourceTypes": 2,
+    "sourceIdentities": 7,
+    "mappedGoIdentities": 6,
+    "targetTypes": 2,
+    "targetGoIdentities": 6,
+    "localDiagnostics": 0,
+    "status": "PASS",
+    "typeMeasurements": [
+      {
+        "xna": "Microsoft.Xna.Framework.PlayerIndex",
+        "goName": "PlayerIndex",
+        "sourceMembers": 5,
+        "expectedGoMembers": 4,
+        "targetGoMembers": 4,
+        "localDiagnostics": 0,
+        "expectedKind": "enum",
+        "actualKind": "named",
+        "actualUnderlying": "int32"
+      },
+      {
+        "xna": "Microsoft.Xna.Framework.Input.Keyboard",
+        "goName": "Keyboard",
+        "sourceMembers": 2,
+        "expectedGoMembers": 2,
+        "targetGoMembers": 2,
+        "localDiagnostics": 0,
+        "expectedKind": "class",
+        "actualKind": "struct",
+        "actualUnderlying": "struct{}"
       }
     ]
   },

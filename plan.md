@@ -15,6 +15,15 @@ including its recursive Plane/Ray/bounds dependencies, then Color and Viewport.
 including reference-class identity, the formal BCL collection projection, and
 binary32 tangent/evaluation/loop behavior.
 
+**Foundation 4 status:** qualified for the complete managed PackedVector
+family and exhaustive raw-pattern behavior.
+
+**Foundation 5 status:** qualified for the complete managed VertexElement
+descriptor closure.
+
+**Foundation 6 status:** qualified for the root PlayerIndex enum and the final
+Keyboard overload through the unchanged process keyboard route.
+
 This file is normative. `NEXT.md` is the resumable handoff; generated reports
 are evidence and must not replace the rules here.
 
@@ -284,6 +293,43 @@ draw/GPU route, or CNA ABI function.
 FOUNDATION_MILESTONE_5_COMPLETE=true
 ```
 
+## Foundation 6 PlayerIndex and Keyboard policy
+
+Foundation 6 completes exactly `Microsoft.Xna.Framework.PlayerIndex` and the
+sole missing `Input.Keyboard.GetState(PlayerIndex)` member. `PlayerIndex` is a
+root-Framework, non-flags named `int32` enum with explicit `One=0`, `Two=1`,
+`Three=2`, and `Four=3` constants. Arbitrary underlying values remain
+representable and are not validated.
+
+Direct IL from the hash-matched XNA 4.0 Windows assembly proves that the
+player-index overload never loads or otherwise consumes its argument. Both Go
+overloads therefore call the same private process keyboard-state helper and
+retain the same active-Game, callback, owner-thread, native error, and value
+snapshot semantics. No player-aware CNA route exists or was added.
+
+## Foundation 6 qualification evidence
+
+- [x] Independently verify the two-type, seven-source-identity/six-Go-identity closure.
+- [x] Complete PlayerIndex and Keyboard with compiler-measured local strict zero.
+- [x] Preserve undefined `int32` enum values and reject range-validation regressions.
+- [x] Prove from direct IL that `GetState(PlayerIndex)` does not read its argument.
+- [x] Prove identical native HEADLESS snapshots for all four values and raw `12345`.
+- [x] Prove the same requirement before Run, during callbacks, and after shutdown.
+- [x] Grow the PURE_XNA_DERIVED corpus from 227 to 234 assertions with zero failures.
+- [x] Grow verifier mutations from 47 to 58 focused cases.
+- [x] Preserve every mismatch, leak, allowlist, and unmeasured counter at zero.
+- [x] Keep all CNA ABI measurements and symbols unchanged.
+- [x] Requalify Go, native stress, unchanged template, artifact, and isolated-consumer gates.
+
+Keyboard moves from partial to complete. Normal strict verification remains red
+only for 199 genuinely missing types and 179 members on five explicitly
+deferred native/runtime partial types. Exact evidence is in
+`docs/player-index-keyboard-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_6_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -293,11 +339,6 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-The regenerated scoreboard and public-signature dependency graph select one
-next closure: the standalone non-flags `PlayerIndex` enum plus the sole missing
-`Keyboard.GetState(PlayerIndex)` overload. Direct XNA IL shows that the
-overload ignores its player argument and reads the same process keyboard state
-as the existing route, so this can complete `Keyboard` without a CNA ABI
-addition. Recompute that closure before implementation. Do not mix it with
-GamePad, `IVertexType`, `VertexDeclaration`, Design, Content, Effects/3D, or
-unrelated native partial cleanup.
+After Foundation 6, regenerate the scoreboard and dependency graph before
+selecting one next closure. Do not infer that GamePad is next merely because
+PlayerIndex now exists, and do not combine independent families.

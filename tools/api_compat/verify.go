@@ -15,6 +15,11 @@ var vertexElementClosureTypes = []string{
 	"Microsoft.Xna.Framework.Graphics.VertexElementUsage",
 }
 
+var playerIndexKeyboardClosureTypes = []string{
+	"Microsoft.Xna.Framework.PlayerIndex",
+	"Microsoft.Xna.Framework.Input.Keyboard",
+}
+
 var adapterTypes = map[string]bool{
 	"EventSubscription": true,
 	"GameCallbacks":     true,
@@ -173,6 +178,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 		result.PackedVectorTypeMeasurements = append(result.PackedVectorTypeMeasurements, measurement)
 	}
 	result.VertexElementClosure = measureVertexElementClosure(expected, actual, typeDiagnostics)
+	result.PlayerIndexKeyboardClosure = measurePlayerIndexKeyboardClosure(expected, actual, typeDiagnostics)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -204,6 +210,48 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+func measurePlayerIndexKeyboardClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) playerIndexKeyboardClosure {
+	measurement := playerIndexKeyboardClosure{
+		SourceTypes: len(playerIndexKeyboardClosureTypes),
+		Status:      "FAIL",
+	}
+	for _, identity := range playerIndexKeyboardClosureTypes {
+		owner := expected.typeForXNA(identity)
+		if owner == nil {
+			continue
+		}
+		row := playerIndexTypeMeasurement{
+			XNA:               owner.XNA,
+			GoName:            owner.GoName,
+			SourceMembers:     owner.SourceMembers,
+			ExpectedGoMembers: len(owner.Members),
+			LocalDiagnostics:  typeDiagnostics[owner.XNA],
+			ExpectedKind:      owner.Kind,
+			ActualKind:        "missing",
+		}
+		measurement.SourceIdentities += row.SourceMembers
+		measurement.MappedGoIdentities += row.ExpectedGoMembers
+		measurement.LocalDiagnostics += row.LocalDiagnostics
+		if target := actual.Types[owner.Key]; target != nil {
+			measurement.TargetTypes++
+			row.ActualKind = target.Kind
+			row.ActualUnderlying = target.Underlying
+			for _, memberKey := range owner.Members {
+				if actual.Members[memberKey] != nil {
+					row.TargetGoMembers++
+				}
+			}
+			measurement.TargetGoIdentities += row.TargetGoMembers
+		}
+		measurement.TypeMeasurements = append(measurement.TypeMeasurements, row)
+	}
+	if measurement.SourceTypes == 2 && measurement.SourceIdentities == 7 && measurement.MappedGoIdentities == 6 &&
+		measurement.TargetTypes == 2 && measurement.TargetGoIdentities == 6 && measurement.LocalDiagnostics == 0 {
+		measurement.Status = "PASS"
+	}
+	return measurement
 }
 
 func expectedTypeForActualMember(expected *expectedSurface, key symbolKey) *expectedType {

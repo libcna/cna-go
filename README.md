@@ -1,7 +1,7 @@
 # CNA-Go
 
 > **Status:** early, measured binding foundation — functional for the qualified
-> Foundation 1 runtime and Foundation 2/3/4/5 managed closures, far from full
+> Foundation 1 runtime and Foundation 2/3/4/5/6 managed/API closures, far from full
 > XNA compatibility.
 
 CNA-Go maps Microsoft XNA Framework 4.0 namespaces to Go import paths and
@@ -25,8 +25,8 @@ nor native handles.
 
 The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,243 expected Go members. The current target has 57 types and 1,317 members:
-51 types are complete, six native/runtime types are partial, and 200 are
+3,243 expected Go members. The current target has 58 types and 1,322 members:
+53 types are complete, five native/runtime types are partial, and 199 are
 missing. The strict verifier remains red because most XNA surface is
 intentionally absent. Every mismatch, leak, allowlist, and unmeasured-category
 gate is green.
@@ -88,6 +88,17 @@ with no ABI expansion:
   formatting;
 - a 227-observation `PURE_XNA_DERIVED` corpus with zero failures.
 
+Foundation 6 completes the root PlayerIndex enum and Keyboard surface without
+ABI expansion:
+
+- exact non-flags `int32` values `One=0`, `Two=1`, `Three=2`, and `Four=3`;
+- arbitrary raw enum values remain representable and are never validated;
+- `KeyboardGetStateByPlayerIndex(framework.PlayerIndex)` uses the same process
+  keyboard route and runtime/error requirements as `KeyboardGetStateByNone`;
+- direct XNA IL proves the player argument is never read;
+- Keyboard moves from partial to complete, with a 234-observation corpus and
+  zero failures.
+
 See [geometry and transform evidence](docs/geometry-transform-evidence.md) for
 the computed closure, mapping decisions, conventions, and local strict-zero
 matrix.
@@ -102,6 +113,10 @@ exhaustive sweeps, and the 19-type local strict-zero matrix.
 See [VertexElement evidence](docs/vertex-element-evidence.md) for the exact
 three-type closure, property expansion, undefined-enum behavior, hash/string
 fixtures, and local strict-zero matrix.
+
+See [PlayerIndex and Keyboard evidence](docs/player-index-keyboard-evidence.md)
+for the enum table, direct unused-argument IL proof, shared runtime route, and
+local strict-zero matrix.
 
 The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
@@ -149,7 +164,7 @@ go run ./tools/native_stress
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its 380 missing-surface diagnostics are the work queue, not a
+surface exists; its 378 missing-surface diagnostics are the work queue, not a
 compatibility claim.
 The native ABI and stress commands require the qualified native environment.
 
