@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 262,
-    "ASSERTIONS": 262,
+    "OBSERVATIONS": 268,
+    "ASSERTIONS": 268,
     "FAILURES": 0
   },
   "observations": [
@@ -282,6 +282,54 @@
     {
       "id": "surface-format.negative-raw",
       "group": "SURFACE_FORMAT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "depth-format.complete-raw-table",
+      "group": "DEPTH_FORMAT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "None=0,Depth16=1,Depth24=2,Depth24Stencil8=3",
+      "actual": "None=0,Depth16=1,Depth24=2,Depth24Stencil8=3",
+      "passed": true
+    },
+    {
+      "id": "depth-format.underlying-system-int32",
+      "group": "DEPTH_FORMAT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "depth-format.flags",
+      "group": "DEPTH_FORMAT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "depth-format.zero-value-none",
+      "group": "DEPTH_FORMAT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "depth-format.arbitrary-positive-raw",
+      "group": "DEPTH_FORMAT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "4,12345",
+      "actual": "4,12345",
+      "passed": true
+    },
+    {
+      "id": "depth-format.negative-raw",
+      "group": "DEPTH_FORMAT",
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": -1,
       "actual": -1,

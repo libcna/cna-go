@@ -183,6 +183,21 @@ func runCorpus() corpusReport {
 	checkGoProjection("surface-format.arbitrary-positive-raw", "SURFACE_FORMAT", "20,12345", fmt.Sprintf("%d,%d", graphics.SurfaceFormat(20), graphics.SurfaceFormat(12345)))
 	checkGoProjection("surface-format.negative-raw", "SURFACE_FORMAT", int32(-1), int32(graphics.SurfaceFormat(-1)))
 
+	check("depth-format.complete-raw-table", "DEPTH_FORMAT", "None=0,Depth16=1,Depth24=2,Depth24Stencil8=3", fmt.Sprintf(
+		"None=%d,Depth16=%d,Depth24=%d,Depth24Stencil8=%d",
+		graphics.DepthFormatNone,
+		graphics.DepthFormatDepth16,
+		graphics.DepthFormatDepth24,
+		graphics.DepthFormatDepth24Stencil8,
+	))
+	depthFormatKind := reflect.TypeOf(graphics.DepthFormatNone).Kind()
+	check("depth-format.underlying-system-int32", "DEPTH_FORMAT", "System.Int32", map[reflect.Kind]string{reflect.Int32: "System.Int32"}[depthFormatKind])
+	check("depth-format.flags", "DEPTH_FORMAT", false, false)
+	var zeroDepthFormat graphics.DepthFormat
+	checkGoProjection("depth-format.zero-value-none", "DEPTH_FORMAT", graphics.DepthFormatNone, zeroDepthFormat)
+	checkGoProjection("depth-format.arbitrary-positive-raw", "DEPTH_FORMAT", "4,12345", fmt.Sprintf("%d,%d", graphics.DepthFormat(4), graphics.DepthFormat(12345)))
+	checkGoProjection("depth-format.negative-raw", "DEPTH_FORMAT", int32(-1), int32(graphics.DepthFormat(-1)))
+
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))
 	check("math.lerp", "MathHelper", bits(4), bits(framework.MathHelperLerp(2, 10, 0.25)))

@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 57,
+    "COMPLETE_TYPES": 58,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 195,
-    "MISSING_TYPES": 195,
+    "MISSING_TYPE": 194,
+    "MISSING_TYPES": 194,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1353,
-    "TARGET_TYPES": 62,
-    "TOTAL_DIAGNOSTICS": 372,
+    "TARGET_MEMBERS": 1357,
+    "TARGET_TYPES": 63,
+    "TOTAL_DIAGNOSTICS": 371,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -642,12 +642,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.CullMode",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:CullMode",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.DepthFormat",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DepthFormat",
       "message": "mapped Go type is absent"
     },
     {
@@ -2293,6 +2287,7 @@
     "Microsoft.Xna.Framework.GameTime",
     "Microsoft.Xna.Framework.Graphics.BufferUsage",
     "Microsoft.Xna.Framework.Graphics.ClearOptions",
+    "Microsoft.Xna.Framework.Graphics.DepthFormat",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
@@ -2607,7 +2602,6 @@
     "Microsoft.Xna.Framework.Graphics.CompareFunction",
     "Microsoft.Xna.Framework.Graphics.CubeMapFace",
     "Microsoft.Xna.Framework.Graphics.CullMode",
-    "Microsoft.Xna.Framework.Graphics.DepthFormat",
     "Microsoft.Xna.Framework.Graphics.DepthStencilState",
     "Microsoft.Xna.Framework.Graphics.DeviceLostException",
     "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
@@ -3614,6 +3608,46 @@
         "name": "HdrBlendable",
         "expectedValue": "19",
         "actualValue": "19",
+        "status": "PASS"
+      }
+    ],
+    "status": "PASS"
+  },
+  "depthFormatClosure": {
+    "sourceTypes": 1,
+    "sourceIdentities": 5,
+    "expectedGoIdentities": 4,
+    "targetTypes": 1,
+    "targetGoIdentities": 4,
+    "localDiagnostics": 0,
+    "expectedKind": "enum",
+    "actualKind": "named",
+    "underlyingType": "int32",
+    "flags": false,
+    "valueStorageExcluded": true,
+    "values": [
+      {
+        "name": "None",
+        "expectedValue": "0",
+        "actualValue": "0",
+        "status": "PASS"
+      },
+      {
+        "name": "Depth16",
+        "expectedValue": "1",
+        "actualValue": "1",
+        "status": "PASS"
+      },
+      {
+        "name": "Depth24",
+        "expectedValue": "2",
+        "actualValue": "2",
+        "status": "PASS"
+      },
+      {
+        "name": "Depth24Stencil8",
+        "expectedValue": "3",
+        "actualValue": "3",
         "status": "PASS"
       }
     ],

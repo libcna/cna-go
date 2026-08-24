@@ -115,5 +115,20 @@
   {"id":"surface-format-value-storage-projected","mutation":"surface_format_value_storage_projected","category":"UNEXPECTED_MEMBER"},
   {"id":"surface-format-extra-public-constant","mutation":"surface_format_extra_constant","category":"UNEXPECTED_MEMBER"},
   {"id":"surface-format-exported-helper-method","mutation":"surface_format_exported_helper","category":"UNEXPECTED_MEMBER"},
-  {"id":"surface-format-renamed-bgr565","mutation":"surface_format_renamed_bgr565","category":"MISSING_MEMBER"}
+  {"id":"surface-format-renamed-bgr565","mutation":"surface_format_renamed_bgr565","category":"MISSING_MEMBER"},
+  {"id":"depth-format-missing","mutation":"depth_format_missing","category":"MISSING_TYPE"},
+  {"id":"depth-format-wrong-package","mutation":"depth_format_wrong_package","category":"MISSING_TYPE"},
+  {"id":"depth-format-wrong-kind","mutation":"depth_format_wrong_kind","category":"TYPE_KIND_MISMATCH"},
+  {"id":"depth-format-wrong-underlying-type","mutation":"depth_format_wrong_underlying_type","category":"TYPE_KIND_MISMATCH"},
+  {"id":"depth-format-accidentally-flags","mutation":"depth_format_accidentally_flags","category":"FLAGS_MAPPING_MISMATCH"},
+  {"id":"depth-format-none-wrong-value","mutation":"depth_format_wrong_none_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"depth-format-depth16-wrong-value","mutation":"depth_format_wrong_depth16_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"depth-format-depth24-wrong-value","mutation":"depth_format_wrong_depth24_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"depth-format-depth24-stencil8-wrong-value","mutation":"depth_format_wrong_depth24_stencil8_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"depth-format-missing-depth24","mutation":"depth_format_missing_depth24","category":"MISSING_MEMBER"},
+  {"id":"depth-format-missing-depth24-stencil8","mutation":"depth_format_missing_depth24_stencil8","category":"MISSING_MEMBER"},
+  {"id":"depth-format-value-storage-projected","mutation":"depth_format_value_storage_projected","category":"UNEXPECTED_MEMBER"},
+  {"id":"depth-format-extra-public-constant","mutation":"depth_format_extra_constant","category":"UNEXPECTED_MEMBER"},
+  {"id":"depth-format-exported-helper-method","mutation":"depth_format_exported_helper","category":"UNEXPECTED_MEMBER"},
+  {"id":"depth-format-renamed-depth24-stencil8","mutation":"depth_format_renamed_depth24_stencil8","category":"MISSING_MEMBER"}
 ]

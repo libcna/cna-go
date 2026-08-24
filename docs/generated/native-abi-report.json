@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "status": "PASS",
-  "header_root": "../../cna/modules/c-api/include",
+  "header_root": "canonical-cna/modules/c-api/include",
   "native_library": "libcna_c_api.so",
   "native_library_sha256": "e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f",
   "abi_version": "0.7.0",

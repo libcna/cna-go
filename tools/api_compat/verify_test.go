@@ -394,6 +394,33 @@ func TestSurfaceFormatMappedContract(t *testing.T) {
 	}
 }
 
+func TestDepthFormatMappedContract(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	format := surface.typeForXNA(depthFormatIdentity)
+	if format == nil || format.Kind != "enum" || format.Flags || format.SourceMembers != 5 || len(format.Members) != 4 || len(format.Interfaces) != 0 {
+		t.Fatalf("DepthFormat projection = %+v", format)
+	}
+	for _, wanted := range depthFormatValues {
+		member := surface.Members[symbolKey{Package: format.PackagePath, Name: "DepthFormat" + wanted.Name}]
+		if member == nil || member.GoKind != "const" || member.EnumValue == nil || *member.EnumValue != wanted.Value || !equalStrings(member.Results, []string{"DepthFormat"}) {
+			t.Fatalf("DepthFormat%s projection = %+v", wanted.Name, member)
+		}
+	}
+	for _, name := range []string{"Value__", "value__"} {
+		if surface.Members[symbolKey{Package: format.PackagePath, Name: "DepthFormat" + name}] != nil {
+			t.Fatalf("enum storage DepthFormat%s was projected", name)
+		}
+	}
+	if !enumHasNamedZero(surface, format) {
+		t.Fatal("DepthFormat None=0 was not measured as the source-declared zero literal")
+	}
+}
+
 func TestFlagsEnumWithoutNamedZeroIsValidGenerically(t *testing.T) {
 	int32Type := "System.Int32"
 	enumType := "Microsoft.Xna.Framework.Graphics.ProbeFlagsNoZero"
@@ -533,6 +560,37 @@ func TestSurfaceFormatCurrentSurfaceAndLocalClosure(t *testing.T) {
 	for _, row := range closure.Values {
 		if row.Status != "PASS" || row.ActualValue != row.ExpectedValue {
 			t.Fatalf("SurfaceFormat value row = %+v", row)
+		}
+	}
+}
+
+func TestDepthFormatCurrentSurfaceAndLocalClosure(t *testing.T) {
+	reference := loadPinnedContract(t)
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("type errors: %v", actual.TypeErrors)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	closure := result.DepthFormatClosure
+	if closure.Status != "PASS" || closure.SourceTypes != 1 || closure.SourceIdentities != 5 || closure.ExpectedGoIdentities != 4 ||
+		closure.TargetTypes != 1 || closure.TargetGoIdentities != 4 || closure.LocalDiagnostics != 0 || closure.ExpectedKind != "enum" ||
+		closure.ActualKind != "named" || closure.UnderlyingType != "int32" || closure.Flags || !closure.ValueStorageExcluded || len(closure.Values) != 4 {
+		t.Fatalf("DepthFormat closure = %+v", closure)
+	}
+	for _, row := range closure.Values {
+		if row.Status != "PASS" || row.ActualValue != row.ExpectedValue {
+			t.Fatalf("DepthFormat value row = %+v", row)
 		}
 	}
 }
@@ -861,7 +919,9 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "surface_format_") {
+			if strings.HasPrefix(fixture.Mutation, "depth_format_") {
+				expected, actual = depthFormatMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "surface_format_") {
 				expected, actual = surfaceFormatMutationCase(t, fixture.Mutation)
 			} else if strings.HasPrefix(fixture.Mutation, "clear_options_") {
 				expected, actual = clearOptionsMutationCase(t, fixture.Mutation)
@@ -882,6 +942,104 @@ func TestMutationFixtures(t *testing.T) {
 			}
 		})
 	}
+}
+
+func depthFormatMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(depthFormatIdentity)
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   5,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  4,
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			copiedType.Key: {Key: copiedType.Key, Kind: "named", Underlying: "int32"},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		value := *copiedMember.EnumValue
+		actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "const", Results: []string{"DepthFormat"}, Value: &value}
+	}
+
+	const graphicsPackage = modulePath + "/Microsoft/Xna/Framework/Graphics"
+	const frameworkPackage = modulePath + "/Microsoft/Xna/Framework"
+	typeKey := symbolKey{Package: graphicsPackage, Name: "DepthFormat"}
+	constant := func(name string) symbolKey { return symbolKey{Package: graphicsPackage, Name: "DepthFormat" + name} }
+	setWrongValue := func(name, value string) { actual.Members[constant(name)].Value = &value }
+	switch mutation {
+	case "depth_format_missing":
+		delete(actual.Types, typeKey)
+	case "depth_format_wrong_package":
+		movedType := *actual.Types[typeKey]
+		delete(actual.Types, typeKey)
+		movedType.Key.Package = frameworkPackage
+		actual.Types[movedType.Key] = &movedType
+		for _, wanted := range depthFormatValues {
+			key := constant(wanted.Name)
+			movedMember := *actual.Members[key]
+			delete(actual.Members, key)
+			movedMember.Key.Package = frameworkPackage
+			actual.Members[movedMember.Key] = &movedMember
+		}
+	case "depth_format_wrong_kind":
+		actual.Types[typeKey].Kind = "struct"
+	case "depth_format_wrong_underlying_type":
+		actual.Types[typeKey].Underlying = "uint32"
+	case "depth_format_accidentally_flags":
+		actual.Types[typeKey].FlagsMarker = true
+	case "depth_format_wrong_none_value":
+		setWrongValue("None", "1")
+	case "depth_format_wrong_depth16_value":
+		setWrongValue("Depth16", "2")
+	case "depth_format_wrong_depth24_value":
+		setWrongValue("Depth24", "3")
+	case "depth_format_wrong_depth24_stencil8_value":
+		setWrongValue("Depth24Stencil8", "4")
+	case "depth_format_missing_depth24":
+		delete(actual.Members, constant("Depth24"))
+	case "depth_format_missing_depth24_stencil8":
+		delete(actual.Members, constant("Depth24Stencil8"))
+	case "depth_format_value_storage_projected":
+		key := constant("Value__")
+		value := "0"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"int32"}, Value: &value}
+	case "depth_format_extra_constant":
+		key := constant("Depth32")
+		value := "4"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"DepthFormat"}, Value: &value}
+	case "depth_format_exported_helper":
+		key := symbolKey{Package: graphicsPackage, Receiver: "DepthFormat", Name: "String"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"string"}}
+	case "depth_format_renamed_depth24_stencil8":
+		original := constant("Depth24Stencil8")
+		renamed := constant("Depth24Stencil08")
+		member := *actual.Members[original]
+		delete(actual.Members, original)
+		member.Key = renamed
+		actual.Members[renamed] = &member
+	default:
+		t.Fatalf("unknown DepthFormat mutation %q", mutation)
+	}
+	return expected, actual
 }
 
 func surfaceFormatMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {

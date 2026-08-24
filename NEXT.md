@@ -2,54 +2,37 @@
 
 ## Current state
 
-Foundation Milestones 1 through 10 are complete. Milestone 10 completes exactly:
+Foundation Milestones 1 through 11 are complete. Milestone 11 completes exactly:
 
 ```text
-Microsoft.Xna.Framework.Graphics.SurfaceFormat
+Microsoft.Xna.Framework.Graphics.DepthFormat
 ```
 
-Foundation 9 is committed and synchronized at
-`e402a85bac00bb82ea429a2a6704e9f5d8b0058f`. Foundation 10 is fully qualified
-on top and intentionally uncommitted. Preserve the current worktree and the
-established namespace, enum, interop, and measured-absence rules.
+Foundation 10 is committed and synchronized at
+`06d084afbd2414af826c8219116e74aaec96a4a4`. Foundation 11 is fully
+qualified on top. Publication was explicitly authorized after qualification.
+Preserve the established namespace, enum, interop, and measured-absence rules.
 
-## Foundation 10 projection
+## Foundation 11 projection
 
-`SurfaceFormat` belongs directly to the Graphics package. It is a non-flags
-named `int32` enum with 20 explicit constants:
+`DepthFormat` belongs directly to the Graphics package. It is a non-flags
+named `int32` enum with four explicit constants:
 
 ```text
-Color=0
-Bgr565=1
-Bgra5551=2
-Bgra4444=3
-Dxt1=4
-Dxt3=5
-Dxt5=6
-NormalizedByte2=7
-NormalizedByte4=8
-Rgba1010102=9
-Rg32=10
-Rgba64=11
-Alpha8=12
-Single=13
-Vector2=14
-Vector4=15
-HalfSingle=16
-HalfVector2=17
-HalfVector4=18
-HdrBlendable=19
+None=0
+Depth16=1
+Depth24=2
+Depth24Stencil8=3
 ```
 
-The milestone request said 20 CLR identities and 19 Go identities, but the
-pinned contract and the required table contain 20 named literals plus
-synthetic `value__`. The authoritative closure is therefore 21 source
-identities and 20 mapped Go identities. Omitting a literal to force 20/19 would
-violate the contract.
+The pinned contract contains five CLR field identities: four named literals
+plus synthetic `value__`. The established enum-storage rule excludes
+`value__`, leaving exactly four mapped Go identities.
 
-There is no `iota`, `// xna:flags`, validation, Stringer, parser, size/format
-helper, PackedVector dependency, native enum mirror, or GPU mapping. Go zero
-equals `Color`; raw `20`, `12345`, and `-1` remain representable.
+There is no `iota`, `// xna:flags`, validation, Stringer, parser,
+depth/stencil-bit helper, SurfaceFormat conversion, native enum mirror, or GPU
+mapping. Go zero equals `None`; raw `4`, `12345`, and `-1` remain
+representable.
 
 ## Structural scoreboard
 
@@ -58,14 +41,14 @@ The pinned contract remains 257 types / 2,964 members at SHA-256
 The formal mapping remains 257 expected Go types / 3,243 members.
 
 ```text
-TARGET_TYPES=62
-TARGET_MEMBERS=1353
-TOTAL_DIAGNOSTICS=372
-MISSING_TYPE=195
+TARGET_TYPES=63
+TARGET_MEMBERS=1357
+TOTAL_DIAGNOSTICS=371
+MISSING_TYPE=194
 MISSING_MEMBER=177
-COMPLETE_TYPES=57
+COMPLETE_TYPES=58
 PARTIAL_TYPES=5
-MISSING_TYPES=195
+MISSING_TYPES=194
 
 INTERFACE_WITNESS_PROJECTIONS=25
 PACKFROMVECTOR4_WITNESS_PROJECTIONS=17
@@ -76,9 +59,9 @@ Every unexpected-symbol, mapping-mismatch, native-leak, allowlist, and
 unmeasured counter is zero. The selected closure is:
 
 ```text
-SurfaceFormat source=21 expected-go=20 target-go=20 local=0
+DepthFormat source=5 expected-go=4 target-go=4 local=0
 kind=enum actual=named underlying=int32 flags=false
-value__-excluded=true all-20-raw-values=PASS status=PASS
+value__-excluded=true all-4-raw-values=PASS status=PASS
 ```
 
 The exact remaining partial types are unchanged:
@@ -93,34 +76,35 @@ Their combined missing-member count remains 177.
 
 ## Behavior and verifier evidence
 
-The behavior corpus has 262 observations, 262 assertions, and zero failures.
-`SURFACE_FORMAT=6`: three `PURE_XNA_DERIVED` facts cover the complete 20-value
-table, `System.Int32`, and `flags=false`; three `GO_LANGUAGE_PROJECTION` facts
-cover Color zero, arbitrary positive raw values, and a negative raw value.
+The behavior corpus has 268 observations, 268 assertions, and zero failures.
+`DEPTH_FORMAT=6`: three `PURE_XNA_DERIVED` facts cover the complete
+four-value table, `System.Int32`, and `flags=false`; three
+`GO_LANGUAGE_PROJECTION` facts cover None zero, arbitrary positive raw values,
+and a negative raw value.
 
-The verifier has 117 mutation cases. The 18 Foundation-10 cases reject missing
-or misplaced type, kind/underlying/flags errors, representative early/middle/
-late raw-value errors, missing middle/last values, projected `value__`, extra
-constant, exported helper, and renamed spelling. Every expected literal is
-generically raw-value checked. Manual allowlists and unmeasured categories are
-zero.
+The verifier has 132 mutation cases. The 15 Foundation-11 cases reject missing
+or misplaced type, kind/underlying/flags errors, every wrong raw value, missing
+middle/last values, projected `value__`, an extra constant, an exported
+String helper, and renamed spelling. Every expected literal is generically
+raw-value checked. Manual allowlists and unmeasured categories are zero.
 
-ClearOptions, BufferUsage, DisplayOrientation/SupportedOrientations,
-PlayerIndex/Keyboard, VertexElement, representative ordinary/flags enums, and
-the 262,400-pattern PackedVector sweep remain green.
+SurfaceFormat, ClearOptions, BufferUsage,
+DisplayOrientation/SupportedOrientations, PlayerIndex/Keyboard, VertexElement,
+representative ordinary/flags enums, and the 262,400-pattern PackedVector sweep
+remain green.
 
 ## Scope and native preservation
 
-All eleven reverse dependents remain deferred: DisplayMode,
-DisplayModeCollection, GraphicsAdapter, PresentationParameters, RenderTarget2D,
-RenderTargetCube, Texture, Texture2D's format constructor, Texture3D,
-TextureCube, and GraphicsDeviceManager format properties.
+All five direct DepthFormat reverse dependents remain deferred:
+GraphicsAdapter, PresentationParameters, RenderTarget2D, RenderTargetCube, and
+GraphicsDeviceManager.
 
-No actual pixel-format support is claimed. Compression, HDR, floating-point
-targets, upload/data paths, GPU negotiation, renderer mapping, and CNA mapping
-remain unimplemented. ABI measurements remain 23 bound functions, 67
-prototype type positions, 96 C/Go measurements, 28 layouts, two callbacks,
-and five constants with zero missing symbols or mismatches.
+No actual depth/stencil format support is claimed. Depth/stencil allocation,
+attachments, render targets, backbuffers, presentation configuration, testing,
+clearing, GPU negotiation, renderer mapping, and CNA mapping remain
+unimplemented. ABI measurements remain 23 bound functions, 67 prototype type
+positions, 96 C/Go measurements, 28 layouts, two callbacks, and five constants
+with zero missing symbols or mismatches.
 
 Native race stress retains 20 Game, recreation, texture, SpriteBatch,
 callback-error, and callback-panic cycles, 80 GC points, and zero
@@ -143,7 +127,7 @@ go test -race ./...
 go build ./...
 go build -trimpath ./...
 go run ./tools/api_compat --mode report
-go run ./tools/api_compat --mode strict       # expected 372 deferred diagnostics
+go run ./tools/api_compat --mode strict       # expected 371 deferred diagnostics
 go run ./tools/api_compat --mode leak-only
 go run ./tools/behavior
 go run ./tools/packed_vector_qualify
@@ -160,32 +144,32 @@ recursively describe its own hash.
 
 ## Worktree provenance
 
-Foundation 10 started on clean `develop` with `HEAD` and `origin/develop` both
-at `e402a85bac00bb82ea429a2a6704e9f5d8b0058f`, the committed and synchronized
-Foundation-9 milestone. Foundation 10 remains intentionally uncommitted after
-qualification. History was not rewritten.
+Foundation 11 started on clean `develop` with `HEAD` and
+`origin/develop` both at
+`06d084afbd2414af826c8219116e74aaec96a4a4`, the committed and synchronized
+Foundation-10 milestone. Foundation 11 was qualified without commit or push;
+publication was subsequently explicitly authorized. History was not rewritten.
 
 ## One next dependency-complete milestone
 
-The regenerated 195-node missing inventory and public-signature graph still
-contain 72 nodes with no missing XNA signature dependency. Runtime/design
-classes and effect interfaces rank higher by raw reverse fan-out but are not
-pure managed public-data leaves. Among such leaves, the highest current reverse
-fan-out is five. The single next selected closure is therefore:
+The regenerated 194-node missing inventory and public-signature graph contain
+71 nodes with no missing XNA signature dependency. Runtime/design classes and
+effect interfaces rank higher by raw reverse fan-out but are not small pure
+managed public-data leaves. Among those leaves, the highest current reverse
+fan-out is four. The single next selected closure is therefore:
 
 ```text
-Microsoft.Xna.Framework.Graphics.DepthFormat
+Microsoft.Xna.Framework.Graphics.GraphicsProfile
 ```
 
-`DepthFormat` has no missing public-signature dependency and is referenced by
-GraphicsAdapter, PresentationParameters, RenderTarget2D, RenderTargetCube, and
-GraphicsDeviceManager. Selection does not authorize any of those consumers,
-any SurfaceFormat consumer, depth-buffer runtime behavior, or another enum.
-Its pinned metadata and behavior must be independently inspected in the next
-milestone.
+`GraphicsProfile` has no missing public-signature dependency and is
+referenced by GraphicsAdapter, GraphicsDevice, GraphicsDeviceInformation, and
+GraphicsDeviceManager. Selection does not authorize any consumer, device
+profile behavior, capability query, native mapping, or another enum. Its pinned
+metadata and behavior must be independently inspected in the next milestone.
 
 ```text
 SELECTED_ONLY=true
 STARTED=false
-FOUNDATION_MILESTONE_10_COMPLETE=true
+FOUNDATION_MILESTONE_11_COMPLETE=true
 ```

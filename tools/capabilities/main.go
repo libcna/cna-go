@@ -42,7 +42,7 @@ var requiredIDs = []string{
 	"graphics-device", "viewport", "clear", "texture-stream", "spritebatch",
 	"keyboard", "visible-rendering", "content-xnb", "effects-3d", "audio",
 	"media", "storage", "linux-amd64", "windows", "macos", "android",
-	"web-wasm", "buffer-usage", "surface-format",
+	"web-wasm", "buffer-usage", "surface-format", "depth-format",
 }
 
 func main() {
