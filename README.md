@@ -1,7 +1,8 @@
 # CNA-Go
 
 > **Status:** early, measured binding foundation — functional for the qualified
-> Foundation 1 closure, far from full XNA compatibility.
+> Foundation 1 runtime and Foundation 2 managed-geometry closures, far from full
+> XNA compatibility.
 
 CNA-Go maps Microsoft XNA Framework 4.0 namespaces to Go import paths and
 executes native-backed APIs only through CNA's canonical C ABI:
@@ -24,8 +25,11 @@ nor native handles.
 
 The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,243 expected Go members. The strict verifier remains red because most XNA
-surface is intentionally absent. Its leak/mapping gates are green.
+3,243 expected Go members. The current target has 29 types and 1,033 members:
+23 types are complete, six native/runtime types are partial, and 228 are
+missing. The strict verifier remains red because most XNA surface is
+intentionally absent. Every mismatch, leak, allowlist, and unmeasured-category
+gate is green.
 
 Foundation 1 qualifies on **Linux amd64 desktop with cgo**:
 
@@ -38,6 +42,20 @@ Foundation 1 qualifies on **Linux amd64 desktop with cgo**:
 - native keyboard snapshots with exact XNA `Keys` values;
 - a complete first managed closure measured by the verifier and behavior
   corpus.
+
+Foundation 2 additionally qualifies, as managed Go with no ABI expansion:
+
+- complete `Vector2`, `Vector3`, `Vector4`, `Quaternion`, and `Matrix` values;
+- the recursive `Plane`, `Ray`, bounding box/sphere/frustum, and containment
+  dependency closure;
+- explicit nullable `(value, hasValue)` intersection results;
+- complete `Color`, including its 141 predefined static colors;
+- managed `Viewport.Project` and `Viewport.Unproject`;
+- a 93-observation PURE_XNA_DERIVED exact-bit behavior corpus.
+
+See [geometry and transform evidence](docs/geometry-transform-evidence.md) for
+the computed closure, mapping decisions, conventions, and local strict-zero
+matrix.
 
 The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
@@ -84,7 +102,8 @@ go run ./tools/native_stress
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its diagnostics are the work queue, not a compatibility claim.
+surface exists; its 408 missing-surface diagnostics are the work queue, not a
+compatibility claim.
 The native ABI and stress commands require the qualified native environment.
 
 The normative rules are in [plan.md](plan.md), the language projection in

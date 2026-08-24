@@ -36,6 +36,35 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	}
 }
 
+func TestNullableMappingKeepsInputReturnOutAndErrorDistinct(t *testing.T) {
+	const nullableSingle = "System.Nullable`1[System.Single]"
+	owner := &expectedType{PackagePath: modulePath + "/Microsoft/Xna/Framework"}
+	surface := &expectedSurface{}
+
+	if got := mapType(surface, nil, owner, nullableSingle); got != "*float32" {
+		t.Fatalf("nullable input = %q, want *float32", got)
+	}
+	if got := typeShape(nullableSingle); got != "NullableOfSingle" {
+		t.Fatalf("nullable source shape = %q, want NullableOfSingle", got)
+	}
+	if got := mapReturn(surface, nil, owner, stringPointer(nullableSingle)); !equalStrings(got, []string{"float32", "bool"}) {
+		t.Fatalf("nullable return = %v, want [float32 bool]", got)
+	}
+	inputs, outputs, directed := mapParameters(surface, nil, owner, []contractParameter{
+		{Name: "value", Type: nullableSingle},
+		{Name: "result", Type: nullableSingle + "&", Out: true},
+	})
+	if !equalStrings(inputs, []string{"*float32"}) || !equalStrings(outputs, []string{"float32", "bool"}) || !directed {
+		t.Fatalf("nullable parameters = inputs %v outputs %v directed %t", inputs, outputs, directed)
+	}
+	withError := append(append([]string(nil), mapReturn(surface, nil, owner, stringPointer(nullableSingle))...), "error")
+	if !equalStrings(withError, []string{"float32", "bool", "error"}) {
+		t.Fatalf("nullable/error result = %v", withError)
+	}
+}
+
+func stringPointer(value string) *string { return &value }
+
 func TestMutationFixtures(t *testing.T) {
 	data, err := os.ReadFile("testdata/mutations.json")
 	if err != nil {

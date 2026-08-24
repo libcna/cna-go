@@ -269,7 +269,7 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 				get.Receiver = ""
 			}
 			get.Parameters = mapIndexerParameters(s, byIdentity, owner, m.Parameters)
-			get.Results = []string{mappedType}
+			get.Results = mapResultType(s, byIdentity, owner, valueOrEmpty(m.Type))
 			if isFallible(t, m) {
 				get.Results = append(get.Results, "error")
 				get.ErrorAdded = true
@@ -401,7 +401,7 @@ func mapParameters(s *expectedSurface, byIdentity map[string]*contractType, owne
 	for _, p := range params {
 		mapped := mapType(s, byIdentity, owner, p.Type)
 		if p.Out {
-			outputs = append(outputs, strings.TrimPrefix(mapped, "*"))
+			outputs = append(outputs, mapResultType(s, byIdentity, owner, p.Type)...)
 			hasDirection = true
 			continue
 		}
@@ -423,13 +423,19 @@ func mapReturn(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 	if raw == nil || *raw == "System.Void" {
 		return nil
 	}
-	return []string{mapType(s, byIdentity, owner, *raw)}
+	return mapResultType(s, byIdentity, owner, *raw)
+}
+
+func mapResultType(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, raw string) []string {
+	if inner, ok := nullableInner(raw); ok {
+		return []string{strings.TrimPrefix(mapType(s, byIdentity, owner, inner), "*"), "bool"}
+	}
+	return []string{mapType(s, byIdentity, owner, raw)}
 }
 
 func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, raw string) string {
 	raw = strings.TrimSuffix(raw, "&")
-	if strings.HasPrefix(raw, "System.Nullable`1[") && strings.HasSuffix(raw, "]") {
-		inner := strings.TrimSuffix(strings.TrimPrefix(raw, "System.Nullable`1["), "]")
+	if inner, ok := nullableInner(raw); ok {
 		return "*" + strings.TrimPrefix(mapType(s, byIdentity, owner, inner), "*")
 	}
 	if strings.HasSuffix(raw, "[]") {
@@ -465,6 +471,14 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 		name = "*" + name
 	}
 	return name
+}
+
+func nullableInner(raw string) (string, bool) {
+	raw = strings.TrimSuffix(raw, "&")
+	if !strings.HasPrefix(raw, "System.Nullable`1[") || !strings.HasSuffix(raw, "]") {
+		return "", false
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(raw, "System.Nullable`1["), "]"), true
 }
 
 func isFallible(t contractType, m contractMember) bool {

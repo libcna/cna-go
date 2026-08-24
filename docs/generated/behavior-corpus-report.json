@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations",
   "summary": {
-    "OBSERVATIONS": 27,
-    "ASSERTIONS": 27,
+    "OBSERVATIONS": 93,
+    "ASSERTIONS": 93,
     "FAILURES": 0
   },
   "observations": [
@@ -194,6 +194,468 @@
       "group": "GameTime",
       "expected": true,
       "actual": true,
+      "passed": true
+    },
+    {
+      "id": "vector2.normalize.zero",
+      "group": "VECTOR2",
+      "expected": "0xffc00000,0xffc00000",
+      "actual": "0xffc00000,0xffc00000",
+      "passed": true
+    },
+    {
+      "id": "vector2.divide.reciprocal-first",
+      "group": "VECTOR2",
+      "expected": "0x3edb6db8",
+      "actual": "0x3edb6db8",
+      "passed": true
+    },
+    {
+      "id": "vector2.transform.forward-overlap",
+      "group": "VECTOR2",
+      "expected": "0x41300000,0x41a80000",
+      "actual": "0x41300000,0x41a80000",
+      "passed": true
+    },
+    {
+      "id": "vector2.nan.equality",
+      "group": "VECTOR2",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "vector3.normalize.zero",
+      "group": "VECTOR3",
+      "expected": "0xffc00000,0xffc00000,0xffc00000",
+      "actual": "0xffc00000,0xffc00000,0xffc00000",
+      "passed": true
+    },
+    {
+      "id": "vector3.forward",
+      "group": "VECTOR3",
+      "expected": "0x00000000,0x00000000,0xbf800000",
+      "actual": "0x00000000,0x00000000,0xbf800000",
+      "passed": true
+    },
+    {
+      "id": "vector3.cross.handedness",
+      "group": "VECTOR3",
+      "expected": "0x00000000,0x00000000,0x3f800000",
+      "actual": "0x00000000,0x00000000,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "vector3.divide.reciprocal-first",
+      "group": "VECTOR3",
+      "expected": "0x40155556",
+      "actual": "0x40155556",
+      "passed": true
+    },
+    {
+      "id": "vector3.hash",
+      "group": "VECTOR3",
+      "expected": -1077936128,
+      "actual": -1077936128,
+      "passed": true
+    },
+    {
+      "id": "vector3.min.nan-order",
+      "group": "VECTOR3",
+      "expected": "0x40e00000,0xffc00000,0xffc00000",
+      "actual": "0x40e00000,0xffc00000,0xffc00000",
+      "passed": true
+    },
+    {
+      "id": "vector3.clamp.reversed",
+      "group": "VECTOR3",
+      "expected": "0x40000000,0x40000000,0x40000000",
+      "actual": "0x40000000,0x40000000,0x40000000",
+      "passed": true
+    },
+    {
+      "id": "vector4.normalize.zero",
+      "group": "VECTOR4",
+      "expected": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
+      "actual": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
+      "passed": true
+    },
+    {
+      "id": "vector4.negate.signed-zero",
+      "group": "VECTOR4",
+      "expected": "0x80000000,0x80000000,0x80000000,0x80000000",
+      "actual": "0x80000000,0x80000000,0x80000000,0x80000000",
+      "passed": true
+    },
+    {
+      "id": "vector4.divide.reciprocal-first",
+      "group": "VECTOR4",
+      "expected": "0x458099ca",
+      "actual": "0x458099ca",
+      "passed": true
+    },
+    {
+      "id": "quaternion.inverse.zero",
+      "group": "QUATERNION",
+      "expected": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
+      "actual": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
+      "passed": true
+    },
+    {
+      "id": "quaternion.multiply.order",
+      "group": "QUATERNION",
+      "expected": "0xce47a05e,0xcf03edf7,0x4fc9c4dd,0x5011d115",
+      "actual": "0xce47a05e,0xcf03edf7,0x4fc9c4dd,0x5011d115",
+      "passed": true
+    },
+    {
+      "id": "quaternion.slerp.branch",
+      "group": "QUATERNION",
+      "expected": "0xbd9a16ec,0x3e60d7e7,0x00000000,0x3f79023d",
+      "actual": "0xbd9a16ec,0x3e60d7e7,0x00000000,0x3f79023d",
+      "passed": true
+    },
+    {
+      "id": "quaternion.concatenate.order",
+      "group": "QUATERNION",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "quaternion.axis-angle.large",
+      "group": "QUATERNION",
+      "expected": "0x00000000,0x3f30464f,0x00000000,0xbf39a48f",
+      "actual": "0x00000000,0x3f30464f,0x00000000,0xbf39a48f",
+      "passed": true
+    },
+    {
+      "id": "quaternion.from-matrix",
+      "group": "QUATERNION",
+      "expected": "0x00000000,0x3eaf904c,0x00000000,0x3f707abb",
+      "actual": "0x00000000,0x3eaf904c,0x00000000,0x3f707abb",
+      "passed": true
+    },
+    {
+      "id": "matrix.translation.row-vector",
+      "group": "MATRIX",
+      "expected": "0x40a00000,0x40c00000,0x40e00000",
+      "actual": "0x40a00000,0x40c00000,0x40e00000",
+      "passed": true
+    },
+    {
+      "id": "matrix.inverse.product",
+      "group": "MATRIX",
+      "expected": "0x3f800000,0x00000000,0xb2000000,0x00000000,0x00000000,0x3f800000,0x00000000,0x00000000,0x33000000,0x00000000,0x3f800000,0x00000000,0x34000000,0x00000000,0x00000000,0x3f800000",
+      "actual": "0x3f800000,0x00000000,0xb2000000,0x00000000,0x00000000,0x3f800000,0x00000000,0x00000000,0x33000000,0x00000000,0x3f800000,0x00000000,0x34000000,0x00000000,0x00000000,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "matrix.invert.singular",
+      "group": "MATRIX",
+      "expected": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
+      "actual": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
+      "passed": true
+    },
+    {
+      "id": "matrix.identity.hash",
+      "group": "MATRIX",
+      "expected": -33554432,
+      "actual": -33554432,
+      "passed": true
+    },
+    {
+      "id": "matrix.rotation.large",
+      "group": "MATRIX",
+      "expected": "0x3d53e807,0xbf7fa83d",
+      "actual": "0x3d53e807,0xbf7fa83d",
+      "passed": true
+    },
+    {
+      "id": "matrix.perspective.infinity",
+      "group": "MATRIX",
+      "expected": "0xffc00000,0xffc00000",
+      "actual": "0xffc00000,0xffc00000",
+      "passed": true
+    },
+    {
+      "id": "matrix.billboard.axis",
+      "group": "MATRIX",
+      "expected": "0xbf800000,0x40000000,0xbf800000",
+      "actual": "0xbf800000,0x40000000,0xbf800000",
+      "passed": true
+    },
+    {
+      "id": "matrix.shadow.zero-plane",
+      "group": "MATRIX",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "matrix.lookat.degenerate",
+      "group": "MATRIX",
+      "expected": "0xffc00000,0xffc00000,0xffc00000,0x00000000,0xffc00000,0xffc00000,0xffc00000,0x00000000,0xffc00000,0xffc00000,0xffc00000,0x00000000,0x7fc00000,0x7fc00000,0x7fc00000,0x3f800000",
+      "actual": "0xffc00000,0xffc00000,0xffc00000,0x00000000,0xffc00000,0xffc00000,0xffc00000,0x00000000,0xffc00000,0xffc00000,0xffc00000,0x00000000,0x7fc00000,0x7fc00000,0x7fc00000,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "matrix.transform.infinity",
+      "group": "MATRIX",
+      "expected": "0x3f800000,0x7f800000,false",
+      "actual": "0x3f800000,0x7f800000,false",
+      "passed": true
+    },
+    {
+      "id": "matrix.decompose.return",
+      "group": "MATRIX",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "matrix.decompose.outputs",
+      "group": "MATRIX",
+      "expected": "0x40000000,0x40400000,0xc0800000,0x00000000,0x3f7e00aa,0x00000000,0xbdff5579,0x40a00000,0x40c00000,0x40e00000",
+      "actual": "0x40000000,0x40400000,0xc0800000,0x00000000,0x3f7e00aa,0x00000000,0xbdff5579,0x40a00000,0x40c00000,0x40e00000",
+      "passed": true
+    },
+    {
+      "id": "matrix.string",
+      "group": "MATRIX",
+      "expected": "{ {M11:1 M12:0 M13:0 M14:0} {M21:0 M22:1 M23:0 M24:0} {M31:0 M32:0 M33:1 M34:0} {M41:0 M42:0 M43:0 M44:1} }",
+      "actual": "{ {M11:1 M12:0 M13:0 M14:0} {M21:0 M22:1 M23:0 M24:0} {M31:0 M32:0 M33:1 M34:0} {M41:0 M42:0 M43:0 M44:1} }",
+      "passed": true
+    },
+    {
+      "id": "plane.points.degenerate",
+      "group": "PLANE",
+      "expected": "0xffc00000,0xffc00000,0xffc00000,0x7fc00000",
+      "actual": "0xffc00000,0xffc00000,0xffc00000,0x7fc00000",
+      "passed": true
+    },
+    {
+      "id": "plane.normalize.near-unit",
+      "group": "PLANE",
+      "expected": "0x3f19999a,0x3f4ccccc,0x00000000,0x40000000",
+      "actual": "0x3f19999a,0x3f4ccccc,0x00000000,0x40000000",
+      "passed": true
+    },
+    {
+      "id": "plane.box.coplanar",
+      "group": "PLANE",
+      "expected": 2,
+      "actual": 2,
+      "passed": true
+    },
+    {
+      "id": "plane.reflection.ref-normalization",
+      "group": "PLANE",
+      "expected": "0x3f800000,0x40000000,0xbf800000,0xc0800000",
+      "actual": "0x3f800000,0x40000000,0xbf800000,0xc0800000",
+      "passed": true
+    },
+    {
+      "id": "ray.sphere.nullable.has-value",
+      "group": "RAY",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "ray.sphere.distance",
+      "group": "RAY",
+      "expected": "0x40810421",
+      "actual": "0x40810421",
+      "passed": true
+    },
+    {
+      "id": "ray.box.near-parallel-null",
+      "group": "RAY",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "ray.plane.near-parallel-null",
+      "group": "RAY",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "ray.plane.just-behind-clamped",
+      "group": "RAY",
+      "expected": "true,0x00000000",
+      "actual": "true,0x00000000",
+      "passed": true
+    },
+    {
+      "id": "box.point.edge",
+      "group": "BOUNDING_BOX",
+      "expected": 1,
+      "actual": 1,
+      "passed": true
+    },
+    {
+      "id": "box.point.nan",
+      "group": "BOUNDING_BOX",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "box.box.nan-intersects",
+      "group": "BOUNDING_BOX",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "box.corner.order",
+      "group": "BOUNDING_BOX",
+      "expected": "{X:1 Y:5 Z:6}|{X:4 Y:2 Z:3}|{X:1 Y:2 Z:3}",
+      "actual": "{X:1 Y:5 Z:6}|{X:4 Y:2 Z:3}|{X:1 Y:2 Z:3}",
+      "passed": true
+    },
+    {
+      "id": "sphere.point.edge",
+      "group": "BOUNDING_SPHERE",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "sphere.external-tangent",
+      "group": "BOUNDING_SPHERE",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "sphere.create-points",
+      "group": "BOUNDING_SPHERE",
+      "expected": "0x3f800000,0x40800000,0x40000000,0x4101fc10",
+      "actual": "0x3f800000,0x40800000,0x40000000,0x4101fc10",
+      "passed": true
+    },
+    {
+      "id": "frustum.near-plane",
+      "group": "BOUNDING_FRUSTUM",
+      "expected": "0x80000000,0x80000000,0x3f800000,0xc0800000",
+      "actual": "0x80000000,0x80000000,0x3f800000,0xc0800000",
+      "passed": true
+    },
+    {
+      "id": "frustum.top-plane",
+      "group": "BOUNDING_FRUSTUM",
+      "expected": "0x00000000,0x3f6c835f,0x3ec3ef16,0xbff4eadb",
+      "actual": "0x00000000,0x3f6c835f,0x3ec3ef16,0xbff4eadb",
+      "passed": true
+    },
+    {
+      "id": "frustum.corner-order.first",
+      "group": "BOUNDING_FRUSTUM",
+      "expected": "0xbf0d6289,0x3ed413cb,0x40800000",
+      "actual": "0xbf0d6289,0x3ed413cb,0x40800000",
+      "passed": true
+    },
+    {
+      "id": "frustum.corner-order.seventh",
+      "group": "BOUNDING_FRUSTUM",
+      "expected": "0x40b0bb28,0xc0848c5d,0xc09ffff8",
+      "actual": "0x40b0bb28,0xc0848c5d,0xc09ffff8",
+      "passed": true
+    },
+    {
+      "id": "frustum.box.gjk.inside",
+      "group": "BOUNDING_FRUSTUM",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "frustum.box.gjk.outside",
+      "group": "BOUNDING_FRUSTUM",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "frustum.ray.nullable",
+      "group": "BOUNDING_FRUSTUM",
+      "expected": "true,0x41800000",
+      "actual": "true,0x41800000",
+      "passed": true
+    },
+    {
+      "id": "frustum.class.nil-equality",
+      "group": "BOUNDING_FRUSTUM",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "color.float-packing",
+      "group": "COLOR",
+      "expected": "0x00ff0080",
+      "actual": "0x00ff0080",
+      "passed": true
+    },
+    {
+      "id": "color.lerp.midpoint",
+      "group": "COLOR",
+      "expected": "0x7f7f7f7f",
+      "actual": "0x7f7f7f7f",
+      "passed": true
+    },
+    {
+      "id": "color.multiply.midpoint",
+      "group": "COLOR",
+      "expected": "0x7f7f7f7f",
+      "actual": "0x7f7f7f7f",
+      "passed": true
+    },
+    {
+      "id": "color.transparent",
+      "group": "COLOR",
+      "expected": "0x00ffffff",
+      "actual": "0x00ffffff",
+      "passed": true
+    },
+    {
+      "id": "color.cornflower-blue",
+      "group": "COLOR",
+      "expected": "0xffed9564",
+      "actual": "0xffed9564",
+      "passed": true
+    },
+    {
+      "id": "color.vector-roundtrip",
+      "group": "COLOR",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "viewport.project",
+      "group": "VIEWPORT",
+      "expected": "0x43d42808,0x43ac9f3c,0x3f63aff4",
+      "actual": "0x43d42808,0x43ac9f3c,0x3f63aff4",
+      "passed": true
+    },
+    {
+      "id": "viewport.unproject",
+      "group": "VIEWPORT",
+      "expected": "0x3e7ffe10,0xbefff906,0x3fa00111",
+      "actual": "0x3e7ffe10,0xbefff906,0x3fa00111",
+      "passed": true
+    },
+    {
+      "id": "viewport.unproject.singular",
+      "group": "VIEWPORT",
+      "expected": "0xffc00000,0xffc00000,0xffc00000",
+      "actual": "0xffc00000,0xffc00000,0xffc00000",
       "passed": true
     }
   ]

@@ -51,6 +51,14 @@ pointers are never a substitute for `IntPtr`.
 signed 100-nanosecond ticks in an `int64`. It is deliberately not
 `time.Duration`: Duration has nanosecond units and a materially smaller range.
 
+`System.Nullable<T>` is a source identity retained by the verifier rather than
+a fake public `System` package type. A nullable value input maps to `*T`, where
+`nil` means null and a non-nil pointer supplies a value. A nullable return maps
+to `(T, bool)`, where the Boolean is `hasValue`; the zero value of `T` is
+unspecified when `hasValue` is false and must not be interpreted as a sentinel.
+The same `(T, bool)` pair is appended for an `out Nullable<T>`. Nullable never
+uses NaN, infinity, or another distinguished value to represent null.
+
 `System.IO.Stream` maps at the first raw-content boundary to `io.Reader`.
 Reading begins at the reader's current position and continues to EOF. CNA-Go
 does not close the reader. The interop layer copies bytes into C-owned or
@@ -121,6 +129,13 @@ For the conventional `TryX` pattern the value precedes the final `bool`. A
 mutable `ref T` input maps to `*T`. Source direction remains in the overload
 shape so `ref`, `out`, and value overloads cannot collide. No rule exposes an
 unsafe or C pointer.
+
+Nullable presence, source Boolean returns, `out` values, and Go failures remain
+separate result channels. Thus a fallible nullable-returning projection, if one
+is introduced by an authoritative runtime boundary, returns `(T, bool, error)`:
+the first Boolean is nullable `hasValue`, while `error` reports genuine
+failure. An `out Nullable<T>` still retains `OutNullableOfT` in its deterministic
+overload shape even though its Go result expands to two values.
 
 ## Inheritance and Game
 

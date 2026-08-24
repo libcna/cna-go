@@ -8,6 +8,9 @@
 HEADLESS closure; strict structural verification remains intentionally red for
 genuine missing surface.
 
+**Foundation 2 status:** qualified for the managed geometry/transform closure,
+including its recursive Plane/Ray/bounds dependencies, then Color and Viewport.
+
 This file is normative. `NEXT.md` is the resumable handoff; generated reports
 are evidence and must not replace the rules here.
 
@@ -114,9 +117,37 @@ operation order; calls through Go's float64 math library require explicit
 rounding boundaries and bit-level golden cases for signed zero, NaN, infinity,
 subnormal, overflow, and underflow.
 
-Vector2 and Color remain measured partial Foundation types because their exact
-contracts depend on the wider vector/matrix/quaternion closure and the full
-named-color set. Their implemented members are real and correctly named.
+Foundation 2 completes `Vector2`, `Vector3`, `Vector4`, `Quaternion`, `Matrix`,
+`Plane`, `Ray`, `BoundingBox`, `BoundingSphere`, `BoundingFrustum`,
+`ContainmentType`, and `PlaneIntersectionType` as one public-signature closure.
+It then completes the directly unblocked `Color` and `Graphics.Viewport`
+partials. `BoundingFrustum` remains a class/pointer facade even though all of
+its state and algorithms are managed. `Nullable<T>` inputs map to `*T` and
+nullable returns/out values map to `(T, bool)` without a sentinel.
+
+All fourteen selected types have zero local structural diagnostics. The
+PURE_XNA_DERIVED corpus has 93 observations and no failures; exact geometry
+evidence is in `docs/geometry-transform-evidence.md`.
+
+## Foundation 2 qualification evidence
+
+- [x] Regenerate the public-signature dependency graph from the pinned contract.
+- [x] Complete all twelve primary geometry/dependency types with local strict zero.
+- [x] Formalize and verifier-test nullable input, return, out, and error separation.
+- [x] Preserve binary32 operation ordering and add exact-bit behavior fixtures.
+- [x] Complete Color, including all 141 predefined static colors and an independent golden table.
+- [x] Complete managed Viewport Project/Unproject without a CNA route.
+- [x] Preserve every global mismatch, leak, allowlist, and unmeasured counter at zero.
+- [x] Keep all CNA ABI measurements and symbols unchanged.
+- [x] Requalify Go tests, vet, race, build, trimpath, native stress, and the unchanged maintained template.
+- [x] Produce and independently regenerate an audited deterministic source artifact and qualify an isolated consumer from it.
+
+The normal strict verifier remains red only for 228 genuinely missing types and
+180 members on six explicitly deferred native/runtime partial types:
+
+```text
+FOUNDATION_MILESTONE_2_COMPLETE=true
+```
 
 ## Deferred families
 
@@ -127,9 +158,10 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 1 qualification, select one dependency-complete closure from
-the generated scoreboard. The current intended candidate is the exact
-Vector2/Vector3/Vector4/Quaternion/Matrix closure plus its behavior corpus,
-because it completes existing Vector2 and unlocks Color vector conversions and
-future graphics values without starting Content, Effects, or 3D runtime APIs.
-Recompute this choice from the final report before starting it.
+After Foundation 2 qualification, the next scoreboard-selected managed closure
+is exactly `Curve`, `CurveKeyCollection`, `CurveKey`, `CurveLoopType`,
+`CurveTangent`, and `CurveContinuity`. `Curve` directly introduces its
+collection and two enums; the collection introduces `CurveKey`; the key
+introduces `CurveContinuity`. Recompute this choice from the then-current pinned
+contract before implementation. Do not mix it with Content, Effects/3D,
+PackedVector, Design, or native runtime cleanup.

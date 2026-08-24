@@ -75,6 +75,41 @@ func (v Viewport) ToString() string {
 	return fmt.Sprintf("{X:%d Y:%d Width:%d Height:%d MinDepth:%g MaxDepth:%g}", v.x, v.y, v.width, v.height, v.minDepth, v.maxDepth)
 }
 
+func (v Viewport) Project(source framework.Vector3, projection, view, world framework.Matrix) framework.Vector3 {
+	matrix := framework.MatrixMultiplyByMatrixAndMatrix(world, view)
+	matrix = framework.MatrixMultiplyByMatrixAndMatrix(matrix, projection)
+	result := framework.Vector3TransformByVector3AndMatrix(source, matrix)
+	w := source.X*matrix.M14 + source.Y*matrix.M24 + source.Z*matrix.M34 + matrix.M44
+	if !withinViewportEpsilon(w, 1) {
+		result = framework.Vector3DivideByVector3AndSingle(result, w)
+	}
+	result.X = (result.X+1)*0.5*float32(v.width) + float32(v.x)
+	result.Y = (-result.Y+1)*0.5*float32(v.height) + float32(v.y)
+	result.Z = result.Z*(v.maxDepth-v.minDepth) + v.minDepth
+	return result
+}
+
+func (v Viewport) Unproject(source framework.Vector3, projection, view, world framework.Matrix) framework.Vector3 {
+	matrix := framework.MatrixMultiplyByMatrixAndMatrix(world, view)
+	matrix = framework.MatrixMultiplyByMatrixAndMatrix(matrix, projection)
+	matrix = framework.MatrixInvertByMatrix(matrix)
+	source.X = (source.X-float32(v.x))/float32(v.width)*2 - 1
+	source.Y = -((source.Y-float32(v.y))/float32(v.height)*2 - 1)
+	source.Z = (source.Z - v.minDepth) / (v.maxDepth - v.minDepth)
+	result := framework.Vector3TransformByVector3AndMatrix(source, matrix)
+	w := source.X*matrix.M14 + source.Y*matrix.M24 + source.Z*matrix.M34 + matrix.M44
+	if !withinViewportEpsilon(w, 1) {
+		result = framework.Vector3DivideByVector3AndSingle(result, w)
+	}
+	return result
+}
+
+func withinViewportEpsilon(value1, value2 float32) bool {
+	difference := value1 - value2
+	const epsilon = 1.40129846e-45
+	return -epsilon <= difference && difference <= epsilon
+}
+
 // GraphicsDevice is a borrowed facade over the Game-owned device. It never
 // retains CNA's callback-scoped device handle.
 type GraphicsDevice struct {

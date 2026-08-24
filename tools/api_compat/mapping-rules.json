@@ -49,6 +49,15 @@
     "out": "remove-input-and-append-return",
     "tryPattern": "value-then-bool"
   },
+  "nullable": {
+    "sourceIdentity": "System.Nullable<T>",
+    "valueInput": "pointer-to-T-nil-means-null",
+    "valueReturn": "T-then-bool-has-value",
+    "outValue": "append-T-then-bool-has-value",
+    "overloadShape": "NullableOfT",
+    "nullSentinel": "none",
+    "errorSeparation": "nullable-has-value-bool-precedes-distinct-final-error"
+  },
   "errors": {
     "nativeRuntimeFailure": "error-final-result",
     "voidNativeFailure": "error-only-result",
