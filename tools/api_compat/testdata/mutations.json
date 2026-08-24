@@ -23,5 +23,12 @@
   {"id":"raw-pointer-leak","mutation":"pointer_leak","category":"PUBLIC_NATIVE_FFI_LEAK"},
   {"id":"native-handle-leak","mutation":"handle_leak","category":"RAW_HANDLE_LEAK"},
   {"id":"interop-helper-leak","mutation":"internal_leak","category":"INTERNAL_TYPE_LEAK"},
-  {"id":"unmeasured-category","mutation":"unmeasured","category":"UNMEASURED_STRUCTURAL_CATEGORY"}
+  {"id":"unmeasured-category","mutation":"unmeasured","category":"UNMEASURED_STRUCTURAL_CATEGORY"},
+  {"id":"missing-packed-interface-witness","mutation":"missing_packed_witness","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"wrong-packed-interface-witness-signature","mutation":"wrong_packed_witness","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"wrong-packed-to-vector4-result","mutation":"wrong_packed_tovector_result","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"bogus-packed-interface-witness","mutation":"bogus_packed_witness","category":"UNEXPECTED_MEMBER"},
+  {"id":"wrong-packed-value-setter-type","mutation":"wrong_packed_setter","category":"PARAMETER_MAPPING_MISMATCH"},
+  {"id":"missing-generic-interface-inheritance","mutation":"missing_packed_inheritance","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"wrong-packed-generic-interface-name","mutation":"wrong_packed_generic_name","category":"MISSING_TYPE"}
 ]

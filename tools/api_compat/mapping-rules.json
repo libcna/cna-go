@@ -17,6 +17,12 @@
     "enum": "named-int32",
     "delegate": "named-func"
   },
+  "genericParameters": {
+    "ownerTokenRule": "CLR !n maps to the nth declared owner generic parameter name",
+    "example": "IPackedVector<TPacked> !0 maps to TPacked",
+    "invalidIndex": "GENERIC_MAPPING_MISMATCH",
+    "recursiveUse": "substitute-inside-supported-array-nullable-and-generic-type-shapes"
+  },
   "members": {
     "instanceField": "exported-struct-field",
     "staticConstant": "package-constant-prefixed-by-declaring-type",
@@ -65,6 +71,27 @@
     "pureValueOperation": "no-added-error-unless-authoritative-managed-argument-failure-is-projected",
     "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
     "panicPolicy": "programmer-invariant-only-never-native-runtime-failure"
+  },
+  "managedInterfaces": {
+    "classification": "explicit-interface-identity-policy-not-owner-kind-fallback",
+    "pureValue": "no-synthetic-error-result-solely-because-the-owner-is-an-interface",
+    "nativeRuntime": "may-add-final-error-when-the-operation-crosses-a-qualified-runtime-boundary",
+    "pureValueIdentities": [
+      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1"
+    ]
+  },
+  "mutableStructInterfaces": {
+    "sourceKind": "struct-remains-go-value-struct",
+    "mutationReceiver": "pointer-receiver",
+    "conformance": "pointer-method-set-must-satisfy-the-exact-constructed-interface-and-transitive-base-while-value-method-set-does-not"
+  },
+  "interfaceWitnessProjections": {
+    "admission": "exported-method-required-by-an-actual-mapped-direct-interface-and-absent-from-the-public-declared-source-member-set",
+    "counting": "measured-separately-from-reference-and-expected-go-member-identities",
+    "validation": "compiler-extracted-exact-signature-and-go-types-interface-satisfaction",
+    "unexpectedPolicy": "any-unrequired-or-misconfigured-public-method-remains-an-ordinary-diagnostic",
+    "allowlist": "forbidden"
   },
   "collectionInterfaces": {
     "System.Collections.Generic.ICollection<T>": "concrete-go-method-set-on-the-xna-collection-no-fake-bcl-package",

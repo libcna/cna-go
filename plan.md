@@ -196,18 +196,63 @@ The normal strict verifier remains red only for 222 genuinely missing types and
 FOUNDATION_MILESTONE_3_COMPLETE=true
 ```
 
+## Foundation 4 managed PackedVector policy
+
+Foundation 4 completes exactly the two PackedVector interfaces and all
+seventeen concrete packed value structs. `IPackedVector<TPacked>` retains the
+deterministic generic-collision name `IPackedVectorOfTPacked[TPacked]`, and the
+general CLR owner-parameter mapping substitutes `!0` with `TPacked` instead of
+leaking a metadata token into Go.
+
+Pure managed interface methods gain no synthetic `error`. Mutable packed
+structs remain Go values, while pointer method sets satisfy the exact generic
+interface and its transitive base. Explicit CLR implementations needed by Go
+structural interfaces are measured as 25 language witness projections, not as
+ordinary XNA members or allowlist entries.
+
+Each format stores one private fixed-width packed integer. Packing preserves
+XNA binary32 scale/clamp/round order, ties-to-even, explicit non-finite
+handling, exact lane masks, SNorm minimum decoding, raw integer behavior, and
+XNA's non-IEEE exponent-31 half semantics. Exact mapping and behavior evidence
+is in `docs/packed-vector-evidence.md`.
+
+## Foundation 4 qualification evidence
+
+- [x] Regenerate the exact 19-type, 171-source-member, 189-Go-member closure.
+- [x] Generalize and mutation-test `!n` owner generic-parameter substitution.
+- [x] Formalize pure managed interface no-error classification and generic inheritance.
+- [x] Prove all seventeen exact `*T` generic/base interface conformances with `go/types`.
+- [x] Measure 17 `PackFromVector4` and eight `ToVector4` witnesses separately.
+- [x] Complete all seventeen canonical packed-bit structs with local strict zero.
+- [x] Qualify every constructor, converter, direct setter, interface lane route, equality, hash, operator, and string identity.
+- [x] Qualify UNorm, SNorm, raw integer, half, midpoint-adjacent, and non-finite behavior.
+- [x] Exhaust all 256 Alpha8 and all 65,536 Bgr565, Bgra4444, Bgra5551, and HalfSingle bit patterns with zero failures.
+- [x] Grow the PURE_XNA_DERIVED corpus from 142 to 201 assertions with zero failures.
+- [x] Preserve every global mismatch, leak, allowlist, and unmeasured counter at zero.
+- [x] Keep all CNA ABI measurements and symbols unchanged.
+- [x] Requalify Go tests, vet, race, build, trimpath, native stress, and the unchanged maintained template.
+- [x] Produce an audited deterministic source artifact and qualify an isolated consumer from it.
+
+The normal strict verifier remains red only for 203 genuinely missing types and
+180 members on the same six deferred native/runtime partial types:
+
+```text
+FOUNDATION_MILESTONE_4_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
-touch; design; packed vectors; GamerServices; and broad platform work are not
+touch; design; GamerServices; and broad platform work are not
 Foundation 1 count-filling opportunities. Windows, macOS, Android, iOS, and
 Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 3 qualification, the next scoreboard-selected managed closure
-is exactly the `Microsoft.Xna.Framework.Graphics.PackedVector` family: its two
-interfaces and seventeen concrete packed value types. Recompute that closure
-from the then-current pinned contract before implementation and finish it as
-one bit-exact dependency-complete milestone. Do not mix it with Design,
-Content, Effects/3D, or native runtime cleanup.
+After Foundation 4 qualification, the freshly regenerated inventory selects
+exactly the managed vertex-element descriptor closure:
+`Microsoft.Xna.Framework.Graphics.VertexElement`, `VertexElementFormat`, and
+`VertexElementUsage`. Recompute its three-type, 37-source-member/39-Go-member
+projection before implementation. Do not mix it with `IVertexType`, native
+`VertexDeclaration`/buffer work, Design, Content, Effects/3D, or partial
+runtime cleanup.

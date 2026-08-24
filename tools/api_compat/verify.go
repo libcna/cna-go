@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"go/types"
 	"sort"
 	"strings"
 )
+
+const packedVectorNamespace = "Microsoft.Xna.Framework.Graphics.PackedVector."
 
 var adapterTypes = map[string]bool{
 	"EventSubscription": true,
@@ -34,10 +37,13 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	for _, category := range diagnosticCategories {
 		result.Summary[category] = 0
 	}
+	typeDiagnostics := make(map[string]int)
+	missingMembers := make(map[string][]string)
 	result.Summary["REFERENCE_TYPES"] = expected.ReferenceTypes
 	result.Summary["REFERENCE_MEMBERS"] = expected.ReferenceMembers
 	result.Summary["EXPECTED_GO_TYPES"] = expected.ExpectedGoTypes
 	result.Summary["EXPECTED_GO_MEMBERS"] = expected.ExpectedGoMembers
+	result.Summary["INTERFACE_WITNESS_PROJECTIONS"] = len(expected.InterfaceWitnesses)
 	result.Summary["ALLOWLIST_ENTRIES"] = allowlistEntries
 	if allowlistEntries > 0 {
 		addDiagnostic(&result, diagnostic{Category: "ALLOWLIST_ENTRIES", Message: fmt.Sprintf("mapping allowlist has %d entries", allowlistEntries)})
@@ -45,9 +51,13 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	for _, source := range actual.Unmeasured {
 		addDiagnostic(&result, diagnostic{Category: "UNMEASURED_STRUCTURAL_CATEGORY", Go: source, Message: "source requested an unmeasured structural category"})
 	}
+	for _, issue := range expected.MappingIssues {
+		addDiagnostic(&result, issue)
+		if issue.XNA != "" {
+			typeDiagnostics[issue.XNA]++
+		}
+	}
 
-	typeDiagnostics := make(map[string]int)
-	missingMembers := make(map[string][]string)
 	presentTypes := 0
 	presentMembers := 0
 
@@ -97,6 +107,11 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 		}
 		before := len(result.Diagnostics)
 		measureCollectionInterfaceProjection(&result, expected, actual, et)
+		measureDirectInterfaceInheritance(&result, actual, et, at)
+		measureInterfaceWitnesses(&result, expected, actual, et)
+		if measurement, measured := measurePackedInterfaceConformance(&result, actual, et); measured {
+			result.PackedInterfaceConformance = append(result.PackedInterfaceConformance, measurement)
+		}
 		typeDiagnostics[et.XNA] += len(result.Diagnostics) - before
 	}
 
@@ -107,7 +122,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 		addDiagnostic(&result, diagnostic{Category: "UNEXPECTED_TYPE", Go: key.String(), Message: "exported type does not map to the selected XNA profile or a declared language adapter"})
 	}
 	for key, am := range actual.Members {
-		if _, ok := expected.Members[key]; ok || isAdapterMember(key) {
+		if _, ok := expected.Members[key]; ok || expected.InterfaceWitnesses[key] != nil || isAdapterMember(key) {
 			continue
 		}
 		addDiagnostic(&result, diagnostic{Category: "UNEXPECTED_MEMBER", Go: key.String(), Message: "exported member does not map to the selected XNA profile or a declared language adapter"})
@@ -115,6 +130,39 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 
 	measureLeaks(&result, actual)
+	for _, et := range sortedExpectedTypes(expected) {
+		if !strings.HasPrefix(et.XNA, packedVectorNamespace) {
+			continue
+		}
+		measurement := packedVectorTypeMeasurement{
+			XNA:               et.XNA,
+			GoName:            et.GoName,
+			SourceMembers:     et.SourceMembers,
+			ExpectedGoMembers: len(et.Members),
+			LocalDiagnostics:  typeDiagnostics[et.XNA],
+		}
+		if at := actual.Types[et.Key]; at != nil {
+			measurement.TypeKind = at.Kind
+			for _, key := range et.Members {
+				if actual.Members[key] != nil {
+					measurement.TargetGoMembers++
+				}
+			}
+		} else {
+			measurement.TypeKind = "missing"
+		}
+		if mapped, ok := directPackedInterface(et); ok {
+			measurement.TPacked = firstOrEmpty(mapped.TypeArguments)
+			measurement.DirectInterfaceStatus = "FAIL"
+			for _, conformance := range result.PackedInterfaceConformance {
+				if conformance.Owner == et.XNA {
+					measurement.DirectInterfaceStatus = conformance.Status
+					break
+				}
+			}
+		}
+		result.PackedVectorTypeMeasurements = append(result.PackedVectorTypeMeasurements, measurement)
+	}
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -135,8 +183,222 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["COMPLETE_TYPES"] = len(result.CompleteTypes)
 	result.Summary["PARTIAL_TYPES"] = len(result.PartialTypes)
 	result.Summary["MISSING_TYPES"] = len(result.MissingTypes)
+	result.Summary["INTERFACE_WITNESS_PROJECTIONS"] = len(result.InterfaceWitnessProjections)
+	for _, witness := range result.InterfaceWitnessProjections {
+		switch witness.Member {
+		case "PackFromVector4":
+			result.Summary["PACKFROMVECTOR4_WITNESS_PROJECTIONS"]++
+		case "ToVector4":
+			result.Summary["TOVECTOR4_WITNESS_PROJECTIONS"]++
+		}
+	}
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+func measureDirectInterfaceInheritance(result *report, actual *actualSurface, owner *expectedType, target *actualType) {
+	if owner.Kind != "interface" || len(owner.MappedInterfaces) == 0 {
+		return
+	}
+	wanted := make([]string, len(owner.MappedInterfaces))
+	for i, mapped := range owner.MappedInterfaces {
+		wanted[i] = mappedInterfaceDisplay(mapped)
+	}
+	if !equalUnorderedStrings(wanted, target.ExportedEmbeddings) {
+		addDiagnostic(result, diagnostic{
+			Category: "INTERFACE_MAPPING_MISMATCH",
+			XNA:      owner.XNA,
+			Go:       owner.Key.String(),
+			Message:  fmt.Sprintf("expected direct interface embeddings %v, found %v", wanted, target.ExportedEmbeddings),
+		})
+	}
+}
+
+func measureInterfaceWitnesses(result *report, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+	var witnesses []*expectedInterfaceWitness
+	for _, witness := range expected.InterfaceWitnesses {
+		if witness.Owner == owner.XNA {
+			witnesses = append(witnesses, witness)
+		}
+	}
+	sort.Slice(witnesses, func(i, j int) bool { return witnesses[i].Key.Name < witnesses[j].Key.Name })
+	for _, witness := range witnesses {
+		row := interfaceWitnessProjection{
+			Owner:           witness.Owner,
+			Member:          witness.GoName,
+			SourceInterface: witness.SourceInterface,
+			InterfaceMember: witness.InterfaceMember,
+			Reason:          witness.Reason,
+			Signature:       witnessSignature(witness),
+			Status:          "PASS",
+		}
+		actualMember := actual.Members[witness.Key]
+		if actualMember == nil {
+			row.Status = "MISSING"
+			addDiagnostic(result, diagnostic{
+				Category: "INTERFACE_MAPPING_MISMATCH",
+				XNA:      witness.Owner,
+				Go:       witness.Key.String(),
+				Message:  "required explicit-interface witness method is absent",
+			})
+			result.InterfaceWitnessProjections = append(result.InterfaceWitnessProjections, row)
+			continue
+		}
+		if actualMember.Kind != "method" || !equalStrings(witness.Parameters, actualMember.Parameters) || !equalStrings(witness.Results, actualMember.Results) {
+			row.Status = "SIGNATURE_MISMATCH"
+			addDiagnostic(result, diagnostic{
+				Category: "INTERFACE_MAPPING_MISMATCH",
+				XNA:      witness.Owner,
+				Go:       witness.Key.String(),
+				Message:  fmt.Sprintf("witness expected parameters/results %v/%v, found %v/%v", witness.Parameters, witness.Results, actualMember.Parameters, actualMember.Results),
+			})
+			expectedMember := &expectedMember{
+				Key: witness.Key, XNA: witness.InterfaceMember, Owner: witness.Owner,
+				SourceKind: "method", GoKind: "method", GoName: witness.GoName,
+				PackagePath: witness.Key.Package, Receiver: witness.Key.Receiver,
+				Parameters: witness.Parameters, Results: witness.Results,
+			}
+			compareMember(result, expectedMember, actualMember)
+		}
+		result.InterfaceWitnessProjections = append(result.InterfaceWitnessProjections, row)
+	}
+}
+
+func measurePackedInterfaceConformance(result *report, actual *actualSurface, owner *expectedType) (packedInterfaceConformance, bool) {
+	mapped, ok := directPackedInterface(owner)
+	if !ok {
+		return packedInterfaceConformance{}, false
+	}
+	measurement := packedInterfaceConformance{
+		Owner:     owner.XNA,
+		Interface: mappedInterfaceDisplay(mapped),
+		TPacked:   firstOrEmpty(mapped.TypeArguments),
+		Status:    "FAIL",
+	}
+	pkg := actual.Packages[owner.PackagePath]
+	if pkg == nil {
+		addPackedConformanceDiagnostic(result, owner, "compiler package evidence is absent")
+		return measurement, true
+	}
+	ownerObject := pkg.Scope().Lookup(owner.GoName)
+	interfaceObject := pkg.Scope().Lookup("IPackedVectorOfTPacked")
+	baseObject := pkg.Scope().Lookup("IPackedVector")
+	if ownerObject == nil || interfaceObject == nil || baseObject == nil {
+		addPackedConformanceDiagnostic(result, owner, "packed owner or mapped interface identity is absent from compiler scope")
+		return measurement, true
+	}
+	ownerNamed, ownerOK := ownerObject.Type().(*types.Named)
+	interfaceNamed, interfaceOK := interfaceObject.Type().(*types.Named)
+	baseNamed, baseOK := baseObject.Type().(*types.Named)
+	typeArgument, argumentOK := mappedBasicType(measurement.TPacked)
+	if !ownerOK || !interfaceOK || !baseOK || !argumentOK {
+		addPackedConformanceDiagnostic(result, owner, "packed owner/interface/type argument could not be represented by go/types")
+		return measurement, true
+	}
+	instantiated, err := types.Instantiate(nil, interfaceNamed, []types.Type{typeArgument}, true)
+	if err != nil {
+		addPackedConformanceDiagnostic(result, owner, "generic packed interface instantiation failed: "+err.Error())
+		return measurement, true
+	}
+	packedInterface, ok := instantiated.Underlying().(*types.Interface)
+	if !ok {
+		addPackedConformanceDiagnostic(result, owner, "mapped generic packed identity is not a Go interface")
+		return measurement, true
+	}
+	baseInterface, ok := baseNamed.Underlying().(*types.Interface)
+	if !ok {
+		addPackedConformanceDiagnostic(result, owner, "mapped packed base identity is not a Go interface")
+		return measurement, true
+	}
+	packedInterface.Complete()
+	baseInterface.Complete()
+	pointer := types.NewPointer(ownerNamed)
+	measurement.PointerMethodSetSatisfies = types.Implements(pointer, packedInterface)
+	measurement.ValueMethodSetSatisfies = types.Implements(ownerNamed, packedInterface)
+	measurement.TransitiveBaseSatisfies = types.Implements(pointer, baseInterface)
+	if measurement.PointerMethodSetSatisfies && !measurement.ValueMethodSetSatisfies && measurement.TransitiveBaseSatisfies {
+		measurement.Status = "PASS"
+		return measurement, true
+	}
+	addPackedConformanceDiagnostic(result, owner, fmt.Sprintf(
+		"expected *%s to satisfy %s and IPackedVector while value %s does not; pointer=%t value=%t transitive=%t",
+		owner.GoName, measurement.Interface, owner.GoName,
+		measurement.PointerMethodSetSatisfies, measurement.ValueMethodSetSatisfies, measurement.TransitiveBaseSatisfies,
+	))
+	return measurement, true
+}
+
+func addPackedConformanceDiagnostic(result *report, owner *expectedType, message string) {
+	addDiagnostic(result, diagnostic{
+		Category: "INTERFACE_MAPPING_MISMATCH",
+		XNA:      owner.XNA,
+		Go:       owner.Key.String(),
+		Message:  message,
+	})
+}
+
+func directPackedInterface(owner *expectedType) (mappedInterface, bool) {
+	if !strings.HasPrefix(owner.XNA, packedVectorNamespace) {
+		return mappedInterface{}, false
+	}
+	for _, mapped := range owner.MappedInterfaces {
+		identity, _ := splitConstructedType(mapped.XNA)
+		if identity == "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1" {
+			return mapped, true
+		}
+	}
+	return mappedInterface{}, false
+}
+
+func mappedBasicType(name string) (types.Type, bool) {
+	switch name {
+	case "uint8":
+		return types.Typ[types.Uint8], true
+	case "uint16":
+		return types.Typ[types.Uint16], true
+	case "uint32":
+		return types.Typ[types.Uint32], true
+	case "uint64":
+		return types.Typ[types.Uint64], true
+	default:
+		return nil, false
+	}
+}
+
+func mappedInterfaceDisplay(mapped mappedInterface) string {
+	if len(mapped.TypeArguments) == 0 {
+		return mapped.GoName
+	}
+	return mapped.GoName + "[" + strings.Join(mapped.TypeArguments, ",") + "]"
+}
+
+func witnessSignature(witness *expectedInterfaceWitness) string {
+	results := strings.Join(witness.Results, ",")
+	if len(witness.Results) > 1 {
+		results = "(" + results + ")"
+	}
+	if results != "" {
+		results = " " + results
+	}
+	return witness.GoName + "(" + strings.Join(witness.Parameters, ",") + ")" + results
+}
+
+func equalUnorderedStrings(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	leftCopy := append([]string(nil), left...)
+	rightCopy := append([]string(nil), right...)
+	sort.Strings(leftCopy)
+	sort.Strings(rightCopy)
+	return equalStrings(leftCopy, rightCopy)
+}
+
+func firstOrEmpty(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
 }
 
 func measureCollectionInterfaceProjection(result *report, expected *expectedSurface, actual *actualSurface, owner *expectedType) {

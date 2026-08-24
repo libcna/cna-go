@@ -6,6 +6,7 @@ import (
 	"path"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -69,6 +70,14 @@ var managedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.CurveTangent":       true,
 }
 
+// managedPureValueInterfaces is the explicit, reusable policy boundary for
+// structural interfaces whose operations are entirely managed value work.
+// Interface ownership alone must never add a synthetic Go error result.
+var managedPureValueInterfaces = map[string]bool{
+	"Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector":   true,
+	"Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1": true,
+}
+
 var managedFallibleMembers = map[string]map[string]bool{
 	"Microsoft.Xna.Framework.Curve": {
 		"method|ComputeTangent": true,
@@ -86,9 +95,10 @@ var managedFallibleMembers = map[string]map[string]bool{
 
 func buildExpected(c contract) (*expectedSurface, error) {
 	s := &expectedSurface{
-		Types:          make(map[symbolKey]*expectedType),
-		Members:        make(map[symbolKey]*expectedMember),
-		ReferenceTypes: len(c.Types),
+		Types:              make(map[symbolKey]*expectedType),
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     len(c.Types),
 	}
 	byIdentity := make(map[string]*contractType, len(c.Types))
 	nameCollisions := make(map[string]int)
@@ -117,6 +127,7 @@ func buildExpected(c contract) (*expectedSurface, error) {
 			Interfaces:       append([]string(nil), t.DirectInterfaces...),
 			AllInterfaces:    append([]string(nil), t.Interfaces...),
 			GenericParameter: genericNames,
+			SourceMembers:    len(t.Members),
 		}
 	}
 
@@ -140,6 +151,7 @@ func buildExpected(c contract) (*expectedSurface, error) {
 		owner := s.typeForXNA(em.Owner)
 		owner.Members = append(owner.Members, em.Key)
 	}
+	buildMappedInterfacesAndWitnesses(s, byIdentity)
 	s.ExpectedGoTypes = len(s.Types)
 	s.ExpectedGoMembers = len(s.Members)
 	return s, nil
@@ -463,6 +475,13 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 	if strings.HasSuffix(raw, "[]") {
 		return "[]" + mapType(s, byIdentity, owner, strings.TrimSuffix(raw, "[]"))
 	}
+	if mapped, matched, err := mapOwnerGenericParameter(owner, raw); matched {
+		if err != nil {
+			addGenericMappingIssue(s, owner, raw, err)
+			return "any"
+		}
+		return mapped
+	}
 	if inner, ok := genericTypeArgument(raw, "System.Collections.Generic.IEnumerator`1["); ok {
 		name := "Iterator"
 		if owner.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
@@ -518,13 +537,186 @@ func genericTypeArgument(raw, prefix string) (string, bool) {
 }
 
 func isFallible(t contractType, m contractMember) bool {
-	if managedTypes[t.Name] || t.Kind == "enum" {
+	if managedTypes[t.Name] || managedPureValueInterfaces[t.Name] || t.Kind == "enum" {
 		return managedFallibleMembers[t.Name][m.Kind+"|"+m.Name]
 	}
 	if m.Kind == "field" || m.Name == "ToString" || m.Name == "GetHashCode" || strings.HasPrefix(m.Name, "op_") {
 		return false
 	}
 	return t.Kind == "class" || t.Kind == "interface"
+}
+
+func mapOwnerGenericParameter(owner *expectedType, raw string) (string, bool, error) {
+	if !strings.HasPrefix(raw, "!") || strings.HasPrefix(raw, "!!") {
+		return "", false, nil
+	}
+	indexText := strings.TrimPrefix(raw, "!")
+	if indexText == "" {
+		return "", true, fmt.Errorf("generic parameter token has no index")
+	}
+	index, err := strconv.Atoi(indexText)
+	if err != nil || index < 0 {
+		return "", true, fmt.Errorf("generic parameter token %q has an invalid index", raw)
+	}
+	if owner == nil || index >= len(owner.GenericParameter) {
+		return "", true, fmt.Errorf("generic parameter token %q has no declared owner parameter", raw)
+	}
+	return owner.GenericParameter[index], true, nil
+}
+
+func addGenericMappingIssue(surface *expectedSurface, owner *expectedType, raw string, err error) {
+	if surface == nil {
+		return
+	}
+	xna := ""
+	goIdentity := ""
+	if owner != nil {
+		xna = owner.XNA
+		goIdentity = owner.Key.String()
+	}
+	message := fmt.Sprintf("cannot substitute CLR generic parameter %s: %v", raw, err)
+	for _, issue := range surface.MappingIssues {
+		if issue.Category == "GENERIC_MAPPING_MISMATCH" && issue.XNA == xna && issue.Message == message {
+			return
+		}
+	}
+	surface.MappingIssues = append(surface.MappingIssues, diagnostic{
+		Category: "GENERIC_MAPPING_MISMATCH",
+		XNA:      xna,
+		Go:       goIdentity,
+		Message:  message,
+	})
+}
+
+func buildMappedInterfacesAndWitnesses(surface *expectedSurface, byIdentity map[string]*contractType) {
+	for _, owner := range sortedExpectedTypes(surface) {
+		contractOwner := byIdentity[owner.XNA]
+		if contractOwner == nil {
+			continue
+		}
+		for _, raw := range contractOwner.DirectInterfaces {
+			identity, arguments := splitConstructedType(raw)
+			interfaceType := byIdentity[identity]
+			if interfaceType == nil || interfaceType.Kind != "interface" {
+				continue
+			}
+			mapped := mappedInterface{XNA: raw}
+			mappedType := surface.typeForXNA(identity)
+			mapped.GoName = qualifiedTypeName(owner, mappedType)
+			for _, argument := range arguments {
+				mapped.TypeArguments = append(mapped.TypeArguments, mapType(surface, byIdentity, owner, argument))
+			}
+			owner.MappedInterfaces = append(owner.MappedInterfaces, mapped)
+			if contractOwner.Kind == "struct" && strings.HasPrefix(owner.XNA, packedVectorNamespace) {
+				collectInterfaceWitnesses(surface, byIdentity, owner, interfaceType, mapped.TypeArguments, map[string]bool{})
+			}
+		}
+	}
+}
+
+func collectInterfaceWitnesses(surface *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, interfaceType *contractType, arguments []string, visited map[string]bool) {
+	visitKey := interfaceType.Name + "[" + strings.Join(arguments, ",") + "]"
+	if visited[visitKey] {
+		return
+	}
+	visited[visitKey] = true
+
+	substitutions := make(map[string]string)
+	for i, parameter := range interfaceType.GenericParameters {
+		if i < len(arguments) {
+			substitutions[parameter.Name] = arguments[i]
+		}
+	}
+	mappedInterfaceType := surface.typeForXNA(interfaceType.Name)
+	if mappedInterfaceType != nil {
+		for _, memberKey := range mappedInterfaceType.Members {
+			member := surface.Members[memberKey]
+			parameters := substituteMappedTypes(member.Parameters, substitutions)
+			results := substituteMappedTypes(member.Results, substitutions)
+			concreteKey := symbolKey{Package: owner.PackagePath, Receiver: owner.GoName, Name: member.GoName}
+			if concrete := surface.Members[concreteKey]; concrete != nil && equalStrings(concrete.Parameters, parameters) && equalStrings(concrete.Results, results) {
+				continue
+			}
+			if _, exists := surface.InterfaceWitnesses[concreteKey]; exists {
+				continue
+			}
+			surface.InterfaceWitnesses[concreteKey] = &expectedInterfaceWitness{
+				Key:             concreteKey,
+				Owner:           owner.XNA,
+				SourceInterface: interfaceType.Name,
+				InterfaceMember: member.XNA,
+				GoName:          member.GoName,
+				Parameters:      parameters,
+				Results:         results,
+				Reason:          "exported Go method required to witness an explicit CLR interface implementation",
+			}
+		}
+	}
+
+	for _, rawBase := range interfaceType.DirectInterfaces {
+		baseIdentity, rawArguments := splitConstructedType(rawBase)
+		baseType := byIdentity[baseIdentity]
+		if baseType == nil || baseType.Kind != "interface" {
+			continue
+		}
+		baseArguments := make([]string, 0, len(rawArguments))
+		for _, rawArgument := range rawArguments {
+			if mapped, ok := substitutions[strings.TrimPrefix(rawArgument, "!")]; ok {
+				baseArguments = append(baseArguments, mapped)
+				continue
+			}
+			baseArguments = append(baseArguments, rawArgument)
+		}
+		collectInterfaceWitnesses(surface, byIdentity, owner, baseType, baseArguments, visited)
+	}
+}
+
+func qualifiedTypeName(owner, target *expectedType) string {
+	if target == nil {
+		return "any"
+	}
+	if target.PackagePath == owner.PackagePath {
+		return target.GoName
+	}
+	return strings.ToLower(path.Base(target.PackagePath)) + "." + target.GoName
+}
+
+func substituteMappedTypes(values []string, substitutions map[string]string) []string {
+	result := make([]string, len(values))
+	for i, value := range values {
+		if replacement, ok := substitutions[value]; ok {
+			result[i] = replacement
+		} else {
+			result[i] = value
+		}
+	}
+	return result
+}
+
+func splitConstructedType(raw string) (string, []string) {
+	open := strings.Index(raw, "[")
+	if open < 0 || !strings.HasSuffix(raw, "]") {
+		return raw, nil
+	}
+	identity := raw[:open]
+	contents := raw[open+1 : len(raw)-1]
+	var arguments []string
+	start, depth := 0, 0
+	for i, character := range contents {
+		switch character {
+		case '[':
+			depth++
+		case ']':
+			depth--
+		case ',':
+			if depth == 0 {
+				arguments = append(arguments, strings.TrimSpace(contents[start:i]))
+				start = i + 1
+			}
+		}
+	}
+	arguments = append(arguments, strings.TrimSpace(contents[start:]))
+	return identity, arguments
 }
 
 func parameterShape(params []contractParameter) string {

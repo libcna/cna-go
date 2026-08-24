@@ -52,6 +52,8 @@ func curveArgumentError(message string) error {
 
 func formatSingle(value float32) string {
 	switch {
+	case value == 0:
+		return "0"
 	case math.IsNaN(float64(value)):
 		return "NaN"
 	case math.IsInf(float64(value), 1):
@@ -59,7 +61,7 @@ func formatSingle(value float32) string {
 	case math.IsInf(float64(value), -1):
 		return "-Infinity"
 	default:
-		return strconv.FormatFloat(float64(value), 'g', -1, 32)
+		return strconv.FormatFloat(float64(value), 'G', 7, 32)
 	}
 }
 

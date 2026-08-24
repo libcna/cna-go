@@ -51,6 +51,14 @@ pointers are never a substitute for `IntPtr`.
 signed 100-nanosecond ticks in an `int64`. It is deliberately not
 `time.Duration`: Duration has nanosecond units and a materially smaller range.
 
+CLR owner generic-parameter tokens are substituted before a Go signature is
+formed. `!0` means the owner's first declared generic parameter, `!1` the
+second, and so on. Thus the `!0` storage type in
+`IPackedVector<TPacked>.PackedValue` maps to `TPacked`; the raw CLR token can
+never appear in Go. Substitution recurses through the supported array,
+nullable, and generic shapes. A malformed token or an index with no declared
+owner parameter is a `GENERIC_MAPPING_MISMATCH`, not an `any` escape hatch.
+
 `System.Nullable<T>` is a source identity retained by the verifier rather than
 a fake public `System` package type. A nullable value input maps to `*T`, where
 `nil` means null and a non-nil pointer supplies a value. A nullable return maps
@@ -164,6 +172,49 @@ is introduced by an authoritative runtime boundary, returns `(T, bool, error)`:
 the first Boolean is nullable `hasValue`, while `error` reports genuine
 failure. An `out Nullable<T>` still retains `OutNullableOfT` in its deterministic
 overload shape even though its Go result expands to two values.
+
+Interface kind alone does not make an operation fallible. Interface identities
+are explicitly classified by their execution boundary. A native/runtime
+interface may retain a final `error`; a pure managed value interface does not
+gain one merely because its owner is an interface. Both PackedVector
+interfaces are pure managed value interfaces, so their mapped contracts are:
+
+```go
+type IPackedVector interface {
+    ToVector4() framework.Vector4
+    PackFromVector4(framework.Vector4)
+}
+
+type IPackedVectorOfTPacked[TPacked any] interface {
+    IPackedVector
+    PackedValue() TPacked
+    SetPackedValue(TPacked)
+}
+```
+
+This is an explicit reusable classification; it does not remove error results
+from unrelated interfaces.
+
+## Mutable struct interface projection
+
+A mutable CLR struct remains a Go value struct. Its non-mutating operations use
+value receivers, while property setters and other state-changing interface
+operations use pointer receivers. Consequently the verifier requires `*T`, not
+`T`, to implement the exact constructed mutable interface. For every concrete
+PackedVector format, compiler `go/types` evidence proves that `*T` implements
+`IPackedVectorOfTPacked[exact fixed-width type]` and transitively
+`IPackedVector`, while `T` retains ordinary value-copy semantics and does not
+implement the mutable method set.
+
+CLR explicit interface implementations are not always ordinary public declared
+members, but Go structural interfaces require exported witness methods. Such a
+method is admitted only when an actual mapped direct interface forces its exact
+name and signature and the source type does not already declare the public
+member. Witnesses remain compiler-extracted and are reported separately; they
+do not increase `REFERENCE_MEMBERS`, `EXPECTED_GO_MEMBERS`, or
+`TARGET_MEMBERS`. A missing or wrong witness is an interface/signature
+diagnostic. An arbitrary extra or a claimed witness not required by the mapped
+interface remains `UNEXPECTED_MEMBER`; there is no witness allowlist.
 
 ## Inheritance and Game
 

@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 29,
+    "COMPLETE_TYPES": 48,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -15,14 +15,16 @@
     "FLAGS_MAPPING_MISMATCH": 0,
     "GENERIC_MAPPING_MISMATCH": 0,
     "INTERFACE_MAPPING_MISMATCH": 0,
+    "INTERFACE_WITNESS_PROJECTIONS": 25,
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 180,
-    "MISSING_TYPE": 222,
-    "MISSING_TYPES": 222,
+    "MISSING_TYPE": 203,
+    "MISSING_TYPES": 203,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
+    "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
     "PARAMETER_MAPPING_MISMATCH": 0,
     "PARTIAL_TYPES": 6,
     "PROPERTY_MAPPING_MISMATCH": 0,
@@ -32,9 +34,10 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1089,
-    "TARGET_TYPES": 35,
-    "TOTAL_DIAGNOSTICS": 402,
+    "TARGET_MEMBERS": 1278,
+    "TARGET_TYPES": 54,
+    "TOTAL_DIAGNOSTICS": 383,
+    "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
     "UNEXPECTED_TYPE": 0,
@@ -1375,120 +1378,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Alpha8",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Bgr565",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Bgra4444",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra5551",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Bgra5551",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Byte4",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Byte4",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfSingle",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:HalfSingle",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector2",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:HalfVector2",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector4",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:HalfVector4",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:IPackedVector",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:IPackedVectorOfTPacked",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte2",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:NormalizedByte2",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte4",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:NormalizedByte4",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort2",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:NormalizedShort2",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort4",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:NormalizedShort4",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Rg32",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Rg32",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba1010102",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Rgba1010102",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba64",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Rgba64",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Short2",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Short2",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Short4",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector:Short4",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.PresentInterval",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:PresentInterval",
       "message": "mapped Go type is absent"
@@ -2467,6 +2356,25 @@
     "Microsoft.Xna.Framework.CurveLoopType",
     "Microsoft.Xna.Framework.CurveTangent",
     "Microsoft.Xna.Framework.GameTime",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra5551",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Byte4",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.HalfSingle",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector2",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector4",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte2",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte4",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort2",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort4",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Rg32",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba1010102",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba64",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Short2",
+    "Microsoft.Xna.Framework.Graphics.PackedVector.Short4",
     "Microsoft.Xna.Framework.Graphics.SpriteEffects",
     "Microsoft.Xna.Framework.Graphics.SpriteSortMode",
     "Microsoft.Xna.Framework.Graphics.Viewport",
@@ -2817,25 +2725,6 @@
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
     "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
     "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra5551",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Byte4",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.HalfSingle",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector2",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector4",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte2",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte4",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort2",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort4",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Rg32",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba1010102",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba64",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Short2",
-    "Microsoft.Xna.Framework.Graphics.PackedVector.Short4",
     "Microsoft.Xna.Framework.Graphics.PresentInterval",
     "Microsoft.Xna.Framework.Graphics.PresentationParameters",
     "Microsoft.Xna.Framework.Graphics.PrimitiveType",
@@ -2927,9 +2816,598 @@
     "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
     "Microsoft.Xna.Framework.TitleContainer"
   ],
+  "interfaceWitnessProjections": [
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
+      "member": "ToVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::ToVector4()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "ToVector4() framework.Vector4",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
+      "member": "ToVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::ToVector4()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "ToVector4() framework.Vector4",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra5551",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Byte4",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfSingle",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfSingle",
+      "member": "ToVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::ToVector4()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "ToVector4() framework.Vector4",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector2",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector2",
+      "member": "ToVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::ToVector4()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "ToVector4() framework.Vector4",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector4",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte2",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte2",
+      "member": "ToVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::ToVector4()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "ToVector4() framework.Vector4",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte4",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort2",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort2",
+      "member": "ToVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::ToVector4()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "ToVector4() framework.Vector4",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort4",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Rg32",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Rg32",
+      "member": "ToVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::ToVector4()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "ToVector4() framework.Vector4",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba1010102",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba64",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Short2",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Short2",
+      "member": "ToVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::ToVector4()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "ToVector4() framework.Vector4",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Short4",
+      "member": "PackFromVector4",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    }
+  ],
+  "packedInterfaceConformance": [
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
+      "interface": "IPackedVectorOfTPacked[uint8]",
+      "tPacked": "uint8",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
+      "interface": "IPackedVectorOfTPacked[uint16]",
+      "tPacked": "uint16",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
+      "interface": "IPackedVectorOfTPacked[uint16]",
+      "tPacked": "uint16",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra5551",
+      "interface": "IPackedVectorOfTPacked[uint16]",
+      "tPacked": "uint16",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Byte4",
+      "interface": "IPackedVectorOfTPacked[uint32]",
+      "tPacked": "uint32",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfSingle",
+      "interface": "IPackedVectorOfTPacked[uint16]",
+      "tPacked": "uint16",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector2",
+      "interface": "IPackedVectorOfTPacked[uint32]",
+      "tPacked": "uint32",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector4",
+      "interface": "IPackedVectorOfTPacked[uint64]",
+      "tPacked": "uint64",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte2",
+      "interface": "IPackedVectorOfTPacked[uint16]",
+      "tPacked": "uint16",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte4",
+      "interface": "IPackedVectorOfTPacked[uint32]",
+      "tPacked": "uint32",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort2",
+      "interface": "IPackedVectorOfTPacked[uint32]",
+      "tPacked": "uint32",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort4",
+      "interface": "IPackedVectorOfTPacked[uint64]",
+      "tPacked": "uint64",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Rg32",
+      "interface": "IPackedVectorOfTPacked[uint32]",
+      "tPacked": "uint32",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba1010102",
+      "interface": "IPackedVectorOfTPacked[uint32]",
+      "tPacked": "uint32",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba64",
+      "interface": "IPackedVectorOfTPacked[uint64]",
+      "tPacked": "uint64",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Short2",
+      "interface": "IPackedVectorOfTPacked[uint32]",
+      "tPacked": "uint32",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Short4",
+      "interface": "IPackedVectorOfTPacked[uint64]",
+      "tPacked": "uint64",
+      "pointerMethodSetSatisfies": true,
+      "valueMethodSetSatisfies": false,
+      "transitiveBaseSatisfies": true,
+      "status": "PASS"
+    }
+  ],
+  "packedVectorTypeMeasurements": [
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
+      "goName": "Alpha8",
+      "sourceMembers": 9,
+      "expectedGoMembers": 10,
+      "targetGoMembers": 10,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint8",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
+      "goName": "Bgr565",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint16",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
+      "goName": "Bgra4444",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint16",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra5551",
+      "goName": "Bgra5551",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint16",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Byte4",
+      "goName": "Byte4",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint32",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfSingle",
+      "goName": "HalfSingle",
+      "sourceMembers": 9,
+      "expectedGoMembers": 10,
+      "targetGoMembers": 10,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint16",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector2",
+      "goName": "HalfVector2",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint32",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.HalfVector4",
+      "goName": "HalfVector4",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint64",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "goName": "IPackedVector",
+      "sourceMembers": 2,
+      "expectedGoMembers": 2,
+      "targetGoMembers": 2,
+      "localDiagnostics": 0,
+      "typeKind": "interface"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
+      "goName": "IPackedVectorOfTPacked",
+      "sourceMembers": 1,
+      "expectedGoMembers": 2,
+      "targetGoMembers": 2,
+      "localDiagnostics": 0,
+      "typeKind": "interface"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte2",
+      "goName": "NormalizedByte2",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint16",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedByte4",
+      "goName": "NormalizedByte4",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint32",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort2",
+      "goName": "NormalizedShort2",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint32",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.NormalizedShort4",
+      "goName": "NormalizedShort4",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint64",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Rg32",
+      "goName": "Rg32",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint32",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba1010102",
+      "goName": "Rgba1010102",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint32",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba64",
+      "goName": "Rgba64",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint64",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Short2",
+      "goName": "Short2",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint32",
+      "directPackedInterfaceStatus": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PackedVector.Short4",
+      "goName": "Short4",
+      "sourceMembers": 10,
+      "expectedGoMembers": 11,
+      "targetGoMembers": 11,
+      "localDiagnostics": 0,
+      "typeKind": "struct",
+      "tPacked": "uint64",
+      "directPackedInterfaceStatus": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "5f741220e7a947a7c5c20d079746cc848fa0f26429b58ea5fc7f10a2a5087a6a",
+    "mappingSha256": "84ef8906c5767c8da71a537fb7c7ad8c1d58083bdddcd346ac1ba3a919de3004",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

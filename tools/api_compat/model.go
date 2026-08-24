@@ -1,6 +1,9 @@
 package main
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"go/types"
+)
 
 type contract struct {
 	SchemaVersion int            `json:"schemaVersion"`
@@ -55,12 +58,14 @@ type contractParameter struct {
 }
 
 type expectedSurface struct {
-	Types             map[symbolKey]*expectedType
-	Members           map[symbolKey]*expectedMember
-	ReferenceTypes    int
-	ReferenceMembers  int
-	ExpectedGoTypes   int
-	ExpectedGoMembers int
+	Types              map[symbolKey]*expectedType
+	Members            map[symbolKey]*expectedMember
+	InterfaceWitnesses map[symbolKey]*expectedInterfaceWitness
+	MappingIssues      []diagnostic
+	ReferenceTypes     int
+	ReferenceMembers   int
+	ExpectedGoTypes    int
+	ExpectedGoMembers  int
 }
 
 type expectedType struct {
@@ -74,7 +79,26 @@ type expectedType struct {
 	Interfaces       []string
 	AllInterfaces    []string
 	GenericParameter []string
+	MappedInterfaces []mappedInterface
 	Members          []symbolKey
+	SourceMembers    int
+}
+
+type mappedInterface struct {
+	XNA           string
+	GoName        string
+	TypeArguments []string
+}
+
+type expectedInterfaceWitness struct {
+	Key             symbolKey
+	Owner           string
+	SourceInterface string
+	InterfaceMember string
+	GoName          string
+	Parameters      []string
+	Results         []string
+	Reason          string
 }
 
 type expectedMember struct {
@@ -100,6 +124,7 @@ type actualSurface struct {
 	TypeErrors  []string
 	Unmeasured  []string
 	PackageDirs map[string]string
+	Packages    map[string]*types.Package
 }
 
 type actualType struct {
@@ -141,15 +166,50 @@ type diagnostic struct {
 }
 
 type report struct {
-	SchemaVersion int            `json:"schemaVersion"`
-	Profile       string         `json:"profile"`
-	Mode          string         `json:"mode"`
-	Summary       map[string]int `json:"summary"`
-	Diagnostics   []diagnostic   `json:"diagnostics"`
-	CompleteTypes []string       `json:"completeTypes"`
-	PartialTypes  []typeStatus   `json:"partialTypes"`
-	MissingTypes  []string       `json:"missingTypes"`
-	Metadata      reportMetadata `json:"metadata"`
+	SchemaVersion                int                           `json:"schemaVersion"`
+	Profile                      string                        `json:"profile"`
+	Mode                         string                        `json:"mode"`
+	Summary                      map[string]int                `json:"summary"`
+	Diagnostics                  []diagnostic                  `json:"diagnostics"`
+	CompleteTypes                []string                      `json:"completeTypes"`
+	PartialTypes                 []typeStatus                  `json:"partialTypes"`
+	MissingTypes                 []string                      `json:"missingTypes"`
+	InterfaceWitnessProjections  []interfaceWitnessProjection  `json:"interfaceWitnessProjections,omitempty"`
+	PackedInterfaceConformance   []packedInterfaceConformance  `json:"packedInterfaceConformance,omitempty"`
+	PackedVectorTypeMeasurements []packedVectorTypeMeasurement `json:"packedVectorTypeMeasurements,omitempty"`
+	Metadata                     reportMetadata                `json:"metadata"`
+}
+
+type interfaceWitnessProjection struct {
+	Owner           string `json:"owner"`
+	Member          string `json:"member"`
+	SourceInterface string `json:"sourceInterface"`
+	InterfaceMember string `json:"interfaceMember"`
+	Reason          string `json:"reason"`
+	Signature       string `json:"signature"`
+	Status          string `json:"status"`
+}
+
+type packedInterfaceConformance struct {
+	Owner                     string `json:"owner"`
+	Interface                 string `json:"interface"`
+	TPacked                   string `json:"tPacked"`
+	PointerMethodSetSatisfies bool   `json:"pointerMethodSetSatisfies"`
+	ValueMethodSetSatisfies   bool   `json:"valueMethodSetSatisfies"`
+	TransitiveBaseSatisfies   bool   `json:"transitiveBaseSatisfies"`
+	Status                    string `json:"status"`
+}
+
+type packedVectorTypeMeasurement struct {
+	XNA                   string `json:"xna"`
+	GoName                string `json:"goName"`
+	SourceMembers         int    `json:"sourceMembers"`
+	ExpectedGoMembers     int    `json:"expectedGoMembers"`
+	TargetGoMembers       int    `json:"targetGoMembers"`
+	LocalDiagnostics      int    `json:"localDiagnostics"`
+	TypeKind              string `json:"typeKind"`
+	TPacked               string `json:"tPacked,omitempty"`
+	DirectInterfaceStatus string `json:"directPackedInterfaceStatus,omitempty"`
 }
 
 type typeStatus struct {

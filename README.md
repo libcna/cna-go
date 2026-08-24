@@ -1,7 +1,7 @@
 # CNA-Go
 
 > **Status:** early, measured binding foundation — functional for the qualified
-> Foundation 1 runtime and Foundation 2/3 managed closures, far from full
+> Foundation 1 runtime and Foundation 2/3/4 managed closures, far from full
 > XNA compatibility.
 
 CNA-Go maps Microsoft XNA Framework 4.0 namespaces to Go import paths and
@@ -25,8 +25,8 @@ nor native handles.
 
 The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,243 expected Go members. The current target has 35 types and 1,089 members:
-29 types are complete, six native/runtime types are partial, and 222 are
+3,243 expected Go members. The current target has 54 types and 1,278 members:
+48 types are complete, six native/runtime types are partial, and 203 are
 missing. The strict verifier remains red because most XNA surface is
 intentionally absent. Every mismatch, leak, allowlist, and unmeasured-category
 gate is green.
@@ -63,12 +63,28 @@ Foundation 3 qualifies the complete managed Curve family with no ABI expansion:
   negative-cycle behavior;
 - a 142-observation `PURE_XNA_DERIVED` corpus with zero failures.
 
+Foundation 4 qualifies the complete managed PackedVector family with no ABI
+expansion:
+
+- both managed interfaces, including general `!0 -> TPacked` substitution and
+  `IPackedVectorOfTPacked[TPacked]` generic identity;
+- exact pointer-method-set conformance for all seventeen mutable value structs;
+- 25 formally measured explicit-interface witness methods without member-count
+  inflation or allowlists;
+- XNA-exact UNorm, SNorm, raw byte/short, and non-IEEE half packing behavior;
+- 262,400 exhaustive packed-pattern round trips and a 201-observation
+  `PURE_XNA_DERIVED` corpus with zero failures.
+
 See [geometry and transform evidence](docs/geometry-transform-evidence.md) for
 the computed closure, mapping decisions, conventions, and local strict-zero
 matrix.
 
 See [Curve evidence](docs/curve-evidence.md) for the collection-language
 projection, class/clone semantics, binary32 interpolation, and local matrix.
+
+See [PackedVector evidence](docs/packed-vector-evidence.md) for generic and
+interface projection, bit layouts, rounding/non-finite rules, half semantics,
+exhaustive sweeps, and the 19-type local strict-zero matrix.
 
 The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
@@ -109,13 +125,14 @@ go build -trimpath ./...
 go run ./tools/api_compat --mode report
 go run ./tools/api_compat --mode leak-only
 go run ./tools/behavior
+go run ./tools/packed_vector_qualify
 go run ./tools/capabilities --check
 go run ./tools/native_abi -library /absolute/path/to/libcna_c_api.so
 go run ./tools/native_stress
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its 402 missing-surface diagnostics are the work queue, not a
+surface exists; its 383 missing-surface diagnostics are the work queue, not a
 compatibility claim.
 The native ABI and stress commands require the qualified native environment.
 

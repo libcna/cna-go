@@ -29,6 +29,7 @@ func extractActual(root string) (*actualSurface, error) {
 		Types:       make(map[symbolKey]*actualType),
 		Members:     make(map[symbolKey]*actualMember),
 		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
 	}
 	frameworkRoot := filepath.Join(root, "Microsoft", "Xna", "Framework")
 	err = filepath.WalkDir(frameworkRoot, func(dir string, entry os.DirEntry, walkErr error) error {
@@ -159,7 +160,10 @@ func extractPackage(surface *actualSurface, packagePath, dir string, filenames [
 			surface.TypeErrors = append(surface.TypeErrors, packagePath+": "+err.Error())
 		},
 	}
-	_, _ = conf.Check(packagePath, fset, files, info)
+	checkedPackage, _ := conf.Check(packagePath, fset, files, info)
+	if checkedPackage != nil {
+		surface.Packages[packagePath] = checkedPackage
+	}
 
 	for _, file := range files {
 		for _, decl := range file.Decls {

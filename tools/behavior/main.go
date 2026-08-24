@@ -11,6 +11,7 @@ import (
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
+	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
 )
 
 type observation struct {
@@ -420,6 +421,119 @@ func runCorpus() corpusReport {
 	check("curve.loop.negative-cycle-offset", "CURVE_LOOPS", "0xc1200000", bits(offsetLoop.Evaluate(3)))
 	check("curve.loop.negative-oscillate", "CURVE_LOOPS", "0x41200000", bits(oscillateLoop.Evaluate(3)))
 	check("curve.loop.multiple-offset", "CURVE_LOOPS", "0xc1a00000,0x41a00000", floatBits(offsetLoop.Evaluate(1), offsetLoop.Evaluate(9)))
+
+	check("packed.alpha.zero", "PACKED_ALPHA", uint8(0), packedvector.NewAlpha8(0).PackedValue())
+	check("packed.alpha.ordinary", "PACKED_ALPHA", uint8(128), packedvector.NewAlpha8(0.5).PackedValue())
+	check("packed.alpha.clamp-low", "PACKED_ALPHA", uint8(0), packedvector.NewAlpha8(-1).PackedValue())
+	check("packed.alpha.clamp-high", "PACKED_ALPHA", uint8(255), packedvector.NewAlpha8(2).PackedValue())
+	check("packed.alpha.tie-even-zero", "PACKED_ALPHA", uint8(0), packedvector.NewAlpha8(float32(0.5/255)).PackedValue())
+	check("packed.alpha.tie-even-two", "PACKED_ALPHA", uint8(2), packedvector.NewAlpha8(float32(2.5/255)).PackedValue())
+	check("packed.alpha.non-finite", "PACKED_ALPHA", "0,255,0", fmt.Sprintf("%d,%d,%d", packedvector.NewAlpha8(float32(math.NaN())).PackedValue(), packedvector.NewAlpha8(float32(math.Inf(1))).PackedValue(), packedvector.NewAlpha8(float32(math.Inf(-1))).PackedValue()))
+
+	check("packed.bgr565.ordinary", "PACKED_16BIT_COLOR", uint16(17431), packedvector.NewBgr565BySingleAndSingleAndSingle(0.25, 0.5, 0.75).PackedValue())
+	check("packed.bgr565.lanes", "PACKED_16BIT_COLOR", "63488,2016,31", fmt.Sprintf("%d,%d,%d", packedvector.NewBgr565BySingleAndSingleAndSingle(1, 0, 0).PackedValue(), packedvector.NewBgr565BySingleAndSingleAndSingle(0, 1, 0).PackedValue(), packedvector.NewBgr565BySingleAndSingleAndSingle(0, 0, 1).PackedValue()))
+	check("packed.bgra4444.ordinary", "PACKED_16BIT_COLOR", uint16(50025), packedvector.NewBgra4444BySingleAndSingleAndSingleAndSingle(0.2, 0.4, 0.6, 0.8).PackedValue())
+	check("packed.bgra4444.lanes", "PACKED_16BIT_COLOR", "3840,240,15,61440", fmt.Sprintf("%d,%d,%d,%d", packedvector.NewBgra4444BySingleAndSingleAndSingleAndSingle(1, 0, 0, 0).PackedValue(), packedvector.NewBgra4444BySingleAndSingleAndSingleAndSingle(0, 1, 0, 0).PackedValue(), packedvector.NewBgra4444BySingleAndSingleAndSingleAndSingle(0, 0, 1, 0).PackedValue(), packedvector.NewBgra4444BySingleAndSingleAndSingleAndSingle(0, 0, 0, 1).PackedValue()))
+	check("packed.bgra5551.ordinary", "PACKED_16BIT_COLOR", uint16(8727), packedvector.NewBgra5551BySingleAndSingleAndSingleAndSingle(0.25, 0.5, 0.75, 0.5).PackedValue())
+	check("packed.bgra5551.alpha-threshold", "PACKED_16BIT_COLOR", "0,0,32768", fmt.Sprintf("%d,%d,%d", packedvector.NewBgra5551BySingleAndSingleAndSingleAndSingle(0, 0, 0, math.Nextafter32(0.5, 0)).PackedValue(), packedvector.NewBgra5551BySingleAndSingleAndSingleAndSingle(0, 0, 0, 0.5).PackedValue(), packedvector.NewBgra5551BySingleAndSingleAndSingleAndSingle(0, 0, 0, math.Nextafter32(0.5, 1)).PackedValue()))
+
+	check("packed.byte4.raw-domain", "PACKED_BYTE4", uint32(4286578944), packedvector.NewByte4BySingleAndSingleAndSingleAndSingle(-1, 1, 128, 256).PackedValue())
+	check("packed.byte4.ties", "PACKED_BYTE4", uint32(67240448), packedvector.NewByte4BySingleAndSingleAndSingleAndSingle(0.5, 1.5, 2.5, 3.5).PackedValue())
+	check("packed.byte4.non-finite", "PACKED_BYTE4", uint32(0x8000ff00), packedvector.NewByte4BySingleAndSingleAndSingleAndSingle(float32(math.NaN()), float32(math.Inf(1)), float32(math.Inf(-1)), 127.5).PackedValue())
+	check("packed.byte4.decode", "PACKED_BYTE4", "0x00000000,0x3f800000,0x43000000,0x437f0000", func() string {
+		value := packedvector.NewByte4BySingleAndSingleAndSingleAndSingle(-1, 1, 128, 256).ToVector4()
+		return floatBits(value.X, value.Y, value.Z, value.W)
+	}())
+
+	check("packed.half.single", "PACKED_HALF", uint16(13653), packedvector.NewHalfSingle(float32(1.0/3.0)).PackedValue())
+	check("packed.half.vector2-order", "PACKED_HALF", uint32(3221240832), packedvector.NewHalfVector2BySingleAndSingle(1, -2).PackedValue())
+	check("packed.half.vector4-order", "PACKED_HALF", uint64(9223433612727172096), packedvector.NewHalfVector4BySingleAndSingleAndSingleAndSingle(1, -2, 0.5, math.Float32frombits(0x80000000)).PackedValue())
+	halfFixtures := []struct {
+		id      string
+		input   uint32
+		packed  uint16
+		decoded uint32
+		text    string
+	}{
+		{"positive-zero", 0x00000000, 0x0000, 0x00000000, "0"},
+		{"negative-zero", 0x80000000, 0x8000, 0x80000000, "0"},
+		{"smallest-subnormal", 0x33800000, 0x0001, 0x33800000, "5.960464E-08"},
+		{"largest-subnormal", 0x387fc000, 0x03ff, 0x387fc000, "6.097555E-05"},
+		{"smallest-normal", 0x38800000, 0x0400, 0x38800000, "6.103516E-05"},
+		{"tie-even-low", 0x3f801000, 0x3c00, 0x3f800000, "1"},
+		{"tie-even-high", 0x3f803000, 0x3c02, 0x3f804000, "1.001953"},
+		{"maximum-conventional-finite", 0x477fe000, 0x7bff, 0x477fe000, "65504"},
+		{"exponent31-boundary", 0x477ff000, 0x7c00, 0x47800000, "65536"},
+		{"positive-infinity", 0x7f800000, 0x7fff, 0x47ffe000, "131008"},
+		{"negative-infinity", 0xff800000, 0xffff, 0xc7ffe000, "-131008"},
+		{"positive-nan", 0x7fc12345, 0x7fff, 0x47ffe000, "131008"},
+		{"negative-nan", 0xffc12345, 0xffff, 0xc7ffe000, "-131008"},
+	}
+	for _, fixture := range halfFixtures {
+		value := packedvector.NewHalfSingle(math.Float32frombits(fixture.input))
+		actual := fmt.Sprintf("%d,%08X,%s", value.PackedValue(), math.Float32bits(value.ToSingle()), value.ToString())
+		expected := fmt.Sprintf("%d,%08X,%s", fixture.packed, fixture.decoded, fixture.text)
+		check("packed.half."+fixture.id, "PACKED_HALF", expected, actual)
+	}
+
+	check("packed.normalized-byte2", "PACKED_NORMALIZED_BYTE", uint16(16513), packedvector.NewNormalizedByte2BySingleAndSingle(-1, 0.5).PackedValue())
+	check("packed.normalized-byte4-endpoints", "PACKED_NORMALIZED_BYTE", uint32(2139029633), packedvector.NewNormalizedByte4BySingleAndSingleAndSingleAndSingle(-2, 0, 1, 2).PackedValue())
+	check("packed.normalized-byte4-ties", "PACKED_NORMALIZED_BYTE", uint32(4261413376), packedvector.NewNormalizedByte4BySingleAndSingleAndSingleAndSingle(float32(0.5/127), float32(1.5/127), float32(-0.5/127), float32(-1.5/127)).PackedValue())
+	var normalizedByteMinimum packedvector.NormalizedByte2
+	normalizedByteMinimum.SetPackedValue(0x0080)
+	check("packed.normalized-byte-minimum-decodes-minus-one", "PACKED_NORMALIZED_BYTE", "0xbf800000", bits(normalizedByteMinimum.ToVector2().X))
+
+	check("packed.normalized-short2", "PACKED_NORMALIZED_SHORT", uint32(1073774593), packedvector.NewNormalizedShort2BySingleAndSingle(-1, 0.5).PackedValue())
+	check("packed.normalized-short4-endpoints", "PACKED_NORMALIZED_SHORT", uint64(9223231295071485953), packedvector.NewNormalizedShort4BySingleAndSingleAndSingleAndSingle(-2, 0, 1, 2).PackedValue())
+	check("packed.normalized-short4-ties", "PACKED_NORMALIZED_SHORT", uint64(18446181123756261376), packedvector.NewNormalizedShort4BySingleAndSingleAndSingleAndSingle(float32(0.5/32767), float32(1.5/32767), float32(-0.5/32767), float32(-1.5/32767)).PackedValue())
+	var normalizedShortMinimum packedvector.NormalizedShort2
+	normalizedShortMinimum.SetPackedValue(0x00008000)
+	check("packed.normalized-short-minimum-decodes-minus-one", "PACKED_NORMALIZED_SHORT", "0xbf800000", bits(normalizedShortMinimum.ToVector2().X))
+
+	check("packed.rg32.ordinary", "PACKED_RG_RGBA", uint32(3221176320), packedvector.NewRg32BySingleAndSingle(0.25, 0.75).PackedValue())
+	check("packed.rg32.lanes", "PACKED_RG_RGBA", "65535,4294901760", fmt.Sprintf("%d,%d", packedvector.NewRg32BySingleAndSingle(1, 0).PackedValue(), packedvector.NewRg32BySingleAndSingle(0, 1).PackedValue()))
+	check("packed.rgba1010102.ordinary", "PACKED_RG_RGBA", uint32(2952265984), packedvector.NewRgba1010102BySingleAndSingleAndSingleAndSingle(0.25, 0.5, 0.75, 0.5).PackedValue())
+	check("packed.rgba1010102.lanes", "PACKED_RG_RGBA", "1023,1047552,1072693248,3221225472", fmt.Sprintf("%d,%d,%d,%d", packedvector.NewRgba1010102BySingleAndSingleAndSingleAndSingle(1, 0, 0, 0).PackedValue(), packedvector.NewRgba1010102BySingleAndSingleAndSingleAndSingle(0, 1, 0, 0).PackedValue(), packedvector.NewRgba1010102BySingleAndSingleAndSingleAndSingle(0, 0, 1, 0).PackedValue(), packedvector.NewRgba1010102BySingleAndSingleAndSingleAndSingle(0, 0, 0, 1).PackedValue()))
+	check("packed.rgba64.ordinary", "PACKED_RG_RGBA", uint64(18446673702817906688), packedvector.NewRgba64BySingleAndSingleAndSingleAndSingle(0.25, 0.5, 0.75, 1).PackedValue())
+	check("packed.rgba64.lanes", "PACKED_RG_RGBA", "65535,4294901760,281470681743360,18446462598732840960", fmt.Sprintf("%d,%d,%d,%d", packedvector.NewRgba64BySingleAndSingleAndSingleAndSingle(1, 0, 0, 0).PackedValue(), packedvector.NewRgba64BySingleAndSingleAndSingleAndSingle(0, 1, 0, 0).PackedValue(), packedvector.NewRgba64BySingleAndSingleAndSingleAndSingle(0, 0, 1, 0).PackedValue(), packedvector.NewRgba64BySingleAndSingleAndSingleAndSingle(0, 0, 0, 1).PackedValue()))
+
+	check("packed.short2.endpoints", "PACKED_SHORT", uint32(2147450880), packedvector.NewShort2BySingleAndSingle(-32768, 32767).PackedValue())
+	check("packed.short4.ordinary", "PACKED_SHORT", uint64(9223090574762868736), packedvector.NewShort4BySingleAndSingleAndSingleAndSingle(-32768, -1.5, 2.5, 32768).PackedValue())
+	check("packed.short4.ties", "PACKED_SHORT", uint64(562954248257536), packedvector.NewShort4BySingleAndSingleAndSingleAndSingle(-0.5, -1.5, 0.5, 1.5).PackedValue())
+	check("packed.short4.non-finite", "PACKED_SHORT", uint64(0x7fff80007fff0000), packedvector.NewShort4BySingleAndSingleAndSingleAndSingle(float32(math.NaN()), float32(math.Inf(1)), float32(math.Inf(-1)), 32768).PackedValue())
+
+	interfaceInput := framework.Vector4{X: -2, Y: 0.5, Z: 2, W: 0.25}
+	alphaInterface := packedvector.Alpha8{}
+	var alphaPacked packedvector.IPackedVectorOfTPacked[uint8] = &alphaInterface
+	alphaPacked.PackFromVector4(interfaceInput)
+	check("packed.interface.alpha8", "PACKED_INTERFACE", "64,0x00000000,0x00000000,0x00000000,0x3e808081", fmt.Sprintf("%d,%s", alphaPacked.PackedValue(), floatBits(alphaPacked.ToVector4().X, alphaPacked.ToVector4().Y, alphaPacked.ToVector4().Z, alphaPacked.ToVector4().W)))
+	bgrInterface := packedvector.Bgr565{}
+	var bgrPacked packedvector.IPackedVectorOfTPacked[uint16] = &bgrInterface
+	bgrPacked.PackFromVector4(interfaceInput)
+	check("packed.interface.bgr565", "PACKED_INTERFACE", "1055,0x00000000,0x3f020821,0x3f800000,0x3f800000", fmt.Sprintf("%d,%s", bgrPacked.PackedValue(), floatBits(bgrPacked.ToVector4().X, bgrPacked.ToVector4().Y, bgrPacked.ToVector4().Z, bgrPacked.ToVector4().W)))
+	halfInterface := packedvector.HalfSingle{}
+	var halfPacked packedvector.IPackedVectorOfTPacked[uint16] = &halfInterface
+	halfPacked.PackFromVector4(interfaceInput)
+	check("packed.interface.halfsingle", "PACKED_INTERFACE", "49152,0xc0000000,0x00000000,0x00000000,0x3f800000", fmt.Sprintf("%d,%s", halfPacked.PackedValue(), floatBits(halfPacked.ToVector4().X, halfPacked.ToVector4().Y, halfPacked.ToVector4().Z, halfPacked.ToVector4().W)))
+	normalizedByteInterface := packedvector.NormalizedByte2{}
+	var normalizedBytePacked packedvector.IPackedVectorOfTPacked[uint16] = &normalizedByteInterface
+	normalizedBytePacked.PackFromVector4(interfaceInput)
+	check("packed.interface.normalizedbyte2", "PACKED_INTERFACE", "16513,0xbf800000,0x3f010204,0x00000000,0x3f800000", fmt.Sprintf("%d,%s", normalizedBytePacked.PackedValue(), floatBits(normalizedBytePacked.ToVector4().X, normalizedBytePacked.ToVector4().Y, normalizedBytePacked.ToVector4().Z, normalizedBytePacked.ToVector4().W)))
+	rgInterface := packedvector.Rg32{}
+	var rgPacked packedvector.IPackedVectorOfTPacked[uint32] = &rgInterface
+	rgPacked.PackFromVector4(interfaceInput)
+	check("packed.interface.rg32", "PACKED_INTERFACE", "2147483648,0x00000000,0x3f000080,0x00000000,0x3f800000", fmt.Sprintf("%d,%s", rgPacked.PackedValue(), floatBits(rgPacked.ToVector4().X, rgPacked.ToVector4().Y, rgPacked.ToVector4().Z, rgPacked.ToVector4().W)))
+	shortInterface := packedvector.Short2{}
+	var shortPacked packedvector.IPackedVectorOfTPacked[uint32] = &shortInterface
+	shortPacked.PackFromVector4(interfaceInput)
+	check("packed.interface.short2", "PACKED_INTERFACE", "65534,0xc0000000,0x00000000,0x00000000,0x3f800000", fmt.Sprintf("%d,%s", shortPacked.PackedValue(), floatBits(shortPacked.ToVector4().X, shortPacked.ToVector4().Y, shortPacked.ToVector4().Z, shortPacked.ToVector4().W)))
+
+	var packedValue64 packedvector.HalfVector4
+	packedValue64.SetPackedValue(0xfedcba9876543210)
+	check("packed.value64.hash-string", "PACKED_INTERFACE", "-2004318072,{X:0.1894531 Y:25920 Z:-0.8242188 W:-112384}", fmt.Sprintf("%d,%s", packedValue64.GetHashCode(), packedValue64.ToString()))
+	packedValue64Copy := packedValue64
+	packedValue64Copy.SetPackedValue(0)
+	check("packed.value64.copy-and-equality", "PACKED_INTERFACE", "true,true,false,true", fmt.Sprintf("%t,%t,%t,%t", packedValue64.EqualsByObject(packedValue64), packedvector.HalfVector4OperatorEqualityByHalfVector4AndHalfVector4(packedValue64, packedValue64), packedValue64.EqualsByHalfVector4(packedValue64Copy), packedvector.HalfVector4OperatorInequalityByHalfVector4AndHalfVector4(packedValue64, packedValue64Copy)))
 
 	return report
 }

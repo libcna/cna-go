@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations",
   "summary": {
-    "OBSERVATIONS": 142,
-    "ASSERTIONS": 142,
+    "OBSERVATIONS": 201,
+    "ASSERTIONS": 201,
     "FAILURES": 0
   },
   "observations": [
@@ -999,6 +999,419 @@
       "group": "CURVE_LOOPS",
       "expected": "0xc1a00000,0x41a00000",
       "actual": "0xc1a00000,0x41a00000",
+      "passed": true
+    },
+    {
+      "id": "packed.alpha.zero",
+      "group": "PACKED_ALPHA",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "packed.alpha.ordinary",
+      "group": "PACKED_ALPHA",
+      "expected": 128,
+      "actual": 128,
+      "passed": true
+    },
+    {
+      "id": "packed.alpha.clamp-low",
+      "group": "PACKED_ALPHA",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "packed.alpha.clamp-high",
+      "group": "PACKED_ALPHA",
+      "expected": 255,
+      "actual": 255,
+      "passed": true
+    },
+    {
+      "id": "packed.alpha.tie-even-zero",
+      "group": "PACKED_ALPHA",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "packed.alpha.tie-even-two",
+      "group": "PACKED_ALPHA",
+      "expected": 2,
+      "actual": 2,
+      "passed": true
+    },
+    {
+      "id": "packed.alpha.non-finite",
+      "group": "PACKED_ALPHA",
+      "expected": "0,255,0",
+      "actual": "0,255,0",
+      "passed": true
+    },
+    {
+      "id": "packed.bgr565.ordinary",
+      "group": "PACKED_16BIT_COLOR",
+      "expected": 17431,
+      "actual": 17431,
+      "passed": true
+    },
+    {
+      "id": "packed.bgr565.lanes",
+      "group": "PACKED_16BIT_COLOR",
+      "expected": "63488,2016,31",
+      "actual": "63488,2016,31",
+      "passed": true
+    },
+    {
+      "id": "packed.bgra4444.ordinary",
+      "group": "PACKED_16BIT_COLOR",
+      "expected": 50025,
+      "actual": 50025,
+      "passed": true
+    },
+    {
+      "id": "packed.bgra4444.lanes",
+      "group": "PACKED_16BIT_COLOR",
+      "expected": "3840,240,15,61440",
+      "actual": "3840,240,15,61440",
+      "passed": true
+    },
+    {
+      "id": "packed.bgra5551.ordinary",
+      "group": "PACKED_16BIT_COLOR",
+      "expected": 8727,
+      "actual": 8727,
+      "passed": true
+    },
+    {
+      "id": "packed.bgra5551.alpha-threshold",
+      "group": "PACKED_16BIT_COLOR",
+      "expected": "0,0,32768",
+      "actual": "0,0,32768",
+      "passed": true
+    },
+    {
+      "id": "packed.byte4.raw-domain",
+      "group": "PACKED_BYTE4",
+      "expected": 4286578944,
+      "actual": 4286578944,
+      "passed": true
+    },
+    {
+      "id": "packed.byte4.ties",
+      "group": "PACKED_BYTE4",
+      "expected": 67240448,
+      "actual": 67240448,
+      "passed": true
+    },
+    {
+      "id": "packed.byte4.non-finite",
+      "group": "PACKED_BYTE4",
+      "expected": 2147548928,
+      "actual": 2147548928,
+      "passed": true
+    },
+    {
+      "id": "packed.byte4.decode",
+      "group": "PACKED_BYTE4",
+      "expected": "0x00000000,0x3f800000,0x43000000,0x437f0000",
+      "actual": "0x00000000,0x3f800000,0x43000000,0x437f0000",
+      "passed": true
+    },
+    {
+      "id": "packed.half.single",
+      "group": "PACKED_HALF",
+      "expected": 13653,
+      "actual": 13653,
+      "passed": true
+    },
+    {
+      "id": "packed.half.vector2-order",
+      "group": "PACKED_HALF",
+      "expected": 3221240832,
+      "actual": 3221240832,
+      "passed": true
+    },
+    {
+      "id": "packed.half.vector4-order",
+      "group": "PACKED_HALF",
+      "expected": 9223433612727172096,
+      "actual": 9223433612727172096,
+      "passed": true
+    },
+    {
+      "id": "packed.half.positive-zero",
+      "group": "PACKED_HALF",
+      "expected": "0,00000000,0",
+      "actual": "0,00000000,0",
+      "passed": true
+    },
+    {
+      "id": "packed.half.negative-zero",
+      "group": "PACKED_HALF",
+      "expected": "32768,80000000,0",
+      "actual": "32768,80000000,0",
+      "passed": true
+    },
+    {
+      "id": "packed.half.smallest-subnormal",
+      "group": "PACKED_HALF",
+      "expected": "1,33800000,5.960464E-08",
+      "actual": "1,33800000,5.960464E-08",
+      "passed": true
+    },
+    {
+      "id": "packed.half.largest-subnormal",
+      "group": "PACKED_HALF",
+      "expected": "1023,387FC000,6.097555E-05",
+      "actual": "1023,387FC000,6.097555E-05",
+      "passed": true
+    },
+    {
+      "id": "packed.half.smallest-normal",
+      "group": "PACKED_HALF",
+      "expected": "1024,38800000,6.103516E-05",
+      "actual": "1024,38800000,6.103516E-05",
+      "passed": true
+    },
+    {
+      "id": "packed.half.tie-even-low",
+      "group": "PACKED_HALF",
+      "expected": "15360,3F800000,1",
+      "actual": "15360,3F800000,1",
+      "passed": true
+    },
+    {
+      "id": "packed.half.tie-even-high",
+      "group": "PACKED_HALF",
+      "expected": "15362,3F804000,1.001953",
+      "actual": "15362,3F804000,1.001953",
+      "passed": true
+    },
+    {
+      "id": "packed.half.maximum-conventional-finite",
+      "group": "PACKED_HALF",
+      "expected": "31743,477FE000,65504",
+      "actual": "31743,477FE000,65504",
+      "passed": true
+    },
+    {
+      "id": "packed.half.exponent31-boundary",
+      "group": "PACKED_HALF",
+      "expected": "31744,47800000,65536",
+      "actual": "31744,47800000,65536",
+      "passed": true
+    },
+    {
+      "id": "packed.half.positive-infinity",
+      "group": "PACKED_HALF",
+      "expected": "32767,47FFE000,131008",
+      "actual": "32767,47FFE000,131008",
+      "passed": true
+    },
+    {
+      "id": "packed.half.negative-infinity",
+      "group": "PACKED_HALF",
+      "expected": "65535,C7FFE000,-131008",
+      "actual": "65535,C7FFE000,-131008",
+      "passed": true
+    },
+    {
+      "id": "packed.half.positive-nan",
+      "group": "PACKED_HALF",
+      "expected": "32767,47FFE000,131008",
+      "actual": "32767,47FFE000,131008",
+      "passed": true
+    },
+    {
+      "id": "packed.half.negative-nan",
+      "group": "PACKED_HALF",
+      "expected": "65535,C7FFE000,-131008",
+      "actual": "65535,C7FFE000,-131008",
+      "passed": true
+    },
+    {
+      "id": "packed.normalized-byte2",
+      "group": "PACKED_NORMALIZED_BYTE",
+      "expected": 16513,
+      "actual": 16513,
+      "passed": true
+    },
+    {
+      "id": "packed.normalized-byte4-endpoints",
+      "group": "PACKED_NORMALIZED_BYTE",
+      "expected": 2139029633,
+      "actual": 2139029633,
+      "passed": true
+    },
+    {
+      "id": "packed.normalized-byte4-ties",
+      "group": "PACKED_NORMALIZED_BYTE",
+      "expected": 4261413376,
+      "actual": 4261413376,
+      "passed": true
+    },
+    {
+      "id": "packed.normalized-byte-minimum-decodes-minus-one",
+      "group": "PACKED_NORMALIZED_BYTE",
+      "expected": "0xbf800000",
+      "actual": "0xbf800000",
+      "passed": true
+    },
+    {
+      "id": "packed.normalized-short2",
+      "group": "PACKED_NORMALIZED_SHORT",
+      "expected": 1073774593,
+      "actual": 1073774593,
+      "passed": true
+    },
+    {
+      "id": "packed.normalized-short4-endpoints",
+      "group": "PACKED_NORMALIZED_SHORT",
+      "expected": 9223231295071485953,
+      "actual": 9223231295071485953,
+      "passed": true
+    },
+    {
+      "id": "packed.normalized-short4-ties",
+      "group": "PACKED_NORMALIZED_SHORT",
+      "expected": 18446181123756261376,
+      "actual": 18446181123756261376,
+      "passed": true
+    },
+    {
+      "id": "packed.normalized-short-minimum-decodes-minus-one",
+      "group": "PACKED_NORMALIZED_SHORT",
+      "expected": "0xbf800000",
+      "actual": "0xbf800000",
+      "passed": true
+    },
+    {
+      "id": "packed.rg32.ordinary",
+      "group": "PACKED_RG_RGBA",
+      "expected": 3221176320,
+      "actual": 3221176320,
+      "passed": true
+    },
+    {
+      "id": "packed.rg32.lanes",
+      "group": "PACKED_RG_RGBA",
+      "expected": "65535,4294901760",
+      "actual": "65535,4294901760",
+      "passed": true
+    },
+    {
+      "id": "packed.rgba1010102.ordinary",
+      "group": "PACKED_RG_RGBA",
+      "expected": 2952265984,
+      "actual": 2952265984,
+      "passed": true
+    },
+    {
+      "id": "packed.rgba1010102.lanes",
+      "group": "PACKED_RG_RGBA",
+      "expected": "1023,1047552,1072693248,3221225472",
+      "actual": "1023,1047552,1072693248,3221225472",
+      "passed": true
+    },
+    {
+      "id": "packed.rgba64.ordinary",
+      "group": "PACKED_RG_RGBA",
+      "expected": 18446673702817906688,
+      "actual": 18446673702817906688,
+      "passed": true
+    },
+    {
+      "id": "packed.rgba64.lanes",
+      "group": "PACKED_RG_RGBA",
+      "expected": "65535,4294901760,281470681743360,18446462598732840960",
+      "actual": "65535,4294901760,281470681743360,18446462598732840960",
+      "passed": true
+    },
+    {
+      "id": "packed.short2.endpoints",
+      "group": "PACKED_SHORT",
+      "expected": 2147450880,
+      "actual": 2147450880,
+      "passed": true
+    },
+    {
+      "id": "packed.short4.ordinary",
+      "group": "PACKED_SHORT",
+      "expected": 9223090574762868736,
+      "actual": 9223090574762868736,
+      "passed": true
+    },
+    {
+      "id": "packed.short4.ties",
+      "group": "PACKED_SHORT",
+      "expected": 562954248257536,
+      "actual": 562954248257536,
+      "passed": true
+    },
+    {
+      "id": "packed.short4.non-finite",
+      "group": "PACKED_SHORT",
+      "expected": 9223231301513838592,
+      "actual": 9223231301513838592,
+      "passed": true
+    },
+    {
+      "id": "packed.interface.alpha8",
+      "group": "PACKED_INTERFACE",
+      "expected": "64,0x00000000,0x00000000,0x00000000,0x3e808081",
+      "actual": "64,0x00000000,0x00000000,0x00000000,0x3e808081",
+      "passed": true
+    },
+    {
+      "id": "packed.interface.bgr565",
+      "group": "PACKED_INTERFACE",
+      "expected": "1055,0x00000000,0x3f020821,0x3f800000,0x3f800000",
+      "actual": "1055,0x00000000,0x3f020821,0x3f800000,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "packed.interface.halfsingle",
+      "group": "PACKED_INTERFACE",
+      "expected": "49152,0xc0000000,0x00000000,0x00000000,0x3f800000",
+      "actual": "49152,0xc0000000,0x00000000,0x00000000,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "packed.interface.normalizedbyte2",
+      "group": "PACKED_INTERFACE",
+      "expected": "16513,0xbf800000,0x3f010204,0x00000000,0x3f800000",
+      "actual": "16513,0xbf800000,0x3f010204,0x00000000,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "packed.interface.rg32",
+      "group": "PACKED_INTERFACE",
+      "expected": "2147483648,0x00000000,0x3f000080,0x00000000,0x3f800000",
+      "actual": "2147483648,0x00000000,0x3f000080,0x00000000,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "packed.interface.short2",
+      "group": "PACKED_INTERFACE",
+      "expected": "65534,0xc0000000,0x00000000,0x00000000,0x3f800000",
+      "actual": "65534,0xc0000000,0x00000000,0x00000000,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "packed.value64.hash-string",
+      "group": "PACKED_INTERFACE",
+      "expected": "-2004318072,{X:0.1894531 Y:25920 Z:-0.8242188 W:-112384}",
+      "actual": "-2004318072,{X:0.1894531 Y:25920 Z:-0.8242188 W:-112384}",
+      "passed": true
+    },
+    {
+      "id": "packed.value64.copy-and-equality",
+      "group": "PACKED_INTERFACE",
+      "expected": "true,true,false,true",
+      "actual": "true,true,false,true",
       "passed": true
     }
   ]

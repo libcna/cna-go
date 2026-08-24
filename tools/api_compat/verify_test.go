@@ -2,7 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"go/types"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -60,6 +65,296 @@ func TestNullableMappingKeepsInputReturnOutAndErrorDistinct(t *testing.T) {
 	withError := append(append([]string(nil), mapReturn(surface, nil, owner, stringPointer(nullableSingle))...), "error")
 	if !equalStrings(withError, []string{"float32", "bool", "error"}) {
 		t.Fatalf("nullable/error result = %v", withError)
+	}
+}
+
+func TestOwnerGenericParameterSubstitution(t *testing.T) {
+	owner := &expectedType{
+		XNA:              "Example.Pair`2",
+		PackagePath:      modulePath + "/Microsoft/Xna/Framework",
+		GenericParameter: []string{"TFirst", "TSecond"},
+	}
+	surface := &expectedSurface{}
+
+	if got := mapType(surface, nil, owner, "!0"); got != "TFirst" {
+		t.Fatalf("!0 = %q, want TFirst", got)
+	}
+	if got := mapType(surface, nil, owner, "!1"); got != "TSecond" {
+		t.Fatalf("!1 = %q, want TSecond", got)
+	}
+	if got := mapType(surface, nil, owner, "!0[]"); got != "[]TFirst" {
+		t.Fatalf("!0[] = %q, want []TFirst", got)
+	}
+	if got := mapType(surface, nil, owner, "System.Nullable`1[!1]"); got != "*TSecond" {
+		t.Fatalf("Nullable<!1> = %q, want *TSecond", got)
+	}
+	if got := mapType(surface, nil, owner, "System.Collections.Generic.IEnumerator`1[!0]"); got != "Iterator[TFirst]" {
+		t.Fatalf("IEnumerator<!0> = %q, want Iterator[TFirst]", got)
+	}
+	if _, matched, err := mapOwnerGenericParameter(owner, "!!0"); matched || err != nil {
+		t.Fatalf("method token !!0 was treated as an owner token: matched=%t err=%v", matched, err)
+	}
+
+	for _, invalid := range []string{"!", "!x", "!-1", "!2"} {
+		before := len(surface.MappingIssues)
+		if got := mapType(surface, nil, owner, invalid); got != "any" {
+			t.Fatalf("invalid %s = %q, want any", invalid, got)
+		}
+		if len(surface.MappingIssues) != before+1 || surface.MappingIssues[len(surface.MappingIssues)-1].Category != "GENERIC_MAPPING_MISMATCH" {
+			t.Fatalf("invalid %s did not add GENERIC_MAPPING_MISMATCH: %+v", invalid, surface.MappingIssues)
+		}
+	}
+}
+
+func TestPackedVectorMappedContract(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const prefix = "Microsoft.Xna.Framework.Graphics.PackedVector."
+	want := map[string]struct {
+		goName       string
+		source       int
+		mapped       int
+		tPacked      string
+		witnessCount int
+	}{
+		prefix + "IPackedVector":    {"IPackedVector", 2, 2, "", 0},
+		prefix + "IPackedVector`1":  {"IPackedVectorOfTPacked", 1, 2, "TPacked", 0},
+		prefix + "Alpha8":           {"Alpha8", 9, 10, "uint8", 2},
+		prefix + "Bgr565":           {"Bgr565", 10, 11, "uint16", 2},
+		prefix + "Bgra4444":         {"Bgra4444", 10, 11, "uint16", 1},
+		prefix + "Bgra5551":         {"Bgra5551", 10, 11, "uint16", 1},
+		prefix + "Byte4":            {"Byte4", 10, 11, "uint32", 1},
+		prefix + "HalfSingle":       {"HalfSingle", 9, 10, "uint16", 2},
+		prefix + "HalfVector2":      {"HalfVector2", 10, 11, "uint32", 2},
+		prefix + "HalfVector4":      {"HalfVector4", 10, 11, "uint64", 1},
+		prefix + "NormalizedByte2":  {"NormalizedByte2", 10, 11, "uint16", 2},
+		prefix + "NormalizedByte4":  {"NormalizedByte4", 10, 11, "uint32", 1},
+		prefix + "NormalizedShort2": {"NormalizedShort2", 10, 11, "uint32", 2},
+		prefix + "NormalizedShort4": {"NormalizedShort4", 10, 11, "uint64", 1},
+		prefix + "Rg32":             {"Rg32", 10, 11, "uint32", 2},
+		prefix + "Rgba1010102":      {"Rgba1010102", 10, 11, "uint32", 1},
+		prefix + "Rgba64":           {"Rgba64", 10, 11, "uint64", 1},
+		prefix + "Short2":           {"Short2", 10, 11, "uint32", 2},
+		prefix + "Short4":           {"Short4", 10, 11, "uint64", 1},
+	}
+
+	sourceTotal := 0
+	mappedTotal := 0
+	for identity, expected := range want {
+		mapped := surface.typeForXNA(identity)
+		if mapped == nil {
+			t.Fatalf("%s was not mapped", identity)
+		}
+		if mapped.GoName != expected.goName || mapped.SourceMembers != expected.source || len(mapped.Members) != expected.mapped {
+			t.Fatalf("%s = name %s source %d mapped %d, want %+v", identity, mapped.GoName, mapped.SourceMembers, len(mapped.Members), expected)
+		}
+		if expected.tPacked != "" && identity != prefix+"IPackedVector`1" {
+			packedInterface, ok := directPackedInterface(mapped)
+			if !ok || !equalStrings(packedInterface.TypeArguments, []string{expected.tPacked}) {
+				t.Fatalf("%s packed interface = %+v, want %s", identity, packedInterface, expected.tPacked)
+			}
+		}
+		witnesses := 0
+		for _, witness := range surface.InterfaceWitnesses {
+			if witness.Owner == identity {
+				witnesses++
+			}
+		}
+		if witnesses != expected.witnessCount {
+			t.Fatalf("%s witnesses = %d, want %d", identity, witnesses, expected.witnessCount)
+		}
+		sourceTotal += expected.source
+		mappedTotal += expected.mapped
+	}
+	if sourceTotal != 171 || mappedTotal != 189 || len(surface.InterfaceWitnesses) != 25 {
+		t.Fatalf("PackedVector totals = source %d mapped %d witnesses %d", sourceTotal, mappedTotal, len(surface.InterfaceWitnesses))
+	}
+
+	base := surface.typeForXNA(prefix + "IPackedVector")
+	toVector4 := surface.Members[symbolKey{Package: base.PackagePath, Receiver: base.GoName, Name: "ToVector4"}]
+	packFromVector4 := surface.Members[symbolKey{Package: base.PackagePath, Receiver: base.GoName, Name: "PackFromVector4"}]
+	if toVector4 == nil || packFromVector4 == nil || toVector4.ErrorAdded || packFromVector4.ErrorAdded || !equalStrings(toVector4.Results, []string{"framework.Vector4"}) || len(packFromVector4.Results) != 0 {
+		t.Fatalf("managed base interface signatures = ToVector4 %+v PackFromVector4 %+v", toVector4, packFromVector4)
+	}
+	generic := surface.typeForXNA(prefix + "IPackedVector`1")
+	if !equalStrings(generic.GenericParameter, []string{"TPacked"}) || len(generic.MappedInterfaces) != 1 || generic.MappedInterfaces[0].GoName != "IPackedVector" {
+		t.Fatalf("generic packed interface identity/inheritance = %+v", generic)
+	}
+	getter := surface.Members[symbolKey{Package: generic.PackagePath, Receiver: generic.GoName, Name: "PackedValue"}]
+	setter := surface.Members[symbolKey{Package: generic.PackagePath, Receiver: generic.GoName, Name: "SetPackedValue"}]
+	if getter == nil || setter == nil || getter.ErrorAdded || setter.ErrorAdded || !equalStrings(getter.Results, []string{"TPacked"}) || !equalStrings(setter.Parameters, []string{"TPacked"}) || len(setter.Results) != 0 {
+		t.Fatalf("generic PackedValue projection = getter %+v setter %+v", getter, setter)
+	}
+}
+
+func loadPinnedContract(t *testing.T) contract {
+	t.Helper()
+	data, err := os.ReadFile("reference/xna40-windows-runtime-contract.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reference contract
+	if err := json.Unmarshal(data, &reference); err != nil {
+		t.Fatal(err)
+	}
+	return reference
+}
+
+func TestPackedVectorCurrentSurfaceAndConformance(t *testing.T) {
+	reference := loadPinnedContract(t)
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("type errors: %v", actual.TypeErrors)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	if result.Summary["INTERFACE_WITNESS_PROJECTIONS"] != 25 || result.Summary["PACKFROMVECTOR4_WITNESS_PROJECTIONS"] != 17 || result.Summary["TOVECTOR4_WITNESS_PROJECTIONS"] != 8 {
+		t.Fatalf("witness counters = %v", result.Summary)
+	}
+	if len(result.PackedInterfaceConformance) != 17 || len(result.PackedVectorTypeMeasurements) != 19 {
+		t.Fatalf("packed measurements = conformance %d types %d", len(result.PackedInterfaceConformance), len(result.PackedVectorTypeMeasurements))
+	}
+	for _, conformance := range result.PackedInterfaceConformance {
+		if conformance.Status != "PASS" || !conformance.PointerMethodSetSatisfies || conformance.ValueMethodSetSatisfies || !conformance.TransitiveBaseSatisfies {
+			t.Fatalf("conformance failed: %+v", conformance)
+		}
+	}
+	for _, measurement := range result.PackedVectorTypeMeasurements {
+		if measurement.LocalDiagnostics != 0 || measurement.TargetGoMembers != measurement.ExpectedGoMembers {
+			t.Fatalf("local PackedVector surface failed: %+v", measurement)
+		}
+	}
+	for _, category := range diagnosticCategories[2:] {
+		if result.Summary[category] != 0 {
+			t.Fatalf("%s = %d", category, result.Summary[category])
+		}
+	}
+}
+
+func TestPackedPointerMethodSetPolicyRejectsValueSatisfaction(t *testing.T) {
+	const pkgPath = modulePath + "/Microsoft/Xna/Framework/Graphics/PackedVector"
+	const source = `package packedvector
+type Vector4 struct{}
+type IPackedVector interface { ToVector4() Vector4; PackFromVector4(Vector4) }
+type IPackedVectorOfTPacked[TPacked any] interface { IPackedVector; PackedValue() TPacked; SetPackedValue(TPacked) }
+type Alpha8 struct{}
+func (Alpha8) ToVector4() Vector4 { return Vector4{} }
+func (Alpha8) PackFromVector4(Vector4) {}
+func (Alpha8) PackedValue() uint8 { return 0 }
+func (Alpha8) SetPackedValue(uint8) {}
+`
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "mutation.go", source, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pkg, err := new(types.Config).Check(pkgPath, fset, []*ast.File{file}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	owner := &expectedType{
+		Key:         symbolKey{Package: pkgPath, Name: "Alpha8"},
+		XNA:         packedVectorNamespace + "Alpha8",
+		GoName:      "Alpha8",
+		PackagePath: pkgPath,
+		MappedInterfaces: []mappedInterface{{
+			XNA:           packedVectorNamespace + "IPackedVector`1[System.Byte]",
+			GoName:        "IPackedVectorOfTPacked",
+			TypeArguments: []string{"uint8"},
+		}},
+	}
+	result := report{Summary: map[string]int{}}
+	measurement, measured := measurePackedInterfaceConformance(&result, &actualSurface{Packages: map[string]*types.Package{pkgPath: pkg}}, owner)
+	if !measured || measurement.Status != "FAIL" || !measurement.ValueMethodSetSatisfies || result.Summary["INTERFACE_MAPPING_MISMATCH"] == 0 {
+		t.Fatalf("value receiver mutation was accepted: measurement=%+v summary=%v", measurement, result.Summary)
+	}
+}
+
+func TestPackedGenericConformanceRejectsWrongTPackedAndMissingMutation(t *testing.T) {
+	const pkgPath = modulePath + "/Microsoft/Xna/Framework/Graphics/PackedVector"
+	fixtures := []struct {
+		name       string
+		sourceTail string
+		tPacked    string
+	}{
+		{
+			name: "wrong TPacked",
+			sourceTail: `
+func (Alpha8) ToVector4() Vector4 { return Vector4{} }
+func (*Alpha8) PackFromVector4(Vector4) {}
+func (Alpha8) PackedValue() uint8 { return 0 }
+func (*Alpha8) SetPackedValue(uint8) {}
+`,
+			tPacked: "uint16",
+		},
+		{
+			name: "missing PackFromVector4",
+			sourceTail: `
+func (Alpha8) ToVector4() Vector4 { return Vector4{} }
+func (Alpha8) PackedValue() uint8 { return 0 }
+func (*Alpha8) SetPackedValue(uint8) {}
+`,
+			tPacked: "uint8",
+		},
+		{
+			name: "wrong PackedValue setter type",
+			sourceTail: `
+func (Alpha8) ToVector4() Vector4 { return Vector4{} }
+func (*Alpha8) PackFromVector4(Vector4) {}
+func (Alpha8) PackedValue() uint8 { return 0 }
+func (*Alpha8) SetPackedValue(uint16) {}
+`,
+			tPacked: "uint8",
+		},
+	}
+	const sourceHead = `package packedvector
+type Vector4 struct{}
+type IPackedVector interface { ToVector4() Vector4; PackFromVector4(Vector4) }
+type IPackedVectorOfTPacked[TPacked any] interface { IPackedVector; PackedValue() TPacked; SetPackedValue(TPacked) }
+type Alpha8 struct{}
+`
+	for _, fixture := range fixtures {
+		t.Run(fixture.name, func(t *testing.T) {
+			fset := token.NewFileSet()
+			file, err := parser.ParseFile(fset, "mutation.go", sourceHead+fixture.sourceTail, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			pkg, err := new(types.Config).Check(pkgPath, fset, []*ast.File{file}, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			owner := &expectedType{
+				Key:         symbolKey{Package: pkgPath, Name: "Alpha8"},
+				XNA:         packedVectorNamespace + "Alpha8",
+				GoName:      "Alpha8",
+				PackagePath: pkgPath,
+				MappedInterfaces: []mappedInterface{{
+					XNA:           packedVectorNamespace + "IPackedVector`1[System.Byte]",
+					GoName:        "IPackedVectorOfTPacked",
+					TypeArguments: []string{fixture.tPacked},
+				}},
+			}
+			result := report{Summary: map[string]int{}}
+			measurement, measured := measurePackedInterfaceConformance(&result, &actualSurface{Packages: map[string]*types.Package{pkgPath: pkg}}, owner)
+			if !measured || measurement.Status != "FAIL" || result.Summary["INTERFACE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("mutation was accepted: measurement=%+v summary=%v", measurement, result.Summary)
+			}
+		})
 	}
 }
 
@@ -141,7 +436,7 @@ func mutationCase(mutation string) (*expectedSurface, *actualSurface) {
 	memberKey := symbolKey{Package: pkg, Receiver: "Probe", Name: "Act"}
 	et := &expectedType{Key: typeKey, XNA: "Microsoft.Xna.Framework.Probe", GoName: "Probe", PackagePath: pkg, Kind: "struct", Members: []symbolKey{memberKey}}
 	em := &expectedMember{Key: memberKey, XNA: "Microsoft.Xna.Framework.Probe::Act(System.Int32)", Owner: et.XNA, SourceKind: "method", GoKind: "method", GoName: "Act", PackagePath: pkg, Receiver: "Probe", Parameters: []string{"int32"}, Results: []string{"bool"}}
-	expected := &expectedSurface{Types: map[symbolKey]*expectedType{typeKey: et}, Members: map[symbolKey]*expectedMember{memberKey: em}, ReferenceTypes: 1, ReferenceMembers: 1, ExpectedGoTypes: 1, ExpectedGoMembers: 1}
+	expected := &expectedSurface{Types: map[symbolKey]*expectedType{typeKey: et}, Members: map[symbolKey]*expectedMember{memberKey: em}, InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness), ReferenceTypes: 1, ReferenceMembers: 1, ExpectedGoTypes: 1, ExpectedGoMembers: 1}
 	at := &actualType{Key: typeKey, Kind: "struct", Underlying: "struct{}"}
 	am := &actualMember{Key: memberKey, Kind: "method", Parameters: []string{"int32"}, Results: []string{"bool"}}
 	actual := &actualSurface{Types: map[symbolKey]*actualType{typeKey: at}, Members: map[symbolKey]*actualMember{memberKey: am}, PackageDirs: map[string]string{}}
@@ -235,6 +530,44 @@ func mutationCase(mutation string) (*expectedSurface, *actualSurface) {
 		am.Results = []string{"interop.GameRef"}
 	case "unmeasured":
 		actual.Unmeasured = []string{"probe.go"}
+	case "missing_packed_witness", "wrong_packed_witness":
+		witnessKey := symbolKey{Package: pkg, Receiver: "Probe", Name: "PackFromVector4"}
+		expected.InterfaceWitnesses[witnessKey] = &expectedInterfaceWitness{
+			Key: witnessKey, Owner: et.XNA, SourceInterface: packedVectorNamespace + "IPackedVector",
+			InterfaceMember: packedVectorNamespace + "IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
+			GoName:          "PackFromVector4", Parameters: []string{"Vector4"},
+		}
+		if mutation == "wrong_packed_witness" {
+			actual.Members[witnessKey] = &actualMember{Key: witnessKey, Kind: "method", Parameters: []string{"Vector3"}}
+		}
+	case "wrong_packed_tovector_result":
+		witnessKey := symbolKey{Package: pkg, Receiver: "Probe", Name: "ToVector4"}
+		expected.InterfaceWitnesses[witnessKey] = &expectedInterfaceWitness{
+			Key: witnessKey, Owner: et.XNA, SourceInterface: packedVectorNamespace + "IPackedVector",
+			InterfaceMember: packedVectorNamespace + "IPackedVector::ToVector4()",
+			GoName:          "ToVector4", Results: []string{"Vector4"},
+		}
+		actual.Members[witnessKey] = &actualMember{Key: witnessKey, Kind: "method", Results: []string{"Vector3"}}
+	case "bogus_packed_witness":
+		bogus := symbolKey{Package: pkg, Receiver: "Probe", Name: "InventedWitness"}
+		actual.Members[bogus] = &actualMember{Key: bogus, Kind: "method"}
+	case "wrong_packed_setter":
+		em.GoName = "SetPackedValue"
+		em.Parameters = []string{"uint8"}
+		am.Parameters = []string{"uint16"}
+	case "missing_packed_inheritance":
+		et.Kind = "interface"
+		at.Kind = "interface"
+		et.MappedInterfaces = []mappedInterface{{XNA: packedVectorNamespace + "IPackedVector", GoName: "IPackedVector"}}
+	case "wrong_packed_generic_name":
+		delete(expected.Types, typeKey)
+		delete(actual.Types, typeKey)
+		expectedKey := symbolKey{Package: pkg, Name: "IPackedVectorOfTPacked"}
+		et.Key, et.GoName, et.Kind, et.GenericParameter = expectedKey, expectedKey.Name, "interface", []string{"TPacked"}
+		expected.Types[expectedKey] = et
+		wrongKey := symbolKey{Package: pkg, Name: "IPackedVectorGeneric"}
+		at.Key, at.Kind, at.TypeParameters = wrongKey, "interface", []string{"TPacked"}
+		actual.Types[wrongKey] = at
 	}
 	return expected, actual
 }

@@ -21,11 +21,11 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 | `UNIMPLEMENTED_CNA_GO` | Design-time APIs | strict structural report | Deferred. |
 | `UNIMPLEMENTED_CNA_GO` | Effects, models, and 3D | strict structural report | Deliberately deferred; no BasicEffect, cube, depth-state, or fake capability API exists. |
 | `UNIMPLEMENTED_CNA_GO` | Media and video | strict structural report | Deferred. |
-| `UNIMPLEMENTED_CNA_GO` | PackedVector family | strict structural report | Deferred. |
 | `UNIMPLEMENTED_CNA_GO` | Storage | strict structural report | Deferred. |
 | `UNIMPLEMENTED_CNA_GO` | Touch input | strict structural report | Deferred. |
 | `UPSTREAM_CNA_BLOCKED` | Native sanitizer evidence | qualified library is not instrumented | NATIVE_SANITIZER_STATUS=NOT_RUN; no leak-freedom claim. |
-| `VERIFIED_MANAGED` | Pure-value Foundation closure | api-compat and behavior-corpus reports | Nine locally complete types; Vector2 and Color remain measured partials. |
+| `VERIFIED_MANAGED` | PackedVector family | docs/packed-vector-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete 19-type managed closure; no CNA ABI route or runtime/hardware claim. |
+| `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, and PackedVector closures are locally strict-zero; six native/runtime types remain explicitly partial. |
 | `VERIFIED_MANAGED` | XNA namespace/package mapping | tools/api_compat and docs/xna-go-mapping.md | Case-preserving import paths; consumer aliases are not API. |
 | `VERIFIED_NATIVE` | Go callback error/panic containment | 20 returned-error and 20 panic subprocess cycles | No panic or Go error crosses C; Run returns the stored Go failure. |
 | `VERIFIED_NATIVE` | GraphicsDevice.Clear | 60/600 canary | Routes through cna_graphics_device_clear_rgba. |

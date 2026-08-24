@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "authority": "PURE_XNA_DERIVED round-trip invariants confirmed from pinned XNA 4.0 IL",
+  "sourceAssemblySha256": "38e7093f52d7474bbc6256906519781a1210d7da50a1c667b52716fcf49ca130",
+  "sweeps": [
+    {
+      "type": "Alpha8",
+      "iterations": 256,
+      "failures": 0,
+      "rule": "encode(decode(bits)) == bits"
+    },
+    {
+      "type": "Bgr565",
+      "iterations": 65536,
+      "failures": 0,
+      "rule": "encode(decode(bits)) == bits"
+    },
+    {
+      "type": "Bgra4444",
+      "iterations": 65536,
+      "failures": 0,
+      "rule": "encode(decode(bits)) == bits"
+    },
+    {
+      "type": "Bgra5551",
+      "iterations": 65536,
+      "failures": 0,
+      "rule": "encode(decode(bits)) == bits"
+    },
+    {
+      "type": "HalfSingle",
+      "iterations": 65536,
+      "failures": 0,
+      "rule": "all encodings decode finite and encode(decode(bits)) == bits"
+    }
+  ],
+  "halfClasses": {
+    "positiveZero": 1,
+    "negativeZero": 1,
+    "subnormal": 2046,
+    "normal": 61440,
+    "exponent31ZeroFraction": 2,
+    "exponent31Fraction": 2046,
+    "nonFiniteDecodes": 0
+  },
+  "totalIterations": 262400,
+  "failures": 0
+}
