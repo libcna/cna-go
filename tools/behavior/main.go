@@ -152,6 +152,37 @@ func runCorpus() corpusReport {
 	checkGoProjection("clear-options.bitwise-or", "CLEAR_OPTIONS", "3,9", fmt.Sprintf("%d,%d", graphics.ClearOptionsTarget|graphics.ClearOptionsDepthBuffer, graphics.ClearOptions(8)|graphics.ClearOptionsTarget))
 	checkGoProjection("clear-options.bitwise-and", "CLEAR_OPTIONS", "4,0", fmt.Sprintf("%d,%d", graphics.ClearOptions(7)&graphics.ClearOptionsStencil, graphics.ClearOptions(2)&graphics.ClearOptionsTarget))
 
+	check("surface-format.complete-raw-table", "SURFACE_FORMAT", "Color=0,Bgr565=1,Bgra5551=2,Bgra4444=3,Dxt1=4,Dxt3=5,Dxt5=6,NormalizedByte2=7,NormalizedByte4=8,Rgba1010102=9,Rg32=10,Rgba64=11,Alpha8=12,Single=13,Vector2=14,Vector4=15,HalfSingle=16,HalfVector2=17,HalfVector4=18,HdrBlendable=19", fmt.Sprintf(
+		"Color=%d,Bgr565=%d,Bgra5551=%d,Bgra4444=%d,Dxt1=%d,Dxt3=%d,Dxt5=%d,NormalizedByte2=%d,NormalizedByte4=%d,Rgba1010102=%d,Rg32=%d,Rgba64=%d,Alpha8=%d,Single=%d,Vector2=%d,Vector4=%d,HalfSingle=%d,HalfVector2=%d,HalfVector4=%d,HdrBlendable=%d",
+		graphics.SurfaceFormatColor,
+		graphics.SurfaceFormatBgr565,
+		graphics.SurfaceFormatBgra5551,
+		graphics.SurfaceFormatBgra4444,
+		graphics.SurfaceFormatDxt1,
+		graphics.SurfaceFormatDxt3,
+		graphics.SurfaceFormatDxt5,
+		graphics.SurfaceFormatNormalizedByte2,
+		graphics.SurfaceFormatNormalizedByte4,
+		graphics.SurfaceFormatRgba1010102,
+		graphics.SurfaceFormatRg32,
+		graphics.SurfaceFormatRgba64,
+		graphics.SurfaceFormatAlpha8,
+		graphics.SurfaceFormatSingle,
+		graphics.SurfaceFormatVector2,
+		graphics.SurfaceFormatVector4,
+		graphics.SurfaceFormatHalfSingle,
+		graphics.SurfaceFormatHalfVector2,
+		graphics.SurfaceFormatHalfVector4,
+		graphics.SurfaceFormatHdrBlendable,
+	))
+	surfaceFormatKind := reflect.TypeOf(graphics.SurfaceFormatColor).Kind()
+	check("surface-format.underlying-system-int32", "SURFACE_FORMAT", "System.Int32", map[reflect.Kind]string{reflect.Int32: "System.Int32"}[surfaceFormatKind])
+	check("surface-format.flags", "SURFACE_FORMAT", false, false)
+	var zeroSurfaceFormat graphics.SurfaceFormat
+	checkGoProjection("surface-format.zero-value-color", "SURFACE_FORMAT", graphics.SurfaceFormatColor, zeroSurfaceFormat)
+	checkGoProjection("surface-format.arbitrary-positive-raw", "SURFACE_FORMAT", "20,12345", fmt.Sprintf("%d,%d", graphics.SurfaceFormat(20), graphics.SurfaceFormat(12345)))
+	checkGoProjection("surface-format.negative-raw", "SURFACE_FORMAT", int32(-1), int32(graphics.SurfaceFormat(-1)))
+
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))
 	check("math.lerp", "MathHelper", bits(4), bits(framework.MathHelperLerp(2, 10, 0.25)))

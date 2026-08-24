@@ -26,7 +26,34 @@ const (
 	supportedOrientationsName  = "SupportedOrientations"
 	bufferUsageIdentity        = "Microsoft.Xna.Framework.Graphics.BufferUsage"
 	clearOptionsIdentity       = "Microsoft.Xna.Framework.Graphics.ClearOptions"
+	surfaceFormatIdentity      = "Microsoft.Xna.Framework.Graphics.SurfaceFormat"
 )
+
+var surfaceFormatValues = []struct {
+	Name  string
+	Value string
+}{
+	{"Color", "0"},
+	{"Bgr565", "1"},
+	{"Bgra5551", "2"},
+	{"Bgra4444", "3"},
+	{"Dxt1", "4"},
+	{"Dxt3", "5"},
+	{"Dxt5", "6"},
+	{"NormalizedByte2", "7"},
+	{"NormalizedByte4", "8"},
+	{"Rgba1010102", "9"},
+	{"Rg32", "10"},
+	{"Rgba64", "11"},
+	{"Alpha8", "12"},
+	{"Single", "13"},
+	{"Vector2", "14"},
+	{"Vector4", "15"},
+	{"HalfSingle", "16"},
+	{"HalfVector2", "17"},
+	{"HalfVector4", "18"},
+	{"HdrBlendable", "19"},
+}
 
 var adapterTypes = map[string]bool{
 	"EventSubscription": true,
@@ -190,6 +217,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.DisplayOrientationClosure = measureDisplayOrientationClosure(expected, actual, typeDiagnostics)
 	result.BufferUsageClosure = measureBufferUsageClosure(expected, actual, typeDiagnostics)
 	result.ClearOptionsClosure = measureClearOptionsClosure(expected, actual, typeDiagnostics)
+	result.SurfaceFormatClosure = measureSurfaceFormatClosure(expected, actual, typeDiagnostics)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -221,6 +249,71 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+func measureSurfaceFormatClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) surfaceFormatClosure {
+	measurement := surfaceFormatClosure{
+		SourceTypes:          1,
+		ExpectedKind:         "enum",
+		ActualKind:           "missing",
+		UnderlyingType:       "missing",
+		ValueStorageExcluded: true,
+		Status:               "FAIL",
+	}
+	owner := expected.typeForXNA(surfaceFormatIdentity)
+	if owner == nil {
+		return measurement
+	}
+	measurement.SourceIdentities = owner.SourceMembers
+	measurement.ExpectedGoIdentities = len(owner.Members)
+	measurement.LocalDiagnostics = typeDiagnostics[owner.XNA]
+	if target := actual.Types[owner.Key]; target != nil {
+		measurement.TargetTypes = 1
+		measurement.ActualKind = target.Kind
+		measurement.UnderlyingType = target.Underlying
+		measurement.Flags = target.FlagsMarker
+	}
+
+	valuesPass := true
+	for _, wanted := range surfaceFormatValues {
+		row := enumValueMeasurement{
+			Name:          wanted.Name,
+			ExpectedValue: wanted.Value,
+			ActualValue:   "missing",
+			Status:        "FAIL",
+		}
+		key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + wanted.Name}
+		expectedMember := expected.Members[key]
+		actualMember := actual.Members[key]
+		if actualMember != nil {
+			measurement.TargetGoIdentities++
+			if actualMember.Value != nil {
+				row.ActualValue = normalizeInteger(*actualMember.Value)
+			}
+		}
+		if expectedMember != nil && expectedMember.EnumValue != nil &&
+			normalizeInteger(*expectedMember.EnumValue) == wanted.Value && row.ActualValue == wanted.Value {
+			row.Status = "PASS"
+		} else {
+			valuesPass = false
+		}
+		measurement.Values = append(measurement.Values, row)
+	}
+	for key := range actual.Members {
+		if key.Package != owner.PackagePath || !strings.HasPrefix(key.Name, owner.GoName) {
+			continue
+		}
+		if strings.EqualFold(strings.TrimPrefix(key.Name, owner.GoName), "value__") {
+			measurement.ValueStorageExcluded = false
+		}
+	}
+	if measurement.SourceIdentities == 21 && measurement.ExpectedGoIdentities == 20 &&
+		measurement.TargetTypes == 1 && measurement.TargetGoIdentities == 20 && measurement.LocalDiagnostics == 0 &&
+		measurement.ActualKind == "named" && measurement.UnderlyingType == "int32" && !measurement.Flags &&
+		measurement.ValueStorageExcluded && len(measurement.Values) == 20 && valuesPass {
+		measurement.Status = "PASS"
+	}
+	return measurement
 }
 
 func measureClearOptionsClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) clearOptionsClosure {

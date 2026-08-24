@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 56,
+    "COMPLETE_TYPES": 57,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 196,
-    "MISSING_TYPES": 196,
+    "MISSING_TYPE": 195,
+    "MISSING_TYPES": 195,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1333,
-    "TARGET_TYPES": 61,
-    "TOTAL_DIAGNOSTICS": 373,
+    "TARGET_MEMBERS": 1353,
+    "TARGET_TYPES": 62,
+    "TOTAL_DIAGNOSTICS": 372,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1552,12 +1552,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.SurfaceFormat",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SurfaceFormat",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.Texture",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture",
       "message": "mapped Go type is absent"
@@ -2320,6 +2314,7 @@
     "Microsoft.Xna.Framework.Graphics.PackedVector.Short4",
     "Microsoft.Xna.Framework.Graphics.SpriteEffects",
     "Microsoft.Xna.Framework.Graphics.SpriteSortMode",
+    "Microsoft.Xna.Framework.Graphics.SurfaceFormat",
     "Microsoft.Xna.Framework.Graphics.VertexElement",
     "Microsoft.Xna.Framework.Graphics.VertexElementFormat",
     "Microsoft.Xna.Framework.Graphics.VertexElementUsage",
@@ -2677,7 +2672,6 @@
     "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
     "Microsoft.Xna.Framework.Graphics.SpriteFont",
     "Microsoft.Xna.Framework.Graphics.StencilOperation",
-    "Microsoft.Xna.Framework.Graphics.SurfaceFormat",
     "Microsoft.Xna.Framework.Graphics.Texture",
     "Microsoft.Xna.Framework.Graphics.Texture3D",
     "Microsoft.Xna.Framework.Graphics.TextureAddressMode",
@@ -3487,6 +3481,142 @@
     "clearOptionsNonePresent": false,
     "clearOptionsDefaultPresent": false,
     "clearOptionsAllPresent": false,
+    "status": "PASS"
+  },
+  "surfaceFormatClosure": {
+    "sourceTypes": 1,
+    "sourceIdentities": 21,
+    "expectedGoIdentities": 20,
+    "targetTypes": 1,
+    "targetGoIdentities": 20,
+    "localDiagnostics": 0,
+    "expectedKind": "enum",
+    "actualKind": "named",
+    "underlyingType": "int32",
+    "flags": false,
+    "valueStorageExcluded": true,
+    "values": [
+      {
+        "name": "Color",
+        "expectedValue": "0",
+        "actualValue": "0",
+        "status": "PASS"
+      },
+      {
+        "name": "Bgr565",
+        "expectedValue": "1",
+        "actualValue": "1",
+        "status": "PASS"
+      },
+      {
+        "name": "Bgra5551",
+        "expectedValue": "2",
+        "actualValue": "2",
+        "status": "PASS"
+      },
+      {
+        "name": "Bgra4444",
+        "expectedValue": "3",
+        "actualValue": "3",
+        "status": "PASS"
+      },
+      {
+        "name": "Dxt1",
+        "expectedValue": "4",
+        "actualValue": "4",
+        "status": "PASS"
+      },
+      {
+        "name": "Dxt3",
+        "expectedValue": "5",
+        "actualValue": "5",
+        "status": "PASS"
+      },
+      {
+        "name": "Dxt5",
+        "expectedValue": "6",
+        "actualValue": "6",
+        "status": "PASS"
+      },
+      {
+        "name": "NormalizedByte2",
+        "expectedValue": "7",
+        "actualValue": "7",
+        "status": "PASS"
+      },
+      {
+        "name": "NormalizedByte4",
+        "expectedValue": "8",
+        "actualValue": "8",
+        "status": "PASS"
+      },
+      {
+        "name": "Rgba1010102",
+        "expectedValue": "9",
+        "actualValue": "9",
+        "status": "PASS"
+      },
+      {
+        "name": "Rg32",
+        "expectedValue": "10",
+        "actualValue": "10",
+        "status": "PASS"
+      },
+      {
+        "name": "Rgba64",
+        "expectedValue": "11",
+        "actualValue": "11",
+        "status": "PASS"
+      },
+      {
+        "name": "Alpha8",
+        "expectedValue": "12",
+        "actualValue": "12",
+        "status": "PASS"
+      },
+      {
+        "name": "Single",
+        "expectedValue": "13",
+        "actualValue": "13",
+        "status": "PASS"
+      },
+      {
+        "name": "Vector2",
+        "expectedValue": "14",
+        "actualValue": "14",
+        "status": "PASS"
+      },
+      {
+        "name": "Vector4",
+        "expectedValue": "15",
+        "actualValue": "15",
+        "status": "PASS"
+      },
+      {
+        "name": "HalfSingle",
+        "expectedValue": "16",
+        "actualValue": "16",
+        "status": "PASS"
+      },
+      {
+        "name": "HalfVector2",
+        "expectedValue": "17",
+        "actualValue": "17",
+        "status": "PASS"
+      },
+      {
+        "name": "HalfVector4",
+        "expectedValue": "18",
+        "actualValue": "18",
+        "status": "PASS"
+      },
+      {
+        "name": "HdrBlendable",
+        "expectedValue": "19",
+        "actualValue": "19",
+        "status": "PASS"
+      }
+    ],
     "status": "PASS"
   },
   "metadata": {

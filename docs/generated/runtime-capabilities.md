@@ -2,9 +2,9 @@
 
 Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 
-- Profile: CNA-Go Foundations 1-9 / XNA 4.0 Windows runtime mapping
+- Profile: CNA-Go Foundations 1-10 / XNA 4.0 Windows runtime mapping
 - Qualified platform: linux/amd64 (HEADLESS renderer, NULL audio)
-- Capability rows: 34
+- Capability rows: 35
 
 | Status | Capability | Evidence | Notes |
 |---|---|---|---|
@@ -28,7 +28,8 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 | `VERIFIED_MANAGED` | ClearOptions enum metadata | docs/clear-options-evidence.md, API compatibility report, and behavior corpus | Only the three-literal named-int32 flags enum is verified. Raw zero is unnamed; no GraphicsDevice.Clear overload, render-target/depth/stencil clear behavior, GPU support, or CNA ABI expansion is claimed. |
 | `VERIFIED_MANAGED` | Display orientation configuration storage | docs/display-orientation-evidence.md, API compatibility report, behavior corpus, and lifecycle stress | DisplayOrientation flags and GraphicsDeviceManager.SupportedOrientations storage/dirty semantics are verified; actual screen or window rotation is not claimed and remains deferred. |
 | `VERIFIED_MANAGED` | PackedVector family | docs/packed-vector-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete 19-type managed closure; no CNA ABI route or runtime/hardware claim. |
-| `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, PackedVector, VertexElement, PlayerIndex, DisplayOrientation, BufferUsage, and ClearOptions closures are locally strict-zero; five native/runtime types remain explicitly partial. |
+| `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, PackedVector, VertexElement, PlayerIndex, DisplayOrientation, BufferUsage, ClearOptions, and SurfaceFormat closures are locally strict-zero; five native/runtime types remain explicitly partial. |
+| `VERIFIED_MANAGED` | SurfaceFormat enum metadata | docs/surface-format-evidence.md, API compatibility report, and behavior corpus | Only the 20-literal non-flags named-int32 enum is verified; no pixel/texture/render-target format support, compression, HDR, GPU mapping, consumer API, or CNA ABI expansion is claimed. |
 | `VERIFIED_MANAGED` | VertexElement descriptor values | docs/vertex-element-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete three-type managed descriptor closure; no VertexDeclaration, buffer, draw, GPU, CNA ABI, or hardware capability claim. |
 | `VERIFIED_MANAGED` | XNA namespace/package mapping | tools/api_compat and docs/xna-go-mapping.md | Case-preserving import paths; consumer aliases are not API. |
 | `VERIFIED_NATIVE` | Go callback error/panic containment | 20 returned-error and 20 panic subprocess cycles | No panic or Go error crosses C; Run returns the stored Go failure. |

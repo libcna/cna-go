@@ -182,7 +182,31 @@ type report struct {
 	DisplayOrientationClosure    displayOrientationClosure     `json:"displayOrientationGraphicsManagerClosure"`
 	BufferUsageClosure           bufferUsageClosure            `json:"bufferUsageClosure"`
 	ClearOptionsClosure          clearOptionsClosure           `json:"clearOptionsClosure"`
+	SurfaceFormatClosure         surfaceFormatClosure          `json:"surfaceFormatClosure"`
 	Metadata                     reportMetadata                `json:"metadata"`
+}
+
+type surfaceFormatClosure struct {
+	SourceTypes          int                    `json:"sourceTypes"`
+	SourceIdentities     int                    `json:"sourceIdentities"`
+	ExpectedGoIdentities int                    `json:"expectedGoIdentities"`
+	TargetTypes          int                    `json:"targetTypes"`
+	TargetGoIdentities   int                    `json:"targetGoIdentities"`
+	LocalDiagnostics     int                    `json:"localDiagnostics"`
+	ExpectedKind         string                 `json:"expectedKind"`
+	ActualKind           string                 `json:"actualKind"`
+	UnderlyingType       string                 `json:"underlyingType"`
+	Flags                bool                   `json:"flags"`
+	ValueStorageExcluded bool                   `json:"valueStorageExcluded"`
+	Values               []enumValueMeasurement `json:"values"`
+	Status               string                 `json:"status"`
+}
+
+type enumValueMeasurement struct {
+	Name          string `json:"name"`
+	ExpectedValue string `json:"expectedValue"`
+	ActualValue   string `json:"actualValue"`
+	Status        string `json:"status"`
 }
 
 type clearOptionsClosure struct {

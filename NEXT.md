@@ -2,53 +2,70 @@
 
 ## Current state
 
-Foundation Milestones 1 through 9 are complete. Milestone 9 completes exactly:
+Foundation Milestones 1 through 10 are complete. Milestone 10 completes exactly:
 
 ```text
-Microsoft.Xna.Framework.Graphics.ClearOptions
+Microsoft.Xna.Framework.Graphics.SurfaceFormat
 ```
 
-Foundation 8 is committed at `68f2a7e9e556c6b5ef0d4d8b360fa1b46673133d`.
-Foundation 9 is qualified on top and intentionally uncommitted. Preserve the
-current worktree and the established namespace, value/class, interop, and
-measured-absence rules.
+Foundation 9 is committed and synchronized at
+`e402a85bac00bb82ea429a2a6704e9f5d8b0058f`. Foundation 10 is fully qualified
+on top and intentionally uncommitted. Preserve the current worktree and the
+established namespace, enum, interop, and measured-absence rules.
 
-## Foundation 9 projection
+## Foundation 10 projection
 
-`ClearOptions` belongs directly to the Graphics package. It is a `[Flags]`
-named `int32` with exactly these declared constants:
+`SurfaceFormat` belongs directly to the Graphics package. It is a non-flags
+named `int32` enum with 20 explicit constants:
 
 ```text
-ClearOptionsTarget=1
-ClearOptionsDepthBuffer=2
-ClearOptionsStencil=4
+Color=0
+Bgr565=1
+Bgra5551=2
+Bgra4444=3
+Dxt1=4
+Dxt3=5
+Dxt5=6
+NormalizedByte2=7
+NormalizedByte4=8
+Rgba1010102=9
+Rg32=10
+Rgba64=11
+Alpha8=12
+Single=13
+Vector2=14
+Vector4=15
+HalfSingle=16
+HalfVector2=17
+HalfVector4=18
+HdrBlendable=19
 ```
 
-The synthetic CLR `value__` storage is excluded, so four source identities map
-to exactly three Go identities. Most importantly, XNA declares no zero-valued
-field. Raw zero is the unnamed Go zero value; `ClearOptionsNone`,
-`ClearOptionsDefault`, and `ClearOptionsAll` do not exist.
+The milestone request said 20 CLR identities and 19 Go identities, but the
+pinned contract and the required table contain 20 named literals plus
+synthetic `value__`. The authoritative closure is therefore 21 source
+identities and 20 mapped Go identities. Omitting a literal to force 20/19 would
+violate the contract.
 
-Declared combinations produce 3, 5, 6, and 7. Raw `0`, `8`, `1<<20`, and `-1`
-remain representable without validation or masking. Typed OR and AND are
-ordinary Go operations. No `String`, flags helper, constructor, validator, or
-other convenience API was added.
+There is no `iota`, `// xna:flags`, validation, Stringer, parser, size/format
+helper, PackedVector dependency, native enum mirror, or GPU mapping. Go zero
+equals `Color`; raw `20`, `12345`, and `-1` remain representable.
 
 ## Structural scoreboard
 
 The pinned contract remains 257 types / 2,964 members at SHA-256
 `7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc`.
-The mapping remains 257 expected Go types / 3,243 members.
+The formal mapping remains 257 expected Go types / 3,243 members.
 
 ```text
-TARGET_TYPES=61
-TARGET_MEMBERS=1333
-TOTAL_DIAGNOSTICS=373
-MISSING_TYPE=196
+TARGET_TYPES=62
+TARGET_MEMBERS=1353
+TOTAL_DIAGNOSTICS=372
+MISSING_TYPE=195
 MISSING_MEMBER=177
-COMPLETE_TYPES=56
+COMPLETE_TYPES=57
 PARTIAL_TYPES=5
-MISSING_TYPES=196
+MISSING_TYPES=195
 
 INTERFACE_WITNESS_PROJECTIONS=25
 PACKFROMVECTOR4_WITNESS_PROJECTIONS=17
@@ -59,10 +76,9 @@ Every unexpected-symbol, mapping-mismatch, native-leak, allowlist, and
 unmeasured counter is zero. The selected closure is:
 
 ```text
-ClearOptions source=4 expected-go=3 target-go=3 local=0
-kind=enum actual=named underlying=int32 flags=true
-Target=1 DepthBuffer=2 Stencil=4 value__-excluded=true
-named-zero=false None=false Default=false All=false status=PASS
+SurfaceFormat source=21 expected-go=20 target-go=20 local=0
+kind=enum actual=named underlying=int32 flags=false
+value__-excluded=true all-20-raw-values=PASS status=PASS
 ```
 
 The exact remaining partial types are unchanged:
@@ -77,35 +93,34 @@ Their combined missing-member count remains 177.
 
 ## Behavior and verifier evidence
 
-The behavior corpus has 256 observations, 256 assertions, and zero failures.
-`CLEAR_OPTIONS=9`: four `PURE_XNA_DERIVED` metadata/value facts and five
-explicitly labeled `GO_LANGUAGE_PROJECTION` observations for zero, raw values,
-combinations, OR, and AND.
+The behavior corpus has 262 observations, 262 assertions, and zero failures.
+`SURFACE_FORMAT=6`: three `PURE_XNA_DERIVED` facts cover the complete 20-value
+table, `System.Int32`, and `flags=false`; three `GO_LANGUAGE_PROJECTION` facts
+cover Color zero, arbitrary positive raw values, and a negative raw value.
 
-The verifier has 99 mutation cases. The 14 Foundation-9 cases reject missing
-or misplaced type, kind/underlying/flags errors, all three wrong literals,
-missing Stencil, projected `value__`, invented `None`, invented `All`, and an
-exported helper. A generic fixture proves that flags metadata with three
-nonzero bits and no named zero is valid. Manual allowlists and unmeasured
-categories remain zero.
+The verifier has 117 mutation cases. The 18 Foundation-10 cases reject missing
+or misplaced type, kind/underlying/flags errors, representative early/middle/
+late raw-value errors, missing middle/last values, projected `value__`, extra
+constant, exported helper, and renamed spelling. Every expected literal is
+generically raw-value checked. Manual allowlists and unmeasured categories are
+zero.
 
-BufferUsage, DisplayOrientation/SupportedOrientations, PlayerIndex/Keyboard,
-ordinary enums, and the 262,400-pattern PackedVector sweep remain green.
+ClearOptions, BufferUsage, DisplayOrientation/SupportedOrientations,
+PlayerIndex/Keyboard, VertexElement, representative ordinary/flags enums, and
+the 262,400-pattern PackedVector sweep remain green.
 
 ## Scope and native preservation
 
-Neither reverse-dependent GraphicsDevice overload was implemented:
+All eleven reverse dependents remain deferred: DisplayMode,
+DisplayModeCollection, GraphicsAdapter, PresentationParameters, RenderTarget2D,
+RenderTargetCube, Texture, Texture2D's format constructor, Texture3D,
+TextureCube, and GraphicsDeviceManager format properties.
 
-```text
-GraphicsDevice.Clear(ClearOptions, Color, Single, Int32)
-GraphicsDevice.Clear(ClearOptions, Vector4, Single, Int32)
-```
-
-No other GraphicsDevice member, render-target/depth/stencil clear behavior,
-renderer command, CNA constant, or ABI route was added. ABI measurements remain
-23 bound functions, 67 prototype type positions, 96 C/Go measurements, 28
-layouts, two callbacks, and five constants with zero missing symbols or
-mismatches.
+No actual pixel-format support is claimed. Compression, HDR, floating-point
+targets, upload/data paths, GPU negotiation, renderer mapping, and CNA mapping
+remain unimplemented. ABI measurements remain 23 bound functions, 67
+prototype type positions, 96 C/Go measurements, 28 layouts, two callbacks,
+and five constants with zero missing symbols or mismatches.
 
 Native race stress retains 20 Game, recreation, texture, SpriteBatch,
 callback-error, and callback-panic cycles, 80 GC points, and zero
@@ -128,7 +143,7 @@ go test -race ./...
 go build ./...
 go build -trimpath ./...
 go run ./tools/api_compat --mode report
-go run ./tools/api_compat --mode strict       # expected 373 deferred diagnostics
+go run ./tools/api_compat --mode strict       # expected 372 deferred diagnostics
 go run ./tools/api_compat --mode leak-only
 go run ./tools/behavior
 go run ./tools/packed_vector_qualify
@@ -145,32 +160,32 @@ recursively describe its own hash.
 
 ## Worktree provenance
 
-Foundation 9 started on clean `develop` with `HEAD` and `origin/develop` both
-at `68f2a7e9e556c6b5ef0d4d8b360fa1b46673133d`, the externally committed
-Foundation-8 milestone. Foundation 9 remains intentionally uncommitted after
+Foundation 10 started on clean `develop` with `HEAD` and `origin/develop` both
+at `e402a85bac00bb82ea429a2a6704e9f5d8b0058f`, the committed and synchronized
+Foundation-9 milestone. Foundation 10 remains intentionally uncommitted after
 qualification. History was not rewritten.
 
 ## One next dependency-complete milestone
 
-The regenerated 196-node missing inventory and public-signature dependency
-graph contain 72 nodes with no missing XNA signature dependency. Among pure
-managed public-data leaves, the maximal reverse fan-out is 11 consumers. The
-single next selected closure is therefore:
+The regenerated 195-node missing inventory and public-signature graph still
+contain 72 nodes with no missing XNA signature dependency. Runtime/design
+classes and effect interfaces rank higher by raw reverse fan-out but are not
+pure managed public-data leaves. Among such leaves, the highest current reverse
+fan-out is five. The single next selected closure is therefore:
 
 ```text
-Microsoft.Xna.Framework.Graphics.SurfaceFormat
+Microsoft.Xna.Framework.Graphics.DepthFormat
 ```
 
-Selection is dependency-driven: SurfaceFormat is referenced by DisplayMode,
-DisplayModeCollection, GraphicsAdapter, PresentationParameters, RenderTarget2D,
-RenderTargetCube, Texture, Texture2D, Texture3D, TextureCube, and
-GraphicsDeviceManager. This selection does not authorize any consumer,
-GraphicsDevice.Clear overload, render-target operation, texture constructor,
-buffer API, VertexDeclaration, or another enum. Its pinned contract and
-behavior must be independently inspected in the next milestone.
+`DepthFormat` has no missing public-signature dependency and is referenced by
+GraphicsAdapter, PresentationParameters, RenderTarget2D, RenderTargetCube, and
+GraphicsDeviceManager. Selection does not authorize any of those consumers,
+any SurfaceFormat consumer, depth-buffer runtime behavior, or another enum.
+Its pinned metadata and behavior must be independently inspected in the next
+milestone.
 
 ```text
 SELECTED_ONLY=true
 STARTED=false
-FOUNDATION_MILESTONE_9_COMPLETE=true
+FOUNDATION_MILESTONE_10_COMPLETE=true
 ```

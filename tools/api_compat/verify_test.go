@@ -367,6 +367,33 @@ func TestClearOptionsMappedContract(t *testing.T) {
 	}
 }
 
+func TestSurfaceFormatMappedContract(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	format := surface.typeForXNA(surfaceFormatIdentity)
+	if format == nil || format.Kind != "enum" || format.Flags || format.SourceMembers != 21 || len(format.Members) != 20 || len(format.Interfaces) != 0 {
+		t.Fatalf("SurfaceFormat projection = %+v", format)
+	}
+	for _, wanted := range surfaceFormatValues {
+		member := surface.Members[symbolKey{Package: format.PackagePath, Name: "SurfaceFormat" + wanted.Name}]
+		if member == nil || member.GoKind != "const" || member.EnumValue == nil || *member.EnumValue != wanted.Value || !equalStrings(member.Results, []string{"SurfaceFormat"}) {
+			t.Fatalf("SurfaceFormat%s projection = %+v", wanted.Name, member)
+		}
+	}
+	for _, name := range []string{"Value__", "value__"} {
+		if surface.Members[symbolKey{Package: format.PackagePath, Name: "SurfaceFormat" + name}] != nil {
+			t.Fatalf("enum storage SurfaceFormat%s was projected", name)
+		}
+	}
+	if !enumHasNamedZero(surface, format) {
+		t.Fatal("SurfaceFormat Color=0 was not measured as the source-declared zero literal")
+	}
+}
+
 func TestFlagsEnumWithoutNamedZeroIsValidGenerically(t *testing.T) {
 	int32Type := "System.Int32"
 	enumType := "Microsoft.Xna.Framework.Graphics.ProbeFlagsNoZero"
@@ -476,6 +503,37 @@ func TestClearOptionsCurrentSurfaceAndLocalClosure(t *testing.T) {
 		closure.DepthBufferValue != "2" || closure.StencilValue != "4" || !closure.ValueStorageExcluded || closure.NamedZeroMember ||
 		closure.ClearOptionsNonePresent || closure.ClearOptionsDefaultPresent || closure.ClearOptionsAllPresent {
 		t.Fatalf("ClearOptions closure = %+v", closure)
+	}
+}
+
+func TestSurfaceFormatCurrentSurfaceAndLocalClosure(t *testing.T) {
+	reference := loadPinnedContract(t)
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("type errors: %v", actual.TypeErrors)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	closure := result.SurfaceFormatClosure
+	if closure.Status != "PASS" || closure.SourceTypes != 1 || closure.SourceIdentities != 21 || closure.ExpectedGoIdentities != 20 ||
+		closure.TargetTypes != 1 || closure.TargetGoIdentities != 20 || closure.LocalDiagnostics != 0 || closure.ExpectedKind != "enum" ||
+		closure.ActualKind != "named" || closure.UnderlyingType != "int32" || closure.Flags || !closure.ValueStorageExcluded || len(closure.Values) != 20 {
+		t.Fatalf("SurfaceFormat closure = %+v", closure)
+	}
+	for _, row := range closure.Values {
+		if row.Status != "PASS" || row.ActualValue != row.ExpectedValue {
+			t.Fatalf("SurfaceFormat value row = %+v", row)
+		}
 	}
 }
 
@@ -803,7 +861,9 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "clear_options_") {
+			if strings.HasPrefix(fixture.Mutation, "surface_format_") {
+				expected, actual = surfaceFormatMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "clear_options_") {
 				expected, actual = clearOptionsMutationCase(t, fixture.Mutation)
 			} else if strings.HasPrefix(fixture.Mutation, "buffer_usage_") {
 				expected, actual = bufferUsageMutationCase(t, fixture.Mutation)
@@ -822,6 +882,110 @@ func TestMutationFixtures(t *testing.T) {
 			}
 		})
 	}
+}
+
+func surfaceFormatMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(surfaceFormatIdentity)
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   21,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  20,
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			copiedType.Key: {Key: copiedType.Key, Kind: "named", Underlying: "int32"},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		value := *copiedMember.EnumValue
+		actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "const", Results: []string{"SurfaceFormat"}, Value: &value}
+	}
+
+	const graphicsPackage = modulePath + "/Microsoft/Xna/Framework/Graphics"
+	const frameworkPackage = modulePath + "/Microsoft/Xna/Framework"
+	typeKey := symbolKey{Package: graphicsPackage, Name: "SurfaceFormat"}
+	constant := func(name string) symbolKey { return symbolKey{Package: graphicsPackage, Name: "SurfaceFormat" + name} }
+	setWrongValue := func(name, value string) { actual.Members[constant(name)].Value = &value }
+	switch mutation {
+	case "surface_format_missing":
+		delete(actual.Types, typeKey)
+	case "surface_format_wrong_package":
+		movedType := *actual.Types[typeKey]
+		delete(actual.Types, typeKey)
+		movedType.Key.Package = frameworkPackage
+		actual.Types[movedType.Key] = &movedType
+		for _, wanted := range surfaceFormatValues {
+			key := constant(wanted.Name)
+			movedMember := *actual.Members[key]
+			delete(actual.Members, key)
+			movedMember.Key.Package = frameworkPackage
+			actual.Members[movedMember.Key] = &movedMember
+		}
+	case "surface_format_wrong_kind":
+		actual.Types[typeKey].Kind = "struct"
+	case "surface_format_wrong_underlying_type":
+		actual.Types[typeKey].Underlying = "uint32"
+	case "surface_format_accidentally_flags":
+		actual.Types[typeKey].FlagsMarker = true
+	case "surface_format_wrong_color_value":
+		setWrongValue("Color", "1")
+	case "surface_format_wrong_bgr565_value":
+		setWrongValue("Bgr565", "2")
+	case "surface_format_wrong_dxt1_value":
+		setWrongValue("Dxt1", "5")
+	case "surface_format_wrong_rgba1010102_value":
+		setWrongValue("Rgba1010102", "10")
+	case "surface_format_wrong_alpha8_value":
+		setWrongValue("Alpha8", "13")
+	case "surface_format_wrong_half_vector4_value":
+		setWrongValue("HalfVector4", "19")
+	case "surface_format_wrong_hdr_blendable_value":
+		setWrongValue("HdrBlendable", "20")
+	case "surface_format_missing_dxt3":
+		delete(actual.Members, constant("Dxt3"))
+	case "surface_format_missing_hdr_blendable":
+		delete(actual.Members, constant("HdrBlendable"))
+	case "surface_format_value_storage_projected":
+		key := constant("Value__")
+		value := "0"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"int32"}, Value: &value}
+	case "surface_format_extra_constant":
+		key := constant("Unknown")
+		value := "20"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"SurfaceFormat"}, Value: &value}
+	case "surface_format_exported_helper":
+		key := symbolKey{Package: graphicsPackage, Receiver: "SurfaceFormat", Name: "String"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"string"}}
+	case "surface_format_renamed_bgr565":
+		original := constant("Bgr565")
+		renamed := constant("BGR565")
+		member := *actual.Members[original]
+		delete(actual.Members, original)
+		member.Key = renamed
+		actual.Members[renamed] = &member
+	default:
+		t.Fatalf("unknown SurfaceFormat mutation %q", mutation)
+	}
+	return expected, actual
 }
 
 func clearOptionsMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {

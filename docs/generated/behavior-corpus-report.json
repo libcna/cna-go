@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 256,
-    "ASSERTIONS": 256,
+    "OBSERVATIONS": 262,
+    "ASSERTIONS": 262,
     "FAILURES": 0
   },
   "observations": [
@@ -237,6 +237,54 @@
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": "4,0",
       "actual": "4,0",
+      "passed": true
+    },
+    {
+      "id": "surface-format.complete-raw-table",
+      "group": "SURFACE_FORMAT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Color=0,Bgr565=1,Bgra5551=2,Bgra4444=3,Dxt1=4,Dxt3=5,Dxt5=6,NormalizedByte2=7,NormalizedByte4=8,Rgba1010102=9,Rg32=10,Rgba64=11,Alpha8=12,Single=13,Vector2=14,Vector4=15,HalfSingle=16,HalfVector2=17,HalfVector4=18,HdrBlendable=19",
+      "actual": "Color=0,Bgr565=1,Bgra5551=2,Bgra4444=3,Dxt1=4,Dxt3=5,Dxt5=6,NormalizedByte2=7,NormalizedByte4=8,Rgba1010102=9,Rg32=10,Rgba64=11,Alpha8=12,Single=13,Vector2=14,Vector4=15,HalfSingle=16,HalfVector2=17,HalfVector4=18,HdrBlendable=19",
+      "passed": true
+    },
+    {
+      "id": "surface-format.underlying-system-int32",
+      "group": "SURFACE_FORMAT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "surface-format.flags",
+      "group": "SURFACE_FORMAT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "surface-format.zero-value-color",
+      "group": "SURFACE_FORMAT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "surface-format.arbitrary-positive-raw",
+      "group": "SURFACE_FORMAT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "20,12345",
+      "actual": "20,12345",
+      "passed": true
+    },
+    {
+      "id": "surface-format.negative-raw",
+      "group": "SURFACE_FORMAT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
       "passed": true
     },
     {

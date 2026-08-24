@@ -34,6 +34,10 @@ BufferUsage flags enum, with no buffer class, device member, or ABI expansion.
 ClearOptions flags enum, including the no-declared-zero mapping edge case,
 with no GraphicsDevice member, clear behavior, or ABI expansion.
 
+**Foundation 10 status:** qualified for exactly the pure managed Graphics
+SurfaceFormat non-flags enum contract, with no texture/display/adapter/
+presentation consumer, runtime pixel-format claim, or ABI expansion.
+
 This file is normative. `NEXT.md` is the resumable handoff; generated reports
 are evidence and must not replace the rules here.
 
@@ -456,6 +460,47 @@ Exact evidence is in `docs/clear-options-evidence.md`.
 FOUNDATION_MILESTONE_9_COMPLETE=true
 ```
 
+## Foundation 10 SurfaceFormat policy
+
+Foundation 10 completes exactly
+`Microsoft.Xna.Framework.Graphics.SurfaceFormat`. It is a non-flags named
+`int32` enum with 20 explicit named constants from `Color=0` through
+`HdrBlendable=19`. The synthetic CLR `value__` field is excluded. The milestone
+request's stated 20-source/19-Go arithmetic is corrected by the pinned contract
+and its own 20-literal table: the exact closure contains 21 source field
+identities and 20 mapped Go identities.
+
+All raw assignments are explicit and production contains no `iota`. The zero
+value is `Color`; arbitrary signed `int32` values remain representable without
+validation. There is no flags marker, Stringer, parser, format-size/helper API,
+PackedVector dependency, native enum mirror, or GPU format mapping.
+
+Completion of the enum contract does not claim runtime support for DXT, HDR,
+half/floating-point, render-target, upload, or any other listed format. All
+eleven reverse dependents remain deferred, including display/adapter/
+presentation types, render targets, the texture family, the Texture2D format
+constructor, and GraphicsDeviceManager format properties.
+
+## Foundation 10 qualification evidence
+
+- [x] Independently confirm the exact 21-source-identity/20-Go-identity contract.
+- [x] Complete SurfaceFormat with compiler-measured local strict zero.
+- [x] Retain every one of the 20 exact raw values and exclude `value__`.
+- [x] Qualify Color zero value and arbitrary positive/negative raw values.
+- [x] Grow verifier mutations from 99 to 117 without an allowlist or special mapping exception.
+- [x] Grow the behavior corpus from 256 to 262 assertions with explicit XNA/Go provenance and zero failures.
+- [x] Preserve all five partial types and their combined 177 missing members.
+- [x] Preserve every mismatch, leak, allowlist, unmeasured, interface-witness, and CNA ABI counter.
+- [x] Requalify Go, native stress, unchanged template, deterministic artifact, and isolated-consumer gates.
+
+Normal strict verification remains red only for 195 genuinely missing types
+and 177 members on five explicitly deferred native/runtime partial types.
+Exact evidence is in `docs/surface-format-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_10_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -465,9 +510,7 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 9, regenerate the scoreboard and dependency graph before
-selecting one next closure. Do not infer that GamePad is next merely because
-PlayerIndex now exists, do not automatically continue GraphicsDeviceManager,
-do not infer that a buffer class is next merely because BufferUsage now exists,
-do not infer that a Clear overload is next merely because ClearOptions now
-exists, and do not combine independent families.
+After Foundation 10, regenerate the scoreboard and dependency graph before
+selecting one next closure. Do not automatically choose a SurfaceFormat
+consumer, continue GraphicsDeviceManager, infer a buffer class from BufferUsage,
+infer a Clear overload from ClearOptions, or combine independent families.
