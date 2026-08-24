@@ -1,15 +1,16 @@
 {
   "schemaVersion": 1,
-  "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations",
+  "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 242,
-    "ASSERTIONS": 242,
+    "OBSERVATIONS": 247,
+    "ASSERTIONS": 247,
     "FAILURES": 0
   },
   "observations": [
     {
       "id": "player-index.defined-raw-values",
       "group": "PLAYER_INDEX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,1,2,3",
       "actual": "0,1,2,3",
       "passed": true
@@ -17,6 +18,7 @@
     {
       "id": "player-index.undefined-raw-value",
       "group": "PLAYER_INDEX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 12345,
       "actual": 12345,
       "passed": true
@@ -24,6 +26,7 @@
     {
       "id": "keyboard.player-index.one",
       "group": "KEYBOARD_PLAYER_INDEX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
       "passed": true
@@ -31,6 +34,7 @@
     {
       "id": "keyboard.player-index.two",
       "group": "KEYBOARD_PLAYER_INDEX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
       "passed": true
@@ -38,6 +42,7 @@
     {
       "id": "keyboard.player-index.three",
       "group": "KEYBOARD_PLAYER_INDEX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
       "passed": true
@@ -45,6 +50,7 @@
     {
       "id": "keyboard.player-index.four",
       "group": "KEYBOARD_PLAYER_INDEX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
       "passed": true
@@ -52,6 +58,7 @@
     {
       "id": "keyboard.player-index.undefined",
       "group": "KEYBOARD_PLAYER_INDEX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
       "passed": true
@@ -59,6 +66,7 @@
     {
       "id": "display-orientation.raw-values",
       "group": "DISPLAY_ORIENTATION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,1,2,4",
       "actual": "0,1,2,4",
       "passed": true
@@ -66,6 +74,7 @@
     {
       "id": "display-orientation.flags-combinations",
       "group": "DISPLAY_ORIENTATION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "3,5,7",
       "actual": "3,5,7",
       "passed": true
@@ -73,6 +82,7 @@
     {
       "id": "display-orientation.unknown-raw-bit",
       "group": "DISPLAY_ORIENTATION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 1048576,
       "actual": 1048576,
       "passed": true
@@ -80,6 +90,7 @@
     {
       "id": "graphics-manager-orientation.initial-state",
       "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,false",
       "actual": "0,false",
       "passed": true
@@ -87,6 +98,7 @@
     {
       "id": "graphics-manager-orientation.same-value-dirty",
       "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,true",
       "actual": "0,true",
       "passed": true
@@ -94,6 +106,7 @@
     {
       "id": "graphics-manager-orientation.changed-value-dirty",
       "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "5,true",
       "actual": "5,true",
       "passed": true
@@ -101,6 +114,7 @@
     {
       "id": "graphics-manager-orientation.multiple-assignment",
       "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "1048576,true",
       "actual": "1048576,true",
       "passed": true
@@ -108,13 +122,55 @@
     {
       "id": "graphics-manager-orientation.post-disposal-managed-state",
       "group": "GRAPHICS_MANAGER_ORIENTATION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "3,true",
       "actual": "3,true",
       "passed": true
     },
     {
+      "id": "buffer-usage.raw-values",
+      "group": "BUFFER_USAGE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,1",
+      "actual": "0,1",
+      "passed": true
+    },
+    {
+      "id": "buffer-usage.underlying-int32",
+      "group": "BUFFER_USAGE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "int32",
+      "actual": "int32",
+      "passed": true
+    },
+    {
+      "id": "buffer-usage.zero-value",
+      "group": "BUFFER_USAGE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "buffer-usage.arbitrary-raw-values",
+      "group": "BUFFER_USAGE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "2,3,1048576,-1",
+      "actual": "2,3,1048576,-1",
+      "passed": true
+    },
+    {
+      "id": "buffer-usage.bitwise-composition",
+      "group": "BUFFER_USAGE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "1,1,3",
+      "actual": "1,1,3",
+      "passed": true
+    },
+    {
       "id": "math.clamp.low",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000",
       "actual": "0x00000000",
       "passed": true
@@ -122,6 +178,7 @@
     {
       "id": "math.clamp.inverted",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40000000",
       "actual": "0x40000000",
       "passed": true
@@ -129,6 +186,7 @@
     {
       "id": "math.lerp",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40800000",
       "actual": "0x40800000",
       "passed": true
@@ -136,6 +194,7 @@
     {
       "id": "math.barycentric",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40600000",
       "actual": "0x40600000",
       "passed": true
@@ -143,6 +202,7 @@
     {
       "id": "math.catmullrom",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xc1218313",
       "actual": "0xc1218313",
       "passed": true
@@ -150,6 +210,7 @@
     {
       "id": "math.hermite",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xc1351eba",
       "actual": "0xc1351eba",
       "passed": true
@@ -157,6 +218,7 @@
     {
       "id": "math.wrapangle.large",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xbfc2e06c",
       "actual": "0xbfc2e06c",
       "passed": true
@@ -164,6 +226,7 @@
     {
       "id": "math.to_degrees",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x43340000",
       "actual": "0x43340000",
       "passed": true
@@ -171,6 +234,7 @@
     {
       "id": "math.negative_zero.distance",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000",
       "actual": "0x00000000",
       "passed": true
@@ -178,6 +242,7 @@
     {
       "id": "math.nan.hermite",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -185,6 +250,7 @@
     {
       "id": "math.overflow.distance",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -192,6 +258,7 @@
     {
       "id": "math.subnormal.lerp",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000001",
       "actual": "0x00000001",
       "passed": true
@@ -199,6 +266,7 @@
     {
       "id": "math.underflow.lerp",
       "group": "MathHelper",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000",
       "actual": "0x00000000",
       "passed": true
@@ -206,6 +274,7 @@
     {
       "id": "point.hash",
       "group": "Point",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 3,
       "actual": 3,
       "passed": true
@@ -213,6 +282,7 @@
     {
       "id": "point.string",
       "group": "Point",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{X:1 Y:2}",
       "actual": "{X:1 Y:2}",
       "passed": true
@@ -220,6 +290,7 @@
     {
       "id": "point.value-equality",
       "group": "Point",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -227,6 +298,7 @@
     {
       "id": "point.zero.fresh-value",
       "group": "Point",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 0,
       "actual": 0,
       "passed": true
@@ -234,6 +306,7 @@
     {
       "id": "rectangle.contains.inclusive-min",
       "group": "Rectangle",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -241,6 +314,7 @@
     {
       "id": "rectangle.contains.exclusive-max",
       "group": "Rectangle",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": false,
       "actual": false,
       "passed": true
@@ -248,6 +322,7 @@
     {
       "id": "rectangle.intersect",
       "group": "Rectangle",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{X:5 Y:0 Width:5 Height:5}",
       "actual": "{X:5 Y:0 Width:5 Height:5}",
       "passed": true
@@ -255,6 +330,7 @@
     {
       "id": "rectangle.union",
       "group": "Rectangle",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{X:0 Y:-5 Width:15 Height:15}",
       "actual": "{X:0 Y:-5 Width:15 Height:15}",
       "passed": true
@@ -262,6 +338,7 @@
     {
       "id": "rectangle.inflate",
       "group": "Rectangle",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{X:1 Y:1 Width:6 Height:9}",
       "actual": "{X:1 Y:1 Width:6 Height:9}",
       "passed": true
@@ -269,6 +346,7 @@
     {
       "id": "rectangle.offset",
       "group": "Rectangle",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{X:0 Y:3 Width:6 Height:9}",
       "actual": "{X:0 Y:3 Width:6 Height:9}",
       "passed": true
@@ -276,6 +354,7 @@
     {
       "id": "rectangle.hash",
       "group": "Rectangle",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 10,
       "actual": 10,
       "passed": true
@@ -283,6 +362,7 @@
     {
       "id": "gametime.total-ticks",
       "group": "GameTime",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 9223372036854775807,
       "actual": 9223372036854775807,
       "passed": true
@@ -290,6 +370,7 @@
     {
       "id": "gametime.elapsed-ticks",
       "group": "GameTime",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 166667,
       "actual": 166667,
       "passed": true
@@ -297,6 +378,7 @@
     {
       "id": "gametime.slow",
       "group": "GameTime",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -304,6 +386,7 @@
     {
       "id": "vector2.normalize.zero",
       "group": "VECTOR2",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffc00000,0xffc00000",
       "actual": "0xffc00000,0xffc00000",
       "passed": true
@@ -311,6 +394,7 @@
     {
       "id": "vector2.divide.reciprocal-first",
       "group": "VECTOR2",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3edb6db8",
       "actual": "0x3edb6db8",
       "passed": true
@@ -318,6 +402,7 @@
     {
       "id": "vector2.transform.forward-overlap",
       "group": "VECTOR2",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x41300000,0x41a80000",
       "actual": "0x41300000,0x41a80000",
       "passed": true
@@ -325,6 +410,7 @@
     {
       "id": "vector2.nan.equality",
       "group": "VECTOR2",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": false,
       "actual": false,
       "passed": true
@@ -332,6 +418,7 @@
     {
       "id": "vector3.normalize.zero",
       "group": "VECTOR3",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffc00000,0xffc00000,0xffc00000",
       "actual": "0xffc00000,0xffc00000,0xffc00000",
       "passed": true
@@ -339,6 +426,7 @@
     {
       "id": "vector3.forward",
       "group": "VECTOR3",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x00000000,0xbf800000",
       "actual": "0x00000000,0x00000000,0xbf800000",
       "passed": true
@@ -346,6 +434,7 @@
     {
       "id": "vector3.cross.handedness",
       "group": "VECTOR3",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x00000000,0x3f800000",
       "actual": "0x00000000,0x00000000,0x3f800000",
       "passed": true
@@ -353,6 +442,7 @@
     {
       "id": "vector3.divide.reciprocal-first",
       "group": "VECTOR3",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40155556",
       "actual": "0x40155556",
       "passed": true
@@ -360,6 +450,7 @@
     {
       "id": "vector3.hash",
       "group": "VECTOR3",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": -1077936128,
       "actual": -1077936128,
       "passed": true
@@ -367,6 +458,7 @@
     {
       "id": "vector3.min.nan-order",
       "group": "VECTOR3",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40e00000,0xffc00000,0xffc00000",
       "actual": "0x40e00000,0xffc00000,0xffc00000",
       "passed": true
@@ -374,6 +466,7 @@
     {
       "id": "vector3.clamp.reversed",
       "group": "VECTOR3",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40000000,0x40000000,0x40000000",
       "actual": "0x40000000,0x40000000,0x40000000",
       "passed": true
@@ -381,6 +474,7 @@
     {
       "id": "vector4.normalize.zero",
       "group": "VECTOR4",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
       "actual": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
       "passed": true
@@ -388,6 +482,7 @@
     {
       "id": "vector4.negate.signed-zero",
       "group": "VECTOR4",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x80000000,0x80000000,0x80000000,0x80000000",
       "actual": "0x80000000,0x80000000,0x80000000,0x80000000",
       "passed": true
@@ -395,6 +490,7 @@
     {
       "id": "vector4.divide.reciprocal-first",
       "group": "VECTOR4",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x458099ca",
       "actual": "0x458099ca",
       "passed": true
@@ -402,6 +498,7 @@
     {
       "id": "quaternion.inverse.zero",
       "group": "QUATERNION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
       "actual": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
       "passed": true
@@ -409,6 +506,7 @@
     {
       "id": "quaternion.multiply.order",
       "group": "QUATERNION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xce47a05e,0xcf03edf7,0x4fc9c4dd,0x5011d115",
       "actual": "0xce47a05e,0xcf03edf7,0x4fc9c4dd,0x5011d115",
       "passed": true
@@ -416,6 +514,7 @@
     {
       "id": "quaternion.slerp.branch",
       "group": "QUATERNION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xbd9a16ec,0x3e60d7e7,0x00000000,0x3f79023d",
       "actual": "0xbd9a16ec,0x3e60d7e7,0x00000000,0x3f79023d",
       "passed": true
@@ -423,6 +522,7 @@
     {
       "id": "quaternion.concatenate.order",
       "group": "QUATERNION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -430,6 +530,7 @@
     {
       "id": "quaternion.axis-angle.large",
       "group": "QUATERNION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x3f30464f,0x00000000,0xbf39a48f",
       "actual": "0x00000000,0x3f30464f,0x00000000,0xbf39a48f",
       "passed": true
@@ -437,6 +538,7 @@
     {
       "id": "quaternion.from-matrix",
       "group": "QUATERNION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x3eaf904c,0x00000000,0x3f707abb",
       "actual": "0x00000000,0x3eaf904c,0x00000000,0x3f707abb",
       "passed": true
@@ -444,6 +546,7 @@
     {
       "id": "matrix.translation.row-vector",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40a00000,0x40c00000,0x40e00000",
       "actual": "0x40a00000,0x40c00000,0x40e00000",
       "passed": true
@@ -451,6 +554,7 @@
     {
       "id": "matrix.inverse.product",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3f800000,0x00000000,0xb2000000,0x00000000,0x00000000,0x3f800000,0x00000000,0x00000000,0x33000000,0x00000000,0x3f800000,0x00000000,0x34000000,0x00000000,0x00000000,0x3f800000",
       "actual": "0x3f800000,0x00000000,0xb2000000,0x00000000,0x00000000,0x3f800000,0x00000000,0x00000000,0x33000000,0x00000000,0x3f800000,0x00000000,0x34000000,0x00000000,0x00000000,0x3f800000",
       "passed": true
@@ -458,6 +562,7 @@
     {
       "id": "matrix.invert.singular",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
       "actual": "0xffc00000,0xffc00000,0xffc00000,0xffc00000",
       "passed": true
@@ -465,6 +570,7 @@
     {
       "id": "matrix.identity.hash",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": -33554432,
       "actual": -33554432,
       "passed": true
@@ -472,6 +578,7 @@
     {
       "id": "matrix.rotation.large",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3d53e807,0xbf7fa83d",
       "actual": "0x3d53e807,0xbf7fa83d",
       "passed": true
@@ -479,6 +586,7 @@
     {
       "id": "matrix.perspective.infinity",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffc00000,0xffc00000",
       "actual": "0xffc00000,0xffc00000",
       "passed": true
@@ -486,6 +594,7 @@
     {
       "id": "matrix.billboard.axis",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xbf800000,0x40000000,0xbf800000",
       "actual": "0xbf800000,0x40000000,0xbf800000",
       "passed": true
@@ -493,6 +602,7 @@
     {
       "id": "matrix.shadow.zero-plane",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
       "passed": true
@@ -500,6 +610,7 @@
     {
       "id": "matrix.lookat.degenerate",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffc00000,0xffc00000,0xffc00000,0x00000000,0xffc00000,0xffc00000,0xffc00000,0x00000000,0xffc00000,0xffc00000,0xffc00000,0x00000000,0x7fc00000,0x7fc00000,0x7fc00000,0x3f800000",
       "actual": "0xffc00000,0xffc00000,0xffc00000,0x00000000,0xffc00000,0xffc00000,0xffc00000,0x00000000,0xffc00000,0xffc00000,0xffc00000,0x00000000,0x7fc00000,0x7fc00000,0x7fc00000,0x3f800000",
       "passed": true
@@ -507,6 +618,7 @@
     {
       "id": "matrix.transform.infinity",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3f800000,0x7f800000,false",
       "actual": "0x3f800000,0x7f800000,false",
       "passed": true
@@ -514,6 +626,7 @@
     {
       "id": "matrix.decompose.return",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -521,6 +634,7 @@
     {
       "id": "matrix.decompose.outputs",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40000000,0x40400000,0xc0800000,0x00000000,0x3f7e00aa,0x00000000,0xbdff5579,0x40a00000,0x40c00000,0x40e00000",
       "actual": "0x40000000,0x40400000,0xc0800000,0x00000000,0x3f7e00aa,0x00000000,0xbdff5579,0x40a00000,0x40c00000,0x40e00000",
       "passed": true
@@ -528,6 +642,7 @@
     {
       "id": "matrix.string",
       "group": "MATRIX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{ {M11:1 M12:0 M13:0 M14:0} {M21:0 M22:1 M23:0 M24:0} {M31:0 M32:0 M33:1 M34:0} {M41:0 M42:0 M43:0 M44:1} }",
       "actual": "{ {M11:1 M12:0 M13:0 M14:0} {M21:0 M22:1 M23:0 M24:0} {M31:0 M32:0 M33:1 M34:0} {M41:0 M42:0 M43:0 M44:1} }",
       "passed": true
@@ -535,6 +650,7 @@
     {
       "id": "plane.points.degenerate",
       "group": "PLANE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffc00000,0xffc00000,0xffc00000,0x7fc00000",
       "actual": "0xffc00000,0xffc00000,0xffc00000,0x7fc00000",
       "passed": true
@@ -542,6 +658,7 @@
     {
       "id": "plane.normalize.near-unit",
       "group": "PLANE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3f19999a,0x3f4ccccc,0x00000000,0x40000000",
       "actual": "0x3f19999a,0x3f4ccccc,0x00000000,0x40000000",
       "passed": true
@@ -549,6 +666,7 @@
     {
       "id": "plane.box.coplanar",
       "group": "PLANE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 2,
       "actual": 2,
       "passed": true
@@ -556,6 +674,7 @@
     {
       "id": "plane.reflection.ref-normalization",
       "group": "PLANE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3f800000,0x40000000,0xbf800000,0xc0800000",
       "actual": "0x3f800000,0x40000000,0xbf800000,0xc0800000",
       "passed": true
@@ -563,6 +682,7 @@
     {
       "id": "ray.sphere.nullable.has-value",
       "group": "RAY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -570,6 +690,7 @@
     {
       "id": "ray.sphere.distance",
       "group": "RAY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40810421",
       "actual": "0x40810421",
       "passed": true
@@ -577,6 +698,7 @@
     {
       "id": "ray.box.near-parallel-null",
       "group": "RAY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": false,
       "actual": false,
       "passed": true
@@ -584,6 +706,7 @@
     {
       "id": "ray.plane.near-parallel-null",
       "group": "RAY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": false,
       "actual": false,
       "passed": true
@@ -591,6 +714,7 @@
     {
       "id": "ray.plane.just-behind-clamped",
       "group": "RAY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,0x00000000",
       "actual": "true,0x00000000",
       "passed": true
@@ -598,6 +722,7 @@
     {
       "id": "box.point.edge",
       "group": "BOUNDING_BOX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 1,
       "actual": 1,
       "passed": true
@@ -605,6 +730,7 @@
     {
       "id": "box.point.nan",
       "group": "BOUNDING_BOX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 0,
       "actual": 0,
       "passed": true
@@ -612,6 +738,7 @@
     {
       "id": "box.box.nan-intersects",
       "group": "BOUNDING_BOX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -619,6 +746,7 @@
     {
       "id": "box.corner.order",
       "group": "BOUNDING_BOX",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{X:1 Y:5 Z:6}|{X:4 Y:2 Z:3}|{X:1 Y:2 Z:3}",
       "actual": "{X:1 Y:5 Z:6}|{X:4 Y:2 Z:3}|{X:1 Y:2 Z:3}",
       "passed": true
@@ -626,6 +754,7 @@
     {
       "id": "sphere.point.edge",
       "group": "BOUNDING_SPHERE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 0,
       "actual": 0,
       "passed": true
@@ -633,6 +762,7 @@
     {
       "id": "sphere.external-tangent",
       "group": "BOUNDING_SPHERE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": false,
       "actual": false,
       "passed": true
@@ -640,6 +770,7 @@
     {
       "id": "sphere.create-points",
       "group": "BOUNDING_SPHERE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3f800000,0x40800000,0x40000000,0x4101fc10",
       "actual": "0x3f800000,0x40800000,0x40000000,0x4101fc10",
       "passed": true
@@ -647,6 +778,7 @@
     {
       "id": "frustum.near-plane",
       "group": "BOUNDING_FRUSTUM",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x80000000,0x80000000,0x3f800000,0xc0800000",
       "actual": "0x80000000,0x80000000,0x3f800000,0xc0800000",
       "passed": true
@@ -654,6 +786,7 @@
     {
       "id": "frustum.top-plane",
       "group": "BOUNDING_FRUSTUM",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x3f6c835f,0x3ec3ef16,0xbff4eadb",
       "actual": "0x00000000,0x3f6c835f,0x3ec3ef16,0xbff4eadb",
       "passed": true
@@ -661,6 +794,7 @@
     {
       "id": "frustum.corner-order.first",
       "group": "BOUNDING_FRUSTUM",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xbf0d6289,0x3ed413cb,0x40800000",
       "actual": "0xbf0d6289,0x3ed413cb,0x40800000",
       "passed": true
@@ -668,6 +802,7 @@
     {
       "id": "frustum.corner-order.seventh",
       "group": "BOUNDING_FRUSTUM",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40b0bb28,0xc0848c5d,0xc09ffff8",
       "actual": "0x40b0bb28,0xc0848c5d,0xc09ffff8",
       "passed": true
@@ -675,6 +810,7 @@
     {
       "id": "frustum.box.gjk.inside",
       "group": "BOUNDING_FRUSTUM",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -682,6 +818,7 @@
     {
       "id": "frustum.box.gjk.outside",
       "group": "BOUNDING_FRUSTUM",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": false,
       "actual": false,
       "passed": true
@@ -689,6 +826,7 @@
     {
       "id": "frustum.ray.nullable",
       "group": "BOUNDING_FRUSTUM",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,0x41800000",
       "actual": "true,0x41800000",
       "passed": true
@@ -696,6 +834,7 @@
     {
       "id": "frustum.class.nil-equality",
       "group": "BOUNDING_FRUSTUM",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": false,
       "actual": false,
       "passed": true
@@ -703,6 +842,7 @@
     {
       "id": "color.float-packing",
       "group": "COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00ff0080",
       "actual": "0x00ff0080",
       "passed": true
@@ -710,6 +850,7 @@
     {
       "id": "color.lerp.midpoint",
       "group": "COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x7f7f7f7f",
       "actual": "0x7f7f7f7f",
       "passed": true
@@ -717,6 +858,7 @@
     {
       "id": "color.multiply.midpoint",
       "group": "COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x7f7f7f7f",
       "actual": "0x7f7f7f7f",
       "passed": true
@@ -724,6 +866,7 @@
     {
       "id": "color.transparent",
       "group": "COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00ffffff",
       "actual": "0x00ffffff",
       "passed": true
@@ -731,6 +874,7 @@
     {
       "id": "color.cornflower-blue",
       "group": "COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffed9564",
       "actual": "0xffed9564",
       "passed": true
@@ -738,6 +882,7 @@
     {
       "id": "color.vector-roundtrip",
       "group": "COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -745,6 +890,7 @@
     {
       "id": "viewport.project",
       "group": "VIEWPORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x43d42808,0x43ac9f3c,0x3f63aff4",
       "actual": "0x43d42808,0x43ac9f3c,0x3f63aff4",
       "passed": true
@@ -752,6 +898,7 @@
     {
       "id": "viewport.unproject",
       "group": "VIEWPORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3e7ffe10,0xbefff906,0x3fa00111",
       "actual": "0x3e7ffe10,0xbefff906,0x3fa00111",
       "passed": true
@@ -759,6 +906,7 @@
     {
       "id": "viewport.unproject.singular",
       "group": "VIEWPORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xffc00000,0xffc00000,0xffc00000",
       "actual": "0xffc00000,0xffc00000,0xffc00000",
       "passed": true
@@ -766,6 +914,7 @@
     {
       "id": "vertex-element.enums.format",
       "group": "VERTEX_ELEMENT_ENUMS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,1,2,3,4,5,6,7,8,9,10,11",
       "actual": "0,1,2,3,4,5,6,7,8,9,10,11",
       "passed": true
@@ -773,6 +922,7 @@
     {
       "id": "vertex-element.enums.usage",
       "group": "VERTEX_ELEMENT_ENUMS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,1,2,3,4,5,6,7,8,9,10,11,12",
       "actual": "0,1,2,3,4,5,6,7,8,9,10,11,12",
       "passed": true
@@ -780,6 +930,7 @@
     {
       "id": "vertex-element.zero.getters",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,0,0,0",
       "actual": "0,0,0,0",
       "passed": true
@@ -787,6 +938,7 @@
     {
       "id": "vertex-element.zero.constructor-equivalence",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,2147483647,{Offset:0 Format:Single Usage:Position UsageIndex:0}",
       "actual": "true,2147483647,{Offset:0 Format:Single Usage:Position UsageIndex:0}",
       "passed": true
@@ -794,6 +946,7 @@
     {
       "id": "vertex-element.constructor",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "12,2,2,7",
       "actual": "12,2,2,7",
       "passed": true
@@ -801,6 +954,7 @@
     {
       "id": "vertex-element.copy.offset",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "12,13",
       "actual": "12,13",
       "passed": true
@@ -808,6 +962,7 @@
     {
       "id": "vertex-element.copy.format",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "2,11",
       "actual": "2,11",
       "passed": true
@@ -815,6 +970,7 @@
     {
       "id": "vertex-element.copy.usage",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "2,5",
       "actual": "2,5",
       "passed": true
@@ -822,6 +978,7 @@
     {
       "id": "vertex-element.copy.usage-index",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "7,8",
       "actual": "7,8",
       "passed": true
@@ -829,6 +986,7 @@
     {
       "id": "vertex-element.undefined.storage",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "123,12345,-23456,-456",
       "actual": "123,12345,-23456,-456",
       "passed": true
@@ -836,6 +994,7 @@
     {
       "id": "vertex-element.int32-boundaries",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "-2147483648,2147483647",
       "actual": "-2147483648,2147483647",
       "passed": true
@@ -843,6 +1002,7 @@
     {
       "id": "vertex-element.equals-object",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,false,false,false",
       "actual": "true,false,false,false",
       "passed": true
@@ -850,6 +1010,7 @@
     {
       "id": "vertex-element.equals-field-differences",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "false,false,false,false",
       "actual": "false,false,false,false",
       "passed": true
@@ -857,6 +1018,7 @@
     {
       "id": "vertex-element.equals-undefined",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -864,6 +1026,7 @@
     {
       "id": "vertex-element.operators",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
       "passed": true
@@ -871,6 +1034,7 @@
     {
       "id": "vertex-element.hash.zero-fallback",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 2147483647,
       "actual": 2147483647,
       "passed": true
@@ -878,6 +1042,7 @@
     {
       "id": "vertex-element.hash.ordinary",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 11,
       "actual": 11,
       "passed": true
@@ -885,6 +1050,7 @@
     {
       "id": "vertex-element.hash.negative",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 3,
       "actual": 3,
       "passed": true
@@ -892,6 +1058,7 @@
     {
       "id": "vertex-element.hash.undefined",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 27162,
       "actual": 27162,
       "passed": true
@@ -899,6 +1066,7 @@
     {
       "id": "vertex-element.hash.boundaries",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": -8,
       "actual": -8,
       "passed": true
@@ -906,6 +1074,7 @@
     {
       "id": "vertex-element.hash.nonzero-collision",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 2147483647,
       "actual": 2147483647,
       "passed": true
@@ -913,6 +1082,7 @@
     {
       "id": "vertex-element.string.zero",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{Offset:0 Format:Single Usage:Position UsageIndex:0}",
       "actual": "{Offset:0 Format:Single Usage:Position UsageIndex:0}",
       "passed": true
@@ -920,6 +1090,7 @@
     {
       "id": "vertex-element.string.ordinary",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{Offset:12 Format:Vector3 Usage:TextureCoordinate UsageIndex:7}",
       "actual": "{Offset:12 Format:Vector3 Usage:TextureCoordinate UsageIndex:7}",
       "passed": true
@@ -927,6 +1098,7 @@
     {
       "id": "vertex-element.string.negative",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{Offset:-16 Format:HalfVector4 Usage:Tangent UsageIndex:-3}",
       "actual": "{Offset:-16 Format:HalfVector4 Usage:Tangent UsageIndex:-3}",
       "passed": true
@@ -934,6 +1106,7 @@
     {
       "id": "vertex-element.string.undefined",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{Offset:123 Format:12345 Usage:-23456 UsageIndex:-456}",
       "actual": "{Offset:123 Format:12345 Usage:-23456 UsageIndex:-456}",
       "passed": true
@@ -941,6 +1114,7 @@
     {
       "id": "vertex-element.string.boundaries",
       "group": "VERTEX_ELEMENT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "{Offset:-2147483648 Format:HalfVector4 Usage:TessellateFactor UsageIndex:2147483647}",
       "actual": "{Offset:-2147483648 Format:HalfVector4 Usage:TessellateFactor UsageIndex:2147483647}",
       "passed": true
@@ -948,6 +1122,7 @@
     {
       "id": "curve.enums.continuity",
       "group": "CURVE_ENUMS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,1",
       "actual": "0,1",
       "passed": true
@@ -955,6 +1130,7 @@
     {
       "id": "curve.enums.tangent",
       "group": "CURVE_ENUMS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,1,2",
       "actual": "0,1,2",
       "passed": true
@@ -962,6 +1138,7 @@
     {
       "id": "curve.enums.loop",
       "group": "CURVE_ENUMS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,1,2,3,4",
       "actual": "0,1,2,3,4",
       "passed": true
@@ -969,6 +1146,7 @@
     {
       "id": "curve.key.defaults",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x00000000,0",
       "actual": "0x00000000,0x00000000,0",
       "passed": true
@@ -976,6 +1154,7 @@
     {
       "id": "curve.key.clone.identity",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -983,6 +1162,7 @@
     {
       "id": "curve.key.clone.independent",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40000000,0x41100000",
       "actual": "0x40000000,0x41100000",
       "passed": true
@@ -990,6 +1170,7 @@
     {
       "id": "curve.key.compare.finite",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "-1,0,true",
       "actual": "-1,0,true",
       "passed": true
@@ -997,6 +1178,7 @@
     {
       "id": "curve.key.compare.nan",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,true",
       "actual": "0,true",
       "passed": true
@@ -1004,6 +1186,7 @@
     {
       "id": "curve.key.compare.nan-order",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "-1,1",
       "actual": "-1,1",
       "passed": true
@@ -1011,6 +1194,7 @@
     {
       "id": "curve.key.nan.equality",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": false,
       "actual": false,
       "passed": true
@@ -1018,6 +1202,7 @@
     {
       "id": "curve.key.hash",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 4194305,
       "actual": 4194305,
       "passed": true
@@ -1025,6 +1210,7 @@
     {
       "id": "curve.key.operators",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
       "passed": true
@@ -1032,6 +1218,7 @@
     {
       "id": "curve.key.compare.nil-error",
       "group": "CURVE_KEY",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1039,6 +1226,7 @@
     {
       "id": "curve.collection.order",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x3f800000,0x3f800000,0x40000000",
       "actual": "0x00000000,0x3f800000,0x3f800000,0x40000000",
       "passed": true
@@ -1046,6 +1234,7 @@
     {
       "id": "curve.collection.duplicate-identity",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1053,6 +1242,7 @@
     {
       "id": "curve.collection.value-equality",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,1",
       "actual": "true,1",
       "passed": true
@@ -1060,6 +1250,7 @@
     {
       "id": "curve.collection.item-reorders",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3f800000,0x3f800000,0x40000000,0x40400000",
       "actual": "0x3f800000,0x3f800000,0x40000000,0x40400000",
       "passed": true
@@ -1067,6 +1258,7 @@
     {
       "id": "curve.collection.item-identity",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1074,6 +1266,7 @@
     {
       "id": "curve.collection.index-errors",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true,true",
       "actual": "true,true,true",
       "passed": true
@@ -1081,6 +1274,7 @@
     {
       "id": "curve.collection.copyto",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1088,6 +1282,7 @@
     {
       "id": "curve.collection.copyto-errors",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1095,6 +1290,7 @@
     {
       "id": "curve.collection.clone-depth",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1102,6 +1298,7 @@
     {
       "id": "curve.collection.enumerator-invalidation",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1109,6 +1306,7 @@
     {
       "id": "curve.collection.remove-equal",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1116,6 +1314,7 @@
     {
       "id": "curve.collection.clear-readonly",
       "group": "CURVE_COLLECTION",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,false",
       "actual": "0,false",
       "passed": true
@@ -1123,6 +1322,7 @@
     {
       "id": "curve.tangent.flat",
       "group": "CURVE_TANGENTS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x00000000",
       "actual": "0x00000000,0x00000000",
       "passed": true
@@ -1130,6 +1330,7 @@
     {
       "id": "curve.tangent.linear",
       "group": "CURVE_TANGENTS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x41200000,0x41a00000",
       "actual": "0x41200000,0x41a00000",
       "passed": true
@@ -1137,6 +1338,7 @@
     {
       "id": "curve.tangent.smooth-first",
       "group": "CURVE_TANGENTS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x41200000",
       "actual": "0x00000000,0x41200000",
       "passed": true
@@ -1144,6 +1346,7 @@
     {
       "id": "curve.tangent.smooth-middle",
       "group": "CURVE_TANGENTS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x41200000,0x41a00000",
       "actual": "0x41200000,0x41a00000",
       "passed": true
@@ -1151,6 +1354,7 @@
     {
       "id": "curve.tangent.smooth-last",
       "group": "CURVE_TANGENTS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x41a00000,0x00000000",
       "actual": "0x41a00000,0x00000000",
       "passed": true
@@ -1158,6 +1362,7 @@
     {
       "id": "curve.tangent.mixed",
       "group": "CURVE_TANGENTS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x41a00000",
       "actual": "0x00000000,0x41a00000",
       "passed": true
@@ -1165,6 +1370,7 @@
     {
       "id": "curve.tangent.invalid-index",
       "group": "CURVE_TANGENTS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1172,6 +1378,7 @@
     {
       "id": "curve.evaluate.empty",
       "group": "CURVE_EVALUATE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000",
       "actual": "0x00000000",
       "passed": true
@@ -1179,6 +1386,7 @@
     {
       "id": "curve.evaluate.defaults",
       "group": "CURVE_EVALUATE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,0,true",
       "actual": "0,0,true",
       "passed": true
@@ -1186,6 +1394,7 @@
     {
       "id": "curve.evaluate.single",
       "group": "CURVE_EVALUATE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40e00000,0x40e00000,0x40e00000",
       "actual": "0x40e00000,0x40e00000,0x40e00000",
       "passed": true
@@ -1193,6 +1402,7 @@
     {
       "id": "curve.evaluate.hermite",
       "group": "CURVE_EVALUATE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x3fc80000",
       "actual": "0x3fc80000",
       "passed": true
@@ -1200,6 +1410,7 @@
     {
       "id": "curve.evaluate.hermite-asymmetric",
       "group": "CURVE_EVALUATE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40b80000",
       "actual": "0x40b80000",
       "passed": true
@@ -1207,6 +1418,7 @@
     {
       "id": "curve.evaluate.step",
       "group": "CURVE_EVALUATE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40000000,0x41100000",
       "actual": "0x40000000,0x41100000",
       "passed": true
@@ -1214,6 +1426,7 @@
     {
       "id": "curve.evaluate.duplicate",
       "group": "CURVE_EVALUATE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x41200000",
       "actual": "0x41200000",
       "passed": true
@@ -1221,6 +1434,7 @@
     {
       "id": "curve.evaluate.clone-depth",
       "group": "CURVE_EVALUATE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": true,
       "actual": true,
       "passed": true
@@ -1228,6 +1442,7 @@
     {
       "id": "curve.loop.constant",
       "group": "CURVE_LOOPS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x41200000",
       "actual": "0x00000000,0x41200000",
       "passed": true
@@ -1235,6 +1450,7 @@
     {
       "id": "curve.loop.cycle",
       "group": "CURVE_LOOPS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40a00000,0x40a00000",
       "actual": "0x40a00000,0x40a00000",
       "passed": true
@@ -1242,6 +1458,7 @@
     {
       "id": "curve.loop.cycle-offset",
       "group": "CURVE_LOOPS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xc0a00000,0x41700000",
       "actual": "0xc0a00000,0x41700000",
       "passed": true
@@ -1249,6 +1466,7 @@
     {
       "id": "curve.loop.oscillate",
       "group": "CURVE_LOOPS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x40a00000,0x40a00000",
       "actual": "0x40a00000,0x40a00000",
       "passed": true
@@ -1256,6 +1474,7 @@
     {
       "id": "curve.loop.linear",
       "group": "CURVE_LOOPS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xc0000000,0x41800000",
       "actual": "0xc0000000,0x41800000",
       "passed": true
@@ -1263,6 +1482,7 @@
     {
       "id": "curve.loop.negative-cycle",
       "group": "CURVE_LOOPS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x41200000",
       "actual": "0x41200000",
       "passed": true
@@ -1270,6 +1490,7 @@
     {
       "id": "curve.loop.negative-cycle-offset",
       "group": "CURVE_LOOPS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xc1200000",
       "actual": "0xc1200000",
       "passed": true
@@ -1277,6 +1498,7 @@
     {
       "id": "curve.loop.negative-oscillate",
       "group": "CURVE_LOOPS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x41200000",
       "actual": "0x41200000",
       "passed": true
@@ -1284,6 +1506,7 @@
     {
       "id": "curve.loop.multiple-offset",
       "group": "CURVE_LOOPS",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xc1a00000,0x41a00000",
       "actual": "0xc1a00000,0x41a00000",
       "passed": true
@@ -1291,6 +1514,7 @@
     {
       "id": "packed.alpha.zero",
       "group": "PACKED_ALPHA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 0,
       "actual": 0,
       "passed": true
@@ -1298,6 +1522,7 @@
     {
       "id": "packed.alpha.ordinary",
       "group": "PACKED_ALPHA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 128,
       "actual": 128,
       "passed": true
@@ -1305,6 +1530,7 @@
     {
       "id": "packed.alpha.clamp-low",
       "group": "PACKED_ALPHA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 0,
       "actual": 0,
       "passed": true
@@ -1312,6 +1538,7 @@
     {
       "id": "packed.alpha.clamp-high",
       "group": "PACKED_ALPHA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 255,
       "actual": 255,
       "passed": true
@@ -1319,6 +1546,7 @@
     {
       "id": "packed.alpha.tie-even-zero",
       "group": "PACKED_ALPHA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 0,
       "actual": 0,
       "passed": true
@@ -1326,6 +1554,7 @@
     {
       "id": "packed.alpha.tie-even-two",
       "group": "PACKED_ALPHA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 2,
       "actual": 2,
       "passed": true
@@ -1333,6 +1562,7 @@
     {
       "id": "packed.alpha.non-finite",
       "group": "PACKED_ALPHA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,255,0",
       "actual": "0,255,0",
       "passed": true
@@ -1340,6 +1570,7 @@
     {
       "id": "packed.bgr565.ordinary",
       "group": "PACKED_16BIT_COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 17431,
       "actual": 17431,
       "passed": true
@@ -1347,6 +1578,7 @@
     {
       "id": "packed.bgr565.lanes",
       "group": "PACKED_16BIT_COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "63488,2016,31",
       "actual": "63488,2016,31",
       "passed": true
@@ -1354,6 +1586,7 @@
     {
       "id": "packed.bgra4444.ordinary",
       "group": "PACKED_16BIT_COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 50025,
       "actual": 50025,
       "passed": true
@@ -1361,6 +1594,7 @@
     {
       "id": "packed.bgra4444.lanes",
       "group": "PACKED_16BIT_COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "3840,240,15,61440",
       "actual": "3840,240,15,61440",
       "passed": true
@@ -1368,6 +1602,7 @@
     {
       "id": "packed.bgra5551.ordinary",
       "group": "PACKED_16BIT_COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 8727,
       "actual": 8727,
       "passed": true
@@ -1375,6 +1610,7 @@
     {
       "id": "packed.bgra5551.alpha-threshold",
       "group": "PACKED_16BIT_COLOR",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,0,32768",
       "actual": "0,0,32768",
       "passed": true
@@ -1382,6 +1618,7 @@
     {
       "id": "packed.byte4.raw-domain",
       "group": "PACKED_BYTE4",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 4286578944,
       "actual": 4286578944,
       "passed": true
@@ -1389,6 +1626,7 @@
     {
       "id": "packed.byte4.ties",
       "group": "PACKED_BYTE4",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 67240448,
       "actual": 67240448,
       "passed": true
@@ -1396,6 +1634,7 @@
     {
       "id": "packed.byte4.non-finite",
       "group": "PACKED_BYTE4",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 2147548928,
       "actual": 2147548928,
       "passed": true
@@ -1403,6 +1642,7 @@
     {
       "id": "packed.byte4.decode",
       "group": "PACKED_BYTE4",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0x00000000,0x3f800000,0x43000000,0x437f0000",
       "actual": "0x00000000,0x3f800000,0x43000000,0x437f0000",
       "passed": true
@@ -1410,6 +1650,7 @@
     {
       "id": "packed.half.single",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 13653,
       "actual": 13653,
       "passed": true
@@ -1417,6 +1658,7 @@
     {
       "id": "packed.half.vector2-order",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 3221240832,
       "actual": 3221240832,
       "passed": true
@@ -1424,6 +1666,7 @@
     {
       "id": "packed.half.vector4-order",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 9223433612727172096,
       "actual": 9223433612727172096,
       "passed": true
@@ -1431,6 +1674,7 @@
     {
       "id": "packed.half.positive-zero",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0,00000000,0",
       "actual": "0,00000000,0",
       "passed": true
@@ -1438,6 +1682,7 @@
     {
       "id": "packed.half.negative-zero",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "32768,80000000,0",
       "actual": "32768,80000000,0",
       "passed": true
@@ -1445,6 +1690,7 @@
     {
       "id": "packed.half.smallest-subnormal",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "1,33800000,5.960464E-08",
       "actual": "1,33800000,5.960464E-08",
       "passed": true
@@ -1452,6 +1698,7 @@
     {
       "id": "packed.half.largest-subnormal",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "1023,387FC000,6.097555E-05",
       "actual": "1023,387FC000,6.097555E-05",
       "passed": true
@@ -1459,6 +1706,7 @@
     {
       "id": "packed.half.smallest-normal",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "1024,38800000,6.103516E-05",
       "actual": "1024,38800000,6.103516E-05",
       "passed": true
@@ -1466,6 +1714,7 @@
     {
       "id": "packed.half.tie-even-low",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "15360,3F800000,1",
       "actual": "15360,3F800000,1",
       "passed": true
@@ -1473,6 +1722,7 @@
     {
       "id": "packed.half.tie-even-high",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "15362,3F804000,1.001953",
       "actual": "15362,3F804000,1.001953",
       "passed": true
@@ -1480,6 +1730,7 @@
     {
       "id": "packed.half.maximum-conventional-finite",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "31743,477FE000,65504",
       "actual": "31743,477FE000,65504",
       "passed": true
@@ -1487,6 +1738,7 @@
     {
       "id": "packed.half.exponent31-boundary",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "31744,47800000,65536",
       "actual": "31744,47800000,65536",
       "passed": true
@@ -1494,6 +1746,7 @@
     {
       "id": "packed.half.positive-infinity",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "32767,47FFE000,131008",
       "actual": "32767,47FFE000,131008",
       "passed": true
@@ -1501,6 +1754,7 @@
     {
       "id": "packed.half.negative-infinity",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "65535,C7FFE000,-131008",
       "actual": "65535,C7FFE000,-131008",
       "passed": true
@@ -1508,6 +1762,7 @@
     {
       "id": "packed.half.positive-nan",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "32767,47FFE000,131008",
       "actual": "32767,47FFE000,131008",
       "passed": true
@@ -1515,6 +1770,7 @@
     {
       "id": "packed.half.negative-nan",
       "group": "PACKED_HALF",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "65535,C7FFE000,-131008",
       "actual": "65535,C7FFE000,-131008",
       "passed": true
@@ -1522,6 +1778,7 @@
     {
       "id": "packed.normalized-byte2",
       "group": "PACKED_NORMALIZED_BYTE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 16513,
       "actual": 16513,
       "passed": true
@@ -1529,6 +1786,7 @@
     {
       "id": "packed.normalized-byte4-endpoints",
       "group": "PACKED_NORMALIZED_BYTE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 2139029633,
       "actual": 2139029633,
       "passed": true
@@ -1536,6 +1794,7 @@
     {
       "id": "packed.normalized-byte4-ties",
       "group": "PACKED_NORMALIZED_BYTE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 4261413376,
       "actual": 4261413376,
       "passed": true
@@ -1543,6 +1802,7 @@
     {
       "id": "packed.normalized-byte-minimum-decodes-minus-one",
       "group": "PACKED_NORMALIZED_BYTE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xbf800000",
       "actual": "0xbf800000",
       "passed": true
@@ -1550,6 +1810,7 @@
     {
       "id": "packed.normalized-short2",
       "group": "PACKED_NORMALIZED_SHORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 1073774593,
       "actual": 1073774593,
       "passed": true
@@ -1557,6 +1818,7 @@
     {
       "id": "packed.normalized-short4-endpoints",
       "group": "PACKED_NORMALIZED_SHORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 9223231295071485953,
       "actual": 9223231295071485953,
       "passed": true
@@ -1564,6 +1826,7 @@
     {
       "id": "packed.normalized-short4-ties",
       "group": "PACKED_NORMALIZED_SHORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 18446181123756261376,
       "actual": 18446181123756261376,
       "passed": true
@@ -1571,6 +1834,7 @@
     {
       "id": "packed.normalized-short-minimum-decodes-minus-one",
       "group": "PACKED_NORMALIZED_SHORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "0xbf800000",
       "actual": "0xbf800000",
       "passed": true
@@ -1578,6 +1842,7 @@
     {
       "id": "packed.rg32.ordinary",
       "group": "PACKED_RG_RGBA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 3221176320,
       "actual": 3221176320,
       "passed": true
@@ -1585,6 +1850,7 @@
     {
       "id": "packed.rg32.lanes",
       "group": "PACKED_RG_RGBA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "65535,4294901760",
       "actual": "65535,4294901760",
       "passed": true
@@ -1592,6 +1858,7 @@
     {
       "id": "packed.rgba1010102.ordinary",
       "group": "PACKED_RG_RGBA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 2952265984,
       "actual": 2952265984,
       "passed": true
@@ -1599,6 +1866,7 @@
     {
       "id": "packed.rgba1010102.lanes",
       "group": "PACKED_RG_RGBA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "1023,1047552,1072693248,3221225472",
       "actual": "1023,1047552,1072693248,3221225472",
       "passed": true
@@ -1606,6 +1874,7 @@
     {
       "id": "packed.rgba64.ordinary",
       "group": "PACKED_RG_RGBA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 18446673702817906688,
       "actual": 18446673702817906688,
       "passed": true
@@ -1613,6 +1882,7 @@
     {
       "id": "packed.rgba64.lanes",
       "group": "PACKED_RG_RGBA",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "65535,4294901760,281470681743360,18446462598732840960",
       "actual": "65535,4294901760,281470681743360,18446462598732840960",
       "passed": true
@@ -1620,6 +1890,7 @@
     {
       "id": "packed.short2.endpoints",
       "group": "PACKED_SHORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 2147450880,
       "actual": 2147450880,
       "passed": true
@@ -1627,6 +1898,7 @@
     {
       "id": "packed.short4.ordinary",
       "group": "PACKED_SHORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 9223090574762868736,
       "actual": 9223090574762868736,
       "passed": true
@@ -1634,6 +1906,7 @@
     {
       "id": "packed.short4.ties",
       "group": "PACKED_SHORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 562954248257536,
       "actual": 562954248257536,
       "passed": true
@@ -1641,6 +1914,7 @@
     {
       "id": "packed.short4.non-finite",
       "group": "PACKED_SHORT",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": 9223231301513838592,
       "actual": 9223231301513838592,
       "passed": true
@@ -1648,6 +1922,7 @@
     {
       "id": "packed.interface.alpha8",
       "group": "PACKED_INTERFACE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "64,0x00000000,0x00000000,0x00000000,0x3e808081",
       "actual": "64,0x00000000,0x00000000,0x00000000,0x3e808081",
       "passed": true
@@ -1655,6 +1930,7 @@
     {
       "id": "packed.interface.bgr565",
       "group": "PACKED_INTERFACE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "1055,0x00000000,0x3f020821,0x3f800000,0x3f800000",
       "actual": "1055,0x00000000,0x3f020821,0x3f800000,0x3f800000",
       "passed": true
@@ -1662,6 +1938,7 @@
     {
       "id": "packed.interface.halfsingle",
       "group": "PACKED_INTERFACE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "49152,0xc0000000,0x00000000,0x00000000,0x3f800000",
       "actual": "49152,0xc0000000,0x00000000,0x00000000,0x3f800000",
       "passed": true
@@ -1669,6 +1946,7 @@
     {
       "id": "packed.interface.normalizedbyte2",
       "group": "PACKED_INTERFACE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "16513,0xbf800000,0x3f010204,0x00000000,0x3f800000",
       "actual": "16513,0xbf800000,0x3f010204,0x00000000,0x3f800000",
       "passed": true
@@ -1676,6 +1954,7 @@
     {
       "id": "packed.interface.rg32",
       "group": "PACKED_INTERFACE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "2147483648,0x00000000,0x3f000080,0x00000000,0x3f800000",
       "actual": "2147483648,0x00000000,0x3f000080,0x00000000,0x3f800000",
       "passed": true
@@ -1683,6 +1962,7 @@
     {
       "id": "packed.interface.short2",
       "group": "PACKED_INTERFACE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "65534,0xc0000000,0x00000000,0x00000000,0x3f800000",
       "actual": "65534,0xc0000000,0x00000000,0x00000000,0x3f800000",
       "passed": true
@@ -1690,6 +1970,7 @@
     {
       "id": "packed.value64.hash-string",
       "group": "PACKED_INTERFACE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "-2004318072,{X:0.1894531 Y:25920 Z:-0.8242188 W:-112384}",
       "actual": "-2004318072,{X:0.1894531 Y:25920 Z:-0.8242188 W:-112384}",
       "passed": true
@@ -1697,6 +1978,7 @@
     {
       "id": "packed.value64.copy-and-equality",
       "group": "PACKED_INTERFACE",
+      "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true,false,true",
       "actual": "true,true,false,true",
       "passed": true

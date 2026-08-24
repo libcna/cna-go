@@ -24,6 +24,7 @@ const (
 	displayOrientationIdentity = "Microsoft.Xna.Framework.DisplayOrientation"
 	graphicsManagerIdentity    = "Microsoft.Xna.Framework.GraphicsDeviceManager"
 	supportedOrientationsName  = "SupportedOrientations"
+	bufferUsageIdentity        = "Microsoft.Xna.Framework.Graphics.BufferUsage"
 )
 
 var adapterTypes = map[string]bool{
@@ -186,6 +187,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.VertexElementClosure = measureVertexElementClosure(expected, actual, typeDiagnostics)
 	result.PlayerIndexKeyboardClosure = measurePlayerIndexKeyboardClosure(expected, actual, typeDiagnostics)
 	result.DisplayOrientationClosure = measureDisplayOrientationClosure(expected, actual, typeDiagnostics)
+	result.BufferUsageClosure = measureBufferUsageClosure(expected, actual, typeDiagnostics)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -217,6 +219,65 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+func measureBufferUsageClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) bufferUsageClosure {
+	measurement := bufferUsageClosure{
+		SourceTypes:          1,
+		ExpectedKind:         "enum",
+		ActualKind:           "missing",
+		UnderlyingType:       "missing",
+		NoneValue:            "missing",
+		WriteOnlyValue:       "missing",
+		ValueStorageExcluded: true,
+		Status:               "FAIL",
+	}
+	owner := expected.typeForXNA(bufferUsageIdentity)
+	if owner == nil {
+		return measurement
+	}
+	measurement.SourceIdentities = owner.SourceMembers
+	measurement.ExpectedGoIdentities = len(owner.Members)
+	measurement.LocalDiagnostics = typeDiagnostics[owner.XNA]
+	if target := actual.Types[owner.Key]; target != nil {
+		measurement.TargetTypes = 1
+		measurement.ActualKind = target.Kind
+		measurement.UnderlyingType = target.Underlying
+		measurement.Flags = target.FlagsMarker
+	}
+	for _, key := range owner.Members {
+		member := expected.Members[key]
+		actualMember := actual.Members[key]
+		if actualMember == nil {
+			continue
+		}
+		measurement.TargetGoIdentities++
+		value := "missing"
+		if actualMember.Value != nil {
+			value = normalizeInteger(*actualMember.Value)
+		}
+		switch member.GoName {
+		case "BufferUsageNone":
+			measurement.NoneValue = value
+		case "BufferUsageWriteOnly":
+			measurement.WriteOnlyValue = value
+		}
+	}
+	for key := range actual.Members {
+		if key.Package != owner.PackagePath || !strings.HasPrefix(key.Name, owner.GoName) {
+			continue
+		}
+		if strings.EqualFold(strings.TrimPrefix(key.Name, owner.GoName), "value__") {
+			measurement.ValueStorageExcluded = false
+		}
+	}
+	if measurement.SourceIdentities == 3 && measurement.ExpectedGoIdentities == 2 &&
+		measurement.TargetTypes == 1 && measurement.TargetGoIdentities == 2 && measurement.LocalDiagnostics == 0 &&
+		measurement.ActualKind == "named" && measurement.UnderlyingType == "int32" && measurement.Flags &&
+		measurement.NoneValue == "0" && measurement.WriteOnlyValue == "1" && measurement.ValueStorageExcluded {
+		measurement.Status = "PASS"
+	}
+	return measurement
 }
 
 func measureDisplayOrientationClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) displayOrientationClosure {
@@ -346,10 +407,19 @@ func measurePlayerIndexKeyboardClosure(expected *expectedSurface, actual *actual
 }
 
 func expectedTypeForActualMember(expected *expectedSurface, key symbolKey) *expectedType {
-	if key.Receiver == "" {
-		return nil
+	if key.Receiver != "" {
+		return expected.Types[symbolKey{Package: key.Package, Name: key.Receiver}]
 	}
-	return expected.Types[symbolKey{Package: key.Package, Name: key.Receiver}]
+	var best *expectedType
+	for _, candidate := range expected.Types {
+		if candidate.PackagePath != key.Package || !strings.HasPrefix(key.Name, candidate.GoName) {
+			continue
+		}
+		if best == nil || len(candidate.GoName) > len(best.GoName) {
+			best = candidate
+		}
+	}
+	return best
 }
 
 func measureVertexElementClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) vertexElementClosure {

@@ -71,5 +71,17 @@
   {"id":"graphics-manager-orientation-mapped-static","mutation":"graphics_manager_orientation_static","category":"MISSING_MEMBER"},
   {"id":"graphics-manager-orientation-read-only","mutation":"graphics_manager_orientation_read_only","category":"MISSING_MEMBER"},
   {"id":"graphics-manager-orientation-moved-to-graphics-package","mutation":"graphics_manager_orientation_moved_to_graphics","category":"MISSING_MEMBER"},
-  {"id":"graphics-manager-orientation-public-dirty-helper","mutation":"graphics_manager_orientation_public_dirty","category":"UNEXPECTED_MEMBER"}
+  {"id":"graphics-manager-orientation-public-dirty-helper","mutation":"graphics_manager_orientation_public_dirty","category":"UNEXPECTED_MEMBER"},
+  {"id":"buffer-usage-missing","mutation":"buffer_usage_missing","category":"MISSING_TYPE"},
+  {"id":"buffer-usage-wrong-package","mutation":"buffer_usage_wrong_package","category":"MISSING_TYPE"},
+  {"id":"buffer-usage-wrong-kind","mutation":"buffer_usage_wrong_kind","category":"TYPE_KIND_MISMATCH"},
+  {"id":"buffer-usage-wrong-underlying-type","mutation":"buffer_usage_wrong_underlying_type","category":"TYPE_KIND_MISMATCH"},
+  {"id":"buffer-usage-missing-flags-marker","mutation":"buffer_usage_missing_flags_marker","category":"FLAGS_MAPPING_MISMATCH"},
+  {"id":"buffer-usage-flags-false","mutation":"buffer_usage_flags_false","category":"FLAGS_MAPPING_MISMATCH"},
+  {"id":"buffer-usage-none-wrong-value","mutation":"buffer_usage_wrong_none_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"buffer-usage-write-only-wrong-value","mutation":"buffer_usage_wrong_write_only_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"buffer-usage-write-only-missing","mutation":"buffer_usage_missing_write_only","category":"MISSING_MEMBER"},
+  {"id":"buffer-usage-value-storage-projected","mutation":"buffer_usage_value_storage_projected","category":"UNEXPECTED_MEMBER"},
+  {"id":"buffer-usage-extra-public-constant","mutation":"buffer_usage_extra_constant","category":"UNEXPECTED_MEMBER"},
+  {"id":"buffer-usage-exported-helper-method","mutation":"buffer_usage_exported_helper","category":"UNEXPECTED_MEMBER"}
 ]

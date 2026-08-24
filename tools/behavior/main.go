@@ -17,11 +17,12 @@ import (
 )
 
 type observation struct {
-	ID       string `json:"id"`
-	Group    string `json:"group"`
-	Expected any    `json:"expected"`
-	Actual   any    `json:"actual"`
-	Passed   bool   `json:"passed"`
+	ID         string `json:"id"`
+	Group      string `json:"group"`
+	Provenance string `json:"provenance"`
+	Expected   any    `json:"expected"`
+	Actual     any    `json:"actual"`
+	Passed     bool   `json:"passed"`
 }
 
 type corpusReport struct {
@@ -59,15 +60,21 @@ func main() {
 }
 
 func runCorpus() corpusReport {
-	report := corpusReport{SchemaVersion: 1, Authority: "PURE_XNA_DERIVED retained XNA 4.0 reference observations"}
-	check := func(id, group string, expected, actual any) {
+	report := corpusReport{SchemaVersion: 1, Authority: "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually"}
+	checkWithProvenance := func(id, group, provenance string, expected, actual any) {
 		passed := fmt.Sprint(expected) == fmt.Sprint(actual)
-		report.Observations = append(report.Observations, observation{ID: id, Group: group, Expected: expected, Actual: actual, Passed: passed})
+		report.Observations = append(report.Observations, observation{ID: id, Group: group, Provenance: provenance, Expected: expected, Actual: actual, Passed: passed})
 		report.Summary.Observations++
 		report.Summary.Assertions++
 		if !passed {
 			report.Summary.Failures++
 		}
+	}
+	check := func(id, group string, expected, actual any) {
+		checkWithProvenance(id, group, "PURE_XNA_DERIVED", expected, actual)
+	}
+	checkGoProjection := func(id, group string, expected, actual any) {
+		checkWithProvenance(id, group, "GO_LANGUAGE_PROJECTION", expected, actual)
 	}
 	bits := func(value float32) string { return fmt.Sprintf("0x%08x", math.Float32bits(value)) }
 	floatBits := func(values ...float32) string {
@@ -122,6 +129,13 @@ func runCorpus() corpusReport {
 	_ = postDisposeManager.Dispose(true)
 	postDisposeManager.SetSupportedOrientations(landscape)
 	check("graphics-manager-orientation.post-disposal-managed-state", "GRAPHICS_MANAGER_ORIENTATION", "3,true", fmt.Sprintf("%d,%t", postDisposeManager.SupportedOrientations(), managerDirty(postDisposeManager)))
+
+	check("buffer-usage.raw-values", "BUFFER_USAGE", "0,1", fmt.Sprintf("%d,%d", graphics.BufferUsageNone, graphics.BufferUsageWriteOnly))
+	check("buffer-usage.underlying-int32", "BUFFER_USAGE", "int32", reflect.TypeOf(graphics.BufferUsageNone).Kind().String())
+	var zeroBufferUsage graphics.BufferUsage
+	checkGoProjection("buffer-usage.zero-value", "BUFFER_USAGE", graphics.BufferUsageNone, zeroBufferUsage)
+	checkGoProjection("buffer-usage.arbitrary-raw-values", "BUFFER_USAGE", "2,3,1048576,-1", fmt.Sprintf("%d,%d,%d,%d", graphics.BufferUsage(2), graphics.BufferUsage(3), graphics.BufferUsage(1<<20), graphics.BufferUsage(-1)))
+	checkGoProjection("buffer-usage.bitwise-composition", "BUFFER_USAGE", "1,1,3", fmt.Sprintf("%d,%d,%d", graphics.BufferUsageNone|graphics.BufferUsageWriteOnly, graphics.BufferUsageWriteOnly|graphics.BufferUsageWriteOnly, graphics.BufferUsage(2)|graphics.BufferUsageWriteOnly))
 
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))

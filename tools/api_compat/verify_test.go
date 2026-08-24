@@ -317,6 +317,69 @@ func TestDisplayOrientationGraphicsManagerMappedContract(t *testing.T) {
 	}
 }
 
+func TestBufferUsageMappedContract(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	usage := surface.typeForXNA(bufferUsageIdentity)
+	if usage == nil || usage.Kind != "enum" || !usage.Flags || usage.SourceMembers != 3 || len(usage.Members) != 2 {
+		t.Fatalf("BufferUsage projection = %+v", usage)
+	}
+	for name, value := range map[string]string{"None": "0", "WriteOnly": "1"} {
+		member := surface.Members[symbolKey{Package: usage.PackagePath, Name: "BufferUsage" + name}]
+		if member == nil || member.GoKind != "const" || member.EnumValue == nil || *member.EnumValue != value || !equalStrings(member.Results, []string{"BufferUsage"}) {
+			t.Fatalf("BufferUsage%s projection = %+v", name, member)
+		}
+	}
+	if surface.Members[symbolKey{Package: usage.PackagePath, Name: "BufferUsageValue__"}] != nil ||
+		surface.Members[symbolKey{Package: usage.PackagePath, Name: "BufferUsagevalue__"}] != nil {
+		t.Fatal("enum value__ storage was projected")
+	}
+}
+
+func TestFlagsDirectiveRequiresExactMarker(t *testing.T) {
+	exact := &ast.CommentGroup{List: []*ast.Comment{{Text: "// xna:flags"}}}
+	if !hasDirectiveNamed("xna:flags", exact) {
+		t.Fatal("exact xna:flags marker was not detected")
+	}
+	for _, text := range []string{"// xna:flags=false", "// not-xna:flags", "// comment mentioning xna:flags"} {
+		group := &ast.CommentGroup{List: []*ast.Comment{{Text: text}}}
+		if hasDirectiveNamed("xna:flags", group) {
+			t.Fatalf("non-exact flags marker %q was accepted", text)
+		}
+	}
+}
+
+func TestBufferUsageCurrentSurfaceAndLocalClosure(t *testing.T) {
+	reference := loadPinnedContract(t)
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("type errors: %v", actual.TypeErrors)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	closure := result.BufferUsageClosure
+	if closure.Status != "PASS" || closure.SourceTypes != 1 || closure.SourceIdentities != 3 || closure.ExpectedGoIdentities != 2 ||
+		closure.TargetTypes != 1 || closure.TargetGoIdentities != 2 || closure.LocalDiagnostics != 0 || closure.ExpectedKind != "enum" ||
+		closure.ActualKind != "named" || closure.UnderlyingType != "int32" || !closure.Flags || closure.NoneValue != "0" ||
+		closure.WriteOnlyValue != "1" || !closure.ValueStorageExcluded {
+		t.Fatalf("BufferUsage closure = %+v", closure)
+	}
+}
+
 func TestDisplayOrientationGraphicsManagerCurrentSurfaceAndSelectedClosure(t *testing.T) {
 	reference := loadPinnedContract(t)
 	expected, err := buildExpected(reference)
@@ -641,7 +704,9 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "display_orientation_") || strings.HasPrefix(fixture.Mutation, "graphics_manager_orientation_") {
+			if strings.HasPrefix(fixture.Mutation, "buffer_usage_") {
+				expected, actual = bufferUsageMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "display_orientation_") || strings.HasPrefix(fixture.Mutation, "graphics_manager_orientation_") {
 				expected, actual = displayOrientationMutationCase(t, fixture.Mutation)
 			} else if strings.HasPrefix(fixture.Mutation, "player_index_") || strings.HasPrefix(fixture.Mutation, "keyboard_player_index_") {
 				expected, actual = playerIndexKeyboardMutationCase(t, fixture.Mutation)
@@ -656,6 +721,92 @@ func TestMutationFixtures(t *testing.T) {
 			}
 		})
 	}
+}
+
+func bufferUsageMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(bufferUsageIdentity)
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   3,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  2,
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			copiedType.Key: {Key: copiedType.Key, Kind: "named", Underlying: "int32", FlagsMarker: true},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		value := *copiedMember.EnumValue
+		actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "const", Results: []string{"BufferUsage"}, Value: &value}
+	}
+
+	const graphicsPackage = modulePath + "/Microsoft/Xna/Framework/Graphics"
+	const frameworkPackage = modulePath + "/Microsoft/Xna/Framework"
+	typeKey := symbolKey{Package: graphicsPackage, Name: "BufferUsage"}
+	constant := func(name string) symbolKey { return symbolKey{Package: graphicsPackage, Name: "BufferUsage" + name} }
+	switch mutation {
+	case "buffer_usage_missing":
+		delete(actual.Types, typeKey)
+	case "buffer_usage_wrong_package":
+		movedType := *actual.Types[typeKey]
+		delete(actual.Types, typeKey)
+		movedType.Key.Package = frameworkPackage
+		actual.Types[movedType.Key] = &movedType
+		for _, name := range []string{"None", "WriteOnly"} {
+			key := constant(name)
+			movedMember := *actual.Members[key]
+			delete(actual.Members, key)
+			movedMember.Key.Package = frameworkPackage
+			actual.Members[movedMember.Key] = &movedMember
+		}
+	case "buffer_usage_wrong_kind":
+		actual.Types[typeKey].Kind = "struct"
+	case "buffer_usage_wrong_underlying_type":
+		actual.Types[typeKey].Underlying = "uint32"
+	case "buffer_usage_missing_flags_marker", "buffer_usage_flags_false":
+		actual.Types[typeKey].FlagsMarker = false
+	case "buffer_usage_wrong_none_value":
+		wrong := "1"
+		actual.Members[constant("None")].Value = &wrong
+	case "buffer_usage_wrong_write_only_value":
+		wrong := "2"
+		actual.Members[constant("WriteOnly")].Value = &wrong
+	case "buffer_usage_missing_write_only":
+		delete(actual.Members, constant("WriteOnly"))
+	case "buffer_usage_value_storage_projected":
+		key := constant("Value__")
+		value := "0"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"int32"}, Value: &value}
+	case "buffer_usage_extra_constant":
+		key := constant("Discard")
+		value := "2"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"BufferUsage"}, Value: &value}
+	case "buffer_usage_exported_helper":
+		key := symbolKey{Package: graphicsPackage, Receiver: "BufferUsage", Name: "String"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"string"}}
+	default:
+		t.Fatalf("unknown BufferUsage mutation %q", mutation)
+	}
+	return expected, actual
 }
 
 func displayOrientationMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {

@@ -27,6 +27,9 @@ Keyboard overload through the unchanged process keyboard route.
 **Foundation 7 status:** qualified for the DisplayOrientation flags enum and
 the managed GraphicsDeviceManager.SupportedOrientations property slice.
 
+**Foundation 8 status:** qualified for exactly the pure managed Graphics
+BufferUsage flags enum, with no buffer class, device member, or ABI expansion.
+
 This file is normative. `NEXT.md` is the resumable handoff; generated reports
 are evidence and must not replace the rules here.
 
@@ -374,6 +377,41 @@ rotation claim is included. Exact IL and lifecycle evidence is in
 FOUNDATION_MILESTONE_7_COMPLETE=true
 ```
 
+## Foundation 8 BufferUsage policy
+
+Foundation 8 completes exactly
+`Microsoft.Xna.Framework.Graphics.BufferUsage`. It is a `[Flags]` named
+`int32` enum with explicit `None=0` and `WriteOnly=1` constants. The synthetic
+CLR `value__` field is excluded, so three source identities project to exactly
+two Go identities. The complete signed `int32` domain remains representable;
+there is no validation, normalization, `String`, flags helper, constructor, or
+other convenience surface.
+
+The type is pure managed metadata in the root Graphics package. It adds no CNA
+constant or operation and does not implement VertexBuffer, DynamicVertexBuffer,
+IndexBuffer, DynamicIndexBuffer, VertexDeclaration, IVertexType, SetData,
+GetData, binding, creation, or draw support. The five existing native/runtime
+partial types are untouched.
+
+## Foundation 8 qualification evidence
+
+- [x] Independently confirm the exact three-source-identity/two-Go-identity contract.
+- [x] Complete BufferUsage with compiler-measured local strict zero.
+- [x] Preserve explicit values, exact flags metadata, zero value, arbitrary raw bits, and bitwise composition.
+- [x] Grow verifier mutations from 73 to 85 focused cases without an allowlist or special case.
+- [x] Grow the behavior corpus from 242 to 247 assertions with explicit XNA/Go provenance and zero failures.
+- [x] Preserve all five partial types and their combined 177 missing members.
+- [x] Preserve every mismatch, leak, allowlist, unmeasured, interface-witness, and CNA ABI counter.
+- [x] Requalify Go, native stress, unchanged template, deterministic artifact, and isolated-consumer gates.
+
+Normal strict verification remains red only for 197 genuinely missing types
+and 177 members on five explicitly deferred native/runtime partial types.
+Exact evidence is in `docs/buffer-usage-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_8_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -383,7 +421,8 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 7, regenerate the scoreboard and dependency graph before
+After Foundation 8, regenerate the scoreboard and dependency graph before
 selecting one next closure. Do not infer that GamePad is next merely because
 PlayerIndex now exists, do not automatically continue GraphicsDeviceManager,
+do not infer that a buffer class is next merely because BufferUsage now exists,
 and do not combine independent families.

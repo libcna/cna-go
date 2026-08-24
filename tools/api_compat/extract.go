@@ -376,7 +376,7 @@ func hasDirectiveNamed(name string, groups ...*ast.CommentGroup) bool {
 			continue
 		}
 		for _, comment := range group.List {
-			if strings.Contains(strings.TrimSpace(strings.TrimPrefix(comment.Text, "//")), name) {
+			if strings.TrimSpace(strings.TrimPrefix(comment.Text, "//")) == name {
 				return true
 			}
 		}
