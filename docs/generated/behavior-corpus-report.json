@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations",
+  "summary": {
+    "OBSERVATIONS": 27,
+    "ASSERTIONS": 27,
+    "FAILURES": 0
+  },
+  "observations": [
+    {
+      "id": "math.clamp.low",
+      "group": "MathHelper",
+      "expected": "0x00000000",
+      "actual": "0x00000000",
+      "passed": true
+    },
+    {
+      "id": "math.clamp.inverted",
+      "group": "MathHelper",
+      "expected": "0x40000000",
+      "actual": "0x40000000",
+      "passed": true
+    },
+    {
+      "id": "math.lerp",
+      "group": "MathHelper",
+      "expected": "0x40800000",
+      "actual": "0x40800000",
+      "passed": true
+    },
+    {
+      "id": "math.barycentric",
+      "group": "MathHelper",
+      "expected": "0x40600000",
+      "actual": "0x40600000",
+      "passed": true
+    },
+    {
+      "id": "math.catmullrom",
+      "group": "MathHelper",
+      "expected": "0xc1218313",
+      "actual": "0xc1218313",
+      "passed": true
+    },
+    {
+      "id": "math.hermite",
+      "group": "MathHelper",
+      "expected": "0xc1351eba",
+      "actual": "0xc1351eba",
+      "passed": true
+    },
+    {
+      "id": "math.wrapangle.large",
+      "group": "MathHelper",
+      "expected": "0xbfc2e06c",
+      "actual": "0xbfc2e06c",
+      "passed": true
+    },
+    {
+      "id": "math.to_degrees",
+      "group": "MathHelper",
+      "expected": "0x43340000",
+      "actual": "0x43340000",
+      "passed": true
+    },
+    {
+      "id": "math.negative_zero.distance",
+      "group": "MathHelper",
+      "expected": "0x00000000",
+      "actual": "0x00000000",
+      "passed": true
+    },
+    {
+      "id": "math.nan.hermite",
+      "group": "MathHelper",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "math.overflow.distance",
+      "group": "MathHelper",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "math.subnormal.lerp",
+      "group": "MathHelper",
+      "expected": "0x00000001",
+      "actual": "0x00000001",
+      "passed": true
+    },
+    {
+      "id": "math.underflow.lerp",
+      "group": "MathHelper",
+      "expected": "0x00000000",
+      "actual": "0x00000000",
+      "passed": true
+    },
+    {
+      "id": "point.hash",
+      "group": "Point",
+      "expected": 3,
+      "actual": 3,
+      "passed": true
+    },
+    {
+      "id": "point.string",
+      "group": "Point",
+      "expected": "{X:1 Y:2}",
+      "actual": "{X:1 Y:2}",
+      "passed": true
+    },
+    {
+      "id": "point.value-equality",
+      "group": "Point",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "point.zero.fresh-value",
+      "group": "Point",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "rectangle.contains.inclusive-min",
+      "group": "Rectangle",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "rectangle.contains.exclusive-max",
+      "group": "Rectangle",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "rectangle.intersect",
+      "group": "Rectangle",
+      "expected": "{X:5 Y:0 Width:5 Height:5}",
+      "actual": "{X:5 Y:0 Width:5 Height:5}",
+      "passed": true
+    },
+    {
+      "id": "rectangle.union",
+      "group": "Rectangle",
+      "expected": "{X:0 Y:-5 Width:15 Height:15}",
+      "actual": "{X:0 Y:-5 Width:15 Height:15}",
+      "passed": true
+    },
+    {
+      "id": "rectangle.inflate",
+      "group": "Rectangle",
+      "expected": "{X:1 Y:1 Width:6 Height:9}",
+      "actual": "{X:1 Y:1 Width:6 Height:9}",
+      "passed": true
+    },
+    {
+      "id": "rectangle.offset",
+      "group": "Rectangle",
+      "expected": "{X:0 Y:3 Width:6 Height:9}",
+      "actual": "{X:0 Y:3 Width:6 Height:9}",
+      "passed": true
+    },
+    {
+      "id": "rectangle.hash",
+      "group": "Rectangle",
+      "expected": 10,
+      "actual": 10,
+      "passed": true
+    },
+    {
+      "id": "gametime.total-ticks",
+      "group": "GameTime",
+      "expected": 9223372036854775807,
+      "actual": 9223372036854775807,
+      "passed": true
+    },
+    {
+      "id": "gametime.elapsed-ticks",
+      "group": "GameTime",
+      "expected": 166667,
+      "actual": 166667,
+      "passed": true
+    },
+    {
+      "id": "gametime.slow",
+      "group": "GameTime",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    }
+  ]
+}

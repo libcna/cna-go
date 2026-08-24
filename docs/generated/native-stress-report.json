@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "isolation": "one native Game generation per subprocess",
+  "GO_RACE_STATUS": "PASS",
+  "NATIVE_SANITIZER_STATUS": "NOT_RUN",
+  "counters": {
+    "GAME_CYCLES": 20,
+    "GAME_RECREATION_CYCLES": 20,
+    "TEXTURE_CYCLES": 20,
+    "SPRITEBATCH_CYCLES": 20,
+    "CALLBACK_ERROR_CYCLES": 20,
+    "CALLBACK_PANIC_CYCLES": 20,
+    "WRONG_THREAD_CHECKS": 1,
+    "OWNER_THREAD_RETRIES": 1,
+    "GC_STRESS_POINTS": 80,
+    "NATIVE_CRASHES": 0,
+    "OBSERVED_UAF": 0,
+    "OBSERVED_DOUBLE_FREE": 0
+  }
+}

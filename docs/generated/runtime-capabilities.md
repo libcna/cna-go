@@ -1,0 +1,40 @@
+# Generated runtime capability inventory
+
+Generated from `docs/runtime-capabilities.json`; do not edit by hand.
+
+- Profile: CNA-Go Foundation 1 / XNA 4.0 Windows runtime mapping
+- Qualified platform: linux/amd64 (HEADLESS renderer, NULL audio)
+- Capability rows: 30
+
+| Status | Capability | Evidence | Notes |
+|---|---|---|---|
+| `BACKEND_BLOCKED` | Audio/XACT | qualified artifact uses NULL audio and strict report is missing Audio types | Both a non-null backend and a future dependency-complete CNA-Go surface are required. |
+| `BACKEND_BLOCKED` | Visible window rendering | qualified artifact reports HEADLESS renderer | Native draw calls are verified, but the retained artifact cannot provide visual evidence. |
+| `HARDWARE_PENDING` | Hardware renderer qualification | Foundation artifact is HEADLESS | Requires a separately admitted exact ABI artifact and visible-run evidence. |
+| `LANGUAGE_MAPPING_LIMITATION` | CLR Game subclassing syntax | docs/xna-go-mapping.md | Go uses a concrete Game host plus an explicit GameCallbacks adapter. |
+| `PLATFORM_PENDING` | Android runtime | unsupported template entry point removed | Not claimed. |
+| `PLATFORM_PENDING` | iOS runtime | no iOS runtime qualification | Not claimed. |
+| `PLATFORM_PENDING` | macOS runtime | no macOS runtime qualification | Not claimed. |
+| `PLATFORM_PENDING` | Web/Wasm runtime | unsupported template entry point removed | cgo/native CNA is not a Web/Wasm qualification. |
+| `PLATFORM_PENDING` | Windows runtime | no Windows loader or runtime qualification | Go target compilation is not CNA runtime evidence. |
+| `UNIMPLEMENTED_CNA_GO` | ContentManager and XNB | strict structural report | Deliberately deferred; no fake ContentManager exists. |
+| `UNIMPLEMENTED_CNA_GO` | Design-time APIs | strict structural report | Deferred. |
+| `UNIMPLEMENTED_CNA_GO` | Effects, models, and 3D | strict structural report | Deliberately deferred; no BasicEffect, cube, depth-state, or fake capability API exists. |
+| `UNIMPLEMENTED_CNA_GO` | Media and video | strict structural report | Deferred. |
+| `UNIMPLEMENTED_CNA_GO` | PackedVector family | strict structural report | Deferred. |
+| `UNIMPLEMENTED_CNA_GO` | Storage | strict structural report | Deferred. |
+| `UNIMPLEMENTED_CNA_GO` | Touch input | strict structural report | Deferred. |
+| `UPSTREAM_CNA_BLOCKED` | Native sanitizer evidence | qualified library is not instrumented | NATIVE_SANITIZER_STATUS=NOT_RUN; no leak-freedom claim. |
+| `VERIFIED_MANAGED` | Pure-value Foundation closure | api-compat and behavior-corpus reports | Nine locally complete types; Vector2 and Color remain measured partials. |
+| `VERIFIED_MANAGED` | XNA namespace/package mapping | tools/api_compat and docs/xna-go-mapping.md | Case-preserving import paths; consumer aliases are not API. |
+| `VERIFIED_NATIVE` | Go callback error/panic containment | 20 returned-error and 20 panic subprocess cycles | No panic or Go error crosses C; Run returns the stored Go failure. |
+| `VERIFIED_NATIVE` | GraphicsDevice.Clear | 60/600 canary | Routes through cna_graphics_device_clear_rgba. |
+| `VERIFIED_NATIVE` | Native Game lifecycle | 60/600 canary and native stress | CNA drives Initialize, LoadContent, Update, Draw, UnloadContent, and Exiting. |
+| `VERIFIED_NATIVE` | Game recreation and generation rejection | 20 isolated Game recreation cycles | Each Run gets a new generation; stale facades reject deterministically. |
+| `VERIFIED_NATIVE` | GraphicsDevice | 60/600 canary | Borrowed from the Game-owned GraphicsDeviceManager; never synthetic. |
+| `VERIFIED_NATIVE` | Keyboard state | 60/600 native callback polling | Exact XNA Keys raw values and native CNA keyboard snapshot; HEADLESS naturally reports no keys. |
+| `VERIFIED_NATIVE` | Linux amd64 runtime | exact ABI 0.7 native gates, stress, and canary | Requires cgo, a C compiler at build time, and a separately supplied CNA shared library. |
+| `VERIFIED_NATIVE` | Owner OS-thread policy | native stress wrong-thread rejection and owner retry | Run locks one OS thread through native destroy and callback-handle deletion. |
+| `VERIFIED_NATIVE` | SpriteBatch 2D draw closure | 60/600 scaled draw canary and 20 lifetime cycles | Begin, one exact scaled Draw overload, End, and Dispose are real; the XNA type is partial. |
+| `VERIFIED_NATIVE` | Texture2D PNG stream load | 128x128 PNG dimensions and 20 texture cycles | io.Reader is read from its current position; CNA-Go does not close it. |
+| `VERIFIED_NATIVE` | Viewport | native viewport 800x480 observed in qualified artifact | Read from CNA; no hard-coded public dimensions. |

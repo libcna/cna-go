@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "profile": "XNA 4.0 Windows runtime",
+  "module": "github.com/openeggbert/cna-go",
+  "namespace": {
+    "prefix": "Microsoft.Xna.Framework",
+    "pathRule": "replace-dot-with-slash",
+    "packageNameRule": "lowercase-final-namespace-segment"
+  },
+  "types": {
+    "publicNameRule": "pascal-case-source-name-with-generic-arity-removed",
+    "nestedNameRule": "concatenate-declaring-and-nested-names",
+    "genericCollisionRule": "append-Of-and-generic-parameter-names-to-generic-identity",
+    "struct": "go-struct-value",
+    "class": "go-struct-pointer-facade",
+    "interface": "go-structural-interface",
+    "enum": "named-int32",
+    "delegate": "named-func"
+  },
+  "members": {
+    "instanceField": "exported-struct-field",
+    "staticConstant": "package-constant-prefixed-by-declaring-type",
+    "staticReadOnlyField": "zero-argument-package-function-prefixed-by-declaring-type",
+    "instancePropertyGet": "method-with-property-name",
+    "instancePropertySet": "pointer-method-prefixed-Set",
+    "staticPropertyGet": "zero-argument-package-function-prefixed-by-declaring-type",
+    "staticPropertySet": "package-function-prefixed-Set-and-declaring-type",
+    "uniqueConstructor": "package-function-prefixed-New",
+    "overloadedConstructor": "NewType-By-parameter-shape",
+    "uniqueInstanceMethod": "source-name",
+    "uniqueStaticMethod": "declaring-type-plus-source-name",
+    "overloadedMethod": "base-name-By-parameter-shape",
+    "operator": "declaring-type-plus-Operator-plus-operator-name-By-operand-shape",
+    "eventAdd": "AddEventNameHandler-returning-EventSubscription",
+    "eventRemove": "RemoveEventNameHandler-taking-EventSubscription"
+  },
+  "goIdentifierCollisionRule": "append-source-kind-to-every-collider; if still-colliding append-Signature-and-uppercase-FNV1a32-of-XNA-identity",
+  "parameterShape": {
+    "separator": "And",
+    "empty": "None",
+    "refPrefix": "Ref",
+    "outPrefix": "Out",
+    "arrayPrefix": "SliceOf",
+    "genericArgumentPrefix": "Of"
+  },
+  "direction": {
+    "value": "go-value-parameter",
+    "ref": "go-pointer-parameter",
+    "out": "remove-input-and-append-return",
+    "tryPattern": "value-then-bool"
+  },
+  "errors": {
+    "nativeRuntimeFailure": "error-final-result",
+    "voidNativeFailure": "error-only-result",
+    "valueNativeFailure": "value-then-error",
+    "pureValueOperation": "no-added-error",
+    "panicPolicy": "programmer-invariant-only-never-native-runtime-failure"
+  },
+  "bcl": {
+    "System.Boolean": "bool",
+    "System.Byte": "uint8",
+    "System.SByte": "int8",
+    "System.Int16": "int16",
+    "System.UInt16": "uint16",
+    "System.Int32": "int32",
+    "System.UInt32": "uint32",
+    "System.Int64": "int64",
+    "System.UInt64": "uint64",
+    "System.Single": "float32",
+    "System.Double": "float64",
+    "System.Char": "uint16",
+    "System.String": "string",
+    "System.Object": "any",
+    "System.IntPtr": "uintptr",
+    "System.TimeSpan": "framework.TimeSpan",
+    "System.IO.Stream": "io.Reader",
+    "System.Type": "reflect.Type"
+  },
+  "expectedCountFormula": {
+    "types": "one-per-reference-type",
+    "members": "reference-members-minus-enum-value__-minus-properties-minus-events-plus-property-accessors-plus-two-event-accessors",
+    "referenceTypes": 257,
+    "referenceMembers": 2964,
+    "enumBackingFieldsRemoved": 49,
+    "propertiesRemoved": 840,
+    "propertyAccessorsAdded": 1119,
+    "eventsRemoved": 49,
+    "eventAccessorsAdded": 98,
+    "expectedGoTypes": 257,
+    "expectedGoMembers": 3243
+  },
+  "languageAdapters": [
+    "EventSubscription",
+    "GameCallbacks",
+    "TimeSpan"
+  ],
+  "crossPackageCycleRule": "when an ancestor namespace member returns a descendant namespace type that imports ancestor values, project the accessor as a descendant-package function named OwnerTypeMember"
+}

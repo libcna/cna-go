@@ -6,14 +6,16 @@ type Vector2 struct {
 	Y float32
 }
 
-// NewVector2 constructs a vector from its components.
-func NewVector2(x, y float32) Vector2 {
+func NewVector2BySingle(value float32) Vector2 {
+	return Vector2{X: value, Y: value}
+}
+
+func NewVector2BySingleAndSingle(x, y float32) Vector2 {
 	return Vector2{X: x, Y: y}
 }
 
-// Add returns the component-wise sum of v and other.
-func (v Vector2) Add(other Vector2) Vector2 {
-	return Vector2{X: v.X + other.X, Y: v.Y + other.Y}
+func Vector2AddByVector2AndVector2(value1, value2 Vector2) Vector2 {
+	return Vector2{X: value1.X + value2.X, Y: value1.Y + value2.Y}
 }
 
 // LengthSquared returns the squared Euclidean length of v.
