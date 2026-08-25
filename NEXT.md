@@ -307,9 +307,12 @@ git ls-files -z | sort -z | tar --null --files-from=- \
   --mtime='@0' --mode='u+rw,go+r,go-w' --sort=name -cf - | gzip -n > OUT.tar.gz
 ```
 
-At `6259bfa` that yields sha256
+At `6259bfa`, the last source-bearing commit, that yields sha256
 `c64a2ab9e06800209e2f32a1e460fb8a56f529b377164f67e8032162c4447011` over 250
-entries, reproduced independently in the same run. Extracted into
+entries; at the final docs-only `685ec54` it yields
+`c21280787fd0d2e33c4783a5e729cc11756e03233e08660676ca0e0d29f1ce2a` over the
+same 250 entries. Both were reproduced independently in the same run, and the
+delta between the two commits touches only `NEXT.md` and `plan.md`. Extracted into
 `build-consumer/isolated`, it passes every gate with **no development-checkout
 dependency** and regenerates `api-compat-report.json`,
 `behavior-corpus-report.json`, and `missing-type-inventory.md` byte-identically
