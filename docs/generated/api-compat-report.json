@@ -7,6 +7,7 @@
     "BASE_MAPPING_MISMATCH": 0,
     "BCL_BASE_ADAPTERS": 1,
     "BCL_BASE_ADAPTER_CONSUMERS": 1,
+    "BCL_DEFERRED_BASE_BLOCKERS": 21,
     "BCL_INHERITED_MEMBER_PROJECTIONS": 12,
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
@@ -8186,6 +8187,25 @@
       "derivedTypes": 5,
       "projectedTypes": 0,
       "exportedEmbeddings": 0,
+      "blockers": [
+        {
+          "kind": "ARCHITECTURE",
+          "needs": "an attribute application model",
+          "detail": "Go has no attribute metadata, so a projected attribute type could be constructed and read back but never applied to anything; the five ContentSerializer* types would be inert data objects whose whole purpose, annotating content-pipeline members, is unrepresentable"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "GetCustomAttribute",
+          "needs": "System.Reflection",
+          "detail": "the inherited static lookups take Assembly, MemberInfo, Module and ParameterInfo, none of which CNA-Go maps; whether inherited STATICS are part of a derived type's projected surface is itself undecided, having never arisen before"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "TypeId",
+          "needs": "a decision on System.Object-typed members",
+          "detail": "the default implementation returns GetType(), so projecting it as any would hand back a reflect.Type through an untyped result"
+        }
+      ],
       "rationale": "Go has no attribute metadata; the content serializer attributes need a separate mapping",
       "verdict": "PASS"
     },
@@ -8196,14 +8216,52 @@
       "derivedTypes": 1,
       "projectedTypes": 0,
       "exportedEmbeddings": 0,
-      "rationale": "a BCL dictionary base whose projected surface is a separate mapping",
+      "blockers": [
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "GetObjectData",
+          "needs": "System.Runtime.Serialization",
+          "detail": "declared `public hidebysig newslot virtual`, NOT an explicit implementation, so LaunchParameters genuinely exposes it"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "OnDeserialization",
+          "needs": "System.Runtime.Serialization",
+          "detail": "likewise public, not explicit"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "Keys",
+          "needs": "Dictionary`2/KeyCollection",
+          "detail": "a public nested BCL type with its own surface and its own nested enumerator"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "Values",
+          "needs": "Dictionary`2/ValueCollection",
+          "detail": "likewise"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "Comparer",
+          "needs": "System.Collections.Generic.IEqualityComparer`1",
+          "detail": "a public BCL interface CNA-Go does not map"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "GetEnumerator",
+          "needs": "Dictionary`2/Enumerator over KeyValuePair`2",
+          "detail": "two more public nested or generic BCL types"
+        }
+      ],
+      "rationale": "blocked on the public surface mapping, not on the behavior: the IL is readable, but six public members cannot be projected in already-decided terms",
       "verdict": "PASS"
     },
     {
       "clrBase": "System.Collections.ObjectModel.Collection`1",
       "adapter": "collectionBase[T]",
       "status": "COMPOSED",
-      "addsProjectedSurface": false,
+      "addsProjectedSurface": true,
       "derivedTypes": 1,
       "projectedTypes": 1,
       "exportedEmbeddings": 0,
@@ -8217,7 +8275,20 @@
       "derivedTypes": 4,
       "projectedTypes": 0,
       "exportedEmbeddings": 0,
-      "rationale": "a read-only BCL collection base whose projected surface is a separate mapping",
+      "blockers": [
+        {
+          "kind": "ARCHITECTURE",
+          "clrMember": "GetEnumerator",
+          "needs": "a rule for a derived member that HIDES an inherited one",
+          "detail": "all four base consumers declare a GetEnumerator returning their own nested Enumerator, which hides the inherited one. The settled collision rule would resolve that into two hashed names, neither of which is GetEnumerator. The principled answer -- a hidden inherited member is unreachable because CNA-Go projects no base type to cast to -- is available but untested, because every consumer is blocked on its element type anyway"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "needs": "ModelBone, Effect, ModelMesh, ModelMeshPart",
+          "detail": "each of the four consumers needs its element type, and all four element types are content-pipeline blocked"
+        }
+      ],
+      "rationale": "DEFERRED AS A BASE ONLY; it is SUPPORTED as a signature adapter, and the two roles are independent",
       "verdict": "PASS"
     },
     {
@@ -8227,6 +8298,26 @@
       "derivedTypes": 1,
       "projectedTypes": 0,
       "exportedEmbeddings": 0,
+      "blockers": [
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "CanConvertFrom",
+          "needs": "System.ComponentModel.ITypeDescriptorContext",
+          "detail": "the descriptor-context contract, which is the single largest blocker in the profile at thirteen types"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "ConvertFrom",
+          "needs": "System.Globalization.CultureInfo",
+          "detail": "culture-aware conversion, which twelve types depend on"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "GetProperties",
+          "needs": "System.Collections.IDictionary",
+          "detail": "shared with System.Exception::Data"
+        }
+      ],
       "rationale": "part of the System.ComponentModel TypeConverter subsystem, which is a separate mapping",
       "verdict": "PASS"
     },
@@ -8258,6 +8349,36 @@
       "derivedTypes": 5,
       "projectedTypes": 0,
       "exportedEmbeddings": 0,
+      "blockers": [
+        {
+          "kind": "ARCHITECTURE",
+          "needs": "the settled error projection",
+          "detail": "whether an XNA exception type is a Go error is cross-cutting, not local. If it is, every fallible projected operation's error contract changes from an opaque error to a possibly typed CLR exception, which reopens every settled per-operation fallibility decision in the binding. If it is not, the eight derived types are inert objects nothing constructs, returns, or catches"
+        },
+        {
+          "kind": "ARCHITECTURE",
+          "needs": "a throw-site model",
+          "detail": "StackTrace is captured by the CLR at throw time; a Go value built by a constructor has no throw site, so the member would be projected with no faithful value to return"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "Data",
+          "needs": "System.Collections.IDictionary",
+          "detail": "the non-generic dictionary contract, which is also the sole blocker of twelve Design type converters"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "TargetSite",
+          "needs": "System.Reflection.MethodBase",
+          "detail": "the reflection member model; CNA-Go maps System.Type to reflect.Type but no member metadata"
+        },
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "GetObjectData",
+          "needs": "System.Runtime.Serialization",
+          "detail": "SerializationInfo and StreamingContext; the same subsystem that blocks Dictionary`2, and two derived types need it for their own declared protected constructor as well"
+        }
+      ],
       "rationale": "CLR exception types as Go types is a separate public-API decision; CNA-Go reports failure through error results and has no exception hierarchy",
       "verdict": "PASS"
     },
@@ -8268,6 +8389,14 @@
       "derivedTypes": 1,
       "projectedTypes": 0,
       "exportedEmbeddings": 0,
+      "blockers": [
+        {
+          "kind": "SUBSYSTEM",
+          "clrMember": "BaseStream",
+          "needs": "System.IO.Stream as a seekable stream",
+          "detail": "CNA-Go maps System.IO.Stream to io.Reader, which carries neither seeking nor the encoding-aware Read7BitEncodedInt behavior the reader's inherited surface depends on"
+        }
+      ],
       "rationale": "requires a stream-reader base whose seek and encoding behavior is a separate mapping",
       "verdict": "PASS"
     },
@@ -8288,6 +8417,13 @@
       "derivedTypes": 3,
       "projectedTypes": 0,
       "exportedEmbeddings": 0,
+      "blockers": [
+        {
+          "kind": "ARCHITECTURE",
+          "needs": "System.Exception",
+          "detail": "it derives from System.Exception, so every blocker of that base applies here first; its own addition is one ErrorCode property over int32"
+        }
+      ],
       "rationale": "derives from System.Exception and inherits the same open decision",
       "verdict": "PASS"
     },
@@ -8832,7 +8968,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "e1da7b6e58c1b6a93f898ad920e1fda70976b90f938e9873705dccc30836607b",
+    "mappingSha256": "63cd108733d9e5137603581c11a9a1bb1fa653d4d60edf0d3ab62af2a50eaf6f",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

@@ -186,6 +186,25 @@ type bclBaseRelationship struct {
 	Status string
 	// Rationale records why the relationship is where it is.
 	Rationale string
+	// Blockers is why a DEFERRED base is deferred, named to the exact
+	// inherited member or the exact architecture decision. A DEFERRED base
+	// with no blocker is a defect: "deferred" must be a measured claim about
+	// something specific, not a word that postpones the question.
+	Blockers []bclBaseBlocker
+}
+
+// bclBaseBlocker is one reason a base cannot be projected yet.
+//
+// SUBSYSTEM means one inherited member's type belongs to a .NET subsystem
+// CNA-Go has not mapped, and names both the member and the subsystem.
+// ARCHITECTURE means the obstacle is a cross-cutting public-API decision
+// rather than a missing type, and the CLRMember is empty because no single
+// member carries it.
+type bclBaseBlocker struct {
+	Kind      string
+	CLRMember string
+	Needs     string
+	Detail    string
 }
 
 // bclBaseRelationships declares every non-XNA CLR base type that appears in
@@ -214,22 +233,58 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 	"System.Exception": {
 		Status:    "DEFERRED",
 		Rationale: "CLR exception types as Go types is a separate public-API decision; CNA-Go reports failure through error results and has no exception hierarchy",
+		Blockers: []bclBaseBlocker{
+			{Kind: "ARCHITECTURE", Needs: "the settled error projection",
+				Detail: "whether an XNA exception type is a Go error is cross-cutting, not local. If it is, every fallible projected operation's error contract changes from an opaque error to a possibly typed CLR exception, which reopens every settled per-operation fallibility decision in the binding. If it is not, the eight derived types are inert objects nothing constructs, returns, or catches"},
+			{Kind: "ARCHITECTURE", Needs: "a throw-site model",
+				Detail: "StackTrace is captured by the CLR at throw time; a Go value built by a constructor has no throw site, so the member would be projected with no faithful value to return"},
+			{Kind: "SUBSYSTEM", CLRMember: "Data", Needs: "System.Collections.IDictionary",
+				Detail: "the non-generic dictionary contract, which is also the sole blocker of twelve Design type converters"},
+			{Kind: "SUBSYSTEM", CLRMember: "TargetSite", Needs: "System.Reflection.MethodBase",
+				Detail: "the reflection member model; CNA-Go maps System.Type to reflect.Type but no member metadata"},
+			{Kind: "SUBSYSTEM", CLRMember: "GetObjectData", Needs: "System.Runtime.Serialization",
+				Detail: "SerializationInfo and StreamingContext; the same subsystem that blocks Dictionary`2, and two derived types need it for their own declared protected constructor as well"},
+		},
 	},
 	"System.Runtime.InteropServices.ExternalException": {
 		Status:    "DEFERRED",
 		Rationale: "derives from System.Exception and inherits the same open decision",
+		Blockers: []bclBaseBlocker{
+			{Kind: "ARCHITECTURE", Needs: "System.Exception",
+				Detail: "it derives from System.Exception, so every blocker of that base applies here first; its own addition is one ErrorCode property over int32"},
+		},
 	},
 	"System.Attribute": {
 		Status:    "DEFERRED",
 		Rationale: "Go has no attribute metadata; the content serializer attributes need a separate mapping",
+		Blockers: []bclBaseBlocker{
+			{Kind: "ARCHITECTURE", Needs: "an attribute application model",
+				Detail: "Go has no attribute metadata, so a projected attribute type could be constructed and read back but never applied to anything; the five ContentSerializer* types would be inert data objects whose whole purpose, annotating content-pipeline members, is unrepresentable"},
+			{Kind: "SUBSYSTEM", CLRMember: "GetCustomAttribute", Needs: "System.Reflection",
+				Detail: "the inherited static lookups take Assembly, MemberInfo, Module and ParameterInfo, none of which CNA-Go maps; whether inherited STATICS are part of a derived type's projected surface is itself undecided, having never arisen before"},
+			{Kind: "SUBSYSTEM", CLRMember: "TypeId", Needs: "a decision on System.Object-typed members",
+				Detail: "the default implementation returns GetType(), so projecting it as any would hand back a reflect.Type through an untyped result"},
+		},
 	},
 	"System.IO.BinaryReader": {
 		Status:    "DEFERRED",
 		Rationale: "requires a stream-reader base whose seek and encoding behavior is a separate mapping",
+		Blockers: []bclBaseBlocker{
+			{Kind: "SUBSYSTEM", CLRMember: "BaseStream", Needs: "System.IO.Stream as a seekable stream",
+				Detail: "CNA-Go maps System.IO.Stream to io.Reader, which carries neither seeking nor the encoding-aware Read7BitEncodedInt behavior the reader's inherited surface depends on"},
+		},
 	},
 	"System.ComponentModel.ExpandableObjectConverter": {
 		Status:    "DEFERRED",
 		Rationale: "part of the System.ComponentModel TypeConverter subsystem, which is a separate mapping",
+		Blockers: []bclBaseBlocker{
+			{Kind: "SUBSYSTEM", CLRMember: "CanConvertFrom", Needs: "System.ComponentModel.ITypeDescriptorContext",
+				Detail: "the descriptor-context contract, which is the single largest blocker in the profile at thirteen types"},
+			{Kind: "SUBSYSTEM", CLRMember: "ConvertFrom", Needs: "System.Globalization.CultureInfo",
+				Detail: "culture-aware conversion, which twelve types depend on"},
+			{Kind: "SUBSYSTEM", CLRMember: "GetProperties", Needs: "System.Collections.IDictionary",
+				Detail: "shared with System.Exception::Data"},
+		},
 	},
 	"System.Collections.ObjectModel.Collection`1": {
 		Adapter:   "collectionBase[T]",
@@ -238,11 +293,31 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 	},
 	"System.Collections.ObjectModel.ReadOnlyCollection`1": {
 		Status:    "DEFERRED",
-		Rationale: "a read-only BCL collection base whose projected surface is a separate mapping",
+		Rationale: "DEFERRED AS A BASE ONLY; it is SUPPORTED as a signature adapter, and the two roles are independent",
+		Blockers: []bclBaseBlocker{
+			{Kind: "ARCHITECTURE", CLRMember: "GetEnumerator", Needs: "a rule for a derived member that HIDES an inherited one",
+				Detail: "all four base consumers declare a GetEnumerator returning their own nested Enumerator, which hides the inherited one. The settled collision rule would resolve that into two hashed names, neither of which is GetEnumerator. The principled answer -- a hidden inherited member is unreachable because CNA-Go projects no base type to cast to -- is available but untested, because every consumer is blocked on its element type anyway"},
+			{Kind: "SUBSYSTEM", Needs: "ModelBone, Effect, ModelMesh, ModelMeshPart",
+				Detail: "each of the four consumers needs its element type, and all four element types are content-pipeline blocked"},
+		},
 	},
 	"System.Collections.Generic.Dictionary`2": {
 		Status:    "DEFERRED",
-		Rationale: "a BCL dictionary base whose projected surface is a separate mapping",
+		Rationale: "blocked on the public surface mapping, not on the behavior: the IL is readable, but six public members cannot be projected in already-decided terms",
+		Blockers: []bclBaseBlocker{
+			{Kind: "SUBSYSTEM", CLRMember: "GetObjectData", Needs: "System.Runtime.Serialization",
+				Detail: "declared `public hidebysig newslot virtual`, NOT an explicit implementation, so LaunchParameters genuinely exposes it"},
+			{Kind: "SUBSYSTEM", CLRMember: "OnDeserialization", Needs: "System.Runtime.Serialization",
+				Detail: "likewise public, not explicit"},
+			{Kind: "SUBSYSTEM", CLRMember: "Keys", Needs: "Dictionary`2/KeyCollection",
+				Detail: "a public nested BCL type with its own surface and its own nested enumerator"},
+			{Kind: "SUBSYSTEM", CLRMember: "Values", Needs: "Dictionary`2/ValueCollection",
+				Detail: "likewise"},
+			{Kind: "SUBSYSTEM", CLRMember: "Comparer", Needs: "System.Collections.Generic.IEqualityComparer`1",
+				Detail: "a public BCL interface CNA-Go does not map"},
+			{Kind: "SUBSYSTEM", CLRMember: "GetEnumerator", Needs: "Dictionary`2/Enumerator over KeyValuePair`2",
+				Detail: "two more public nested or generic BCL types"},
+		},
 	},
 }
 

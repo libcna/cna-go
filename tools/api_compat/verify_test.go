@@ -4620,8 +4620,18 @@ func TestBCLBaseRelationshipMeasurementIsReported(t *testing.T) {
 		if row.Verdict != "PASS" {
 			t.Fatalf("%s verdict = %q with nothing projected", row.CLRBase, row.Verdict)
 		}
-		if row.AddsProjectedSurface {
-			t.Fatalf("%s claims to add projected surface; a CLR base contributes no Go member identity", row.CLRBase)
+		// COMPOSED is the one status under which a base contributes Go
+		// member identities, and it must be the only one. Every other
+		// relationship keeps the original invariant: a CLR base contributes
+		// no Go member identity of its own.
+		if row.AddsProjectedSurface != (row.Status == "COMPOSED") {
+			t.Fatalf("%s is %s and reports addsProjectedSurface=%v; only a COMPOSED base contributes Go member identities",
+				row.CLRBase, row.Status, row.AddsProjectedSurface)
+		}
+		if row.Status == "COMPOSED" {
+			if _, hasAdapter := bclBaseAdapters[row.CLRBase]; !hasAdapter {
+				t.Fatalf("%s is COMPOSED but declares no base adapter", row.CLRBase)
+			}
 		}
 		derived += row.DerivedTypes
 	}
@@ -5493,5 +5503,116 @@ func TestBCLSignatureAdaptersAreMeasuredNotAssumed(t *testing.T) {
 	}
 	if _, isBaseAdapter := bclBaseAdapters["System.Collections.ObjectModel.ReadOnlyCollection`1"]; isBaseAdapter {
 		t.Fatal("a DEFERRED base must not declare a base adapter")
+	}
+}
+
+// TestEveryDeferredBaseNamesItsBlockers turns "DEFERRED" from a status word
+// into a measured claim.
+//
+// A base nobody has decided about is already a diagnostic. This adds the other
+// half: a base somebody has explicitly deferred must say what blocks it, named
+// to the exact inherited member or the exact architecture decision, so the
+// frontier is an inventory rather than a shrug.
+func TestEveryDeferredBaseNamesItsBlockers(t *testing.T) {
+	for identity, relationship := range bclBaseRelationships {
+		switch relationship.Status {
+		case "IMPLIED", "MAPPED", "COMPOSED":
+			if len(relationship.Blockers) != 0 {
+				t.Fatalf("%s is %s but records blockers", identity, relationship.Status)
+			}
+			continue
+		case "DEFERRED":
+		default:
+			t.Fatalf("%s has unknown status %q", identity, relationship.Status)
+		}
+		if len(relationship.Blockers) == 0 {
+			t.Fatalf("%s is DEFERRED but names nothing that blocks it", identity)
+		}
+		for _, blocker := range relationship.Blockers {
+			if blocker.Needs == "" || blocker.Detail == "" {
+				t.Fatalf("%s has an under-specified blocker: %+v", identity, blocker)
+			}
+			switch blocker.Kind {
+			case "SUBSYSTEM", "ARCHITECTURE":
+			default:
+				t.Fatalf("%s blocker has unknown kind %q", identity, blocker.Kind)
+			}
+		}
+	}
+}
+
+// TestDeferredBaseWithoutBlockersIsRejected is the negative control for the
+// claim above, run through the real measurement rather than the table.
+func TestDeferredBaseWithoutBlockersIsRejected(t *testing.T) {
+	identity := "System.Exception"
+	original := bclBaseRelationships[identity]
+	t.Cleanup(func() { bclBaseRelationships[identity] = original })
+
+	stripped := original
+	stripped.Blockers = nil
+	bclBaseRelationships[identity] = stripped
+
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := &actualSurface{
+		Types: make(map[symbolKey]*actualType), Members: make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string), Packages: make(map[string]*types.Package),
+	}
+	measurements := measureBCLBaseRelationships(expected, actual)
+	for _, row := range measurements {
+		if row.CLRBase == identity && row.Verdict != "FAIL" {
+			t.Fatalf("a DEFERRED base with no blockers must FAIL, got %q", row.Verdict)
+		}
+	}
+}
+
+// TestSystemExceptionAuditIsRecorded pins the specific findings of the
+// directed System.Exception audit, so a later edit cannot quietly soften them.
+func TestSystemExceptionAuditIsRecorded(t *testing.T) {
+	relationship := bclBaseRelationships["System.Exception"]
+	needs := make(map[string]string, len(relationship.Blockers))
+	architecture := 0
+	for _, blocker := range relationship.Blockers {
+		if blocker.Kind == "ARCHITECTURE" {
+			architecture++
+			continue
+		}
+		needs[blocker.CLRMember] = blocker.Needs
+	}
+	if architecture < 2 {
+		t.Fatalf("the audit found two architecture obstacles, the table records %d", architecture)
+	}
+	for member, subsystem := range map[string]string{
+		"Data":          "System.Collections.IDictionary",
+		"TargetSite":    "System.Reflection.MethodBase",
+		"GetObjectData": "System.Runtime.Serialization",
+	} {
+		if needs[member] != subsystem {
+			t.Fatalf("System.Exception::%s must be recorded as needing %s, got %q", member, subsystem, needs[member])
+		}
+	}
+	// The eight derived types declare constructors and nothing else, which is
+	// why the whole question is about inherited surface.
+	reference := loadPinnedContract(t)
+	derived := 0
+	for _, declared := range reference.Types {
+		if declared.BaseType == nil {
+			continue
+		}
+		base := baseIdentityWithoutArguments(*declared.BaseType)
+		if base != "System.Exception" && base != "System.Runtime.InteropServices.ExternalException" {
+			continue
+		}
+		derived++
+		for _, member := range declared.Members {
+			if member.Kind != "constructor" {
+				t.Fatalf("%s declares a non-constructor member %s, which the audit did not account for", declared.Name, member.Name)
+			}
+		}
+	}
+	if derived != 8 {
+		t.Fatalf("the audit covered 8 derived types, the contract has %d", derived)
 	}
 }

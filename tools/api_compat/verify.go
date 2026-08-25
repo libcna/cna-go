@@ -307,6 +307,15 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation23Interfaces = measureManagedInterfaceClosures(expected, actual, typeDiagnostics, foundation23Interfaces)
 	result.Foundation23ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation23ManagedClasses)
 	result.BCLBaseRelationships = measureBCLBaseRelationships(expected, actual)
+	for _, relationship := range result.BCLBaseRelationships {
+		result.Summary["BCL_DEFERRED_BASE_BLOCKERS"] += len(relationship.Blockers)
+		if relationship.Verdict != "PASS" {
+			addDiagnostic(&result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: relationship.CLRBase,
+				Message: "BCL base relationship measurement failed: a deferred base must name what blocks it",
+			})
+		}
+	}
 	result.BCLInterfaceRelationships = measureBCLInterfaceRelationships(expected, actual)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
@@ -2721,10 +2730,17 @@ func adapterFieldType(adapter bclBaseAdapter, baseType string) string {
 func measureBCLBaseRelationships(expected *expectedSurface, actual *actualSurface) []bclBaseProjection {
 	derived := make(map[string]*bclBaseProjection, len(bclBaseRelationships))
 	for identity, relationship := range bclBaseRelationships {
-		derived[identity] = &bclBaseProjection{
+		row := &bclBaseProjection{
 			CLRBase: identity, Adapter: relationship.Adapter, Status: relationship.Status,
-			AddsProjectedSurface: false, Rationale: relationship.Rationale, Verdict: "PASS",
+			AddsProjectedSurface: relationship.Status == "COMPOSED",
+			Rationale:            relationship.Rationale, Verdict: "PASS",
 		}
+		for _, blocker := range relationship.Blockers {
+			row.Blockers = append(row.Blockers, bclBaseBlockerMeasurement{
+				Kind: blocker.Kind, CLRMember: blocker.CLRMember, Needs: blocker.Needs, Detail: blocker.Detail,
+			})
+		}
+		derived[identity] = row
 	}
 	for _, et := range sortedExpectedTypes(expected) {
 		if et.BaseType == "" || strings.HasPrefix(et.BaseType, "Microsoft.Xna.Framework") {
@@ -2747,6 +2763,11 @@ func measureBCLBaseRelationships(expected *expectedSurface, actual *actualSurfac
 	measurements := make([]bclBaseProjection, 0, len(derived))
 	for _, row := range derived {
 		if row.ExportedEmbeddings != 0 || (row.Status == "DEFERRED" && row.ProjectedTypes != 0) {
+			row.Verdict = "FAIL"
+		}
+		// A DEFERRED base must name why. Deferring with no recorded blocker
+		// would be an unmeasured structural category wearing a status word.
+		if row.Status == "DEFERRED" && len(row.Blockers) == 0 {
 			row.Verdict = "FAIL"
 		}
 		measurements = append(measurements, *row)

@@ -271,9 +271,20 @@ type bclBaseProjection struct {
 	ProjectedTypes int `json:"projectedTypes"`
 	// ExportedEmbeddings counts derived Go types that faked the inheritance
 	// with an exported embedded field. It must stay zero.
-	ExportedEmbeddings int    `json:"exportedEmbeddings"`
-	Rationale          string `json:"rationale"`
-	Verdict            string `json:"verdict"`
+	ExportedEmbeddings int `json:"exportedEmbeddings"`
+	// Blockers is why a DEFERRED base is deferred, named to the exact
+	// inherited member or the exact architecture decision, so "deferred" is a
+	// measured claim rather than a word.
+	Blockers  []bclBaseBlockerMeasurement `json:"blockers,omitempty"`
+	Rationale string                      `json:"rationale"`
+	Verdict   string                      `json:"verdict"`
+}
+
+type bclBaseBlockerMeasurement struct {
+	Kind      string `json:"kind"`
+	CLRMember string `json:"clrMember,omitempty"`
+	Needs     string `json:"needs"`
+	Detail    string `json:"detail"`
 }
 
 // bclBaseAdapterMeasurement measures one supported BCL base-class family: the
