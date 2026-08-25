@@ -1131,3 +1131,233 @@ func TestAnUnconstructedGameIsRejectedByEveryBaseCall(t *testing.T) {
 		}
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 32 — GameComponent, from outside the binding.
+// ---------------------------------------------------------------------------
+
+// TestConsumerUsesTheShippedGameComponent proves a downstream user can use
+// XNA's own component class rather than writing a conformer, and that it drives
+// the engine with no adapter in between.
+func TestConsumerUsesTheShippedGameComponent(t *testing.T) {
+	game, user := newCanaryGame(t)
+	first := framework.NewGameComponent(game)
+	second := framework.NewGameComponent(game)
+
+	// Constructor defaults, from outside.
+	if !first.Enabled() || first.UpdateOrder() != 0 || first.Game() != game {
+		t.Fatal("constructor defaults are wrong")
+	}
+	// The constructor validates nothing, so a component with no Game is legal.
+	if orphan := framework.NewGameComponent(nil); orphan.Game() != nil || !orphan.Enabled() {
+		t.Fatal("a nil Game must be accepted and stored")
+	}
+
+	if err := second.SetUpdateOrder(-1); err != nil {
+		t.Fatal(err)
+	}
+	for _, component := range []*framework.GameComponent{first, second} {
+		if err := game.Components().Add(component); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := user.Initialize(game); err != nil {
+		t.Fatal(err)
+	}
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	// A GameComponent is IUpdateable and IGameComponent but NOT IDrawable, so
+	// base Draw iterates nothing.
+	if _, drawable := any(first).(framework.IDrawable); drawable {
+		t.Fatal("GameComponent must not satisfy IDrawable")
+	}
+	if err := user.Draw(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestDisposingAComponentRemovesItFromGameComponents is canary claim 11 in its
+// strongest form, which needed GameComponent to exist.
+func TestDisposingAComponentRemovesItFromGameComponents(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	component := framework.NewGameComponent(game)
+	if err := game.Components().Add(component); err != nil {
+		t.Fatal(err)
+	}
+	if game.Components().Count() != 1 {
+		t.Fatal("setup failed")
+	}
+
+	// The Disposed handler observes a Game the component has already left,
+	// because Dispose removes before it announces.
+	observed := int32(-1)
+	raises := 0
+	if _, err := component.AddDisposedHandler(func(sender any, args *framework.EventArgs) error {
+		raises++
+		observed = game.Components().Count()
+		if sender != any(component) {
+			t.Error("Disposed must be raised with the component as sender")
+		}
+		if args != framework.EventArgsEmpty() {
+			t.Error("Disposed must carry the shared EventArgs.Empty identity")
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := component.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
+	}
+	if game.Components().Count() != 0 {
+		t.Fatal("Dispose did not remove the component from Game.Components")
+	}
+	if observed != 0 {
+		t.Fatalf("the Disposed handler observed Count=%d; removal precedes the announcement", observed)
+	}
+	if raises != 1 {
+		t.Fatalf("Disposed raised %d times", raises)
+	}
+
+	// It is not idempotent, exactly as the reference is not.
+	if err := component.DisposeByNone(); err != nil {
+		t.Fatal(err)
+	}
+	if raises != 2 {
+		t.Fatalf("a second Dispose raised %d times in total", raises)
+	}
+}
+
+// TestDisposedComponentStopsBeingUpdated joins the two halves: disposal removes
+// the component from Components, which untracks it, which stops base Update
+// from reaching it.
+func TestDisposedComponentStopsBeingUpdated(t *testing.T) {
+	game, user := newCanaryGame(t)
+	var log []string
+	// A consumer's own component, so the update is observable, plus a shipped
+	// GameComponent whose Dispose does the removing.
+	watcher := NewUserComponent("watcher", &log, 0, 0)
+	if err := game.Components().Add(watcher); err != nil {
+		t.Fatal(err)
+	}
+	component := framework.NewGameComponent(game)
+	if err := game.Components().Add(component); err != nil {
+		t.Fatal(err)
+	}
+	if err := user.Initialize(game); err != nil {
+		t.Fatal(err)
+	}
+
+	removed := 0
+	if _, err := game.Components().AddComponentRemovedHandler(func(any, *framework.GameComponentCollectionEventArgs) error {
+		removed++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := component.DisposeByNone(); err != nil {
+		t.Fatal(err)
+	}
+	if removed != 1 {
+		t.Fatalf("Dispose announced %d removals", removed)
+	}
+	log = nil
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if joinLog(log) != "update:watcher" {
+		t.Fatalf("after disposal the loop ran %q", joinLog(log))
+	}
+	if game.Components().Count() != 1 {
+		t.Fatalf("Count is %d", game.Components().Count())
+	}
+}
+
+// TestGameComponentOrderChangeRePlacesItInTheLoop proves the shipped class's
+// own setter drives the engine: nothing here tells Game the order changed.
+func TestGameComponentOrderChangeRePlacesItInTheLoop(t *testing.T) {
+	game, user := newCanaryGame(t)
+	var log []string
+	// Two consumer components bracket a shipped one, so its movement between
+	// them is visible in one sequence.
+	low := NewUserComponent("low", &log, 0, 0)
+	high := NewUserComponent("high", &log, 100, 100)
+	moving := framework.NewGameComponent(game)
+	if err := moving.SetUpdateOrder(50); err != nil {
+		t.Fatal(err)
+	}
+	movingRan := 0
+	if _, err := moving.AddUpdateOrderChangedHandler(func(sender any, args *framework.EventArgs) error {
+		movingRan++
+		if sender != any(moving) {
+			t.Error("UpdateOrderChanged must be raised with the component as sender")
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for _, component := range []framework.IGameComponent{low, moving, high} {
+		if err := game.Components().Add(component); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := user.Initialize(game); err != nil {
+		t.Fatal(err)
+	}
+
+	// An unchanged assignment announces nothing at all.
+	if err := moving.SetUpdateOrder(50); err != nil {
+		t.Fatal(err)
+	}
+	if movingRan != 0 {
+		t.Fatal("an unchanged assignment announced")
+	}
+
+	// Moving it past `high` re-places it, and the consumer's handler runs
+	// after the engine's, because Game subscribed first.
+	if err := moving.SetUpdateOrder(200); err != nil {
+		t.Fatal(err)
+	}
+	if movingRan != 1 {
+		t.Fatalf("the change announced %d times", movingRan)
+	}
+	log = nil
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if joinLog(log) != "update:low,update:high" {
+		t.Fatalf("the ordered loop is %q; the shipped component moved to the end", joinLog(log))
+	}
+
+	// Disabling it is the other gate, and it does not move anything.
+	if err := moving.SetEnabled(false); err != nil {
+		t.Fatal(err)
+	}
+	if moving.Enabled() {
+		t.Fatal("SetEnabled did not store")
+	}
+}
+
+// TestGameComponentSatisfiesItsDeclaredContractsFromOutside is the compiler-
+// level witness, made from a module that is not part of the binding: if
+// GameComponent stopped satisfying either contract, this file would not build.
+func TestGameComponentSatisfiesItsDeclaredContractsFromOutside(t *testing.T) {
+	var (
+		_ framework.IGameComponent = (*framework.GameComponent)(nil)
+		_ framework.IUpdateable    = (*framework.GameComponent)(nil)
+	)
+	// And it can be stored where either contract is required.
+	game, _ := newCanaryGame(t)
+	var asComponent framework.IGameComponent = framework.NewGameComponent(game)
+	if err := game.Components().Add(asComponent); err != nil {
+		t.Fatal(err)
+	}
+	var asUpdateable framework.IUpdateable = asComponent.(*framework.GameComponent)
+	if !asUpdateable.Enabled() || asUpdateable.UpdateOrder() != 0 {
+		t.Fatal("the contract view disagrees with the class")
+	}
+	if err := asComponent.Initialize(); err != nil {
+		t.Fatalf("the contract's Initialize channel reported %v", err)
+	}
+}

@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 612,
-    "ASSERTIONS": 612,
+    "OBSERVATIONS": 620,
+    "ASSERTIONS": 620,
     "FAILURES": 0
   },
   "observations": [
@@ -4901,6 +4901,70 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true,,1",
       "actual": "true,true,,1",
+      "passed": true
+    },
+    {
+      "id": "game-gameComponent.constructor-defaults",
+      "group": "GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0,true,true,true",
+      "actual": "true,0,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-gameComponent.unchanged-assignment-announces-nothing",
+      "group": "GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,",
+      "actual": "true,true,",
+      "passed": true
+    },
+    {
+      "id": "game-gameComponent.changed-assignment-stores-then-announces",
+      "group": "GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "enabled=false,self=true,empty=true|order=7,self=true",
+      "actual": "enabled=false,self=true,empty=true|order=7,self=true",
+      "passed": true
+    },
+    {
+      "id": "game-gameComponent.on-methods-ignore-their-sender-argument",
+      "group": "GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "enabled=false,self=true,empty=true",
+      "actual": "enabled=false,self=true,empty=true",
+      "passed": true
+    },
+    {
+      "id": "game-gameComponent.dispose-removes-then-announces",
+      "group": "GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,0,0,1",
+      "actual": "true,true,0,0,1",
+      "passed": true
+    },
+    {
+      "id": "game-gameComponent.dispose-is-not-idempotent",
+      "group": "GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,2",
+      "actual": "true,2",
+      "passed": true
+    },
+    {
+      "id": "game-gameComponent.dispose-false-and-finalize-do-nothing",
+      "group": "GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0,1",
+      "actual": "true,0,1",
+      "passed": true
+    },
+    {
+      "id": "game-gameComponent.drives-the-engine",
+      "group": "GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false,true,true,true,true,true,true,1",
+      "actual": "false,true,true,true,true,true,true,1",
       "passed": true
     }
   ]

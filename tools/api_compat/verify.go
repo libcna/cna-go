@@ -142,6 +142,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	// unmeasured family from reading like a clean one.
 	result.Summary["GAME_BASE_CALL_ADAPTERS"] = 0
 	result.Summary["GAME_BASE_CALL_DEFERRED_STEPS"] = 0
+	result.Summary["DECLARED_INTERFACE_CONFORMANCE"] = 0
 	typeDiagnostics := make(map[string]int)
 	missingMembers := make(map[string][]string)
 	result.Summary["REFERENCE_TYPES"] = expected.ReferenceTypes
@@ -345,6 +346,9 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	sort.Strings(result.CompleteTypes)
 	sort.Strings(result.MissingTypes)
 	sort.Slice(result.PartialTypes, func(i, j int) bool { return result.PartialTypes[i].XNA < result.PartialTypes[j].XNA })
+
+	result.DeclaredInterfaceConformance = measureDeclaredInterfaceConformance(&result, expected, actual, result.CompleteTypes)
+	result.Summary["DECLARED_INTERFACE_CONFORMANCE"] = len(result.DeclaredInterfaceConformance)
 
 	result.Summary["TARGET_TYPES"] = presentTypes
 	result.Summary["TARGET_MEMBERS"] = presentMembers
@@ -3480,4 +3484,151 @@ func measureGameBaseCallAdapters(result *report, expected *expectedSurface, actu
 		})
 	}
 	return measurements
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 32 — declared CLR interface conformance, checked by the compiler.
+// ---------------------------------------------------------------------------
+
+// measureDeclaredInterfaceConformance proves that a COMPLETE projected class
+// actually satisfies the Go projection of every XNA interface its CLR metadata
+// declares.
+//
+// Until this milestone the only conformance the verifier checked by compiler
+// evidence was the PackedVector family's, through interface witnesses. Every
+// other declaration was checked structurally -- member for member -- which is
+// necessary but not sufficient: a receiver-kind mistake, a type-parameter
+// mistake, or a member that matches the interface's shape without satisfying it
+// would pass the member comparison and still leave the class unusable where the
+// contract says it belongs.
+//
+// The rule is:
+//
+//	a projected class that CLR metadata says implements a projected XNA
+//	interface must satisfy that interface's Go projection, on the POINTER
+//	method set, and the compiler must say so
+//
+// # Why only complete types
+//
+// A partial type is missing members by definition, so requiring it to satisfy a
+// contract would report the same gap twice: once as MISSING_MEMBER and again as
+// a conformance failure. The claim is meaningful exactly when the type's whole
+// surface is present, which is what completeness means. GraphicsDeviceManager
+// is the live example: it declares IGraphicsDeviceService and
+// IGraphicsDeviceManager and satisfies neither, because 20 of its members are
+// still missing, and that is already fully reported.
+//
+// # Why the pointer method set
+//
+// CNA-Go projects every CLR class as a Go pointer facade, so the class's
+// identity is *T and it is *T that must implement. A value type is a different
+// projection with its own settled rules and is not covered here.
+func measureDeclaredInterfaceConformance(result *report, expected *expectedSurface, actual *actualSurface, complete []string) []declaredInterfaceConformance {
+	completeSet := make(map[string]bool, len(complete))
+	for _, identity := range complete {
+		completeSet[identity] = true
+	}
+	measurements := make([]declaredInterfaceConformance, 0)
+	for _, owner := range sortedExpectedTypes(expected) {
+		if owner.Kind != "class" || !completeSet[owner.XNA] || len(owner.MappedInterfaces) == 0 {
+			continue
+		}
+		// The PackedVector family is measured by its own generic-aware
+		// conformance check and by interface witnesses, so it is not measured
+		// twice under a rule that cannot express its type argument.
+		if strings.HasPrefix(owner.XNA, packedVectorNamespace) {
+			continue
+		}
+		pkg := actual.Packages[owner.PackagePath]
+		ownerObject := lookupNamed(pkg, owner.GoName)
+		for _, mapped := range owner.MappedInterfaces {
+			identity, arguments := splitConstructedType(mapped.XNA)
+			mappedType := expected.typeForXNA(identity)
+			// Only an interface CNA-Go actually projects as a Go interface can
+			// be satisfied. A CLR interface with no Go projection is carried by
+			// the settled BCL-interface relationship instead.
+			if mappedType == nil || mappedType.Kind != "interface" {
+				continue
+			}
+			if _, missing := contains(result.MissingTypes, identity); missing {
+				continue
+			}
+			// A generic CLR interface would need its type arguments
+			// instantiated, which only the packed family has and which is
+			// measured there. Nothing else in the profile declares one.
+			if len(arguments) > 0 {
+				continue
+			}
+			measurement := declaredInterfaceConformance{
+				Owner: owner.XNA, GoOwner: "*" + owner.GoName,
+				CLRInterface: mapped.XNA, GoInterface: mapped.GoName, Verdict: "FAIL",
+			}
+			interfaceObject := lookupNamed(actual.Packages[mappedType.PackagePath], mappedType.GoName)
+			switch {
+			case pkg == nil || ownerObject == nil:
+				addDiagnostic(result, diagnostic{
+					Category: "INTERFACE_MAPPING_MISMATCH", XNA: owner.XNA, Go: owner.Key.String(),
+					Message: "compiler evidence for the declaring class is absent, so declared interface conformance cannot be checked",
+				})
+			case interfaceObject == nil:
+				addDiagnostic(result, diagnostic{
+					Category: "INTERFACE_MAPPING_MISMATCH", XNA: identity, Go: mappedType.Key.String(),
+					Message: "compiler evidence for the mapped interface is absent, so declared interface conformance cannot be checked",
+				})
+			default:
+				contract, ok := interfaceObject.Underlying().(*types.Interface)
+				if !ok {
+					addDiagnostic(result, diagnostic{
+						Category: "INTERFACE_MAPPING_MISMATCH", XNA: identity, Go: mappedType.Key.String(),
+						Message: "mapped XNA interface is not a Go interface",
+					})
+					break
+				}
+				contract.Complete()
+				measurement.PointerSatisfies = types.Implements(types.NewPointer(ownerObject), contract)
+				if measurement.PointerSatisfies {
+					measurement.Verdict = "PASS"
+					break
+				}
+				addDiagnostic(result, diagnostic{
+					Category: "INTERFACE_MAPPING_MISMATCH", XNA: owner.XNA, Go: owner.Key.String(),
+					Message: fmt.Sprintf("CLR metadata declares %s on this class, but *%s does not satisfy the Go projection %s: %s",
+						mapped.XNA, owner.GoName, mapped.GoName,
+						missingInterfaceMethod(types.NewPointer(ownerObject), contract)),
+				})
+			}
+			measurements = append(measurements, measurement)
+		}
+	}
+	return measurements
+}
+
+// lookupNamed resolves one exported Go type name to its *types.Named, or nil.
+func lookupNamed(pkg *types.Package, name string) *types.Named {
+	if pkg == nil {
+		return nil
+	}
+	object := pkg.Scope().Lookup(name)
+	if object == nil {
+		return nil
+	}
+	named, ok := object.Type().(*types.Named)
+	if !ok {
+		return nil
+	}
+	return named
+}
+
+// missingInterfaceMethod names the first contract method the type does not
+// satisfy, so a conformance failure says WHICH member is wrong rather than only
+// that something is.
+func missingInterfaceMethod(target types.Type, contract *types.Interface) string {
+	method, wrongType := types.MissingMethod(target, contract, true)
+	if method == nil {
+		return "no missing method was reported"
+	}
+	if wrongType {
+		return fmt.Sprintf("%s has the wrong signature", method.Name())
+	}
+	return fmt.Sprintf("%s is absent", method.Name())
 }

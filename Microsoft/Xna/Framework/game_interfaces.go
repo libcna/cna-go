@@ -12,8 +12,11 @@ package framework
 // therefore genuinely reaches the game and graphics runtime, and an
 // implementation that cannot initialize needs somewhere to say so.
 //
-// Declaring the contract implements no component. CNA-Go has no GameComponent,
-// no component collection, and no component lifecycle.
+// As of Foundation 32 the contract has a shipped implementor: GameComponent
+// satisfies it, and Game's component engine calls Initialize through it -- from
+// the pending-queue drain in base Initialize, and directly from the collection
+// handler for a component added while the game is running. GameComponent's own
+// body is a bare `ret`, so it carries the channel and never uses it.
 type IGameComponent interface {
 	Initialize() error
 }

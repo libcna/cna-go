@@ -6061,3 +6061,186 @@ func TestEveryBaseCallDefectHasAMutationFixture(t *testing.T) {
 		}
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 32 — negative controls for compiler-checked interface conformance.
+// ---------------------------------------------------------------------------
+
+// conformanceFixture builds a synthetic package containing one interface and
+// one class, so the conformance rule can be attacked directly.
+//
+// The evidence the rule consumes is go/types, not the mapping tables, so a
+// defect has to be expressed as real compiler evidence. Constructing it here is
+// what lets the control assert the rule rather than assert the binding.
+func conformanceFixture(t *testing.T, shape string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	const (
+		packagePath   = "example.test/pkg"
+		clrOwner      = "Probe.Namespace.Probe"
+		clrInterface  = "Probe.Namespace.IProbe"
+		goOwner       = "Probe"
+		goInterface   = "IProbe"
+		contractMethd = "Run"
+	)
+	pkg := types.NewPackage(packagePath, "pkg")
+
+	// The contract: Run() error.
+	errorType := types.Universe.Lookup("error").Type()
+	contractSignature := types.NewSignatureType(nil, nil, nil,
+		types.NewTuple(), types.NewTuple(types.NewVar(token.NoPos, pkg, "", errorType)), false)
+	contractMethod := types.NewFunc(token.NoPos, pkg, contractMethd, contractSignature)
+	contract := types.NewInterfaceType([]*types.Func{contractMethod}, nil)
+	contractNamed := types.NewNamed(types.NewTypeName(token.NoPos, pkg, goInterface, nil), contract, nil)
+	pkg.Scope().Insert(contractNamed.Obj())
+
+	ownerNamed := types.NewNamed(types.NewTypeName(token.NoPos, pkg, goOwner, nil), types.NewStruct(nil, nil), nil)
+	pkg.Scope().Insert(ownerNamed.Obj())
+
+	receiver := types.NewVar(token.NoPos, pkg, "p", types.NewPointer(ownerNamed))
+	switch shape {
+	case "conforming":
+		ownerNamed.AddMethod(types.NewFunc(token.NoPos, pkg, contractMethd,
+			types.NewSignatureType(receiver, nil, nil,
+				types.NewTuple(), types.NewTuple(types.NewVar(token.NoPos, pkg, "", errorType)), false)))
+	case "wrong-signature":
+		// Run() with no result: the member exists and its name matches, which
+		// is exactly what a structural member comparison would accept.
+		ownerNamed.AddMethod(types.NewFunc(token.NoPos, pkg, contractMethd,
+			types.NewSignatureType(receiver, nil, nil, types.NewTuple(), types.NewTuple(), false)))
+	case "value-receiver-only":
+		// Declared on the VALUE method set. CNA-Go projects a CLR class as a
+		// pointer facade, and *Probe still carries a value method, so this one
+		// conforms; it is here as the control that the rule tests the pointer
+		// method set rather than accidentally testing the value one.
+		valueReceiver := types.NewVar(token.NoPos, pkg, "p", ownerNamed)
+		ownerNamed.AddMethod(types.NewFunc(token.NoPos, pkg, contractMethd,
+			types.NewSignatureType(valueReceiver, nil, nil,
+				types.NewTuple(), types.NewTuple(types.NewVar(token.NoPos, pkg, "", errorType)), false)))
+	case "absent":
+		// No method at all.
+	default:
+		t.Fatalf("unknown fixture shape %q", shape)
+	}
+	pkg.MarkComplete()
+
+	ownerKey := symbolKey{Package: packagePath, Name: goOwner}
+	interfaceKey := symbolKey{Package: packagePath, Name: goInterface}
+	expected := &expectedSurface{
+		Types: map[symbolKey]*expectedType{
+			ownerKey: {Key: ownerKey, XNA: clrOwner, GoName: goOwner, PackagePath: packagePath, Kind: "class",
+				MappedInterfaces: []mappedInterface{{XNA: clrInterface, GoName: goInterface}}},
+			interfaceKey: {Key: interfaceKey, XNA: clrInterface, GoName: goInterface, PackagePath: packagePath, Kind: "interface"},
+		},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+	}
+	actual := &actualSurface{
+		Types:       make(map[symbolKey]*actualType),
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: map[string]string{packagePath: "pkg"},
+		Packages:    map[string]*types.Package{packagePath: pkg},
+	}
+	return expected, actual
+}
+
+// TestDeclaredInterfaceConformanceDefectsAreRejected attacks the rule in the
+// two directions a structural member comparison cannot catch.
+func TestDeclaredInterfaceConformanceDefectsAreRejected(t *testing.T) {
+	const clrOwner = "Probe.Namespace.Probe"
+	for _, testCase := range []struct {
+		shape       string
+		wantVerdict string
+		wantMessage string
+	}{
+		{"conforming", "PASS", ""},
+		{"value-receiver-only", "PASS", ""},
+		{"absent", "FAIL", "Run is absent"},
+		{"wrong-signature", "FAIL", "Run has the wrong signature"},
+	} {
+		t.Run(testCase.shape, func(t *testing.T) {
+			expected, actual := conformanceFixture(t, testCase.shape)
+			result := report{Summary: make(map[string]int)}
+			measurements := measureDeclaredInterfaceConformance(&result, expected, actual, []string{clrOwner})
+			if len(measurements) != 1 {
+				t.Fatalf("expected one measurement, got %d", len(measurements))
+			}
+			if measurements[0].Verdict != testCase.wantVerdict {
+				t.Fatalf("verdict %q, want %q", measurements[0].Verdict, testCase.wantVerdict)
+			}
+			if testCase.wantVerdict == "PASS" {
+				if result.Summary["INTERFACE_MAPPING_MISMATCH"] != 0 {
+					t.Fatalf("a conforming class produced %d diagnostics", result.Summary["INTERFACE_MAPPING_MISMATCH"])
+				}
+				return
+			}
+			if result.Summary["INTERFACE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("shape %q raised no INTERFACE_MAPPING_MISMATCH", testCase.shape)
+			}
+			found := false
+			for _, item := range result.Diagnostics {
+				if item.Category == "INTERFACE_MAPPING_MISMATCH" && strings.Contains(item.Message, testCase.wantMessage) {
+					found = true
+				}
+			}
+			if !found {
+				t.Fatalf("no diagnostic named %q; got %v", testCase.wantMessage, result.Diagnostics)
+			}
+		})
+	}
+}
+
+// TestAPartialTypeIsNotHeldToItsDeclaredInterfaces pins the completeness gate.
+// GraphicsDeviceManager declares two contracts and satisfies neither, because
+// 20 of its members are missing; that gap is already MISSING_MEMBER and must
+// not be reported a second time as a conformance failure.
+func TestAPartialTypeIsNotHeldToItsDeclaredInterfaces(t *testing.T) {
+	expected, actual := conformanceFixture(t, "absent")
+	result := report{Summary: make(map[string]int)}
+	// The same fixture, with the owner absent from the complete list.
+	measurements := measureDeclaredInterfaceConformance(&result, expected, actual, nil)
+	if len(measurements) != 0 {
+		t.Fatalf("a partial type was measured for conformance: %v", measurements)
+	}
+	if result.Summary["INTERFACE_MAPPING_MISMATCH"] != 0 {
+		t.Fatal("a partial type produced a conformance diagnostic")
+	}
+}
+
+// TestGameComponentSatisfiesBothDeclaredContracts asserts the live claim by
+// name, so the measurement cannot silently stop covering it.
+func TestGameComponentSatisfiesBothDeclaredContracts(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	wanted := map[string]bool{
+		"Microsoft.Xna.Framework.IGameComponent": false,
+		"Microsoft.Xna.Framework.IUpdateable":    false,
+	}
+	for _, measurement := range result.DeclaredInterfaceConformance {
+		if measurement.Owner != "Microsoft.Xna.Framework.GameComponent" {
+			continue
+		}
+		if _, tracked := wanted[measurement.CLRInterface]; !tracked {
+			t.Fatalf("unexpected conformance claim %q", measurement.CLRInterface)
+		}
+		if measurement.Verdict != "PASS" || !measurement.PointerSatisfies {
+			t.Fatalf("%s does not satisfy %s", measurement.GoOwner, measurement.GoInterface)
+		}
+		wanted[measurement.CLRInterface] = true
+	}
+	for identity, measured := range wanted {
+		if !measured {
+			t.Fatalf("GameComponent's declared %s was never measured for conformance", identity)
+		}
+	}
+}

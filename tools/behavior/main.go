@@ -2300,6 +2300,110 @@ func runCorpus() corpusReport {
 		fmt.Sprintf("%t,%t,%s,%d", loadError == nil, unloadError == nil,
 			strings.Join(noOpLog, ","), noOpGame.Components().Count()))
 
+	// ------------------------------------------------------------------
+	// Foundation 32. GameComponent, the class the whole engine was built for.
+	// ------------------------------------------------------------------
+	componentGame, _ := framework.NewGame(corpusCallbacks{})
+	gameComponent := framework.NewGameComponent(componentGame)
+
+	// The 21-byte constructor: Enabled true, UpdateOrder zero, the Game stored
+	// as handed over, and nothing validated.
+	orphanComponent := framework.NewGameComponent(nil)
+	check("game-gameComponent.constructor-defaults", "GAME_COMPONENT", "true,0,true,true,true",
+		fmt.Sprintf("%t,%d,%t,%t,%t", gameComponent.Enabled(), gameComponent.UpdateOrder(),
+			gameComponent.Game() == componentGame, orphanComponent.Game() == nil, orphanComponent.Enabled()))
+
+	// Both settable properties suppress an unchanged value, store before they
+	// announce, and raise with the COMPONENT as sender rather than whatever
+	// sender the On... method was handed.
+	var componentEvents []string
+	_, _ = gameComponent.AddEnabledChangedHandler(func(sender any, args *framework.EventArgs) error {
+		componentEvents = append(componentEvents, fmt.Sprintf("enabled=%t,self=%t,empty=%t",
+			sender.(*framework.GameComponent).Enabled(), sender == any(gameComponent), args == framework.EventArgsEmpty()))
+		return nil
+	})
+	_, _ = gameComponent.AddUpdateOrderChangedHandler(func(sender any, args *framework.EventArgs) error {
+		componentEvents = append(componentEvents, fmt.Sprintf("order=%d,self=%t",
+			sender.(*framework.GameComponent).UpdateOrder(), sender == any(gameComponent)))
+		return nil
+	})
+	sameEnabled := gameComponent.SetEnabled(true)
+	sameOrder := gameComponent.SetUpdateOrder(0)
+	check("game-gameComponent.unchanged-assignment-announces-nothing", "GAME_COMPONENT", "true,true,",
+		fmt.Sprintf("%t,%t,%s", sameEnabled == nil, sameOrder == nil, strings.Join(componentEvents, "|")))
+
+	componentEvents = nil
+	_ = gameComponent.SetEnabled(false)
+	_ = gameComponent.SetUpdateOrder(7)
+	check("game-gameComponent.changed-assignment-stores-then-announces", "GAME_COMPONENT",
+		"enabled=false,self=true,empty=true|order=7,self=true",
+		strings.Join(componentEvents, "|"))
+
+	// The On... methods accept a sender, ignore it, and raise with `this`.
+	// That is what makes Game's engine work, since its handler reads sender.
+	componentEvents = nil
+	decoy := framework.NewGameComponent(nil)
+	_ = gameComponent.OnEnabledChanged(decoy, framework.EventArgsEmpty())
+	check("game-gameComponent.on-methods-ignore-their-sender-argument", "GAME_COMPONENT",
+		"enabled=false,self=true,empty=true",
+		strings.Join(componentEvents, "|"))
+
+	// Dispose removes from Game.Components BEFORE it announces, so a Disposed
+	// handler observes a Game that no longer contains the gameComponent.
+	disposeGame, _ := framework.NewGame(corpusCallbacks{})
+	disposed := framework.NewGameComponent(disposeGame)
+	addDisposed := disposeGame.Components().Add(disposed)
+	observedDuringDispose := int32(-1)
+	disposeRaises := 0
+	_, _ = disposed.AddDisposedHandler(func(sender any, args *framework.EventArgs) error {
+		disposeRaises++
+		observedDuringDispose = disposeGame.Components().Count()
+		return nil
+	})
+	disposeError := disposed.DisposeByNone()
+	check("game-gameComponent.dispose-removes-then-announces", "GAME_COMPONENT", "true,true,0,0,1",
+		fmt.Sprintf("%t,%t,%d,%d,%d", addDisposed == nil, disposeError == nil,
+			observedDuringDispose, disposeGame.Components().Count(), disposeRaises))
+
+	// It is NOT idempotent: the reference pops Remove's boolean and raises
+	// Disposed unconditionally, so a second Dispose raises again.
+	secondDispose := disposed.DisposeByNone()
+	check("game-gameComponent.dispose-is-not-idempotent", "GAME_COMPONENT", "true,2",
+		fmt.Sprintf("%t,%d", secondDispose == nil, disposeRaises))
+
+	// Dispose(false) is the whole body behind `if (!disposing) return`, which
+	// is also why Finalize is observably a no-op.
+	quietGame, _ := framework.NewGame(corpusCallbacks{})
+	quiet := framework.NewGameComponent(quietGame)
+	_ = quietGame.Components().Add(quiet)
+	quietRaises := 0
+	_, _ = quiet.AddDisposedHandler(func(any, *framework.EventArgs) error { quietRaises++; return nil })
+	quietDispose := quiet.DisposeByBoolean(false)
+	quiet.Finalize()
+	check("game-gameComponent.dispose-false-and-finalize-do-nothing", "GAME_COMPONENT", "true,0,1",
+		fmt.Sprintf("%t,%d,%d", quietDispose == nil, quietRaises, quietGame.Components().Count()))
+
+	// And the class drives the engine with no adapter between them: order
+	// changes re-place it, base Update runs it, Dispose untracks it, and a
+	// GameComponent is never drawn because it is not IDrawable.
+	engineComponentGame, _ := framework.NewGame(corpusCallbacks{})
+	early := framework.NewGameComponent(engineComponentGame)
+	late := framework.NewGameComponent(engineComponentGame)
+	_ = late.SetUpdateOrder(5)
+	_ = engineComponentGame.Components().Add(early)
+	_ = engineComponentGame.Components().Add(late)
+	_, isDrawable := any(early).(framework.IDrawable)
+	_, isUpdateable := any(early).(framework.IUpdateable)
+	_, isComponent := any(early).(framework.IGameComponent)
+	initializeComponents := framework.GameBaseInitialize(engineComponentGame)
+	updateComponents := framework.GameBaseUpdate(engineComponentGame, framework.NewGameTimeByNone())
+	drawComponents := framework.GameBaseDraw(engineComponentGame, framework.NewGameTimeByNone())
+	disposeEarly := early.DisposeByNone()
+	check("game-gameComponent.drives-the-engine", "GAME_COMPONENT", "false,true,true,true,true,true,true,1",
+		fmt.Sprintf("%t,%t,%t,%t,%t,%t,%t,%d", isDrawable, isUpdateable, isComponent,
+			initializeComponents == nil, updateComponents == nil, drawComponents == nil,
+			disposeEarly == nil, engineComponentGame.Components().Count()))
+
 	return report
 }
 

@@ -249,6 +249,7 @@ type report struct {
 	BCLSignatureAdapters         []bclSignatureAdapterMeasurement `json:"bclSignatureAdapters"`
 	BCLInterfaceRelationships    []bclInterfaceProjection         `json:"bclInterfaceRelationships"`
 	GameBaseCallAdapters         []gameBaseCallMeasurement        `json:"gameBaseCallAdapters"`
+	DeclaredInterfaceConformance []declaredInterfaceConformance   `json:"declaredInterfaceConformance"`
 	Metadata                     reportMetadata                   `json:"metadata"`
 }
 
@@ -284,6 +285,20 @@ type gameBaseCallMeasurement struct {
 	// is rejected rather than recorded.
 	Deferred []gameBaseCallDeferralRow `json:"deferredSteps"`
 	Verdict  string                    `json:"verdict"`
+}
+
+// declaredInterfaceConformance records one compiler-checked claim: a complete
+// projected class satisfies the Go projection of an XNA interface its CLR
+// metadata declares.
+type declaredInterfaceConformance struct {
+	Owner        string `json:"owner"`
+	GoOwner      string `json:"goOwner"`
+	CLRInterface string `json:"clrInterface"`
+	GoInterface  string `json:"goInterface"`
+	// PointerSatisfies is go/types' answer for the pointer method set, which
+	// is the method set of the facade CNA-Go projects a CLR class as.
+	PointerSatisfies bool   `json:"pointerSatisfies"`
+	Verdict          string `json:"verdict"`
 }
 
 type gameBaseCallFallibilityRow struct {

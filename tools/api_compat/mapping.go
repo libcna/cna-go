@@ -98,6 +98,21 @@ var pureManagedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.Audio.AudioListener": true,
 	"Microsoft.Xna.Framework.Audio.AudioEmitter":  true,
 
+	// Foundation 32. Microsoft.Xna.Framework.Game.dll IL
+	// (sha256 b5dffdd8125abef2a4507ba4e1d2f11062143f0a63d48fe4f298b95ad746a1f0)
+	// shows GameComponent as managed field work throughout. The constructor is
+	// 21 bytes of stfld, both getters and get_Game are one ldfld each, both
+	// setters are compare-store-announce, Initialize and Update are a bare
+	// `ret` of code size 1, Finalize's one branch returns immediately, and the
+	// two On... methods are a null test and a delegate Invoke. Nothing in the
+	// class reaches a device, a host, a window, or a CNA handle.
+	//
+	// Its one non-local statement is Dispose(bool)'s
+	// `get_Game().get_Components().Remove(this)`, which is a managed
+	// collection call -- and the reason the type could not be projected until
+	// Game exposed Components.
+	"Microsoft.Xna.Framework.GameComponent": true,
+
 	// Foundation 19. Microsoft.Xna.Framework.Graphics.dll IL
 	// (sha256 560080fc39021c611ca9d076dcebed312faf6d7d1413c2dc523683ea635e9f55)
 	// shows PresentationParameters as a descriptor over one assembly-visible
@@ -557,6 +572,37 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"method|CopyTo":   true,
 		"method|RemoveAt": true,
 		"property|Item":   true,
+	},
+
+	// Foundation 32. GameComponent is pure managed, so it starts from "nothing
+	// is fallible" and each entry below names its own evidence. Six members are
+	// deliberately absent: the constructor validates nothing, Update and
+	// Finalize are observably no-ops, and the three getters are one ldfld each.
+	"Microsoft.Xna.Framework.GameComponent": {
+		// A bare `ret`, so the class itself never fails -- but IGameComponent
+		// declares an error result, on the evidence of its OTHER implementor:
+		// DrawableGameComponent.Initialize resolves IGraphicsDeviceService out
+		// of Game.Services and throws when it is absent. Go requires an exact
+		// signature to satisfy an interface, so the member carries the
+		// contract's channel and never uses it. This is the first member in
+		// the profile whose fallibility comes from a contract it implements
+		// rather than from its own body, and it is recorded as such.
+		"method|Initialize": true,
+		// Dispose() and Dispose(bool) share one CLR name and one entry.
+		// Dispose(bool) runs Game.Components.Remove, which is fallible on the
+		// settled collection projection, and then raises Disposed, whose
+		// consumer handlers may fail. Dispose() is `Dispose(true)` plus a
+		// GC.SuppressFinalize that has nothing to suppress.
+		"method|Dispose": true,
+		// Both raise sites invoke consumer handlers.
+		"method|OnEnabledChanged":     true,
+		"method|OnUpdateOrderChanged": true,
+		// Only the SETTERS announce. Each is compare, store, then a virtual
+		// call to its On... method, so it inherits exactly that method's
+		// fallibility -- and a suppressed assignment announces nothing and
+		// cannot fail at all.
+		"property-set|Enabled":     true,
+		"property-set|UpdateOrder": true,
 	},
 	// AudioEmitter::set_DopplerScale is the first measured accessor-level
 	// case. Its IL guards the store with `ldarg.1; ldc.r4 0.0; bge.un.s`,

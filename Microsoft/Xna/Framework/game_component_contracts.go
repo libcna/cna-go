@@ -38,9 +38,9 @@ package framework
 //	    return s.enabledChanged.Remove(sub)
 //	}
 //
-// Declaring the contract implements no component. CNA-Go has no GameComponent,
-// no component collection, and no component lifecycle, and nothing in the
-// binding calls Update.
+// As of Foundation 32 this contract is live: GameComponent satisfies it, Game
+// keeps an ordered list of every IUpdateable in Components, and base Update
+// calls Update on each Enabled one in UpdateOrder.
 type IUpdateable interface {
 	Enabled() bool
 	UpdateOrder() int32
@@ -61,7 +61,10 @@ type IUpdateable interface {
 // reaches the graphics runtime through get_GraphicsDevice and Initialize, which
 // this contract does not declare.
 //
-// Declaring the contract binds no implementor and draws nothing.
+// Game keeps an ordered list of every IDrawable in Components and base Draw
+// calls Draw on each Visible one in DrawOrder. The reference's own implementor,
+// DrawableGameComponent, is still missing -- it crosses the protected graphics
+// runtime -- so the live implementors are consumers' own types.
 type IDrawable interface {
 	Visible() bool
 	DrawOrder() int32
@@ -83,8 +86,9 @@ type IDrawable interface {
 // get_GameComponent as one ldfld, so neither operation can fail and a nil
 // component is stored exactly as the reference stores a null one.
 //
-// XNA declares the constructor public, so CNA-Go projects it. Nothing in the
-// binding raises this type yet: CNA-Go has no GameComponentCollection.
+// XNA declares the constructor public, so CNA-Go projects it.
+// GameComponentCollection raises it on every insertion and removal, and Game's
+// component engine is its first consumer.
 type GameComponentCollectionEventArgs struct {
 	gameComponent IGameComponent
 }

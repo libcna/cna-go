@@ -189,6 +189,7 @@ func printSummary(result report) {
 		"BCL_BASE_ADAPTERS", "BCL_BASE_ADAPTER_CONSUMERS",
 		"BCL_SIGNATURE_ADAPTERS", "BCL_SIGNATURE_ADAPTER_CARRIERS", "BCL_DEFERRED_BASE_BLOCKERS",
 		"GAME_BASE_CALL_ADAPTERS", "GAME_BASE_CALL_DEFERRED_STEPS",
+		"DECLARED_INTERFACE_CONFORMANCE",
 	}
 	order = append(order, diagnosticCategories[2:]...)
 	seen := make(map[string]bool)
