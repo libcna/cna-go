@@ -1107,6 +1107,13 @@ func TestMutationFixtures(t *testing.T) {
 				}
 				return
 			}
+			if strings.HasPrefix(fixture.Mutation, "f36signal_") {
+				result := gameSignalMutationCase(t, fixture.Mutation)
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
 			if strings.HasPrefix(fixture.Mutation, "f27sig_") {
 				expected, actual = bclSignatureAdapterMutationCase(t, fixture.Mutation)
 				result := report{Summary: make(map[string]int)}
@@ -5732,9 +5739,12 @@ func gameBaseCallFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 	}
 	// The framework package always carries the BCL signature adapters too, so
 	// they are seeded as well: an incomplete fixture would report their
-	// absence and drown the defect this test is about.
+	// absence and drown the defect this test is about. The same holds for the
+	// members the Foundation-36 registries name -- Game's event accessors, its
+	// raise sites and its four frame hooks all live in this package.
 	seedSignatureAdapters(actual)
 	seedGameBaseCallAdapters(actual)
+	seedGameSignalMembers(t, expected, actual)
 	return expected, actual
 }
 
@@ -6517,6 +6527,565 @@ func TestMappingRulesDeclareTheSameXNABasesAsTheRegistry(t *testing.T) {
 	for base, relationship := range xnaBaseRelationships {
 		if _, documented := rules.XNABaseRelationships.Statuses[relationship.Status]; !documented {
 			t.Fatalf("%s carries undocumented status %q", base, relationship.Status)
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 36 — negative controls for the native game-signal bridge and the
+// frame-hook frontier.
+// ---------------------------------------------------------------------------
+
+// gameSignalFixture builds a surface pair that exercises the two Foundation-36
+// registries and nothing else. The expected surface is the whole pinned
+// contract, so Game, its four events, its three raise sites and its four frame
+// hooks are all present; the actual surface carries only the framework package
+// with exactly the members those registries name.
+//
+// Every defect below is measured as a delta against this fixture's own
+// baseline, so the fixture's unrelated MISSING_TYPE noise cannot make a defect
+// look detected.
+func gameSignalFixture(t *testing.T) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := &actualSurface{
+		Types:       make(map[symbolKey]*actualType),
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: map[string]string{modulePath + "/Microsoft/Xna/Framework": "Microsoft/Xna/Framework"},
+		Packages:    make(map[string]*types.Package),
+	}
+	seedSignatureAdapters(actual)
+	seedGameBaseCallAdapters(actual)
+	seedGameSignalMembers(t, expected, actual)
+	return expected, actual
+}
+
+// seedGameSignalMembers copies the projected members the two registries name
+// out of the expected surface and into the actual one, so the fixture starts
+// VALID and every diagnostic below is caused by its own mutation.
+func seedGameSignalMembers(t *testing.T, expected *expectedSurface, actual *actualSurface) {
+	t.Helper()
+	gameType := expected.typeForXNA("Microsoft.Xna.Framework.Game")
+	if gameType == nil {
+		t.Fatal("the pinned contract does not declare Game")
+	}
+	wanted := make(map[string]bool)
+	for name, signal := range gameNativeSignals {
+		wanted["Add"+name+"Handler"] = true
+		wanted["Remove"+name+"Handler"] = true
+		if signal.RaiseSite != "" {
+			wanted[signal.RaiseSite] = true
+		}
+	}
+	for name := range gameFrameHooks {
+		wanted[name] = true
+	}
+	for _, key := range gameType.Members {
+		member := expected.Members[key]
+		if member == nil || !wanted[member.GoName] {
+			continue
+		}
+		actual.Members[key] = &actualMember{
+			Key: key, Kind: member.GoKind,
+			Parameters: append([]string(nil), member.Parameters...),
+			Results:    append([]string(nil), member.Results...),
+		}
+	}
+}
+
+// withGameNativeSignals runs fn with the signal registry mutated, then restores
+// it.
+func withGameNativeSignals(t *testing.T, mutate func(), fn func()) {
+	t.Helper()
+	saved := make(map[string]gameNativeSignal, len(gameNativeSignals))
+	for name, signal := range gameNativeSignals {
+		saved[name] = signal
+	}
+	defer func() { gameNativeSignals = saved }()
+	mutate()
+	fn()
+}
+
+// withGameFrameHooks runs fn with the frame-hook registry mutated, then
+// restores it.
+func withGameFrameHooks(t *testing.T, mutate func(), fn func()) {
+	t.Helper()
+	saved := make(map[string]gameFrameHook, len(gameFrameHooks))
+	for name, hook := range gameFrameHooks {
+		saved[name] = hook
+	}
+	defer func() { gameFrameHooks = saved }()
+	mutate()
+	fn()
+}
+
+func frameworkGameKey(name string) symbolKey {
+	return symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Receiver: "Game", Name: name}
+}
+
+// gameSignalDefects is the shared table behind both the named test and the
+// mutation inventory. Each entry breaks exactly one rule the native-signal
+// bridge or the frame-hook frontier rests on, and each must raise
+// LANGUAGE_MAPPING_MISMATCH.
+var gameSignalDefects = map[string]func(expected *expectedSurface, actual *actualSurface){
+	// ---- the native signal bridge --------------------------------------
+	// An event Game declares with no bound signal is an accessor pair nothing
+	// can ever fire.
+	"signal_absent_for_a_declared_event": func(_ *expectedSurface, _ *actualSurface) {
+		delete(gameNativeSignals, "Exiting")
+	},
+	// A signal for an event Game does not declare is an invention.
+	"signal_declared_for_an_event_game_does_not_declare": func(_ *expectedSurface, _ *actualSurface) {
+		gameNativeSignals["Suspended"] = gameNativeSignal{
+			CNAConstant: "CNA_GAME_EVENT_SUSPENDED", CNAIdentity: 9,
+			CLREvent: "Microsoft.Xna.Framework.Game::Suspended", Sender: "GAME",
+			ReferencePath: []string{"invented"}, RuntimeEvidence: "VERIFIED_NATIVE",
+		}
+	},
+	// Two events sharing one native identity would deliver one signal to both.
+	"duplicate_cna_identity": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Exiting"]
+		signal.CNAIdentity = gameNativeSignals["Activated"].CNAIdentity
+		gameNativeSignals["Exiting"] = signal
+	},
+	// A signal that names no canonical constant is unbound in fact.
+	"signal_names_no_cna_constant": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Disposed"]
+		signal.CNAConstant = ""
+		gameNativeSignals["Disposed"] = signal
+	},
+	// A raise site the reference does not declare.
+	"raise_site_is_not_a_projected_method": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Activated"]
+		signal.RaiseSite = "OnActivating"
+		gameNativeSignals["Activated"] = signal
+	},
+	// Inventing an OnDisposed. The reference has none: Dispose(bool) invokes
+	// the delegate field directly.
+	"raise_site_invented_for_an_event_that_has_none": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Disposed"]
+		signal.RaiseSite = "OnDisposed"
+		gameNativeSignals["Disposed"] = signal
+	},
+	// Dropping a raise site the pinned contract does declare.
+	"raise_site_omitted_for_an_event_that_has_one": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Exiting"]
+		signal.RaiseSite = ""
+		gameNativeSignals["Exiting"] = signal
+	},
+	// A raise site whose projected shape is not (any, *EventArgs) error is not
+	// the CLR raise site's shape.
+	"raise_site_signature_is_not_the_clr_shape": func(expected *expectedSurface, _ *actualSurface) {
+		expected.Members[frameworkGameKey("OnExiting")].Parameters = []string{"*EventArgs"}
+	},
+	// The raise site is declared but the package does not ship it.
+	"raise_site_absent_from_the_package": func(_ *expectedSurface, actual *actualSurface) {
+		delete(actual.Members, frameworkGameKey("OnDeactivated"))
+	},
+	// One of the two accessors is missing, so the signal has nowhere to arrive.
+	"accessor_absent_from_the_package": func(_ *expectedSurface, actual *actualSurface) {
+		delete(actual.Members, frameworkGameKey("AddActivatedHandler"))
+	},
+	// A sender that is neither `this` nor null. Every raise in this family
+	// pushes one of the two.
+	"sender_is_neither_game_nor_null": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Activated"]
+		signal.Sender = "HOST"
+		gameNativeSignals["Activated"] = signal
+	},
+	// Without a recorded reference path there is nothing to check against.
+	"signal_records_no_reference_path": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Disposed"]
+		signal.ReferencePath = nil
+		gameNativeSignals["Disposed"] = signal
+	},
+	// An unrecognised evidence class hides whether the signal was ever seen.
+	"runtime_evidence_unclassified": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Exiting"]
+		signal.RuntimeEvidence = "PROBABLY_FINE"
+		gameNativeSignals["Exiting"] = signal
+	},
+	// A signal the environment cannot deliver must say why. An unexplained one
+	// is an unproved claim wearing a label.
+	"unverified_signal_records_no_reason": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Deactivated"]
+		signal.EvidenceReason = ""
+		gameNativeSignals["Deactivated"] = signal
+	},
+	// And a verified one must not: an excuse next to a verification is a sign
+	// the label and the evidence disagree.
+	"verified_signal_records_an_excuse": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Activated"]
+		signal.EvidenceReason = "not really"
+		gameNativeSignals["Activated"] = signal
+	},
+	// A raise path that exists on Game but no signal declares is a raise
+	// nothing measures.
+	"raise_site_exists_that_no_signal_declares": func(expected *expectedSurface, _ *actualSurface) {
+		gameType := expected.typeForXNA("Microsoft.Xna.Framework.Game")
+		key := frameworkGameKey("OnResumed")
+		expected.Members[key] = &expectedMember{
+			Key: key, XNA: "Microsoft.Xna.Framework.Game::OnResumed(System.Object,System.EventArgs)",
+			Owner: "Microsoft.Xna.Framework.Game", SourceKind: "method", SourceAccess: "protected",
+			GoKind: "method", GoName: "OnResumed", Receiver: "Game",
+			PackagePath: modulePath + "/Microsoft/Xna/Framework",
+			Parameters:  []string{"any", "*EventArgs"}, Results: []string{"error"},
+		}
+		gameType.Members = append(gameType.Members, key)
+	},
+
+	// ---- the frame-hook frontier ---------------------------------------
+	// The hook is declared but the package does not ship it.
+	"frame_hook_absent_from_the_package": func(_ *expectedSurface, actual *actualSurface) {
+		delete(actual.Members, frameworkGameKey("BeginDraw"))
+	},
+	// A hook for a member Game does not project.
+	"frame_hook_declared_for_a_member_that_is_not_projected": func(_ *expectedSurface, _ *actualSurface) {
+		gameFrameHooks["BeginFrame"] = gameFrameHook{
+			CLRMember: "Microsoft.Xna.Framework.Game::BeginFrame", GoName: "BeginFrame",
+			Results: []string{"error"}, NativeHook: "CNA_GameFrameHooks::begin_frame",
+			ReasonUninstalled: "invented", NativeOrdering: "invented",
+			ReferenceBody: []string{"invented"},
+		}
+	},
+	// A hook whose declared signature is not the projected one.
+	"frame_hook_signature_mismatch": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginDraw"]
+		hook.Results = []string{"error"}
+		gameFrameHooks["BeginDraw"] = hook
+	},
+	// A GameBase... helper for a member that is not a GameCallbacks override.
+	// The base body is reachable as a method on Game and needs no helper.
+	"frame_hook_gains_a_base_call_helper": func(_ *expectedSurface, actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBaseBeginRun"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "func", Parameters: []string{"*Game"}, Results: []string{"error"}}
+	},
+	// A hook declared for one of the five mandatory override members would put
+	// it in two contracts at once.
+	"frame_hook_declared_for_a_gamecallbacks_member": func(_ *expectedSurface, _ *actualSurface) {
+		gameFrameHooks["Update"] = gameFrameHook{
+			CLRMember: "Microsoft.Xna.Framework.Game::Update", GoName: "Update",
+			Parameters: []string{"GameTime"}, Results: []string{"error"},
+			NativeHook: "CNA_GameFrameHooks::update", ReasonUninstalled: "invented",
+			NativeOrdering: "invented", ReferenceBody: []string{"invented"},
+		}
+	},
+	// An uninstalled native hook with no reason is a silence, not a decision.
+	"frame_hook_uninstalled_without_a_reason": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndRun"]
+		hook.ReasonUninstalled = ""
+		gameFrameHooks["EndRun"] = hook
+	},
+	// And an installed one that still carries the excuse for not installing it
+	// means the record and the code disagree.
+	"frame_hook_installed_but_records_a_reason": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndDraw"]
+		hook.Installed = true
+		gameFrameHooks["EndDraw"] = hook
+	},
+	// A hook that names no canonical CNA hook records no position at all.
+	"frame_hook_names_no_native_hook": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginRun"]
+		hook.NativeHook = ""
+		gameFrameHooks["BeginRun"] = hook
+	},
+	// The correspondence between the native position and the reference call
+	// site is the whole claim; unrecorded, it is an assertion.
+	"frame_hook_records_no_native_ordering": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginDraw"]
+		hook.NativeOrdering = ""
+		gameFrameHooks["BeginDraw"] = hook
+	},
+	// Without a reference body there is nothing to check the projection against.
+	"frame_hook_records_no_reference_body": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndDraw"]
+		hook.ReferenceBody = nil
+		gameFrameHooks["EndDraw"] = hook
+	},
+	// The same three deferral rules the base-call family already carries.
+	"frame_hook_deferral_unclassified": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginDraw"]
+		hook.Deferred = []gameBaseCallDeferral{{Step: "Logger.BeginLogEvent", Class: "LATER", Reason: "not now"}}
+		gameFrameHooks["BeginDraw"] = hook
+	},
+	"frame_hook_deferral_records_no_reason": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginDraw"]
+		hook.Deferred = []gameBaseCallDeferral{{Step: "Logger.BeginLogEvent", Class: "UNOBSERVABLE"}}
+		gameFrameHooks["BeginDraw"] = hook
+	},
+	"frame_hook_deferral_marked_observable": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndDraw"]
+		deferred := append([]gameBaseCallDeferral(nil), hook.Deferred...)
+		deferred[0].Observable = true
+		hook.Deferred = deferred
+		gameFrameHooks["EndDraw"] = hook
+	},
+	// A hook projected onto anything but Game would move a member Microsoft
+	// declared on Game somewhere else.
+	"frame_hook_projected_onto_another_receiver": func(expected *expectedSurface, _ *actualSurface) {
+		expected.Members[frameworkGameKey("EndRun")].Receiver = "GameCallbacks"
+	},
+	// And a hook that is not a protected virtual has no base body to project.
+	"frame_hook_names_a_public_member": func(expected *expectedSurface, _ *actualSurface) {
+		expected.Members[frameworkGameKey("BeginRun")].SourceAccess = "public"
+	},
+}
+
+// TestGameSignalDefectsAreRejected attacks every rule the native game-signal
+// bridge and the frame-hook frontier rest on.
+//
+// The danger both registries defend against is the same one the base-call
+// family has: not a wrong XNA signature, but an INVENTED claim -- a raise site
+// the reference never declared, an event bound to nothing, a native hook
+// silently left out, or a runtime evidence label with no evidence behind it.
+func TestGameSignalDefectsAreRejected(t *testing.T) {
+	baselineExpected, baselineActual := gameSignalFixture(t)
+	baseline := verify(baselineExpected, baselineActual, 0, "report", "contract", "mapping")
+	if baseline.Summary["LANGUAGE_MAPPING_MISMATCH"] != 0 {
+		t.Fatalf("the unmutated signal fixture is not clean: %d LANGUAGE_MAPPING_MISMATCH", baseline.Summary["LANGUAGE_MAPPING_MISMATCH"])
+	}
+	if baseline.Summary["GAME_NATIVE_SIGNALS"] != len(gameNativeSignals) {
+		t.Fatalf("fixture measured %d signals, registry declares %d",
+			baseline.Summary["GAME_NATIVE_SIGNALS"], len(gameNativeSignals))
+	}
+	if baseline.Summary["GAME_FRAME_HOOKS"] != len(gameFrameHooks) {
+		t.Fatalf("fixture measured %d frame hooks, registry declares %d",
+			baseline.Summary["GAME_FRAME_HOOKS"], len(gameFrameHooks))
+	}
+	if baseline.Summary["GAME_FRAME_HOOKS_INSTALLED"] != 0 {
+		t.Fatalf("fixture measured %d installed frame hooks; CNA-Go installs none",
+			baseline.Summary["GAME_FRAME_HOOKS_INSTALLED"])
+	}
+
+	names := make([]string, 0, len(gameSignalDefects))
+	for name := range gameSignalDefects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		defect := gameSignalDefects[name]
+		t.Run(name, func(t *testing.T) {
+			expected, actual := gameSignalFixture(t)
+			var result report
+			withGameNativeSignals(t, func() {}, func() {
+				withGameFrameHooks(t, func() { defect(expected, actual) }, func() {
+					result = verify(expected, actual, 0, "report", "contract", "mapping")
+				})
+			})
+			if result.Summary["LANGUAGE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("signal defect %q raised no LANGUAGE_MAPPING_MISMATCH", name)
+			}
+		})
+	}
+}
+
+// gameSignalMutationCase applies one Foundation-36 defect to a fresh fixture
+// and returns the resulting report, so the shared defect table drives both the
+// named test and the mutation inventory.
+func gameSignalMutationCase(t *testing.T, mutation string) report {
+	t.Helper()
+	name := strings.TrimPrefix(mutation, "f36signal_")
+	defect, ok := gameSignalDefects[name]
+	if !ok {
+		t.Fatalf("unknown game-signal defect %q", name)
+	}
+	expected, actual := gameSignalFixture(t)
+	var result report
+	withGameNativeSignals(t, func() {}, func() {
+		withGameFrameHooks(t, func() { defect(expected, actual) }, func() {
+			result = verify(expected, actual, 0, "report", "contract", "mapping")
+		})
+	})
+	return result
+}
+
+// TestEveryGameSignalDefectHasAMutationFixture keeps the shared defect table
+// and the mutation inventory from drifting.
+func TestEveryGameSignalDefectHasAMutationFixture(t *testing.T) {
+	data, err := os.ReadFile("testdata/mutations.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixtures []mutationFixture
+	if err := json.Unmarshal(data, &fixtures); err != nil {
+		t.Fatal(err)
+	}
+	inventoried := make(map[string]bool)
+	for _, fixture := range fixtures {
+		if strings.HasPrefix(fixture.Mutation, "f36signal_") {
+			inventoried[strings.TrimPrefix(fixture.Mutation, "f36signal_")] = true
+		}
+	}
+	for name := range gameSignalDefects {
+		if !inventoried[name] {
+			t.Fatalf("game-signal defect %q has no mutation fixture", name)
+		}
+	}
+	for name := range inventoried {
+		if _, declared := gameSignalDefects[name]; !declared {
+			t.Fatalf("mutation fixture f36signal_%s names no defect in the shared table", name)
+		}
+	}
+}
+
+// TestGameNativeSignalsAndFrameHooksAreNotXNAIdentities is the accounting
+// claim: both registries measure an existing projection and must not inflate
+// any identity counter. The members they name are already counted as Game's
+// own; the registries only prove the binding around them.
+func TestGameNativeSignalsAndFrameHooksAreNotXNAIdentities(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	referenceMembers := expected.ReferenceMembers
+	expectedMembers := len(expected.Members)
+	gameType := expected.typeForXNA("Microsoft.Xna.Framework.Game")
+	if gameType == nil {
+		t.Fatal("the pinned contract does not declare Game")
+	}
+	gameMembers := len(gameType.Members)
+
+	_, actual := gameSignalFixture(t)
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	if result.Summary["GAME_NATIVE_SIGNALS"] != len(gameNativeSignals) {
+		t.Fatalf("measured %d signals, registry declares %d", result.Summary["GAME_NATIVE_SIGNALS"], len(gameNativeSignals))
+	}
+	if expected.ReferenceMembers != referenceMembers {
+		t.Fatalf("REFERENCE_MEMBERS moved from %d to %d", referenceMembers, expected.ReferenceMembers)
+	}
+	if len(expected.Members) != expectedMembers {
+		t.Fatalf("EXPECTED_GO_MEMBERS moved from %d to %d", expectedMembers, len(expected.Members))
+	}
+	if len(gameType.Members) != gameMembers {
+		t.Fatalf("Game's projected member set moved from %d to %d", gameMembers, len(gameType.Members))
+	}
+}
+
+// TestMappingRulesDeclareTheSameGameSignalsAsTheRegistry keeps the documented
+// rules file and the executable registry from drifting.
+//
+// mapping-rules.json is hashed into every report, so it is the record of what
+// the binding claims its rules are; gameNativeSignals is what the verifier
+// actually enforces. A signal documented in one and not the other would let a
+// binding claim a raise path nobody checks, or check one nobody published.
+func TestMappingRulesDeclareTheSameGameSignalsAsTheRegistry(t *testing.T) {
+	data, err := os.ReadFile("mapping-rules.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rules struct {
+		GameNativeSignals struct {
+			Senders         map[string]string `json:"senders"`
+			RuntimeEvidence map[string]string `json:"runtimeEvidence"`
+			Signals         map[string]struct {
+				CNAConstant     string `json:"cnaConstant"`
+				CNAIdentity     int    `json:"cnaIdentity"`
+				CLREvent        string `json:"clrEvent"`
+				RaiseSite       string `json:"raiseSite"`
+				Sender          string `json:"sender"`
+				EdgeTriggered   bool   `json:"edgeTriggered"`
+				RuntimeEvidence string `json:"runtimeEvidence"`
+			} `json:"signals"`
+		} `json:"gameNativeSignals"`
+		GameFrameHooks struct {
+			Hooks map[string]struct {
+				CLRMember  string `json:"clrMember"`
+				Signature  string `json:"signature"`
+				NativeHook string `json:"nativeHook"`
+				Installed  bool   `json:"installed"`
+			} `json:"hooks"`
+		} `json:"gameFrameHooks"`
+	}
+	if err := json.Unmarshal(data, &rules); err != nil {
+		t.Fatal(err)
+	}
+
+	documented := rules.GameNativeSignals.Signals
+	if len(documented) != len(gameNativeSignals) {
+		t.Fatalf("mapping-rules.json documents %d native signals, the registry declares %d",
+			len(documented), len(gameNativeSignals))
+	}
+	for name, signal := range gameNativeSignals {
+		entry, present := documented[name]
+		if !present {
+			t.Fatalf("native signal %q is in the registry but not in mapping-rules.json", name)
+		}
+		if entry.CNAConstant != signal.CNAConstant || entry.CNAIdentity != signal.CNAIdentity {
+			t.Fatalf("native signal %q: rules say %s=%d, registry says %s=%d",
+				name, entry.CNAConstant, entry.CNAIdentity, signal.CNAConstant, signal.CNAIdentity)
+		}
+		if entry.CLREvent != signal.CLREvent {
+			t.Fatalf("native signal %q: rules say CLR event %q, registry says %q", name, entry.CLREvent, signal.CLREvent)
+		}
+		if entry.RaiseSite != signal.RaiseSite {
+			t.Fatalf("native signal %q: rules say raise site %q, registry says %q", name, entry.RaiseSite, signal.RaiseSite)
+		}
+		if entry.Sender != signal.Sender {
+			t.Fatalf("native signal %q: rules say sender %q, registry says %q", name, entry.Sender, signal.Sender)
+		}
+		if entry.EdgeTriggered != signal.EdgeTriggered {
+			t.Fatalf("native signal %q: rules say edgeTriggered=%t, registry says %t", name, entry.EdgeTriggered, signal.EdgeTriggered)
+		}
+		if entry.RuntimeEvidence != signal.RuntimeEvidence {
+			t.Fatalf("native signal %q: rules say evidence %q, registry says %q", name, entry.RuntimeEvidence, signal.RuntimeEvidence)
+		}
+	}
+	// The two closed vocabularies must be documented exactly as the verifier
+	// enforces them, so neither can gain a class in prose alone.
+	for sender := range gameNativeSignalSenders {
+		if _, documented := rules.GameNativeSignals.Senders[sender]; !documented {
+			t.Fatalf("sender %q is admitted by the verifier but not documented", sender)
+		}
+	}
+	if len(rules.GameNativeSignals.Senders) != len(gameNativeSignalSenders) {
+		t.Fatalf("mapping-rules.json documents %d senders, the verifier admits %d",
+			len(rules.GameNativeSignals.Senders), len(gameNativeSignalSenders))
+	}
+	for evidence := range gameNativeSignalEvidence {
+		if _, documented := rules.GameNativeSignals.RuntimeEvidence[evidence]; !documented {
+			t.Fatalf("runtime evidence class %q is admitted by the verifier but not documented", evidence)
+		}
+	}
+	if len(rules.GameNativeSignals.RuntimeEvidence) != len(gameNativeSignalEvidence) {
+		t.Fatalf("mapping-rules.json documents %d evidence classes, the verifier admits %d",
+			len(rules.GameNativeSignals.RuntimeEvidence), len(gameNativeSignalEvidence))
+	}
+
+	documentedHooks := rules.GameFrameHooks.Hooks
+	if len(documentedHooks) != len(gameFrameHooks) {
+		t.Fatalf("mapping-rules.json documents %d frame hooks, the registry declares %d",
+			len(documentedHooks), len(gameFrameHooks))
+	}
+	for name, hook := range gameFrameHooks {
+		entry, present := documentedHooks[name]
+		if !present {
+			t.Fatalf("frame hook %q is in the registry but not in mapping-rules.json", name)
+		}
+		if entry.CLRMember != hook.CLRMember {
+			t.Fatalf("frame hook %q: rules say CLR member %q, registry says %q", name, entry.CLRMember, hook.CLRMember)
+		}
+		if entry.NativeHook != hook.NativeHook {
+			t.Fatalf("frame hook %q: rules say native hook %q, registry says %q", name, entry.NativeHook, hook.NativeHook)
+		}
+		if entry.Installed != hook.Installed {
+			t.Fatalf("frame hook %q: rules say installed=%t, registry says %t", name, entry.Installed, hook.Installed)
+		}
+		// The documented signature must spell the registry's exact results, so
+		// a widened one cannot hide behind prose. In particular BeginDraw's
+		// Boolean must stay a separate channel from its error.
+		wanted := "func (g *Game) " + hook.GoName + "()"
+		switch len(hook.Results) {
+		case 0:
+		case 1:
+			wanted += " " + hook.Results[0]
+		default:
+			wanted += " (" + strings.Join(hook.Results, ", ") + ")"
+		}
+		if entry.Signature != wanted {
+			t.Fatalf("frame hook %q: rules document signature %q, registry implies %q", name, entry.Signature, wanted)
 		}
 	}
 }

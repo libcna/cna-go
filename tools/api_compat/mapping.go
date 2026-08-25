@@ -2286,3 +2286,213 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 		{Class: "SUBSYSTEM", Detail: "MathTypeConverter extends System.ComponentModel.ExpandableObjectConverter, which is already a DEFERRED BCL base with three recorded blockers, so the twelve Design converters are blocked by a BCL decision before the XNA one is reached"},
 	}},
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 36 — the native game-signal bridge and the frame-hook frontier.
+// ---------------------------------------------------------------------------
+
+// gameNativeSignal declares one canonical CNA game signal, the CLR event it
+// raises, and the reference raise path it goes through.
+//
+// The registry exists because binding a native signal to a projected event is a
+// claim with four separable parts, and prose cannot hold any of them:
+//
+//  1. the CLR event really is declared by Game, and really does project to the
+//     two-accessor pair the event mapping promises;
+//  2. the raise site really is the protected virtual the reference routes
+//     through -- or really is absent, which is a fact about Disposed rather
+//     than an oversight;
+//  3. the sender the projection pushes is the sender the IL pushes, which for
+//     Exiting is `ldnull` and for the others is `ldarg.0`;
+//  4. the runtime evidence for that signal is recorded honestly, so an event
+//     the qualification environment cannot deliver says so instead of being
+//     counted as verified.
+type gameNativeSignal struct {
+	// CNAConstant is the canonical C identity, and CNAIdentity its value. They
+	// are recorded so the projection names a real signal rather than a Go
+	// invention; the C-side chain from the canonical header through CNA-Go's
+	// private manifest, bridge.h's mirror and the Go constants is separately
+	// compiler-checked and measured by tools/native_abi.
+	CNAConstant string
+	CNAIdentity int
+	// CLREvent is the event Game declares, spelled as the pinned contract does.
+	CLREvent string
+	// RaiseSite is the projected protected virtual the reference routes the
+	// raise through, or empty when the reference declares none. Disposed is the
+	// only one with none: Dispose(bool) invokes the delegate field directly.
+	RaiseSite string
+	// Sender is what the raise pushes: GAME for `ldarg.0`, NULL for `ldnull`.
+	Sender string
+	// EdgeTriggered records whether the reference's host handler suppresses a
+	// repeated signal. The two activation events guard on Game::isActive;
+	// Exiting and Disposed do not guard at all.
+	EdgeTriggered bool
+	// ReferencePath is the reference's chain from host signal to handler.
+	ReferencePath []string
+	// RuntimeEvidence is VERIFIED_NATIVE when the qualification artifact
+	// actually delivers the signal, and NOT_RUN_ENVIRONMENT when it cannot.
+	// EvidenceReason is required for the second and forbidden for the first: a
+	// verified signal needs no excuse, and an unverified one must give its.
+	RuntimeEvidence string
+	EvidenceReason  string
+}
+
+// gameNativeSignalSenders are the only senders a raise may push. There is no
+// third: every raise site in this family pushes either `this` or null.
+var gameNativeSignalSenders = map[string]bool{"GAME": true, "NULL": true}
+
+// gameNativeSignalEvidence are the only runtime-evidence classes. A signal the
+// environment cannot produce is NOT_RUN_ENVIRONMENT with a reason, never a
+// quietly verified one.
+var gameNativeSignalEvidence = map[string]bool{
+	"VERIFIED_NATIVE": true, "NOT_RUN_ENVIRONMENT": true,
+}
+
+// gameNativeSignals is the closed registry, keyed by CLR event name. Its keys
+// must be exactly the events Game declares: an event with no signal is a
+// projected event with no raise path, and a signal for an event Game does not
+// declare is an invention.
+var gameNativeSignals = map[string]gameNativeSignal{
+	"Activated": {
+		CNAConstant: "CNA_GAME_EVENT_ACTIVATED", CNAIdentity: 0,
+		CLREvent:  "Microsoft.Xna.Framework.Game::Activated",
+		RaiseSite: "OnActivated", Sender: "GAME", EdgeTriggered: true,
+		ReferencePath: []string{
+			"EnsureHost(): host.Activated += HostActivated",
+			"HostActivated: if (isActive) return; isActive = true;",
+			"HostActivated: OnActivated(this, EventArgs.Empty)",
+			"OnActivated: if (Activated != null) Activated(this, args)   // ldarg.0",
+		},
+		RuntimeEvidence: "VERIFIED_NATIVE",
+	},
+	"Deactivated": {
+		CNAConstant: "CNA_GAME_EVENT_DEACTIVATED", CNAIdentity: 1,
+		CLREvent:  "Microsoft.Xna.Framework.Game::Deactivated",
+		RaiseSite: "OnDeactivated", Sender: "GAME", EdgeTriggered: true,
+		ReferencePath: []string{
+			"EnsureHost(): host.Deactivated += HostDeactivated",
+			"HostDeactivated: if (!isActive) return; isActive = false;",
+			"HostDeactivated: OnDeactivated(this, EventArgs.Empty)",
+			"OnDeactivated: if (Deactivated != null) Deactivated(this, args)   // ldarg.0",
+		},
+		RuntimeEvidence: "NOT_RUN_ENVIRONMENT",
+		EvidenceReason:  "the qualification artifact runs a HEADLESS renderer with no window manager, so no focus transition away from the game can be produced and CNA_GAME_EVENT_DEACTIVATED is never delivered; the accessors, the edge-trigger guard and the raise path are proved without it and the delivery counter is left at zero",
+	},
+	"Exiting": {
+		CNAConstant: "CNA_GAME_EVENT_EXITING", CNAIdentity: 3,
+		CLREvent:  "Microsoft.Xna.Framework.Game::Exiting",
+		RaiseSite: "OnExiting", Sender: "NULL", EdgeTriggered: false,
+		ReferencePath: []string{
+			"EnsureHost(): host.Exiting += HostExiting",
+			"HostExiting: OnExiting(this, EventArgs.Empty)   // no guard",
+			"OnExiting: if (Exiting != null) Exiting(null, args)   // ldnull, NOT ldarg.0",
+		},
+		RuntimeEvidence: "VERIFIED_NATIVE",
+	},
+	"Disposed": {
+		CNAConstant: "CNA_GAME_EVENT_DISPOSED", CNAIdentity: 2,
+		CLREvent:  "Microsoft.Xna.Framework.Game::Disposed",
+		RaiseSite: "", Sender: "GAME", EdgeTriggered: false,
+		ReferencePath: []string{
+			"Dispose(bool disposing): if (!disposing) return;",
+			"Dispose(bool): dispose each IDisposable component, then the device manager, then UnhookDeviceEvents()",
+			"Dispose(bool): if (Disposed != null) Disposed(this, EventArgs.Empty)   // ldarg.0, no On... method",
+		},
+		RuntimeEvidence: "VERIFIED_NATIVE",
+	},
+}
+
+// gameFrameHook declares one of Game's frame-boundary protected virtuals, the
+// canonical CNA hook that sits at the same position, and whether CNA-Go
+// installs it.
+//
+// The registry's load-bearing claim is the negative one. CNA publishes four
+// hooks that correspond position for position to these four virtuals, and
+// CNA-Go installs none of them, because Foundation 31 settled that base
+// behavior is never automatic: forwarding a hook into a base body would run the
+// base at a position CNA-Go picked and make that base call mandatory, which
+// prejudges the override design that has not been made. Recording that as a
+// measured fact with a reason is what keeps it a decision rather than a
+// silence.
+type gameFrameHook struct {
+	// CLRMember is the protected virtual, spelled as the pinned contract does.
+	CLRMember string
+	// GoName is the projected method on Game. These are methods rather than
+	// GameCallbacks members because the mapper redirects exactly the five
+	// protected virtuals GameCallbacks declares and no others.
+	GoName     string
+	Parameters []string
+	Results    []string
+	// NativeHook is the canonical CNA_GameFrameHooks member at the same
+	// position in the frame, and Installed records whether CNA-Go installs it.
+	// ReasonUninstalled is required whenever it does not.
+	NativeHook        string
+	Installed         bool
+	ReasonUninstalled string
+	// NativeOrdering is the measured position of the native hook relative to
+	// the reference's call site, so the correspondence is recorded rather than
+	// asserted.
+	NativeOrdering string
+	// ReferenceBody is the base body, in order, and Deferred records every step
+	// it does not reproduce, with the same classes and the same
+	// observable-is-a-stop-condition rule the base-call adapters use.
+	ReferenceBody []string
+	Deferred      []gameBaseCallDeferral
+}
+
+// gameFrameHooks is the closed registry, keyed by Go method name. Its keys are
+// exactly the four protected virtuals of Game that sit on a frame boundary and
+// are NOT GameCallbacks members.
+var gameFrameHooks = map[string]gameFrameHook{
+	"BeginRun": {
+		CLRMember: "Microsoft.Xna.Framework.Game::BeginRun",
+		GoName:    "BeginRun", Parameters: nil, Results: []string{"error"},
+		NativeHook: "CNA_GameFrameHooks::begin_run", Installed: false,
+		ReasonUninstalled: "base behavior is never automatic; with no override mechanism the forwarding would be provably inert and would prejudge where a derived class calls its base",
+		NativeOrdering:    "measured after initialize and load_content and before the first update, which is where RunGame calls BeginRun -- after Initialize returns and inRun is raised, before the priming Update",
+		ReferenceBody:     []string{"IL_0000: ret   // code size 1"},
+	},
+	"EndRun": {
+		CLRMember: "Microsoft.Xna.Framework.Game::EndRun",
+		GoName:    "EndRun", Parameters: nil, Results: []string{"error"},
+		NativeHook: "CNA_GameFrameHooks::end_run", Installed: false,
+		ReasonUninstalled: "base behavior is never automatic; with no override mechanism the forwarding would be provably inert and would prejudge where a derived class calls its base",
+		NativeOrdering:    "measured after the last frame and before cna_game_run returns, which is where RunGame calls EndRun -- immediately after the blocking host.Run() returns",
+		ReferenceBody:     []string{"IL_0000: ret   // code size 1"},
+	},
+	"BeginDraw": {
+		CLRMember: "Microsoft.Xna.Framework.Game::BeginDraw",
+		GoName:    "BeginDraw", Parameters: nil, Results: []string{"bool", "error"},
+		NativeHook: "CNA_GameFrameHooks::begin_draw", Installed: false,
+		ReasonUninstalled: "base behavior is never automatic; the hook also fires per frame and, with no reachable IGraphicsDeviceManager, the base body provably always admits the frame",
+		NativeOrdering:    "measured before each draw, and a frame whose out_should_draw is set to CNA_FALSE delivers neither draw nor end_draw -- the same shape as DrawFrame's `if (BeginDraw()) { Draw(); EndDraw(); }`",
+		ReferenceBody: []string{
+			"if (graphicsDeviceManager != null && !graphicsDeviceManager.BeginDraw()) return false;",
+			"Logger.BeginLogEvent((LoggingEvent)4, \"\");",
+			"return true;",
+		},
+		Deferred: []gameBaseCallDeferral{
+			{Step: "graphicsDeviceManager resolution at the head of RunGame", Class: "ARCHITECTURE",
+				Reason: "the statement after it calls CreateDevice on what it found, and the native CNA runtime owns and creates the device; Foundation 30 separately audited that the projected GraphicsDeviceManager satisfies neither service contract, so the reference's only registrar cannot run and the private field is permanently null -- a state the reference itself has whenever no manager is registered"},
+			{Step: "Logger.BeginLogEvent((LoggingEvent)4, \"\")", Class: "UNOBSERVABLE",
+				Reason: "Microsoft.Xna.Framework.Logger writes to a sink no projected member can read, so reproducing or omitting the call is indistinguishable from the public surface"},
+		},
+	},
+	"EndDraw": {
+		CLRMember: "Microsoft.Xna.Framework.Game::EndDraw",
+		GoName:    "EndDraw", Parameters: nil, Results: []string{"error"},
+		NativeHook: "CNA_GameFrameHooks::end_draw", Installed: false,
+		ReasonUninstalled: "base behavior is never automatic; the hook also fires per frame and, with no reachable IGraphicsDeviceManager, the base body is observably empty",
+		NativeOrdering:    "measured after each draw and skipped entirely on a frame begin_draw refused, which is where DrawFrame calls EndDraw -- inside the branch BeginDraw admitted",
+		ReferenceBody: []string{
+			"if (graphicsDeviceManager != null) graphicsDeviceManager.EndDraw();",
+			"Logger.EndLogEvent((LoggingEvent)4, \"\");",
+		},
+		Deferred: []gameBaseCallDeferral{
+			{Step: "graphicsDeviceManager resolution at the head of RunGame", Class: "ARCHITECTURE",
+				Reason: "the same permanently-null private field BeginDraw records; the null branch is the one the reference itself takes whenever no manager is registered"},
+			{Step: "Logger.EndLogEvent((LoggingEvent)4, \"\")", Class: "UNOBSERVABLE",
+				Reason: "Microsoft.Xna.Framework.Logger writes to a sink no projected member can read"},
+		},
+	},
+}

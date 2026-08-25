@@ -147,6 +147,14 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["XNA_BASE_DERIVED_TYPES"] = 0
 	result.Summary["XNA_DEFERRED_BASE_BLOCKERS"] = 0
 	result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED"] = 0
+	// Foundation 36's counters are seeded for the same reason: a native signal
+	// family that measured nothing must report zeros rather than omit the keys.
+	result.Summary["GAME_NATIVE_SIGNALS"] = 0
+	result.Summary["GAME_NATIVE_SIGNAL_RAISE_SITES"] = 0
+	result.Summary["GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED"] = 0
+	result.Summary["GAME_FRAME_HOOKS"] = 0
+	result.Summary["GAME_FRAME_HOOKS_INSTALLED"] = 0
+	result.Summary["GAME_FRAME_HOOK_DEFERRED_STEPS"] = 0
 	typeDiagnostics := make(map[string]int)
 	missingMembers := make(map[string][]string)
 	result.Summary["REFERENCE_TYPES"] = expected.ReferenceTypes
@@ -170,6 +178,10 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.GameBaseCallAdapters = measureGameBaseCallAdapters(&result, expected, actual)
 	result.Summary["GAME_BASE_CALL_ADAPTERS"] = len(result.GameBaseCallAdapters)
+	result.GameNativeSignals = measureGameNativeSignals(&result, expected, actual)
+	result.Summary["GAME_NATIVE_SIGNALS"] = len(result.GameNativeSignals)
+	result.GameFrameHooks = measureGameFrameHooks(&result, expected, actual)
+	result.Summary["GAME_FRAME_HOOKS"] = len(result.GameFrameHooks)
 	result.Summary["BCL_BASE_ADAPTERS"] = len(result.BCLBaseAdapters)
 	for _, adapter := range result.BCLBaseAdapters {
 		result.Summary["BCL_BASE_ADAPTER_CONSUMERS"] += len(adapter.Consumers)
@@ -3756,4 +3768,360 @@ func measureXNABaseRelationships(result *report, expected *expectedSurface, comp
 		projections = append(projections, projection)
 	}
 	return projections
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 36 — the native game-signal bridge, and the frame-hook frontier.
+// ---------------------------------------------------------------------------
+
+// measureGameNativeSignals proves that every CLR event Game declares is bound
+// to exactly one canonical CNA signal, through exactly the raise path the
+// reference uses.
+//
+// Five claims it exists to defend:
+//
+//  1. Every declared signal names an event Game really declares, and every
+//     event Game declares has a signal. A projected event with no raise path
+//     is an accessor pair nothing can ever fire; a signal for an event that
+//     does not exist is an invention.
+//  2. Each event's two projected accessors are the ones the registry names, so
+//     an accessor cannot be renamed out from under the binding.
+//  3. A declared raise site is a REAL protected virtual of Game with the exact
+//     (any, *EventArgs) error shape, and an ABSENT raise site means the
+//     reference genuinely declares none. Disposed is the only one with none,
+//     and inventing an OnDisposed would be caught here rather than shipped.
+//  4. Every On... member Game projects is a declared raise site, so a raise
+//     path cannot be added without being measured.
+//  5. The runtime evidence is honest: an event the qualification environment
+//     cannot deliver is NOT_RUN_ENVIRONMENT with a reason, and a verified one
+//     carries no excuse.
+func measureGameNativeSignals(result *report, expected *expectedSurface, actual *actualSurface) []gameNativeSignalMeasurement {
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	gameType := expected.typeForXNA("Microsoft.Xna.Framework.Game")
+	if actual.PackageDirs[frameworkPackage] == "" || gameType == nil {
+		return nil
+	}
+
+	// Game's events and its On... members, taken from the expected surface so
+	// the registry is checked against the pinned contract rather than against a
+	// second hand-written list.
+	eventAccessors := make(map[string][]*expectedMember)
+	raiseSites := make(map[string]*expectedMember)
+	for _, key := range gameType.Members {
+		member := expected.Members[key]
+		if member == nil {
+			continue
+		}
+		switch {
+		case member.SourceKind == "event":
+			name := clrMemberName(member.XNA)
+			eventAccessors[name] = append(eventAccessors[name], member)
+		case member.SourceKind == "method" && strings.HasPrefix(member.GoName, "On"):
+			raiseSites[member.GoName] = member
+		}
+	}
+
+	names := make([]string, 0, len(gameNativeSignals))
+	for name := range gameNativeSignals {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	declaredRaiseSites := make(map[string]bool, len(gameNativeSignals))
+	identities := make(map[int]string, len(gameNativeSignals))
+	measurements := make([]gameNativeSignalMeasurement, 0, len(gameNativeSignals))
+	for _, name := range names {
+		signal := gameNativeSignals[name]
+		measurement := gameNativeSignalMeasurement{
+			CNAConstant: signal.CNAConstant, CNAIdentity: signal.CNAIdentity,
+			CLREvent: signal.CLREvent, RaiseSite: signal.RaiseSite,
+			Sender: signal.Sender, EdgeTriggered: signal.EdgeTriggered,
+			ReferencePath:   append([]string(nil), signal.ReferencePath...),
+			RuntimeEvidence: signal.RuntimeEvidence, EvidenceReason: signal.EvidenceReason,
+			Verdict: "PASS",
+		}
+		fail := func(message string) {
+			addDiagnostic(result, diagnostic{
+				Category: "LANGUAGE_MAPPING_MISMATCH", XNA: signal.CLREvent,
+				Go: frameworkPackage + ":Game." + name, Message: message,
+			})
+			measurement.Verdict = "FAIL"
+		}
+
+		if other, duplicate := identities[signal.CNAIdentity]; duplicate {
+			fail(fmt.Sprintf("CNA identity %d is already bound to %q; two events cannot share one signal", signal.CNAIdentity, other))
+		}
+		identities[signal.CNAIdentity] = name
+		if signal.CNAConstant == "" {
+			fail("declared signal names no CNA_GAME_EVENT_* constant")
+		}
+
+		// (1) and (2): the event exists and projects to the named accessor pair.
+		accessors := eventAccessors[name]
+		switch {
+		case len(accessors) == 0:
+			fail("declared signal names an event Game does not declare")
+		case len(accessors) != 2:
+			fail(fmt.Sprintf("event projects %d accessors; the settled event mapping projects exactly two", len(accessors)))
+		default:
+			for _, accessor := range accessors {
+				switch {
+				case strings.HasPrefix(accessor.GoName, "Add"):
+					measurement.AddAccessor = accessor.GoName
+				case strings.HasPrefix(accessor.GoName, "Remove"):
+					measurement.RemoveAccessor = accessor.GoName
+				}
+				if _, present := actual.Members[accessor.Key]; !present {
+					fail(fmt.Sprintf("projected accessor %s is absent, so the bound signal has nowhere to arrive", accessor.Key))
+				}
+			}
+			if measurement.AddAccessor != "Add"+name+"Handler" || measurement.RemoveAccessor != "Remove"+name+"Handler" {
+				fail(fmt.Sprintf("event projects accessors %q and %q, not the settled Add%sHandler/Remove%sHandler pair",
+					measurement.AddAccessor, measurement.RemoveAccessor, name, name))
+			}
+		}
+
+		// (3): the raise site is real, protected and exactly shaped -- or the
+		// reference really declares none.
+		if signal.RaiseSite == "" {
+			if site, declared := raiseSites["On"+name]; declared {
+				fail(fmt.Sprintf("registry records no raise site but the pinned contract declares %s", site.XNA))
+			}
+		} else {
+			declaredRaiseSites[signal.RaiseSite] = true
+			site, declared := raiseSites[signal.RaiseSite]
+			if !declared {
+				fail(fmt.Sprintf("declared raise site %s is not a projected method of Game", signal.RaiseSite))
+			} else {
+				measurement.RaiseSiteAccess = site.SourceAccess
+				if site.SourceAccess != "protected" {
+					fail(fmt.Sprintf("raise site %s is %q; the reference routes a raise through a protected virtual", signal.RaiseSite, site.SourceAccess))
+				}
+				if want := []string{"any", "*EventArgs"}; !equalStrings(want, site.Parameters) {
+					fail(fmt.Sprintf("raise site %s takes %v, want %v", signal.RaiseSite, site.Parameters, want))
+				}
+				if want := []string{"error"}; !equalStrings(want, site.Results) {
+					fail(fmt.Sprintf("raise site %s returns %v, want %v", signal.RaiseSite, site.Results, want))
+				}
+				if _, present := actual.Members[site.Key]; !present {
+					fail(fmt.Sprintf("declared raise site %s is absent from the framework package", site.Key))
+				}
+			}
+		}
+
+		if !gameNativeSignalSenders[signal.Sender] {
+			fail(fmt.Sprintf("sender %q is neither GAME nor NULL; every raise in this family pushes `this` or null", signal.Sender))
+		}
+		if len(signal.ReferencePath) == 0 {
+			fail("declared signal records no reference raise path, so there is nothing to check the projection against")
+		}
+
+		// (5): the runtime evidence is a recorded class, and an unverified
+		// signal must say why rather than passing quietly.
+		if !gameNativeSignalEvidence[signal.RuntimeEvidence] {
+			fail(fmt.Sprintf("runtime evidence %q is not VERIFIED_NATIVE or NOT_RUN_ENVIRONMENT", signal.RuntimeEvidence))
+		}
+		switch signal.RuntimeEvidence {
+		case "NOT_RUN_ENVIRONMENT":
+			result.Summary["GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED"]++
+			if strings.TrimSpace(signal.EvidenceReason) == "" {
+				fail("a signal the environment cannot deliver must record why; an unexplained one is an unproved claim")
+			}
+		case "VERIFIED_NATIVE":
+			if strings.TrimSpace(signal.EvidenceReason) != "" {
+				fail("a verified signal records an evidence reason, which only an unverified one may carry")
+			}
+		}
+		if signal.RaiseSite != "" {
+			result.Summary["GAME_NATIVE_SIGNAL_RAISE_SITES"]++
+		}
+		measurements = append(measurements, measurement)
+	}
+
+	// (1), the other direction: no event Game declares may be left unbound.
+	for name, accessors := range eventAccessors {
+		if _, declared := gameNativeSignals[name]; declared {
+			continue
+		}
+		addDiagnostic(result, diagnostic{
+			Category: "LANGUAGE_MAPPING_MISMATCH", XNA: accessors[0].XNA,
+			Go:      frameworkPackage + ":Game." + accessors[0].GoName,
+			Message: "Game declares an event with no bound native signal, so the projected accessors have no raise path",
+		})
+	}
+
+	// (4): every On... member Game projects must be a declared raise site.
+	for goName, site := range raiseSites {
+		if declaredRaiseSites[goName] {
+			continue
+		}
+		addDiagnostic(result, diagnostic{
+			Category: "LANGUAGE_MAPPING_MISMATCH", XNA: site.XNA,
+			Go:      site.Key.String(),
+			Message: "Game projects a raise site that no native signal declares, so a raise path exists that nothing measures",
+		})
+	}
+	return measurements
+}
+
+// clrMemberName returns the member half of a "Namespace.Type::Member(...)"
+// identity, without its parameter list.
+func clrMemberName(identity string) string {
+	name := identity
+	if index := strings.LastIndex(name, "::"); index >= 0 {
+		name = name[index+2:]
+	}
+	if index := strings.Index(name, "("); index >= 0 {
+		name = name[:index]
+	}
+	return name
+}
+
+// measureGameFrameHooks proves that Game's four frame-boundary protected
+// virtuals are projected as methods on Game, that each records the canonical
+// CNA hook sitting at the same frame position, and that CNA-Go's decision not
+// to install those hooks is a recorded decision with a reason.
+//
+// Four claims:
+//
+//  1. Each declared hook names a REAL protected virtual of Game, read from the
+//     pinned contract.
+//  2. None of them is a GameCallbacks member. The mandatory override contract
+//     keeps exactly its five members, and a frame hook that joined it would
+//     break every existing external implementation.
+//  3. None of them has a GameBase... helper. The base-call registry is keyed by
+//     the GameCallbacks members, so GameBaseBeginRun and friends are exactly
+//     the invented helpers that registry's closure rule exists to stop.
+//  4. An uninstalled native hook records why, and every unreproduced reference
+//     step is classified and unobservable -- the same rule the base-call
+//     adapters follow, because it is the same kind of claim.
+func measureGameFrameHooks(result *report, expected *expectedSurface, actual *actualSurface) []gameFrameHookMeasurement {
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	gameType := expected.typeForXNA("Microsoft.Xna.Framework.Game")
+	if actual.PackageDirs[frameworkPackage] == "" || gameType == nil {
+		return nil
+	}
+
+	gameMembers := make(map[string]*expectedMember)
+	callbackMembers := make(map[string]bool)
+	for _, key := range gameType.Members {
+		if member := expected.Members[key]; member != nil {
+			gameMembers[member.GoName] = member
+		}
+	}
+	for _, member := range expected.Members {
+		if member.PackagePath == frameworkPackage && member.Receiver == "GameCallbacks" {
+			callbackMembers[member.GoName] = true
+		}
+	}
+
+	names := make([]string, 0, len(gameFrameHooks))
+	for name := range gameFrameHooks {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	measurements := make([]gameFrameHookMeasurement, 0, len(gameFrameHooks))
+	for _, name := range names {
+		hook := gameFrameHooks[name]
+		measurement := gameFrameHookMeasurement{
+			CLRMember: hook.CLRMember,
+			GoMember:  frameworkPackage + ":Game." + hook.GoName,
+			// A nil parameter list and an empty one are the same claim; the
+			// report spells both as an empty list so the JSON is stable.
+			Parameters:        append([]string{}, hook.Parameters...),
+			Results:           append([]string{}, hook.Results...),
+			NativeHook:        hook.NativeHook,
+			Installed:         hook.Installed,
+			ReasonUninstalled: hook.ReasonUninstalled,
+			NativeOrdering:    hook.NativeOrdering,
+			ReferenceBody:     append([]string(nil), hook.ReferenceBody...),
+			Verdict:           "PASS",
+		}
+		fail := func(message string) {
+			addDiagnostic(result, diagnostic{
+				Category: "LANGUAGE_MAPPING_MISMATCH", XNA: hook.CLRMember,
+				Go: measurement.GoMember, Message: message,
+			})
+			measurement.Verdict = "FAIL"
+		}
+
+		// (1) a real protected virtual of Game.
+		member, projected := gameMembers[hook.GoName]
+		switch {
+		case !projected:
+			fail("declared frame hook is not a projected member of Game")
+		default:
+			measurement.CLRAccess = member.SourceAccess
+			if member.SourceAccess != "protected" {
+				fail(fmt.Sprintf("frame hook names a %q member; each of these four is a protected virtual", member.SourceAccess))
+			}
+			if wanted := member.XNA; !strings.HasPrefix(wanted, hook.CLRMember+"(") && wanted != hook.CLRMember {
+				fail(fmt.Sprintf("frame hook declares CLR member %q but the projected member is %q", hook.CLRMember, wanted))
+			}
+			if member.Receiver != "Game" {
+				fail(fmt.Sprintf("frame hook projects onto receiver %q; it must be a method on Game, where Microsoft declared it", member.Receiver))
+			}
+			if !equalStrings(hook.Parameters, member.Parameters) {
+				fail(fmt.Sprintf("frame hook expects parameters %v, found %v", hook.Parameters, member.Parameters))
+			}
+			if !equalStrings(hook.Results, member.Results) {
+				fail(fmt.Sprintf("frame hook expects results %v, found %v", hook.Results, member.Results))
+			}
+			if _, present := actual.Members[member.Key]; !present {
+				fail("declared frame hook is absent from the framework package")
+			}
+		}
+
+		// (2) it is not part of the mandatory override contract.
+		if callbackMembers[hook.GoName] {
+			fail("frame hook is also a GameCallbacks member; the mandatory override contract must keep exactly its five members")
+		}
+
+		// (3) and it has no base-call helper.
+		helper := "GameBase" + hook.GoName
+		if _, declared := gameBaseCallAdapters[hook.GoName]; declared {
+			fail("frame hook has a declared base-call adapter; that registry is keyed by the GameCallbacks members")
+		}
+		if _, present := actual.Members[symbolKey{Package: frameworkPackage, Name: helper}]; present {
+			fail(fmt.Sprintf("%s exists; a frame hook's base body is reachable as a method on Game and needs no helper", helper))
+		}
+
+		// (4) the install decision and every deferral are recorded.
+		if hook.NativeHook == "" {
+			fail("declared frame hook names no canonical CNA hook, so the position it claims to correspond to is unrecorded")
+		}
+		if strings.TrimSpace(hook.NativeOrdering) == "" {
+			fail("declared frame hook records no measured native ordering")
+		}
+		if hook.Installed {
+			result.Summary["GAME_FRAME_HOOKS_INSTALLED"]++
+			if strings.TrimSpace(hook.ReasonUninstalled) != "" {
+				fail("an installed frame hook records a reason for not installing it")
+			}
+		} else if strings.TrimSpace(hook.ReasonUninstalled) == "" {
+			fail("an uninstalled native hook must record why; an unexplained one is a silence rather than a decision")
+		}
+		if len(hook.ReferenceBody) == 0 {
+			fail("declared frame hook records no reference body, so there is nothing to check the projection against")
+		}
+		for _, deferral := range hook.Deferred {
+			measurement.Deferred = append(measurement.Deferred, gameBaseCallDeferralRow{
+				Step: deferral.Step, Class: deferral.Class,
+				Reason: deferral.Reason, Observable: deferral.Observable,
+			})
+			result.Summary["GAME_FRAME_HOOK_DEFERRED_STEPS"]++
+			if !gameBaseCallDeferralClasses[deferral.Class] {
+				fail(fmt.Sprintf("deferred reference step %q carries unclassified class %q", deferral.Step, deferral.Class))
+			}
+			if strings.TrimSpace(deferral.Reason) == "" {
+				fail(fmt.Sprintf("deferred reference step %q records no reason", deferral.Step))
+			}
+			if deferral.Observable {
+				fail(fmt.Sprintf("deferred reference step %q is observable, which makes it a stop condition rather than a deferral", deferral.Step))
+			}
+		}
+		measurements = append(measurements, measurement)
+	}
+	return measurements
 }

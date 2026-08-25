@@ -257,7 +257,62 @@ type report struct {
 	GameBaseCallAdapters         []gameBaseCallMeasurement        `json:"gameBaseCallAdapters"`
 	DeclaredInterfaceConformance []declaredInterfaceConformance   `json:"declaredInterfaceConformance"`
 	XNABaseRelationships         []xnaBaseProjection              `json:"xnaBaseRelationships"`
+	GameNativeSignals            []gameNativeSignalMeasurement    `json:"gameNativeSignals"`
+	GameFrameHooks               []gameFrameHookMeasurement       `json:"gameFrameHooks"`
 	Metadata                     reportMetadata                   `json:"metadata"`
+}
+
+// gameNativeSignalMeasurement records one canonical CNA game signal bound to one
+// CLR event Game declares: the projected accessor pair, the reference raise
+// path, the sender that path pushes, and the runtime evidence class.
+//
+// Like the base-call adapters it adds no XNA identity. The accessors it names
+// are already counted as the event's two projected members; this measurement
+// only proves the binding around them is the one the reference describes.
+type gameNativeSignalMeasurement struct {
+	// CNAConstant and CNAIdentity name the canonical signal. The C-side chain
+	// that proves those values is measured by tools/native_abi, not here.
+	CNAConstant string `json:"cnaConstant"`
+	CNAIdentity int    `json:"cnaIdentity"`
+	// CLREvent is the event Game declares; AddAccessor and RemoveAccessor are
+	// the two Go members the settled event mapping projects it to.
+	CLREvent       string `json:"clrEvent"`
+	AddAccessor    string `json:"addAccessor"`
+	RemoveAccessor string `json:"removeAccessor"`
+	// RaiseSite is the projected protected virtual the raise routes through,
+	// and is empty for the one event whose reference has none. RaiseSiteAccess
+	// is read from the pinned contract so a claim of "protected" is measured.
+	RaiseSite       string   `json:"raiseSite"`
+	RaiseSiteAccess string   `json:"raiseSiteAccess"`
+	Sender          string   `json:"sender"`
+	EdgeTriggered   bool     `json:"edgeTriggered"`
+	ReferencePath   []string `json:"referencePath"`
+	RuntimeEvidence string   `json:"runtimeEvidence"`
+	EvidenceReason  string   `json:"evidenceReason,omitempty"`
+	Verdict         string   `json:"verdict"`
+}
+
+// gameFrameHookMeasurement records one of Game's frame-boundary protected
+// virtuals, the canonical CNA hook at the same position, and the measured fact
+// that CNA-Go does not install it.
+type gameFrameHookMeasurement struct {
+	CLRMember string `json:"clrMember"`
+	CLRAccess string `json:"clrAccess"`
+	// GoMember is the fully qualified projected method. It is a method on Game
+	// rather than a GameCallbacks member or a GameBase... helper, and the
+	// verifier proves all three.
+	GoMember   string   `json:"goMember"`
+	Parameters []string `json:"parameters"`
+	Results    []string `json:"results"`
+	// NativeHook is the canonical hook at the same frame position, Installed
+	// records whether CNA-Go installs it, and ReasonUninstalled says why not.
+	NativeHook        string                    `json:"nativeHook"`
+	Installed         bool                      `json:"installed"`
+	ReasonUninstalled string                    `json:"reasonUninstalled,omitempty"`
+	NativeOrdering    string                    `json:"nativeOrdering"`
+	ReferenceBody     []string                  `json:"referenceBody"`
+	Deferred          []gameBaseCallDeferralRow `json:"deferredSteps"`
+	Verdict           string                    `json:"verdict"`
 }
 
 // gameBaseCallMeasurement records one Game base-call language adapter: the

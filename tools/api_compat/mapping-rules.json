@@ -1,526 +1,618 @@
 {
-  "schemaVersion": 1,
-  "profile": "XNA 4.0 Windows runtime",
-  "module": "github.com/openeggbert/cna-go",
-  "namespace": {
-    "prefix": "Microsoft.Xna.Framework",
-    "pathRule": "replace-dot-with-slash",
-    "packageNameRule": "lowercase-final-namespace-segment"
-  },
-  "types": {
-    "publicNameRule": "pascal-case-source-name-with-generic-arity-removed",
-    "nestedNameRule": "concatenate-declaring-and-nested-names",
-    "genericCollisionRule": "append-Of-and-generic-parameter-names-to-generic-identity",
-    "struct": "go-struct-value",
-    "class": "go-struct-pointer-facade",
-    "interface": "go-structural-interface",
-    "enum": "named-int32",
-    "flagsZeroMemberRule": "raw-zero-is-representable-but-no-None-Default-or-other-named-zero-is-synthesized",
-    "delegate": "named-func",
-    "classClassification": "pure-managed-or-native-backed-decided-by-authoritative-IL-never-by-CLR-kind",
-    "classReferenceSemantics": "both-classifications-keep-CLR-reference-semantics-and-project-as-a-Go-pointer"
-  },
-  "genericParameters": {
-    "ownerTokenRule": "CLR !n maps to the nth declared owner generic parameter name",
-    "example": "IPackedVector<TPacked> !0 maps to TPacked",
-    "invalidIndex": "GENERIC_MAPPING_MISMATCH",
-    "recursiveUse": "substitute-inside-supported-array-nullable-and-generic-type-shapes"
-  },
-  "members": {
-    "instanceField": "exported-struct-field",
-    "staticConstant": "package-constant-prefixed-by-declaring-type",
-    "staticReadOnlyField": "zero-argument-package-function-prefixed-by-declaring-type",
-    "instancePropertyGet": "method-with-property-name",
-    "instancePropertySet": "pointer-method-prefixed-Set",
-    "staticPropertyGet": "zero-argument-package-function-prefixed-by-declaring-type",
-    "staticPropertySet": "package-function-prefixed-Set-and-declaring-type",
-    "uniqueConstructor": "package-function-prefixed-New",
-    "overloadedConstructor": "NewType-By-parameter-shape",
-    "uniqueInstanceMethod": "source-name",
-    "uniqueStaticMethod": "declaring-type-plus-source-name",
-    "overloadedMethod": "base-name-By-parameter-shape",
-    "operator": "declaring-type-plus-Operator-plus-operator-name-By-operand-shape",
-    "eventAdd": "AddEventNameHandler-returning-EventSubscription",
-    "eventRemove": "RemoveEventNameHandler-taking-EventSubscription"
-  },
-  "goIdentifierCollisionRule": "append-source-kind-to-every-collider; if still-colliding append-Signature-and-uppercase-FNV1a32-of-XNA-identity",
-  "parameterShape": {
-    "separator": "And",
-    "empty": "None",
-    "refPrefix": "Ref",
-    "outPrefix": "Out",
-    "arrayPrefix": "SliceOf",
-    "genericArgumentPrefix": "Of"
-  },
-  "direction": {
-    "value": "go-value-parameter",
-    "ref": "go-pointer-parameter",
-    "out": "remove-input-and-append-return",
-    "tryPattern": "value-then-bool"
-  },
-  "nullable": {
-    "sourceIdentity": "System.Nullable<T>",
-    "valueInput": "pointer-to-T-nil-means-null",
-    "valueReturn": "T-then-bool-has-value",
-    "outValue": "append-T-then-bool-has-value",
-    "overloadShape": "NullableOfT",
-    "nullSentinel": "none",
-    "errorSeparation": "nullable-has-value-bool-precedes-distinct-final-error"
-  },
-  "errors": {
-    "nativeRuntimeFailure": "error-final-result",
-    "voidNativeFailure": "error-only-result",
-    "valueNativeFailure": "value-then-error",
-    "pureValueOperation": "no-added-error-unless-authoritative-managed-argument-failure-is-projected",
-    "managedStoredMember": "no-added-error-when-reference-IL-only-reads-or-writes-managed-state",
-    "managedStoredMemberIdentities": [
-      "Microsoft.Xna.Framework.GraphicsDeviceManager.SupportedOrientations"
-    ],
-    "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
-    "panicPolicy": "programmer-invariant-only-never-native-runtime-failure",
-    "fallibilityScope": "per-projected-operation-never-per-type",
-    "fallibilityKeys": [
-      "constructor|Name",
-      "method|Name",
-      "field|Name",
-      "property-get|Name",
-      "property-set|Name",
-      "property|Name"
-    ],
-    "propertyAccessorRule": "a-getter-and-its-own-setter-are-classified-independently; property|Name marks both and is only correct when the reference IL validates on read and on write"
-  },
-  "managedInterfaces": {
-    "classification": "explicit-interface-identity-policy-not-owner-kind-fallback",
-    "pureValue": "no-synthetic-error-result-solely-because-the-owner-is-an-interface",
-    "nativeRuntime": "may-add-final-error-when-the-operation-crosses-a-qualified-runtime-boundary",
-    "fallibilityScope": "per-projected-operation-so-one-contract-may-mix-infallible-accessors-with-runtime-boundary-operations",
-    "evidenceRule": "the-boundary-is-read-from-the-reference-implementor-IL-in-the-assembly-that-declares-the-interface-never-from-speculation-about-an-unknown-implementor",
-    "classifiedIdentities": [
-      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
-      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
-      "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-      "Microsoft.Xna.Framework.Graphics.IEffectFog",
-      "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService"
-    ],
-    "pureValueIdentities": [
-      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
-      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
-      "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-      "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService"
-    ],
-    "runtimeBoundaryOperations": [
-      "Microsoft.Xna.Framework.Graphics.IEffectFog::FogColor get",
-      "Microsoft.Xna.Framework.Graphics.IEffectFog::FogColor set"
-    ],
-    "runtimeIdentities": [
-      "Microsoft.Xna.Framework.IGameComponent",
-      "Microsoft.Xna.Framework.IGraphicsDeviceManager"
-    ],
-    "unclassifiedDefault": "every-operation-is-fallible-which-is-correct-for-a-contract-whose-purpose-is-to-cross-a-runtime-boundary",
-    "bclInterfacesAlreadyDeclaredByTheOwner": "a-BCL-interface-whose-members-the-XNA-type-already-declares-publicly-adds-no-projected-surface-and-needs-no-separate-Go-interface",
-    "bclInterfaceIdentities": [
-      "System.Collections.Generic.ICollection`1",
-      "System.Collections.Generic.IList`1",
-      "System.Collections.Generic.IEnumerable`1",
-      "System.Collections.IEnumerable",
-      "System.IServiceProvider"
-    ],
-    "perContractNotPerClass": "GraphicsDeviceManager implements BOTH IGraphicsDeviceService and IGraphicsDeviceManager. The first is infallible because its accessor is `ldarg.0; ldfld device; ret` -- a stored reference handed over, null before a device exists. The second stays fallible because CreateDevice, BeginDraw and EndDraw genuinely cross into the runtime. Two contracts on one class disagree, which is what per-contract boundary reading means"
-  },
-  "bclInterfaceRelationships": {
-    "rule": "a non-XNA CLR interface an XNA type declares contributes NO projected Go surface of its own",
-    "satisfiedBy": [
-      "the XNA type already declares the interface's members publicly, so the concrete method set is the whole projection",
-      "the XNA type implements the interface explicitly, so the CLR member is private .override and is not public surface at all"
-    ],
-    "exhaustive": "every non-XNA direct interface in the profile is declared here; an undeclared one is INTERFACE_MAPPING_MISMATCH",
-    "projectedMembers": 0,
-    "declared": {
-      "System.IDisposable": "adds no Disposable interface, no Close alias, no io.Closer adaptation, no finalizer, and no ownership wrapper; 28 of its 29 declaring types declare Dispose publicly and it maps as an ordinary member, while GraphicsDeviceManager implements it explicitly so nothing is projected for it",
-      "System.IEquatable`1": "the declaring type already declares the strongly typed Equals publicly",
-      "System.IComparable`1": "CurveKey already declares CompareTo publicly",
-      "System.IServiceProvider": "GameServiceContainer already declares GetService publicly",
-      "System.Collections.Generic.IEnumerable`1": "projected by the collection rule as GetEnumerator",
-      "System.Collections.Generic.IEnumerator`1": "projected by the collection rule as Iterator<T> or the collection's own enumerator",
-      "System.Collections.Generic.ICollection`1": "a concrete Go method set on the XNA collection",
-      "System.Collections.Generic.IList`1": "its indexer and index methods are already public members of the XNA collection"
-    },
-    "disposeMembersRemainPerType": "a Dispose() or Dispose(bool) the XNA type declares itself stays an ordinary XNA member under the existing overload and per-operation fallibility rules; none is ever synthesized from CLR ancestry",
-    "ownershipIsNotSettled": "mapping the interface makes a dependency syntactically complete; it does not decide native ownership or lifetime for any concrete type",
-    "internalXNAInterfaces": {
-      "rule": "an XNA-namespaced interface that is not a public contract type is assembly-visible, so it contributes no public surface for a stronger reason than a BCL interface: it has no public member to project",
-      "exhaustive": "declared like the BCL set; an XNA interface that is neither a public contract type nor declared internal is INTERFACE_MAPPING_MISMATCH",
-      "declared": {
-        "Microsoft.Xna.Framework.Graphics.IGraphicsResource": "`.class interface private`; device-loss plumbing declared by seven public graphics types",
-        "Microsoft.Xna.Framework.Graphics.IDynamicGraphicsResource": "`.class interface private`; content-loss plumbing declared by four public graphics types, whose public ContentLost event is their own declared member"
-      }
-    }
-  },
-  "pureManagedClasses": {
-    "classification": "explicit-type-identity-policy-proved-by-authoritative-XNA-IL-not-CLR-kind-fallback",
-    "admission": "selected-public-behavior-is-backed-entirely-by-managed-fields-and-deterministic-managed-code",
-    "requires": [
-      "owns-no-CNA-native-object",
-      "no-FFI",
-      "no-native-allocation",
-      "no-renderer-or-device-query",
-      "no-native-destruction",
-      "no-callback-registration",
-      "no-thread-affinity-lifecycle",
-      "no-external-hardware-state"
-    ],
-    "referenceSemantics": "an-admitted-CLR-class-still-projects-as-*T-so-shared-instances-observe-shared-mutation",
-    "effect": "removes-only-the-synthetic-native-runtime-error-result; it never removes an authoritative managed argument failure",
-    "nativeBackedTypesExcluded": [
-      "Microsoft.Xna.Framework.Game",
-      "Microsoft.Xna.Framework.GraphicsDeviceManager",
-      "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
-      "Microsoft.Xna.Framework.Graphics.SpriteBatch",
-      "Microsoft.Xna.Framework.Graphics.Texture2D"
-    ],
-    "classIdentities": [
-      "Microsoft.Xna.Framework.GameTime",
-      "Microsoft.Xna.Framework.Curve",
-      "Microsoft.Xna.Framework.CurveKey",
-      "Microsoft.Xna.Framework.CurveKeyCollection",
-      "Microsoft.Xna.Framework.Audio.AudioListener",
-      "Microsoft.Xna.Framework.Audio.AudioEmitter",
-      "Microsoft.Xna.Framework.Graphics.PresentationParameters",
-      "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-      "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-      "Microsoft.Xna.Framework.GameServiceContainer"
-    ],
-    "appliesToBothCLRKinds": "a-CLR-struct-may-also-be-admitted; admission-decides-fallibility-only-and-never-changes-value-or-reference-semantics"
-  },
-  "pointerSizedHandles": {
-    "projection": "System.IntPtr -> uintptr",
-    "meaning": "the-opaque-pointer-sized-bit-value-the-public-XNA-contract-carries-at-that-position",
-    "zero": "System.IntPtr.Zero -> uintptr(0)",
-    "doesNotMean": [
-      "may-be-dereferenced",
-      "is-a-CNA-handle",
-      "is-an-SDL-pointer",
-      "proves-a-window-exists",
-      "authorizes-unsafe.Pointer",
-      "authorizes-native-device-creation",
-      "carries-signed-numerical-ordering"
-    ],
-    "rawHandleLeakRule": "a-public-uintptr-is-admitted-only-at-a-signature-position-where-the-authoritative-XNA-metadata-declares-System.IntPtr; every-other-public-uintptr-is-a-RAW_HANDLE_LEAK",
-    "declaringMembers": [
-      "Microsoft.Xna.Framework.GameWindow::Handle",
-      "Microsoft.Xna.Framework.Graphics.GraphicsAdapter::MonitorHandle",
-      "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Present overload taking overrideWindowHandle",
-      "Microsoft.Xna.Framework.Graphics.PresentationParameters::DeviceWindowHandle",
-      "Microsoft.Xna.Framework.Input.Mouse::WindowHandle",
-      "Microsoft.Xna.Framework.Input.Touch.TouchPanel::WindowHandle"
-    ]
-  },
-  "mutableStructInterfaces": {
-    "sourceKind": "struct-remains-go-value-struct",
-    "mutationReceiver": "pointer-receiver",
-    "conformance": "pointer-method-set-must-satisfy-the-exact-constructed-interface-and-transitive-base-while-value-method-set-does-not"
-  },
-  "interfaceWitnessProjections": {
-    "admission": "exported-method-required-by-an-actual-mapped-direct-interface-and-absent-from-the-public-declared-source-member-set",
-    "counting": "measured-separately-from-reference-and-expected-go-member-identities",
-    "validation": "compiler-extracted-exact-signature-and-go-types-interface-satisfaction",
-    "unexpectedPolicy": "any-unrequired-or-misconfigured-public-method-remains-an-ordinary-diagnostic",
-    "allowlist": "forbidden"
-  },
-  "collectionInterfaces": {
-    "System.Collections.Generic.ICollection<T>": "concrete-go-method-set-on-the-xna-collection-no-fake-bcl-package",
-    "System.Collections.Generic.IList<T>": "concrete-go-method-set-on-the-xna-collection-no-fake-bcl-package; its indexer and index methods are already declared public members of the XNA collection and map as ordinary members",
-    "System.Collections.Generic.IEnumerable<T>": "GetEnumerator-returning-Iterator<T>",
-    "System.Collections.IEnumerable": "satisfied-by-the-same-generic-GetEnumerator-projection",
-    "System.Collections.Generic.IEnumerator<T>": "Iterator<T>",
-    "iteratorMethod": "Next()-(T,bool,error)",
-    "enumerationOrder": "source-order",
-    "mutationPolicy": "versioned-fail-fast-error-on-next WHERE THE UNDERLYING LIST HAS A VERSION; the policy belongs to the list, not to the view, so an array-backed ReadOnlyCollection<T> is deliberately not version-checked because SZGenericArrayEnumerator<T> has no version to check",
-    "sliceExposure": "forbidden",
-    "concreteEnumeratorRule": "a-collection-that-declares-its-own-public-enumerator-type-projects-that-type-from-GetEnumerator; the Iterator<T> adapter is for collections that declare none",
-    "inheritedFromAComposedBase": "a type that acquires ICollection<T>/IList<T> through a COMPOSED BCL base projects what that base makes PUBLIC, not the full interface: Collection<T> implements ICollection<T>.IsReadOnly explicitly, so it is not public surface and is not projected, and every member the adapter records as excluded is verified ABSENT from the Go type"
-  },
-  "bcl": {
-    "System.Boolean": "bool",
-    "System.Byte": "uint8",
-    "System.SByte": "int8",
-    "System.Int16": "int16",
-    "System.UInt16": "uint16",
-    "System.Int32": "int32",
-    "System.UInt32": "uint32",
-    "System.Int64": "int64",
-    "System.UInt64": "uint64",
-    "System.Single": "float32",
-    "System.Double": "float64",
-    "System.Char": "uint16",
-    "System.String": "string",
-    "System.Object": "any",
-    "System.IntPtr": "uintptr",
-    "System.TimeSpan": "framework.TimeSpan",
-    "System.IO.Stream": "io.Reader",
-    "System.Type": "reflect.Type",
-    "System.EventArgs": "*framework.EventArgs",
-    "System.EventHandler`1": "framework.EventHandler[MappedT]",
-    "System.Collections.ObjectModel.ReadOnlyCollection`1": "*framework.ReadOnlyCollection[MappedT]"
-  },
-  "events": {
-    "handler": "System.EventHandler<T> -> EventHandler[T]; the generic argument is mapped exactly and never degraded to any, a bare func, a channel, or a callback word",
-    "handlerShape": "func(sender any, args T) error",
-    "handlerErrorResult": "GO_LANGUAGE_PROJECTION of the CLR exception channel, never an additional XNA return identity",
-    "eventArgs": "System.EventArgs -> *framework.EventArgs; a CLR class keeps reference semantics, so nil is not the projection of EventArgs.Empty and neither any, struct{}, nor map[string]any is admitted",
-    "eventArgsEmpty": "System.EventArgs.Empty -> framework.EventArgsEmpty(), one stable private singleton behind a function so no consumer can reassign the shared identity",
-    "accessorPair": "one CLR event -> exactly two projected Go accessors, unchanged from the settled rule",
-    "subscriptionIdentity": "GO_LANGUAGE_PROJECTION: Go func values are not comparable, so a token names the registration rather than the handler; adding one handler twice yields two registrations and two tokens, unlike CLR Delegate.Remove identity matching",
-    "nilHandler": "Add(nil) registers nothing and returns the zero token, mirroring Delegate.Combine(existing, null) returning existing",
-    "absentToken": "the zero token, an already-removed token, and a token owned by another event all leave every registration list unchanged, mirroring Delegate.Remove of an absent delegate",
-    "dispatch": "registration order over a snapshot taken under the lock; mutation during a raise affects later raises only",
-    "dispatchFailure": "the first non-nil handler error propagates, no later handler runs, and the registration list survives the failure",
-    "lockScope": "no internal lock is held while a consumer handler runs",
-    "supportTypes": "EventSource[T] is public language support so a type declared outside CNA-Go can implement an event-bearing XNA contract; it is measured as an adapter and adds no XNA identity"
-  },
-  "bclBaseRelationships": {
-    "rule": "a non-XNA CLR base is a measured relationship, never exported Go embedding; Go has no CLR inheritance and embedding would promote members the XNA contract never declared",
-    "derivedProjection": "a derived XNA class projects as its own pointer reference type",
-    "addsProjectedSurface": "false for IMPLIED, MAPPED and DEFERRED; a COMPOSED base is the one exception and its contribution is counted as BCL_INHERITED_MEMBER_PROJECTIONS, never as an XNA-declared reference member",
-    "exhaustive": "every non-XNA base in the profile is declared here; an undeclared base is BASE_MAPPING_MISMATCH, so no base can be dropped in silence",
-    "deferredMeaning": "a DEFERRED base is still an open public-API decision, and no derived type may be projected until it is taken",
-    "implied": [
-      "System.Object",
-      "System.ValueType",
-      "System.Enum"
-    ],
-    "mapped": {
-      "System.EventArgs": "framework.EventArgs"
-    },
-    "deferred": [
-      "System.Exception",
-      "System.Runtime.InteropServices.ExternalException",
-      "System.Attribute",
-      "System.IO.BinaryReader",
-      "System.ComponentModel.ExpandableObjectConverter",
-      "System.Collections.ObjectModel.ReadOnlyCollection`1",
-      "System.Collections.Generic.Dictionary`2"
-    ],
-    "composedMeaning": "a COMPOSED base is a supported BCL family whose PUBLIC members remain part of the observable public CLR surface of every derived type; the derived Go type holds a PRIVATE generic adapter for the base and re-exposes those members through measured forwarding, so the surface does not disappear merely because the XNA assembly metadata does not declare it",
-    "composed": {
-      "System.Collections.ObjectModel.Collection`1": "collectionBase[T]"
-    },
-    "deferredDetail": {
-      "System.Exception": "ARCHITECTURE: whether an XNA exception type is a Go error is cross-cutting. If it is, every fallible projected operation's error contract changes from an opaque error to a possibly typed CLR exception, reopening every settled per-operation fallibility decision; if it is not, the eight derived types are inert objects nothing constructs, returns, or catches. ARCHITECTURE: StackTrace is captured at throw time and a constructed Go value has no throw site. SUBSYSTEM: Data needs System.Collections.IDictionary, TargetSite needs System.Reflection.MethodBase, GetObjectData needs System.Runtime.Serialization. All eight derived types declare ONLY constructors, so the entire useful surface is inherited, and two of them need System.Runtime.Serialization for their own declared protected constructor as well.",
-      "System.Runtime.InteropServices.ExternalException": "derives from System.Exception, so every blocker there applies first; its own addition is one ErrorCode property over int32",
-      "System.Attribute": "ARCHITECTURE: Go has no attribute metadata, so a projected attribute type could be constructed and read back but never applied; the five ContentSerializer* types would be inert data objects whose whole purpose is unrepresentable. SUBSYSTEM: the inherited static lookups take System.Reflection Assembly/MemberInfo/Module/ParameterInfo, and whether inherited STATICS are part of a derived type's projected surface is itself undecided, having never arisen before.",
-      "System.IO.BinaryReader": "SUBSYSTEM: BaseStream needs a seekable System.IO.Stream; CNA-Go maps that to io.Reader, which carries neither seeking nor the encoding-aware reads the inherited surface depends on",
-      "System.ComponentModel.ExpandableObjectConverter": "SUBSYSTEM: ITypeDescriptorContext (the profile's single largest blocker at thirteen types), System.Globalization.CultureInfo, and System.Collections.IDictionary",
-      "System.Collections.Generic.Dictionary`2": "BLOCKED on the public surface mapping, not on the behavior. GetObjectData and OnDeserialization are declared `public hidebysig newslot virtual`, NOT explicit implementations, so LaunchParameters genuinely exposes them and they need System.Runtime.Serialization; Keys and Values return the public nested KeyCollection/ValueCollection; Comparer needs IEqualityComparer<TKey>; GetEnumerator needs the nested Enumerator over KeyValuePair<K,V>. Projecting a subset would make LaunchParameters a partial type. LaunchParameters is the only consumer.",
-      "System.Collections.ObjectModel.ReadOnlyCollection`1": "DEFERRED AS A BASE ONLY; SUPPORTED as a signature adapter, and the two roles are independent. ARCHITECTURE: all four consumers declare a GetEnumerator that HIDES the inherited one, and the settled collision rule would resolve that into two hashed names; the principled answer -- a hidden inherited member is unreachable because CNA-Go projects no base type to cast to -- is available but untested. SUBSYSTEM: each consumer is blocked on its element type regardless."
-    },
-    "deferredIsMeasured": "a DEFERRED base must NAME what blocks it, down to the exact inherited member or the exact architecture decision, and the verifier fails a deferred base that records nothing; deferring with no recorded blocker would be an unmeasured structural category wearing a status word",
-    "blockerKinds": {
-      "SUBSYSTEM": "one inherited member's type belongs to a .NET subsystem CNA-Go has not mapped; the entry names both the member and the subsystem",
-      "ARCHITECTURE": "a cross-cutting public-API decision rather than a missing type, so no single member carries it"
-    }
-  },
-  "expectedCountFormula": {
-    "types": "one-per-reference-type",
-    "members": "reference-members-minus-enum-value__-minus-properties-minus-events-plus-property-accessors-plus-two-event-accessors-plus-bcl-inherited-member-projections",
-    "referenceTypes": 257,
-    "referenceMembers": 2964,
-    "enumBackingFieldsRemoved": 49,
-    "propertiesRemoved": 840,
-    "propertyAccessorsAdded": 1119,
-    "eventsRemoved": 49,
-    "eventAccessorsAdded": 98,
-    "expectedGoTypes": 257,
-    "expectedGoMembers": 3255,
-    "xnaDeclaredGoMembers": 3243,
-    "bclInheritedPublicMembers": 11,
-    "bclInheritedMemberProjections": 12,
-    "provenance": "REFERENCE_MEMBERS names only what the Microsoft XNA assemblies declare and is never inflated with inherited mscorlib members; BCL_INHERITED_MEMBER_PROJECTIONS is counted separately and the two partitions are disjoint and exhaustive",
-    "signatureAdapterCarriers": 6
-  },
-  "languageAdapters": [
-    "EventArgs",
-    "EventHandler<T>",
-    "EventSource<T>",
-    "EventSubscription",
-    "GameCallbacks",
-    "Iterator<T>",
-    "ReadOnlyCollection<T>",
-    "TimeSpan"
+ "schemaVersion": 1,
+ "profile": "XNA 4.0 Windows runtime",
+ "module": "github.com/openeggbert/cna-go",
+ "namespace": {
+  "prefix": "Microsoft.Xna.Framework",
+  "pathRule": "replace-dot-with-slash",
+  "packageNameRule": "lowercase-final-namespace-segment"
+ },
+ "types": {
+  "publicNameRule": "pascal-case-source-name-with-generic-arity-removed",
+  "nestedNameRule": "concatenate-declaring-and-nested-names",
+  "genericCollisionRule": "append-Of-and-generic-parameter-names-to-generic-identity",
+  "struct": "go-struct-value",
+  "class": "go-struct-pointer-facade",
+  "interface": "go-structural-interface",
+  "enum": "named-int32",
+  "flagsZeroMemberRule": "raw-zero-is-representable-but-no-None-Default-or-other-named-zero-is-synthesized",
+  "delegate": "named-func",
+  "classClassification": "pure-managed-or-native-backed-decided-by-authoritative-IL-never-by-CLR-kind",
+  "classReferenceSemantics": "both-classifications-keep-CLR-reference-semantics-and-project-as-a-Go-pointer"
+ },
+ "genericParameters": {
+  "ownerTokenRule": "CLR !n maps to the nth declared owner generic parameter name",
+  "example": "IPackedVector<TPacked> !0 maps to TPacked",
+  "invalidIndex": "GENERIC_MAPPING_MISMATCH",
+  "recursiveUse": "substitute-inside-supported-array-nullable-and-generic-type-shapes"
+ },
+ "members": {
+  "instanceField": "exported-struct-field",
+  "staticConstant": "package-constant-prefixed-by-declaring-type",
+  "staticReadOnlyField": "zero-argument-package-function-prefixed-by-declaring-type",
+  "instancePropertyGet": "method-with-property-name",
+  "instancePropertySet": "pointer-method-prefixed-Set",
+  "staticPropertyGet": "zero-argument-package-function-prefixed-by-declaring-type",
+  "staticPropertySet": "package-function-prefixed-Set-and-declaring-type",
+  "uniqueConstructor": "package-function-prefixed-New",
+  "overloadedConstructor": "NewType-By-parameter-shape",
+  "uniqueInstanceMethod": "source-name",
+  "uniqueStaticMethod": "declaring-type-plus-source-name",
+  "overloadedMethod": "base-name-By-parameter-shape",
+  "operator": "declaring-type-plus-Operator-plus-operator-name-By-operand-shape",
+  "eventAdd": "AddEventNameHandler-returning-EventSubscription",
+  "eventRemove": "RemoveEventNameHandler-taking-EventSubscription"
+ },
+ "goIdentifierCollisionRule": "append-source-kind-to-every-collider; if still-colliding append-Signature-and-uppercase-FNV1a32-of-XNA-identity",
+ "parameterShape": {
+  "separator": "And",
+  "empty": "None",
+  "refPrefix": "Ref",
+  "outPrefix": "Out",
+  "arrayPrefix": "SliceOf",
+  "genericArgumentPrefix": "Of"
+ },
+ "direction": {
+  "value": "go-value-parameter",
+  "ref": "go-pointer-parameter",
+  "out": "remove-input-and-append-return",
+  "tryPattern": "value-then-bool"
+ },
+ "nullable": {
+  "sourceIdentity": "System.Nullable<T>",
+  "valueInput": "pointer-to-T-nil-means-null",
+  "valueReturn": "T-then-bool-has-value",
+  "outValue": "append-T-then-bool-has-value",
+  "overloadShape": "NullableOfT",
+  "nullSentinel": "none",
+  "errorSeparation": "nullable-has-value-bool-precedes-distinct-final-error"
+ },
+ "errors": {
+  "nativeRuntimeFailure": "error-final-result",
+  "voidNativeFailure": "error-only-result",
+  "valueNativeFailure": "value-then-error",
+  "pureValueOperation": "no-added-error-unless-authoritative-managed-argument-failure-is-projected",
+  "managedStoredMember": "no-added-error-when-reference-IL-only-reads-or-writes-managed-state",
+  "managedStoredMemberIdentities": [
+   "Microsoft.Xna.Framework.GraphicsDeviceManager.SupportedOrientations"
   ],
-  "languageAdapterPackage": "every language adapter is declared in the framework package and takes the same package qualification as any other framework-package name",
-  "crossPackageCycleRule": "when an ancestor namespace member returns a descendant namespace type that imports ancestor values, project the accessor as a descendant-package function named OwnerTypeMember",
-  "bclBaseAdapters": {
-    "rule": "a CLR class that inherits a supported BCL collection base projects as a concrete Go reference type CONTAINING a private generic adapter for that base, which re-exposes the inherited public surface through measured forwarding members",
-    "theAdapterIsNot": [
-      "an XNA type",
-      "an exported field",
-      "a public base-class object",
-      "an embedded public API",
-      "a native or CNA handle"
-    ],
-    "exportedEmbeddingIsForbidden": "type X struct { Collection[T] } is refused: it publishes a Go type the contract never declares, promotes a method set the derived type never declared, implies a Go subtype relationship CLR inheritance does not create, and exposes support implementation; the verifier rejects it",
-    "adapterVisibility": "the adapter type and the field that holds it are both unexported, and no projected signature ever names either; when a COMPOSED base gains a consumer outside the framework package the adapter moves to an internal package rather than becoming exported",
-    "hookArchitecture": "the base's protected virtual members are projected as an UNEXPORTED Go interface, so only a type declared in this module can supply or reach a hook; every mutating public operation routes through it, so a subclass override always runs and nothing appends to the backing store and separately fakes the override's observable effect",
-    "storageExposure": "forbidden: the backing store is never returned, never aliased into a caller's hands, and never an exported field, and a Dictionary-derived or Collection-derived type is never projected as a bare map[K]V or []T",
-    "behaviorAuthority": "inherited behavior comes from the exact .NET Framework BCL the pinned XNA assemblies bind against, read from IL, never from modern .NET and never from Go convention; a family whose exact behavior cannot be established stays DEFERRED",
-    "registry": {
-      "System.Collections.ObjectModel.Collection`1": {
-        "goAdapter": "collectionBase[T]",
-        "adapterField": "base",
-        "behaviorLevel": "SUPPORTED",
-        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0, public key token b77a5c561934e089",
-        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
-        "backingStore": "the parameterless constructor assigns new List<T>(), which is the only overload any pinned XNA subclass calls, so items.IsReadOnly is statically false and the read-only guard on six public mutators is dead for every consumer in the profile",
-        "inheritedPublicMembers": [
-          "Count",
-          "Item",
-          "Add",
-          "Clear",
-          "Contains",
-          "CopyTo",
-          "GetEnumerator",
-          "IndexOf",
-          "Insert",
-          "Remove",
-          "RemoveAt"
-        ],
-        "projectedGoIdentitiesPerConsumer": 12,
-        "excluded": {
-          "constructors": "the CLR does not inherit constructors; a derived type projects its own",
-          "protectedMembers": "Items and the four virtual hooks are `family`; Items would hand out the backing store and the hooks are the private override interface",
-          "explicitInterfaceImplementations": "fourteen private .override members of IList, ICollection, IEnumerable and ICollection<T>.IsReadOnly; the settled BCL-interface rule projects nothing for them, so no IsReadOnly, IsSynchronized, SyncRoot or IsFixedSize is invented"
-        },
-        "enumeration": "GetEnumerator returns the backing List<T>'s enumerator boxed as IEnumerator<T>, so enumeration is source order and fail-fast against List<T>._version; the version check runs BEFORE the bounds test, and List<T>.Clear increments the version unconditionally, so clearing an already empty collection still invalidates a live enumerator",
-        "enumeratorProjection": "the settled Iterator<T> adapter; fusing MoveNext and Current makes the CLR enumerator's default(T) states before the first step and after the last unrepresentable rather than reinvented, and Reset is a private explicit implementation that projects nothing",
-        "elementEquality": "EqualityComparer<T>.Default, supplied per consumer rather than assumed; for an element type whose CLR form is a reference type that does not override Object.Equals it reduces to reference identity, which Go's == on an interface value spells exactly",
-        "consumers": [
-          "Microsoft.Xna.Framework.GameComponentCollection"
-        ]
-      }
-    },
-    "identityAccounting": "every projected Go member has exactly one provenance class -- XNA-declared or BCL-inherited -- and every inherited projection is attributable to an exact BCL base, an exact CLR member, and an exact projected Go member",
-    "allowlist": "forbidden"
+  "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
+  "panicPolicy": "programmer-invariant-only-never-native-runtime-failure",
+  "fallibilityScope": "per-projected-operation-never-per-type",
+  "fallibilityKeys": [
+   "constructor|Name",
+   "method|Name",
+   "field|Name",
+   "property-get|Name",
+   "property-set|Name",
+   "property|Name"
+  ],
+  "propertyAccessorRule": "a-getter-and-its-own-setter-are-classified-independently; property|Name marks both and is only correct when the reference IL validates on read and on write"
+ },
+ "managedInterfaces": {
+  "classification": "explicit-interface-identity-policy-not-owner-kind-fallback",
+  "pureValue": "no-synthetic-error-result-solely-because-the-owner-is-an-interface",
+  "nativeRuntime": "may-add-final-error-when-the-operation-crosses-a-qualified-runtime-boundary",
+  "fallibilityScope": "per-projected-operation-so-one-contract-may-mix-infallible-accessors-with-runtime-boundary-operations",
+  "evidenceRule": "the-boundary-is-read-from-the-reference-implementor-IL-in-the-assembly-that-declares-the-interface-never-from-speculation-about-an-unknown-implementor",
+  "classifiedIdentities": [
+   "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+   "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
+   "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+   "Microsoft.Xna.Framework.Graphics.IEffectFog",
+   "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService"
+  ],
+  "pureValueIdentities": [
+   "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+   "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
+   "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+   "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService"
+  ],
+  "runtimeBoundaryOperations": [
+   "Microsoft.Xna.Framework.Graphics.IEffectFog::FogColor get",
+   "Microsoft.Xna.Framework.Graphics.IEffectFog::FogColor set"
+  ],
+  "runtimeIdentities": [
+   "Microsoft.Xna.Framework.IGameComponent",
+   "Microsoft.Xna.Framework.IGraphicsDeviceManager"
+  ],
+  "unclassifiedDefault": "every-operation-is-fallible-which-is-correct-for-a-contract-whose-purpose-is-to-cross-a-runtime-boundary",
+  "bclInterfacesAlreadyDeclaredByTheOwner": "a-BCL-interface-whose-members-the-XNA-type-already-declares-publicly-adds-no-projected-surface-and-needs-no-separate-Go-interface",
+  "bclInterfaceIdentities": [
+   "System.Collections.Generic.ICollection`1",
+   "System.Collections.Generic.IList`1",
+   "System.Collections.Generic.IEnumerable`1",
+   "System.Collections.IEnumerable",
+   "System.IServiceProvider"
+  ],
+  "perContractNotPerClass": "GraphicsDeviceManager implements BOTH IGraphicsDeviceService and IGraphicsDeviceManager. The first is infallible because its accessor is `ldarg.0; ldfld device; ret` -- a stored reference handed over, null before a device exists. The second stays fallible because CreateDevice, BeginDraw and EndDraw genuinely cross into the runtime. Two contracts on one class disagree, which is what per-contract boundary reading means"
+ },
+ "bclInterfaceRelationships": {
+  "rule": "a non-XNA CLR interface an XNA type declares contributes NO projected Go surface of its own",
+  "satisfiedBy": [
+   "the XNA type already declares the interface's members publicly, so the concrete method set is the whole projection",
+   "the XNA type implements the interface explicitly, so the CLR member is private .override and is not public surface at all"
+  ],
+  "exhaustive": "every non-XNA direct interface in the profile is declared here; an undeclared one is INTERFACE_MAPPING_MISMATCH",
+  "projectedMembers": 0,
+  "declared": {
+   "System.IDisposable": "adds no Disposable interface, no Close alias, no io.Closer adaptation, no finalizer, and no ownership wrapper; 28 of its 29 declaring types declare Dispose publicly and it maps as an ordinary member, while GraphicsDeviceManager implements it explicitly so nothing is projected for it",
+   "System.IEquatable`1": "the declaring type already declares the strongly typed Equals publicly",
+   "System.IComparable`1": "CurveKey already declares CompareTo publicly",
+   "System.IServiceProvider": "GameServiceContainer already declares GetService publicly",
+   "System.Collections.Generic.IEnumerable`1": "projected by the collection rule as GetEnumerator",
+   "System.Collections.Generic.IEnumerator`1": "projected by the collection rule as Iterator<T> or the collection's own enumerator",
+   "System.Collections.Generic.ICollection`1": "a concrete Go method set on the XNA collection",
+   "System.Collections.Generic.IList`1": "its indexer and index methods are already public members of the XNA collection"
   },
-  "bclSignatureAdapters": {
-    "rule": "a BCL type the pinned XNA contract carries at a PUBLIC SIGNATURE POSITION needs a public Go spelling, or the member that returns it cannot be projected at all; this is the footing System.TimeSpan and System.EventHandler<T> already have",
-    "distinctFromBaseAdapters": "a base adapter is PRIVATE machinery a derived type composes and forwards; a signature adapter is a PUBLIC type because a projected member returns one. One CLR type may hold both roles independently, and neither implies the other",
-    "surfaceIsMeasured": "the adapter's exported member set is pinned to the exact public CLR member inventory, so an adapter type is not a hole in the unexpected-member scan; a missing, extra, or promoted-excluded member is LANGUAGE_MAPPING_MISMATCH",
-    "registry": {
-      "System.Collections.ObjectModel.ReadOnlyCollection`1": {
-        "goAdapter": "*framework.ReadOnlyCollection[T]",
-        "behaviorLevel": "SUPPORTED",
-        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
-        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
-        "inheritedPublicMembers": [
-          "Count",
-          "Item",
-          "Contains",
-          "CopyTo",
-          "GetEnumerator",
-          "IndexOf"
-        ],
-        "readOnlyMeaning": "no public mutation THROUGH THIS SURFACE, not immutable storage: the type stores the IList<T> it is given rather than copying it, so the owner keeps writing and every change is visible through the view; freezing a copy would be a different type",
-        "readOnlyIsNotANewDecision": "every mutator -- ICollection<T>.Add/Clear/Remove, IList<T>.Insert/RemoveAt/set_Item and the whole non-generic IList set -- is a private explicit implementation, so the settled BCL-interface rule already excludes them",
-        "listBinding": "the view holds the list INSTANCE it was handed; an owner that later points its own field at a different list does not change an existing view, so a Go slice header is captured by value rather than by pointer",
-        "enumeration": "forwarded to the underlying list, so the semantics are the LIST's and not the view's: an array-backed view is NOT version-checked, because SZArrayHelper.SZGenericArrayEnumerator<T> holds only _array, _index and _endIndex and an array cannot change length, while a List<T>-backed view keeps List<T>._version fail-fast",
-        "elementEquality": "EqualityComparer<T>.Default supplied per element type; for System.Single that is System.Single::Equals, which returns TRUE for two NaNs where Go's == returns false",
-        "carriers": [
-          "Microsoft.Xna.Framework.Audio.AudioEngine::RendererDetails",
-          "Microsoft.Xna.Framework.Audio.Microphone::All",
-          "Microsoft.Xna.Framework.Graphics.GraphicsAdapter::Adapters",
-          "Microsoft.Xna.Framework.Graphics.SpriteFont::Characters",
-          "Microsoft.Xna.Framework.Media.VisualizationData::Frequencies",
-          "Microsoft.Xna.Framework.Media.VisualizationData::Samples"
-        ]
-      }
-    },
-    "allowlist": "forbidden"
-  },
-  "gameBaseCallAdapters": {
-    "rule": "GameCallbacks projects CLR protected virtual OVERRIDES, and in CLR the override -- not the framework -- decides whether and when the base body runs. Go has no `base` keyword, so each supported override gets ONE package-level function in the framework package that runs the base body, and a callback that never calls one gets no base behavior at all",
-    "baseBehaviorIsNeverAutomatic": "CNA-Go must not run a base body around a callback. Doing so would make every override a mandatory base call at a position CNA-Go picked, which is a different contract that merely resembles XNA's: omitting base.Update(t) is legal and means the component loop does not run that frame, and moving the call changes what runs before what",
-    "theseAreNot": [
-      "an XNA identity: they add nothing to REFERENCE_MEMBERS, EXPECTED_GO_MEMBERS, or any type's projected member set",
-      "a member of Game: they are package-level functions so Game's projected member surface gains no name Microsoft never declared",
-      "a member of GameCallbacks: the callback contract is unchanged",
-      "a way to invoke GameCallbacks: no base body in the reference calls the virtual it is the base of, and neither does any of these",
-      "an allowlist entry: they are admitted from the measured registry, which is what subjects them to measurement"
-    ],
-    "closure": "the registry keys are exactly the GameCallbacks members, which are exactly the Game protected virtuals the mapper redirects. An adapter for anything else is an invented helper; a callback member without one leaves an override unable to reach its base. Both are verifier failures",
-    "firstParameter": "*Game, which is the `this` a CLR base call passes implicitly",
-    "fallibility": "every error result names its reasons. GUARD is the Go-only nil/unconstructed-Game check, which has no CLR counterpart and is the condition Game.Run and Game.Exit already report; REFERENCE is a failure the reference base body itself can produce. An error result with no recorded reason, and a recorded reason with no error result, are both rejected",
-    "deferredSteps": "every reference step the projection does not reproduce is recorded with a class -- SUBSYSTEM, ARCHITECTURE or UNOBSERVABLE -- and a reason. A deferral marked observable from the managed component surface is REJECTED: that is a stop condition, not a deferral",
-    "adapters": {
-      "Initialize": {
-        "clrMember": "Microsoft.Xna.Framework.Game::Initialize",
-        "goFunction": "GameBaseInitialize",
-        "signature": "func GameBaseInitialize(game *Game) error",
-        "referenceBody": "HookDeviceEvents(); while (notYetInitialized.Count > 0) { notYetInitialized[0].Initialize(); notYetInitialized.RemoveAt(0); } if (graphicsDeviceService != null && graphicsDeviceService.GraphicsDevice != null) LoadContent();",
-        "deferredSteps": [
-          {
-            "step": "HookDeviceEvents()",
-            "class": "ARCHITECTURE"
-          },
-          {
-            "step": "if (graphicsDeviceService != null && ...) LoadContent()",
-            "class": "ARCHITECTURE"
-          }
-        ]
-      },
-      "LoadContent": {
-        "clrMember": "Microsoft.Xna.Framework.Game::LoadContent",
-        "goFunction": "GameBaseLoadContent",
-        "signature": "func GameBaseLoadContent(game *Game) error",
-        "referenceBody": "ret  // code size 1, a true authoritative no-op"
-      },
-      "Update": {
-        "clrMember": "Microsoft.Xna.Framework.Game::Update",
-        "goFunction": "GameBaseUpdate",
-        "signature": "func GameBaseUpdate(game *Game, gameTime GameTime) error",
-        "referenceBody": "snapshot updateableComponents into currentlyUpdatingComponents, iterate the snapshot calling Update on each Enabled component, Clear the snapshot, FrameworkDispatcher.Update(), doneFirstUpdate = true",
-        "deferredSteps": [
-          {
-            "step": "FrameworkDispatcher.Update()",
-            "class": "SUBSYSTEM"
-          },
-          {
-            "step": "Logger.BeginLogEvent / Logger.EndLogEvent",
-            "class": "UNOBSERVABLE"
-          }
-        ]
-      },
-      "Draw": {
-        "clrMember": "Microsoft.Xna.Framework.Game::Draw",
-        "goFunction": "GameBaseDraw",
-        "signature": "func GameBaseDraw(game *Game, gameTime GameTime) error",
-        "referenceBody": "snapshot drawableComponents into currentlyDrawingComponents, iterate the snapshot calling Draw on each Visible component, Clear the snapshot",
-        "touchesNoDevice": "base Draw does not clear, present, or reach GraphicsDevice at all; the device work lives in Game::BeginDraw and Game::EndDraw, which delegate to IGraphicsDeviceManager and are separate protected virtuals CNA-Go does not project"
-      },
-      "UnloadContent": {
-        "clrMember": "Microsoft.Xna.Framework.Game::UnloadContent",
-        "goFunction": "GameBaseUnloadContent",
-        "signature": "func GameBaseUnloadContent(game *Game) error",
-        "referenceBody": "ret  // code size 1, a true authoritative no-op"
-      }
-    }
-  },
-  "xnaBaseRelationships": {
-    "rule": "every CLR class in the pinned profile that another class in the SAME profile inherits from is recorded here with a status. This is a different frontier from bclBaseRelationships: a BCL base is a type outside the contract that CNA-Go decides how to model, while an XNA base is a type inside the contract whose public surface a derived type inherits WITHOUT the contract redeclaring it",
-    "whyItIsMeasured": "Texture2D's contract declares sixteen members and inherits nine more from Texture and GraphicsResource -- Name, Tag, GraphicsDevice, IsDisposed, Dispose, ToString, Disposing, LevelCount and Format. CNA-Go projects Texture2D with none of them, and until Foundation 33 nothing recorded that. The same silence covered SpriteBatch",
-    "statuses": {
-      "COMPOSED": "CNA-Go re-exposes the base's public surface on its derived types. No XNA base is composed yet",
-      "DEFERRED": "CNA-Go does not, and the relationship must name what blocks it"
-    },
-    "deferredMustNameItsBlockers": "a DEFERRED XNA base that records no blocker is a verifier failure, exactly as a DEFERRED BCL base is",
-    "blockerClasses": {
-      "ARCHITECTURE": "a cross-cutting projection decision no single member carries",
-      "SUBSYSTEM": "the base reaches a .NET or CNA subsystem CNA-Go does not map",
-      "TRANSITIVE": "the base is itself unprojected because its own base is deferred",
-      "NATIVE_OWNERSHIP": "the base is natively owned and its ownership is undecided"
-    },
-    "noCompleteDerivedType": "no derived type of a DEFERRED XNA base may be reported COMPLETE. Completeness asserts that a type's whole public surface is present, and the inherited half is not; a PARTIAL derived type is correct because its gap is already MISSING_MEMBER",
-    "theOpenArchitectureDecision": "projecting any derived XNA class needs three things CNA-Go does not have: a composition and forwarding rule for a base that is itself an XNA identity; a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice; and an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding of an XNA base is refused by BASE_MAPPING_MISMATCH and stays refused",
-    "closure": "the registry covers every XNA-to-XNA link the pinned contract declares -- 12 bases over 41 derived types -- so a new one cannot appear unnoticed"
+  "disposeMembersRemainPerType": "a Dispose() or Dispose(bool) the XNA type declares itself stays an ordinary XNA member under the existing overload and per-operation fallibility rules; none is ever synthesized from CLR ancestry",
+  "ownershipIsNotSettled": "mapping the interface makes a dependency syntactically complete; it does not decide native ownership or lifetime for any concrete type",
+  "internalXNAInterfaces": {
+   "rule": "an XNA-namespaced interface that is not a public contract type is assembly-visible, so it contributes no public surface for a stronger reason than a BCL interface: it has no public member to project",
+   "exhaustive": "declared like the BCL set; an XNA interface that is neither a public contract type nor declared internal is INTERFACE_MAPPING_MISMATCH",
+   "declared": {
+    "Microsoft.Xna.Framework.Graphics.IGraphicsResource": "`.class interface private`; device-loss plumbing declared by seven public graphics types",
+    "Microsoft.Xna.Framework.Graphics.IDynamicGraphicsResource": "`.class interface private`; content-loss plumbing declared by four public graphics types, whose public ContentLost event is their own declared member"
+   }
   }
+ },
+ "pureManagedClasses": {
+  "classification": "explicit-type-identity-policy-proved-by-authoritative-XNA-IL-not-CLR-kind-fallback",
+  "admission": "selected-public-behavior-is-backed-entirely-by-managed-fields-and-deterministic-managed-code",
+  "requires": [
+   "owns-no-CNA-native-object",
+   "no-FFI",
+   "no-native-allocation",
+   "no-renderer-or-device-query",
+   "no-native-destruction",
+   "no-callback-registration",
+   "no-thread-affinity-lifecycle",
+   "no-external-hardware-state"
+  ],
+  "referenceSemantics": "an-admitted-CLR-class-still-projects-as-*T-so-shared-instances-observe-shared-mutation",
+  "effect": "removes-only-the-synthetic-native-runtime-error-result; it never removes an authoritative managed argument failure",
+  "nativeBackedTypesExcluded": [
+   "Microsoft.Xna.Framework.Game",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager",
+   "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
+   "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+   "Microsoft.Xna.Framework.Graphics.Texture2D"
+  ],
+  "classIdentities": [
+   "Microsoft.Xna.Framework.GameTime",
+   "Microsoft.Xna.Framework.Curve",
+   "Microsoft.Xna.Framework.CurveKey",
+   "Microsoft.Xna.Framework.CurveKeyCollection",
+   "Microsoft.Xna.Framework.Audio.AudioListener",
+   "Microsoft.Xna.Framework.Audio.AudioEmitter",
+   "Microsoft.Xna.Framework.Graphics.PresentationParameters",
+   "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+   "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+   "Microsoft.Xna.Framework.GameServiceContainer"
+  ],
+  "appliesToBothCLRKinds": "a-CLR-struct-may-also-be-admitted; admission-decides-fallibility-only-and-never-changes-value-or-reference-semantics"
+ },
+ "pointerSizedHandles": {
+  "projection": "System.IntPtr -> uintptr",
+  "meaning": "the-opaque-pointer-sized-bit-value-the-public-XNA-contract-carries-at-that-position",
+  "zero": "System.IntPtr.Zero -> uintptr(0)",
+  "doesNotMean": [
+   "may-be-dereferenced",
+   "is-a-CNA-handle",
+   "is-an-SDL-pointer",
+   "proves-a-window-exists",
+   "authorizes-unsafe.Pointer",
+   "authorizes-native-device-creation",
+   "carries-signed-numerical-ordering"
+  ],
+  "rawHandleLeakRule": "a-public-uintptr-is-admitted-only-at-a-signature-position-where-the-authoritative-XNA-metadata-declares-System.IntPtr; every-other-public-uintptr-is-a-RAW_HANDLE_LEAK",
+  "declaringMembers": [
+   "Microsoft.Xna.Framework.GameWindow::Handle",
+   "Microsoft.Xna.Framework.Graphics.GraphicsAdapter::MonitorHandle",
+   "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Present overload taking overrideWindowHandle",
+   "Microsoft.Xna.Framework.Graphics.PresentationParameters::DeviceWindowHandle",
+   "Microsoft.Xna.Framework.Input.Mouse::WindowHandle",
+   "Microsoft.Xna.Framework.Input.Touch.TouchPanel::WindowHandle"
+  ]
+ },
+ "mutableStructInterfaces": {
+  "sourceKind": "struct-remains-go-value-struct",
+  "mutationReceiver": "pointer-receiver",
+  "conformance": "pointer-method-set-must-satisfy-the-exact-constructed-interface-and-transitive-base-while-value-method-set-does-not"
+ },
+ "interfaceWitnessProjections": {
+  "admission": "exported-method-required-by-an-actual-mapped-direct-interface-and-absent-from-the-public-declared-source-member-set",
+  "counting": "measured-separately-from-reference-and-expected-go-member-identities",
+  "validation": "compiler-extracted-exact-signature-and-go-types-interface-satisfaction",
+  "unexpectedPolicy": "any-unrequired-or-misconfigured-public-method-remains-an-ordinary-diagnostic",
+  "allowlist": "forbidden"
+ },
+ "collectionInterfaces": {
+  "System.Collections.Generic.ICollection<T>": "concrete-go-method-set-on-the-xna-collection-no-fake-bcl-package",
+  "System.Collections.Generic.IList<T>": "concrete-go-method-set-on-the-xna-collection-no-fake-bcl-package; its indexer and index methods are already declared public members of the XNA collection and map as ordinary members",
+  "System.Collections.Generic.IEnumerable<T>": "GetEnumerator-returning-Iterator<T>",
+  "System.Collections.IEnumerable": "satisfied-by-the-same-generic-GetEnumerator-projection",
+  "System.Collections.Generic.IEnumerator<T>": "Iterator<T>",
+  "iteratorMethod": "Next()-(T,bool,error)",
+  "enumerationOrder": "source-order",
+  "mutationPolicy": "versioned-fail-fast-error-on-next WHERE THE UNDERLYING LIST HAS A VERSION; the policy belongs to the list, not to the view, so an array-backed ReadOnlyCollection<T> is deliberately not version-checked because SZGenericArrayEnumerator<T> has no version to check",
+  "sliceExposure": "forbidden",
+  "concreteEnumeratorRule": "a-collection-that-declares-its-own-public-enumerator-type-projects-that-type-from-GetEnumerator; the Iterator<T> adapter is for collections that declare none",
+  "inheritedFromAComposedBase": "a type that acquires ICollection<T>/IList<T> through a COMPOSED BCL base projects what that base makes PUBLIC, not the full interface: Collection<T> implements ICollection<T>.IsReadOnly explicitly, so it is not public surface and is not projected, and every member the adapter records as excluded is verified ABSENT from the Go type"
+ },
+ "bcl": {
+  "System.Boolean": "bool",
+  "System.Byte": "uint8",
+  "System.SByte": "int8",
+  "System.Int16": "int16",
+  "System.UInt16": "uint16",
+  "System.Int32": "int32",
+  "System.UInt32": "uint32",
+  "System.Int64": "int64",
+  "System.UInt64": "uint64",
+  "System.Single": "float32",
+  "System.Double": "float64",
+  "System.Char": "uint16",
+  "System.String": "string",
+  "System.Object": "any",
+  "System.IntPtr": "uintptr",
+  "System.TimeSpan": "framework.TimeSpan",
+  "System.IO.Stream": "io.Reader",
+  "System.Type": "reflect.Type",
+  "System.EventArgs": "*framework.EventArgs",
+  "System.EventHandler`1": "framework.EventHandler[MappedT]",
+  "System.Collections.ObjectModel.ReadOnlyCollection`1": "*framework.ReadOnlyCollection[MappedT]"
+ },
+ "events": {
+  "handler": "System.EventHandler<T> -> EventHandler[T]; the generic argument is mapped exactly and never degraded to any, a bare func, a channel, or a callback word",
+  "handlerShape": "func(sender any, args T) error",
+  "handlerErrorResult": "GO_LANGUAGE_PROJECTION of the CLR exception channel, never an additional XNA return identity",
+  "eventArgs": "System.EventArgs -> *framework.EventArgs; a CLR class keeps reference semantics, so nil is not the projection of EventArgs.Empty and neither any, struct{}, nor map[string]any is admitted",
+  "eventArgsEmpty": "System.EventArgs.Empty -> framework.EventArgsEmpty(), one stable private singleton behind a function so no consumer can reassign the shared identity",
+  "accessorPair": "one CLR event -> exactly two projected Go accessors, unchanged from the settled rule",
+  "subscriptionIdentity": "GO_LANGUAGE_PROJECTION: Go func values are not comparable, so a token names the registration rather than the handler; adding one handler twice yields two registrations and two tokens, unlike CLR Delegate.Remove identity matching",
+  "nilHandler": "Add(nil) registers nothing and returns the zero token, mirroring Delegate.Combine(existing, null) returning existing",
+  "absentToken": "the zero token, an already-removed token, and a token owned by another event all leave every registration list unchanged, mirroring Delegate.Remove of an absent delegate",
+  "dispatch": "registration order over a snapshot taken under the lock; mutation during a raise affects later raises only",
+  "dispatchFailure": "the first non-nil handler error propagates, no later handler runs, and the registration list survives the failure",
+  "lockScope": "no internal lock is held while a consumer handler runs",
+  "supportTypes": "EventSource[T] is public language support so a type declared outside CNA-Go can implement an event-bearing XNA contract; it is measured as an adapter and adds no XNA identity"
+ },
+ "bclBaseRelationships": {
+  "rule": "a non-XNA CLR base is a measured relationship, never exported Go embedding; Go has no CLR inheritance and embedding would promote members the XNA contract never declared",
+  "derivedProjection": "a derived XNA class projects as its own pointer reference type",
+  "addsProjectedSurface": "false for IMPLIED, MAPPED and DEFERRED; a COMPOSED base is the one exception and its contribution is counted as BCL_INHERITED_MEMBER_PROJECTIONS, never as an XNA-declared reference member",
+  "exhaustive": "every non-XNA base in the profile is declared here; an undeclared base is BASE_MAPPING_MISMATCH, so no base can be dropped in silence",
+  "deferredMeaning": "a DEFERRED base is still an open public-API decision, and no derived type may be projected until it is taken",
+  "implied": [
+   "System.Object",
+   "System.ValueType",
+   "System.Enum"
+  ],
+  "mapped": {
+   "System.EventArgs": "framework.EventArgs"
+  },
+  "deferred": [
+   "System.Exception",
+   "System.Runtime.InteropServices.ExternalException",
+   "System.Attribute",
+   "System.IO.BinaryReader",
+   "System.ComponentModel.ExpandableObjectConverter",
+   "System.Collections.ObjectModel.ReadOnlyCollection`1",
+   "System.Collections.Generic.Dictionary`2"
+  ],
+  "composedMeaning": "a COMPOSED base is a supported BCL family whose PUBLIC members remain part of the observable public CLR surface of every derived type; the derived Go type holds a PRIVATE generic adapter for the base and re-exposes those members through measured forwarding, so the surface does not disappear merely because the XNA assembly metadata does not declare it",
+  "composed": {
+   "System.Collections.ObjectModel.Collection`1": "collectionBase[T]"
+  },
+  "deferredDetail": {
+   "System.Exception": "ARCHITECTURE: whether an XNA exception type is a Go error is cross-cutting. If it is, every fallible projected operation's error contract changes from an opaque error to a possibly typed CLR exception, reopening every settled per-operation fallibility decision; if it is not, the eight derived types are inert objects nothing constructs, returns, or catches. ARCHITECTURE: StackTrace is captured at throw time and a constructed Go value has no throw site. SUBSYSTEM: Data needs System.Collections.IDictionary, TargetSite needs System.Reflection.MethodBase, GetObjectData needs System.Runtime.Serialization. All eight derived types declare ONLY constructors, so the entire useful surface is inherited, and two of them need System.Runtime.Serialization for their own declared protected constructor as well.",
+   "System.Runtime.InteropServices.ExternalException": "derives from System.Exception, so every blocker there applies first; its own addition is one ErrorCode property over int32",
+   "System.Attribute": "ARCHITECTURE: Go has no attribute metadata, so a projected attribute type could be constructed and read back but never applied; the five ContentSerializer* types would be inert data objects whose whole purpose is unrepresentable. SUBSYSTEM: the inherited static lookups take System.Reflection Assembly/MemberInfo/Module/ParameterInfo, and whether inherited STATICS are part of a derived type's projected surface is itself undecided, having never arisen before.",
+   "System.IO.BinaryReader": "SUBSYSTEM: BaseStream needs a seekable System.IO.Stream; CNA-Go maps that to io.Reader, which carries neither seeking nor the encoding-aware reads the inherited surface depends on",
+   "System.ComponentModel.ExpandableObjectConverter": "SUBSYSTEM: ITypeDescriptorContext (the profile's single largest blocker at thirteen types), System.Globalization.CultureInfo, and System.Collections.IDictionary",
+   "System.Collections.Generic.Dictionary`2": "BLOCKED on the public surface mapping, not on the behavior. GetObjectData and OnDeserialization are declared `public hidebysig newslot virtual`, NOT explicit implementations, so LaunchParameters genuinely exposes them and they need System.Runtime.Serialization; Keys and Values return the public nested KeyCollection/ValueCollection; Comparer needs IEqualityComparer<TKey>; GetEnumerator needs the nested Enumerator over KeyValuePair<K,V>. Projecting a subset would make LaunchParameters a partial type. LaunchParameters is the only consumer.",
+   "System.Collections.ObjectModel.ReadOnlyCollection`1": "DEFERRED AS A BASE ONLY; SUPPORTED as a signature adapter, and the two roles are independent. ARCHITECTURE: all four consumers declare a GetEnumerator that HIDES the inherited one, and the settled collision rule would resolve that into two hashed names; the principled answer -- a hidden inherited member is unreachable because CNA-Go projects no base type to cast to -- is available but untested. SUBSYSTEM: each consumer is blocked on its element type regardless."
+  },
+  "deferredIsMeasured": "a DEFERRED base must NAME what blocks it, down to the exact inherited member or the exact architecture decision, and the verifier fails a deferred base that records nothing; deferring with no recorded blocker would be an unmeasured structural category wearing a status word",
+  "blockerKinds": {
+   "SUBSYSTEM": "one inherited member's type belongs to a .NET subsystem CNA-Go has not mapped; the entry names both the member and the subsystem",
+   "ARCHITECTURE": "a cross-cutting public-API decision rather than a missing type, so no single member carries it"
+  }
+ },
+ "expectedCountFormula": {
+  "types": "one-per-reference-type",
+  "members": "reference-members-minus-enum-value__-minus-properties-minus-events-plus-property-accessors-plus-two-event-accessors-plus-bcl-inherited-member-projections",
+  "referenceTypes": 257,
+  "referenceMembers": 2964,
+  "enumBackingFieldsRemoved": 49,
+  "propertiesRemoved": 840,
+  "propertyAccessorsAdded": 1119,
+  "eventsRemoved": 49,
+  "eventAccessorsAdded": 98,
+  "expectedGoTypes": 257,
+  "expectedGoMembers": 3255,
+  "xnaDeclaredGoMembers": 3243,
+  "bclInheritedPublicMembers": 11,
+  "bclInheritedMemberProjections": 12,
+  "provenance": "REFERENCE_MEMBERS names only what the Microsoft XNA assemblies declare and is never inflated with inherited mscorlib members; BCL_INHERITED_MEMBER_PROJECTIONS is counted separately and the two partitions are disjoint and exhaustive",
+  "signatureAdapterCarriers": 6
+ },
+ "languageAdapters": [
+  "EventArgs",
+  "EventHandler<T>",
+  "EventSource<T>",
+  "EventSubscription",
+  "GameCallbacks",
+  "Iterator<T>",
+  "ReadOnlyCollection<T>",
+  "TimeSpan"
+ ],
+ "languageAdapterPackage": "every language adapter is declared in the framework package and takes the same package qualification as any other framework-package name",
+ "crossPackageCycleRule": "when an ancestor namespace member returns a descendant namespace type that imports ancestor values, project the accessor as a descendant-package function named OwnerTypeMember",
+ "bclBaseAdapters": {
+  "rule": "a CLR class that inherits a supported BCL collection base projects as a concrete Go reference type CONTAINING a private generic adapter for that base, which re-exposes the inherited public surface through measured forwarding members",
+  "theAdapterIsNot": [
+   "an XNA type",
+   "an exported field",
+   "a public base-class object",
+   "an embedded public API",
+   "a native or CNA handle"
+  ],
+  "exportedEmbeddingIsForbidden": "type X struct { Collection[T] } is refused: it publishes a Go type the contract never declares, promotes a method set the derived type never declared, implies a Go subtype relationship CLR inheritance does not create, and exposes support implementation; the verifier rejects it",
+  "adapterVisibility": "the adapter type and the field that holds it are both unexported, and no projected signature ever names either; when a COMPOSED base gains a consumer outside the framework package the adapter moves to an internal package rather than becoming exported",
+  "hookArchitecture": "the base's protected virtual members are projected as an UNEXPORTED Go interface, so only a type declared in this module can supply or reach a hook; every mutating public operation routes through it, so a subclass override always runs and nothing appends to the backing store and separately fakes the override's observable effect",
+  "storageExposure": "forbidden: the backing store is never returned, never aliased into a caller's hands, and never an exported field, and a Dictionary-derived or Collection-derived type is never projected as a bare map[K]V or []T",
+  "behaviorAuthority": "inherited behavior comes from the exact .NET Framework BCL the pinned XNA assemblies bind against, read from IL, never from modern .NET and never from Go convention; a family whose exact behavior cannot be established stays DEFERRED",
+  "registry": {
+   "System.Collections.ObjectModel.Collection`1": {
+    "goAdapter": "collectionBase[T]",
+    "adapterField": "base",
+    "behaviorLevel": "SUPPORTED",
+    "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0, public key token b77a5c561934e089",
+    "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+    "backingStore": "the parameterless constructor assigns new List<T>(), which is the only overload any pinned XNA subclass calls, so items.IsReadOnly is statically false and the read-only guard on six public mutators is dead for every consumer in the profile",
+    "inheritedPublicMembers": [
+     "Count",
+     "Item",
+     "Add",
+     "Clear",
+     "Contains",
+     "CopyTo",
+     "GetEnumerator",
+     "IndexOf",
+     "Insert",
+     "Remove",
+     "RemoveAt"
+    ],
+    "projectedGoIdentitiesPerConsumer": 12,
+    "excluded": {
+     "constructors": "the CLR does not inherit constructors; a derived type projects its own",
+     "protectedMembers": "Items and the four virtual hooks are `family`; Items would hand out the backing store and the hooks are the private override interface",
+     "explicitInterfaceImplementations": "fourteen private .override members of IList, ICollection, IEnumerable and ICollection<T>.IsReadOnly; the settled BCL-interface rule projects nothing for them, so no IsReadOnly, IsSynchronized, SyncRoot or IsFixedSize is invented"
+    },
+    "enumeration": "GetEnumerator returns the backing List<T>'s enumerator boxed as IEnumerator<T>, so enumeration is source order and fail-fast against List<T>._version; the version check runs BEFORE the bounds test, and List<T>.Clear increments the version unconditionally, so clearing an already empty collection still invalidates a live enumerator",
+    "enumeratorProjection": "the settled Iterator<T> adapter; fusing MoveNext and Current makes the CLR enumerator's default(T) states before the first step and after the last unrepresentable rather than reinvented, and Reset is a private explicit implementation that projects nothing",
+    "elementEquality": "EqualityComparer<T>.Default, supplied per consumer rather than assumed; for an element type whose CLR form is a reference type that does not override Object.Equals it reduces to reference identity, which Go's == on an interface value spells exactly",
+    "consumers": [
+     "Microsoft.Xna.Framework.GameComponentCollection"
+    ]
+   }
+  },
+  "identityAccounting": "every projected Go member has exactly one provenance class -- XNA-declared or BCL-inherited -- and every inherited projection is attributable to an exact BCL base, an exact CLR member, and an exact projected Go member",
+  "allowlist": "forbidden"
+ },
+ "bclSignatureAdapters": {
+  "rule": "a BCL type the pinned XNA contract carries at a PUBLIC SIGNATURE POSITION needs a public Go spelling, or the member that returns it cannot be projected at all; this is the footing System.TimeSpan and System.EventHandler<T> already have",
+  "distinctFromBaseAdapters": "a base adapter is PRIVATE machinery a derived type composes and forwards; a signature adapter is a PUBLIC type because a projected member returns one. One CLR type may hold both roles independently, and neither implies the other",
+  "surfaceIsMeasured": "the adapter's exported member set is pinned to the exact public CLR member inventory, so an adapter type is not a hole in the unexpected-member scan; a missing, extra, or promoted-excluded member is LANGUAGE_MAPPING_MISMATCH",
+  "registry": {
+   "System.Collections.ObjectModel.ReadOnlyCollection`1": {
+    "goAdapter": "*framework.ReadOnlyCollection[T]",
+    "behaviorLevel": "SUPPORTED",
+    "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+    "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+    "inheritedPublicMembers": [
+     "Count",
+     "Item",
+     "Contains",
+     "CopyTo",
+     "GetEnumerator",
+     "IndexOf"
+    ],
+    "readOnlyMeaning": "no public mutation THROUGH THIS SURFACE, not immutable storage: the type stores the IList<T> it is given rather than copying it, so the owner keeps writing and every change is visible through the view; freezing a copy would be a different type",
+    "readOnlyIsNotANewDecision": "every mutator -- ICollection<T>.Add/Clear/Remove, IList<T>.Insert/RemoveAt/set_Item and the whole non-generic IList set -- is a private explicit implementation, so the settled BCL-interface rule already excludes them",
+    "listBinding": "the view holds the list INSTANCE it was handed; an owner that later points its own field at a different list does not change an existing view, so a Go slice header is captured by value rather than by pointer",
+    "enumeration": "forwarded to the underlying list, so the semantics are the LIST's and not the view's: an array-backed view is NOT version-checked, because SZArrayHelper.SZGenericArrayEnumerator<T> holds only _array, _index and _endIndex and an array cannot change length, while a List<T>-backed view keeps List<T>._version fail-fast",
+    "elementEquality": "EqualityComparer<T>.Default supplied per element type; for System.Single that is System.Single::Equals, which returns TRUE for two NaNs where Go's == returns false",
+    "carriers": [
+     "Microsoft.Xna.Framework.Audio.AudioEngine::RendererDetails",
+     "Microsoft.Xna.Framework.Audio.Microphone::All",
+     "Microsoft.Xna.Framework.Graphics.GraphicsAdapter::Adapters",
+     "Microsoft.Xna.Framework.Graphics.SpriteFont::Characters",
+     "Microsoft.Xna.Framework.Media.VisualizationData::Frequencies",
+     "Microsoft.Xna.Framework.Media.VisualizationData::Samples"
+    ]
+   }
+  },
+  "allowlist": "forbidden"
+ },
+ "gameBaseCallAdapters": {
+  "rule": "GameCallbacks projects CLR protected virtual OVERRIDES, and in CLR the override -- not the framework -- decides whether and when the base body runs. Go has no `base` keyword, so each supported override gets ONE package-level function in the framework package that runs the base body, and a callback that never calls one gets no base behavior at all",
+  "baseBehaviorIsNeverAutomatic": "CNA-Go must not run a base body around a callback. Doing so would make every override a mandatory base call at a position CNA-Go picked, which is a different contract that merely resembles XNA's: omitting base.Update(t) is legal and means the component loop does not run that frame, and moving the call changes what runs before what",
+  "theseAreNot": [
+   "an XNA identity: they add nothing to REFERENCE_MEMBERS, EXPECTED_GO_MEMBERS, or any type's projected member set",
+   "a member of Game: they are package-level functions so Game's projected member surface gains no name Microsoft never declared",
+   "a member of GameCallbacks: the callback contract is unchanged",
+   "a way to invoke GameCallbacks: no base body in the reference calls the virtual it is the base of, and neither does any of these",
+   "an allowlist entry: they are admitted from the measured registry, which is what subjects them to measurement"
+  ],
+  "closure": "the registry keys are exactly the GameCallbacks members, which are exactly the Game protected virtuals the mapper redirects. An adapter for anything else is an invented helper; a callback member without one leaves an override unable to reach its base. Both are verifier failures",
+  "firstParameter": "*Game, which is the `this` a CLR base call passes implicitly",
+  "fallibility": "every error result names its reasons. GUARD is the Go-only nil/unconstructed-Game check, which has no CLR counterpart and is the condition Game.Run and Game.Exit already report; REFERENCE is a failure the reference base body itself can produce. An error result with no recorded reason, and a recorded reason with no error result, are both rejected",
+  "deferredSteps": "every reference step the projection does not reproduce is recorded with a class -- SUBSYSTEM, ARCHITECTURE or UNOBSERVABLE -- and a reason. A deferral marked observable from the managed component surface is REJECTED: that is a stop condition, not a deferral",
+  "adapters": {
+   "Initialize": {
+    "clrMember": "Microsoft.Xna.Framework.Game::Initialize",
+    "goFunction": "GameBaseInitialize",
+    "signature": "func GameBaseInitialize(game *Game) error",
+    "referenceBody": "HookDeviceEvents(); while (notYetInitialized.Count > 0) { notYetInitialized[0].Initialize(); notYetInitialized.RemoveAt(0); } if (graphicsDeviceService != null && graphicsDeviceService.GraphicsDevice != null) LoadContent();",
+    "deferredSteps": [
+     {
+      "step": "HookDeviceEvents()",
+      "class": "ARCHITECTURE"
+     },
+     {
+      "step": "if (graphicsDeviceService != null && ...) LoadContent()",
+      "class": "ARCHITECTURE"
+     }
+    ]
+   },
+   "LoadContent": {
+    "clrMember": "Microsoft.Xna.Framework.Game::LoadContent",
+    "goFunction": "GameBaseLoadContent",
+    "signature": "func GameBaseLoadContent(game *Game) error",
+    "referenceBody": "ret  // code size 1, a true authoritative no-op"
+   },
+   "Update": {
+    "clrMember": "Microsoft.Xna.Framework.Game::Update",
+    "goFunction": "GameBaseUpdate",
+    "signature": "func GameBaseUpdate(game *Game, gameTime GameTime) error",
+    "referenceBody": "snapshot updateableComponents into currentlyUpdatingComponents, iterate the snapshot calling Update on each Enabled component, Clear the snapshot, FrameworkDispatcher.Update(), doneFirstUpdate = true",
+    "deferredSteps": [
+     {
+      "step": "FrameworkDispatcher.Update()",
+      "class": "SUBSYSTEM"
+     },
+     {
+      "step": "Logger.BeginLogEvent / Logger.EndLogEvent",
+      "class": "UNOBSERVABLE"
+     }
+    ]
+   },
+   "Draw": {
+    "clrMember": "Microsoft.Xna.Framework.Game::Draw",
+    "goFunction": "GameBaseDraw",
+    "signature": "func GameBaseDraw(game *Game, gameTime GameTime) error",
+    "referenceBody": "snapshot drawableComponents into currentlyDrawingComponents, iterate the snapshot calling Draw on each Visible component, Clear the snapshot",
+    "touchesNoDevice": "base Draw does not clear, present, or reach GraphicsDevice at all; the device work lives in Game::BeginDraw and Game::EndDraw, which delegate to IGraphicsDeviceManager and are separate protected virtuals CNA-Go does not project"
+   },
+   "UnloadContent": {
+    "clrMember": "Microsoft.Xna.Framework.Game::UnloadContent",
+    "goFunction": "GameBaseUnloadContent",
+    "signature": "func GameBaseUnloadContent(game *Game) error",
+    "referenceBody": "ret  // code size 1, a true authoritative no-op"
+   }
+  }
+ },
+ "xnaBaseRelationships": {
+  "rule": "every CLR class in the pinned profile that another class in the SAME profile inherits from is recorded here with a status. This is a different frontier from bclBaseRelationships: a BCL base is a type outside the contract that CNA-Go decides how to model, while an XNA base is a type inside the contract whose public surface a derived type inherits WITHOUT the contract redeclaring it",
+  "whyItIsMeasured": "Texture2D's contract declares sixteen members and inherits nine more from Texture and GraphicsResource -- Name, Tag, GraphicsDevice, IsDisposed, Dispose, ToString, Disposing, LevelCount and Format. CNA-Go projects Texture2D with none of them, and until Foundation 33 nothing recorded that. The same silence covered SpriteBatch",
+  "statuses": {
+   "COMPOSED": "CNA-Go re-exposes the base's public surface on its derived types. No XNA base is composed yet",
+   "DEFERRED": "CNA-Go does not, and the relationship must name what blocks it"
+  },
+  "deferredMustNameItsBlockers": "a DEFERRED XNA base that records no blocker is a verifier failure, exactly as a DEFERRED BCL base is",
+  "blockerClasses": {
+   "ARCHITECTURE": "a cross-cutting projection decision no single member carries",
+   "SUBSYSTEM": "the base reaches a .NET or CNA subsystem CNA-Go does not map",
+   "TRANSITIVE": "the base is itself unprojected because its own base is deferred",
+   "NATIVE_OWNERSHIP": "the base is natively owned and its ownership is undecided"
+  },
+  "noCompleteDerivedType": "no derived type of a DEFERRED XNA base may be reported COMPLETE. Completeness asserts that a type's whole public surface is present, and the inherited half is not; a PARTIAL derived type is correct because its gap is already MISSING_MEMBER",
+  "theOpenArchitectureDecision": "projecting any derived XNA class needs three things CNA-Go does not have: a composition and forwarding rule for a base that is itself an XNA identity; a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice; and an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding of an XNA base is refused by BASE_MAPPING_MISMATCH and stays refused",
+  "closure": "the registry covers every XNA-to-XNA link the pinned contract declares -- 12 bases over 41 derived types -- so a new one cannot appear unnoticed"
+ },
+ "gameNativeSignals": {
+  "rule": "Every CLR event Microsoft.Xna.Framework.Game declares is bound to exactly one canonical CNA game signal, and every declared signal is bound to an event Game really declares. An event with no signal is an accessor pair nothing can fire; a signal for an event that does not exist is an invention",
+  "noCNAChange": "the four signals were already published by the pinned CNA C API and had never been reached from Go. Binding them added two bound functions to CNA-Go's manifest and changed no CNA C++, did not rebuild CNA, and did not alter the pinned artifact",
+  "oneSubscriptionPerEvent": "exactly one native subscription per event per Game, never one per consumer handler. CNA invokes multiple native registrations on one event in REVERSE registration order, measured against the pinned binary, so per-handler registration would invert the dispatch order the event projection promises",
+  "subscriptionLifetime": "installed on the owner thread immediately after cna_game_create, because CNA answers CNA_RESULT_THREAD for cna_game_subscribe from any other thread; released after cna_game_destroy, because the disposal signal is raised from inside that call and a registration handle stays valid across it; the cgo.Handle is deleted last, so a callback-after-free is unreachable",
+  "errorBoundary": "CNA_GameEventCallback returns void, so this boundary cannot stop the game -- the canonical header says these handlers only observe. A handler failure is recorded through the same callback-failure path every lifecycle failure uses and surfaces from Game.Run; a panic is recovered in the trampoline and recorded the same way. Nothing crosses the C frame and nothing is discarded",
+  "ownerThread": "every signal is delivered on the Game owner thread, measured. The projected accessors do not inherit that affinity: Add and Remove touch a mutex-guarded Go list and never reach C",
+  "noNativeIdentity": "CNA_GameEventRegistrationHandle, the cgo.Handle, the callback context pointer and the CNA_GAME_EVENT_* constants stay inside internal/interop. The public surface is EventHandler[*EventArgs] and EventSubscription, exactly as for every other projected XNA event",
+  "senders": {
+   "GAME": "the raise pushes `ldarg.0`, which is the Game itself and NOT the sender parameter the On... method was handed",
+   "NULL": "the raise pushes `ldnull`. Game::OnExiting is the only member of this family that does, and it is observable from every handler"
+  },
+  "runtimeEvidence": {
+   "VERIFIED_NATIVE": "the qualification artifact actually delivers the signal, and the delivery is counted. Such a signal records no evidence reason: an excuse next to a verification means the label and the evidence disagree",
+   "NOT_RUN_ENVIRONMENT": "the environment cannot produce the signal. A reason is REQUIRED, and the delivery counter is left at zero rather than made to move"
+  },
+  "signals": {
+   "Activated": {
+    "cnaConstant": "CNA_GAME_EVENT_ACTIVATED",
+    "cnaIdentity": 0,
+    "clrEvent": "Microsoft.Xna.Framework.Game::Activated",
+    "raiseSite": "OnActivated",
+    "sender": "GAME",
+    "edgeTriggered": true,
+    "runtimeEvidence": "VERIFIED_NATIVE"
+   },
+   "Deactivated": {
+    "cnaConstant": "CNA_GAME_EVENT_DEACTIVATED",
+    "cnaIdentity": 1,
+    "clrEvent": "Microsoft.Xna.Framework.Game::Deactivated",
+    "raiseSite": "OnDeactivated",
+    "sender": "GAME",
+    "edgeTriggered": true,
+    "runtimeEvidence": "NOT_RUN_ENVIRONMENT"
+   },
+   "Disposed": {
+    "cnaConstant": "CNA_GAME_EVENT_DISPOSED",
+    "cnaIdentity": 2,
+    "clrEvent": "Microsoft.Xna.Framework.Game::Disposed",
+    "raiseSite": "",
+    "sender": "GAME",
+    "edgeTriggered": false,
+    "runtimeEvidence": "VERIFIED_NATIVE"
+   },
+   "Exiting": {
+    "cnaConstant": "CNA_GAME_EVENT_EXITING",
+    "cnaIdentity": 3,
+    "clrEvent": "Microsoft.Xna.Framework.Game::Exiting",
+    "raiseSite": "OnExiting",
+    "sender": "NULL",
+    "edgeTriggered": false,
+    "runtimeEvidence": "VERIFIED_NATIVE"
+   }
+  }
+ },
+ "gameFrameHooks": {
+  "rule": "Game's four frame-boundary protected virtuals project as METHODS ON Game, because the mapper redirects exactly the five protected virtuals GameCallbacks declares and no others. Each records the canonical CNA hook that sits at the same frame position and whether CNA-Go installs it",
+  "theseAreNot": [
+   "GameCallbacks members: the mandatory override contract keeps exactly its five members, and adding to it would break every existing external implementation",
+   "base-call adapters: the GameBase... registry is keyed by the GameCallbacks members, so GameBaseBeginRun and friends are exactly the invented helpers its closure rule stops"
+  ],
+  "hooksAreNotInstalled": "CNA_GameFrameHooks::begin_run, end_run, begin_draw and end_draw correspond position for position to these four virtuals, measured against the pinned artifact, and CNA-Go installs none of them. Base behavior is never automatic: forwarding a hook into a base body would run the base at a position CNA-Go picked, make that base call mandatory, and prejudge the override design. Every uninstalled hook records why",
+  "beginDrawBoolean": "the Boolean is a value channel, not a success flag. DrawFrame runs `if (BeginDraw()) { Draw(); EndDraw(); }`, so false skips both, and the measured native hook does the same: a frame whose out_should_draw is CNA_FALSE delivers neither draw nor end_draw. The Boolean is never collapsed into the error, and a refused call answers (false, err)",
+  "graphicsDeviceManager": "Game::graphicsDeviceManager has one assignment in the whole class, at the head of RunGame, and the statement after it calls CreateDevice on what it found. The native CNA runtime owns and creates the device, and Foundation 30 audited that the projected GraphicsDeviceManager satisfies neither service contract, so the reference's only registrar cannot run. The field is permanently null, which is a state the reference itself has whenever no manager is registered; both draw bodies are reproduced as written and the null branch is the one always taken",
+  "deferredSteps": "same classes and same rule as the base-call adapters: SUBSYSTEM, ARCHITECTURE or UNOBSERVABLE, each with a reason, and a deferral marked observable is REJECTED as a stop condition",
+  "hooks": {
+   "BeginRun": {
+    "clrMember": "Microsoft.Xna.Framework.Game::BeginRun",
+    "signature": "func (g *Game) BeginRun() error",
+    "nativeHook": "CNA_GameFrameHooks::begin_run",
+    "installed": false
+   },
+   "EndRun": {
+    "clrMember": "Microsoft.Xna.Framework.Game::EndRun",
+    "signature": "func (g *Game) EndRun() error",
+    "nativeHook": "CNA_GameFrameHooks::end_run",
+    "installed": false
+   },
+   "BeginDraw": {
+    "clrMember": "Microsoft.Xna.Framework.Game::BeginDraw",
+    "signature": "func (g *Game) BeginDraw() (bool, error)",
+    "nativeHook": "CNA_GameFrameHooks::begin_draw",
+    "installed": false
+   },
+   "EndDraw": {
+    "clrMember": "Microsoft.Xna.Framework.Game::EndDraw",
+    "signature": "func (g *Game) EndDraw() error",
+    "nativeHook": "CNA_GameFrameHooks::end_draw",
+    "installed": false
+   }
+  }
+ }
 }

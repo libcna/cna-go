@@ -23,6 +23,12 @@
     "FLAGS_MAPPING_MISMATCH": 0,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
+    "GAME_FRAME_HOOKS": 4,
+    "GAME_FRAME_HOOKS_INSTALLED": 0,
+    "GAME_FRAME_HOOK_DEFERRED_STEPS": 4,
+    "GAME_NATIVE_SIGNALS": 4,
+    "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
+    "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
     "INTERFACE_MAPPING_MISMATCH": 0,
     "INTERFACE_WITNESS_PROJECTIONS": 25,
@@ -9288,9 +9294,190 @@
       "verdict": "PASS"
     }
   ],
+  "gameNativeSignals": [
+    {
+      "cnaConstant": "CNA_GAME_EVENT_ACTIVATED",
+      "cnaIdentity": 0,
+      "clrEvent": "Microsoft.Xna.Framework.Game::Activated",
+      "addAccessor": "AddActivatedHandler",
+      "removeAccessor": "RemoveActivatedHandler",
+      "raiseSite": "OnActivated",
+      "raiseSiteAccess": "protected",
+      "sender": "GAME",
+      "edgeTriggered": true,
+      "referencePath": [
+        "EnsureHost(): host.Activated += HostActivated",
+        "HostActivated: if (isActive) return; isActive = true;",
+        "HostActivated: OnActivated(this, EventArgs.Empty)",
+        "OnActivated: if (Activated != null) Activated(this, args)   // ldarg.0"
+      ],
+      "runtimeEvidence": "VERIFIED_NATIVE",
+      "verdict": "PASS"
+    },
+    {
+      "cnaConstant": "CNA_GAME_EVENT_DEACTIVATED",
+      "cnaIdentity": 1,
+      "clrEvent": "Microsoft.Xna.Framework.Game::Deactivated",
+      "addAccessor": "AddDeactivatedHandler",
+      "removeAccessor": "RemoveDeactivatedHandler",
+      "raiseSite": "OnDeactivated",
+      "raiseSiteAccess": "protected",
+      "sender": "GAME",
+      "edgeTriggered": true,
+      "referencePath": [
+        "EnsureHost(): host.Deactivated += HostDeactivated",
+        "HostDeactivated: if (!isActive) return; isActive = false;",
+        "HostDeactivated: OnDeactivated(this, EventArgs.Empty)",
+        "OnDeactivated: if (Deactivated != null) Deactivated(this, args)   // ldarg.0"
+      ],
+      "runtimeEvidence": "NOT_RUN_ENVIRONMENT",
+      "evidenceReason": "the qualification artifact runs a HEADLESS renderer with no window manager, so no focus transition away from the game can be produced and CNA_GAME_EVENT_DEACTIVATED is never delivered; the accessors, the edge-trigger guard and the raise path are proved without it and the delivery counter is left at zero",
+      "verdict": "PASS"
+    },
+    {
+      "cnaConstant": "CNA_GAME_EVENT_DISPOSED",
+      "cnaIdentity": 2,
+      "clrEvent": "Microsoft.Xna.Framework.Game::Disposed",
+      "addAccessor": "AddDisposedHandler",
+      "removeAccessor": "RemoveDisposedHandler",
+      "raiseSite": "",
+      "raiseSiteAccess": "",
+      "sender": "GAME",
+      "edgeTriggered": false,
+      "referencePath": [
+        "Dispose(bool disposing): if (!disposing) return;",
+        "Dispose(bool): dispose each IDisposable component, then the device manager, then UnhookDeviceEvents()",
+        "Dispose(bool): if (Disposed != null) Disposed(this, EventArgs.Empty)   // ldarg.0, no On... method"
+      ],
+      "runtimeEvidence": "VERIFIED_NATIVE",
+      "verdict": "PASS"
+    },
+    {
+      "cnaConstant": "CNA_GAME_EVENT_EXITING",
+      "cnaIdentity": 3,
+      "clrEvent": "Microsoft.Xna.Framework.Game::Exiting",
+      "addAccessor": "AddExitingHandler",
+      "removeAccessor": "RemoveExitingHandler",
+      "raiseSite": "OnExiting",
+      "raiseSiteAccess": "protected",
+      "sender": "NULL",
+      "edgeTriggered": false,
+      "referencePath": [
+        "EnsureHost(): host.Exiting += HostExiting",
+        "HostExiting: OnExiting(this, EventArgs.Empty)   // no guard",
+        "OnExiting: if (Exiting != null) Exiting(null, args)   // ldnull, NOT ldarg.0"
+      ],
+      "runtimeEvidence": "VERIFIED_NATIVE",
+      "verdict": "PASS"
+    }
+  ],
+  "gameFrameHooks": [
+    {
+      "clrMember": "Microsoft.Xna.Framework.Game::BeginDraw",
+      "clrAccess": "protected",
+      "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.BeginDraw",
+      "parameters": [],
+      "results": [
+        "bool",
+        "error"
+      ],
+      "nativeHook": "CNA_GameFrameHooks::begin_draw",
+      "installed": false,
+      "reasonUninstalled": "base behavior is never automatic; the hook also fires per frame and, with no reachable IGraphicsDeviceManager, the base body provably always admits the frame",
+      "nativeOrdering": "measured before each draw, and a frame whose out_should_draw is set to CNA_FALSE delivers neither draw nor end_draw -- the same shape as DrawFrame's `if (BeginDraw()) { Draw(); EndDraw(); }`",
+      "referenceBody": [
+        "if (graphicsDeviceManager != null \u0026\u0026 !graphicsDeviceManager.BeginDraw()) return false;",
+        "Logger.BeginLogEvent((LoggingEvent)4, \"\");",
+        "return true;"
+      ],
+      "deferredSteps": [
+        {
+          "step": "graphicsDeviceManager resolution at the head of RunGame",
+          "class": "ARCHITECTURE",
+          "reason": "the statement after it calls CreateDevice on what it found, and the native CNA runtime owns and creates the device; Foundation 30 separately audited that the projected GraphicsDeviceManager satisfies neither service contract, so the reference's only registrar cannot run and the private field is permanently null -- a state the reference itself has whenever no manager is registered",
+          "observable": false
+        },
+        {
+          "step": "Logger.BeginLogEvent((LoggingEvent)4, \"\")",
+          "class": "UNOBSERVABLE",
+          "reason": "Microsoft.Xna.Framework.Logger writes to a sink no projected member can read, so reproducing or omitting the call is indistinguishable from the public surface",
+          "observable": false
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrMember": "Microsoft.Xna.Framework.Game::BeginRun",
+      "clrAccess": "protected",
+      "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.BeginRun",
+      "parameters": [],
+      "results": [
+        "error"
+      ],
+      "nativeHook": "CNA_GameFrameHooks::begin_run",
+      "installed": false,
+      "reasonUninstalled": "base behavior is never automatic; with no override mechanism the forwarding would be provably inert and would prejudge where a derived class calls its base",
+      "nativeOrdering": "measured after initialize and load_content and before the first update, which is where RunGame calls BeginRun -- after Initialize returns and inRun is raised, before the priming Update",
+      "referenceBody": [
+        "IL_0000: ret   // code size 1"
+      ],
+      "deferredSteps": null,
+      "verdict": "PASS"
+    },
+    {
+      "clrMember": "Microsoft.Xna.Framework.Game::EndDraw",
+      "clrAccess": "protected",
+      "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.EndDraw",
+      "parameters": [],
+      "results": [
+        "error"
+      ],
+      "nativeHook": "CNA_GameFrameHooks::end_draw",
+      "installed": false,
+      "reasonUninstalled": "base behavior is never automatic; the hook also fires per frame and, with no reachable IGraphicsDeviceManager, the base body is observably empty",
+      "nativeOrdering": "measured after each draw and skipped entirely on a frame begin_draw refused, which is where DrawFrame calls EndDraw -- inside the branch BeginDraw admitted",
+      "referenceBody": [
+        "if (graphicsDeviceManager != null) graphicsDeviceManager.EndDraw();",
+        "Logger.EndLogEvent((LoggingEvent)4, \"\");"
+      ],
+      "deferredSteps": [
+        {
+          "step": "graphicsDeviceManager resolution at the head of RunGame",
+          "class": "ARCHITECTURE",
+          "reason": "the same permanently-null private field BeginDraw records; the null branch is the one the reference itself takes whenever no manager is registered",
+          "observable": false
+        },
+        {
+          "step": "Logger.EndLogEvent((LoggingEvent)4, \"\")",
+          "class": "UNOBSERVABLE",
+          "reason": "Microsoft.Xna.Framework.Logger writes to a sink no projected member can read",
+          "observable": false
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrMember": "Microsoft.Xna.Framework.Game::EndRun",
+      "clrAccess": "protected",
+      "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.EndRun",
+      "parameters": [],
+      "results": [
+        "error"
+      ],
+      "nativeHook": "CNA_GameFrameHooks::end_run",
+      "installed": false,
+      "reasonUninstalled": "base behavior is never automatic; with no override mechanism the forwarding would be provably inert and would prejudge where a derived class calls its base",
+      "nativeOrdering": "measured after the last frame and before cna_game_run returns, which is where RunGame calls EndRun -- immediately after the blocking host.Run() returns",
+      "referenceBody": [
+        "IL_0000: ret   // code size 1"
+      ],
+      "deferredSteps": null,
+      "verdict": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "8bf7c73a2f5b228e531355534c35bcdfef4eb3db8e925cc6a16e27c8ac0a681a",
+    "mappingSha256": "3daaf3278e0cdf95ed95354f176ffeb77e47309a7de6da77e89ea7f4dc7db792",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

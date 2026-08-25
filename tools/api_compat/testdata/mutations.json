@@ -2498,5 +2498,160 @@
   "id": "f33-xna-base-derived-type-of-a-deferred-base-reported-complete",
   "mutation": "f33xna_derived_type_of_a_deferred_base_reported_complete",
   "category": "BASE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-signal-absent-for-a-declared-event",
+  "mutation": "f36signal_signal_absent_for_a_declared_event",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-signal-declared-for-an-event-game-does-not-declare",
+  "mutation": "f36signal_signal_declared_for_an_event_game_does_not_declare",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-duplicate-cna-identity",
+  "mutation": "f36signal_duplicate_cna_identity",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-signal-names-no-cna-constant",
+  "mutation": "f36signal_signal_names_no_cna_constant",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-raise-site-is-not-a-projected-method",
+  "mutation": "f36signal_raise_site_is_not_a_projected_method",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-raise-site-invented-for-an-event-that-has-none",
+  "mutation": "f36signal_raise_site_invented_for_an_event_that_has_none",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-raise-site-omitted-for-an-event-that-has-one",
+  "mutation": "f36signal_raise_site_omitted_for_an_event_that_has_one",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-raise-site-signature-is-not-the-clr-shape",
+  "mutation": "f36signal_raise_site_signature_is_not_the_clr_shape",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-raise-site-absent-from-the-package",
+  "mutation": "f36signal_raise_site_absent_from_the_package",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-accessor-absent-from-the-package",
+  "mutation": "f36signal_accessor_absent_from_the_package",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-sender-is-neither-game-nor-null",
+  "mutation": "f36signal_sender_is_neither_game_nor_null",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-signal-records-no-reference-path",
+  "mutation": "f36signal_signal_records_no_reference_path",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-runtime-evidence-unclassified",
+  "mutation": "f36signal_runtime_evidence_unclassified",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-unverified-signal-records-no-reason",
+  "mutation": "f36signal_unverified_signal_records_no_reason",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-verified-signal-records-an-excuse",
+  "mutation": "f36signal_verified_signal_records_an_excuse",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-raise-site-exists-that-no-signal-declares",
+  "mutation": "f36signal_raise_site_exists_that_no_signal_declares",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-absent-from-the-package",
+  "mutation": "f36signal_frame_hook_absent_from_the_package",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-declared-for-a-member-that-is-not-projected",
+  "mutation": "f36signal_frame_hook_declared_for_a_member_that_is_not_projected",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-signature-mismatch",
+  "mutation": "f36signal_frame_hook_signature_mismatch",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-gains-a-base-call-helper",
+  "mutation": "f36signal_frame_hook_gains_a_base_call_helper",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-declared-for-a-gamecallbacks-member",
+  "mutation": "f36signal_frame_hook_declared_for_a_gamecallbacks_member",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-uninstalled-without-a-reason",
+  "mutation": "f36signal_frame_hook_uninstalled_without_a_reason",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-installed-but-records-a-reason",
+  "mutation": "f36signal_frame_hook_installed_but_records_a_reason",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-names-no-native-hook",
+  "mutation": "f36signal_frame_hook_names_no_native_hook",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-records-no-native-ordering",
+  "mutation": "f36signal_frame_hook_records_no_native_ordering",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-records-no-reference-body",
+  "mutation": "f36signal_frame_hook_records_no_reference_body",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-deferral-unclassified",
+  "mutation": "f36signal_frame_hook_deferral_unclassified",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-deferral-records-no-reason",
+  "mutation": "f36signal_frame_hook_deferral_records_no_reason",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-deferral-marked-observable",
+  "mutation": "f36signal_frame_hook_deferral_marked_observable",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-projected-onto-another-receiver",
+  "mutation": "f36signal_frame_hook_projected_onto_another_receiver",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f36signal-frame-hook-names-a-public-member",
+  "mutation": "f36signal_frame_hook_names_a_public_member",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
  }
 ]
