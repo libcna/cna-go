@@ -52,6 +52,45 @@ static CNA_Result forward_lifecycle(
         return forward_lifecycle(kind, game, game_time, context); \
     }
 
+extern void cnaGoGameEvent(uint32_t event, uintptr_t context);
+
+/* One trampoline per canonical event identity. CNA_GameEventCallback carries
+   nothing but the caller context, so the identity has to come from the
+   function that was registered rather than from a parameter. */
+#define CNA_GO_EVENT_CALLBACK(name, event) \
+    static void name(void* context) { \
+        cnaGoGameEvent((uint32_t)(event), (uintptr_t)context); \
+    }
+
+CNA_GO_EVENT_CALLBACK(event_activated, CNA_GO_GAME_EVENT_ACTIVATED)
+CNA_GO_EVENT_CALLBACK(event_deactivated, CNA_GO_GAME_EVENT_DEACTIVATED)
+CNA_GO_EVENT_CALLBACK(event_disposed, CNA_GO_GAME_EVENT_DISPOSED)
+CNA_GO_EVENT_CALLBACK(event_exiting, CNA_GO_GAME_EVENT_EXITING)
+
+static const CNA_GameEventCallback event_callbacks[CNA_GO_GAME_EVENT_COUNT] = {
+    event_activated,
+    event_deactivated,
+    event_disposed,
+    event_exiting
+};
+
+static const CNA_GameEvent event_identities[CNA_GO_GAME_EVENT_COUNT] = {
+    CNA_GAME_EVENT_ACTIVATED,
+    CNA_GAME_EVENT_DEACTIVATED,
+    CNA_GAME_EVENT_DISPOSED,
+    CNA_GAME_EVENT_EXITING
+};
+
+/* bridge.h's mirror is what the Go side switches on, and the two arrays above
+   are indexed by it. If the mirror and the manifest ever disagreed, a signal
+   would be routed to the wrong projected event with nothing to catch it. */
+_Static_assert(CNA_GO_GAME_EVENT_ACTIVATED == CNA_GAME_EVENT_ACTIVATED, "activation identity drift");
+_Static_assert(CNA_GO_GAME_EVENT_DEACTIVATED == CNA_GAME_EVENT_DEACTIVATED, "deactivation identity drift");
+_Static_assert(CNA_GO_GAME_EVENT_DISPOSED == CNA_GAME_EVENT_DISPOSED, "disposal identity drift");
+_Static_assert(CNA_GO_GAME_EVENT_EXITING == CNA_GAME_EVENT_EXITING, "exit identity drift");
+_Static_assert(CNA_GO_GAME_EVENT_COUNT == CNA_GAME_EVENT_MAXIMUM + 1, "game-event identity count drift");
+_Static_assert(sizeof(CNA_GameEventRegistrationHandle) == sizeof(CNA_Handle), "registration handle width drift");
+
 CNA_GO_CALLBACK(callback_initialize, CNA_GO_CALLBACK_INITIALIZE)
 CNA_GO_CALLBACK(callback_load_content, CNA_GO_CALLBACK_LOAD_CONTENT)
 CNA_GO_CALLBACK(callback_update, CNA_GO_CALLBACK_UPDATE)
@@ -184,6 +223,48 @@ CnaGoResult cna_go_game_create(uintptr_t context, const char* title, uint64_t ti
         *out_game = 0;
     }
     return result;
+}
+
+CnaGoResult cna_go_game_unsubscribe_events(CnaGoHandle* registrations) {
+    if (registrations == NULL) {
+        return 1; /* CNA_RESULT_INVALID_ARGUMENT */
+    }
+    CNA_Result first = 0;
+    for (int i = 0; i < CNA_GO_GAME_EVENT_COUNT; i++) {
+        if (registrations[i] == 0) {
+            continue;
+        }
+        const CNA_Result result = api.cna_game_unsubscribe(registrations[i]);
+        registrations[i] = 0;
+        if (result != 0 && first == 0) {
+            first = result;
+        }
+    }
+    return first;
+}
+
+CnaGoResult cna_go_game_subscribe_events(CnaGoHandle game, uintptr_t context, CnaGoHandle* out_registrations) {
+    if (out_registrations == NULL) {
+        return 1; /* CNA_RESULT_INVALID_ARGUMENT */
+    }
+    for (int i = 0; i < CNA_GO_GAME_EVENT_COUNT; i++) {
+        out_registrations[i] = 0;
+    }
+    for (int i = 0; i < CNA_GO_GAME_EVENT_COUNT; i++) {
+        CNA_GameEventRegistrationHandle registration = 0;
+        const CNA_Result result = api.cna_game_subscribe(
+            game,
+            event_identities[i],
+            event_callbacks[i],
+            (void*)context,
+            &registration);
+        if (result != 0) {
+            (void)cna_go_game_unsubscribe_events(out_registrations);
+            return result;
+        }
+        out_registrations[i] = registration;
+    }
+    return 0;
 }
 
 CnaGoResult cna_go_game_run(CnaGoHandle game) { return api.cna_game_run(game); }

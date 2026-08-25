@@ -21,6 +21,18 @@ const (
 	callbackExiting       = 6
 )
 
+// The four canonical CNA game-event identities. They mirror CNA_GAME_EVENT_*
+// exactly; native_linux.go carries compile-time assertions that they equal the
+// C values, so no Go file outside this package ever spells a CNA constant.
+const (
+	GameEventActivated   uint32 = 0
+	GameEventDeactivated uint32 = 1
+	GameEventDisposed    uint32 = 2
+	GameEventExiting     uint32 = 3
+
+	gameEventCount = 4
+)
+
 type ownership uint8
 
 const (
@@ -55,6 +67,15 @@ type Callbacks interface {
 	Update(FrameTime) error
 	Draw(FrameTime) error
 	UnloadContent() error
+
+	// GameEvent delivers one canonical CNA game signal. It is deliberately
+	// separate from the five lifecycle members above: those project XNA's
+	// protected virtual overrides and are declared by the public
+	// GameCallbacks contract, while this one is the private bridge for the
+	// four CLR events Game declares. Adding it here leaves GameCallbacks
+	// untouched, which is what keeps every existing external implementation
+	// of that interface compiling.
+	GameEvent(event uint32) error
 }
 
 // Runtime owns one admitted native Game generation.
@@ -69,6 +90,13 @@ type Runtime struct {
 	callbackFailure error
 	resources       []*Resource
 	title           string
+
+	// eventRegistrations holds the four owned CNA registration handles, one
+	// per canonical game event. They are installed once, right after the
+	// native game is created, and released after it is destroyed -- never in
+	// the other order, because CNA raises the disposal signal from inside
+	// cna_game_destroy and a registration released first would miss it.
+	eventRegistrations [gameEventCount]uint64
 }
 
 // Resource is an internal generation-checked owned-handle control block.
@@ -179,6 +207,25 @@ func (r *Runtime) Run() error {
 	r.game = game
 	r.mu.Unlock()
 
+	// One native subscription per canonical event, installed eagerly on the
+	// owner thread the moment the native game exists. It is not installed
+	// lazily on the first Go handler: CNA rejects cna_game_subscribe from any
+	// other thread with CNA_RESULT_THREAD, and a Go consumer is free to add an
+	// event handler from any goroutine at any time, so the only point at which
+	// the call is guaranteed legal is right here.
+	registrations, subscribeErr := nativeGameSubscribeEvents(game, uintptr(callbackHandle))
+	if subscribeErr != nil {
+		tracef("Run: game-event subscription failed: %v", subscribeErr)
+		destroyErr := nativeGameDestroy(game)
+		r.deactivate()
+		callbackHandle.Delete()
+		return errors.Join(subscribeErr, destroyErr)
+	}
+	r.mu.Lock()
+	r.eventRegistrations = registrations
+	r.mu.Unlock()
+	tracef("Run: installed %d native game-event registrations", gameEventCount)
+
 	tracef("Run: entering cna_game_run")
 	runErr := nativeGameRun(game)
 	tracef("Run: cna_game_run returned: %v", runErr)
@@ -186,6 +233,11 @@ func (r *Runtime) Run() error {
 	tracef("Run: resource cleanup returned: %v", cleanupErr)
 	destroyErr := nativeGameDestroy(game)
 	tracef("Run: Game destroy returned: %v", destroyErr)
+	// The registrations are released only now. CNA raises the disposal signal
+	// from inside cna_game_destroy, and a registration handle stays valid
+	// across that call, so releasing first would silently drop the event.
+	unsubscribeErr := r.releaseGameEvents()
+	tracef("Run: released game-event registrations: %v", unsubscribeErr)
 	r.deactivate()
 	callbackHandle.Delete()
 
@@ -195,7 +247,84 @@ func (r *Runtime) Run() error {
 	if callbackErr != nil {
 		return callbackErr
 	}
-	return errors.Join(runErr, cleanupErr, destroyErr)
+	return errors.Join(runErr, cleanupErr, destroyErr, unsubscribeErr)
+}
+
+// releaseGameEvents releases every installed registration exactly once. The
+// slots are zeroed under the same lock that publishes them, so a second call
+// releases nothing rather than handing CNA a stale handle -- which it answers
+// with CNA_RESULT_INVALID_HANDLE, not success.
+func (r *Runtime) releaseGameEvents() error {
+	r.mu.Lock()
+	registrations := r.eventRegistrations
+	r.eventRegistrations = [gameEventCount]uint64{}
+	r.mu.Unlock()
+	installed := false
+	for _, handle := range registrations {
+		if handle != 0 {
+			installed = true
+			break
+		}
+	}
+	if !installed {
+		return nil
+	}
+	return nativeGameUnsubscribeEvents(&registrations)
+}
+
+// invokeGameEvent delivers one canonical CNA game signal to the framework.
+//
+// It is not invokeCallback. A CNA_GameEventCallback returns void, so this
+// boundary has no result channel at all: it cannot stop the game, and the
+// canonical header says so directly -- "The exiting callback in
+// CNA_GameCallbacks is a different thing: it can stop the game by failing,
+// while these handlers only observe."
+//
+// Two consequences are load-bearing and are reproduced rather than papered
+// over. A handler failure is recorded as the run's callback failure and
+// surfaces from Run, so nothing is discarded, but it does not end the frame
+// loop. And inCallback is deliberately NOT raised: an observation point is not
+// an operation point, and the disposal signal in particular is delivered from
+// inside cna_game_destroy, where the native game is already being torn down.
+func (r *Runtime) invokeGameEvent(event uint32) {
+	tracef("game event %s: enter", gameEventName(event))
+	r.mu.Lock()
+	alive := r.alive
+	callbacks := r.callbacks
+	r.mu.Unlock()
+	if !alive || callbacks == nil {
+		r.recordCallbackFailure(ErrStaleGeneration)
+		tracef("game event %s: dropped, runtime is not live", gameEventName(event))
+		return
+	}
+	var err error
+	func() {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				err = fmt.Errorf("panic in Game event handler: %v\n%s", recovered, debug.Stack())
+			}
+		}()
+		err = callbacks.GameEvent(event)
+	}()
+	if err != nil {
+		r.recordCallbackFailure(err)
+	}
+	tracef("game event %s: return %v", gameEventName(event), err)
+}
+
+func gameEventName(event uint32) string {
+	switch event {
+	case GameEventActivated:
+		return "Activated"
+	case GameEventDeactivated:
+		return "Deactivated"
+	case GameEventDisposed:
+		return "Disposed"
+	case GameEventExiting:
+		return "Exiting"
+	default:
+		return fmt.Sprintf("unknown(%d)", event)
+	}
 }
 
 func (r *Runtime) Exit() error {

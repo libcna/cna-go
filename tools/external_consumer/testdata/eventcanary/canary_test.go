@@ -2,6 +2,7 @@ package eventcanary
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -1360,4 +1361,271 @@ func TestGameComponentSatisfiesItsDeclaredContractsFromOutside(t *testing.T) {
 	if err := asComponent.Initialize(); err != nil {
 		t.Fatalf("the contract's Initialize channel reported %v", err)
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 34 — Game's four events, from outside the binding.
+// ---------------------------------------------------------------------------
+
+// TestConsumerSubscribesToAllFourGameEvents is the structural half of the
+// native bridge qualification: a downstream user reaches every one of the eight
+// projected accessors, gets a token from each Add, and hands each token back.
+//
+// It deliberately does not run the Game. Delivery of a real native signal is
+// proved separately by the native stress harness, which runs the pinned
+// runtime; what this proves is that the public surface is complete, usable and
+// free of any native identity from a module that cannot see the binding's
+// internals at all.
+func TestConsumerSubscribesToAllFourGameEvents(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	// The eight accessor signatures, asserted at compile time. Every one takes
+	// or returns only EventHandler[*EventArgs] and EventSubscription.
+	var (
+		_ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = game.AddActivatedHandler
+		_ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = game.AddDeactivatedHandler
+		_ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = game.AddExitingHandler
+		_ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = game.AddDisposedHandler
+		_ func(framework.EventSubscription) error                                                 = game.RemoveActivatedHandler
+		_ func(framework.EventSubscription) error                                                 = game.RemoveDeactivatedHandler
+		_ func(framework.EventSubscription) error                                                 = game.RemoveExitingHandler
+		_ func(framework.EventSubscription) error                                                 = game.RemoveDisposedHandler
+	)
+	// And the three protected raise sites, which are ordinary methods here.
+	var (
+		_ func(any, *framework.EventArgs) error = game.OnActivated
+		_ func(any, *framework.EventArgs) error = game.OnDeactivated
+		_ func(any, *framework.EventArgs) error = game.OnExiting
+	)
+
+	var seen []string
+	adders := []struct {
+		name   string
+		add    func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error)
+		remove func(framework.EventSubscription) error
+	}{
+		{"Activated", game.AddActivatedHandler, game.RemoveActivatedHandler},
+		{"Deactivated", game.AddDeactivatedHandler, game.RemoveDeactivatedHandler},
+		{"Exiting", game.AddExitingHandler, game.RemoveExitingHandler},
+		{"Disposed", game.AddDisposedHandler, game.RemoveDisposedHandler},
+	}
+	tokens := make([]framework.EventSubscription, 0, len(adders))
+	for _, entry := range adders {
+		name := entry.name
+		token, err := entry.add(func(any, *framework.EventArgs) error {
+			seen = append(seen, name)
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("Add%sHandler: %v", name, err)
+		}
+		if token == (framework.EventSubscription{}) {
+			t.Fatalf("Add%sHandler returned the zero token for a real handler", name)
+		}
+		tokens = append(tokens, token)
+	}
+
+	if err := game.OnActivated(nil, framework.EventArgsEmpty()); err != nil {
+		t.Fatalf("OnActivated: %v", err)
+	}
+	if err := game.OnDeactivated(nil, framework.EventArgsEmpty()); err != nil {
+		t.Fatalf("OnDeactivated: %v", err)
+	}
+	if err := game.OnExiting(nil, framework.EventArgsEmpty()); err != nil {
+		t.Fatalf("OnExiting: %v", err)
+	}
+	if strings.Join(seen, ",") != "Activated,Deactivated,Exiting" {
+		t.Fatalf("observed %v, want the three raise sites in order", seen)
+	}
+
+	for i, entry := range adders {
+		if err := entry.remove(tokens[i]); err != nil {
+			t.Fatalf("Remove%sHandler: %v", entry.name, err)
+		}
+	}
+	seen = nil
+	if err := game.OnActivated(nil, framework.EventArgsEmpty()); err != nil {
+		t.Fatalf("OnActivated after removal: %v", err)
+	}
+	if err := game.OnExiting(nil, framework.EventArgsEmpty()); err != nil {
+		t.Fatalf("OnExiting after removal: %v", err)
+	}
+	if len(seen) != 0 {
+		t.Fatalf("removed handlers still ran: %v", seen)
+	}
+}
+
+// TestConsumerObservesTheExitingSenderQuirk proves the one-instruction
+// difference from outside: OnExiting pushes `ldnull` where its two siblings
+// push `this`.
+func TestConsumerObservesTheExitingSenderQuirk(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	var activatedSender, exitingSender any
+	sawExiting := false
+	if _, err := game.AddActivatedHandler(func(sender any, _ *framework.EventArgs) error {
+		activatedSender = sender
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := game.AddExitingHandler(func(sender any, _ *framework.EventArgs) error {
+		exitingSender = sender
+		sawExiting = true
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// A sender argument is supplied to both, and both ignore it.
+	decoy, _ := newCanaryGame(t)
+	if err := game.OnActivated(decoy, framework.EventArgsEmpty()); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.OnExiting(decoy, framework.EventArgsEmpty()); err != nil {
+		t.Fatal(err)
+	}
+	if activatedSender != any(game) {
+		t.Fatalf("Activated sender = %v, want the Game", activatedSender)
+	}
+	if !sawExiting {
+		t.Fatal("Exiting handler did not run")
+	}
+	if exitingSender != nil {
+		t.Fatalf("Exiting sender = %v, want nil", exitingSender)
+	}
+}
+
+// TestConsumerGameEventDuplicatesAndStaleRemovals holds the settled token rule
+// on Game: two Adds of one handler are two registrations, each removed
+// separately, and every kind of absent token is inert.
+func TestConsumerGameEventDuplicatesAndStaleRemovals(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	other, _ := newCanaryGame(t)
+	calls := 0
+	handler := func(any, *framework.EventArgs) error {
+		calls++
+		return nil
+	}
+	first, err := game.AddActivatedHandler(handler)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := game.AddActivatedHandler(handler); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.OnActivated(nil, framework.EventArgsEmpty()); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 2 {
+		t.Fatalf("one handler added twice ran %d times, want 2", calls)
+	}
+	if err := game.RemoveActivatedHandler(first); err != nil {
+		t.Fatal(err)
+	}
+	foreign, err := other.AddActivatedHandler(handler)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, token := range []framework.EventSubscription{first, {}, foreign} {
+		if err := game.RemoveActivatedHandler(token); err != nil {
+			t.Fatalf("an absent token reported %v, want nil", err)
+		}
+	}
+	calls = 0
+	if err := game.OnActivated(nil, framework.EventArgsEmpty()); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Fatalf("after one removal and three inert removals the handler ran %d times, want 1", calls)
+	}
+	// The other Game's registration is untouched by any of it.
+	calls = 0
+	if err := other.OnActivated(nil, framework.EventArgsEmpty()); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Fatalf("the other Game's registration ran %d times, want 1", calls)
+	}
+}
+
+// TestGameEventsExposeNoNativeRegistrationHandle is the leak claim, made from a
+// module that has no access to internal/interop at all. Every exported name in
+// the family is spelled in terms of two adapter types and nothing else; there
+// is no uintptr, no unsafe.Pointer and no CNA registration handle anywhere in
+// the surface, and the assertions above are the compiler's proof.
+func TestGameEventsExposeNoNativeRegistrationHandle(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	token, err := game.AddDisposedHandler(func(any, *framework.EventArgs) error { return nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	// EventSubscription is a struct with no exported field, so a consumer can
+	// hold it, compare it and hand it back, and can do nothing else with it.
+	if got := reflect.TypeOf(token); got.Kind() != reflect.Struct {
+		t.Fatalf("EventSubscription kind = %v, want a struct", got.Kind())
+	}
+	for i := 0; i < reflect.TypeOf(token).NumField(); i++ {
+		field := reflect.TypeOf(token).Field(i)
+		if field.IsExported() {
+			t.Fatalf("EventSubscription exports field %q", field.Name)
+		}
+	}
+	// And the Game's own event methods name no native type.
+	gameType := reflect.TypeOf(game)
+	for i := 0; i < gameType.NumMethod(); i++ {
+		method := gameType.Method(i)
+		if !strings.Contains(method.Name, "Handler") && !strings.HasPrefix(method.Name, "On") {
+			continue
+		}
+		signature := method.Type.String()
+		for _, banned := range []string{"uintptr", "unsafe.Pointer", "cgo.Handle", "interop."} {
+			if strings.Contains(signature, banned) {
+				t.Fatalf("%s exposes %q in %s", method.Name, banned, signature)
+			}
+		}
+	}
+}
+
+// TestGameStaysUsableAfterEveryHandlerIsRemoved proves the native subscription
+// is per Game rather than per handler: removing every Go handler leaves the
+// Game fully usable, and a later Add is delivered to normally.
+func TestGameStaysUsableAfterEveryHandlerIsRemoved(t *testing.T) {
+	game, user := newCanaryGame(t)
+	token, err := game.AddExitingHandler(func(any, *framework.EventArgs) error { return nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := game.RemoveExitingHandler(token); err != nil {
+		t.Fatal(err)
+	}
+	// The component engine is untouched by any of it.
+	component := NewRotator("after-removal")
+	if err := component.SetEnabled(true); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.Components().Add(component); err != nil {
+		t.Fatal(err)
+	}
+	if err := framework.GameBaseInitialize(game); err != nil {
+		t.Fatal(err)
+	}
+	if err := framework.GameBaseUpdate(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if component.Updates != 1 {
+		t.Fatalf("component updated %d times after event removal, want 1", component.Updates)
+	}
+	// And a fresh subscription still works.
+	late := 0
+	if _, err := game.AddExitingHandler(func(any, *framework.EventArgs) error {
+		late++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.OnExiting(nil, framework.EventArgsEmpty()); err != nil {
+		t.Fatal(err)
+	}
+	if late != 1 {
+		t.Fatalf("a handler added after every removal ran %d times, want 1", late)
+	}
+	_ = user
 }

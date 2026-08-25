@@ -35,6 +35,14 @@ type counters struct {
 	NativeCrashes        int `json:"NATIVE_CRASHES"`
 	ObservedUAF          int `json:"OBSERVED_UAF"`
 	ObservedDoubleFree   int `json:"OBSERVED_DOUBLE_FREE"`
+
+	GameEventActivated       int `json:"GAME_EVENT_ACTIVATED_DELIVERIES"`
+	GameEventDeactivated     int `json:"GAME_EVENT_DEACTIVATED_DELIVERIES"`
+	GameEventExiting         int `json:"GAME_EVENT_EXITING_DELIVERIES"`
+	GameEventDisposed        int `json:"GAME_EVENT_DISPOSED_DELIVERIES"`
+	GameEventOrderChecks     int `json:"GAME_EVENT_ORDER_CHECKS"`
+	GameEventRemovalChecks   int `json:"GAME_EVENT_REMOVAL_CHECKS"`
+	GameEventOwnerThreadHits int `json:"GAME_EVENT_OWNER_THREAD_CHECKS"`
 }
 
 type stressReport struct {
@@ -52,6 +60,13 @@ type stressGame struct {
 	device   *graphics.GraphicsDevice
 	data     []byte
 	result   counters
+
+	// eventOrder records every native game signal in delivery order, and
+	// removedRan records whether a handler removed before Run ever fired.
+	eventOrder      []string
+	removedRan      bool
+	ownerGoroutine  string
+	eventGoroutines map[string]bool
 }
 
 var callbackSentinel = errors.New("native stress callback sentinel")
@@ -132,6 +147,20 @@ func runParent() (counters, error) {
 	if total.GameCycles < 20 || total.GameRecreationCycles < 20 || total.TextureCycles < 20 || total.SpriteBatchCycles < 20 || total.CallbackErrorCycles < 20 || total.CallbackPanicCycles < 20 {
 		return total, errors.New("native stress minimum was not met")
 	}
+	// One clean run per success cycle delivers exactly one Activated, one
+	// Exiting and one Disposed, each proved in order and on the owner
+	// goroutine. Deactivated has no minimum: HEADLESS cannot produce a focus
+	// transition away from the game, and the counter records that honestly by
+	// staying at zero.
+	if total.GameEventActivated < 20 || total.GameEventExiting < 20 || total.GameEventDisposed < 20 {
+		return total, errors.New("native game-event delivery minimum was not met")
+	}
+	if total.GameEventOrderChecks < 20 || total.GameEventOwnerThreadHits < 20 {
+		return total, errors.New("native game-event ordering or owner-goroutine minimum was not met")
+	}
+	if total.GameEventRemovalChecks < 60 {
+		return total, errors.New("native game-event removal was not proved in every isolated cycle")
+	}
 	return total, nil
 }
 
@@ -155,10 +184,14 @@ func runChild(scenario string, index int) error {
 	if err != nil {
 		return err
 	}
+	if err := game.subscribeGameEvents(host); err != nil {
+		return err
+	}
 	if err := verifyKeyboardUnavailable("before Game.Run"); err != nil {
 		return err
 	}
 	err = host.Run()
+	game.recordGameEventDeliveries()
 	if unavailableErr := verifyKeyboardUnavailable("after Game shutdown"); unavailableErr != nil {
 		return unavailableErr
 	}
@@ -168,6 +201,9 @@ func runChild(scenario string, index int) error {
 		game.result.GameRecreationCycles = 1
 		if err != nil {
 			return err
+		}
+		if verifyErr := game.verifyGameEventDelivery(); verifyErr != nil {
+			return verifyErr
 		}
 		if _, staleErr := game.device.Viewport(); !errors.Is(staleErr, interop.ErrStaleGeneration) {
 			game.result.ObservedUAF++
@@ -193,7 +229,149 @@ func runChild(scenario string, index int) error {
 	return nil
 }
 
+// subscribeGameEvents registers on all four projected Game events BEFORE the
+// native game exists, which is the point of the exercise: a Go consumer never
+// waits for a native subscription, because the bridge installs exactly one per
+// event when the native host is created and the Go registration list is
+// entirely managed state.
+//
+// It also registers and immediately removes a fifth handler. That handler must
+// never run, which is what proves removal reaches the delivery path rather than
+// only the registration list.
+func (g *stressGame) subscribeGameEvents(host *framework.Game) error {
+	g.eventGoroutines = map[string]bool{}
+	record := func(name string) framework.EventHandler[*framework.EventArgs] {
+		return func(sender any, args *framework.EventArgs) error {
+			g.eventOrder = append(g.eventOrder, name)
+			if args != framework.EventArgsEmpty() {
+				return fmt.Errorf("%s carried args that are not EventArgs.Empty", name)
+			}
+			// Exiting is the one event the reference raises with a null
+			// sender; the other three raise with the Game.
+			if name == "Exiting" {
+				if sender != nil {
+					return fmt.Errorf("Exiting sender = %v, want nil", sender)
+				}
+			} else if sender != any(host) {
+				return fmt.Errorf("%s sender = %v, want the Game", name, sender)
+			}
+			g.eventGoroutines[currentGoroutineLabel()] = true
+			return nil
+		}
+	}
+	if _, err := host.AddActivatedHandler(record("Activated")); err != nil {
+		return err
+	}
+	if _, err := host.AddDeactivatedHandler(record("Deactivated")); err != nil {
+		return err
+	}
+	if _, err := host.AddExitingHandler(record("Exiting")); err != nil {
+		return err
+	}
+	if _, err := host.AddDisposedHandler(record("Disposed")); err != nil {
+		return err
+	}
+	removed, err := host.AddExitingHandler(func(any, *framework.EventArgs) error {
+		g.removedRan = true
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if err := host.RemoveExitingHandler(removed); err != nil {
+		return err
+	}
+	// Removing the same token twice, and removing it from a different event,
+	// must both be inert.
+	if err := host.RemoveExitingHandler(removed); err != nil {
+		return err
+	}
+	return host.RemoveDisposedHandler(removed)
+}
+
+func (g *stressGame) recordGameEventDeliveries() {
+	for _, name := range g.eventOrder {
+		switch name {
+		case "Activated":
+			g.result.GameEventActivated++
+		case "Deactivated":
+			g.result.GameEventDeactivated++
+		case "Exiting":
+			g.result.GameEventExiting++
+		case "Disposed":
+			g.result.GameEventDisposed++
+		}
+	}
+	if !g.removedRan {
+		g.result.GameEventRemovalChecks++
+	}
+	if len(g.eventGoroutines) == 1 && g.eventGoroutines[g.ownerGoroutine] {
+		g.result.GameEventOwnerThreadHits++
+	}
+}
+
+// verifyGameEventDelivery holds the exact ordering the pinned runtime produces
+// for a clean run, measured against libcna_c_api.so:
+//
+//	initialize -> load_content -> begin_run -> ACTIVATED -> update/draw...
+//	-> exiting callback -> EXITING -> end_run -> [cna_game_run returns]
+//	-> unload_content -> DISPOSED -> [cna_game_destroy returns]
+//
+// The two facts that matter to the projection are that Exiting precedes
+// Disposed and that each is delivered exactly once. Deactivated is NOT asserted:
+// the qualification artifact runs a HEADLESS renderer with no window manager,
+// so no focus transition away from the game can be produced, and inventing one
+// to make a counter move would be fabricating evidence.
+func (g *stressGame) verifyGameEventDelivery() error {
+	if g.result.GameEventActivated != 1 {
+		return fmt.Errorf("Activated delivered %d times, want exactly 1", g.result.GameEventActivated)
+	}
+	if g.result.GameEventExiting != 1 {
+		return fmt.Errorf("Exiting delivered %d times, want exactly 1", g.result.GameEventExiting)
+	}
+	if g.result.GameEventDisposed != 1 {
+		return fmt.Errorf("Disposed delivered %d times, want exactly 1", g.result.GameEventDisposed)
+	}
+	exiting, disposed := -1, -1
+	for i, name := range g.eventOrder {
+		switch name {
+		case "Exiting":
+			exiting = i
+		case "Disposed":
+			disposed = i
+		}
+	}
+	if exiting < 0 || disposed < 0 || exiting >= disposed {
+		return fmt.Errorf("delivery order %v does not place Exiting before Disposed", g.eventOrder)
+	}
+	if g.eventOrder[0] != "Activated" {
+		return fmt.Errorf("delivery order %v does not start with Activated", g.eventOrder)
+	}
+	g.result.GameEventOrderChecks++
+	if g.removedRan {
+		return errors.New("a handler removed before Run was still delivered")
+	}
+	if g.result.GameEventOwnerThreadHits != 1 {
+		return fmt.Errorf("game events were delivered on %d distinct goroutines, want the owner goroutine only", len(g.eventGoroutines))
+	}
+	return nil
+}
+
+// currentGoroutineLabel identifies the delivering goroutine without exposing
+// any runtime identity beyond this file. Every native game event must arrive on
+// the same locked owner goroutine that entered cna_game_run.
+func currentGoroutineLabel() string {
+	buffer := make([]byte, 64)
+	buffer = buffer[:runtime.Stack(buffer, false)]
+	line := string(buffer)
+	if index := bytes.IndexByte([]byte(line), '['); index > 0 {
+		return line[:index]
+	}
+	return line
+}
+
 func (g *stressGame) Initialize(host *framework.Game) error {
+	g.ownerGoroutine = currentGoroutineLabel()
 	manager, err := framework.NewGraphicsDeviceManager(host)
 	if err != nil {
 		return err
@@ -376,4 +554,11 @@ func addCounters(target *counters, value counters) {
 	target.NativeCrashes += value.NativeCrashes
 	target.ObservedUAF += value.ObservedUAF
 	target.ObservedDoubleFree += value.ObservedDoubleFree
+	target.GameEventActivated += value.GameEventActivated
+	target.GameEventDeactivated += value.GameEventDeactivated
+	target.GameEventExiting += value.GameEventExiting
+	target.GameEventDisposed += value.GameEventDisposed
+	target.GameEventOrderChecks += value.GameEventOrderChecks
+	target.GameEventRemovalChecks += value.GameEventRemovalChecks
+	target.GameEventOwnerThreadHits += value.GameEventOwnerThreadHits
 }

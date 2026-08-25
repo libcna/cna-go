@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 620,
-    "ASSERTIONS": 620,
+    "OBSERVATIONS": 625,
+    "ASSERTIONS": 625,
     "FAILURES": 0
   },
   "observations": [
@@ -4965,6 +4965,46 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "false,true,true,true,true,true,true,1",
       "actual": "false,true,true,true,true,true,true,1",
+      "passed": true
+    },
+    {
+      "id": "game-event.on-methods-drop-their-sender",
+      "group": "GAME_EVENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "activated:self=true,args=true|deactivated:self=true,args=true|exiting:nil=true,args=true,true,true,true",
+      "actual": "activated:self=true,args=true|deactivated:self=true,args=true|exiting:nil=true,args=true,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-event.the-four-lists-are-independent",
+      "group": "GAME_EVENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,activated,deactivated,exiting",
+      "actual": "true,true,true,activated,deactivated,exiting",
+      "passed": true
+    },
+    {
+      "id": "game-event.dispatch-is-registration-order",
+      "group": "GAME_EVENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "first,second,third",
+      "actual": "first,second,third",
+      "passed": true
+    },
+    {
+      "id": "game-event.token-identity-and-inert-removals",
+      "group": "GAME_EVENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,true,true,true,0",
+      "actual": "true,true,true,true,true,true,0",
+      "passed": true
+    },
+    {
+      "id": "game-event.handler-failure-stops-dispatch",
+      "group": "GAME_EVENT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true,2,0",
+      "actual": "true,true,2,0",
       "passed": true
     }
   ]

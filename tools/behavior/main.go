@@ -2404,6 +2404,114 @@ func runCorpus() corpusReport {
 			initializeComponents == nil, updateComponents == nil, drawComponents == nil,
 			disposeEarly == nil, engineComponentGame.Components().Count()))
 
+	// ------------------------------------------------------------------
+	// Foundation 34. Game's four events and the three protected raise sites.
+	// ------------------------------------------------------------------
+	eventGame, _ := framework.NewGame(corpusCallbacks{})
+	eventSenderGame, _ := framework.NewGame(corpusCallbacks{})
+
+	// OnActivated and OnDeactivated accept a sender, ignore it, and raise with
+	// `this`. OnExiting is the outlier: its IL pushes `ldnull`, so the handler
+	// receives no sender at all. The args are forwarded unchanged in all three.
+	var eventSenders []string
+	customArgs := framework.EventArgsEmpty()
+	_, _ = eventGame.AddActivatedHandler(func(sender any, args *framework.EventArgs) error {
+		eventSenders = append(eventSenders, fmt.Sprintf("activated:self=%t,args=%t", sender == any(eventGame), args == customArgs))
+		return nil
+	})
+	_, _ = eventGame.AddDeactivatedHandler(func(sender any, args *framework.EventArgs) error {
+		eventSenders = append(eventSenders, fmt.Sprintf("deactivated:self=%t,args=%t", sender == any(eventGame), args == customArgs))
+		return nil
+	})
+	_, _ = eventGame.AddExitingHandler(func(sender any, args *framework.EventArgs) error {
+		eventSenders = append(eventSenders, fmt.Sprintf("exiting:nil=%t,args=%t", sender == nil, args == customArgs))
+		return nil
+	})
+	activatedRaise := eventGame.OnActivated(eventSenderGame, customArgs)
+	deactivatedRaise := eventGame.OnDeactivated(eventSenderGame, customArgs)
+	exitingRaise := eventGame.OnExiting(eventSenderGame, customArgs)
+	check("game-event.on-methods-drop-their-sender", "GAME_EVENT",
+		"activated:self=true,args=true|deactivated:self=true,args=true|exiting:nil=true,args=true,true,true,true",
+		fmt.Sprintf("%s,%t,%t,%t", strings.Join(eventSenders, "|"),
+			activatedRaise == nil, deactivatedRaise == nil, exitingRaise == nil))
+
+	// The four events are four separate registration lists. A token from one
+	// removes nothing from another, and a handler on one never runs for another.
+	independentGame, _ := framework.NewGame(corpusCallbacks{})
+	var independentLog []string
+	independentHandler := func(name string) framework.EventHandler[*framework.EventArgs] {
+		return func(any, *framework.EventArgs) error {
+			independentLog = append(independentLog, name)
+			return nil
+		}
+	}
+	activatedToken, _ := independentGame.AddActivatedHandler(independentHandler("activated"))
+	_, _ = independentGame.AddDeactivatedHandler(independentHandler("deactivated"))
+	_, _ = independentGame.AddExitingHandler(independentHandler("exiting"))
+	_, _ = independentGame.AddDisposedHandler(independentHandler("disposed"))
+	crossRemovals := fmt.Sprintf("%t,%t,%t",
+		independentGame.RemoveDeactivatedHandler(activatedToken) == nil,
+		independentGame.RemoveExitingHandler(activatedToken) == nil,
+		independentGame.RemoveDisposedHandler(activatedToken) == nil)
+	_ = independentGame.OnActivated(nil, framework.EventArgsEmpty())
+	_ = independentGame.OnDeactivated(nil, framework.EventArgsEmpty())
+	_ = independentGame.OnExiting(nil, framework.EventArgsEmpty())
+	check("game-event.the-four-lists-are-independent", "GAME_EVENT",
+		"true,true,true,activated,deactivated,exiting",
+		fmt.Sprintf("%s,%s", crossRemovals, strings.Join(independentLog, ",")))
+
+	// Dispatch is registration order, which is what one native subscription per
+	// event buys: CNA invokes multiple native registrations on one event in
+	// reverse order, and none of that is visible here.
+	orderGame, _ := framework.NewGame(corpusCallbacks{})
+	var eventOrder []string
+	for _, name := range []string{"first", "second", "third"} {
+		label := name
+		_, _ = orderGame.AddExitingHandler(func(any, *framework.EventArgs) error {
+			eventOrder = append(eventOrder, label)
+			return nil
+		})
+	}
+	_ = orderGame.OnExiting(nil, framework.EventArgsEmpty())
+	check("game-event.dispatch-is-registration-order", "GAME_EVENT", "first,second,third",
+		strings.Join(eventOrder, ","))
+
+	// The settled accessor projection, on a Game: one handler added twice is
+	// two registrations, a token removes exactly one, and the zero token, an
+	// already-removed token and a token owned by another Game are all inert.
+	tokenGame, _ := framework.NewGame(corpusCallbacks{})
+	tokenCalls := 0
+	tokenHandler := func(any, *framework.EventArgs) error { tokenCalls++; return nil }
+	firstDisposedToken, _ := tokenGame.AddDisposedHandler(tokenHandler)
+	_, _ = tokenGame.AddDisposedHandler(tokenHandler)
+	foreignGameToken, _ := eventSenderGame.AddDisposedHandler(tokenHandler)
+	nilGameToken, nilGameError := tokenGame.AddActivatedHandler(nil)
+	inertRemovals := fmt.Sprintf("%t,%t,%t,%t",
+		tokenGame.RemoveDisposedHandler(firstDisposedToken) == nil,
+		tokenGame.RemoveDisposedHandler(firstDisposedToken) == nil,
+		tokenGame.RemoveDisposedHandler(framework.EventSubscription{}) == nil,
+		tokenGame.RemoveDisposedHandler(foreignGameToken) == nil)
+	tokenCalls = 0
+	_ = tokenGame.OnActivated(nil, framework.EventArgsEmpty())
+	disposedAfterRemoval := tokenCalls
+	check("game-event.token-identity-and-inert-removals", "GAME_EVENT",
+		"true,true,true,true,true,true,0",
+		fmt.Sprintf("%s,%t,%t,%d", inertRemovals,
+			nilGameToken == framework.EventSubscription{}, nilGameError == nil, disposedAfterRemoval))
+
+	// A failing handler stops dispatch, propagates, and leaves the list intact.
+	failGame, _ := framework.NewGame(corpusCallbacks{})
+	failSentinel := errors.New("corpus game event failure")
+	failRan, laterRan := 0, 0
+	_, _ = failGame.AddExitingHandler(func(any, *framework.EventArgs) error { failRan++; return failSentinel })
+	_, _ = failGame.AddExitingHandler(func(any, *framework.EventArgs) error { laterRan++; return nil })
+	firstFailure := failGame.OnExiting(nil, framework.EventArgsEmpty())
+	secondFailure := failGame.OnExiting(nil, framework.EventArgsEmpty())
+	checkGoProjection("game-event.handler-failure-stops-dispatch", "GAME_EVENT", "true,true,2,0",
+		fmt.Sprintf("%t,%t,%d,%d",
+			errors.Is(firstFailure, failSentinel), errors.Is(secondFailure, failSentinel),
+			failRan, laterRan))
+
 	return report
 }
 

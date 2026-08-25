@@ -45,6 +45,7 @@ var parameterCounts = map[string]int{
 	"cna_error_copy_last_message": 3, "cna_game_create": 2,
 	"cna_game_set_frame_hooks_ext": 2, "cna_game_run": 1,
 	"cna_game_request_exit": 1, "cna_game_destroy": 1,
+	"cna_game_subscribe": 5, "cna_game_unsubscribe": 1,
 	"cna_graphics_device_manager_create":              2,
 	"cna_graphics_device_manager_get_graphics_device": 2,
 	"cna_graphics_device_manager_destroy":             1, "cna_game_get_graphics_device": 2,
@@ -85,8 +86,14 @@ func verify(headerRoot, library string) (report, error) {
 	}
 	sort.Strings(result.Functions)
 	result.BoundFunctions = len(result.Functions)
-	result.Callbacks = 2
-	result.Constants = 5
+	// CNA_GameLifecycleCallback, CNA_GameBeginDrawCallback and
+	// CNA_GameEventCallback: every callback typedef the bridge installs is
+	// pinned by an incompatible-pointer-types assignment in probe.c.
+	result.Callbacks = 3
+	// The five original _Static_asserts plus the five that compare the four
+	// canonical game-event identities and CNA_GAME_EVENT_MAXIMUM against
+	// CNA-Go's private manifest copy.
+	result.Constants = 10
 	root, err := filepath.Abs(headerRoot)
 	if err != nil {
 		return result, err

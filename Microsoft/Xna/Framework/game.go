@@ -67,6 +67,21 @@ type Game struct {
 	// native host plays GameHost's part. It decides whether a newly added
 	// component is initialized immediately or queued.
 	inRun bool
+
+	// The four CLR events Game declares, each a private registration list
+	// exactly as the reference keeps a private multicast delegate field. See
+	// game_events.go for the raise paths and the native bridge.
+	activated   EventSource[*EventArgs]
+	deactivated EventSource[*EventArgs]
+	exiting     EventSource[*EventArgs]
+	disposed    EventSource[*EventArgs]
+
+	// isActive is Game::isActive, the private bool HostActivated and
+	// HostDeactivated maintain. It is NOT Game::IsActive: that getter also
+	// consults GamerServices' Guide and stays a missing member. This field
+	// exists only because it is what makes the two activation events
+	// edge-triggered, and the reference leaves it false at construction.
+	isActive bool
 }
 
 // GameCallbacks is the measured Go language adapter for XNA Game lifecycle
@@ -207,6 +222,13 @@ func (c gameRuntimeCallbacks) Draw(value interop.FrameTime) error {
 
 func (c gameRuntimeCallbacks) UnloadContent() error {
 	return c.game.callbacks.UnloadContent(c.game)
+}
+
+// GameEvent is the private end of the native game-event bridge. It is NOT a
+// GameCallbacks member: the five-member override contract is unchanged, and a
+// consumer implements nothing new to receive these signals.
+func (c gameRuntimeCallbacks) GameEvent(event uint32) error {
+	return c.game.raiseNativeGameEvent(event)
 }
 
 func gameTimeFromInterop(value interop.FrameTime) GameTime {

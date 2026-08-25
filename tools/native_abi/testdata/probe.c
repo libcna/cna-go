@@ -18,11 +18,32 @@ _Static_assert(CNA_RESULT_CALLBACK == 9, "CNA_RESULT_CALLBACK drift");
 _Static_assert(CNA_FALSE == 0 && CNA_TRUE == 1, "CNA_Bool constants drift");
 _Static_assert(CNA_INVALID_HANDLE == 0, "invalid handle drift");
 
+// The four canonical game-event identities, compared against CNA-Go's own
+// private copy in abi_manifest.h. The manifest's copy is what the cgo build
+// uses, because that build never sees a CNA header; these five assertions are
+// the only place the two are compiled together, so they are what stops a
+// signal from being routed to the wrong projected event.
+_Static_assert(CNA_GAME_EVENT_ACTIVATED == CNA_GO_MANIFEST_GAME_EVENT_ACTIVATED, "activation identity drift");
+_Static_assert(CNA_GAME_EVENT_DEACTIVATED == CNA_GO_MANIFEST_GAME_EVENT_DEACTIVATED, "deactivation identity drift");
+_Static_assert(CNA_GAME_EVENT_DISPOSED == CNA_GO_MANIFEST_GAME_EVENT_DISPOSED, "disposal identity drift");
+_Static_assert(CNA_GAME_EVENT_EXITING == CNA_GO_MANIFEST_GAME_EVENT_EXITING, "exit identity drift");
+_Static_assert(CNA_GAME_EVENT_MAXIMUM == CNA_GAME_EVENT_EXITING, "highest game-event identity drift");
+
+#ifndef CNA_GO_LAYOUT_ONLY
+// The event callback ABI, pinned the same way every bound function prototype
+// is: by assigning a function of the exact shape to the canonical typedef
+// under -Werror=incompatible-pointer-types. A handler that returned a result,
+// took a game handle, or dropped the context would not compile.
+static void cna_go_probe_game_event(void* context) { (void)context; }
+static CNA_GameEventCallback checked_CNA_GameEventCallback = &cna_go_probe_game_event;
+#endif
+
 int main(void) {
 #ifndef CNA_GO_LAYOUT_ONLY
 #define USE_PROTOTYPE(name) (void)checked_##name;
     CNA_GO_REQUIRED_SYMBOLS(USE_PROTOTYPE)
 #undef USE_PROTOTYPE
+    (void)checked_CNA_GameEventCallback;
 #endif
     printf("abi_version=%u\n", (unsigned)CNA_ABI_VERSION);
     printf("sizeof_CNA_Bool=%zu\n", sizeof(CNA_Bool));
@@ -50,6 +71,9 @@ int main(void) {
     printf("sizeof_CNA_SpriteScaledCommand=%zu\n", sizeof(CNA_SpriteScaledCommand));
     printf("alignof_CNA_SpriteScaledCommand=%zu\n", _Alignof(CNA_SpriteScaledCommand));
     printf("offsetof_CNA_SpriteScaledCommand_scale=%zu\n", offsetof(CNA_SpriteScaledCommand, scale));
+    printf("sizeof_CNA_GameEvent=%zu\n", sizeof(CNA_GameEvent));
+    printf("sizeof_CNA_GameEventRegistrationHandle=%zu\n", sizeof(CNA_GameEventRegistrationHandle));
+    printf("sizeof_CNA_GameEventCallback=%zu\n", sizeof(CNA_GameEventCallback));
     printf("sizeof_CNA_KeyboardState=%zu\n", sizeof(CNA_KeyboardState));
     printf("alignof_CNA_KeyboardState=%zu\n", _Alignof(CNA_KeyboardState));
     printf("offsetof_CNA_KeyboardState_pressed_key_words=%zu\n", offsetof(CNA_KeyboardState, pressed_key_words));

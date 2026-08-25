@@ -15,6 +15,18 @@ import (
 	"unsafe"
 )
 
+// The Go game-event identities must equal the C ones exactly. These arrays are
+// sized by the difference, so any drift between runtime.go's constants and
+// bridge.h's mirror of CNA_GAME_EVENT_* is a compile error rather than a
+// silently mis-routed signal.
+var (
+	_ [C.CNA_GO_GAME_EVENT_ACTIVATED - GameEventActivated]struct{}
+	_ [C.CNA_GO_GAME_EVENT_DEACTIVATED - GameEventDeactivated]struct{}
+	_ [C.CNA_GO_GAME_EVENT_DISPOSED - GameEventDisposed]struct{}
+	_ [C.CNA_GO_GAME_EVENT_EXITING - GameEventExiting]struct{}
+	_ [C.CNA_GO_GAME_EVENT_COUNT - gameEventCount]struct{}
+)
+
 func nativeOpen(path string) error {
 	cPath := C.CString(path)
 	defer C.free(unsafe.Pointer(cPath))
@@ -85,6 +97,35 @@ func nativeGameRequestExit(game uint64) error {
 
 func nativeGameDestroy(game uint64) error {
 	return resultError("cna_game_destroy", uint32(C.cna_go_game_destroy(C.CnaGoHandle(game))))
+}
+
+// nativeGameSubscribeEvents installs exactly one native subscription per
+// canonical game event and returns the four owned registration handles. CNA
+// enforces owner-thread affinity on cna_game_subscribe itself: a call from any
+// other thread reports CNA_RESULT_THREAD (8) and installs nothing.
+func nativeGameSubscribeEvents(game uint64, context uintptr) ([gameEventCount]uint64, error) {
+	var registrations [gameEventCount]C.CnaGoHandle
+	code := uint32(C.cna_go_game_subscribe_events(C.CnaGoHandle(game), C.uintptr_t(context), &registrations[0]))
+	var result [gameEventCount]uint64
+	for i := range result {
+		result[i] = uint64(registrations[i])
+	}
+	return result, resultError("cna_game_subscribe", code)
+}
+
+// nativeGameUnsubscribeEvents releases every non-zero registration and zeroes
+// the caller's slot, so a second release cannot pass a stale handle back to
+// CNA -- which answers CNA_RESULT_INVALID_HANDLE (2) for one, not success.
+func nativeGameUnsubscribeEvents(registrations *[gameEventCount]uint64) error {
+	var handles [gameEventCount]C.CnaGoHandle
+	for i, value := range registrations {
+		handles[i] = C.CnaGoHandle(value)
+	}
+	code := uint32(C.cna_go_game_unsubscribe_events(&handles[0]))
+	for i := range registrations {
+		registrations[i] = uint64(handles[i])
+	}
+	return resultError("cna_game_unsubscribe", code)
 }
 
 func nativeGraphicsDeviceManagerCreate(game uint64) (uint64, error) {
@@ -185,6 +226,22 @@ func cStringFromBuffer(buffer []byte) string {
 		}
 	}
 	return string(buffer)
+}
+
+//export cnaGoGameEvent
+func cnaGoGameEvent(event C.uint32_t, context C.uintptr_t) {
+	// A CNA_GameEventCallback returns void, so nothing may cross the C frame:
+	// neither a Go panic nor an error. Both are recorded on the Runtime and
+	// surface from Run instead.
+	var state *Runtime
+	defer func() {
+		if recovered := recover(); recovered != nil && state != nil {
+			state.recordCallbackFailure(fmt.Errorf("panic in native game-event trampoline: %v", recovered))
+		}
+	}()
+	handle := cgo.Handle(context)
+	state = handle.Value().(*Runtime)
+	state.invokeGameEvent(uint32(event))
 }
 
 //export cnaGoLifecycle

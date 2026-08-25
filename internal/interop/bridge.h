@@ -22,7 +22,17 @@ enum {
     CNA_GO_CALLBACK_UPDATE = 3,
     CNA_GO_CALLBACK_DRAW = 4,
     CNA_GO_CALLBACK_UNLOAD_CONTENT = 5,
-    CNA_GO_CALLBACK_EXITING = 6
+    CNA_GO_CALLBACK_EXITING = 6,
+
+    /* The four canonical CNA game-event identities, mirrored so the Go side
+       never spells a CNA_GAME_EVENT_* constant itself. abi_manifest.h holds
+       the authoritative values and tools/native_abi static-asserts them
+       against the canonical header. */
+    CNA_GO_GAME_EVENT_ACTIVATED = 0,
+    CNA_GO_GAME_EVENT_DEACTIVATED = 1,
+    CNA_GO_GAME_EVENT_DISPOSED = 2,
+    CNA_GO_GAME_EVENT_EXITING = 3,
+    CNA_GO_GAME_EVENT_COUNT = 4
 };
 
 int cna_go_open(const char* path, char* error_buffer, size_t error_capacity);
@@ -42,6 +52,20 @@ CnaGoResult cna_go_game_create(
 CnaGoResult cna_go_game_run(CnaGoHandle game);
 CnaGoResult cna_go_game_request_exit(CnaGoHandle game);
 CnaGoResult cna_go_game_destroy(CnaGoHandle game);
+
+/* Installs exactly one native subscription per canonical game event.
+   out_registrations must point at CNA_GO_GAME_EVENT_COUNT handles; every
+   handle it fills is owned by the caller and must be released with
+   cna_go_game_unsubscribe_events. A partial failure releases what it already
+   installed and reports the first failing result. */
+CnaGoResult cna_go_game_subscribe_events(
+    CnaGoHandle game,
+    uintptr_t context,
+    CnaGoHandle* out_registrations);
+
+/* Releases every non-zero registration handle and zeroes the slot. Returns the
+   first failing result and still releases the remaining handles. */
+CnaGoResult cna_go_game_unsubscribe_events(CnaGoHandle* registrations);
 
 CnaGoResult cna_go_graphics_device_manager_create(CnaGoHandle game, CnaGoHandle* out_manager);
 CnaGoResult cna_go_graphics_device_manager_get_device(CnaGoHandle manager, CnaGoHandle* out_device);

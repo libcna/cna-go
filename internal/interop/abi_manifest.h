@@ -18,6 +18,17 @@ typedef struct CNA_Rectangle { int32_t x; int32_t y; int32_t width; int32_t heig
 typedef struct CNA_Color { uint8_t r; uint8_t g; uint8_t b; uint8_t a; } CNA_Color;
 #endif
 
+/* CNA-Go's own copy of the four canonical game-event identities. These are
+   deliberately declared under private names and OUTSIDE the guard below, so a
+   translation unit that also has the canonical CNA header can compare the two
+   sets rather than silently preferring one. tools/native_abi does exactly that.
+   The guarded block further down defines the canonical spellings from these
+   when, and only when, the canonical header is absent. */
+#define CNA_GO_MANIFEST_GAME_EVENT_ACTIVATED UINT32_C(0)
+#define CNA_GO_MANIFEST_GAME_EVENT_DEACTIVATED UINT32_C(1)
+#define CNA_GO_MANIFEST_GAME_EVENT_DISPOSED UINT32_C(2)
+#define CNA_GO_MANIFEST_GAME_EVENT_EXITING UINT32_C(3)
+
 #ifndef CNA_C_RUNTIME_H
 typedef struct CNA_GameTime {
     int64_t total_game_time_ticks;
@@ -61,6 +72,14 @@ typedef struct CNA_GameCreateInfo {
     CNA_StringView window_title;
     const CNA_GameCallbacks* callbacks;
 } CNA_GameCreateInfo;
+typedef CNA_Handle CNA_GameEventRegistrationHandle;
+typedef uint32_t CNA_GameEvent;
+#define CNA_GAME_EVENT_ACTIVATED CNA_GO_MANIFEST_GAME_EVENT_ACTIVATED
+#define CNA_GAME_EVENT_DEACTIVATED CNA_GO_MANIFEST_GAME_EVENT_DEACTIVATED
+#define CNA_GAME_EVENT_DISPOSED CNA_GO_MANIFEST_GAME_EVENT_DISPOSED
+#define CNA_GAME_EVENT_EXITING CNA_GO_MANIFEST_GAME_EVENT_EXITING
+#define CNA_GAME_EVENT_MAXIMUM CNA_GAME_EVENT_EXITING
+typedef void (*CNA_GameEventCallback)(void*);
 #endif
 
 #ifndef CNA_C_GRAPHICS_DEVICE_H
@@ -124,6 +143,8 @@ typedef CNA_Result (*cna_game_set_frame_hooks_ext_fn)(CNA_Handle, const CNA_Game
 typedef CNA_Result (*cna_game_run_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_request_exit_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_game_subscribe_fn)(CNA_Handle, CNA_GameEvent, CNA_GameEventCallback, void*, CNA_GameEventRegistrationHandle*);
+typedef CNA_Result (*cna_game_unsubscribe_fn)(CNA_GameEventRegistrationHandle);
 typedef CNA_Result (*cna_graphics_device_manager_create_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_manager_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_manager_destroy_fn)(CNA_Handle);
@@ -149,6 +170,8 @@ typedef CNA_Result (*cna_keyboard_get_state_fn)(CNA_Handle, CNA_KeyboardState*);
     X(cna_game_run) \
     X(cna_game_request_exit) \
     X(cna_game_destroy) \
+    X(cna_game_subscribe) \
+    X(cna_game_unsubscribe) \
     X(cna_graphics_device_manager_create) \
     X(cna_graphics_device_manager_get_graphics_device) \
     X(cna_graphics_device_manager_destroy) \

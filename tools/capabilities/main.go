@@ -38,6 +38,7 @@ var admittedStatuses = map[string]bool{
 
 var requiredIDs = []string{
 	"xna-package-mapping", "pure-value-foundation", "game-lifecycle",
+	"game-events", "game-activation-transitions",
 	"callback-containment", "owner-os-thread", "game-recreation",
 	"graphics-device", "viewport", "clear", "texture-stream", "spritebatch",
 	"keyboard", "visible-rendering", "content-xnb", "effects-3d", "audio",
