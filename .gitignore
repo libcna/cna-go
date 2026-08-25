@@ -5,6 +5,14 @@
 *.out
 coverage.*
 
+# Shared build directories (closed list; never suffix per ticket)
+/build/
+/build-asan/
+/build-ubsan/
+/build-tsan/
+/build-probe/
+/build-consumer/
+
 # Native CNA binaries are packaged artifacts, not source
 /runtimes/
 *.dll

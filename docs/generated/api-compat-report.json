@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 59,
+    "COMPLETE_TYPES": 60,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 193,
-    "MISSING_TYPES": 193,
+    "MISSING_TYPE": 192,
+    "MISSING_TYPES": 192,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1359,
-    "TARGET_TYPES": 64,
-    "TOTAL_DIAGNOSTICS": 370,
+    "TARGET_MEMBERS": 1361,
+    "TARGET_TYPES": 65,
+    "TOTAL_DIAGNOSTICS": 369,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1960,12 +1960,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.ButtonState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:ButtonState",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.Buttons",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:Buttons",
       "message": "mapped Go type is absent"
@@ -2309,6 +2303,7 @@
     "Microsoft.Xna.Framework.Graphics.VertexElementFormat",
     "Microsoft.Xna.Framework.Graphics.VertexElementUsage",
     "Microsoft.Xna.Framework.Graphics.Viewport",
+    "Microsoft.Xna.Framework.Input.ButtonState",
     "Microsoft.Xna.Framework.Input.KeyState",
     "Microsoft.Xna.Framework.Input.Keyboard",
     "Microsoft.Xna.Framework.Input.KeyboardState",
@@ -2678,7 +2673,6 @@
     "Microsoft.Xna.Framework.IGameComponent",
     "Microsoft.Xna.Framework.IGraphicsDeviceManager",
     "Microsoft.Xna.Framework.IUpdateable",
-    "Microsoft.Xna.Framework.Input.ButtonState",
     "Microsoft.Xna.Framework.Input.Buttons",
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadButtons",
@@ -3668,6 +3662,34 @@
       },
       {
         "name": "HiDef",
+        "expectedValue": "1",
+        "actualValue": "1",
+        "status": "PASS"
+      }
+    ],
+    "status": "PASS"
+  },
+  "buttonStateClosure": {
+    "sourceTypes": 1,
+    "sourceIdentities": 3,
+    "expectedGoIdentities": 2,
+    "targetTypes": 1,
+    "targetGoIdentities": 2,
+    "localDiagnostics": 0,
+    "expectedKind": "enum",
+    "actualKind": "named",
+    "underlyingType": "int32",
+    "flags": false,
+    "valueStorageExcluded": true,
+    "values": [
+      {
+        "name": "Released",
+        "expectedValue": "0",
+        "actualValue": "0",
+        "status": "PASS"
+      },
+      {
+        "name": "Pressed",
         "expectedValue": "1",
         "actualValue": "1",
         "status": "PASS"

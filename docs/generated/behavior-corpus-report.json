@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 274,
-    "ASSERTIONS": 274,
+    "OBSERVATIONS": 280,
+    "ASSERTIONS": 280,
     "FAILURES": 0
   },
   "observations": [
@@ -378,6 +378,54 @@
     {
       "id": "graphics-profile.negative-raw",
       "group": "GRAPHICS_PROFILE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "button-state.complete-raw-table",
+      "group": "BUTTON_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Released=0,Pressed=1",
+      "actual": "Released=0,Pressed=1",
+      "passed": true
+    },
+    {
+      "id": "button-state.underlying-system-int32",
+      "group": "BUTTON_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "button-state.flags",
+      "group": "BUTTON_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "button-state.zero-value-released",
+      "group": "BUTTON_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "button-state.arbitrary-positive-raw",
+      "group": "BUTTON_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "2,12345",
+      "actual": "2,12345",
+      "passed": true
+    },
+    {
+      "id": "button-state.negative-raw",
+      "group": "BUTTON_STATE",
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": -1,
       "actual": -1,

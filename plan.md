@@ -593,6 +593,50 @@ Exact evidence is in `docs/graphics-profile-evidence.md`.
 FOUNDATION_MILESTONE_12_COMPLETE=true
 ```
 
+## Foundation 13 ButtonState policy
+
+Foundation 13 completes exactly `Microsoft.Xna.Framework.Input.ButtonState`. It
+is a non-flags named `int32` enum with explicit `Released=0` and `Pressed=1`
+constants. The synthetic CLR `value__` field is excluded, so three source
+identities map to exactly two Go identities. It belongs to the `Input` package,
+never to `Graphics` or the `Framework` root.
+
+Both raw assignments are explicit and production contains no `iota`. The zero
+value is `Released`; arbitrary signed `int32` values remain representable
+without validation, clamping, panic, or error. There is no flags marker,
+Stringer, parser, `IsPressed`/`IsReleased`/`Bool`/`FromBool`/`Toggle` helper,
+native enum mirror, or input backend mapping. `Released | Pressed` is an
+ordinary Go integer expression, not an XNA flags composition.
+
+Completion of the enum contract claims managed metadata only. `Released` and
+`Pressed` are metadata values, not runtime input capability claims: no mouse
+button behavior, gamepad button behavior, D-pad behavior, button polling,
+device enumeration, connection state, dead zone, or vibration is claimed. All
+three direct reverse dependents remain deferred: GamePadButtons, GamePadDPad,
+and MouseState. A completed property or parameter type never authorizes its
+consumer.
+
+## Foundation 13 qualification evidence
+
+- [x] Independently confirm the exact three-source-identity/two-Go-identity contract.
+- [x] Complete ButtonState in the Input package with compiler-measured local strict zero.
+- [x] Retain both exact raw values and exclude `value__`.
+- [x] Qualify Released zero value and arbitrary positive/negative raw values.
+- [x] Grow verifier mutations from 144 to 157 without an allowlist or mapping exception.
+- [x] Add a source-level self-test that rejects an accidental `xna:flags` directive at the declaration site.
+- [x] Grow the behavior corpus from 274 to 280 with explicit XNA/Go provenance and zero failures.
+- [x] Preserve all five partial types and their combined 177 missing members.
+- [x] Preserve every mismatch, leak, allowlist, unmeasured, interface-witness, and CNA ABI counter.
+- [x] Requalify Go, native stress, unchanged template, deterministic artifact, and isolated-consumer gates.
+
+Normal strict verification remains red only for 192 genuinely missing types
+and 177 members on five explicitly deferred native/runtime partial types.
+Exact evidence is in `docs/button-state-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_13_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -602,8 +646,13 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 12, regenerate the scoreboard and dependency graph before
-selecting one next closure. Do not automatically choose a GraphicsProfile,
-DepthFormat, or SurfaceFormat consumer, continue GraphicsDeviceManager or
-GraphicsDevice, infer runtime support from a managed enum, or combine
-independent families.
+After Foundation 13, regenerate the scoreboard and dependency graph before
+selecting one next closure. Do not automatically choose a ButtonState,
+GraphicsProfile, DepthFormat, or SurfaceFormat consumer, continue
+GraphicsDeviceManager or GraphicsDevice, infer runtime support from a managed
+enum, or combine independent families.
+
+The dependency-complete node count is measured with direct interfaces included
+as public-signature dependencies. That rule is authoritative; a historical
+count taken without interface edges differs by exactly one node
+(`Microsoft.Xna.Framework.GameComponent`) and never changes the ranking.

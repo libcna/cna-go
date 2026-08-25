@@ -394,6 +394,36 @@ func TestSurfaceFormatMappedContract(t *testing.T) {
 	}
 }
 
+func TestButtonStateMappedContract(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	state := surface.typeForXNA(buttonStateIdentity)
+	if state == nil || state.Kind != "enum" || state.Flags || state.SourceMembers != 3 || len(state.Members) != 2 || len(state.Interfaces) != 0 {
+		t.Fatalf("ButtonState projection = %+v", state)
+	}
+	if state.PackagePath != modulePath+"/Microsoft/Xna/Framework/Input" {
+		t.Fatalf("ButtonState package = %q", state.PackagePath)
+	}
+	for _, wanted := range buttonStateValues {
+		member := surface.Members[symbolKey{Package: state.PackagePath, Name: "ButtonState" + wanted.Name}]
+		if member == nil || member.GoKind != "const" || member.EnumValue == nil || *member.EnumValue != wanted.Value || !equalStrings(member.Results, []string{"ButtonState"}) {
+			t.Fatalf("ButtonState%s projection = %+v", wanted.Name, member)
+		}
+	}
+	for _, name := range []string{"Value__", "value__"} {
+		if surface.Members[symbolKey{Package: state.PackagePath, Name: "ButtonState" + name}] != nil {
+			t.Fatalf("enum storage ButtonState%s was projected", name)
+		}
+	}
+	if !enumHasNamedZero(surface, state) {
+		t.Fatal("ButtonState Released=0 was not measured as the source-declared zero literal")
+	}
+}
+
 func TestGraphicsProfileMappedContract(t *testing.T) {
 	reference := loadPinnedContract(t)
 	surface, err := buildExpected(reference)
@@ -587,6 +617,37 @@ func TestSurfaceFormatCurrentSurfaceAndLocalClosure(t *testing.T) {
 	for _, row := range closure.Values {
 		if row.Status != "PASS" || row.ActualValue != row.ExpectedValue {
 			t.Fatalf("SurfaceFormat value row = %+v", row)
+		}
+	}
+}
+
+func TestButtonStateCurrentSurfaceAndLocalClosure(t *testing.T) {
+	reference := loadPinnedContract(t)
+	expected, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("type errors: %v", actual.TypeErrors)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	closure := result.ButtonStateClosure
+	if closure.Status != "PASS" || closure.SourceTypes != 1 || closure.SourceIdentities != 3 || closure.ExpectedGoIdentities != 2 ||
+		closure.TargetTypes != 1 || closure.TargetGoIdentities != 2 || closure.LocalDiagnostics != 0 || closure.ExpectedKind != "enum" ||
+		closure.ActualKind != "named" || closure.UnderlyingType != "int32" || closure.Flags || !closure.ValueStorageExcluded || len(closure.Values) != 2 {
+		t.Fatalf("ButtonState closure = %+v", closure)
+	}
+	for _, row := range closure.Values {
+		if row.Status != "PASS" || row.ActualValue != row.ExpectedValue {
+			t.Fatalf("ButtonState value row = %+v", row)
 		}
 	}
 }
@@ -977,7 +1038,9 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "graphics_profile_") {
+			if strings.HasPrefix(fixture.Mutation, "button_state_") {
+				expected, actual = buttonStateMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "graphics_profile_") {
 				expected, actual = graphicsProfileMutationCase(t, fixture.Mutation)
 			} else if strings.HasPrefix(fixture.Mutation, "depth_format_") {
 				expected, actual = depthFormatMutationCase(t, fixture.Mutation)
@@ -1002,6 +1065,105 @@ func TestMutationFixtures(t *testing.T) {
 			}
 		})
 	}
+}
+
+func buttonStateMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(buttonStateIdentity)
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   3,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  2,
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			copiedType.Key: {Key: copiedType.Key, Kind: "named", Underlying: "int32"},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		value := *copiedMember.EnumValue
+		actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "const", Results: []string{"ButtonState"}, Value: &value}
+	}
+
+	const inputPackage = modulePath + "/Microsoft/Xna/Framework/Input"
+	const graphicsPackage = modulePath + "/Microsoft/Xna/Framework/Graphics"
+	typeKey := symbolKey{Package: inputPackage, Name: "ButtonState"}
+	constant := func(name string) symbolKey {
+		return symbolKey{Package: inputPackage, Name: "ButtonState" + name}
+	}
+	setWrongValue := func(name, value string) { actual.Members[constant(name)].Value = &value }
+	rename := func(from, to string) {
+		original := constant(from)
+		renamed := constant(to)
+		member := *actual.Members[original]
+		delete(actual.Members, original)
+		member.Key = renamed
+		actual.Members[renamed] = &member
+	}
+	switch mutation {
+	case "button_state_missing":
+		delete(actual.Types, typeKey)
+	case "button_state_wrong_package":
+		movedType := *actual.Types[typeKey]
+		delete(actual.Types, typeKey)
+		movedType.Key.Package = graphicsPackage
+		actual.Types[movedType.Key] = &movedType
+		for _, wanted := range buttonStateValues {
+			key := constant(wanted.Name)
+			movedMember := *actual.Members[key]
+			delete(actual.Members, key)
+			movedMember.Key.Package = graphicsPackage
+			actual.Members[movedMember.Key] = &movedMember
+		}
+	case "button_state_wrong_kind":
+		actual.Types[typeKey].Kind = "struct"
+	case "button_state_wrong_underlying_type":
+		actual.Types[typeKey].Underlying = "uint32"
+	case "button_state_accidentally_flags":
+		actual.Types[typeKey].FlagsMarker = true
+	case "button_state_wrong_released_value":
+		setWrongValue("Released", "1")
+	case "button_state_wrong_pressed_value":
+		setWrongValue("Pressed", "2")
+	case "button_state_missing_pressed":
+		delete(actual.Members, constant("Pressed"))
+	case "button_state_value_storage_projected":
+		key := constant("Value__")
+		value := "0"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"int32"}, Value: &value}
+	case "button_state_extra_constant":
+		key := constant("None")
+		value := "2"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"ButtonState"}, Value: &value}
+	case "button_state_renamed_released":
+		rename("Released", "Release")
+	case "button_state_renamed_pressed":
+		rename("Pressed", "Press")
+	case "button_state_exported_helper":
+		key := symbolKey{Package: inputPackage, Receiver: "ButtonState", Name: "IsPressed"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"bool"}}
+	default:
+		t.Fatalf("unknown ButtonState mutation %q", mutation)
+	}
+	return expected, actual
 }
 
 func graphicsProfileMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {

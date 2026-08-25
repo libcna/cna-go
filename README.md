@@ -1,7 +1,7 @@
 # CNA-Go
 
 > **Status:** early, measured binding foundation — functional for the qualified
-> Foundation 1 runtime and Foundation 2/3/4/5/6/7/8/9/10/11/12 managed/API
+> Foundation 1 runtime and Foundation 2/3/4/5/6/7/8/9/10/11/12/13 managed/API
 > closures, far from full XNA compatibility.
 
 CNA-Go maps Microsoft XNA Framework 4.0 namespaces to Go import paths and
@@ -25,8 +25,8 @@ nor native handles.
 
 The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,243 expected Go members. The current target has 64 types and 1,359 members:
-59 types are complete, five native/runtime types are partial, and 193 are
+3,243 expected Go members. The current target has 65 types and 1,361 members:
+60 types are complete, five native/runtime types are partial, and 192 are
 missing. The strict verifier remains red because most XNA surface is
 intentionally absent. Every mismatch, leak, allowlist, and unmeasured-category
 gate is green.
@@ -180,6 +180,20 @@ contract without ABI expansion:
   profile selection, feature-level detection, or renderer support is claimed,
   and the corpus reaches 274 observations with zero failures.
 
+Foundation 13 completes exactly the managed Input `ButtonState` enum contract
+without ABI expansion:
+
+- exact non-flags named-`int32` metadata with `Released=0` and `Pressed=1`;
+- the synthetic CLR `value__` field is excluded, so three source identities map
+  to exactly two Go identities;
+- zero value equals `Released`, while arbitrary positive and negative raw
+  values remain representable without validation;
+- no `iota`, flags marker, Stringer/helper surface, consumer API, input backend
+  or native enum mapping, or CNA ABI route is added;
+- `Released` and `Pressed` are metadata values, not hardware capability claims:
+  no mouse, gamepad, D-pad, or button-polling behavior is claimed, and the
+  corpus reaches 280 observations with zero failures.
+
 See [geometry and transform evidence](docs/geometry-transform-evidence.md) for
 the computed closure, mapping decisions, conventions, and local strict-zero
 matrix.
@@ -223,6 +237,11 @@ See [GraphicsProfile evidence](docs/graphics-profile-evidence.md) for the
 exact two-literal raw table, non-flags projection, focused verifier negatives,
 the four deferred reverse dependents, and the strict metadata-only Reach/HiDef
 boundary.
+
+See [ButtonState evidence](docs/button-state-evidence.md) for the exact
+two-literal raw table, non-flags projection, focused verifier negatives, the
+three deferred `System.ValueType` reverse consumers, and the strict
+metadata-only input boundary.
 
 The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
@@ -270,7 +289,7 @@ go run ./tools/native_stress
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its 370 missing-surface diagnostics are the work queue, not a
+surface exists; its 369 missing-surface diagnostics are the work queue, not a
 compatibility claim.
 The native ABI and stress commands require the qualified native environment.
 

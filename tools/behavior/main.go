@@ -211,6 +211,19 @@ func runCorpus() corpusReport {
 	checkGoProjection("graphics-profile.arbitrary-positive-raw", "GRAPHICS_PROFILE", "2,12345", fmt.Sprintf("%d,%d", graphics.GraphicsProfile(2), graphics.GraphicsProfile(12345)))
 	checkGoProjection("graphics-profile.negative-raw", "GRAPHICS_PROFILE", int32(-1), int32(graphics.GraphicsProfile(-1)))
 
+	check("button-state.complete-raw-table", "BUTTON_STATE", "Released=0,Pressed=1", fmt.Sprintf(
+		"Released=%d,Pressed=%d",
+		input.ButtonStateReleased,
+		input.ButtonStatePressed,
+	))
+	buttonStateKind := reflect.TypeOf(input.ButtonStateReleased).Kind()
+	check("button-state.underlying-system-int32", "BUTTON_STATE", "System.Int32", map[reflect.Kind]string{reflect.Int32: "System.Int32"}[buttonStateKind])
+	check("button-state.flags", "BUTTON_STATE", false, false)
+	var zeroButtonState input.ButtonState
+	checkGoProjection("button-state.zero-value-released", "BUTTON_STATE", input.ButtonStateReleased, zeroButtonState)
+	checkGoProjection("button-state.arbitrary-positive-raw", "BUTTON_STATE", "2,12345", fmt.Sprintf("%d,%d", input.ButtonState(2), input.ButtonState(12345)))
+	checkGoProjection("button-state.negative-raw", "BUTTON_STATE", int32(-1), int32(input.ButtonState(-1)))
+
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))
 	check("math.lerp", "MathHelper", bits(4), bits(framework.MathHelperLerp(2, 10, 0.25)))

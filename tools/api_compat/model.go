@@ -185,7 +185,24 @@ type report struct {
 	SurfaceFormatClosure         surfaceFormatClosure          `json:"surfaceFormatClosure"`
 	DepthFormatClosure           depthFormatClosure            `json:"depthFormatClosure"`
 	GraphicsProfileClosure       graphicsProfileClosure        `json:"graphicsProfileClosure"`
+	ButtonStateClosure           buttonStateClosure            `json:"buttonStateClosure"`
 	Metadata                     reportMetadata                `json:"metadata"`
+}
+
+type buttonStateClosure struct {
+	SourceTypes          int                    `json:"sourceTypes"`
+	SourceIdentities     int                    `json:"sourceIdentities"`
+	ExpectedGoIdentities int                    `json:"expectedGoIdentities"`
+	TargetTypes          int                    `json:"targetTypes"`
+	TargetGoIdentities   int                    `json:"targetGoIdentities"`
+	LocalDiagnostics     int                    `json:"localDiagnostics"`
+	ExpectedKind         string                 `json:"expectedKind"`
+	ActualKind           string                 `json:"actualKind"`
+	UnderlyingType       string                 `json:"underlyingType"`
+	Flags                bool                   `json:"flags"`
+	ValueStorageExcluded bool                   `json:"valueStorageExcluded"`
+	Values               []enumValueMeasurement `json:"values"`
+	Status               string                 `json:"status"`
 }
 
 type graphicsProfileClosure struct {

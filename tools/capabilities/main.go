@@ -43,7 +43,7 @@ var requiredIDs = []string{
 	"keyboard", "visible-rendering", "content-xnb", "effects-3d", "audio",
 	"media", "storage", "linux-amd64", "windows", "macos", "android",
 	"web-wasm", "buffer-usage", "surface-format", "depth-format",
-	"graphics-profile",
+	"graphics-profile", "button-state",
 }
 
 func main() {

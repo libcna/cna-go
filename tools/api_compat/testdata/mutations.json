@@ -142,5 +142,18 @@
   {"id":"graphics-profile-value-storage-projected","mutation":"graphics_profile_value_storage_projected","category":"UNEXPECTED_MEMBER"},
   {"id":"graphics-profile-extra-public-constant","mutation":"graphics_profile_extra_constant","category":"UNEXPECTED_MEMBER"},
   {"id":"graphics-profile-renamed-hidef","mutation":"graphics_profile_renamed_hidef","category":"MISSING_MEMBER"},
-  {"id":"graphics-profile-exported-helper-method","mutation":"graphics_profile_exported_helper","category":"UNEXPECTED_MEMBER"}
+  {"id":"graphics-profile-exported-helper-method","mutation":"graphics_profile_exported_helper","category":"UNEXPECTED_MEMBER"},
+  {"id":"button-state-missing","mutation":"button_state_missing","category":"MISSING_TYPE"},
+  {"id":"button-state-wrong-package","mutation":"button_state_wrong_package","category":"MISSING_TYPE"},
+  {"id":"button-state-wrong-kind","mutation":"button_state_wrong_kind","category":"TYPE_KIND_MISMATCH"},
+  {"id":"button-state-wrong-underlying-type","mutation":"button_state_wrong_underlying_type","category":"TYPE_KIND_MISMATCH"},
+  {"id":"button-state-accidentally-flags","mutation":"button_state_accidentally_flags","category":"FLAGS_MAPPING_MISMATCH"},
+  {"id":"button-state-released-wrong-value","mutation":"button_state_wrong_released_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"button-state-pressed-wrong-value","mutation":"button_state_wrong_pressed_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"button-state-missing-pressed","mutation":"button_state_missing_pressed","category":"MISSING_MEMBER"},
+  {"id":"button-state-value-storage-projected","mutation":"button_state_value_storage_projected","category":"UNEXPECTED_MEMBER"},
+  {"id":"button-state-extra-public-constant","mutation":"button_state_extra_constant","category":"UNEXPECTED_MEMBER"},
+  {"id":"button-state-renamed-released","mutation":"button_state_renamed_released","category":"MISSING_MEMBER"},
+  {"id":"button-state-renamed-pressed","mutation":"button_state_renamed_pressed","category":"MISSING_MEMBER"},
+  {"id":"button-state-exported-helper-method","mutation":"button_state_exported_helper","category":"UNEXPECTED_MEMBER"}
 ]
