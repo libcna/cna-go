@@ -1474,6 +1474,78 @@ func runCorpus() corpusReport {
 	checkGoProjection("game-component-contract.initialize-channel", "INTERFACE_CONTRACT",
 		"true,true", fmt.Sprintf("%t,%t", component.Initialize() == nil, deviceManagerContract.CreateDevice() == nil))
 
+	// --- Foundation 19: pure managed swap-chain descriptor ------------------
+	//
+	// Read from Microsoft.Xna.Framework.Graphics.dll IL
+	// (sha256 560080fc39021c611ca9d076dcebed312faf6d7d1413c2dc523683ea635e9f55).
+	// Every accessor is one ldflda into the nested Settings value struct plus
+	// one ldfld or stfld; Bounds is computed; Clone copies the whole struct.
+	parameters := graphics.NewPresentationParameters()
+	// The constructor's whole body after the base call is
+	// `this.IsFullScreen = true`, so a fresh descriptor is full-screen and
+	// every other member takes its CLR zero.
+	check("presentation-parameters.constructor-defaults", "PRESENTATION_PARAMETERS",
+		"0,0,0,0,0,0,0,0,0,true",
+		fmt.Sprintf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%t",
+			parameters.BackBufferWidth(), parameters.BackBufferHeight(),
+			parameters.BackBufferFormat(), parameters.DepthStencilFormat(),
+			parameters.MultiSampleCount(), parameters.DisplayOrientation(),
+			parameters.PresentationInterval(), parameters.RenderTargetUsage(),
+			parameters.DeviceWindowHandle(), parameters.IsFullScreen()))
+	// Bounds is computed from the two live extents and always originates at
+	// zero, so a fresh descriptor reports a degenerate rectangle.
+	defaultBounds := parameters.Bounds()
+	check("presentation-parameters.default-bounds", "PRESENTATION_PARAMETERS", "0,0,0,0",
+		fmt.Sprintf("%d,%d,%d,%d", defaultBounds.X, defaultBounds.Y, defaultBounds.Width, defaultBounds.Height))
+	parameters.SetBackBufferWidth(1280)
+	parameters.SetBackBufferHeight(720)
+	trackedBounds := parameters.Bounds()
+	check("presentation-parameters.bounds-tracks-extents", "PRESENTATION_PARAMETERS", "0,0,1280,720",
+		fmt.Sprintf("%d,%d,%d,%d", trackedBounds.X, trackedBounds.Y, trackedBounds.Width, trackedBounds.Height))
+	// Nothing validates: a descriptor stores what it is given.
+	degenerate := graphics.NewPresentationParameters()
+	degenerate.SetBackBufferWidth(-5)
+	degenerate.SetMultiSampleCount(-7)
+	degenerate.SetBackBufferFormat(graphics.SurfaceFormat(12345))
+	degenerate.SetDisplayOrientation(framework.DisplayOrientation(1 << 20))
+	check("presentation-parameters.stores-without-validating", "PRESENTATION_PARAMETERS",
+		"-5,-7,12345,1048576,-5",
+		fmt.Sprintf("%d,%d,%d,%d,%d", degenerate.BackBufferWidth(), degenerate.MultiSampleCount(),
+			degenerate.BackBufferFormat(), degenerate.DisplayOrientation(), degenerate.Bounds().Width))
+
+	// System.IntPtr projects to the pointer-sized bit value it carries. The
+	// value is opaque: it is stored and returned verbatim, never dereferenced,
+	// and it is no evidence that a window exists.
+	handles := graphics.NewPresentationParameters()
+	handleResults := make([]string, 0, 4)
+	for _, handle := range []uintptr{0, 1, ^uintptr(0), 0xdeadbeef} {
+		handles.SetDeviceWindowHandle(handle)
+		handleResults = append(handleResults, fmt.Sprintf("%#x", handles.DeviceWindowHandle()))
+	}
+	check("presentation-parameters.device-window-handle-round-trip", "PRESENTATION_PARAMETERS",
+		fmt.Sprintf("%#x,%#x,%#x,%#x", uintptr(0), uintptr(1), ^uintptr(0), uintptr(0xdeadbeef)),
+		strings.Join(handleResults, ","))
+
+	// Clone copies the whole Settings value struct into a fresh instance, so
+	// the source's IsFullScreen overwrites the clone constructor's true and
+	// the two share nothing afterwards.
+	source := graphics.NewPresentationParameters()
+	source.SetBackBufferWidth(800)
+	source.SetDeviceWindowHandle(0x1234)
+	source.SetIsFullScreen(false)
+	clone := source.Clone()
+	clone.SetBackBufferWidth(1)
+	check("presentation-parameters.clone-is-independent", "PRESENTATION_PARAMETERS",
+		"800,1,0x1234,false,false",
+		fmt.Sprintf("%d,%d,%#x,%t,%t", source.BackBufferWidth(), clone.BackBufferWidth(),
+			clone.DeviceWindowHandle(), clone.IsFullScreen(), source.IsFullScreen()))
+	// The descriptor itself keeps CLR reference semantics; only Clone copies.
+	aliased := graphics.NewPresentationParameters()
+	aliasedReference := aliased
+	aliasedReference.SetBackBufferHeight(1080)
+	check("presentation-parameters.reference-semantics", "PRESENTATION_PARAMETERS", "1080",
+		fmt.Sprintf("%d", aliased.BackBufferHeight()))
+
 	return report
 }
 

@@ -1039,6 +1039,14 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
+			if strings.HasPrefix(fixture.Mutation, "f19rh_") {
+				expected, actual = rawHandleMutationCase(t, fixture.Mutation)
+				result := verify(expected, actual, 0, "leak-only", "contract", "mapping")
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
 			if strings.HasPrefix(fixture.Mutation, "f18cls_") {
 				result := interfaceClassificationMutationCase(t, fixture.Mutation)
 				if result.Summary[fixture.Category] == 0 {
@@ -2794,10 +2802,9 @@ var managedClassDefects = []struct {
 		delete(actual.Types, owner.Key)
 	}},
 	{Name: "wrong_package", Category: "MISSING_TYPE", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
-		const elsewhere = modulePath + "/Microsoft/Xna/Framework/Graphics"
 		moved := *actual.Types[owner.Key]
 		delete(actual.Types, owner.Key)
-		moved.Key.Package = elsewhere
+		moved.Key.Package = somewhereElse(owner.PackagePath)
 		actual.Types[moved.Key] = &moved
 	}},
 	{Name: "projected_as_named_type", Category: "TYPE_KIND_MISMATCH", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
@@ -2827,7 +2834,9 @@ var managedClassDefects = []struct {
 		actual.Members[key] = &actualMember{Key: key, Kind: "method", Parameters: []string{"int32"}}
 	}},
 	{Name: "wrong_setter_parameter", Category: "PARAMETER_MAPPING_MISMATCH", Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
-		actual.Members[anyAccessorKey(t, expected, owner, "set", false)].Parameters = []string{"int32"}
+		// complex128 is chosen because no XNA member maps to it, so this can
+		// never coincide with the correct parameter type of any accessor.
+		actual.Members[anyAccessorKey(t, expected, owner, "set", false)].Parameters = []string{"complex128"}
 	}},
 	{Name: "artificial_getter_error", Category: "ERROR_MAPPING_MISMATCH", Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
 		// Every getter in the cluster is one ldfld. None may gain an error.
@@ -2874,8 +2883,8 @@ func constructorKey(t *testing.T, expected *expectedSurface, owner *expectedType
 // target-side defect to every pure-managed CLR class, asserting a clean
 // baseline first so no defect can pass by accident.
 func TestFoundation17ManagedClassDefectsRejectedForEveryType(t *testing.T) {
-	if len(allManagedClasses()) != 2 {
-		t.Fatalf("managed-class cluster size = %d, want 2", len(allManagedClasses()))
+	if len(allManagedClasses()) != 3 {
+		t.Fatalf("managed-class cluster size = %d, want 3", len(allManagedClasses()))
 	}
 	cases := 0
 	for _, identity := range allManagedClasses() {
@@ -2886,7 +2895,7 @@ func TestFoundation17ManagedClassDefectsRejectedForEveryType(t *testing.T) {
 			if baseline.Summary["TOTAL_DIAGNOSTICS"] != 0 {
 				t.Fatalf("unmutated %s baseline is not clean: %v", identity, baseline.Diagnostics)
 			}
-			for _, closure := range baseline.Foundation17ManagedClasses {
+			for _, closure := range allManagedClassClosures(baseline) {
 				if closure.XNA == identity && closure.Status != "PASS" {
 					t.Fatalf("unmutated %s closure = %q", identity, closure.Status)
 				}
@@ -2901,7 +2910,7 @@ func TestFoundation17ManagedClassDefectsRejectedForEveryType(t *testing.T) {
 						t.Fatalf("defect %q on %s did not raise %s; summary=%v",
 							defect.Name, identity, defect.Category, result.Summary)
 					}
-					for _, closure := range result.Foundation17ManagedClasses {
+					for _, closure := range allManagedClassClosures(result) {
 						if closure.XNA == identity && closure.Status != "FAIL" {
 							t.Fatalf("defect %q on %s left the closure measurement at %q",
 								defect.Name, identity, closure.Status)
@@ -3327,10 +3336,9 @@ var managedInterfaceDefects = []struct {
 		delete(actual.Types, owner.Key)
 	}},
 	{Name: "wrong_package", Category: "MISSING_TYPE", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
-		const elsewhere = modulePath + "/Microsoft/Xna/Framework/Media"
 		moved := *actual.Types[owner.Key]
 		delete(actual.Types, owner.Key)
-		moved.Key.Package = elsewhere
+		moved.Key.Package = somewhereElse(owner.PackagePath)
 		actual.Types[moved.Key] = &moved
 	}},
 	{Name: "projected_as_struct", Category: "TYPE_KIND_MISMATCH", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
@@ -3708,4 +3716,206 @@ var interfaceClassificationDefects = map[string]func(){
 			"property|FogStart": true, "property|FogEnd": true,
 		}
 	},
+}
+
+// allManagedClassClosures flattens the per-milestone managed-class closure
+// slices so a shared defect matrix can assert on whichever one carries the
+// type under test.
+func allManagedClassClosures(result report) []managedClassClosure {
+	all := append([]managedClassClosure(nil), result.Foundation17ManagedClasses...)
+	return append(all, result.Foundation19ManagedClasses...)
+}
+
+// somewhereElse returns a mapped package path that is never the given one, so
+// a wrong-package defect relocates the type for every owner regardless of
+// which package it actually lives in.
+func somewhereElse(packagePath string) string {
+	const media = modulePath + "/Microsoft/Xna/Framework/Media"
+	const graphics = modulePath + "/Microsoft/Xna/Framework/Graphics"
+	if packagePath == media {
+		return graphics
+	}
+	return media
+}
+
+const presentationParametersIdentity = "Microsoft.Xna.Framework.Graphics.PresentationParameters"
+
+// TestIntPtrProjectsToPointerSizedWord pins the general language projection and
+// its one admitted consumer. Every System.IntPtr in the pinned profile is
+// declared here, so the rule is stated once and measured against all of them.
+func TestIntPtrProjectsToPointerSizedWord(t *testing.T) {
+	if bclTypes["System.IntPtr"] != "uintptr" {
+		t.Fatalf("System.IntPtr maps to %q", bclTypes["System.IntPtr"])
+	}
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Every position in the whole profile that carries a pointer-sized word,
+	// with the source member that put it there.
+	declared := make(map[string]int)
+	for _, member := range surface.Members {
+		for _, text := range append(append([]string(nil), member.Parameters...), member.Results...) {
+			if pointerSizedWord.MatchString(text) {
+				declared[member.XNA]++
+			}
+		}
+	}
+	// Six CLR members declare System.IntPtr. GameWindow.Handle and
+	// GraphicsAdapter.MonitorHandle are read-only properties, and the
+	// three-parameter GraphicsDevice.Present overload takes one IntPtr
+	// window-handle override, so those contribute one position each. The three read/write properties --
+	// PresentationParameters.DeviceWindowHandle and the two static
+	// WindowHandle properties on Mouse and TouchPanel -- contribute a getter
+	// result and a setter parameter, so two each.
+	want := map[string]int{
+		"Microsoft.Xna.Framework.GameWindow::Handle()":                      1,
+		"Microsoft.Xna.Framework.Graphics.GraphicsAdapter::MonitorHandle()": 1,
+		"Microsoft.Xna.Framework.Graphics.GraphicsDevice::Present(System.Nullable`1[Microsoft.Xna.Framework.Rectangle],System.Nullable`1[Microsoft.Xna.Framework.Rectangle],System.IntPtr)": 1,
+		"Microsoft.Xna.Framework.Graphics.PresentationParameters::DeviceWindowHandle()":                                                                                                     2,
+		"Microsoft.Xna.Framework.Input.Mouse::WindowHandle()":                                                                                                                               2,
+		"Microsoft.Xna.Framework.Input.Touch.TouchPanel::WindowHandle()":                                                                                                                    2,
+	}
+	if len(declared) != len(want) {
+		t.Fatalf("pointer-sized word positions on %d members, want %d: %v", len(declared), len(want), declared)
+	}
+	for identity, count := range want {
+		if declared[identity] != count {
+			t.Fatalf("%s carries %d pointer-sized positions, want %d", identity, declared[identity], count)
+		}
+	}
+
+	// The one implemented consumer, spelled out.
+	const graphicsPackage = modulePath + "/Microsoft/Xna/Framework/Graphics"
+	getter := surface.Members[symbolKey{Package: graphicsPackage, Receiver: "PresentationParameters", Name: "DeviceWindowHandle"}]
+	if getter == nil || getter.ErrorAdded || !equalStrings(getter.Results, []string{"uintptr"}) {
+		t.Fatalf("DeviceWindowHandle getter = %+v", getter)
+	}
+	setter := surface.Members[symbolKey{Package: graphicsPackage, Receiver: "PresentationParameters", Name: "SetDeviceWindowHandle"}]
+	if setter == nil || setter.ErrorAdded || !equalStrings(setter.Parameters, []string{"uintptr"}) || len(setter.Results) != 0 {
+		t.Fatalf("SetDeviceWindowHandle = %+v", setter)
+	}
+}
+
+// rawHandleFixture is one positive or negative raw-handle case applied to an
+// isolated PresentationParameters surface.
+type rawHandleFixture struct {
+	Name  string
+	Leaks bool
+	Apply func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType)
+}
+
+// rawHandleFixtures exercise both sides of the narrowed rule: the admitted
+// IntPtr projection must not be flagged, and every other route to a
+// pointer-sized word or a native identity in public surface must be.
+var rawHandleFixtures = []rawHandleFixture{
+	{Name: "admitted_intptr_getter_and_setter", Leaks: false, Apply: func(_ *testing.T, _ *expectedSurface, _ *actualSurface, _ *expectedType) {
+		// The unmutated surface already projects both DeviceWindowHandle
+		// accessors as uintptr. This is the positive fixture.
+	}},
+	{Name: "uintptr_result_where_source_declares_int32", Leaks: true, Apply: func(t *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		actual.Members[namedMember(t, owner, "BackBufferWidth")].Results = []string{"uintptr"}
+	}},
+	{Name: "uintptr_parameter_where_source_declares_int32", Leaks: true, Apply: func(t *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		actual.Members[namedMember(t, owner, "SetBackBufferWidth")].Parameters = []string{"uintptr"}
+	}},
+	{Name: "uintptr_drifted_from_parameter_to_result", Leaks: true, Apply: func(t *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// The setter's admitted position is parameter 0, not result 0.
+		member := actual.Members[namedMember(t, owner, "SetDeviceWindowHandle")]
+		member.Parameters = nil
+		member.Results = []string{"uintptr"}
+	}},
+	{Name: "uintptr_drifted_to_an_unadmitted_index", Leaks: true, Apply: func(t *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		member := actual.Members[namedMember(t, owner, "SetDeviceWindowHandle")]
+		member.Parameters = []string{"int32", "uintptr"}
+	}},
+	{Name: "uintptr_slice_result", Leaks: true, Apply: func(t *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		actual.Members[namedMember(t, owner, "BackBufferWidth")].Results = []string{"[]uintptr"}
+	}},
+	{Name: "uintptr_pointer_result", Leaks: true, Apply: func(t *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		actual.Members[namedMember(t, owner, "BackBufferWidth")].Results = []string{"*uintptr"}
+	}},
+	{Name: "uintptr_on_an_invented_member", Leaks: true, Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := symbolKey{Package: owner.PackagePath, Receiver: owner.GoName, Name: "NativeWindow"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"uintptr"}}
+	}},
+	{Name: "exported_named_type_over_uintptr", Leaks: true, Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := symbolKey{Package: owner.PackagePath, Name: "WindowToken"}
+		actual.Types[key] = &actualType{Key: key, Kind: "named", Underlying: "uintptr"}
+	}},
+	{Name: "unsafe_pointer_result", Leaks: false, Apply: func(t *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// unsafe.Pointer is a PUBLIC_NATIVE_FFI_LEAK, not a RAW_HANDLE_LEAK;
+		// asserting that keeps the two categories from collapsing.
+		actual.Members[namedMember(t, owner, "BackBufferWidth")].Results = []string{"unsafe.Pointer"}
+	}},
+	{Name: "cna_prefixed_member_name", Leaks: true, Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := symbolKey{Package: owner.PackagePath, Receiver: owner.GoName, Name: "CnaSwapChain"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"int32"}}
+	}},
+	{Name: "native_handle_type_name", Leaks: true, Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := symbolKey{Package: owner.PackagePath, Name: "SwapChainNativeHandle"}
+		actual.Types[key] = &actualType{Key: key, Kind: "struct"}
+	}},
+}
+
+// namedMember returns the projected key of one member of a class by Go name.
+func namedMember(t *testing.T, owner *expectedType, name string) symbolKey {
+	t.Helper()
+	for _, key := range owner.Members {
+		if key.Name == name {
+			return key
+		}
+	}
+	t.Fatalf("%s projects no member named %q", owner.XNA, name)
+	return symbolKey{}
+}
+
+// TestRawHandleLeakDistinguishesTheIntPtrProjection runs every fixture and
+// asserts the exact verdict, so neither direction of the narrowed rule can
+// regress: the admitted projection must stay clean and everything else must
+// still be caught.
+func TestRawHandleLeakDistinguishesTheIntPtrProjection(t *testing.T) {
+	positives, negatives := 0, 0
+	for _, fixture := range rawHandleFixtures {
+		fixture := fixture
+		t.Run(fixture.Name, func(t *testing.T) {
+			expected, actual, owner := managedClassSurfaces(t, presentationParametersIdentity)
+			fixture.Apply(t, expected, actual, owner)
+			result := verify(expected, actual, 0, "leak-only", "contract", "mapping")
+			got := result.Summary["RAW_HANDLE_LEAK"] > 0
+			if got != fixture.Leaks {
+				t.Fatalf("raw-handle fixture %q reported leak=%t, want %t; diagnostics=%v",
+					fixture.Name, got, fixture.Leaks, result.Diagnostics)
+			}
+			if fixture.Name == "unsafe_pointer_result" && result.Summary["PUBLIC_NATIVE_FFI_LEAK"] == 0 {
+				t.Fatal("unsafe.Pointer did not raise PUBLIC_NATIVE_FFI_LEAK")
+			}
+		})
+		if fixture.Leaks {
+			negatives++
+		} else {
+			positives++
+		}
+	}
+	if positives != 2 || negatives != 10 {
+		t.Fatalf("raw-handle fixtures = %d admitted, %d rejected", positives, negatives)
+	}
+}
+
+// rawHandleMutationCase applies one named Foundation-19 raw-handle fixture.
+// Mutation ids have the form f19rh_<fixture>.
+func rawHandleMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	name := strings.TrimPrefix(mutation, "f19rh_")
+	for _, fixture := range rawHandleFixtures {
+		if fixture.Name != name {
+			continue
+		}
+		expected, actual, owner := managedClassSurfaces(t, presentationParametersIdentity)
+		fixture.Apply(t, expected, actual, owner)
+		return expected, actual
+	}
+	t.Fatalf("unknown raw-handle fixture %q", name)
+	return nil, nil
 }

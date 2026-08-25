@@ -281,6 +281,14 @@ gap that keeps `IUpdateable`, `IDrawable`, and `IGraphicsDeviceService`
 deferred. The four contracts are declarations only: CNA-Go has no effect
 runtime, no game component, and no device manager bound to the contract.
 
+See [Foundation 19 IntPtr and PresentationParameters evidence](docs/foundation-19-intptr-presentation-parameters-evidence.md)
+for the `System.IntPtr` to `uintptr` projection and exactly what it does not
+authorize, the narrowed `RAW_HANDLE_LEAK` rule with its two-clean and ten-leak
+fixtures, the complete descriptor contract, the `IsFullScreen` constructor
+quirk, and why XNA 4.0 has no `Clear` here. `PresentationParameters` is a
+descriptor, not a device: it stores a platform window handle and creates,
+resets, enumerates, and presents nothing.
+
 The `Media` and `Input/Touch` packages contain enum metadata only and carry no
 media or touch runtime capability claim. The `Audio` package adds two pure
 managed positional descriptors alongside its enums and still carries no audio

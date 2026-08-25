@@ -97,6 +97,15 @@ var pureManagedTypes = map[string]bool{
 	// XACT, a device, or any native allocation.
 	"Microsoft.Xna.Framework.Audio.AudioListener": true,
 	"Microsoft.Xna.Framework.Audio.AudioEmitter":  true,
+
+	// Foundation 19. Microsoft.Xna.Framework.Graphics.dll IL
+	// (sha256 560080fc39021c611ca9d076dcebed312faf6d7d1413c2dc523683ea635e9f55)
+	// shows PresentationParameters as a descriptor over one assembly-visible
+	// nested `Settings` value struct: every accessor is one ldflda plus one
+	// ldfld or stfld, Bounds is computed from two stored extents, and Clone
+	// copies the whole value struct. It stores a platform window handle but
+	// never creates, resets, presents, enumerates, or looks anything up.
+	"Microsoft.Xna.Framework.Graphics.PresentationParameters": true,
 }
 
 // classifiedInterfaces is the explicit, reusable policy boundary for

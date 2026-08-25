@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 541,
-    "ASSERTIONS": 541,
+    "OBSERVATIONS": 548,
+    "ASSERTIONS": 548,
     "FAILURES": 0
   },
   "observations": [
@@ -4333,6 +4333,62 @@
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": "true,true",
       "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "presentation-parameters.constructor-defaults",
+      "group": "PRESENTATION_PARAMETERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,0,0,0,0,0,0,0,0,true",
+      "actual": "0,0,0,0,0,0,0,0,0,true",
+      "passed": true
+    },
+    {
+      "id": "presentation-parameters.default-bounds",
+      "group": "PRESENTATION_PARAMETERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,0,0,0",
+      "actual": "0,0,0,0",
+      "passed": true
+    },
+    {
+      "id": "presentation-parameters.bounds-tracks-extents",
+      "group": "PRESENTATION_PARAMETERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,0,1280,720",
+      "actual": "0,0,1280,720",
+      "passed": true
+    },
+    {
+      "id": "presentation-parameters.stores-without-validating",
+      "group": "PRESENTATION_PARAMETERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "-5,-7,12345,1048576,-5",
+      "actual": "-5,-7,12345,1048576,-5",
+      "passed": true
+    },
+    {
+      "id": "presentation-parameters.device-window-handle-round-trip",
+      "group": "PRESENTATION_PARAMETERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x0,0x1,0xffffffffffffffff,0xdeadbeef",
+      "actual": "0x0,0x1,0xffffffffffffffff,0xdeadbeef",
+      "passed": true
+    },
+    {
+      "id": "presentation-parameters.clone-is-independent",
+      "group": "PRESENTATION_PARAMETERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "800,1,0x1234,false,false",
+      "actual": "800,1,0x1234,false,false",
+      "passed": true
+    },
+    {
+      "id": "presentation-parameters.reference-semantics",
+      "group": "PRESENTATION_PARAMETERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1080",
+      "actual": "1080",
       "passed": true
     }
   ]

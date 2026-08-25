@@ -919,6 +919,49 @@ Exact evidence is in `docs/foundation-18-interface-evidence.md`.
 FOUNDATION_MILESTONE_18_COMPLETE=true
 ```
 
+## Foundation 19 System.IntPtr and descriptor policy
+
+`System.IntPtr` projects to Go `uintptr`. That is the opaque pointer-sized bit
+value the public XNA contract carries at that position and nothing more: it may
+not be dereferenced, it is not a CNA or SDL handle, it is no evidence that a
+window exists, and it authorizes neither `unsafe.Pointer` nor native device
+creation. `IntPtr.Zero` is `uintptr(0)`, and no signed numerical ordering is
+claimed for these values even though CLR `IntPtr` is signed.
+
+`RAW_HANDLE_LEAK` is narrowed by exactly that much: a public `uintptr` is
+admitted only at a signature position where authoritative XNA metadata declares
+`System.IntPtr`. Six CLR members do. Every other route to a pointer-sized word
+in public surface still leaks, and `unsafe.Pointer` remains a
+`PUBLIC_NATIVE_FFI_LEAK` rather than collapsing into the same category.
+
+Foundation 19 then closes `Graphics.PresentationParameters`: 13 source members,
+23 Go identities, no error result. It is a pure managed descriptor over one
+nested `Settings` value struct. **A descriptor is not a device.** Storing a
+platform window handle authorizes no `GraphicsDevice` creation or reset, no
+`GraphicsAdapter`, no display enumeration, no native window lookup, no SDL
+call, and no presentation.
+
+Two reference facts are reproduced rather than corrected: the constructor's
+only statement is `IsFullScreen = true`, so a fresh descriptor is full-screen
+on a zero-sized back buffer; and XNA 4.0 has **no `Clear` method** on this type,
+so none was invented and no MonoGame or FNA default was copied.
+
+## Foundation 19 qualification evidence
+
+- [x] Enumerate every `System.IntPtr` position in the pinned profile, not only the one implemented, and pin each member's count.
+- [x] Narrow `RAW_HANDLE_LEAK` positionally against the expected surface so no separate allowlist can drift.
+- [x] Fixture both directions: 2 cases that must stay clean and 10 that must leak, including slice, pointer, index-drift, invented-member, and named-type routes, plus one that must stay a `PUBLIC_NATIVE_FFI_LEAK`.
+- [x] Derive the complete `PresentationParameters` contract from IL: constructor, `Clone`, ten read/write properties, computed `Bounds`, no validation, no `Clear`.
+- [x] Make two shared managed-class defects owner-relative so the matrix applies unchanged to a Graphics-package type.
+- [x] Grow the mutation inventory from 290 to 314 and the behavior corpus from 541 to 548, both with zero failures.
+- [x] Keep `MISSING_MEMBER` at 177, `PARTIAL_TYPES` at 5, and all three leak counters at zero.
+
+Exact evidence is in `docs/foundation-19-intptr-presentation-parameters-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_19_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

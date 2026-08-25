@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"go/types"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -207,7 +208,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 		_ = am
 	}
 
-	measureLeaks(&result, actual)
+	measureLeaks(&result, expected, actual)
 	for _, et := range sortedExpectedTypes(expected) {
 		if !strings.HasPrefix(et.XNA, packedVectorNamespace) {
 			continue
@@ -256,6 +257,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation16ValueStructs = measureValueStructClosures(expected, actual, typeDiagnostics, foundation16ValueStructs)
 	result.Foundation17ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation17ManagedClasses)
 	result.Foundation18Interfaces = measureManagedInterfaceClosures(expected, actual, typeDiagnostics, foundation18Interfaces)
+	result.Foundation19ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation19ManagedClasses)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -1750,10 +1752,21 @@ func categoryForMember(member *expectedMember) string {
 	}
 }
 
-func measureLeaks(result *report, actual *actualSurface) {
+// pointerSizedWord matches a whole-word `uintptr` anywhere inside a mapped
+// type expression, so `[]uintptr`, `*uintptr`, and `func(uintptr)` are seen as
+// readily as a bare `uintptr`, while an identifier such as `uintptrish` is not.
+var pointerSizedWord = regexp.MustCompile(`\buintptr\b`)
+
+func measureLeaks(result *report, expected *expectedSurface, actual *actualSurface) {
 	for key, t := range actual.Types {
 		if t.Kind != "struct" && t.Kind != "interface" {
 			inspectLeakText(result, key.String(), t.Underlying)
+			// No XNA type projects to a bare pointer-sized word. A named
+			// exported type over uintptr would be a handle type in all but
+			// name.
+			if pointerSizedWord.MatchString(t.Underlying) {
+				addDiagnostic(result, diagnostic{Category: "RAW_HANDLE_LEAK", Go: key.String(), Message: "exported type is defined over a pointer-sized machine word"})
+			}
 		}
 		if strings.Contains(strings.ToLower(key.Name), "nativehandle") || strings.Contains(strings.ToLower(key.Name), "rawhandle") || strings.HasPrefix(strings.ToLower(key.Name), "cna") {
 			addDiagnostic(result, diagnostic{Category: "RAW_HANDLE_LEAK", Go: key.String(), Message: "exported type name exposes native-handle/FFI identity"})
@@ -1763,9 +1776,62 @@ func measureLeaks(result *report, actual *actualSurface) {
 		for _, value := range append(append([]string(nil), member.Parameters...), member.Results...) {
 			inspectLeakText(result, key.String(), value)
 		}
+		measurePointerSizedWordPositions(result, expected, key, member)
 		lower := strings.ToLower(key.Name)
 		if strings.Contains(lower, "nativehandle") || strings.Contains(lower, "rawhandle") || strings.HasPrefix(lower, "cna") {
 			addDiagnostic(result, diagnostic{Category: "RAW_HANDLE_LEAK", Go: key.String(), Message: "exported member name exposes native-handle/FFI identity"})
+		}
+	}
+}
+
+// measurePointerSizedWordPositions enforces the one narrow exception to the
+// raw-handle rule.
+//
+// A public Go `uintptr` is an allowed *language projection* only where the
+// authoritative XNA metadata declares System.IntPtr at that exact public
+// signature position. Because System.IntPtr is the only source type that maps
+// to uintptr, the expected surface already carries uintptr at precisely the
+// admitted positions, and positional agreement with it is the whole test.
+//
+// Everything else still leaks: a uintptr the source never declared, a uintptr
+// that has drifted from a parameter to a result or between indices, and any
+// uintptr on a member the reference profile does not declare at all -- which
+// includes an invented member and a language adapter, none of which carries a
+// pointer-sized word.
+//
+// The admission is about the *bit value* the XNA contract carries at that
+// position. It does not make the value dereferenceable, does not make it a CNA
+// or SDL handle, and does not admit unsafe.Pointer or an implementation-only
+// native pointer anywhere; those remain caught by inspectLeakText and by the
+// name rules above.
+func measurePointerSizedWordPositions(result *report, expected *expectedSurface, key symbolKey, member *actualMember) {
+	var admittedParameters, admittedResults []string
+	if expected != nil {
+		if em := expected.Members[key]; em != nil {
+			admittedParameters, admittedResults = em.Parameters, em.Results
+		} else if witness := expected.InterfaceWitnesses[key]; witness != nil {
+			admittedParameters, admittedResults = witness.Parameters, witness.Results
+		}
+	}
+	leak := func(role string, index int, text string) {
+		addDiagnostic(result, diagnostic{
+			Category: "RAW_HANDLE_LEAK",
+			Go:       key.String(),
+			Message: fmt.Sprintf("exported %s %d is %q, but the reference profile declares no System.IntPtr at that position",
+				role, index, text),
+		})
+	}
+	admits := func(admitted []string, index int) bool {
+		return index < len(admitted) && pointerSizedWord.MatchString(admitted[index])
+	}
+	for index, text := range member.Parameters {
+		if pointerSizedWord.MatchString(text) && !admits(admittedParameters, index) {
+			leak("parameter", index, text)
+		}
+	}
+	for index, text := range member.Results {
+		if pointerSizedWord.MatchString(text) && !admits(admittedResults, index) {
+			leak("result", index, text)
 		}
 	}
 }
@@ -1946,11 +2012,21 @@ var foundation17ManagedClasses = []string{
 	"Microsoft.Xna.Framework.Audio.AudioEmitter",
 }
 
+// foundation19ManagedClasses is the Foundation-19 pure-managed CLR class
+// closure. PresentationParameters is the first admitted class whose public
+// surface carries a System.IntPtr, and the first descriptor for a runtime the
+// binding does not have: it stores a platform window handle without creating,
+// resetting, presenting, enumerating, or looking anything up.
+var foundation19ManagedClasses = []string{
+	"Microsoft.Xna.Framework.Graphics.PresentationParameters",
+}
+
 // allManagedClasses is every pinned pure-managed CLR class measured by the
 // shared table-driven closure category, across milestones.
 func allManagedClasses() []string {
-	all := make([]string, 0, len(foundation17ManagedClasses))
+	all := make([]string, 0, len(foundation17ManagedClasses)+len(foundation19ManagedClasses))
 	all = append(all, foundation17ManagedClasses...)
+	all = append(all, foundation19ManagedClasses...)
 	return all
 }
 

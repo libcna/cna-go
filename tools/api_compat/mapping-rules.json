@@ -144,7 +144,31 @@
       "Microsoft.Xna.Framework.CurveKey",
       "Microsoft.Xna.Framework.CurveKeyCollection",
       "Microsoft.Xna.Framework.Audio.AudioListener",
-      "Microsoft.Xna.Framework.Audio.AudioEmitter"
+      "Microsoft.Xna.Framework.Audio.AudioEmitter",
+      "Microsoft.Xna.Framework.Graphics.PresentationParameters"
+    ]
+  },
+  "pointerSizedHandles": {
+    "projection": "System.IntPtr -> uintptr",
+    "meaning": "the-opaque-pointer-sized-bit-value-the-public-XNA-contract-carries-at-that-position",
+    "zero": "System.IntPtr.Zero -> uintptr(0)",
+    "doesNotMean": [
+      "may-be-dereferenced",
+      "is-a-CNA-handle",
+      "is-an-SDL-pointer",
+      "proves-a-window-exists",
+      "authorizes-unsafe.Pointer",
+      "authorizes-native-device-creation",
+      "carries-signed-numerical-ordering"
+    ],
+    "rawHandleLeakRule": "a-public-uintptr-is-admitted-only-at-a-signature-position-where-the-authoritative-XNA-metadata-declares-System.IntPtr; every-other-public-uintptr-is-a-RAW_HANDLE_LEAK",
+    "declaringMembers": [
+      "Microsoft.Xna.Framework.GameWindow::Handle",
+      "Microsoft.Xna.Framework.Graphics.GraphicsAdapter::MonitorHandle",
+      "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Present overload taking overrideWindowHandle",
+      "Microsoft.Xna.Framework.Graphics.PresentationParameters::DeviceWindowHandle",
+      "Microsoft.Xna.Framework.Input.Mouse::WindowHandle",
+      "Microsoft.Xna.Framework.Input.Touch.TouchPanel::WindowHandle"
     ]
   },
   "mutableStructInterfaces": {

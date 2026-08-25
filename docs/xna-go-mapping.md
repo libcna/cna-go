@@ -190,6 +190,31 @@ one instance observe the same mutations. It never becomes a copied Go value.
 `Audio.AudioListener` and `Audio.AudioEmitter` are the first classes admitted
 on this general rule rather than because they are value types.
 
+## System.IntPtr and the raw-handle rule
+
+`System.IntPtr` projects to Go `uintptr`. That is a **language projection of an
+opaque pointer-sized bit value** the public XNA contract carries at that
+position, and nothing more. It does not mean the value may be dereferenced,
+that it is a CNA or SDL handle, that a window exists, that `unsafe.Pointer` is
+admissible anywhere, or that native device creation is authorized.
+`IntPtr.Zero` is `uintptr(0)`. Because the values are opaque handles and bit
+patterns for this binding, no signed numerical ordering is claimed for them
+even though CLR `IntPtr` is signed.
+
+The `RAW_HANDLE_LEAK` gate is narrowed to match, and only that far. A public
+`uintptr` is admitted **only** at a signature position where the authoritative
+XNA metadata declares `System.IntPtr`. Six CLR members do:
+`GameWindow.Handle`, `GraphicsAdapter.MonitorHandle`, the `GraphicsDevice.Present`
+overload taking `overrideWindowHandle`, `PresentationParameters.DeviceWindowHandle`,
+`Mouse.WindowHandle`, and `TouchPanel.WindowHandle`.
+
+Everything else still leaks: a `uintptr` the source never declared, one that has
+drifted between parameter and result or between indices, one inside a slice or
+pointer at an unadmitted position, one on a member the profile does not declare
+at all, an exported named type defined over `uintptr`, a public
+`unsafe.Pointer`, a leaked CNA or SDL handle, and any implementation-only
+native pointer or internal type in public API.
+
 ## Fallibility is per operation
 
 An `error` result belongs to one projected operation, not to a type and not to
