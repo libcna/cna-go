@@ -130,5 +130,17 @@
   {"id":"depth-format-value-storage-projected","mutation":"depth_format_value_storage_projected","category":"UNEXPECTED_MEMBER"},
   {"id":"depth-format-extra-public-constant","mutation":"depth_format_extra_constant","category":"UNEXPECTED_MEMBER"},
   {"id":"depth-format-exported-helper-method","mutation":"depth_format_exported_helper","category":"UNEXPECTED_MEMBER"},
-  {"id":"depth-format-renamed-depth24-stencil8","mutation":"depth_format_renamed_depth24_stencil8","category":"MISSING_MEMBER"}
+  {"id":"depth-format-renamed-depth24-stencil8","mutation":"depth_format_renamed_depth24_stencil8","category":"MISSING_MEMBER"},
+  {"id":"graphics-profile-missing","mutation":"graphics_profile_missing","category":"MISSING_TYPE"},
+  {"id":"graphics-profile-wrong-package","mutation":"graphics_profile_wrong_package","category":"MISSING_TYPE"},
+  {"id":"graphics-profile-wrong-kind","mutation":"graphics_profile_wrong_kind","category":"TYPE_KIND_MISMATCH"},
+  {"id":"graphics-profile-wrong-underlying-type","mutation":"graphics_profile_wrong_underlying_type","category":"TYPE_KIND_MISMATCH"},
+  {"id":"graphics-profile-accidentally-flags","mutation":"graphics_profile_accidentally_flags","category":"FLAGS_MAPPING_MISMATCH"},
+  {"id":"graphics-profile-reach-wrong-value","mutation":"graphics_profile_wrong_reach_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"graphics-profile-hidef-wrong-value","mutation":"graphics_profile_wrong_hidef_value","category":"ENUM_VALUE_MISMATCH"},
+  {"id":"graphics-profile-missing-hidef","mutation":"graphics_profile_missing_hidef","category":"MISSING_MEMBER"},
+  {"id":"graphics-profile-value-storage-projected","mutation":"graphics_profile_value_storage_projected","category":"UNEXPECTED_MEMBER"},
+  {"id":"graphics-profile-extra-public-constant","mutation":"graphics_profile_extra_constant","category":"UNEXPECTED_MEMBER"},
+  {"id":"graphics-profile-renamed-hidef","mutation":"graphics_profile_renamed_hidef","category":"MISSING_MEMBER"},
+  {"id":"graphics-profile-exported-helper-method","mutation":"graphics_profile_exported_helper","category":"UNEXPECTED_MEMBER"}
 ]

@@ -2,9 +2,9 @@
 
 Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 
-- Profile: CNA-Go Foundations 1-11 / XNA 4.0 Windows runtime mapping
+- Profile: CNA-Go Foundations 1-12 / XNA 4.0 Windows runtime mapping
 - Qualified platform: linux/amd64 (HEADLESS renderer, NULL audio)
-- Capability rows: 36
+- Capability rows: 37
 
 | Status | Capability | Evidence | Notes |
 |---|---|---|---|
@@ -28,8 +28,9 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 | `VERIFIED_MANAGED` | ClearOptions enum metadata | docs/clear-options-evidence.md, API compatibility report, and behavior corpus | Only the three-literal named-int32 flags enum is verified. Raw zero is unnamed; no GraphicsDevice.Clear overload, render-target/depth/stencil clear behavior, GPU support, or CNA ABI expansion is claimed. |
 | `VERIFIED_MANAGED` | DepthFormat enum metadata | docs/depth-format-evidence.md, API compatibility report, and behavior corpus | Only the four-literal non-flags named-int32 enum is verified; no depth/stencil surface support, render target, presentation configuration, GPU/native mapping, consumer API, or CNA ABI expansion is claimed. |
 | `VERIFIED_MANAGED` | Display orientation configuration storage | docs/display-orientation-evidence.md, API compatibility report, behavior corpus, and lifecycle stress | DisplayOrientation flags and GraphicsDeviceManager.SupportedOrientations storage/dirty semantics are verified; actual screen or window rotation is not claimed and remains deferred. |
+| `VERIFIED_MANAGED` | GraphicsProfile enum metadata | docs/graphics-profile-evidence.md, API compatibility report, and behavior corpus | Only the Reach=0 / HiDef=1 non-flags named-int32 enum metadata is verified; no actual Reach or HiDef hardware support, profile selection, GraphicsDevice/GraphicsDeviceManager/GraphicsAdapter/GraphicsDeviceInformation consumer, GPU capability, renderer feature level, shader model, or CNA ABI mapping is claimed. |
 | `VERIFIED_MANAGED` | PackedVector family | docs/packed-vector-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete 19-type managed closure; no CNA ABI route or runtime/hardware claim. |
-| `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, PackedVector, VertexElement, PlayerIndex, DisplayOrientation, BufferUsage, ClearOptions, SurfaceFormat, and DepthFormat closures are locally strict-zero; five native/runtime types remain explicitly partial. |
+| `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, PackedVector, VertexElement, PlayerIndex, DisplayOrientation, BufferUsage, ClearOptions, SurfaceFormat, DepthFormat, and GraphicsProfile closures are locally strict-zero; five native/runtime types remain explicitly partial. |
 | `VERIFIED_MANAGED` | SurfaceFormat enum metadata | docs/surface-format-evidence.md, API compatibility report, and behavior corpus | Only the 20-literal non-flags named-int32 enum is verified; no pixel/texture/render-target format support, compression, HDR, GPU mapping, consumer API, or CNA ABI expansion is claimed. |
 | `VERIFIED_MANAGED` | VertexElement descriptor values | docs/vertex-element-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete three-type managed descriptor closure; no VertexDeclaration, buffer, draw, GPU, CNA ABI, or hardware capability claim. |
 | `VERIFIED_MANAGED` | XNA namespace/package mapping | tools/api_compat and docs/xna-go-mapping.md | Case-preserving import paths; consumer aliases are not API. |

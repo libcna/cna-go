@@ -28,7 +28,16 @@ const (
 	clearOptionsIdentity       = "Microsoft.Xna.Framework.Graphics.ClearOptions"
 	surfaceFormatIdentity      = "Microsoft.Xna.Framework.Graphics.SurfaceFormat"
 	depthFormatIdentity        = "Microsoft.Xna.Framework.Graphics.DepthFormat"
+	graphicsProfileIdentity    = "Microsoft.Xna.Framework.Graphics.GraphicsProfile"
 )
+
+var graphicsProfileValues = []struct {
+	Name  string
+	Value string
+}{
+	{"Reach", "0"},
+	{"HiDef", "1"},
+}
 
 var depthFormatValues = []struct {
 	Name  string
@@ -230,6 +239,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.ClearOptionsClosure = measureClearOptionsClosure(expected, actual, typeDiagnostics)
 	result.SurfaceFormatClosure = measureSurfaceFormatClosure(expected, actual, typeDiagnostics)
 	result.DepthFormatClosure = measureDepthFormatClosure(expected, actual, typeDiagnostics)
+	result.GraphicsProfileClosure = measureGraphicsProfileClosure(expected, actual, typeDiagnostics)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -261,6 +271,71 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+func measureGraphicsProfileClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) graphicsProfileClosure {
+	measurement := graphicsProfileClosure{
+		SourceTypes:          1,
+		ExpectedKind:         "enum",
+		ActualKind:           "missing",
+		UnderlyingType:       "missing",
+		ValueStorageExcluded: true,
+		Status:               "FAIL",
+	}
+	owner := expected.typeForXNA(graphicsProfileIdentity)
+	if owner == nil {
+		return measurement
+	}
+	measurement.SourceIdentities = owner.SourceMembers
+	measurement.ExpectedGoIdentities = len(owner.Members)
+	measurement.LocalDiagnostics = typeDiagnostics[owner.XNA]
+	if target := actual.Types[owner.Key]; target != nil {
+		measurement.TargetTypes = 1
+		measurement.ActualKind = target.Kind
+		measurement.UnderlyingType = target.Underlying
+		measurement.Flags = target.FlagsMarker
+	}
+
+	valuesPass := true
+	for _, wanted := range graphicsProfileValues {
+		row := enumValueMeasurement{
+			Name:          wanted.Name,
+			ExpectedValue: wanted.Value,
+			ActualValue:   "missing",
+			Status:        "FAIL",
+		}
+		key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + wanted.Name}
+		expectedMember := expected.Members[key]
+		actualMember := actual.Members[key]
+		if actualMember != nil {
+			measurement.TargetGoIdentities++
+			if actualMember.Value != nil {
+				row.ActualValue = normalizeInteger(*actualMember.Value)
+			}
+		}
+		if expectedMember != nil && expectedMember.EnumValue != nil &&
+			normalizeInteger(*expectedMember.EnumValue) == wanted.Value && row.ActualValue == wanted.Value {
+			row.Status = "PASS"
+		} else {
+			valuesPass = false
+		}
+		measurement.Values = append(measurement.Values, row)
+	}
+	for key := range actual.Members {
+		if key.Package != owner.PackagePath || !strings.HasPrefix(key.Name, owner.GoName) {
+			continue
+		}
+		if strings.EqualFold(strings.TrimPrefix(key.Name, owner.GoName), "value__") {
+			measurement.ValueStorageExcluded = false
+		}
+	}
+	if measurement.SourceIdentities == 3 && measurement.ExpectedGoIdentities == 2 &&
+		measurement.TargetTypes == 1 && measurement.TargetGoIdentities == 2 && measurement.LocalDiagnostics == 0 &&
+		measurement.ActualKind == "named" && measurement.UnderlyingType == "int32" && !measurement.Flags &&
+		measurement.ValueStorageExcluded && len(measurement.Values) == 2 && valuesPass {
+		measurement.Status = "PASS"
+	}
+	return measurement
 }
 
 func measureDepthFormatClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) depthFormatClosure {

@@ -198,6 +198,19 @@ func runCorpus() corpusReport {
 	checkGoProjection("depth-format.arbitrary-positive-raw", "DEPTH_FORMAT", "4,12345", fmt.Sprintf("%d,%d", graphics.DepthFormat(4), graphics.DepthFormat(12345)))
 	checkGoProjection("depth-format.negative-raw", "DEPTH_FORMAT", int32(-1), int32(graphics.DepthFormat(-1)))
 
+	check("graphics-profile.complete-raw-table", "GRAPHICS_PROFILE", "Reach=0,HiDef=1", fmt.Sprintf(
+		"Reach=%d,HiDef=%d",
+		graphics.GraphicsProfileReach,
+		graphics.GraphicsProfileHiDef,
+	))
+	graphicsProfileKind := reflect.TypeOf(graphics.GraphicsProfileReach).Kind()
+	check("graphics-profile.underlying-system-int32", "GRAPHICS_PROFILE", "System.Int32", map[reflect.Kind]string{reflect.Int32: "System.Int32"}[graphicsProfileKind])
+	check("graphics-profile.flags", "GRAPHICS_PROFILE", false, false)
+	var zeroGraphicsProfile graphics.GraphicsProfile
+	checkGoProjection("graphics-profile.zero-value-reach", "GRAPHICS_PROFILE", graphics.GraphicsProfileReach, zeroGraphicsProfile)
+	checkGoProjection("graphics-profile.arbitrary-positive-raw", "GRAPHICS_PROFILE", "2,12345", fmt.Sprintf("%d,%d", graphics.GraphicsProfile(2), graphics.GraphicsProfile(12345)))
+	checkGoProjection("graphics-profile.negative-raw", "GRAPHICS_PROFILE", int32(-1), int32(graphics.GraphicsProfile(-1)))
+
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))
 	check("math.lerp", "MathHelper", bits(4), bits(framework.MathHelperLerp(2, 10, 0.25)))

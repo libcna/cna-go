@@ -1,8 +1,8 @@
 # CNA-Go
 
 > **Status:** early, measured binding foundation — functional for the qualified
-> Foundation 1 runtime and Foundation 2/3/4/5/6/7/8/9/10/11 managed/API closures, far from full
-> XNA compatibility.
+> Foundation 1 runtime and Foundation 2/3/4/5/6/7/8/9/10/11/12 managed/API
+> closures, far from full XNA compatibility.
 
 CNA-Go maps Microsoft XNA Framework 4.0 namespaces to Go import paths and
 executes native-backed APIs only through CNA's canonical C ABI:
@@ -25,8 +25,8 @@ nor native handles.
 
 The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,243 expected Go members. The current target has 63 types and 1,357 members:
-58 types are complete, five native/runtime types are partial, and 194 are
+3,243 expected Go members. The current target has 64 types and 1,359 members:
+59 types are complete, five native/runtime types are partial, and 193 are
 missing. The strict verifier remains red because most XNA surface is
 intentionally absent. Every mismatch, leak, allowlist, and unmeasured-category
 gate is green.
@@ -166,6 +166,20 @@ contract without ABI expansion:
 - no actual depth/stencil surface support is claimed, and the corpus reaches
   268 observations with zero failures.
 
+Foundation 12 completes exactly the managed Graphics `GraphicsProfile` enum
+contract without ABI expansion:
+
+- exact non-flags named-`int32` metadata with `Reach=0` and `HiDef=1`;
+- the synthetic CLR `value__` field is excluded, so three source identities map
+  to exactly two Go identities;
+- zero value equals `Reach`, while arbitrary positive and negative raw values
+  remain representable without validation;
+- no `iota`, flags marker, Stringer/helper surface, consumer API, GPU/native
+  profile mapping, or CNA ABI route is added;
+- `Reach` and `HiDef` are metadata values, not hardware capability claims: no
+  profile selection, feature-level detection, or renderer support is claimed,
+  and the corpus reaches 274 observations with zero failures.
+
 See [geometry and transform evidence](docs/geometry-transform-evidence.md) for
 the computed closure, mapping decisions, conventions, and local strict-zero
 matrix.
@@ -204,6 +218,11 @@ projection, focused verifier negatives, and strict runtime-support boundary.
 See [DepthFormat evidence](docs/depth-format-evidence.md) for the exact
 four-literal raw table, non-flags projection, focused verifier negatives,
 deferred reverse dependents, and strict runtime-support boundary.
+
+See [GraphicsProfile evidence](docs/graphics-profile-evidence.md) for the
+exact two-literal raw table, non-flags projection, focused verifier negatives,
+the four deferred reverse dependents, and the strict metadata-only Reach/HiDef
+boundary.
 
 The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
@@ -251,7 +270,7 @@ go run ./tools/native_stress
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its 371 missing-surface diagnostics are the work queue, not a
+surface exists; its 370 missing-surface diagnostics are the work queue, not a
 compatibility claim.
 The native ABI and stress commands require the qualified native environment.
 

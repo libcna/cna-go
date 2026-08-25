@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 268,
-    "ASSERTIONS": 268,
+    "OBSERVATIONS": 274,
+    "ASSERTIONS": 274,
     "FAILURES": 0
   },
   "observations": [
@@ -330,6 +330,54 @@
     {
       "id": "depth-format.negative-raw",
       "group": "DEPTH_FORMAT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "graphics-profile.complete-raw-table",
+      "group": "GRAPHICS_PROFILE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Reach=0,HiDef=1",
+      "actual": "Reach=0,HiDef=1",
+      "passed": true
+    },
+    {
+      "id": "graphics-profile.underlying-system-int32",
+      "group": "GRAPHICS_PROFILE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "graphics-profile.flags",
+      "group": "GRAPHICS_PROFILE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "graphics-profile.zero-value-reach",
+      "group": "GRAPHICS_PROFILE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "graphics-profile.arbitrary-positive-raw",
+      "group": "GRAPHICS_PROFILE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "2,12345",
+      "actual": "2,12345",
+      "passed": true
+    },
+    {
+      "id": "graphics-profile.negative-raw",
+      "group": "GRAPHICS_PROFILE",
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": -1,
       "actual": -1,

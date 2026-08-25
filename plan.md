@@ -42,6 +42,11 @@ presentation consumer, runtime pixel-format claim, or ABI expansion.
 DepthFormat non-flags enum contract, with no adapter/presentation/render-target/
 manager consumer, depth-stencil runtime claim, or ABI expansion.
 
+**Foundation 12 status:** qualified for exactly the pure managed Graphics
+GraphicsProfile non-flags enum contract, with no adapter/device/manager/
+device-information consumer, Reach/HiDef hardware or feature-level claim, or
+ABI expansion.
+
 This file is normative. `NEXT.md` is the resumable handoff; generated reports
 are evidence and must not replace the rules here.
 
@@ -545,6 +550,49 @@ Exact evidence is in `docs/depth-format-evidence.md`.
 FOUNDATION_MILESTONE_11_COMPLETE=true
 ```
 
+## Foundation 12 GraphicsProfile policy
+
+Foundation 12 completes exactly
+`Microsoft.Xna.Framework.Graphics.GraphicsProfile`. It is a non-flags named
+`int32` enum with explicit `Reach=0` and `HiDef=1` constants. The synthetic CLR
+`value__` field is excluded, so three source identities map to exactly two Go
+identities.
+
+Both raw assignments are explicit and production contains no `iota`. The zero
+value is `Reach`; arbitrary signed `int32` values remain representable without
+validation, clamping, panic, or error. There is no flags marker, Stringer,
+parser, `IsReach`/`IsHiDef`/`SupportsHiDef`/`FeatureLevel` helper, native enum
+mirror, or GPU capability mapping. `Reach | HiDef` is an ordinary Go integer
+expression, not an XNA flags composition.
+
+Completion of the enum contract claims managed metadata only. `Reach` and
+`HiDef` are metadata values, not runtime GPU capability claims: no actual Reach
+support, HiDef support, profile selection, feature-level detection, shader-model
+support, renderer capability mapping, or native profile negotiation is claimed.
+All four direct reverse dependents remain deferred: GraphicsAdapter,
+GraphicsDevice, GraphicsDeviceInformation, and GraphicsDeviceManager. A
+completed parameter or property type never authorizes its consumer.
+
+## Foundation 12 qualification evidence
+
+- [x] Independently confirm the exact three-source-identity/two-Go-identity contract.
+- [x] Complete GraphicsProfile with compiler-measured local strict zero.
+- [x] Retain both exact raw values and exclude `value__`.
+- [x] Qualify Reach zero value and arbitrary positive/negative raw values.
+- [x] Grow verifier mutations from 132 to 144 without an allowlist or mapping exception.
+- [x] Grow the behavior corpus from 268 to 274 with explicit XNA/Go provenance and zero failures.
+- [x] Preserve all five partial types and their combined 177 missing members.
+- [x] Preserve every mismatch, leak, allowlist, unmeasured, interface-witness, and CNA ABI counter.
+- [x] Requalify Go, native stress, unchanged template, deterministic artifact, and isolated-consumer gates.
+
+Normal strict verification remains red only for 193 genuinely missing types
+and 177 members on five explicitly deferred native/runtime partial types.
+Exact evidence is in `docs/graphics-profile-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_12_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -554,7 +602,8 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 11, regenerate the scoreboard and dependency graph before
-selecting one next closure. Do not automatically choose a DepthFormat or
-SurfaceFormat consumer, continue GraphicsDeviceManager, infer runtime support
-from a managed enum, or combine independent families.
+After Foundation 12, regenerate the scoreboard and dependency graph before
+selecting one next closure. Do not automatically choose a GraphicsProfile,
+DepthFormat, or SurfaceFormat consumer, continue GraphicsDeviceManager or
+GraphicsDevice, infer runtime support from a managed enum, or combine
+independent families.
