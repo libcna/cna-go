@@ -2,116 +2,151 @@
 
 ## Current state
 
-Foundation Milestones 1 through 21 are complete. Milestones 17 through 21 were
-produced in one session as **five local commits that have not been pushed**;
-`develop` is 5 ahead of `origin/develop`.
+Foundation Milestones 1 through 25 are complete. Milestones 22 through 25 were
+produced in one session as **four local commits that have not been pushed**;
+`develop` is 4 ahead of `origin/develop`.
 
 ```text
-START   HEAD = origin/develop = 766e2a0b1c7ed06a2eb67abf00e2ab108afc7551
-FINAL   HEAD = fc18d7b1bf9f41bb3a90d47d27a72222fe4bb4ef
-        origin/develop unchanged at 766e2a0
+START   HEAD = origin/develop = 81d8fe7cd08f4303ff49ebfca98441ceaa59b9bc
+FINAL   HEAD = 6259bfa
+        origin/develop unchanged at 81d8fe7
         worktree clean, git diff --check clean
 ```
 
-| # | commit    | milestone                                     | types | Go identities |
-| - | --------- | ---------------------------------------------- | ----- | ------------- |
-| 17 | `54b9989` | pure managed CLR class + per-operation fallibility | 2 | 20 |
-| 18 | `680b52c` | projected CLR interface contracts              | 4     | 18            |
-| 19 | `6dd2fb0` | `System.IntPtr` + `PresentationParameters`     | 1     | 23            |
-| 20 | `2418e9e` | read-only `TouchCollection`                    | 2     | 19            |
-| 21 | `fc18d7b` | `GameServiceContainer`                         | 1     | 4             |
+| #  | commit    | milestone                                        | types | Go identities |
+| -- | --------- | ------------------------------------------------ | ----- | ------------- |
+| 22 | `b8698d0` | the general CLR event architecture               | 0     | 0             |
+| 23 | `f169408` | IUpdateable, IDrawable, the EventArgs carriers   | 5     | 19            |
+| 24 | `d2068e0` | `System.IDisposable` as a zero-surface relation  | 0     | 0             |
+| 25 | `6259bfa` | internal XNA interfaces, frontier closure        | 0     | 0             |
 
-Ten types, 84 mapped Go identities.
+Five types, 19 mapped Go identities. Three of the four milestones deliberately
+complete no type: they are mapping decisions and measurement.
 
 ## Scoreboard
 
 ```text                        start    final
-TARGET_TYPES                   103      113
-TARGET_MEMBERS                1619     1703
-TOTAL_DIAGNOSTICS              331      321
-MISSING_TYPE                   154      144
+TARGET_TYPES                   113      118
+TARGET_MEMBERS                1703     1722
+TOTAL_DIAGNOSTICS              321      316
+MISSING_TYPE                   144      139
 MISSING_MEMBER                 177      177
-COMPLETE_TYPES                  98      108
+COMPLETE_TYPES                 108      113
 PARTIAL_TYPES                    5        5
-MISSING_TYPES                  154      144
+MISSING_TYPES                  144      139
 
 INTERFACE_WITNESS_PROJECTIONS   25       25
 PACKFROMVECTOR4_WITNESSES       17       17
 TOVECTOR4_WITNESSES              8        8
 
-mutation inventory             217      347
-behavior corpus                487      564
+mutation inventory             347      447
+behavior corpus                564      575
 ```
 
-Every mismatch, leak, allowlist, and unmeasured counter is zero throughout. The
-five protected partial runtime types are untouched: Game 39,
-GraphicsDeviceManager 40, GraphicsDevice 70, SpriteBatch 16, Texture2D 12,
-combined 177.
+Every mismatch, leak, allowlist, and unmeasured counter is zero throughout,
+including the now load-bearing `EVENT_MAPPING_MISMATCH` and
+`BASE_MAPPING_MISMATCH`. The five protected partial runtime types are untouched:
+Game 39, GraphicsDeviceManager 40, GraphicsDevice 70, SpriteBatch 16,
+Texture2D 12, combined 177. `MISSING_MEMBER` stayed at 177 on purpose: none of
+them gained an event, because an event that never fires is not implemented.
 
-## Mapping rules this session settled
+## The event architecture
 
-These are general rules, not per-type exceptions. All are declared in
-`tools/api_compat/mapping-rules.json` and documented in
-`docs/xna-go-mapping.md`.
+Every one of the 49 public CLR events in the profile is
+`System.EventHandler`1<T>` over one of five generic arguments, so two BCL shapes
+close the whole surface:
 
-1. **CLR `class` is not evidence of native backing.** A type is admitted to
-   `pureManagedTypes` only when authoritative XNA IL proves its selected public
-   behavior is entirely managed. Admission changes fallibility and nothing else:
-   a class still projects as `*T`, a struct still projects as `T`. The five
-   native-backed runtime types are deliberately excluded.
+```text
+System.EventArgs        -> *framework.EventArgs
+System.EventHandler<T>  -> framework.EventHandler[T]   func(sender any, args T) error
+```
 
-2. **Fallibility belongs to one projected operation.** Keys are
-   `constructor|Name`, `method|Name`, `field|Name`, `property-get|Name`,
-   `property-set|Name`, and `property|Name`. The whole-property key still marks
-   both accessors and is correct only where the reference validates on read
-   *and* on write. `ERROR_MAPPING_MISMATCH` names the accessor and the direction
-   of every disagreement.
+The generic argument is carried exactly; the old undeclared `mapType`
+fall-through to `any` is gone, and degrading a handler is now a named event
+defect. The handler's `error` is a Go projection of the CLR exception channel,
+not an XNA return identity.
 
-3. **Interface fallibility comes from reference implementor IL**, in the
-   assembly that declares the interface — never from speculation about an
-   implementor that does not exist. One contract may mix boundaries;
-   `IEffectFog` is the first that does.
+The settled accessor projection is unchanged — one CLR event still becomes
+exactly two Go accessors. Four language adapters live in the framework package:
+`EventArgs`, `EventHandler[T]`, `EventSubscription`, `EventSource[T]`.
 
-4. **`System.IntPtr` projects to `uintptr`**, meaning only the opaque
-   pointer-sized bit value the contract carries at that position.
-   `RAW_HANDLE_LEAK` admits a public `uintptr` **only** where XNA metadata
-   declares `System.IntPtr` at that exact position; everything else still leaks.
+Semantics read from the reference accessors rather than invented:
 
-5. **A BCL interface whose members the XNA type already declares publicly** adds
-   no projected surface and needs no separate Go interface. Covers
-   `IList<T>` and `System.IServiceProvider`.
+| property | behavior | source |
+| -------- | -------- | ------ |
+| `Add(nil)` | registers nothing, returns the zero token | `Delegate.Combine(x, null) -> x` |
+| absent-token removal | harmless: zero, already-removed, foreign | `Delegate.Remove` of an absent delegate |
+| ordering | registration order | |
+| dispatch | over a snapshot taken under the lock | |
+| mutation during raise | affects later raises only | |
+| lock scope | no internal lock held while a handler runs | |
+| failure | first error propagates, no later handler runs, list intact | |
+| token lifetime | explicit removal only; no finalizer | |
 
-6. **A collection that declares its own public enumerator type** projects that
-   type from `GetEnumerator`; the `Iterator<T>` adapter is for collections that
-   declare none.
+**The one deliberate divergence**, recorded as a Go language projection: Go func
+values are not comparable, so a token names the **registration**, not the
+handler. Adding one handler twice yields two registrations and two tokens, where
+CLR `Delegate.Remove` matches by delegate identity.
+
+`EventArgs` carries one unexported byte. Measured on go1.24.4 linux/amd64, four
+separate `new(struct{})` heap allocations all returned `runtime.zerobase` — 6
+collisions out of 6 pairs — so a zero-size `EventArgs` would make every instance
+pointer-equal and destroy the identity `Empty` depends on.
+
+## Relationship rules this session settled
+
+These are general rules, declared in `tools/api_compat/mapping-rules.json` and
+documented in `docs/xna-go-mapping.md`.
+
+1. **A non-XNA CLR base is a measured relationship, never Go embedding.** Go has
+   no CLR inheritance and embedding would promote members the contract never
+   declared. The table is exhaustive over the profile: 3 implied roots,
+   `System.EventArgs` mapped, 8 deferred. A **deferred** base means no derived
+   type may be projected, and projecting one is a diagnostic.
+
+2. **A non-XNA CLR interface contributes no projected Go surface.** Either the
+   XNA type already declares the members publicly, or it implements the
+   interface explicitly so the member is not public surface. All 8 are declared
+   and measured with `projectedMembers == 0`.
+
+3. **`System.IDisposable` in particular creates nothing**: no `Disposable` type,
+   no `Close` alias, no `io.Closer`, no finalizer, no ownership wrapper, and no
+   `Dispose` synthesized from ancestry. Mapping it makes a dependency
+   syntactically complete without deciding native ownership for anything.
+
+4. **An internal XNA interface is declared, not skipped.** `IGraphicsResource`
+   and `IDynamicGraphicsResource` are `.class interface private`, so they have
+   no public member to project at all.
+
+5. **A CLR class may derive from any MAPPED BCL base.** The class closure used
+   to hardcode `System.Object`; it now records which relationship carried the
+   base (`DIRECT` or the adapter name), and `UNDECIDED` fails.
+
+6. **An interface's boundary is read per contract, not per class.**
+   `IUpdateable` and `IDrawable` are infallible because their implementors'
+   getters are one `ldfld` and their `Update`/`Draw` are a bare `ret`, while
+   `IGameComponent` on the same class stays fallible because its `Initialize`
+   throws. Event accessors carry an error from the accessor projection, counted
+   separately from boundary operations.
 
 ## Reference quirks now preserved — do not "correct" them
 
-- `AudioListener`/`AudioEmitter` constructors store `Vector3.Zero` **unflipped**
-  while the getters flip, so `Position` and `Velocity` read back with a
-  **negative-zero Z** (`0x80000000`). `Forward` and `Up` do not, because their
-  stored values were flipped once already.
-- `AudioEmitter.set_DopplerScale` guards with `bge.un.s`, so `+0`, `-0`,
-  `+Infinity`, **and every NaN** are accepted; only negative-ordered values
-  throw.
-- `PresentationParameters`'s constructor's only statement is
-  `IsFullScreen = true`, so a fresh descriptor is full-screen on a zero-sized
-  back buffer. XNA 4.0 has **no `Clear`** on this type.
-- `TouchCollection`'s `IList<T>` mutators throw `NotSupportedException`
-  unconditionally, validating nothing first, so `Insert(-99, x)` reports
-  not-supported rather than out-of-range. `CopyTo` checks capacity in **64-bit**
-  arithmetic. `IndexOf` uses the equality operator, so a location `Equals`
-  accepts is missed. `FindById`'s miss yields a **zero** location, not the
-  `Id` -1 sentinel `TryGetPreviousLocation` uses.
-- `GameServiceContainer.AddService` checks for a **duplicate before checking
-  assignability**. `RemoveService` on an unregistered type succeeds and
-  `GetService` on one returns nil with no error.
+Everything in the Foundation 17-21 list still holds, plus:
+
+- `GameComponent::set_Enabled` and `set_UpdateOrder` compare first and raise
+  **only when the value actually changes**.
+- Every XNA raise site pushes the one shared `System.EventArgs::Empty` static
+  field, so shared object identity is the faithful projection.
+- `GraphicsDeviceManager` implements `System.IDisposable` **explicitly**
+  (`private ... .override`), so its `Dispose()` is not public surface; its only
+  projected `Dispose` is the `Dispose(bool)` the contract declares.
+- `ResourceCreatedEventArgs` and `ResourceDestroyedEventArgs` declare
+  `assembly` constructors, so they get **no** Go constructor.
+  `ResourceDestroyedEventArgs`'s constructor stores its tag before its name.
 
 ## Reference authority
 
-Behavior comes from retained original Microsoft assemblies in `~/Downloads/win`,
-verified by hash and read with `ikdasm`. Exception message strings were read
-from each assembly's embedded `.resources` stream with `monodis --mresources`.
+Unchanged, and all six re-verified by hash this session.
 
 ```text
 Microsoft.Xna.Framework.dll             38e7093f52d7474bbc6256906519781a1210d7da50a1c667b52716fcf49ca130
@@ -122,9 +157,8 @@ Microsoft.Xna.Framework.Xact.dll        a14d5364dca7cf49fb90639e87ba04d52b59a700
 Microsoft.Xna.Framework.Video.dll       17538b1ca9d48a993e2cd88c96b436df08e7abb4aec5d4758eb21feb580d6e06
 ```
 
-Public *surface* remains the pinned contract at SHA-256
-`7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc`. FNA and
-MonoGame remain comparators only and were not consulted.
+Public surface remains the pinned contract at SHA-256
+`7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc`.
 
 ## Native provenance — unchanged
 
@@ -137,88 +171,107 @@ sha256 e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f
 
 EXACT_BINARY_PROVENANCE=VERIFIED
 ABI_COMPATIBILITY=VERIFIED          23/67/96/28/2/5, 0 missing, 0 mismatches
-BEHAVIORAL_EQUIVALENCE=VERIFIED     on the exercised 20-cycle stress surface
+BEHAVIORAL_EQUIVALENCE=VERIFIED     native_stress reproduces every counter byte-identically
 REPRODUCED_BUILD_OUTPUT=NOT_ESTABLISHED
 ```
 
-Rediscover it by hash rather than by path:
-
-```sh
-find / -name 'libcna_c_api.so*' -type f 2>/dev/null -exec sha256sum {} + | grep ^e912cd1d
-```
-
 `native_abi` reproduces the committed report key for key, differing only in
-`header_root`, which the committed evidence stores normalized. `native_stress`
-reproduces every counter identically with `GO_RACE_STATUS=PASS`.
+`header_root`, which the committed evidence stores normalized.
 
-## Toolchain
+## The frontier — exhausted again, and the next step is a decision
 
-The Go toolchain lived only under the system temporary directory. It is now
-preserved durably, byte-for-byte, at `~/deps/go1.24.4` (go1.24.4 linux/amd64),
-so a future session does not have to re-download it. `GOCACHE` was already
-durable at `~/.cache/go-build`.
-
-## The frontier is exhausted — the next milestone is a decision
-
-**Every dependency-complete missing type has been individually re-derived from
-IL this session.** All eleven that remain are deferred with evidence, not with
-an assumption:
+Fourteen missing types are dependency-complete. **All fourteen are blocked on
+behavior, not on a mapping**, and each was re-derived rather than assumed:
 
 | type | why |
 | ---- | --- |
-| `Graphics.DisplayMode` | `assembly` constructor only; values come from display enumeration |
-| `Input.GamePadCapabilities` | `assembly`/`private` constructors only; device capability |
-| `Input.Touch.TouchPanelCapabilities` | **no constructor at all**; device capability |
-| `Audio.RendererDetail` | `assembly` constructor only; values come from XACT renderer enumeration |
-| `Audio.AudioCategory` | `assembly` constructor needing an `AudioEngine`; every method P/Invokes `UnsafeNativeMethods.Engine` |
-| `Audio.SoundEffectInstance` | `assembly` constructors; 18 throw sites through `Helpers.ThrowExceptionFromErrorCode` |
-| `Graphics.EffectAnnotation` | `assembly` constructor; unmanaged `calli` through `GraphicsHelpers.GetExceptionFromResult` |
-| `Media.Video` | `assembly` constructor needing a `GraphicsDevice` and a content file |
-| `Media.MediaSource` | `assembly` constructor; values come from the media backend |
-| `FrameworkDispatcher` | `Update()` drives the microphone, dynamic-audio, media, and storage pumps |
+| `Graphics.DisplayMode` | `assembly` ctor; display enumeration |
+| `Input.GamePadCapabilities` | `assembly`/`private` ctor; device capability |
+| `Input.Touch.TouchPanelCapabilities` | no constructor at all; device capability |
 | `Input.Mouse` | device state plus `MouseMessageHooker` |
+| `Audio.RendererDetail` | `assembly` ctor; XACT renderer enumeration |
+| `Media.MediaSource` | `assembly` ctor; media backend |
+| `GameWindow` | **new**: `public abstract`, `assembly` ctor, 8 bodyless public abstract members, real platform `Handle` |
+| `Audio.AudioCategory` | `assembly` ctor needing `AudioEngine`; every method P/Invokes |
+| `Audio.Cue` | XACT native |
+| `Audio.SoundEffectInstance` | `assembly` ctors; 18 native throw sites |
+| `Graphics.EffectAnnotation` | `assembly` ctor; unmanaged `calli` |
+| `Media.Video` | `assembly` ctor needing `GraphicsDevice` and a content file |
+| `FrameworkDispatcher` | drives the microphone, dynamic-audio, media and storage pumps |
 | `TitleContainer` | needs `TitleLocation.Path` and the file system |
 
-Everything else in the profile is blocked on an **unmapped BCL shape**, and each
-of those is a new public-API decision that this session deliberately did not
-take. Ranked by how many missing types each would unblock:
+Six BCL shapes remain. For each, the types whose **only** remaining blocker it
+is:
 
 ```text
-  26  System.IDisposable                             disposal / ownership design
-  24  System.EventArgs                               the event handler type
-  21  System.EventHandler`1                          (one decision, two shapes)
-  13  System.ComponentModel.ITypeDescriptorContext   the Design namespace
-  12  System.Globalization.CultureInfo
-  12  System.Collections.IDictionary
-   9  System.Collections.ObjectModel.ReadOnlyCollection`1
-   8  System.Exception (+3 ExternalException)        CLR exception types as Go types
-   6  System.Attribute                               content serializer attributes
-   4  System.Collections.Generic.List`1+Enumerator
+5  System.Attribute            the five ContentSerializer* attributes
+4  System.Exception            NoMicrophoneConnectedException, DeviceLostException,
+                               DeviceNotResetException, NoSuitableGraphicsDeviceException
+2  ReadOnlyCollection`1        Audio.Microphone, Media.VisualizationData
+1  Collection`1                GameComponentCollection
+1  Dictionary`2                LaunchParameters
+1  System.Action`1             Content.ContentManager
 ```
 
-### The two highest-value decisions
+`Microphone` and `ContentManager` stay device- and filesystem-blocked even with
+their shape mapped.
 
-**1. The event handler type** (`System.EventArgs` + `System.EventHandler<T>`).
-Nine missing types are blocked on this *alone*, including
-`Graphics.GraphicsResource` (fan-out 10), `IDrawable`, `IUpdateable`, and
-`IGraphicsDeviceService`. The event *accessor* mapping is already settled
-(`AddXHandler` returning `EventSubscription`, `RemoveXHandler` taking one); what
-is unsettled is the handler parameter type, which currently degrades to `any`
-through an undeclared `mapType` fallthrough. Foundation 18 deferred three
-interfaces on exactly this rather than lock in `any`. Plausible options:
+### The next decision: how a BCL collection base projects
 
-- a named `EventHandler` func type plus an `EventArgs` adapter, added to
-  `languageAdapters` alongside `EventSubscription`;
-- a generic `EventHandlerOf[T]` func type mirroring the CLR generic;
-- keep `any` but *declare* it, accepting a lossy signature.
+This is the highest-value one, and it is a **material public-API choice that
+existing policy does not resolve**.
 
-**2. Disposal and ownership** (`System.IDisposable`). Twenty-six missing types
-declare it. It is also the second half of what `GraphicsResource` needs, and it
-touches the protected partial `GraphicsDevice`. The prompt-level guidance has
-consistently deferred this as a separate architecture milestone.
+`GameComponentCollection` was reconsidered as directed — its prerequisites
+(`IGameComponent`, the event projection, `GameComponentCollectionEventArgs`) are
+all now complete — and re-derived in full. Its behavior **is** entirely managed
+and IL-provable:
 
-Resolving both would unblock `GraphicsResource` and, through it, the whole
-graphics resource family.
+```text
+InsertItem   IndexOf(item) != -1 -> ArgumentException; base.InsertItem;
+             then raise ComponentAdded only if item is non-null, with a FRESH
+             GameComponentCollectionEventArgs
+RemoveItem   read base[index]; base.RemoveItem; then raise ComponentRemoved
+             only if the removed item was non-null
+SetItem      unconditionally throws NotSupportedException
+ClearItems   raises ComponentRemoved for EVERY item, index 0 upward, and only
+             THEN calls base.ClearItems
+```
+
+Note the asymmetry: `Insert`/`Remove` mutate **before** they raise; `Clear`
+raises for the whole collection **before** it mutates. Do not guess this.
+
+It is blocked anyway, for a projection reason. Its declared surface is seven
+members — a constructor, four **protected** overrides, and two events. `Add`,
+`Remove`, `Clear`, `Count`, the indexer, `IndexOf`, `Insert`, `RemoveAt`, and
+`GetEnumerator` are all inherited from `Collection<IGameComponent>` and are not
+declared members. Projecting only the seven would turn the strict gate green
+while producing a collection **nothing can be added to**.
+
+`LaunchParameters` is the same decision in starker form: it derives from
+`Dictionary<string,string>` and its only declared member is a constructor.
+
+Alternatives, recorded rather than chosen:
+
+1. **Re-declare the inherited surface on the derived Go type.** Faithful for
+   callers; needs a new expected-member category for inherited BCL surface, a
+   scope rule for which inherited members count, and new `expectedCountFormula`
+   arithmetic.
+2. **Project only the declared members.** Faithful to the letter, useless, and
+   leaves four protected overrides overriding nothing.
+3. **A framework-package `Collection[T]` adapter** the derived type holds and
+   re-exports. Still needs answer 1, and adds a public non-XNA support type.
+4. **Defer** — what Foundation 25 does.
+
+The same answer governs `ReadOnlyCollection<T>` (4 `Model*` types plus 2) and
+`Dictionary<K,V>`.
+
+### The other decision: CLR exception types
+
+Untouched on purpose. `System.Exception` is the sole remaining blocker for four
+XNA exception types, and `ExternalException` for three more. CNA-Go reports
+failure through `error` results and has no exception hierarchy; both bases are
+declared **DEFERRED** in the base relationship table, so no derived type may be
+projected until the decision is taken.
 
 ## Re-running gates
 
@@ -229,11 +282,10 @@ export CNA_NATIVE_LIBRARY=~/deps/cna-c-abi-0.7.0-pinned-foundation11/libcna_c_ap
 gofmt -l .
 go vet ./...
 go test ./...
-go test -race ./...          # api_compat takes ~200s under -race
-go build ./...
-go build -trimpath ./...
-go run ./tools/api_compat --mode strict     # expected red: 321 deferred diagnostics
-go run ./tools/api_compat --mode leak-only
+go test -race ./...          # api_compat takes ~250s under -race
+go build ./... && go build -trimpath ./...
+go run ./tools/api_compat --mode strict -report "" -missing ""   # expected red: 316 deferred
+go run ./tools/api_compat --mode leak-only -report "" -missing ""
 go run ./tools/behavior
 go run ./tools/packed_vector_qualify
 go run ./tools/capabilities --check
@@ -244,11 +296,10 @@ go run ./tools/api_compat --mode report     # run LAST so committed evidence kee
 git diff --check
 ```
 
-Always send native reports to an explicit `-output` under a scratch directory so
-a locally rebuilt library or an absolute header path never rewrites the
-committed evidence.
+Pass `-report "" -missing ""` on any non-report run so committed evidence keeps
+report mode, and send native reports to an explicit scratch `-output`.
 
-### Deterministic artifact and isolated consumer
+### Deterministic artifact, isolated consumer, external canary
 
 ```sh
 git ls-files -z | sort -z | tar --null --files-from=- \
@@ -256,19 +307,34 @@ git ls-files -z | sort -z | tar --null --files-from=- \
   --mtime='@0' --mode='u+rw,go+r,go-w' --sort=name -cf - | gzip -n > OUT.tar.gz
 ```
 
-At `fc18d7b` that yields sha256
-`0244074eb42a0b163aa40b38230558aa9c07368270bc28b33cd08e4444dce8a4` over 237
+At `6259bfa` that yields sha256
+`c64a2ab9e06800209e2f32a1e460fb8a56f529b377164f67e8032162c4447011` over 250
 entries, reproduced independently in the same run. Extracted into
 `build-consumer/isolated`, it passes every gate with **no development-checkout
-dependency** and regenerates `api-compat-report.json` and
-`behavior-corpus-report.json` byte-identically to the committed evidence. The
-external consumer fixture in `build-consumer/consumer` builds against it and
-runs at exactly 60 and 600 native Draw callbacks.
+dependency** and regenerates `api-compat-report.json`,
+`behavior-corpus-report.json`, and `missing-type-inventory.md` byte-identically
+to the committed evidence. The Foundation-1 consumer fixture in
+`build-consumer/consumer` builds against it and runs at exactly 60 and 600
+native Draw callbacks.
 
-### Maintained template
+The **external event conformance canary** is new and is mandatory for the event
+architecture:
+
+```sh
+go run ./tools/external_consumer -source build-consumer/isolated/cna-go
+```
+
+It materialises `tools/external_consumer/testdata/eventcanary` as its own Go
+module whose only requirement is the extracted artifact, with `GOWORK=off` and
+no sibling checkout, and runs 7 tests proving an external type can satisfy
+`IUpdateable` and `IDrawable`, own private `EventSource` fields, raise its own
+events, and that a consumer holding only the contract has no way to raise.
+
+## Maintained template
 
 `cna-go-template` is unchanged, on `develop` at `6525484`, worktree clean, and
 runs at exactly 60 and 600 native Draw callbacks against the pinned binary.
+`SOURCE_CHANGED=NO`.
 
 ## Qualification artifact caveats — unchanged
 
@@ -277,20 +343,19 @@ visible rendering is not. Windows, macOS, Android, iOS, and Web/Wasm are not
 qualified. Content/XNB, Effects/3D, Audio, Media, Storage, and most of XNA
 remain unimplemented.
 
-Nothing completed in Foundations 17–21 claims a runtime capability. The audio
-descriptors open no device and create no XACT state; the effect and device
-interfaces are declarations with no implementation; `PresentationParameters` is
-a descriptor that creates, resets, enumerates, and presents nothing;
-`TouchCollection` polls no panel; and `GameServiceContainer` is not reachable
-from `Game`, which still exposes no `Services` property.
+Nothing completed in Foundations 22-25 claims a runtime capability. The event
+architecture raises no XNA event: CNA-Go has no `GameComponent`, no component
+collection, and no component loop, so nothing calls `Update` or `Draw`.
+`GraphicsDevice` remains a protected partial that raises nothing, so nothing
+constructs either resource carrier. The three protected partials gained no event
+member, deliberately.
 
 ```text
-FOUNDATION_MILESTONE_17_COMPLETE=true
-FOUNDATION_MILESTONE_18_COMPLETE=true
-FOUNDATION_MILESTONE_19_COMPLETE=true
-FOUNDATION_MILESTONE_20_COMPLETE=true
-FOUNDATION_MILESTONE_21_COMPLETE=true
+FOUNDATION_MILESTONE_22_COMPLETE=true
+FOUNDATION_MILESTONE_23_COMPLETE=true
+FOUNDATION_MILESTONE_24_COMPLETE=true
+FOUNDATION_MILESTONE_25_COMPLETE=true
 PUSHED=false
 SAFE_MANAGED_FRONTIER=EXHAUSTED
-NEXT_STEP=PUBLIC_API_DECISION
+NEXT_STEP=PUBLIC_API_DECISION_BCL_COLLECTION_BASE
 ```

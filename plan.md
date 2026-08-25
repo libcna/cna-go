@@ -1037,6 +1037,72 @@ Exact evidence is in `docs/foundation-21-game-service-container-evidence.md`.
 FOUNDATION_MILESTONE_21_COMPLETE=true
 ```
 
+## Foundation 22 the general CLR event architecture
+
+Every public CLR event in the profile is `System.EventHandler`1<T>`, so two BCL
+shapes close the whole event surface. Both are general, not per-type.
+
+- [x] `System.EventArgs -> *framework.EventArgs`, keeping CLR reference
+      semantics; `nil` is not its `Empty`.
+- [x] `System.EventArgs.Empty -> framework.EventArgsEmpty()`, one stable private
+      singleton behind a function so no consumer can reassign it.
+- [x] `System.EventHandler<T> -> framework.EventHandler[T]`, the generic
+      argument carried exactly and never degraded to `any`.
+- [x] Handler results `error`, recorded as a Go projection of the CLR exception
+      channel rather than an XNA return identity.
+- [x] `EventSubscription` materialised as a real opaque token;
+      `EventSource[T]` added as public language support.
+- [x] Non-XNA CLR bases made a measured relationship, exhaustive over the
+      profile, with `System.EventArgs` mapped and eight bases deferred.
+- [x] Preserve the settled two-accessor event projection and every XNA counter.
+
+## Foundation 22 qualification evidence
+
+Exact evidence is in `docs/foundation-22-event-architecture-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_22_COMPLETE=true
+```
+
+## Foundation 23 the first event contracts
+
+- [x] `IUpdateable` and `IDrawable`, re-derived from IL and classified
+      `PURE_MANAGED` on their own implementor evidence.
+- [x] The three dependency-complete `System.EventArgs` carriers, preserving
+      public and `assembly` construction exactly.
+- [x] External conformance canary as its own module, `GOWORK=off`, no sibling
+      checkout.
+
+## Foundation 23 qualification evidence
+
+Exact evidence is in `docs/foundation-23-component-contracts-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_23_COMPLETE=true
+```
+
+## Foundation 24 and 25 BCL relationships and the frontier
+
+- [x] `System.IDisposable` registered as a measured relationship that adds no
+      projected Go surface: no `Disposable` type, no `Close`, no `io.Closer`,
+      no finalizer, no ownership wrapper, no synthesized `Dispose`.
+- [x] All eight non-XNA direct interfaces declared and measured with
+      `projectedMembers == 0`.
+- [x] The two internal XNA interfaces declared `INTERNAL_NO_SURFACE` rather
+      than skipped.
+- [x] Frontier regenerated; `GameComponentCollection`, `LaunchParameters`, and
+      `GameWindow` re-derived and deferred with recorded evidence.
+
+## Foundation 24 and 25 qualification evidence
+
+Exact evidence is in `docs/foundation-24-idisposable-relationship-evidence.md`
+and `docs/foundation-25-frontier-closure-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_24_COMPLETE=true
+FOUNDATION_MILESTONE_25_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
