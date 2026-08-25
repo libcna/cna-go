@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 595,
-    "ASSERTIONS": 595,
+    "OBSERVATIONS": 598,
+    "ASSERTIONS": 598,
     "FAILURES": 0
   },
   "observations": [
@@ -4765,6 +4765,30 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "99,3",
       "actual": "99,3",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-service.accessor-hands-over-a-stored-reference",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-service.four-independent-events",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,true,created,resetting,reset,disposing",
+      "actual": "true,true,true,true,created,resetting,reset,disposing",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-service.removal-affects-one-event-only",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,resetting,reset,disposing",
+      "actual": "true,resetting,reset,disposing",
       "passed": true
     }
   ]

@@ -2095,7 +2095,93 @@ func runCorpus() corpusReport {
 	check("read-only-collection.live-over-the-list-it-was-given", "BCL_SIGNATURE_ADAPTER", "99,3",
 		fmt.Sprintf("%v,%d", liveElement, liveView.Count()))
 
+	// ---------------------------------------------------------------------
+	// Foundation 28. IGraphicsDeviceService, the device-publication contract.
+	//
+	// Its one non-event operation is infallible because the reference
+	// implementor's accessor is `ldarg.0; ldfld device; ret` -- a stored
+	// reference handed over, null before a device exists.
+	// ---------------------------------------------------------------------
+
+	var deviceServiceContract graphics.IGraphicsDeviceService = &corpusDeviceService{}
+	check("graphics-device-service.accessor-hands-over-a-stored-reference", "EVENT_ARCHITECTURE", "true",
+		fmt.Sprintf("%t", deviceServiceContract.GraphicsDevice() == nil))
+
+	corpusService := &corpusDeviceService{}
+	deviceServiceContract = corpusService
+	var deviceOrder []string
+	deviceHandler := func(name string) framework.EventHandler[*framework.EventArgs] {
+		return func(sender any, args *framework.EventArgs) error {
+			if sender != any(corpusService) || args != framework.EventArgsEmpty() {
+				deviceOrder = append(deviceOrder, name+":identity-lost")
+				return nil
+			}
+			deviceOrder = append(deviceOrder, name)
+			return nil
+		}
+	}
+	createdToken, createdError := deviceServiceContract.AddDeviceCreatedHandler(deviceHandler("created"))
+	_, resettingError := deviceServiceContract.AddDeviceResettingHandler(deviceHandler("resetting"))
+	_, resetError := deviceServiceContract.AddDeviceResetHandler(deviceHandler("reset"))
+	_, disposingError := deviceServiceContract.AddDeviceDisposingHandler(deviceHandler("disposing"))
+	corpusService.raiseAll()
+	check("graphics-device-service.four-independent-events", "EVENT_ARCHITECTURE",
+		"true,true,true,true,created,resetting,reset,disposing",
+		fmt.Sprintf("%t,%t,%t,%t,%s", createdError == nil, resettingError == nil,
+			resetError == nil, disposingError == nil, strings.Join(deviceOrder, ",")))
+
+	deviceOrder = nil
+	removalError := deviceServiceContract.RemoveDeviceCreatedHandler(createdToken)
+	corpusService.raiseAll()
+	check("graphics-device-service.removal-affects-one-event-only", "EVENT_ARCHITECTURE",
+		"true,resetting,reset,disposing",
+		fmt.Sprintf("%t,%s", removalError == nil, strings.Join(deviceOrder, ",")))
+
 	return report
+}
+
+// corpusDeviceService is a corpus-local conformer of the device-publication
+// contract. Only it can raise; a consumer holding the contract can only
+// subscribe. It publishes no device and reproduces no XNA implementor.
+type corpusDeviceService struct {
+	created   framework.EventSource[*framework.EventArgs]
+	disposing framework.EventSource[*framework.EventArgs]
+	reset     framework.EventSource[*framework.EventArgs]
+	resetting framework.EventSource[*framework.EventArgs]
+}
+
+func (s *corpusDeviceService) GraphicsDevice() *graphics.GraphicsDevice { return nil }
+
+func (s *corpusDeviceService) AddDeviceCreatedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.created.Add(h)
+}
+func (s *corpusDeviceService) RemoveDeviceCreatedHandler(sub framework.EventSubscription) error {
+	return s.created.Remove(sub)
+}
+func (s *corpusDeviceService) AddDeviceDisposingHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.disposing.Add(h)
+}
+func (s *corpusDeviceService) RemoveDeviceDisposingHandler(sub framework.EventSubscription) error {
+	return s.disposing.Remove(sub)
+}
+func (s *corpusDeviceService) AddDeviceResetHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.reset.Add(h)
+}
+func (s *corpusDeviceService) RemoveDeviceResetHandler(sub framework.EventSubscription) error {
+	return s.reset.Remove(sub)
+}
+func (s *corpusDeviceService) AddDeviceResettingHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.resetting.Add(h)
+}
+func (s *corpusDeviceService) RemoveDeviceResettingHandler(sub framework.EventSubscription) error {
+	return s.resetting.Remove(sub)
+}
+
+func (s *corpusDeviceService) raiseAll() {
+	_ = s.created.Raise(s, framework.EventArgsEmpty())
+	_ = s.resetting.Raise(s, framework.EventArgsEmpty())
+	_ = s.reset.Raise(s, framework.EventArgsEmpty())
+	_ = s.disposing.Raise(s, framework.EventArgsEmpty())
 }
 
 // corpusComponent is a corpus-local conformer of both component contracts. It

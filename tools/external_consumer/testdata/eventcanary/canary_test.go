@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
+	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 )
 
 func TestExternalTypeSatisfiesBothComponentContracts(t *testing.T) {
@@ -587,5 +588,107 @@ func TestExternalCallerCannotReachTheCollectionImplementation(t *testing.T) {
 	}
 	if collection.Count() != 2 {
 		t.Fatal("two variables naming one collection must observe one state")
+	}
+}
+
+func TestExternalTypeSatisfiesTheDevicePublicationContract(t *testing.T) {
+	service := &DeviceService{}
+	var contract graphics.IGraphicsDeviceService = service
+
+	// The accessor is infallible and reports nil before a device exists,
+	// exactly as the reference implementor's one-ldfld getter returns null.
+	if contract.GraphicsDevice() != nil {
+		t.Fatal("a service with no device must report nil")
+	}
+
+	var seen []string
+	token, err := contract.AddDeviceCreatedHandler(func(sender any, args *framework.EventArgs) error {
+		if sender != any(service) || args != framework.EventArgsEmpty() {
+			t.Fatal("sender or args identity was lost")
+		}
+		seen = append(seen, "created")
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := service.RaiseDeviceCreated(); err != nil {
+		t.Fatal(err)
+	}
+	if len(seen) != 1 || seen[0] != "created" {
+		t.Fatalf("seen = %v", seen)
+	}
+	if err := contract.RemoveDeviceCreatedHandler(token); err != nil {
+		t.Fatal(err)
+	}
+	seen = nil
+	if err := service.RaiseDeviceCreated(); err != nil {
+		t.Fatal(err)
+	}
+	if len(seen) != 0 {
+		t.Fatalf("a removed handler still ran: %v", seen)
+	}
+}
+
+// silentService declares the nine contract members and NOTHING else: no raise
+// helper, no exported event field, no way for anyone to make it fire.
+type silentService struct {
+	created   framework.EventSource[*framework.EventArgs]
+	disposing framework.EventSource[*framework.EventArgs]
+	reset     framework.EventSource[*framework.EventArgs]
+	resetting framework.EventSource[*framework.EventArgs]
+}
+
+func (s *silentService) GraphicsDevice() *graphics.GraphicsDevice { return nil }
+func (s *silentService) AddDeviceCreatedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.created.Add(h)
+}
+func (s *silentService) RemoveDeviceCreatedHandler(sub framework.EventSubscription) error {
+	return s.created.Remove(sub)
+}
+func (s *silentService) AddDeviceDisposingHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.disposing.Add(h)
+}
+func (s *silentService) RemoveDeviceDisposingHandler(sub framework.EventSubscription) error {
+	return s.disposing.Remove(sub)
+}
+func (s *silentService) AddDeviceResetHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.reset.Add(h)
+}
+func (s *silentService) RemoveDeviceResetHandler(sub framework.EventSubscription) error {
+	return s.reset.Remove(sub)
+}
+func (s *silentService) AddDeviceResettingHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.resetting.Add(h)
+}
+func (s *silentService) RemoveDeviceResettingHandler(sub framework.EventSubscription) error {
+	return s.resetting.Remove(sub)
+}
+
+func TestTheDeviceContractIsExactlyTheNineAccessors(t *testing.T) {
+	// A conformer that declares the nine members and nothing else satisfies
+	// the contract, which is the claim: the contract requires exactly the one
+	// accessor and the four two-accessor event pairs, and requires no way to
+	// raise. Adding a tenth requirement would break this line at compile time.
+	var contract graphics.IGraphicsDeviceService = &silentService{}
+
+	// A consumer holding the contract can subscribe and unsubscribe, and can
+	// do nothing else. There is no raise operation on the contract at all.
+	seen := 0
+	token, err := contract.AddDeviceResetHandler(func(any, *framework.EventArgs) error {
+		seen++
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if seen != 0 {
+		t.Fatal("subscribing must not fire anything")
+	}
+	if err := contract.RemoveDeviceResetHandler(token); err != nil {
+		t.Fatal(err)
+	}
+	if contract.GraphicsDevice() != nil {
+		t.Fatal("a service publishing no device must report nil")
 	}
 }

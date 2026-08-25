@@ -11,7 +11,7 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 115,
+    "COMPLETE_TYPES": 116,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -26,8 +26,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 137,
-    "MISSING_TYPES": 137,
+    "MISSING_TYPE": 136,
+    "MISSING_TYPES": 136,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -41,9 +41,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1746,
-    "TARGET_TYPES": 120,
-    "TOTAL_DIAGNOSTICS": 314,
+    "TARGET_MEMBERS": 1755,
+    "TARGET_TYPES": 121,
+    "TOTAL_DIAGNOSTICS": 313,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1121,12 +1121,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IGraphicsDeviceService",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.IVertexType",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IVertexType",
       "message": "mapped Go type is absent"
@@ -1975,6 +1969,7 @@
     "Microsoft.Xna.Framework.Graphics.GraphicsProfile",
     "Microsoft.Xna.Framework.Graphics.IEffectFog",
     "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
     "Microsoft.Xna.Framework.Graphics.IndexElementSize",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
@@ -2332,7 +2327,6 @@
     "Microsoft.Xna.Framework.Graphics.GraphicsAdapter",
     "Microsoft.Xna.Framework.Graphics.GraphicsResource",
     "Microsoft.Xna.Framework.Graphics.IEffectLights",
-    "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
     "Microsoft.Xna.Framework.Graphics.IVertexType",
     "Microsoft.Xna.Framework.Graphics.IndexBuffer",
     "Microsoft.Xna.Framework.Graphics.Model",
@@ -8838,7 +8832,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "c4faa4e95c55986b78f35a3348d6eb2a19df2c80bf6b0ef2c8ea51c378d422d1",
+    "mappingSha256": "e1da7b6e58c1b6a93f898ad920e1fda70976b90f938e9873705dccc30836607b",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

@@ -99,12 +99,14 @@
       "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
       "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
       "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-      "Microsoft.Xna.Framework.Graphics.IEffectFog"
+      "Microsoft.Xna.Framework.Graphics.IEffectFog",
+      "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService"
     ],
     "pureValueIdentities": [
       "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
       "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
-      "Microsoft.Xna.Framework.Graphics.IEffectMatrices"
+      "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+      "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService"
     ],
     "runtimeBoundaryOperations": [
       "Microsoft.Xna.Framework.Graphics.IEffectFog::FogColor get",
@@ -122,7 +124,8 @@
       "System.Collections.Generic.IEnumerable`1",
       "System.Collections.IEnumerable",
       "System.IServiceProvider"
-    ]
+    ],
+    "perContractNotPerClass": "GraphicsDeviceManager implements BOTH IGraphicsDeviceService and IGraphicsDeviceManager. The first is infallible because its accessor is `ldarg.0; ldfld device; ret` -- a stored reference handed over, null before a device exists. The second stays fallible because CreateDevice, BeginDraw and EndDraw genuinely cross into the runtime. Two contracts on one class disagree, which is what per-contract boundary reading means"
   },
   "bclInterfaceRelationships": {
     "rule": "a non-XNA CLR interface an XNA type declares contributes NO projected Go surface of its own",

@@ -435,6 +435,19 @@ var classifiedInterfaces = map[string]bool{
 	// accessor projection rather than from this classification.
 	"Microsoft.Xna.Framework.IUpdateable": true,
 	"Microsoft.Xna.Framework.IDrawable":   true,
+
+	// Foundation 28. IGraphicsDeviceService publishes a device; it does not
+	// reach one. Microsoft.Xna.Framework.Game.dll ships exactly one
+	// implementor, GraphicsDeviceManager, whose get_GraphicsDevice is
+	// `ldarg.0; ldfld device; ret` -- a stored reference handed over, null
+	// before a device exists. Nothing in the contract creates, resets, queries
+	// or disposes anything.
+	//
+	// This is the sharpest per-contract split in the profile: the SAME class
+	// implements IGraphicsDeviceManager, which stays unclassified and fallible
+	// because its CreateDevice, BeginDraw and EndDraw genuinely cross into the
+	// runtime. The boundary is read per contract, never per class.
+	"Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService": true,
 }
 
 // managedFallibleMembers records, per pure-managed owner, exactly which

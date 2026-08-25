@@ -16,6 +16,7 @@ package eventcanary
 
 import (
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
+	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 )
 
 // Rotator is an external conformer of both component contracts.
@@ -185,4 +186,53 @@ func (p *CollectionProbe) Failing(label string, err error) framework.EventHandle
 // Reset clears everything the probe has recorded.
 func (p *CollectionProbe) Reset() {
 	p.Events, p.Senders, p.Args, p.Components, p.Counts = nil, nil, nil, nil, nil
+}
+
+// DeviceService is an external conformer of the device-publication contract.
+//
+// It proves a cross-package claim the in-repo tests cannot: a type declared
+// outside CNA-Go can satisfy a contract declared in the GRAPHICS package whose
+// event accessors are spelled in FRAMEWORK-package types, without importing
+// anything unexported and without a CNA-Go implementor to copy.
+type DeviceService struct {
+	device *graphics.GraphicsDevice
+
+	created   framework.EventSource[*framework.EventArgs]
+	disposing framework.EventSource[*framework.EventArgs]
+	reset     framework.EventSource[*framework.EventArgs]
+	resetting framework.EventSource[*framework.EventArgs]
+}
+
+func (s *DeviceService) GraphicsDevice() *graphics.GraphicsDevice { return s.device }
+
+func (s *DeviceService) AddDeviceCreatedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.created.Add(h)
+}
+func (s *DeviceService) RemoveDeviceCreatedHandler(sub framework.EventSubscription) error {
+	return s.created.Remove(sub)
+}
+func (s *DeviceService) AddDeviceDisposingHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.disposing.Add(h)
+}
+func (s *DeviceService) RemoveDeviceDisposingHandler(sub framework.EventSubscription) error {
+	return s.disposing.Remove(sub)
+}
+func (s *DeviceService) AddDeviceResetHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.reset.Add(h)
+}
+func (s *DeviceService) RemoveDeviceResetHandler(sub framework.EventSubscription) error {
+	return s.reset.Remove(sub)
+}
+func (s *DeviceService) AddDeviceResettingHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.resetting.Add(h)
+}
+func (s *DeviceService) RemoveDeviceResettingHandler(sub framework.EventSubscription) error {
+	return s.resetting.Remove(sub)
+}
+
+// RaiseDeviceCreated is how the declaring type publishes the event. A consumer
+// holding only the contract has no equivalent, which is the encapsulation the
+// two-accessor projection buys.
+func (s *DeviceService) RaiseDeviceCreated() error {
+	return s.created.Raise(s, framework.EventArgsEmpty())
 }
