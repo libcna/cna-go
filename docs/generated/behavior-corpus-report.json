@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 588,
-    "ASSERTIONS": 588,
+    "OBSERVATIONS": 595,
+    "ASSERTIONS": 595,
     "FAILURES": 0
   },
   "observations": [
@@ -4709,6 +4709,62 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,1,true,1",
       "actual": "true,1,true,1",
+      "passed": true
+    },
+    {
+      "id": "visualization-data.two-stable-distinct-256-buffers",
+      "group": "BCL_SIGNATURE_ADAPTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "256,256,true,true,false",
+      "actual": "256,256,true,true,false",
+      "passed": true
+    },
+    {
+      "id": "visualization-data.buffers-start-zeroed-and-bounded",
+      "group": "BCL_SIGNATURE_ADAPTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,true,0,true,true,true",
+      "actual": "0,true,0,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "read-only-collection.copyto-hands-out-a-copy",
+      "group": "BCL_SIGNATURE_ADAPTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0",
+      "actual": "true,0",
+      "passed": true
+    },
+    {
+      "id": "read-only-collection.copyto-validates",
+      "group": "BCL_SIGNATURE_ADAPTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "read-only-collection.array-backed-enumeration-is-complete-and-unchecked",
+      "group": "BCL_SIGNATURE_ADAPTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "256,false",
+      "actual": "256,false",
+      "passed": true
+    },
+    {
+      "id": "read-only-collection.single-comparer-treats-nan-as-equal",
+      "group": "BCL_SIGNATURE_ADAPTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,true,2,-1",
+      "actual": "1,true,2,-1",
+      "passed": true
+    },
+    {
+      "id": "read-only-collection.live-over-the-list-it-was-given",
+      "group": "BCL_SIGNATURE_ADAPTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "99,3",
+      "actual": "99,3",
       "passed": true
     }
   ]

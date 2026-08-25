@@ -1092,6 +1092,15 @@ func TestMutationFixtures(t *testing.T) {
 				}
 				return
 			}
+			if strings.HasPrefix(fixture.Mutation, "f27sig_") {
+				expected, actual = bclSignatureAdapterMutationCase(t, fixture.Mutation)
+				result := report{Summary: make(map[string]int)}
+				measureBCLSignatureAdapters(&result, expected, actual)
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
 			if strings.HasPrefix(fixture.Mutation, "f26bcl_") {
 				expected, actual = bclCompositionMutationCase(t, fixture.Mutation)
 				result := verify(expected, actual, 0, "report", "contract", "mapping")
@@ -4510,7 +4519,35 @@ func baseProjectionFixture(t *testing.T, identity string) (*expectedSurface, *ac
 		PackageDirs: make(map[string]string),
 		Packages:    make(map[string]*types.Package),
 	}
+	seedSignatureAdapters(actual)
 	return expected, actual, &copiedType
+}
+
+// seedSignatureAdapters gives an isolated fixture the BCL signature adapters
+// the framework package must always carry, so a fixture represents a VALID
+// surface and a mutation's diagnostic is caused by the mutation rather than by
+// the fixture being incomplete.
+func seedSignatureAdapters(actual *actualSurface) {
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	// Naming the package is what turns the adapter measurement on, so a
+	// seeded fixture exercises it rather than skipping it.
+	if actual.PackageDirs == nil {
+		actual.PackageDirs = make(map[string]string)
+	}
+	actual.PackageDirs[frameworkPackage] = "Microsoft/Xna/Framework"
+	for _, adapter := range bclSignatureAdapters {
+		goName := bclSignatureAdapterGoName(adapter)
+		key := symbolKey{Package: frameworkPackage, Name: goName}
+		if _, present := actual.Types[key]; !present {
+			actual.Types[key] = &actualType{Key: key, Kind: "struct", TypeParameters: []string{"T"}}
+		}
+		for _, entry := range adapter.Members {
+			memberKey := symbolKey{Package: frameworkPackage, Receiver: goName, Name: entry.Member.Name}
+			if _, present := actual.Members[memberKey]; !present {
+				actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "method"}
+			}
+		}
+	}
 }
 
 // TestBCLBaseProjectionDefectsAreRejected attacks the base decision in every
@@ -4700,6 +4737,7 @@ func isolateTypeSurface(t *testing.T, identity string) (*expectedSurface, *actua
 			Value:      copiedMember.EnumValue,
 		}
 	}
+	seedSignatureAdapters(actual)
 	return expected, actual, &copiedType
 }
 
@@ -5306,5 +5344,154 @@ func TestBCLCompositionFixtureIsCleanBeforeMutation(t *testing.T) {
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
 	if result.Summary["TOTAL_DIAGNOSTICS"] != 0 {
 		t.Fatalf("clean composition fixture produced %d diagnostics: %v", result.Summary["TOTAL_DIAGNOSTICS"], result.Diagnostics)
+	}
+}
+
+// bclSignatureAdapterFixture builds an isolated, initially correct pair for the
+// BCL signature adapters: the framework package with each declared adapter type
+// and its exact public member set present, and nothing else.
+func bclSignatureAdapterFixture(t *testing.T) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	expected := &expectedSurface{
+		Types:              make(map[symbolKey]*expectedType),
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+	}
+	actual := &actualSurface{
+		Types:       make(map[symbolKey]*actualType),
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: map[string]string{frameworkPackage: "Microsoft/Xna/Framework"},
+		Packages:    make(map[string]*types.Package),
+	}
+	seedSignatureAdapters(actual)
+	return expected, actual
+}
+
+func bclSignatureAdapterMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	expected, actual := bclSignatureAdapterFixture(t)
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	adapter := bclSignatureAdapters["System.Collections.ObjectModel.ReadOnlyCollection`1"]
+	goName := bclSignatureAdapterGoName(adapter)
+	switch strings.TrimPrefix(mutation, "f27sig_") {
+	case "adapter_type_absent":
+		delete(actual.Types, symbolKey{Package: frameworkPackage, Name: goName})
+	case "public_member_missing":
+		delete(actual.Members, symbolKey{Package: frameworkPackage, Receiver: goName, Name: "IndexOf"})
+	case "enumerator_missing":
+		delete(actual.Members, symbolKey{Package: frameworkPackage, Receiver: goName, Name: "GetEnumerator"})
+	case "extra_public_member":
+		key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: "Reverse"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method"}
+	case "read_only_made_mutable_add":
+		// Promoting an explicitly implemented mutator would make a read-only
+		// view writable, which is the whole point of the type.
+		key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: "Add"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method"}
+	case "read_only_made_mutable_setter":
+		key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: "SetItem"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method"}
+	case "read_only_made_mutable_clear":
+		key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: "Clear"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method"}
+	case "excluded_member_promoted":
+		key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: "Items"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method"}
+	case "sync_root_promoted":
+		key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: "SyncRoot"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method"}
+	default:
+		t.Fatalf("unknown signature adapter defect %q", mutation)
+	}
+	return expected, actual
+}
+
+// TestBCLSignatureAdapterFixtureIsCleanBeforeMutation is the control the
+// signature-adapter negative controls depend on.
+func TestBCLSignatureAdapterFixtureIsCleanBeforeMutation(t *testing.T) {
+	expected, actual := bclSignatureAdapterFixture(t)
+	result := report{Summary: make(map[string]int)}
+	measureBCLSignatureAdapters(&result, expected, actual)
+	if result.Summary["LANGUAGE_MAPPING_MISMATCH"] != 0 {
+		t.Fatalf("clean signature adapter fixture produced %d diagnostics: %v",
+			result.Summary["LANGUAGE_MAPPING_MISMATCH"], result.Diagnostics)
+	}
+}
+
+// TestBCLSignatureAdapterDefectsAreRejected attacks the signature-adapter
+// projection, including every way a read-only view could be made mutable.
+func TestBCLSignatureAdapterDefectsAreRejected(t *testing.T) {
+	mutations := []string{
+		"adapter_type_absent",
+		"public_member_missing",
+		"enumerator_missing",
+		"extra_public_member",
+		"read_only_made_mutable_add",
+		"read_only_made_mutable_setter",
+		"read_only_made_mutable_clear",
+		"excluded_member_promoted",
+		"sync_root_promoted",
+	}
+	for _, mutation := range mutations {
+		t.Run(mutation, func(t *testing.T) {
+			expected, actual := bclSignatureAdapterMutationCase(t, "f27sig_"+mutation)
+			result := report{Summary: make(map[string]int)}
+			measureBCLSignatureAdapters(&result, expected, actual)
+			if result.Summary["LANGUAGE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("mutation %q did not trigger LANGUAGE_MAPPING_MISMATCH", mutation)
+			}
+		})
+	}
+}
+
+// TestBCLSignatureAdaptersAreMeasuredNotAssumed proves the signature-adapter
+// registry describes the pinned reality, and that the two adapter roles stay
+// distinct.
+func TestBCLSignatureAdaptersAreMeasuredNotAssumed(t *testing.T) {
+	for identity, adapter := range bclSignatureAdapters {
+		if adapter.Authority == "" || adapter.AuthoritySHA256 == "" || adapter.Rationale == "" {
+			t.Fatalf("%s signature adapter is under-specified", identity)
+		}
+		if len(adapter.Members) == 0 || len(adapter.Excluded) == 0 {
+			t.Fatalf("%s must inventory both its projected and its excluded members", identity)
+		}
+		goName := bclSignatureAdapterGoName(adapter)
+		if strings.ToUpper(goName[:1]) != goName[:1] {
+			t.Fatalf("%s adapter %q must be exported: a signature adapter is a public type", identity, goName)
+		}
+		if !adapterTypes[goName] {
+			t.Fatalf("%s adapter %q is not admitted as a language adapter", identity, goName)
+		}
+		for _, entry := range adapter.Members {
+			if entry.Rationale == "" {
+				t.Fatalf("%s::%s has no recorded rationale", identity, entry.Member.Name)
+			}
+			if entry.Member.Kind == "property" && entry.Member.Set {
+				t.Fatalf("%s::%s declares a public setter, which no read-only view has", identity, entry.Member.Name)
+			}
+		}
+		for _, excluded := range adapter.Excluded {
+			if excluded.Reason == "" {
+				t.Fatalf("%s excludes %s with no reason", identity, excluded.CLRMember)
+			}
+		}
+		// The two adapter roles are distinct. ReadOnlyCollection<T> is a
+		// signature adapter AND a deferred base, and neither fact implies the
+		// other.
+		if relationship, declared := bclBaseRelationships[identity]; declared && relationship.Status == "COMPOSED" {
+			if _, alsoBase := bclBaseAdapters[identity]; !alsoBase {
+				t.Fatalf("%s is COMPOSED as a base but declares no base adapter", identity)
+			}
+		}
+	}
+	// The read-only base relationship is still deferred, so no XNA type may
+	// derive from it yet even though the signature projection exists.
+	relationship := bclBaseRelationships["System.Collections.ObjectModel.ReadOnlyCollection`1"]
+	if relationship.Status != "DEFERRED" {
+		t.Fatalf("ReadOnlyCollection base status = %q, want DEFERRED", relationship.Status)
+	}
+	if _, isBaseAdapter := bclBaseAdapters["System.Collections.ObjectModel.ReadOnlyCollection`1"]; isBaseAdapter {
+		t.Fatal("a DEFERRED base must not declare a base adapter")
 	}
 }

@@ -2343,5 +2343,50 @@
   "id": "f26-bcl-composition-gamecomponentcollection-fallible-reader",
   "mutation": "f26bcl_fallible_reader__Microsoft.Xna.Framework.GameComponentCollection",
   "category": "ERROR_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f27-bcl-signature-readonlycollection-adapter-type-absent",
+  "mutation": "f27sig_adapter_type_absent",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f27-bcl-signature-readonlycollection-public-member-missing",
+  "mutation": "f27sig_public_member_missing",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f27-bcl-signature-readonlycollection-enumerator-missing",
+  "mutation": "f27sig_enumerator_missing",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f27-bcl-signature-readonlycollection-extra-public-member",
+  "mutation": "f27sig_extra_public_member",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f27-bcl-signature-readonlycollection-read-only-made-mutable-add",
+  "mutation": "f27sig_read_only_made_mutable_add",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f27-bcl-signature-readonlycollection-read-only-made-mutable-setter",
+  "mutation": "f27sig_read_only_made_mutable_setter",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f27-bcl-signature-readonlycollection-read-only-made-mutable-clear",
+  "mutation": "f27sig_read_only_made_mutable_clear",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f27-bcl-signature-readonlycollection-excluded-member-promoted",
+  "mutation": "f27sig_excluded_member_promoted",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f27-bcl-signature-readonlycollection-sync-root-promoted",
+  "mutation": "f27sig_sync_root_promoted",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
  }
 ]

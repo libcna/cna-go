@@ -96,12 +96,22 @@ var adapterTypes = map[string]bool{
 	"GameCallbacks":     true,
 	"Iterator":          true,
 	"TimeSpan":          true,
+	// ReadOnlyCollection is a MEASURED adapter: bclSignatureAdapters pins its
+	// exact public member set, so admitting it here does not admit whatever
+	// members it happens to declare.
+	"ReadOnlyCollection": true,
 }
 
 var adapterFunctions = map[string]bool{
 	"EventArgsEmpty":    true,
 	"NewGame":           true,
 	"TimeSpanFromTicks": true,
+}
+
+func init() {
+	for name := range bclSignatureAdapterConstructors {
+		adapterFunctions[name] = true
+	}
 }
 
 func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries int, mode string, contractHash, mappingHash string) report {
@@ -136,6 +146,11 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["EXPECTED_GO_MEMBERS"] = expected.ExpectedGoMembers
 	result.Summary["INTERFACE_WITNESS_PROJECTIONS"] = len(expected.InterfaceWitnesses)
 	result.BCLBaseAdapters = measureBCLBaseAdapters(expected, actual)
+	result.BCLSignatureAdapters = measureBCLSignatureAdapters(&result, expected, actual)
+	result.Summary["BCL_SIGNATURE_ADAPTERS"] = len(result.BCLSignatureAdapters)
+	for _, adapter := range result.BCLSignatureAdapters {
+		result.Summary["BCL_SIGNATURE_ADAPTER_CARRIERS"] += adapter.SignaturePositions
+	}
 	result.Summary["BCL_BASE_ADAPTERS"] = len(result.BCLBaseAdapters)
 	for _, adapter := range result.BCLBaseAdapters {
 		result.Summary["BCL_BASE_ADAPTER_CONSUMERS"] += len(adapter.Consumers)
@@ -3092,4 +3107,147 @@ func verifyExcludedBaseMembersAbsent(result *report, expected *expectedSurface, 
 			})
 		}
 	}
+}
+
+// measureBCLSignatureAdapters pins the exported surface of every BCL signature
+// adapter to its exact public CLR member inventory, and records which
+// projected XNA members carry the type.
+//
+// Three claims are enforced:
+//
+//   - every inventoried CLR member has its projected Go member present;
+//   - the adapter declares no OTHER exported member, so an adapter type is not
+//     a hole in the unexpected-member scan;
+//   - no member the registry records as excluded appears under its bare name,
+//     so a private explicit implementation is never promoted to public Go
+//     surface -- which for a read-only view is what keeps it read-only.
+func measureBCLSignatureAdapters(result *report, expected *expectedSurface, actual *actualSurface) []bclSignatureAdapterMeasurement {
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	// The adapters are a claim about the real framework package, so the
+	// measurement runs only when that package was actually extracted. An
+	// isolated per-type fixture models one XNA type and no package at all;
+	// demanding the whole adapter surface of it would make every such fixture
+	// dirty and would say nothing about the binding.
+	if actual.PackageDirs[frameworkPackage] == "" {
+		return nil
+	}
+	measurements := make([]bclSignatureAdapterMeasurement, 0, len(bclSignatureAdapters))
+	for identity, adapter := range bclSignatureAdapters {
+		goName := bclSignatureAdapterGoName(adapter)
+		measurement := bclSignatureAdapterMeasurement{
+			CLRType: identity, GoAdapter: adapter.GoAdapter, BehaviorLevel: adapter.BehaviorLevel,
+			Authority: adapter.Authority, AuthoritySHA256: adapter.AuthoritySHA256,
+			CLRMembers: len(adapter.Members), ExcludedMembers: len(adapter.Excluded),
+			Rationale: adapter.Rationale, Verdict: "PASS",
+		}
+		for _, excluded := range adapter.Excluded {
+			measurement.Exclusions = append(measurement.Exclusions, bclInheritedExclusion{CLRMember: excluded.CLRMember, Reason: excluded.Reason})
+		}
+		if _, present := actual.Types[symbolKey{Package: frameworkPackage, Name: goName}]; !present {
+			addDiagnostic(result, diagnostic{
+				Category: "LANGUAGE_MAPPING_MISMATCH", XNA: identity, Go: frameworkPackage + ":" + goName,
+				Message: "declared BCL signature adapter is absent from the framework package",
+			})
+			measurement.Verdict = "FAIL"
+		}
+
+		// Every inventoried CLR member maps to one exported Go member. A
+		// property with both accessors would map to two; none of these has a
+		// public setter, which is the read-only claim itself.
+		wanted := make(map[string]bool)
+		for _, entry := range adapter.Members {
+			goMember := entry.Member.Name
+			if entry.Member.Kind == "property" && entry.Member.Set {
+				addDiagnostic(result, diagnostic{
+					Category: "LANGUAGE_MAPPING_MISMATCH", XNA: identity, Go: goName,
+					Message: fmt.Sprintf("signature adapter inventory declares a public setter for %q, which the read-only projection does not model", entry.Member.Name),
+				})
+				measurement.Verdict = "FAIL"
+			}
+			wanted[goMember] = true
+			key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: goMember}
+			_, present := actual.Members[key]
+			accessor := ""
+			if entry.Member.Kind == "property" {
+				accessor = "get"
+			}
+			row := bclInheritedMemberMeasurement{
+				CLRType: identity, CLRBase: identity, CLRMember: entry.Member.Name, CLRKind: entry.Member.Kind,
+				Consumer: goName, GoMember: key.String(), Accessor: accessor,
+				Present: present, Rationale: entry.Rationale,
+			}
+			if member := actual.Members[key]; member != nil {
+				row.GoResults = strings.Join(member.Results, ",")
+			}
+			if !present {
+				addDiagnostic(result, diagnostic{
+					Category: "LANGUAGE_MAPPING_MISMATCH", XNA: identity + "::" + entry.Member.Name, Go: key.String(),
+					Message: "BCL signature adapter is missing a public member of the pinned CLR type",
+				})
+				measurement.Verdict = "FAIL"
+			}
+			measurement.Inventory = append(measurement.Inventory, row)
+			measurement.GoMembers++
+		}
+
+		// Nothing else may be exported on the adapter.
+		for key := range actual.Members {
+			if key.Package != frameworkPackage || key.Receiver != goName || wanted[key.Name] {
+				continue
+			}
+			addDiagnostic(result, diagnostic{
+				Category: "LANGUAGE_MAPPING_MISMATCH", XNA: identity, Go: key.String(),
+				Message: "BCL signature adapter exports a member the pinned CLR type does not declare publicly",
+			})
+			measurement.Verdict = "FAIL"
+		}
+		// A member the registry excludes must not appear under its bare name.
+		for _, excluded := range adapter.Excluded {
+			name := excluded.CLRMember
+			if strings.Contains(name, "(") {
+				continue
+			}
+			if dot := strings.LastIndex(name, "."); dot >= 0 {
+				name = name[dot+1:]
+			}
+			if wanted[name] {
+				continue
+			}
+			if _, present := actual.Members[symbolKey{Package: frameworkPackage, Receiver: goName, Name: name}]; present {
+				addDiagnostic(result, diagnostic{
+					Category: "LANGUAGE_MAPPING_MISMATCH", XNA: identity, Go: goName + "." + name,
+					Message: fmt.Sprintf("BCL signature adapter promotes %q, which is excluded (%s)", excluded.CLRMember, excluded.Reason),
+				})
+				measurement.Verdict = "FAIL"
+			}
+		}
+
+		// Which projected XNA members carry the type.
+		needle := "*" + goName + "["
+		qualified := "*framework." + goName + "["
+		for _, key := range sortedMemberKeys(expected) {
+			member := expected.Members[key]
+			for _, result := range append(append([]string(nil), member.Results...), member.Parameters...) {
+				if strings.HasPrefix(result, needle) || strings.HasPrefix(result, qualified) {
+					measurement.SignaturePositions++
+					measurement.Carriers = append(measurement.Carriers, member.XNA)
+					break
+				}
+			}
+		}
+		sort.Strings(measurement.Carriers)
+		measurements = append(measurements, measurement)
+	}
+	sort.Slice(measurements, func(i, j int) bool { return measurements[i].CLRType < measurements[j].CLRType })
+	return measurements
+}
+
+// sortedMemberKeys returns every expected member key in a stable order.
+func sortedMemberKeys(expected *expectedSurface) []symbolKey {
+	keys := make([]symbolKey, 0, len(expected.Members))
+	for key := range expected.Members {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
+	return keys
 }

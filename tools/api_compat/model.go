@@ -207,41 +207,42 @@ type diagnostic struct {
 }
 
 type report struct {
-	SchemaVersion                int                           `json:"schemaVersion"`
-	Profile                      string                        `json:"profile"`
-	Mode                         string                        `json:"mode"`
-	Summary                      map[string]int                `json:"summary"`
-	Diagnostics                  []diagnostic                  `json:"diagnostics"`
-	CompleteTypes                []string                      `json:"completeTypes"`
-	PartialTypes                 []typeStatus                  `json:"partialTypes"`
-	MissingTypes                 []string                      `json:"missingTypes"`
-	InterfaceWitnessProjections  []interfaceWitnessProjection  `json:"interfaceWitnessProjections,omitempty"`
-	PackedInterfaceConformance   []packedInterfaceConformance  `json:"packedInterfaceConformance,omitempty"`
-	PackedVectorTypeMeasurements []packedVectorTypeMeasurement `json:"packedVectorTypeMeasurements,omitempty"`
-	VertexElementClosure         vertexElementClosure          `json:"vertexElementClosure"`
-	PlayerIndexKeyboardClosure   playerIndexKeyboardClosure    `json:"playerIndexKeyboardClosure"`
-	DisplayOrientationClosure    displayOrientationClosure     `json:"displayOrientationGraphicsManagerClosure"`
-	BufferUsageClosure           bufferUsageClosure            `json:"bufferUsageClosure"`
-	ClearOptionsClosure          clearOptionsClosure           `json:"clearOptionsClosure"`
-	SurfaceFormatClosure         surfaceFormatClosure          `json:"surfaceFormatClosure"`
-	DepthFormatClosure           depthFormatClosure            `json:"depthFormatClosure"`
-	GraphicsProfileClosure       graphicsProfileClosure        `json:"graphicsProfileClosure"`
-	ButtonStateClosure           buttonStateClosure            `json:"buttonStateClosure"`
-	Foundation14EnumClosures     []enumClosure                 `json:"foundation14EnumClosures"`
-	Foundation15EnumClosures     []enumClosure                 `json:"foundation15EnumClosures"`
-	Foundation15ValueStructs     []valueStructClosure          `json:"foundation15ValueStructClosures"`
-	Foundation16ValueStructs     []valueStructClosure          `json:"foundation16ValueStructClosures"`
-	Foundation17ManagedClasses   []managedTypeClosure          `json:"foundation17ManagedClassClosures"`
-	Foundation18Interfaces       []managedInterfaceClosure     `json:"foundation18InterfaceClosures"`
-	Foundation19ManagedClasses   []managedTypeClosure          `json:"foundation19ManagedClassClosures"`
-	Foundation20ValueContracts   []managedTypeClosure          `json:"foundation20ValueContractClosures"`
-	Foundation21ManagedClasses   []managedTypeClosure          `json:"foundation21ManagedClassClosures"`
-	Foundation23Interfaces       []managedInterfaceClosure     `json:"foundation23InterfaceClosures"`
-	Foundation23ManagedClasses   []managedTypeClosure          `json:"foundation23ManagedClassClosures"`
-	BCLBaseRelationships         []bclBaseProjection           `json:"bclBaseRelationships"`
-	BCLBaseAdapters              []bclBaseAdapterMeasurement   `json:"bclBaseAdapters"`
-	BCLInterfaceRelationships    []bclInterfaceProjection      `json:"bclInterfaceRelationships"`
-	Metadata                     reportMetadata                `json:"metadata"`
+	SchemaVersion                int                              `json:"schemaVersion"`
+	Profile                      string                           `json:"profile"`
+	Mode                         string                           `json:"mode"`
+	Summary                      map[string]int                   `json:"summary"`
+	Diagnostics                  []diagnostic                     `json:"diagnostics"`
+	CompleteTypes                []string                         `json:"completeTypes"`
+	PartialTypes                 []typeStatus                     `json:"partialTypes"`
+	MissingTypes                 []string                         `json:"missingTypes"`
+	InterfaceWitnessProjections  []interfaceWitnessProjection     `json:"interfaceWitnessProjections,omitempty"`
+	PackedInterfaceConformance   []packedInterfaceConformance     `json:"packedInterfaceConformance,omitempty"`
+	PackedVectorTypeMeasurements []packedVectorTypeMeasurement    `json:"packedVectorTypeMeasurements,omitempty"`
+	VertexElementClosure         vertexElementClosure             `json:"vertexElementClosure"`
+	PlayerIndexKeyboardClosure   playerIndexKeyboardClosure       `json:"playerIndexKeyboardClosure"`
+	DisplayOrientationClosure    displayOrientationClosure        `json:"displayOrientationGraphicsManagerClosure"`
+	BufferUsageClosure           bufferUsageClosure               `json:"bufferUsageClosure"`
+	ClearOptionsClosure          clearOptionsClosure              `json:"clearOptionsClosure"`
+	SurfaceFormatClosure         surfaceFormatClosure             `json:"surfaceFormatClosure"`
+	DepthFormatClosure           depthFormatClosure               `json:"depthFormatClosure"`
+	GraphicsProfileClosure       graphicsProfileClosure           `json:"graphicsProfileClosure"`
+	ButtonStateClosure           buttonStateClosure               `json:"buttonStateClosure"`
+	Foundation14EnumClosures     []enumClosure                    `json:"foundation14EnumClosures"`
+	Foundation15EnumClosures     []enumClosure                    `json:"foundation15EnumClosures"`
+	Foundation15ValueStructs     []valueStructClosure             `json:"foundation15ValueStructClosures"`
+	Foundation16ValueStructs     []valueStructClosure             `json:"foundation16ValueStructClosures"`
+	Foundation17ManagedClasses   []managedTypeClosure             `json:"foundation17ManagedClassClosures"`
+	Foundation18Interfaces       []managedInterfaceClosure        `json:"foundation18InterfaceClosures"`
+	Foundation19ManagedClasses   []managedTypeClosure             `json:"foundation19ManagedClassClosures"`
+	Foundation20ValueContracts   []managedTypeClosure             `json:"foundation20ValueContractClosures"`
+	Foundation21ManagedClasses   []managedTypeClosure             `json:"foundation21ManagedClassClosures"`
+	Foundation23Interfaces       []managedInterfaceClosure        `json:"foundation23InterfaceClosures"`
+	Foundation23ManagedClasses   []managedTypeClosure             `json:"foundation23ManagedClassClosures"`
+	BCLBaseRelationships         []bclBaseProjection              `json:"bclBaseRelationships"`
+	BCLBaseAdapters              []bclBaseAdapterMeasurement      `json:"bclBaseAdapters"`
+	BCLSignatureAdapters         []bclSignatureAdapterMeasurement `json:"bclSignatureAdapters"`
+	BCLInterfaceRelationships    []bclInterfaceProjection         `json:"bclInterfaceRelationships"`
+	Metadata                     reportMetadata                   `json:"metadata"`
 }
 
 // bclBaseProjection measures one non-XNA CLR base type across every XNA type
@@ -310,6 +311,34 @@ type bclBaseAdapterMeasurement struct {
 	Verdict    string                          `json:"verdict"`
 }
 
+// bclSignatureAdapterMeasurement measures one BCL type the pinned contract
+// carries at a public signature position, and pins the exported Go surface of
+// its adapter to the exact public CLR member inventory.
+//
+// Without it an adapter type would be a hole in the unexpected-member scan,
+// because every exported member on an adapter receiver is admitted.
+type bclSignatureAdapterMeasurement struct {
+	CLRType         string `json:"clrType"`
+	GoAdapter       string `json:"goAdapter"`
+	BehaviorLevel   string `json:"behaviorLevel"`
+	Authority       string `json:"authority"`
+	AuthoritySHA256 string `json:"authoritySha256"`
+	// CLRMembers is the public member inventory and GoMembers the exported Go
+	// members that must reproduce it, one for one.
+	CLRMembers int `json:"clrPublicMembers"`
+	GoMembers  int `json:"goMembers"`
+	// ExcludedMembers is how many CLR members are deliberately unprojected.
+	ExcludedMembers int `json:"excludedMembers"`
+	// SignaturePositions is how many projected XNA members carry this type.
+	SignaturePositions int `json:"signaturePositions"`
+	// Carriers is the XNA members that carry it.
+	Carriers   []string                        `json:"carriers"`
+	Inventory  []bclInheritedMemberMeasurement `json:"memberInventory"`
+	Exclusions []bclInheritedExclusion         `json:"exclusions"`
+	Rationale  string                          `json:"rationale"`
+	Verdict    string                          `json:"verdict"`
+}
+
 type bclBaseAdapterConsumer struct {
 	XNA string `json:"xna"`
 	Go  string `json:"go"`
@@ -334,7 +363,10 @@ type bclBaseAdapterConsumer struct {
 // bclInheritedMemberMeasurement is one row of the attribution table: exact BCL
 // base, exact CLR member, exact projected Go member.
 type bclInheritedMemberMeasurement struct {
-	CLRBase   string `json:"clrBase"`
+	// CLRType is set for a signature adapter and CLRBase for a base adapter,
+	// so one row always names which role it belongs to.
+	CLRType   string `json:"clrType,omitempty"`
+	CLRBase   string `json:"clrBase,omitempty"`
 	CLRMember string `json:"clrMember"`
 	CLRKind   string `json:"clrKind"`
 	Consumer  string `json:"consumer"`

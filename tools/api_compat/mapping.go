@@ -148,6 +148,14 @@ var pureManagedTypes = map[string]bool{
 	// is equally managed in the pinned mscorlib. Nothing reaches a device, an
 	// allocation, or native code.
 	"Microsoft.Xna.Framework.GameComponentCollection": true,
+
+	// Foundation 27. Microsoft.Xna.Framework.dll shows VisualizationData as
+	// four fields and two one-ldfld getters: the constructor allocates two
+	// 256-element Single arrays with `newarr` and wraps each in a
+	// ReadOnlyCollection`1<float32>, validating nothing. It reaches no device,
+	// no allocation beyond those arrays, and no native code, and it starts no
+	// playback.
+	"Microsoft.Xna.Framework.Media.VisualizationData": true,
 }
 
 // bclBaseRelationship is how one non-XNA CLR base type is projected.
@@ -980,6 +988,23 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 	if inner, ok := genericTypeArgument(raw, "System.EventHandler`1["); ok {
 		return frameworkQualified(owner, "EventHandler") + "[" + mapType(s, byIdentity, owner, inner) + "]"
 	}
+	// System.Collections.ObjectModel.ReadOnlyCollection<T> appears at
+	// signature positions in the pinned contract -- VisualizationData returns
+	// two of them and Microphone.All returns one -- so it needs a public Go
+	// spelling on exactly the footing System.TimeSpan and
+	// System.EventHandler<T> already have, or the members that return it
+	// cannot be projected at all.
+	//
+	// It is a CLR class, so it keeps reference semantics and projects as a
+	// pointer. The element type is mapped exactly and never degraded, for the
+	// same reason the event handler's argument is not.
+	//
+	// This is the SIGNATURE-POSITION projection only. Whether an XNA class may
+	// DERIVE from ReadOnlyCollection<T> is a separate question, still deferred
+	// in bclBaseRelationships.
+	if inner, ok := genericTypeArgument(raw, "System.Collections.ObjectModel.ReadOnlyCollection`1["); ok {
+		return "*" + frameworkQualified(owner, "ReadOnlyCollection") + "[" + mapType(s, byIdentity, owner, inner) + "]"
+	}
 	// System.EventArgs is a CLR class, so it keeps CLR reference semantics and
 	// projects as a pointer to the framework-package language adapter.
 	if raw == "System.EventArgs" {
@@ -1703,4 +1728,103 @@ func goAdapterArgument(clr string) string {
 		return mapped
 	}
 	return flattenedBaseName(clr)
+}
+
+// bclSignatureAdapters declares every BCL type the pinned XNA contract carries
+// at a PUBLIC SIGNATURE POSITION and that therefore needs a public Go
+// spelling, together with the exact public CLR member inventory that spelling
+// must reproduce.
+//
+// This is a different role from bclBaseAdapters and the two must not be
+// confused. A base adapter is PRIVATE machinery a derived type composes and
+// forwards; a signature adapter is a PUBLIC type because a projected member
+// returns one, exactly as System.TimeSpan and System.EventHandler<T> are
+// public because projected members carry them.
+//
+// One CLR type can legitimately appear in both roles. ReadOnlyCollection<T> is
+// a signature adapter here, because VisualizationData returns two of them,
+// while remaining DEFERRED as a base in bclBaseRelationships: whether an XNA
+// class may derive from it is a separate question, and no consumer needs the
+// answer yet.
+//
+// The registry exists so the adapter's surface is measured rather than merely
+// permitted. Without it an adapter type is a hole in the unexpected-member
+// scan, since every exported member on an adapter receiver is admitted.
+var bclSignatureAdapters = map[string]bclBaseAdapter{
+	// System.Collections.ObjectModel.ReadOnlyCollection<T>.
+	//
+	// It holds one private `IList<T> list` field and forwards every read to
+	// it. It stores the list rather than copying it, so read-only means no
+	// public mutation THROUGH THIS SURFACE, not immutable storage: the owner
+	// keeps writing and every change is visible through the view.
+	//
+	// Its public surface is exactly the six members below. The one
+	// constructor is not inherited by anything; `Items` is `family`; and every
+	// mutator -- ICollection<T>.Add/Clear/Remove, IList<T>.Insert/RemoveAt,
+	// IList<T>.set_Item and the whole non-generic IList set -- is a private
+	// explicit implementation, so the settled BCL-interface rule already
+	// excludes them and read-only needed no new decision.
+	"System.Collections.ObjectModel.ReadOnlyCollection`1": {
+		GoAdapter:       "ReadOnlyCollection[T]",
+		GenericArity:    1,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "a read-only BCL view the pinned contract returns from projected members; it forwards every read to the list it was given, so enumeration semantics and mutation visibility are the underlying list's rather than the view's",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Count", "System.Int32", true, false),
+				Rationale: "get_Count is one forwarded `list.Count`"},
+			{Member: bclProperty("Item", "!0", true, false, bclParameter("index", "System.Int32")),
+				Rationale: "get_Item is one forwarded `list[index]`; the SETTER is a private explicit implementation, which is what makes the view read-only"},
+			{Member: bclMethod("Contains", "System.Boolean", bclParameter("value", "!0")),
+				Rationale: "Contains is one forwarded `list.Contains(value)` over EqualityComparer<T>.Default"},
+			{Member: bclMethod("CopyTo", "System.Void", bclParameter("array", "!0[]"), bclParameter("index", "System.Int32")),
+				Rationale: "CopyTo is one forwarded `list.CopyTo(array, index)`, which for an array-backed list carries Array.Copy's three failures"},
+			{Member: bclMethod("GetEnumerator", "System.Collections.Generic.IEnumerator`1[!0]"),
+				Rationale: "GetEnumerator forwards to the underlying list's enumerator, so an array-backed view is NOT version-checked while a List<T>-backed one is"},
+			{Member: bclMethod("IndexOf", "System.Int32", bclParameter("value", "!0")),
+				Rationale: "IndexOf is one forwarded `list.IndexOf(value)`"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: ".ctor(IList`1<T>)", Reason: "the adapter's own constructor is the projection of it; no XNA member is projected from it"},
+			{CLRMember: "Items", Reason: "`family`; exposing it would hand out the wrapped list"},
+			{CLRMember: "ICollection<T>.IsReadOnly", Reason: "private explicit implementation; the settled BCL-interface rule projects nothing for it"},
+			{CLRMember: "IList<T>.Item", Reason: "private explicit implementation whose setter throws NotSupportedException; the generic getter is the projected indexer"},
+			{CLRMember: "ICollection<T>.Add", Reason: "private explicit mutator; read-only means it is not public surface"},
+			{CLRMember: "ICollection<T>.Clear", Reason: "private explicit mutator"},
+			{CLRMember: "ICollection<T>.Remove", Reason: "private explicit mutator"},
+			{CLRMember: "IList<T>.Insert", Reason: "private explicit mutator"},
+			{CLRMember: "IList<T>.RemoveAt", Reason: "private explicit mutator"},
+			{CLRMember: "IEnumerable.GetEnumerator", Reason: "private explicit implementation; the generic GetEnumerator carries enumeration"},
+			{CLRMember: "ICollection.IsSynchronized", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.SyncRoot", Reason: "private explicit implementation, and CNA-Go projects no CLR sync root"},
+			{CLRMember: "ICollection.CopyTo", Reason: "private explicit implementation"},
+			{CLRMember: "IList.IsFixedSize", Reason: "private explicit implementation"},
+			{CLRMember: "IList.IsReadOnly", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Item", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Add", Reason: "private explicit mutator"},
+			{CLRMember: "IList.Clear", Reason: "private explicit mutator"},
+			{CLRMember: "IList.Contains", Reason: "private explicit implementation"},
+			{CLRMember: "IList.IndexOf", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Insert", Reason: "private explicit mutator"},
+			{CLRMember: "IList.Remove", Reason: "private explicit mutator"},
+			{CLRMember: "IList.RemoveAt", Reason: "private explicit mutator"},
+		},
+	},
+}
+
+// bclSignatureAdapterConstructors are the exported functions that build a
+// signature adapter, declared per adapter so a stray exported constructor is
+// still an unexpected member.
+var bclSignatureAdapterConstructors = map[string]string{
+	"NewReadOnlyCollectionOverSingles": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+}
+
+// bclSignatureAdapterGoName is the Go type name of one signature adapter,
+// without its type parameters.
+func bclSignatureAdapterGoName(adapter bclBaseAdapter) string {
+	if open := strings.Index(adapter.GoAdapter, "["); open >= 0 {
+		return adapter.GoAdapter[:open]
+	}
+	return adapter.GoAdapter
 }

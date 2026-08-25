@@ -232,7 +232,7 @@
     "System.Collections.Generic.IEnumerator<T>": "Iterator<T>",
     "iteratorMethod": "Next()-(T,bool,error)",
     "enumerationOrder": "source-order",
-    "mutationPolicy": "versioned-fail-fast-error-on-next",
+    "mutationPolicy": "versioned-fail-fast-error-on-next WHERE THE UNDERLYING LIST HAS A VERSION; the policy belongs to the list, not to the view, so an array-backed ReadOnlyCollection<T> is deliberately not version-checked because SZGenericArrayEnumerator<T> has no version to check",
     "sliceExposure": "forbidden",
     "concreteEnumeratorRule": "a-collection-that-declares-its-own-public-enumerator-type-projects-that-type-from-GetEnumerator; the Iterator<T> adapter is for collections that declare none",
     "inheritedFromAComposedBase": "a type that acquires ICollection<T>/IList<T> through a COMPOSED BCL base projects what that base makes PUBLIC, not the full interface: Collection<T> implements ICollection<T>.IsReadOnly explicitly, so it is not public surface and is not projected, and every member the adapter records as excluded is verified ABSENT from the Go type"
@@ -257,7 +257,8 @@
     "System.IO.Stream": "io.Reader",
     "System.Type": "reflect.Type",
     "System.EventArgs": "*framework.EventArgs",
-    "System.EventHandler`1": "framework.EventHandler[MappedT]"
+    "System.EventHandler`1": "framework.EventHandler[MappedT]",
+    "System.Collections.ObjectModel.ReadOnlyCollection`1": "*framework.ReadOnlyCollection[MappedT]"
   },
   "events": {
     "handler": "System.EventHandler<T> -> EventHandler[T]; the generic argument is mapped exactly and never degraded to any, a bare func, a channel, or a callback word",
@@ -300,6 +301,10 @@
     "composedMeaning": "a COMPOSED base is a supported BCL family whose PUBLIC members remain part of the observable public CLR surface of every derived type; the derived Go type holds a PRIVATE generic adapter for the base and re-exposes those members through measured forwarding, so the surface does not disappear merely because the XNA assembly metadata does not declare it",
     "composed": {
       "System.Collections.ObjectModel.Collection`1": "collectionBase[T]"
+    },
+    "deferredDetail": {
+      "System.Collections.Generic.Dictionary`2": "BLOCKED on the public surface mapping, not on the behavior. Six public members of the pinned Dictionary<K,V> cannot be projected in already-decided terms: GetObjectData(SerializationInfo, StreamingContext) and OnDeserialization(object) are PUBLIC, not explicit, and need the System.Runtime.Serialization subsystem; Keys and Values return the public nested KeyCollection/ValueCollection, each with its own surface and nested enumerator; Comparer returns IEqualityComparer<TKey>; and GetEnumerator returns the public nested Dictionary<K,V>.Enumerator over KeyValuePair<K,V>. Projecting a subset would make LaunchParameters a partial type. LaunchParameters is the only consumer.",
+      "System.Collections.ObjectModel.ReadOnlyCollection`1": "DEFERRED AS A BASE ONLY; it is SUPPORTED as a signature adapter. Its four base consumers -- ModelBoneCollection, ModelEffectCollection, ModelMeshCollection, ModelMeshPartCollection -- are each blocked on their element type (ModelBone, Effect, ModelMesh, ModelMeshPart) and on their own nested Enumerator type, and each also DECLARES a GetEnumerator that HIDES the inherited one, which is an unresolved projection question: CNA-Go projects no base type through which a hidden inherited member could be reached. No consumer needs the answer yet."
     }
   },
   "expectedCountFormula": {
@@ -317,7 +322,8 @@
     "xnaDeclaredGoMembers": 3243,
     "bclInheritedPublicMembers": 11,
     "bclInheritedMemberProjections": 12,
-    "provenance": "REFERENCE_MEMBERS names only what the Microsoft XNA assemblies declare and is never inflated with inherited mscorlib members; BCL_INHERITED_MEMBER_PROJECTIONS is counted separately and the two partitions are disjoint and exhaustive"
+    "provenance": "REFERENCE_MEMBERS names only what the Microsoft XNA assemblies declare and is never inflated with inherited mscorlib members; BCL_INHERITED_MEMBER_PROJECTIONS is counted separately and the two partitions are disjoint and exhaustive",
+    "signatureAdapterCarriers": 6
   },
   "languageAdapters": [
     "EventArgs",
@@ -326,6 +332,7 @@
     "EventSubscription",
     "GameCallbacks",
     "Iterator<T>",
+    "ReadOnlyCollection<T>",
     "TimeSpan"
   ],
   "languageAdapterPackage": "every language adapter is declared in the framework package and takes the same package qualification as any other framework-package name",
@@ -380,6 +387,41 @@
       }
     },
     "identityAccounting": "every projected Go member has exactly one provenance class -- XNA-declared or BCL-inherited -- and every inherited projection is attributable to an exact BCL base, an exact CLR member, and an exact projected Go member",
+    "allowlist": "forbidden"
+  },
+  "bclSignatureAdapters": {
+    "rule": "a BCL type the pinned XNA contract carries at a PUBLIC SIGNATURE POSITION needs a public Go spelling, or the member that returns it cannot be projected at all; this is the footing System.TimeSpan and System.EventHandler<T> already have",
+    "distinctFromBaseAdapters": "a base adapter is PRIVATE machinery a derived type composes and forwards; a signature adapter is a PUBLIC type because a projected member returns one. One CLR type may hold both roles independently, and neither implies the other",
+    "surfaceIsMeasured": "the adapter's exported member set is pinned to the exact public CLR member inventory, so an adapter type is not a hole in the unexpected-member scan; a missing, extra, or promoted-excluded member is LANGUAGE_MAPPING_MISMATCH",
+    "registry": {
+      "System.Collections.ObjectModel.ReadOnlyCollection`1": {
+        "goAdapter": "*framework.ReadOnlyCollection[T]",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "inheritedPublicMembers": [
+          "Count",
+          "Item",
+          "Contains",
+          "CopyTo",
+          "GetEnumerator",
+          "IndexOf"
+        ],
+        "readOnlyMeaning": "no public mutation THROUGH THIS SURFACE, not immutable storage: the type stores the IList<T> it is given rather than copying it, so the owner keeps writing and every change is visible through the view; freezing a copy would be a different type",
+        "readOnlyIsNotANewDecision": "every mutator -- ICollection<T>.Add/Clear/Remove, IList<T>.Insert/RemoveAt/set_Item and the whole non-generic IList set -- is a private explicit implementation, so the settled BCL-interface rule already excludes them",
+        "listBinding": "the view holds the list INSTANCE it was handed; an owner that later points its own field at a different list does not change an existing view, so a Go slice header is captured by value rather than by pointer",
+        "enumeration": "forwarded to the underlying list, so the semantics are the LIST's and not the view's: an array-backed view is NOT version-checked, because SZArrayHelper.SZGenericArrayEnumerator<T> holds only _array, _index and _endIndex and an array cannot change length, while a List<T>-backed view keeps List<T>._version fail-fast",
+        "elementEquality": "EqualityComparer<T>.Default supplied per element type; for System.Single that is System.Single::Equals, which returns TRUE for two NaNs where Go's == returns false",
+        "carriers": [
+          "Microsoft.Xna.Framework.Audio.AudioEngine::RendererDetails",
+          "Microsoft.Xna.Framework.Audio.Microphone::All",
+          "Microsoft.Xna.Framework.Graphics.GraphicsAdapter::Adapters",
+          "Microsoft.Xna.Framework.Graphics.SpriteFont::Characters",
+          "Microsoft.Xna.Framework.Media.VisualizationData::Frequencies",
+          "Microsoft.Xna.Framework.Media.VisualizationData::Samples"
+        ]
+      }
+    },
     "allowlist": "forbidden"
   }
 }

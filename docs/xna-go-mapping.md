@@ -506,6 +506,33 @@ seven remain deferred as open public-API decisions — `System.Exception`,
 **deferred** base means no derived type may be projected yet, and projecting
 one anyway is a diagnostic.
 
+### BCL types at signature positions
+
+A BCL type the contract carries in a **public signature** needs a public Go
+spelling, or the member that returns it cannot be projected at all. That is the
+footing `System.TimeSpan` and `System.EventHandler<T>` already have, and
+`System.Collections.ObjectModel.ReadOnlyCollection<T>` joins them as
+`*framework.ReadOnlyCollection[T]`.
+
+This is a **different role** from base composition and neither implies the
+other. A base adapter is private machinery a derived type composes and
+forwards; a signature adapter is public because a projected member returns one.
+`ReadOnlyCollection<T>` holds both roles independently: supported as a
+signature adapter, still deferred as a base.
+
+A signature adapter's exported surface is pinned to the exact public CLR member
+inventory, so it is not a hole in the unexpected-member scan. For
+`ReadOnlyCollection<T>` that is six members, and read-only needed no new
+decision: every mutator is a private explicit implementation, which the settled
+BCL-interface rule already excludes.
+
+Two semantics are the list's rather than the view's, and both are measured. The
+view **stores** the list rather than copying it, so read-only means no public
+mutation through that surface and not frozen data. And enumeration forwards, so
+an array-backed view is deliberately **not** version-checked — the reference
+array enumerator has no version to check — while a `List<T>`-backed one keeps
+its fail-fast behavior.
+
 ### BCL base-class composition
 
 A **supported BCL collection base** is the one exception to "the base

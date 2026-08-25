@@ -46,6 +46,31 @@ func compareSingle(left, right float32) int32 {
 	}
 }
 
+// singleEquals reproduces System.Single::Equals(Single), which is what
+// EqualityComparer<Single>.Default reaches: Single implements
+// IEquatable<Single>, so the BCL selects GenericEqualityComparer<Single> and
+// that comparer calls the strongly typed Equals.
+//
+// It is deliberately NOT Go's ==. The reference IL is
+//
+//	ldarg.1; ldarg.0; ldind.r4; bne.un.s L      // equal -> true
+//	ldarg.1; call IsNaN; brfalse.s L2
+//	ldarg.0; ldind.r4; call IsNaN; ret          // both NaN -> true
+//
+// so NaN equals NaN, where Go's == reports false. A collection search over
+// System.Single therefore finds a NaN element, and CNA-Go reproduces that
+// rather than inheriting Go's IEEE comparison. Signed zeros stay equal in both
+// languages, so no special case is needed for them.
+//
+// This is the equality counterpart of compareSingle, which already records the
+// same NaN treatment for System.Single::CompareTo.
+func singleEquals(left, right float32) bool {
+	if left == right {
+		return true
+	}
+	return math.IsNaN(float64(left)) && math.IsNaN(float64(right))
+}
+
 func curveArgumentError(message string) error {
 	return fmt.Errorf("curve argument: %s", message)
 }

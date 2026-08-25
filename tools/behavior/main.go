@@ -2011,6 +2011,90 @@ func runCorpus() corpusReport {
 		fmt.Sprintf("%t,%d,%t,%d", errors.Is(failedAdd, collectionFailure), failingCollection.Count(),
 			errors.Is(failedClear, collectionFailure), clearedCollection.Count()))
 
+	// ---------------------------------------------------------------------
+	// Foundation 27. ReadOnlyCollection<T> as a signature-position BCL
+	// projection, proved by Media.VisualizationData.
+	// ---------------------------------------------------------------------
+
+	visualization := media.NewVisualizationData()
+	frequencies, samples := visualization.Frequencies(), visualization.Samples()
+
+	// The constructor allocates two 256-element Single arrays and wraps each.
+	// Both getters are one ldfld, so each returns the same stored view every
+	// time and the two views are distinct.
+	check("visualization-data.two-stable-distinct-256-buffers", "BCL_SIGNATURE_ADAPTER", "256,256,true,true,false",
+		fmt.Sprintf("%d,%d,%t,%t,%t", frequencies.Count(), samples.Count(),
+			visualization.Frequencies() == frequencies, visualization.Samples() == samples,
+			any(frequencies) == any(samples)))
+
+	// Both buffers start as zeros; the constructor writes nothing.
+	firstFrequency, frequencyError := frequencies.Item(0)
+	lastSample, sampleError := samples.Item(0xFF)
+	pastEnd := func() bool { _, err := samples.Item(0x100); return err != nil }()
+	negative := func() bool { _, err := samples.Item(-1); return err != nil }()
+	check("visualization-data.buffers-start-zeroed-and-bounded", "BCL_SIGNATURE_ADAPTER", "0,true,0,true,true,true",
+		fmt.Sprintf("%v,%t,%v,%t,%t,%t", firstFrequency, frequencyError == nil,
+			lastSample, sampleError == nil, pastEnd, negative))
+
+	// ReadOnlyCollection<T> stores the list rather than copying it, so the
+	// view is LIVE. CNA-Go has no media backend, so the corpus plays that part
+	// by copying out, checking, and relying on the view reporting the current
+	// contents rather than a snapshot taken at construction.
+	visualizationCopy := make([]float32, 0x100)
+	visualizationCopyError := frequencies.CopyTo(visualizationCopy, 0)
+	visualizationCopy[0] = 1
+	afterCopyMutation, _ := frequencies.Item(0)
+	check("read-only-collection.copyto-hands-out-a-copy", "BCL_SIGNATURE_ADAPTER", "true,0",
+		fmt.Sprintf("%t,%v", visualizationCopyError == nil, afterCopyMutation))
+
+	// CopyTo carries Array.Copy's three failures in Array.Copy's order.
+	viewNilDestination := frequencies.CopyTo(nil, 0)
+	viewNegativeIndex := frequencies.CopyTo(visualizationCopy, -1)
+	viewTooSmall := frequencies.CopyTo(visualizationCopy, 1)
+	check("read-only-collection.copyto-validates", "BCL_SIGNATURE_ADAPTER", "true,true,true",
+		fmt.Sprintf("%t,%t,%t", viewNilDestination != nil, viewNegativeIndex != nil, viewTooSmall != nil))
+
+	// The whole buffer enumerates in source order, and an array-backed view is
+	// NOT version-checked: SZGenericArrayEnumerator<T> holds only _array,
+	// _index and _endIndex and compares the index against the end.
+	visualizationIterator := samples.GetEnumerator()
+	enumerated, enumerationFailed := 0, false
+	for {
+		_, ok, err := visualizationIterator.Next()
+		if err != nil {
+			enumerationFailed = true
+			break
+		}
+		if !ok {
+			break
+		}
+		enumerated++
+	}
+	check("read-only-collection.array-backed-enumeration-is-complete-and-unchecked", "BCL_SIGNATURE_ADAPTER",
+		"256,false", fmt.Sprintf("%d,%t", enumerated, enumerationFailed))
+
+	// Element equality is EqualityComparer<Single>.Default, which reaches
+	// System.Single::Equals, so a NaN search finds a NaN element. Go's ==
+	// would report false, which is why the comparer is projected rather than
+	// inherited from the language.
+	nanBuffer := []float32{1, float32(math.NaN()), 3}
+	nanView := framework.NewReadOnlyCollectionOverSingles(nanBuffer)
+	check("read-only-collection.single-comparer-treats-nan-as-equal", "BCL_SIGNATURE_ADAPTER", "1,true,2,-1",
+		fmt.Sprintf("%d,%t,%d,%d", nanView.IndexOf(float32(math.NaN())),
+			nanView.Contains(float32(math.NaN())), nanView.IndexOf(3), nanView.IndexOf(9)))
+
+	// The view is live over the array it was handed: a later element write is
+	// visible, while pointing the owner's own variable at a different array is
+	// not, because the CLR view holds the array reference it was given.
+	liveBuffer := []float32{1, 2, 3}
+	liveView := framework.NewReadOnlyCollectionOverSingles(liveBuffer)
+	liveBuffer[1] = 99
+	liveElement, _ := liveView.Item(1)
+	liveBuffer = []float32{7, 8}
+	_ = liveBuffer
+	check("read-only-collection.live-over-the-list-it-was-given", "BCL_SIGNATURE_ADAPTER", "99,3",
+		fmt.Sprintf("%v,%d", liveElement, liveView.Count()))
+
 	return report
 }
 

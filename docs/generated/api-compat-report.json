@@ -9,7 +9,9 @@
     "BCL_BASE_ADAPTER_CONSUMERS": 1,
     "BCL_INHERITED_MEMBER_PROJECTIONS": 12,
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
-    "COMPLETE_TYPES": 114,
+    "BCL_SIGNATURE_ADAPTERS": 1,
+    "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
+    "COMPLETE_TYPES": 115,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -24,8 +26,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 138,
-    "MISSING_TYPES": 138,
+    "MISSING_TYPE": 137,
+    "MISSING_TYPES": 137,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -39,9 +41,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1743,
-    "TARGET_TYPES": 119,
-    "TOTAL_DIAGNOSTICS": 315,
+    "TARGET_MEMBERS": 1746,
+    "TARGET_TYPES": 120,
+    "TOTAL_DIAGNOSTICS": 314,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1905,12 +1907,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.VisualizationData",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:VisualizationData",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:PreparingDeviceSettingsEventArgs",
       "message": "mapped Go type is absent"
@@ -2045,6 +2041,7 @@
     "Microsoft.Xna.Framework.Media.MediaSourceType",
     "Microsoft.Xna.Framework.Media.MediaState",
     "Microsoft.Xna.Framework.Media.VideoSoundtrackType",
+    "Microsoft.Xna.Framework.Media.VisualizationData",
     "Microsoft.Xna.Framework.Plane",
     "Microsoft.Xna.Framework.PlaneIntersectionType",
     "Microsoft.Xna.Framework.PlayerIndex",
@@ -2398,7 +2395,6 @@
     "Microsoft.Xna.Framework.Media.SongCollection",
     "Microsoft.Xna.Framework.Media.Video",
     "Microsoft.Xna.Framework.Media.VideoPlayer",
-    "Microsoft.Xna.Framework.Media.VisualizationData",
     "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
     "Microsoft.Xna.Framework.Storage.StorageContainer",
     "Microsoft.Xna.Framework.Storage.StorageDevice",
@@ -8286,7 +8282,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 14,
+      "projectedTypes": 15,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -8551,6 +8547,193 @@
       "verdict": "PASS"
     }
   ],
+  "bclSignatureAdapters": [
+    {
+      "clrType": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+      "goAdapter": "ReadOnlyCollection[T]",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "clrPublicMembers": 6,
+      "goMembers": 6,
+      "excludedMembers": 23,
+      "signaturePositions": 6,
+      "carriers": [
+        "Microsoft.Xna.Framework.Audio.AudioEngine::RendererDetails()",
+        "Microsoft.Xna.Framework.Audio.Microphone::All()",
+        "Microsoft.Xna.Framework.Graphics.GraphicsAdapter::Adapters()",
+        "Microsoft.Xna.Framework.Graphics.SpriteFont::Characters()",
+        "Microsoft.Xna.Framework.Media.VisualizationData::Frequencies()",
+        "Microsoft.Xna.Framework.Media.VisualizationData::Samples()"
+      ],
+      "memberInventory": [
+        {
+          "clrType": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Count",
+          "clrKind": "property",
+          "consumer": "ReadOnlyCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:ReadOnlyCollection.Count",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Count is one forwarded `list.Count`"
+        },
+        {
+          "clrType": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Item",
+          "clrKind": "property",
+          "consumer": "ReadOnlyCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:ReadOnlyCollection.Item",
+          "goResults": "T,error",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Item is one forwarded `list[index]`; the SETTER is a private explicit implementation, which is what makes the view read-only"
+        },
+        {
+          "clrType": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Contains",
+          "clrKind": "method",
+          "consumer": "ReadOnlyCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:ReadOnlyCollection.Contains",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "Contains is one forwarded `list.Contains(value)` over EqualityComparer\u003cT\u003e.Default"
+        },
+        {
+          "clrType": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "CopyTo",
+          "clrKind": "method",
+          "consumer": "ReadOnlyCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:ReadOnlyCollection.CopyTo",
+          "goResults": "error",
+          "present": true,
+          "rationale": "CopyTo is one forwarded `list.CopyTo(array, index)`, which for an array-backed list carries Array.Copy's three failures"
+        },
+        {
+          "clrType": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "GetEnumerator",
+          "clrKind": "method",
+          "consumer": "ReadOnlyCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:ReadOnlyCollection.GetEnumerator",
+          "goResults": "Iterator[T]",
+          "present": true,
+          "rationale": "GetEnumerator forwards to the underlying list's enumerator, so an array-backed view is NOT version-checked while a List\u003cT\u003e-backed one is"
+        },
+        {
+          "clrType": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "IndexOf",
+          "clrKind": "method",
+          "consumer": "ReadOnlyCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:ReadOnlyCollection.IndexOf",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "IndexOf is one forwarded `list.IndexOf(value)`"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": ".ctor(IList`1\u003cT\u003e)",
+          "reason": "the adapter's own constructor is the projection of it; no XNA member is projected from it"
+        },
+        {
+          "clrMember": "Items",
+          "reason": "`family`; exposing it would hand out the wrapped list"
+        },
+        {
+          "clrMember": "ICollection\u003cT\u003e.IsReadOnly",
+          "reason": "private explicit implementation; the settled BCL-interface rule projects nothing for it"
+        },
+        {
+          "clrMember": "IList\u003cT\u003e.Item",
+          "reason": "private explicit implementation whose setter throws NotSupportedException; the generic getter is the projected indexer"
+        },
+        {
+          "clrMember": "ICollection\u003cT\u003e.Add",
+          "reason": "private explicit mutator; read-only means it is not public surface"
+        },
+        {
+          "clrMember": "ICollection\u003cT\u003e.Clear",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "ICollection\u003cT\u003e.Remove",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList\u003cT\u003e.Insert",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList\u003cT\u003e.RemoveAt",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IEnumerable.GetEnumerator",
+          "reason": "private explicit implementation; the generic GetEnumerator carries enumeration"
+        },
+        {
+          "clrMember": "ICollection.IsSynchronized",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.SyncRoot",
+          "reason": "private explicit implementation, and CNA-Go projects no CLR sync root"
+        },
+        {
+          "clrMember": "ICollection.CopyTo",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.IsFixedSize",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.IsReadOnly",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.Item",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.Add",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList.Clear",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList.Contains",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.IndexOf",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.Insert",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList.Remove",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList.RemoveAt",
+          "reason": "private explicit mutator"
+        }
+      ],
+      "rationale": "a read-only BCL view the pinned contract returns from projected members; it forwards every read to the list it was given, so enumeration semantics and mutation visibility are the underlying list's rather than the view's",
+      "verdict": "PASS"
+    }
+  ],
   "bclInterfaceRelationships": [
     {
       "clrInterface": "Microsoft.Xna.Framework.Graphics.IDynamicGraphicsResource",
@@ -8655,7 +8838,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "3e26313f2a148b41c39217a8dd6db35ef1d1840a14313e04512d709a603ef71a",
+    "mappingSha256": "c4faa4e95c55986b78f35a3348d6eb2a19df2c80bf6b0ef2c8ea51c378d422d1",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }
