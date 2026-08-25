@@ -85,7 +85,13 @@ var surfaceFormatValues = []struct {
 	{"HdrBlendable", "19"},
 }
 
+// adapterTypes are the CNA-Go language-support types. They are declared in
+// mapping-rules.json under languageAdapters, live in the framework package, and
+// are measured as adapters rather than counted as XNA type identities.
 var adapterTypes = map[string]bool{
+	"EventArgs":         true,
+	"EventHandler":      true,
+	"EventSource":       true,
 	"EventSubscription": true,
 	"GameCallbacks":     true,
 	"Iterator":          true,
@@ -93,6 +99,7 @@ var adapterTypes = map[string]bool{
 }
 
 var adapterFunctions = map[string]bool{
+	"EventArgsEmpty":    true,
 	"NewGame":           true,
 	"TimeSpanFromTicks": true,
 }
@@ -162,6 +169,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 			addDiagnostic(&result, diagnostic{Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(), Message: "CLR base type was projected as exported Go embedding"})
 			typeDiagnostics[et.XNA]++
 		}
+		verifyBCLBaseProjection(&result, typeDiagnostics, et, at)
 		if et.Kind == "interface" && at.Kind != "interface" {
 			addDiagnostic(&result, diagnostic{Category: "INTERFACE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(), Message: "XNA interface is not a Go interface"})
 			typeDiagnostics[et.XNA]++
@@ -182,6 +190,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 			typeDiagnostics[et.XNA] += len(result.Diagnostics) - before
 		}
 		before := len(result.Diagnostics)
+		verifyEventGroupLeaks(&result, expected, actual, et)
 		measureCollectionInterfaceProjection(&result, expected, actual, et)
 		measureDirectInterfaceInheritance(&result, actual, et, at)
 		measureInterfaceWitnesses(&result, expected, actual, et)
@@ -260,6 +269,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation19ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation19ManagedClasses)
 	result.Foundation20ValueContracts = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation20ValueContracts)
 	result.Foundation21ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation21ManagedClasses)
+	result.BCLBaseRelationships = measureBCLBaseRelationships(expected, actual)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -1665,6 +1675,75 @@ func compareMember(result *report, expected *expectedMember, actual *actualMembe
 			addDiagnostic(result, diagnostic{Category: "ENUM_VALUE_MISMATCH", XNA: expected.XNA, Go: actual.Key.String(), Message: fmt.Sprintf("expected raw enum value %s, found %s", *expected.EnumValue, found)})
 		}
 	}
+	if expected.SourceKind == "event" {
+		verifyEventAccessorProjection(result, expected, actual)
+	}
+}
+
+// eventHandlerSpelling matches the projected System.EventHandler<T> adapter and
+// captures the package qualifier and the mapped generic argument, so a defect
+// can be named as the event defect it is rather than as an anonymous parameter
+// difference.
+var eventHandlerSpelling = regexp.MustCompile(`^(framework\.)?EventHandler\[(.+)\]$`)
+
+// eventSubscriptionSpelling matches the projected subscription token.
+var eventSubscriptionSpelling = regexp.MustCompile(`^(framework\.)?EventSubscription$`)
+
+// verifyEventAccessorProjection checks one projected event accessor against the
+// settled event mapping directly, independently of whether it happens to equal
+// the expected signature string.
+//
+// The rule it enforces is the whole event decision: one CLR event becomes
+// exactly two Go accessors; Add takes the typed EventHandler adapter and returns
+// the opaque token plus an error; Remove takes the token and returns an error.
+// Checking it structurally is what makes a degraded handler -- `any`, a bare
+// func, a channel, a raw callback word -- a named event defect instead of a
+// generic signature difference.
+func verifyEventAccessorProjection(result *report, expected *expectedMember, actual *actualMember) {
+	fail := func(format string, args ...any) {
+		addDiagnostic(result, diagnostic{
+			Category: "EVENT_MAPPING_MISMATCH", XNA: expected.XNA, Go: actual.Key.String(),
+			Message: fmt.Sprintf(format, args...),
+		})
+	}
+	qualifier := ""
+	if expected.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
+		qualifier = "framework."
+	}
+	removal := strings.HasPrefix(actual.Key.Name, "Remove")
+	if removal {
+		if len(actual.Parameters) != 1 || !eventSubscriptionSpelling.MatchString(actual.Parameters[0]) {
+			fail("event removal must take exactly one %sEventSubscription, found %v", qualifier, actual.Parameters)
+		} else if actual.Parameters[0] != qualifier+"EventSubscription" {
+			fail("event removal token is spelled %q, want %q for package %s", actual.Parameters[0], qualifier+"EventSubscription", expected.PackagePath)
+		}
+		if !equalStrings(actual.Results, []string{"error"}) {
+			fail("event removal must return exactly one error, found %v", actual.Results)
+		}
+		return
+	}
+	if len(actual.Parameters) != 1 {
+		fail("event registration must take exactly one handler, found %v", actual.Parameters)
+		return
+	}
+	match := eventHandlerSpelling.FindStringSubmatch(actual.Parameters[0])
+	if match == nil {
+		fail("event registration handler is %q, want the %sEventHandler[T] adapter", actual.Parameters[0], qualifier)
+		return
+	}
+	if match[1] != qualifier {
+		fail("event registration handler is spelled %q, want the %sEventHandler qualification for package %s", actual.Parameters[0], qualifier, expected.PackagePath)
+	}
+	if match[2] == "any" {
+		fail("event registration handler degraded its generic argument to any")
+	}
+	if len(actual.Results) != 2 || !eventSubscriptionSpelling.MatchString(actual.Results[0]) || actual.Results[1] != "error" {
+		fail("event registration must return (%sEventSubscription, error), found %v", qualifier, actual.Results)
+		return
+	}
+	if actual.Results[0] != qualifier+"EventSubscription" {
+		fail("event registration token is spelled %q, want %q for package %s", actual.Results[0], qualifier+"EventSubscription", expected.PackagePath)
+	}
 }
 
 // errorMappingMessage names the exact fallibility defect. Because fallibility
@@ -2339,4 +2418,162 @@ func measureManagedInterfaceClosure(expected *expectedSurface, actual *actualSur
 		measurement.Status = "PASS"
 	}
 	return measurement
+}
+
+// verifyBCLBaseProjection measures one XNA type's non-XNA CLR base.
+//
+// The three claims it enforces are the whole content of the base decision:
+//
+//   - a non-XNA base must be a declared relationship, so no base is dropped in
+//     silence and no new BCL base can arrive unnoticed;
+//   - a DEFERRED base must have no projected derived type, so a type can never
+//     be shipped under a base relationship nobody has decided about;
+//   - a MAPPED base must not be faked with exported Go embedding, because
+//     embedding would promote members the XNA contract never declared.
+//
+// actual is nil when the derived type is not projected yet, which is the normal
+// state for a DEFERRED base.
+func verifyBCLBaseProjection(result *report, typeDiagnostics map[string]int, et *expectedType, actual *actualType) {
+	if et.BaseType == "" || strings.HasPrefix(et.BaseType, "Microsoft.Xna.Framework") {
+		return
+	}
+	identity := baseIdentityWithoutArguments(et.BaseType)
+	relationship, declared := bclBaseRelationships[identity]
+	if !declared {
+		addDiagnostic(result, diagnostic{
+			Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+			Message: fmt.Sprintf("CLR base %q is not a declared BCL base relationship", identity),
+		})
+		typeDiagnostics[et.XNA]++
+		return
+	}
+	if actual == nil {
+		return
+	}
+	if relationship.Status == "DEFERRED" {
+		addDiagnostic(result, diagnostic{
+			Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+			Message: fmt.Sprintf("CLR base %q is a deferred BCL base relationship, so the derived type must not be projected yet", identity),
+		})
+		typeDiagnostics[et.XNA]++
+		return
+	}
+	if relationship.Status != "MAPPED" {
+		return
+	}
+	if len(actual.ExportedEmbeddings) > 0 {
+		addDiagnostic(result, diagnostic{
+			Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+			Message: fmt.Sprintf("CLR base %q was faked with exported Go embedding %v", identity, actual.ExportedEmbeddings),
+		})
+		typeDiagnostics[et.XNA]++
+	}
+	if relationship.Adapter != "" && actual.Kind != "struct" {
+		addDiagnostic(result, diagnostic{
+			Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+			Message: fmt.Sprintf("CLR class deriving from %q must project as a Go struct reference type, found %s", identity, actual.Kind),
+		})
+		typeDiagnostics[et.XNA]++
+	}
+}
+
+// measureBCLBaseRelationships summarises every declared non-XNA base across the
+// profile so the report carries the whole relationship table, not only the
+// entries that happen to have a projected derived type.
+func measureBCLBaseRelationships(expected *expectedSurface, actual *actualSurface) []bclBaseProjection {
+	derived := make(map[string]*bclBaseProjection, len(bclBaseRelationships))
+	for identity, relationship := range bclBaseRelationships {
+		derived[identity] = &bclBaseProjection{
+			CLRBase: identity, Adapter: relationship.Adapter, Status: relationship.Status,
+			AddsProjectedSurface: false, Rationale: relationship.Rationale, Verdict: "PASS",
+		}
+	}
+	for _, et := range sortedExpectedTypes(expected) {
+		if et.BaseType == "" || strings.HasPrefix(et.BaseType, "Microsoft.Xna.Framework") {
+			continue
+		}
+		row := derived[baseIdentityWithoutArguments(et.BaseType)]
+		if row == nil {
+			continue
+		}
+		row.DerivedTypes++
+		at := actual.Types[et.Key]
+		if at == nil {
+			continue
+		}
+		row.ProjectedTypes++
+		if len(at.ExportedEmbeddings) > 0 {
+			row.ExportedEmbeddings++
+		}
+	}
+	measurements := make([]bclBaseProjection, 0, len(derived))
+	for _, row := range derived {
+		if row.ExportedEmbeddings != 0 || (row.Status == "DEFERRED" && row.ProjectedTypes != 0) {
+			row.Verdict = "FAIL"
+		}
+		measurements = append(measurements, *row)
+	}
+	sort.Slice(measurements, func(i, j int) bool { return measurements[i].CLRBase < measurements[j].CLRBase })
+	return measurements
+}
+
+// verifyEventGroupLeaks rejects any exported member that occupies an event's
+// name space without being one of the event's two projected accessors.
+//
+// The settled projection is exactly two accessors per CLR event, so anything
+// else on the same receiver that spells the event is a leak: the CLR accessor
+// names add_X, remove_X and raise_X, the CLR raise helper OnX, and the bare
+// event name X, which is how an event would look if it had been projected as a
+// property, a closure field, or a channel instead.
+//
+// The scan runs for every projected event, not only for events whose accessors
+// are missing, so a leak alongside a correct projection is still an event
+// defect rather than an anonymous unexpected symbol.
+func verifyEventGroupLeaks(result *report, expected *expectedSurface, actual *actualSurface, et *expectedType) {
+	for _, memberKey := range et.Members {
+		member := expected.Members[memberKey]
+		if member == nil || member.SourceKind != "event" || !strings.HasPrefix(memberKey.Name, "Add") {
+			continue
+		}
+		// The XNA event name, recovered from the projected accessor name so the
+		// static declaring-type prefix is handled the same way.
+		// A static event projects as a package function whose name carries the
+		// declaring type, so the receiver is empty and the type prefix is part
+		// of the accessor name.
+		base := strings.TrimSuffix(memberKey.Name, "Handler")
+		if memberKey.Receiver == "" {
+			base = strings.TrimPrefix(base, et.GoName)
+		}
+		base = strings.TrimPrefix(base, "Add")
+		if base == "" {
+			continue
+		}
+		forbidden := map[string]string{
+			base:             "event projected as a bare member instead of an add/remove accessor pair",
+			"add_" + base:    "CLR add_ accessor leaked as an XNA identity",
+			"remove_" + base: "CLR remove_ accessor leaked as an XNA identity",
+			"raise_" + base:  "CLR raise_ accessor leaked as an XNA identity",
+			"On" + base:      "CLR protected raise helper leaked as an XNA identity",
+		}
+		for key := range actual.Members {
+			if key.Package != memberKey.Package || key.Receiver != memberKey.Receiver {
+				continue
+			}
+			if _, mapped := expected.Members[key]; mapped {
+				continue
+			}
+			reason, forbiddenName := forbidden[key.Name]
+			if !forbiddenName {
+				// Anything else sharing the accessor prefix is a stray member of
+				// the same event group.
+				if !strings.HasPrefix(key.Name, strings.TrimSuffix(memberKey.Name, "Handler")) {
+					continue
+				}
+				reason = "event group contains a non-matching add/remove projection"
+			}
+			addDiagnostic(result, diagnostic{
+				Category: "EVENT_MAPPING_MISMATCH", XNA: member.XNA, Go: key.String(), Message: reason,
+			})
+		}
+	}
 }

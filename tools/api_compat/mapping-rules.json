@@ -225,7 +225,43 @@
     "System.IntPtr": "uintptr",
     "System.TimeSpan": "framework.TimeSpan",
     "System.IO.Stream": "io.Reader",
-    "System.Type": "reflect.Type"
+    "System.Type": "reflect.Type",
+    "System.EventArgs": "*framework.EventArgs",
+    "System.EventHandler`1": "framework.EventHandler[MappedT]"
+  },
+  "events": {
+    "handler": "System.EventHandler<T> -> EventHandler[T]; the generic argument is mapped exactly and never degraded to any, a bare func, a channel, or a callback word",
+    "handlerShape": "func(sender any, args T) error",
+    "handlerErrorResult": "GO_LANGUAGE_PROJECTION of the CLR exception channel, never an additional XNA return identity",
+    "eventArgs": "System.EventArgs -> *framework.EventArgs; a CLR class keeps reference semantics, so nil is not the projection of EventArgs.Empty and neither any, struct{}, nor map[string]any is admitted",
+    "eventArgsEmpty": "System.EventArgs.Empty -> framework.EventArgsEmpty(), one stable private singleton behind a function so no consumer can reassign the shared identity",
+    "accessorPair": "one CLR event -> exactly two projected Go accessors, unchanged from the settled rule",
+    "subscriptionIdentity": "GO_LANGUAGE_PROJECTION: Go func values are not comparable, so a token names the registration rather than the handler; adding one handler twice yields two registrations and two tokens, unlike CLR Delegate.Remove identity matching",
+    "nilHandler": "Add(nil) registers nothing and returns the zero token, mirroring Delegate.Combine(existing, null) returning existing",
+    "absentToken": "the zero token, an already-removed token, and a token owned by another event all leave every registration list unchanged, mirroring Delegate.Remove of an absent delegate",
+    "dispatch": "registration order over a snapshot taken under the lock; mutation during a raise affects later raises only",
+    "dispatchFailure": "the first non-nil handler error propagates, no later handler runs, and the registration list survives the failure",
+    "lockScope": "no internal lock is held while a consumer handler runs",
+    "supportTypes": "EventSource[T] is public language support so a type declared outside CNA-Go can implement an event-bearing XNA contract; it is measured as an adapter and adds no XNA identity"
+  },
+  "bclBaseRelationships": {
+    "rule": "a non-XNA CLR base is a measured relationship, never exported Go embedding; Go has no CLR inheritance and embedding would promote members the XNA contract never declared",
+    "derivedProjection": "a derived XNA class projects as its own pointer reference type",
+    "addsProjectedSurface": false,
+    "exhaustive": "every non-XNA base in the profile is declared here; an undeclared base is BASE_MAPPING_MISMATCH, so no base can be dropped in silence",
+    "deferredMeaning": "a DEFERRED base is still an open public-API decision, and no derived type may be projected until it is taken",
+    "implied": ["System.Object", "System.ValueType", "System.Enum"],
+    "mapped": {"System.EventArgs": "framework.EventArgs"},
+    "deferred": [
+      "System.Exception",
+      "System.Runtime.InteropServices.ExternalException",
+      "System.Attribute",
+      "System.IO.BinaryReader",
+      "System.ComponentModel.ExpandableObjectConverter",
+      "System.Collections.ObjectModel.Collection`1",
+      "System.Collections.ObjectModel.ReadOnlyCollection`1",
+      "System.Collections.Generic.Dictionary`2"
+    ]
   },
   "expectedCountFormula": {
     "types": "one-per-reference-type",
@@ -241,10 +277,14 @@
     "expectedGoMembers": 3243
   },
   "languageAdapters": [
+    "EventArgs",
+    "EventHandler<T>",
+    "EventSource<T>",
     "EventSubscription",
     "GameCallbacks",
     "Iterator<T>",
     "TimeSpan"
   ],
+  "languageAdapterPackage": "every language adapter is declared in the framework package and takes the same package qualification as any other framework-package name",
   "crossPackageCycleRule": "when an ancestor namespace member returns a descendant namespace type that imports ancestor values, project the accessor as a descendant-package function named OwnerTypeMember"
 }

@@ -200,7 +200,39 @@ type report struct {
 	Foundation19ManagedClasses   []managedTypeClosure          `json:"foundation19ManagedClassClosures"`
 	Foundation20ValueContracts   []managedTypeClosure          `json:"foundation20ValueContractClosures"`
 	Foundation21ManagedClasses   []managedTypeClosure          `json:"foundation21ManagedClassClosures"`
+	BCLBaseRelationships         []bclBaseProjection           `json:"bclBaseRelationships"`
 	Metadata                     reportMetadata                `json:"metadata"`
+}
+
+// bclBaseProjection measures one non-XNA CLR base type across every XNA type
+// that derives from it.
+//
+// Go has no CLR inheritance and CNA-Go deliberately refuses to fake it with
+// exported embedding, so a derived type is projected as its own reference type
+// and the base survives only as this measured relationship. Recording it is
+// what keeps a dropped base from being invisible: every non-XNA base in the
+// pinned contract appears here with a status, so a base nobody has decided
+// about is a diagnostic rather than a silent omission.
+type bclBaseProjection struct {
+	// CLRBase is the CLR base identity with any generic arguments removed.
+	CLRBase string `json:"clrBase"`
+	// Adapter is the framework-package language adapter that models the base,
+	// empty when the relationship contributes no adapter.
+	Adapter string `json:"adapter,omitempty"`
+	// Status is IMPLIED, MAPPED, or DEFERRED.
+	Status string `json:"status"`
+	// AddsProjectedSurface records the invariant every relationship in this
+	// table shares: a base contributes no Go member identities of its own.
+	AddsProjectedSurface bool `json:"addsProjectedSurface"`
+	// DerivedTypes is every XNA type in the profile with this CLR base.
+	DerivedTypes int `json:"derivedTypes"`
+	// ProjectedTypes is how many of them are present in the Go surface.
+	ProjectedTypes int `json:"projectedTypes"`
+	// ExportedEmbeddings counts derived Go types that faked the inheritance
+	// with an exported embedded field. It must stay zero.
+	ExportedEmbeddings int    `json:"exportedEmbeddings"`
+	Rationale          string `json:"rationale"`
+	Verdict            string `json:"verdict"`
 }
 
 // enumClosure is the reusable ordinary/flags enum closure measurement. The

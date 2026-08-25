@@ -394,12 +394,75 @@ is reported as a language mapping limitation, not disguised as CLR inheritance.
 ## Events and callback identity
 
 An XNA event maps to `Add<EventName>Handler` and
-`Remove<EventName>Handler`. Addition returns an opaque, generation-checked
-`EventSubscription`; removal accepts that token. Static events prefix the
-declaring type. This preserves duplicate subscriptions, deterministic removal,
-callback order, and self-removal without comparing Go function values. Named
-CLR delegate types map to named Go function types. Native registration remains
-private and uses `runtime/cgo.Handle`; an event token is never a native handle.
+`Remove<EventName>Handler`. Addition returns an opaque `EventSubscription`;
+removal accepts that token. Static events prefix the declaring type. This
+preserves duplicate subscriptions, deterministic removal, callback order, and
+self-removal without comparing Go function values. Named CLR delegate types map
+to named Go function types. Native registration remains private and uses
+`runtime/cgo.Handle`; an event token is never a native handle.
+
+Every one of the 49 public CLR events in the profile is declared
+`System.EventHandler`1<T>`, so two BCL shapes carry the whole event surface:
+
+```text
+System.EventArgs        -> *framework.EventArgs
+System.EventHandler<T>  -> framework.EventHandler[T]
+```
+
+`EventHandler[T]` is `func(sender any, args T) error`. The generic argument is
+mapped exactly — degrading it to `any`, to a bare `func`, to a channel, or to a
+callback word is `EVENT_MAPPING_MISMATCH`. The `error` result is a Go language
+projection of the CLR exception channel, not an extra XNA return identity: no
+XNA event handler produces a value.
+
+`System.EventArgs` is a CLR class, so it keeps reference semantics and projects
+as a pointer. `nil` is not its `Empty`. `System.EventArgs.Empty` projects as
+`framework.EventArgsEmpty()`, one stable private singleton behind a function so
+no consumer can reassign the shared identity — the reference raises it as
+`ldsfld System.EventArgs::Empty`, so shared object identity is the faithful
+projection. `EventArgs` carries one unexported byte because Go permits distinct
+zero-size variables to share an address, and the gc runtime does: four separate
+`new(struct{})` allocations measured on go1.24.4 all returned
+`runtime.zerobase`.
+
+`EventSource[T]` is public language support with `Add`, `Remove`, and `Raise`,
+so a type declared **outside** CNA-Go can implement an event-bearing XNA
+contract without inventing its own incompatible token. Its semantics are pinned:
+registration order is preserved, duplicates are allowed, dispatch runs over a
+snapshot taken under the lock so mutation during a raise affects only later
+raises, no internal lock is held while a consumer handler runs, the first
+non-nil handler error propagates and stops the dispatch, and the registration
+list survives that failure.
+
+Two behaviors are read from the reference accessors rather than invented.
+`add_X` calls `Delegate.Combine(existing, value)`, which returns the other
+operand when one is null, so `Add(nil)` registers nothing and returns the zero
+token instead of panicking. `remove_X` calls `Delegate.Remove`, which returns
+the list unchanged when the delegate is absent, so the zero token, an
+already-removed token, and a token owned by another event are all harmless.
+
+One difference is a deliberate Go language projection and is recorded as such:
+Go function values are not comparable, so a token names the **registration**
+rather than the handler. Adding one handler twice therefore produces two
+registrations and two distinct tokens, where CLR `Delegate.Remove` would match
+by delegate identity.
+
+## CLR base types
+
+Go has no CLR inheritance and CNA-Go never fakes one with exported embedding,
+which would promote members the XNA contract does not declare. A non-XNA CLR
+base survives as a **measured relationship**: the derived class projects as its
+own pointer reference type and the base contributes no Go member identity.
+
+The relationship table is exhaustive over the profile, so a base nobody has
+decided about is `BASE_MAPPING_MISMATCH` rather than a silent omission. Three
+CLR roots are implied by the existing projections (`System.Object`,
+`System.ValueType`, `System.Enum`); `System.EventArgs` is mapped to the
+`framework.EventArgs` adapter; and eight remain deferred as open public-API
+decisions — `System.Exception`, `ExternalException`, `System.Attribute`,
+`System.IO.BinaryReader`, `ExpandableObjectConverter`, `Collection<T>`,
+`ReadOnlyCollection<T>`, and `Dictionary<K,V>`. A **deferred** base means no
+derived type may be projected yet, and projecting one anyway is a diagnostic.
 
 ## Structural counts
 
@@ -411,6 +474,9 @@ accessors, and expands 49 events into 98 add/remove accessors:
 EXPECTED_GO_MEMBERS = 2964 - 49 - 840 + 1119 - 49 + 98 = 3243
 ```
 
-Language adapter types (`EventSubscription`, `GameCallbacks`, `Iterator<T>`,
-and `TimeSpan`) and error results are measured separately and do not
-inflate these XNA counts.
+Language adapter types (`EventArgs`, `EventHandler<T>`, `EventSource<T>`,
+`EventSubscription`, `GameCallbacks`, `Iterator<T>`, and `TimeSpan`) and error
+results are measured separately and do not inflate these XNA counts. Every
+adapter is declared in the framework package and takes the same package
+qualification as any other framework-package name, so a graphics-package event
+reads `framework.EventHandler[*framework.EventArgs]`.

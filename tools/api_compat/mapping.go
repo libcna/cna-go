@@ -127,6 +127,95 @@ var pureManagedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.GameServiceContainer": true,
 }
 
+// bclBaseRelationship is how one non-XNA CLR base type is projected.
+//
+// Go has no CLR inheritance, and CNA-Go's established policy is that an
+// exported embedded field must never be used to simulate one: embedding would
+// promote the base's members into the derived type's Go method set, inventing
+// surface the XNA contract never declared and making the derived type
+// assignable in ways CLR inheritance does not imply. A CLR base therefore
+// survives as this measured relationship rather than as Go structure, and the
+// invariant every entry shares is that the base contributes no projected Go
+// member identity of its own.
+type bclBaseRelationship struct {
+	// Adapter is the framework-package language adapter that models the base,
+	// empty when the relationship needs none.
+	Adapter string
+	// Status is IMPLIED for the three universal CLR roots that no projection
+	// ever names, MAPPED when a derived XNA type may be projected today, and
+	// DEFERRED when the relationship is still an open public-API decision and
+	// no derived type may be projected yet.
+	Status string
+	// Rationale records why the relationship is where it is.
+	Rationale string
+}
+
+// bclBaseRelationships declares every non-XNA CLR base type that appears in
+// the pinned profile. The table is exhaustive by construction: a base absent
+// from it raises BASE_MAPPING_MISMATCH, so a base type can never be dropped
+// silently, and DEFERRED means a derived type must stay unprojected rather
+// than be projected under a base nobody has decided about.
+var bclBaseRelationships = map[string]bclBaseRelationship{
+	"System.Object": {
+		Status:    "IMPLIED",
+		Rationale: "the universal CLR root; a Go struct or interface names no base and inherits nothing",
+	},
+	"System.ValueType": {
+		Status:    "IMPLIED",
+		Rationale: "the CLR value root; the struct projection already carries value semantics",
+	},
+	"System.Enum": {
+		Status:    "IMPLIED",
+		Rationale: "the CLR enum root; the named-int32 projection already carries it",
+	},
+	"System.EventArgs": {
+		Adapter:   "EventArgs",
+		Status:    "MAPPED",
+		Rationale: "modelled by the framework EventArgs language adapter; a derived XNA class keeps CLR reference semantics and projects as its own pointer type with no exported embedding",
+	},
+	"System.Exception": {
+		Status:    "DEFERRED",
+		Rationale: "CLR exception types as Go types is a separate public-API decision; CNA-Go reports failure through error results and has no exception hierarchy",
+	},
+	"System.Runtime.InteropServices.ExternalException": {
+		Status:    "DEFERRED",
+		Rationale: "derives from System.Exception and inherits the same open decision",
+	},
+	"System.Attribute": {
+		Status:    "DEFERRED",
+		Rationale: "Go has no attribute metadata; the content serializer attributes need a separate mapping",
+	},
+	"System.IO.BinaryReader": {
+		Status:    "DEFERRED",
+		Rationale: "requires a stream-reader base whose seek and encoding behavior is a separate mapping",
+	},
+	"System.ComponentModel.ExpandableObjectConverter": {
+		Status:    "DEFERRED",
+		Rationale: "part of the System.ComponentModel TypeConverter subsystem, which is a separate mapping",
+	},
+	"System.Collections.ObjectModel.Collection`1": {
+		Status:    "DEFERRED",
+		Rationale: "a mutable BCL collection base whose projected surface is a separate mapping",
+	},
+	"System.Collections.ObjectModel.ReadOnlyCollection`1": {
+		Status:    "DEFERRED",
+		Rationale: "a read-only BCL collection base whose projected surface is a separate mapping",
+	},
+	"System.Collections.Generic.Dictionary`2": {
+		Status:    "DEFERRED",
+		Rationale: "a BCL dictionary base whose projected surface is a separate mapping",
+	},
+}
+
+// baseIdentityWithoutArguments strips generic arguments so a constructed base
+// such as ReadOnlyCollection`1[ModelBone] is looked up by its open identity.
+func baseIdentityWithoutArguments(raw string) string {
+	if bracket := strings.Index(raw, "["); bracket >= 0 {
+		return raw[:bracket]
+	}
+	return raw
+}
+
 // classifiedInterfaces is the explicit, reusable policy boundary for
 // structural interfaces whose fallibility is decided per projected operation
 // from authoritative evidence rather than by the interface-kind default.
@@ -553,8 +642,16 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 			add.GoName, remove.GoName = owner.GoName+add.GoName, owner.GoName+remove.GoName
 			add.Receiver, remove.Receiver = "", ""
 		}
-		add.Parameters, add.Results = []string{handler}, []string{"EventSubscription", "error"}
-		remove.Parameters, remove.Results = []string{"EventSubscription"}, []string{"error"}
+		// The event accessor projection is settled: one CLR event becomes
+		// exactly two Go accessors, Add returns the subscription token, and
+		// Remove consumes one. Both carry an error because the accessor pair
+		// is the projection of CLR add_/remove_ semantics, not because the
+		// declaring type happens to be fallible, so ErrorAdded is pinned here
+		// rather than inherited from the owner's classification.
+		subscription := frameworkQualified(owner, "EventSubscription")
+		add.Parameters, add.Results = []string{handler}, []string{subscription, "error"}
+		remove.Parameters, remove.Results = []string{subscription}, []string{"error"}
+		add.ErrorAdded, remove.ErrorAdded = true, true
 		add.Key = symbolKey{Package: add.PackagePath, Receiver: add.Receiver, Name: add.GoName}
 		remove.Key = symbolKey{Package: remove.PackagePath, Receiver: remove.Receiver, Name: remove.GoName}
 		return []*expectedMember{add, remove}
@@ -659,17 +756,25 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 		return mapped
 	}
 	if inner, ok := genericTypeArgument(raw, "System.Collections.Generic.IEnumerator`1["); ok {
-		name := "Iterator"
-		if owner.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
-			name = "framework.Iterator"
-		}
-		return name + "[" + mapType(s, byIdentity, owner, inner) + "]"
+		return frameworkQualified(owner, "Iterator") + "[" + mapType(s, byIdentity, owner, inner) + "]"
+	}
+	// System.EventHandler<T> is the delegate every one of the 49 public CLR
+	// events in the profile declares. The generic argument is mapped exactly:
+	// degrading it to `any` would erase the args identity the handler is
+	// given, which is the whole reason the CLR event is generic.
+	if inner, ok := genericTypeArgument(raw, "System.EventHandler`1["); ok {
+		return frameworkQualified(owner, "EventHandler") + "[" + mapType(s, byIdentity, owner, inner) + "]"
+	}
+	// System.EventArgs is a CLR class, so it keeps CLR reference semantics and
+	// projects as a pointer to the framework-package language adapter.
+	if raw == "System.EventArgs" {
+		return "*" + frameworkQualified(owner, "EventArgs")
 	}
 	if mapped, ok := bclTypes[raw]; ok {
-		// TimeSpan is the one BCL entry that maps to a CNA-Go type rather
-		// than a Go builtin or standard-library type, so it obeys the same
-		// package-qualification rule as every other framework-package value.
-		// mapping-rules.json already declares it as framework.TimeSpan.
+		// TimeSpan is the one primitive BCL entry that maps to a CNA-Go type
+		// rather than a Go builtin or standard-library type, so it obeys the
+		// same package-qualification rule as every other framework-package
+		// value. mapping-rules.json already declares it as framework.TimeSpan.
 		if raw == "System.TimeSpan" && owner.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
 			return "framework." + mapped
 		}
@@ -702,6 +807,16 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 		name = "*" + name
 	}
 	return name
+}
+
+// frameworkQualified spells a framework-package name the way a source file in
+// owner's package must spell it. Every CNA-Go language adapter lives in the
+// framework package, so each one takes this qualification.
+func frameworkQualified(owner *expectedType, name string) string {
+	if owner != nil && owner.PackagePath == modulePath+"/Microsoft/Xna/Framework" {
+		return name
+	}
+	return "framework." + name
 }
 
 func nullableInner(raw string) (string, bool) {

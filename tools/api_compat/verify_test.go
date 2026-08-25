@@ -1047,6 +1047,22 @@ func TestMutationFixtures(t *testing.T) {
 				}
 				return
 			}
+			if strings.HasPrefix(fixture.Mutation, "f22ev_") {
+				expected, actual = eventProjectionMutationCase(t, fixture.Mutation)
+				result := verify(expected, actual, 0, "report", "contract", "mapping")
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
+			if strings.HasPrefix(fixture.Mutation, "f22base_") {
+				expected, actual = baseProjectionMutationCase(t, fixture.Mutation)
+				result := verify(expected, actual, 0, "report", "contract", "mapping")
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
 			if strings.HasPrefix(fixture.Mutation, "f18cls_") {
 				result := interfaceClassificationMutationCase(t, fixture.Mutation)
 				if result.Summary[fixture.Category] == 0 {
@@ -4059,4 +4075,516 @@ func rawHandleMutationCase(t *testing.T, mutation string) (*expectedSurface, *ac
 	}
 	t.Fatalf("unknown raw-handle fixture %q", name)
 	return nil, nil
+}
+
+// isolateEventOwner builds an isolated, initially correct expected/actual pair
+// for one event-bearing XNA type, so an event defect can be injected on the
+// target side and nothing else can account for the resulting diagnostic.
+func isolateEventOwner(t *testing.T, identity string) (*expectedSurface, *actualSurface, *expectedType) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(identity)
+	if fullType == nil {
+		t.Fatalf("%s is not in the pinned contract", identity)
+	}
+	copiedType := *fullType
+	copiedType.Members = nil
+	kind := "struct"
+	if fullType.Kind == "interface" {
+		kind = "interface"
+	}
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ExpectedGoTypes:    1,
+	}
+	actual := &actualSurface{
+		Types:       map[symbolKey]*actualType{copiedType.Key: {Key: copiedType.Key, Kind: kind}},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	// Only the event accessors are carried across, so every diagnostic the
+	// fixtures produce is attributable to the event projection alone.
+	for _, memberKey := range fullType.Members {
+		fullMember := full.Members[memberKey]
+		if fullMember.SourceKind != "event" {
+			continue
+		}
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		copiedType.Members = append(copiedType.Members, memberKey)
+		expected.Members[memberKey] = &copiedMember
+		actual.Members[memberKey] = &actualMember{
+			Key:        memberKey,
+			Kind:       copiedMember.GoKind,
+			Parameters: append([]string(nil), copiedMember.Parameters...),
+			Results:    append([]string(nil), copiedMember.Results...),
+		}
+	}
+	if len(copiedType.Members) == 0 {
+		t.Fatalf("%s declares no event", identity)
+	}
+	expected.ReferenceMembers = len(copiedType.Members) / 2
+	expected.ExpectedGoMembers = len(copiedType.Members)
+	return expected, actual, &copiedType
+}
+
+func eventAccessorKeys(t *testing.T, expected *expectedSurface, owner *expectedType) (add, remove symbolKey) {
+	t.Helper()
+	for _, key := range owner.Members {
+		if strings.HasPrefix(key.Name, "Add") && add == (symbolKey{}) {
+			add = key
+		}
+		if strings.HasPrefix(key.Name, "Remove") && remove == (symbolKey{}) {
+			remove = key
+		}
+	}
+	if add == (symbolKey{}) || remove == (symbolKey{}) {
+		t.Fatalf("%s has no add/remove accessor pair", owner.XNA)
+	}
+	return add, remove
+}
+
+// TestEventProjectionIsMeasuredExactly pins the settled event mapping on both
+// sides of the package-qualification rule and proves the generic argument is
+// carried exactly rather than degraded.
+func TestEventProjectionIsMeasuredExactly(t *testing.T) {
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const frameworkPackage = modulePath + "/Microsoft/Xna/Framework"
+	const graphicsPackage = modulePath + "/Microsoft/Xna/Framework/Graphics"
+
+	for _, want := range []struct {
+		pkg        string
+		receiver   string
+		name       string
+		parameters []string
+		results    []string
+	}{
+		// Same package: the adapters are unqualified.
+		{frameworkPackage, "IUpdateable", "AddEnabledChangedHandler",
+			[]string{"EventHandler[*EventArgs]"}, []string{"EventSubscription", "error"}},
+		{frameworkPackage, "IUpdateable", "RemoveEnabledChangedHandler",
+			[]string{"EventSubscription"}, []string{"error"}},
+		// Descendant package: every adapter takes the framework qualification.
+		{graphicsPackage, "DynamicVertexBuffer", "AddContentLostHandler",
+			[]string{"framework.EventHandler[*framework.EventArgs]"}, []string{"framework.EventSubscription", "error"}},
+		{graphicsPackage, "DynamicVertexBuffer", "RemoveContentLostHandler",
+			[]string{"framework.EventSubscription"}, []string{"error"}},
+		// A non-EventArgs generic argument is carried exactly, and an XNA args
+		// type in the owner's own package is not over-qualified.
+		{graphicsPackage, "GraphicsDevice", "AddResourceCreatedHandler",
+			[]string{"framework.EventHandler[*ResourceCreatedEventArgs]"}, []string{"framework.EventSubscription", "error"}},
+		{frameworkPackage, "GraphicsDeviceManager", "AddPreparingDeviceSettingsHandler",
+			[]string{"EventHandler[*PreparingDeviceSettingsEventArgs]"}, []string{"EventSubscription", "error"}},
+	} {
+		want := want
+		t.Run(want.receiver+"."+want.name, func(t *testing.T) {
+			member := surface.Members[symbolKey{Package: want.pkg, Receiver: want.receiver, Name: want.name}]
+			if member == nil {
+				t.Fatalf("%s.%s is not projected", want.receiver, want.name)
+			}
+			if member.SourceKind != "event" {
+				t.Fatalf("source kind = %q", member.SourceKind)
+			}
+			if !equalStrings(member.Parameters, want.parameters) {
+				t.Fatalf("parameters = %v, want %v", member.Parameters, want.parameters)
+			}
+			if !equalStrings(member.Results, want.results) {
+				t.Fatalf("results = %v, want %v", member.Results, want.results)
+			}
+			if !member.ErrorAdded {
+				t.Fatal("event accessor lost its error channel")
+			}
+		})
+	}
+
+	// Every CLR event in the profile becomes exactly two accessors and no event
+	// anywhere degrades its handler to `any`.
+	events, accessors := 0, 0
+	for _, et := range sortedExpectedTypes(surface) {
+		for _, key := range et.Members {
+			member := surface.Members[key]
+			if member.SourceKind != "event" {
+				continue
+			}
+			accessors++
+			// A static event projects as a package function whose name carries
+			// the declaring type, so the accessor stem is not at index 0.
+			registration := strings.HasPrefix(key.Name, "Add")
+			if key.Receiver == "" {
+				registration = strings.HasPrefix(strings.TrimPrefix(key.Name, et.GoName), "Add")
+			}
+			if registration {
+				events++
+				if len(member.Parameters) != 1 || strings.Contains(member.Parameters[0], "any") {
+					t.Fatalf("%s handler = %v", member.XNA, member.Parameters)
+				}
+				if !strings.Contains(member.Parameters[0], "EventHandler[") {
+					t.Fatalf("%s handler = %v, want the EventHandler adapter", member.XNA, member.Parameters)
+				}
+			}
+		}
+	}
+	if events != 49 || accessors != 98 {
+		t.Fatalf("profile events = %d producing %d accessors, want 49 and 98", events, accessors)
+	}
+}
+
+// eventProjectionDefects are the target-side defects the event mapping is
+// negatively fixtured against. Each one is a way a binding could plausibly
+// weaken the event projection.
+var eventProjectionDefects = []struct {
+	Name     string
+	Category string
+	Apply    func(t *testing.T, actual *actualSurface, add, remove symbolKey, qualifier string)
+}{
+	{"handler-degraded-to-any", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Parameters = []string{q + "EventHandler[any]"}
+	}},
+	{"handler-erased-to-any", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Parameters = []string{"any"}
+	}},
+	{"wrong-generic-argument", "PARAMETER_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Parameters = []string{q + "EventHandler[*" + q + "GameTime]"}
+	}},
+	{"event-args-projected-by-value", "PARAMETER_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Parameters = []string{q + "EventHandler[" + q + "EventArgs]"}
+	}},
+	{"handler-is-a-raw-func", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Parameters = []string{"func(sender any, args *" + q + "EventArgs) error"}
+	}},
+	{"handler-is-a-channel", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Parameters = []string{"chan *" + q + "EventArgs"}
+	}},
+	{"handler-is-a-raw-callback-word", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Parameters = []string{"unsafe.Pointer"}
+	}},
+	{"subscription-token-dropped", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Results = []string{"error"}
+	}},
+	{"subscription-token-is-a-native-handle", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Results = []string{"uintptr", "error"}
+	}},
+	{"removal-takes-the-handler", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[remove].Parameters = []string{q + "EventHandler[*" + q + "EventArgs]"}
+	}},
+	{"removal-takes-a-native-handle", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[remove].Parameters = []string{"uintptr"}
+	}},
+	{"registration-error-channel-dropped", "ERROR_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Results = []string{q + "EventSubscription"}
+	}},
+	{"removal-error-channel-dropped", "ERROR_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[remove].Results = nil
+	}},
+	{"registration-accessor-missing", "MISSING_MEMBER", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		delete(actual.Members, add)
+	}},
+	{"removal-accessor-missing", "MISSING_MEMBER", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		delete(actual.Members, remove)
+	}},
+	{"clr-accessor-name-leaked", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		leaked := symbolKey{Package: add.Package, Receiver: add.Receiver, Name: strings.TrimSuffix(add.Name, "Handler")}
+		actual.Members[leaked] = &actualMember{Key: leaked, Kind: "method"}
+	}},
+	{"accessor-projected-as-a-field", "EVENT_MAPPING_MISMATCH", func(t *testing.T, actual *actualSurface, add, remove symbolKey, q string) {
+		actual.Members[add].Kind = "field"
+	}},
+}
+
+// TestEventProjectionDefectsAreRejected runs every event defect against an
+// owner in the framework package and an owner in a descendant package, so the
+// package-qualification half of the rule is attacked as hard as the shape half.
+func TestEventProjectionDefectsAreRejected(t *testing.T) {
+	owners := []struct {
+		identity  string
+		qualifier string
+	}{
+		{"Microsoft.Xna.Framework.IUpdateable", ""},
+		{"Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer", "framework."},
+	}
+	cases := 0
+	for _, owner := range owners {
+		owner := owner
+		t.Run(owner.identity, func(t *testing.T) {
+			baseExpected, baseActual, baseOwner := isolateEventOwner(t, owner.identity)
+			baseline := verify(baseExpected, baseActual, 0, "report", "contract", "mapping")
+			if baseline.Summary["TOTAL_DIAGNOSTICS"] != 0 {
+				t.Fatalf("unmutated %s baseline is not clean: %v", owner.identity, baseline.Diagnostics)
+			}
+			_ = baseOwner
+			for _, defect := range eventProjectionDefects {
+				defect := defect
+				t.Run(defect.Name, func(t *testing.T) {
+					expected, actual, isolated := isolateEventOwner(t, owner.identity)
+					add, remove := eventAccessorKeys(t, expected, isolated)
+					defect.Apply(t, actual, add, remove, owner.qualifier)
+					result := verify(expected, actual, 0, "report", "contract", "mapping")
+					if result.Summary[defect.Category] == 0 {
+						t.Fatalf("defect %q on %s did not raise %s; summary=%v",
+							defect.Name, owner.identity, defect.Category, result.Summary)
+					}
+				})
+				cases++
+			}
+		})
+	}
+	if cases != len(owners)*len(eventProjectionDefects) {
+		t.Fatalf("event fixture accounting = %d", cases)
+	}
+	if cases != 34 {
+		t.Fatalf("event negative fixtures = %d, want 34", cases)
+	}
+}
+
+// TestEventAdapterSurfaceIsDeclaredLanguageSupport proves the four event
+// adapters are measured as language support: they are registered adapters, they
+// live in the framework package, and none of them is an XNA identity.
+func TestEventAdapterSurfaceIsDeclaredLanguageSupport(t *testing.T) {
+	for _, name := range []string{"EventArgs", "EventHandler", "EventSource", "EventSubscription"} {
+		if !adapterTypes[name] {
+			t.Fatalf("%s is not a declared language adapter", name)
+		}
+	}
+	if !adapterFunctions["EventArgsEmpty"] {
+		t.Fatal("EventArgsEmpty is not a declared adapter function")
+	}
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// No adapter may collide with a projected XNA identity.
+	for key := range surface.Types {
+		if adapterTypes[key.Name] && key.Name != "TimeSpan" && key.Name != "GameCallbacks" {
+			t.Fatalf("language adapter %s collides with a projected XNA type", key.Name)
+		}
+	}
+	const frameworkPackage = modulePath + "/Microsoft/Xna/Framework"
+	for _, name := range []string{"EventArgs", "EventHandler", "EventSource", "EventSubscription"} {
+		if !isAdapterType(symbolKey{Package: frameworkPackage, Name: name}, &actualType{}) {
+			t.Fatalf("%s is not admitted as a framework-package adapter type", name)
+		}
+		if isAdapterType(symbolKey{Package: frameworkPackage + "/Graphics", Name: name}, &actualType{}) {
+			t.Fatalf("%s was admitted outside the framework package", name)
+		}
+	}
+}
+
+// TestBCLBaseRelationshipsAreExhaustive proves the base table covers every
+// non-XNA CLR base in the pinned profile. That exhaustiveness is what makes the
+// relationship measured rather than silently dropped: a base nobody has decided
+// about cannot exist without failing here.
+func TestBCLBaseRelationshipsAreExhaustive(t *testing.T) {
+	reference := loadPinnedContract(t)
+	seen := make(map[string]int)
+	for _, declared := range reference.Types {
+		base := valueOrEmpty(declared.BaseType)
+		if base == "" || strings.HasPrefix(base, "Microsoft.Xna.Framework") {
+			continue
+		}
+		identity := baseIdentityWithoutArguments(base)
+		seen[identity]++
+		if _, ok := bclBaseRelationships[identity]; !ok {
+			t.Fatalf("%s derives from undeclared BCL base %q", declared.Name, identity)
+		}
+	}
+	for identity := range bclBaseRelationships {
+		if seen[identity] == 0 {
+			t.Fatalf("declared BCL base %q has no derived type in the profile", identity)
+		}
+	}
+	// The three universal CLR roots plus the nine special bases the profile
+	// actually uses.
+	if len(bclBaseRelationships) != 12 {
+		t.Fatalf("declared BCL base relationships = %d, want 12", len(bclBaseRelationships))
+	}
+	if bclBaseRelationships["System.EventArgs"].Status != "MAPPED" ||
+		bclBaseRelationships["System.EventArgs"].Adapter != "EventArgs" {
+		t.Fatalf("System.EventArgs = %+v", bclBaseRelationships["System.EventArgs"])
+	}
+	for _, deferred := range []string{"System.Exception", "System.Attribute", "System.Runtime.InteropServices.ExternalException"} {
+		if bclBaseRelationships[deferred].Status != "DEFERRED" {
+			t.Fatalf("%s = %+v, want DEFERRED", deferred, bclBaseRelationships[deferred])
+		}
+	}
+}
+
+// baseProjectionFixture isolates one derived type and projects it correctly, so
+// a base defect can be injected with nothing else to account for it.
+func baseProjectionFixture(t *testing.T, identity string) (*expectedSurface, *actualSurface, *expectedType) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(identity)
+	if fullType == nil {
+		t.Fatalf("%s is not in the pinned contract", identity)
+	}
+	copiedType := *fullType
+	copiedType.Members = nil
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ExpectedGoTypes:    1,
+	}
+	actual := &actualSurface{
+		Types:       map[symbolKey]*actualType{copiedType.Key: {Key: copiedType.Key, Kind: "struct"}},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	return expected, actual, &copiedType
+}
+
+// TestBCLBaseProjectionDefectsAreRejected attacks the base decision in every
+// direction the rule forbids.
+func TestBCLBaseProjectionDefectsAreRejected(t *testing.T) {
+	// A MAPPED base: the derived type may be projected, but not by faking CLR
+	// inheritance and not as something other than a reference struct.
+	const mapped = "Microsoft.Xna.Framework.GameComponentCollectionEventArgs"
+	// A DEFERRED base: no derived type may be projected at all yet.
+	const deferred = "Microsoft.Xna.Framework.Graphics.DeviceLostException"
+
+	for _, defect := range []struct {
+		name     string
+		identity string
+		apply    func(expected *expectedSurface, actual *actualSurface, owner *expectedType)
+	}{
+		{"exported-embedding-fakes-inheritance", mapped, func(e *expectedSurface, a *actualSurface, owner *expectedType) {
+			a.Types[owner.Key].ExportedEmbeddings = []string{"EventArgs"}
+		}},
+		{"framework-adapter-embedded-by-qualified-name", mapped, func(e *expectedSurface, a *actualSurface, owner *expectedType) {
+			a.Types[owner.Key].ExportedEmbeddings = []string{"framework.EventArgs"}
+		}},
+		{"derived-class-projected-as-an-interface", mapped, func(e *expectedSurface, a *actualSurface, owner *expectedType) {
+			a.Types[owner.Key].Kind = "interface"
+		}},
+		{"deferred-base-projected-anyway", deferred, func(e *expectedSurface, a *actualSurface, owner *expectedType) {
+			// The fixture already projects it; that alone is the defect.
+		}},
+		{"undeclared-bcl-base", mapped, func(e *expectedSurface, a *actualSurface, owner *expectedType) {
+			owner.BaseType = "System.Something.Undecided"
+		}},
+	} {
+		defect := defect
+		t.Run(defect.name, func(t *testing.T) {
+			expected, actual, owner := baseProjectionFixture(t, defect.identity)
+			baseline := verify(expected, actual, 0, "report", "contract", "mapping")
+			if defect.name != "deferred-base-projected-anyway" && baseline.Summary["BASE_MAPPING_MISMATCH"] != 0 {
+				t.Fatalf("unmutated %s baseline already fails: %v", defect.identity, baseline.Diagnostics)
+			}
+			expected, actual, owner = baseProjectionFixture(t, defect.identity)
+			defect.apply(expected, actual, owner)
+			result := verify(expected, actual, 0, "report", "contract", "mapping")
+			if result.Summary["BASE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("defect %q did not raise BASE_MAPPING_MISMATCH; summary=%v", defect.name, result.Summary)
+			}
+		})
+	}
+}
+
+// TestBCLBaseRelationshipMeasurementIsReported proves the relationship table
+// reaches the report with a verdict per base rather than only when something
+// goes wrong.
+func TestBCLBaseRelationshipMeasurementIsReported(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := &actualSurface{
+		Types:       make(map[symbolKey]*actualType),
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	measurements := measureBCLBaseRelationships(expected, actual)
+	if len(measurements) != len(bclBaseRelationships) {
+		t.Fatalf("measured %d relationships, want %d", len(measurements), len(bclBaseRelationships))
+	}
+	derived := 0
+	for _, row := range measurements {
+		if row.Verdict != "PASS" {
+			t.Fatalf("%s verdict = %q with nothing projected", row.CLRBase, row.Verdict)
+		}
+		if row.AddsProjectedSurface {
+			t.Fatalf("%s claims to add projected surface; a CLR base contributes no Go member identity", row.CLRBase)
+		}
+		derived += row.DerivedTypes
+	}
+	// Every non-XNA-based type in the profile is accounted for by exactly one
+	// relationship row.
+	want := 0
+	for _, declared := range loadPinnedContract(t).Types {
+		base := valueOrEmpty(declared.BaseType)
+		if base != "" && !strings.HasPrefix(base, "Microsoft.Xna.Framework") {
+			want++
+		}
+	}
+	if derived != want {
+		t.Fatalf("relationship rows cover %d derived types, want %d", derived, want)
+	}
+}
+
+// eventProjectionMutationCase applies one named event defect. Mutation ids have
+// the form f22ev_<defect>__<identity>.
+func eventProjectionMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	parts := strings.SplitN(strings.TrimPrefix(mutation, "f22ev_"), "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed event mutation %q", mutation)
+	}
+	expected, actual, owner := isolateEventOwner(t, parts[1])
+	add, remove := eventAccessorKeys(t, expected, owner)
+	qualifier := ""
+	if owner.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
+		qualifier = "framework."
+	}
+	for _, defect := range eventProjectionDefects {
+		if defect.Name != parts[0] {
+			continue
+		}
+		defect.Apply(t, actual, add, remove, qualifier)
+		return expected, actual
+	}
+	t.Fatalf("unknown event defect %q", parts[0])
+	return nil, nil
+}
+
+// baseProjectionMutationCase applies one named BCL base defect. Mutation ids
+// have the form f22base_<defect>__<identity>.
+func baseProjectionMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	parts := strings.SplitN(strings.TrimPrefix(mutation, "f22base_"), "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed base mutation %q", mutation)
+	}
+	expected, actual, owner := baseProjectionFixture(t, parts[1])
+	switch parts[0] {
+	case "exported_embedding":
+		actual.Types[owner.Key].ExportedEmbeddings = []string{"EventArgs"}
+	case "qualified_embedding":
+		actual.Types[owner.Key].ExportedEmbeddings = []string{"framework.EventArgs"}
+	case "projected_as_interface":
+		actual.Types[owner.Key].Kind = "interface"
+	case "deferred_base_projected":
+		// Projecting the type at all is the defect.
+	case "undeclared_base":
+		owner.BaseType = "System.Something.Undecided"
+	default:
+		t.Fatalf("unknown base defect %q", parts[0])
+	}
+	return expected, actual
 }

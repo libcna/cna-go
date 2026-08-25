@@ -7793,9 +7793,132 @@
       "status": "PASS"
     }
   ],
+  "bclBaseRelationships": [
+    {
+      "clrBase": "System.Attribute",
+      "status": "DEFERRED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 5,
+      "projectedTypes": 0,
+      "exportedEmbeddings": 0,
+      "rationale": "Go has no attribute metadata; the content serializer attributes need a separate mapping",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Collections.Generic.Dictionary`2",
+      "status": "DEFERRED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 1,
+      "projectedTypes": 0,
+      "exportedEmbeddings": 0,
+      "rationale": "a BCL dictionary base whose projected surface is a separate mapping",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Collections.ObjectModel.Collection`1",
+      "status": "DEFERRED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 1,
+      "projectedTypes": 0,
+      "exportedEmbeddings": 0,
+      "rationale": "a mutable BCL collection base whose projected surface is a separate mapping",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+      "status": "DEFERRED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 4,
+      "projectedTypes": 0,
+      "exportedEmbeddings": 0,
+      "rationale": "a read-only BCL collection base whose projected surface is a separate mapping",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.ComponentModel.ExpandableObjectConverter",
+      "status": "DEFERRED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 1,
+      "projectedTypes": 0,
+      "exportedEmbeddings": 0,
+      "rationale": "part of the System.ComponentModel TypeConverter subsystem, which is a separate mapping",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Enum",
+      "status": "IMPLIED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 49,
+      "projectedTypes": 49,
+      "exportedEmbeddings": 0,
+      "rationale": "the CLR enum root; the named-int32 projection already carries it",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.EventArgs",
+      "adapter": "EventArgs",
+      "status": "MAPPED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 4,
+      "projectedTypes": 0,
+      "exportedEmbeddings": 0,
+      "rationale": "modelled by the framework EventArgs language adapter; a derived XNA class keeps CLR reference semantics and projects as its own pointer type with no exported embedding",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Exception",
+      "status": "DEFERRED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 5,
+      "projectedTypes": 0,
+      "exportedEmbeddings": 0,
+      "rationale": "CLR exception types as Go types is a separate public-API decision; CNA-Go reports failure through error results and has no exception hierarchy",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.IO.BinaryReader",
+      "status": "DEFERRED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 1,
+      "projectedTypes": 0,
+      "exportedEmbeddings": 0,
+      "rationale": "requires a stream-reader base whose seek and encoding behavior is a separate mapping",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Object",
+      "status": "IMPLIED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 75,
+      "projectedTypes": 14,
+      "exportedEmbeddings": 0,
+      "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Runtime.InteropServices.ExternalException",
+      "status": "DEFERRED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 3,
+      "projectedTypes": 0,
+      "exportedEmbeddings": 0,
+      "rationale": "derives from System.Exception and inherits the same open decision",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.ValueType",
+      "status": "IMPLIED",
+      "addsProjectedSurface": false,
+      "derivedTypes": 56,
+      "projectedTypes": 42,
+      "exportedEmbeddings": 0,
+      "rationale": "the CLR value root; the struct projection already carries value semantics",
+      "verdict": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "7ab61cf6619ab8c1a2b4a078c41b1cc758522652cd63c9c87265c3b5e1a883fd",
+    "mappingSha256": "ecdd8d19409293507d947564d9ba4c78ea3983343e1dac3dccac546ac8275430",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }
