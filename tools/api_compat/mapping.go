@@ -106,6 +106,17 @@ var pureManagedTypes = map[string]bool{
 	// copies the whole value struct. It stores a platform window handle but
 	// never creates, resets, presents, enumerates, or looks anything up.
 	"Microsoft.Xna.Framework.Graphics.PresentationParameters": true,
+
+	// Foundation 20. Microsoft.Xna.Framework.Input.Touch.dll IL
+	// (sha256 b0585224c18022c3661057ae79544644c10f33f1dc529678364f3d6b25151c25)
+	// shows TouchCollection as a fixed eight-slot inline value struct over
+	// TouchLocation with no array allocation and no device access, and its
+	// nested Enumerator as a two-field cursor over a copy of it. Both are
+	// System.ValueType rather than class, but the classification is what
+	// makes their per-operation fallibility expressible: several of their
+	// members throw from authoritative managed argument validation.
+	"Microsoft.Xna.Framework.Input.Touch.TouchCollection":            true,
+	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": true,
 }
 
 // classifiedInterfaces is the explicit, reusable policy boundary for
@@ -193,6 +204,30 @@ var managedFallibleMembers = map[string]map[string]bool{
 	"Microsoft.Xna.Framework.Graphics.IEffectFog": {
 		"property-get|FogColor": true,
 		"property-set|FogColor": true,
+	},
+	// TouchCollection is a read-only view: every IList<T> mutator is an
+	// unconditional `newobj NotSupportedException; throw`, and the indexer
+	// setter is one too. The indexer getter and the constructor validate
+	// their arguments, and CopyTo validates three things. Its remaining
+	// members -- IsConnected, Count, IsReadOnly, Contains, IndexOf, FindById,
+	// and GetEnumerator -- index only inside the measured range and cannot
+	// fail.
+	"Microsoft.Xna.Framework.Input.Touch.TouchCollection": {
+		"constructor|.ctor": true,
+		"property-get|Item": true,
+		"property-set|Item": true,
+		"method|Add":        true,
+		"method|Clear":      true,
+		"method|Insert":     true,
+		"method|Remove":     true,
+		"method|RemoveAt":   true,
+		"method|CopyTo":     true,
+	},
+	// Enumerator::get_Current forwards to TouchCollection::get_Item, so it
+	// throws before the first MoveNext and after the cursor is exhausted.
+	// MoveNext is pure arithmetic and Dispose is a bare `ret`.
+	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": {
+		"property-get|Current": true,
 	},
 }
 

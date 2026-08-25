@@ -195,9 +195,10 @@ type report struct {
 	Foundation15EnumClosures     []enumClosure                 `json:"foundation15EnumClosures"`
 	Foundation15ValueStructs     []valueStructClosure          `json:"foundation15ValueStructClosures"`
 	Foundation16ValueStructs     []valueStructClosure          `json:"foundation16ValueStructClosures"`
-	Foundation17ManagedClasses   []managedClassClosure         `json:"foundation17ManagedClassClosures"`
+	Foundation17ManagedClasses   []managedTypeClosure          `json:"foundation17ManagedClassClosures"`
 	Foundation18Interfaces       []managedInterfaceClosure     `json:"foundation18InterfaceClosures"`
-	Foundation19ManagedClasses   []managedClassClosure         `json:"foundation19ManagedClassClosures"`
+	Foundation19ManagedClasses   []managedTypeClosure          `json:"foundation19ManagedClassClosures"`
+	Foundation20ValueContracts   []managedTypeClosure          `json:"foundation20ValueContractClosures"`
 	Metadata                     reportMetadata                `json:"metadata"`
 }
 
@@ -288,7 +289,7 @@ type managedInterfaceMember struct {
 	Status           string   `json:"status"`
 }
 
-// managedClassClosure measures one pure-managed CLR class: a type whose CLR
+// managedTypeClosure measures one pure-managed CLR class: a type whose CLR
 // kind is `class`, so it keeps reference semantics and projects as a Go
 // pointer facade, but whose authoritative IL proves the selected public
 // behavior is entirely managed. Beyond the identity arithmetic it records the
@@ -300,34 +301,36 @@ type managedInterfaceMember struct {
 //   - per-operation fallibility: an error result belongs to a single projected
 //     operation, so one property's setter may carry an error while its own
 //     getter does not.
-type managedClassClosure struct {
-	XNA                  string               `json:"xna"`
-	GoName               string               `json:"goName"`
-	PackagePath          string               `json:"packagePath"`
-	SourceTypes          int                  `json:"sourceTypes"`
-	SourceIdentities     int                  `json:"sourceIdentities"`
-	ExpectedGoIdentities int                  `json:"expectedGoIdentities"`
-	TargetTypes          int                  `json:"targetTypes"`
-	TargetGoIdentities   int                  `json:"targetGoIdentities"`
-	LocalDiagnostics     int                  `json:"localDiagnostics"`
-	ExpectedKind         string               `json:"expectedKind"`
-	ActualKind           string               `json:"actualKind"`
-	BaseType             string               `json:"baseType"`
-	PureManaged          bool                 `json:"pureManaged"`
-	ReferenceProjection  string               `json:"referenceProjection"`
-	AccessorPairs        int                  `json:"accessorPairs"`
-	FallibleGetters      int                  `json:"fallibleGetters"`
-	FallibleSetters      int                  `json:"fallibleSetters"`
-	FallibleOperations   int                  `json:"fallibleOperations"`
-	ErrorResults         int                  `json:"errorResults"`
-	Members              []managedClassMember `json:"members"`
-	Status               string               `json:"status"`
+type managedTypeClosure struct {
+	XNA                  string              `json:"xna"`
+	SourceKind           string              `json:"sourceKind"`
+	ValueSemantics       bool                `json:"valueSemantics"`
+	GoName               string              `json:"goName"`
+	PackagePath          string              `json:"packagePath"`
+	SourceTypes          int                 `json:"sourceTypes"`
+	SourceIdentities     int                 `json:"sourceIdentities"`
+	ExpectedGoIdentities int                 `json:"expectedGoIdentities"`
+	TargetTypes          int                 `json:"targetTypes"`
+	TargetGoIdentities   int                 `json:"targetGoIdentities"`
+	LocalDiagnostics     int                 `json:"localDiagnostics"`
+	ExpectedKind         string              `json:"expectedKind"`
+	ActualKind           string              `json:"actualKind"`
+	BaseType             string              `json:"baseType"`
+	PureManaged          bool                `json:"pureManaged"`
+	ReferenceProjection  string              `json:"referenceProjection"`
+	AccessorPairs        int                 `json:"accessorPairs"`
+	FallibleGetters      int                 `json:"fallibleGetters"`
+	FallibleSetters      int                 `json:"fallibleSetters"`
+	FallibleOperations   int                 `json:"fallibleOperations"`
+	ErrorResults         int                 `json:"errorResults"`
+	Members              []managedTypeMember `json:"members"`
+	Status               string              `json:"status"`
 }
 
-// managedClassMember is one projected operation of a pure-managed CLR class.
+// managedTypeMember is one projected operation of a pure-managed CLR class.
 // A CLR property contributes two of these rows, one per accessor, each with
 // its own fallibility verdict.
-type managedClassMember struct {
+type managedTypeMember struct {
 	XNA              string   `json:"xna"`
 	SourceKind       string   `json:"sourceKind"`
 	Accessor         string   `json:"accessor,omitempty"`

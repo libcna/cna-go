@@ -962,6 +962,47 @@ Exact evidence is in `docs/foundation-19-intptr-presentation-parameters-evidence
 FOUNDATION_MILESTONE_19_COMPLETE=true
 ```
 
+## Foundation 20 read-only collection policy
+
+`TouchCollection` was previously grouped with the touch types blocked on device
+capability. The IL says otherwise: two public constructors, no `calli`, no
+P/Invoke, no device access, and eight private inline `TouchLocation` fields
+rather than an array. Completing it claims no touch capability; CNA-Go still
+has no `TouchPanel` and reads no device.
+
+It is the first cluster that is simultaneously a CLR value type and fallible,
+which only Foundation 17's per-operation fallibility makes expressible.
+Admitting a CLR struct to the pure-managed classification changes its
+fallibility and nothing else: it stays a copied Go value, and the closure
+asserts the constructor projects `TouchCollection` rather than a pointer.
+
+Two mapping rules are settled. `System.Collections.Generic.IList<T>` projects
+like `ICollection<T>` — a concrete Go method set, no fabricated BCL package —
+because the indexer and index methods it adds are already declared public
+members of the XNA collection. And a collection that declares its own public
+enumerator type projects that type from `GetEnumerator`; the `Iterator<T>`
+adapter is for collections that declare none.
+
+A read-only collection keeps its mutators. Every `IList<T>` mutator here is an
+unconditional `NotSupportedException` that validates nothing first, and those
+throws project as errors rather than being dropped.
+
+## Foundation 20 qualification evidence
+
+- [x] Re-derive the whole closure from the hash-verified retained assembly, including the private eight-slot storage and the post-increment slot selection.
+- [x] Preserve the guard order, the `> 8` capacity boundary, and `CopyTo`'s 64-bit overflow arithmetic.
+- [x] Preserve the search asymmetry: `IndexOf` uses the equality operator, so a location `Equals` accepts is missed.
+- [x] Preserve the cursor's -1 start, its clamp on exhaustion, and the errors at both ends.
+- [x] Generalize the managed closure across both CLR kinds and derive the expected constructor projection from pinned metadata.
+- [x] Add `dropped_error` and shape predicates: 61 applied and 9 accounted-for skipped cases across five types; mutation inventory 314 to 336.
+- [x] Grow the behavior corpus from 548 to 558 with zero failures.
+
+Exact evidence is in `docs/foundation-20-touch-collection-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_20_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 105,
+    "COMPLETE_TYPES": 107,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 147,
-    "MISSING_TYPES": 147,
+    "MISSING_TYPE": 145,
+    "MISSING_TYPES": 145,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1680,
-    "TARGET_TYPES": 110,
-    "TOTAL_DIAGNOSTICS": 324,
+    "TARGET_MEMBERS": 1699,
+    "TARGET_TYPES": 112,
+    "TOTAL_DIAGNOSTICS": 322,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1804,18 +1804,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:TouchCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:TouchCollectionEnumerator",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.Touch.TouchPanel",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:TouchPanel",
       "message": "mapped Go type is absent"
@@ -2078,6 +2066,8 @@
     "Microsoft.Xna.Framework.Input.MouseState",
     "Microsoft.Xna.Framework.Input.Touch.GestureSample",
     "Microsoft.Xna.Framework.Input.Touch.GestureType",
+    "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
     "Microsoft.Xna.Framework.Input.Touch.TouchLocation",
     "Microsoft.Xna.Framework.Input.Touch.TouchLocationState",
     "Microsoft.Xna.Framework.MathHelper",
@@ -2422,8 +2412,6 @@
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadCapabilities",
     "Microsoft.Xna.Framework.Input.Mouse",
-    "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-    "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
     "Microsoft.Xna.Framework.Input.Touch.TouchPanel",
     "Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities",
     "Microsoft.Xna.Framework.LaunchParameters",
@@ -6278,6 +6266,8 @@
   "foundation17ManagedClassClosures": [
     {
       "xna": "Microsoft.Xna.Framework.Audio.AudioListener",
+      "sourceKind": "class",
+      "valueSemantics": false,
       "goName": "AudioListener",
       "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio",
       "sourceTypes": 1,
@@ -6437,6 +6427,8 @@
     },
     {
       "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter",
+      "sourceKind": "class",
+      "valueSemantics": false,
       "goName": "AudioEmitter",
       "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio",
       "sourceTypes": 1,
@@ -6972,6 +6964,8 @@
   "foundation19ManagedClassClosures": [
     {
       "xna": "Microsoft.Xna.Framework.Graphics.PresentationParameters",
+      "sourceKind": "class",
+      "valueSemantics": false,
       "goName": "PresentationParameters",
       "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
       "sourceTypes": 1,
@@ -7343,9 +7337,378 @@
       "status": "PASS"
     }
   ],
+  "foundation20ValueContractClosures": [
+    {
+      "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+      "sourceKind": "struct",
+      "valueSemantics": true,
+      "goName": "TouchCollection",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch",
+      "sourceTypes": 1,
+      "sourceIdentities": 15,
+      "expectedGoIdentities": 16,
+      "targetTypes": 1,
+      "targetGoIdentities": 16,
+      "localDiagnostics": 0,
+      "expectedKind": "struct",
+      "actualKind": "struct",
+      "baseType": "System.ValueType",
+      "pureManaged": true,
+      "referenceProjection": "TouchCollection",
+      "accessorPairs": 1,
+      "fallibleGetters": 1,
+      "fallibleSetters": 1,
+      "fallibleOperations": 7,
+      "errorResults": 9,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::.ctor(Microsoft.Xna.Framework.Input.Touch.TouchLocation[])",
+          "sourceKind": "constructor",
+          "goKind": "func",
+          "name": "NewTouchCollection",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "TouchCollection",
+            "error"
+          ],
+          "actualResults": [
+            "TouchCollection",
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::FindById(System.Int32,out Microsoft.Xna.Framework.Input.Touch.TouchLocation\u0026)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "FindById",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "bool",
+            "TouchLocation"
+          ],
+          "actualResults": [
+            "bool",
+            "TouchLocation"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::IndexOf(Microsoft.Xna.Framework.Input.Touch.TouchLocation)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "IndexOf",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "int32"
+          ],
+          "actualResults": [
+            "int32"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::Insert(System.Int32,Microsoft.Xna.Framework.Input.Touch.TouchLocation)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "Insert",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::RemoveAt(System.Int32)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "RemoveAt",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::Add(Microsoft.Xna.Framework.Input.Touch.TouchLocation)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "Add",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::Clear()",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "Clear",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::Contains(Microsoft.Xna.Framework.Input.Touch.TouchLocation)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "Contains",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::CopyTo(Microsoft.Xna.Framework.Input.Touch.TouchLocation[],System.Int32)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "CopyTo",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::Remove(Microsoft.Xna.Framework.Input.Touch.TouchLocation)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "Remove",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "bool",
+            "error"
+          ],
+          "actualResults": [
+            "bool",
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::GetEnumerator()",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "GetEnumerator",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "TouchCollectionEnumerator"
+          ],
+          "actualResults": [
+            "TouchCollectionEnumerator"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::IsConnected()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "IsConnected",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::Item(System.Int32)",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "Item",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "TouchLocation",
+            "error"
+          ],
+          "actualResults": [
+            "TouchLocation",
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::Item(System.Int32)",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "SetItem",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::Count()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "Count",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "int32"
+          ],
+          "actualResults": [
+            "int32"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection::IsReadOnly()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "TouchCollection",
+          "name": "IsReadOnly",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+      "sourceKind": "struct",
+      "valueSemantics": true,
+      "goName": "TouchCollectionEnumerator",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch",
+      "sourceTypes": 1,
+      "sourceIdentities": 3,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "struct",
+      "actualKind": "struct",
+      "baseType": "System.ValueType",
+      "pureManaged": true,
+      "referenceProjection": "",
+      "accessorPairs": 0,
+      "fallibleGetters": 1,
+      "fallibleSetters": 0,
+      "fallibleOperations": 0,
+      "errorResults": 1,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator::MoveNext()",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollectionEnumerator",
+          "name": "MoveNext",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator::Dispose()",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "TouchCollectionEnumerator",
+          "name": "Dispose",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator::Current()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "TouchCollectionEnumerator",
+          "name": "Current",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "TouchLocation",
+            "error"
+          ],
+          "actualResults": [
+            "TouchLocation",
+            "error"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "80201e1afdce0b2d06dfecee82cc826c80d7e8814a963a7aacb36ae48476d8ee",
+    "mappingSha256": "137c228f41acf33881d38291bd7e93eb5c54a0ce1edf01b584c9ba02fb994afc",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

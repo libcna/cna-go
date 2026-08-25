@@ -1546,6 +1546,99 @@ func runCorpus() corpusReport {
 	check("presentation-parameters.reference-semantics", "PRESENTATION_PARAMETERS", "1080",
 		fmt.Sprintf("%d", aliased.BackBufferHeight()))
 
+	// --- Foundation 20: read-only touch collection --------------------------
+	//
+	// Read from Microsoft.Xna.Framework.Input.Touch.dll IL
+	// (sha256 b0585224c18022c3661057ae79544644c10f33f1dc529678364f3d6b25151c25).
+	// TouchCollection is a System.ValueType with eight inline TouchLocation
+	// slots. Building one claims no touch capability: CNA-Go has no TouchPanel
+	// and the caller supplies every location.
+	touchSample := func(id int32, x, y float32) touch.TouchLocation {
+		return touch.NewTouchLocationByInt32AndTouchLocationStateAndVector2(
+			id, touch.TouchLocationStateMoved, framework.Vector2{X: x, Y: y})
+	}
+	touchSamples := []touch.TouchLocation{touchSample(1, 10, 20), touchSample(2, 30, 40)}
+	touches, touchesError := touch.NewTouchCollection(touchSamples)
+	check("touch-collection.constructor", "TOUCH_COLLECTION", "true,2,true,true",
+		fmt.Sprintf("%t,%d,%t,%t", touchesError == nil, touches.Count(), touches.IsConnected(), touches.IsReadOnly()))
+
+	// The constructor validates nil first and the eight-slot capacity second;
+	// exactly eight is accepted because the reference tests `> 8`.
+	_, nilError := touch.NewTouchCollection(nil)
+	_, nineError := touch.NewTouchCollection(make([]touch.TouchLocation, 9))
+	eight, eightError := touch.NewTouchCollection(make([]touch.TouchLocation, 8))
+	check("touch-collection.constructor-guards", "TOUCH_COLLECTION", "true,true,true,8",
+		fmt.Sprintf("%t,%t,%t,%d", nilError != nil, nineError != nil, eightError == nil, eight.Count()))
+
+	// The indexer getter validates; every IList<T> mutator throws
+	// unconditionally, without looking at its argument at all.
+	_, lowIndexError := touches.Item(-1)
+	_, highIndexError := touches.Item(2)
+	touchFirst, touchFirstError := touches.Item(0)
+	check("touch-collection.indexer", "TOUCH_COLLECTION", "true,true,true,1",
+		fmt.Sprintf("%t,%t,%t,%d", lowIndexError != nil, highIndexError != nil, touchFirstError == nil, touchFirst.Id()))
+	touchMutable := touches
+	_, removeError := touchMutable.Remove(touchFirst)
+	check("touch-collection.mutators-are-unsupported", "TOUCH_COLLECTION", "true,true,true,true,true,true,2",
+		fmt.Sprintf("%t,%t,%t,%t,%t,%t,%d",
+			touchMutable.Add(touchFirst) != nil, touchMutable.Clear() != nil,
+			touchMutable.Insert(-99, touchFirst) != nil, touchMutable.RemoveAt(-99) != nil,
+			removeError != nil, touchMutable.SetItem(0, touchFirst) != nil, touchMutable.Count()))
+
+	// Search compares with the TouchLocation equality operator, which weighs
+	// both state fields, so a location that Equals would accept is missed.
+	sameIDDifferentState := touch.NewTouchLocationByInt32AndTouchLocationStateAndVector2(
+		1, touch.TouchLocationStateReleased, framework.Vector2{X: 10, Y: 20})
+	check("touch-collection.search-uses-operator-equality", "TOUCH_COLLECTION", "0,true,-1,false,true",
+		fmt.Sprintf("%d,%t,%d,%t,%t",
+			touches.IndexOf(touchFirst), touches.Contains(touchFirst),
+			touches.IndexOf(sameIDDifferentState), touches.Contains(sameIDDifferentState),
+			touchFirst.EqualsByTouchLocation(sameIDDifferentState)))
+
+	// FindById compares identifiers only and yields a zero location on a miss.
+	foundById, touchById := touches.FindById(2)
+	touchMissedById, touchMissed := touches.FindById(1234)
+	check("touch-collection.find-by-id", "TOUCH_COLLECTION", "true,2,false,0,0",
+		fmt.Sprintf("%t,%d,%t,%d,%d", foundById, touchById.Id(), touchMissedById, touchMissed.Id(), int32(touchMissed.State())))
+
+	// CopyTo validates a nil touchDestination, a negative start, and an
+	// insufficient touchDestination, the last in 64-bit arithmetic.
+	touchDestination := make([]touch.TouchLocation, 4)
+	check("touch-collection.copy-to-guards", "TOUCH_COLLECTION", "true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t",
+			touches.CopyTo(nil, 0) != nil, touches.CopyTo(touchDestination, -1) != nil,
+			touches.CopyTo(touchDestination, 3) != nil, touches.CopyTo(touchDestination, 1<<31-1) != nil))
+	touchCopyError := touches.CopyTo(touchDestination, 2)
+	check("touch-collection.copy-to", "TOUCH_COLLECTION", "true,0,0,1,2",
+		fmt.Sprintf("%t,%d,%d,%d,%d", touchCopyError == nil,
+			touchDestination[0].Id(), touchDestination[1].Id(), touchDestination[2].Id(), touchDestination[3].Id()))
+
+	// The touchCursor starts before the first element and clamps on exhaustion, so
+	// Current reports an error at both ends.
+	touchCursor := touches.GetEnumerator()
+	_, beforeStart := touchCursor.Current()
+	touchVisited := make([]string, 0, 2)
+	for touchCursor.MoveNext() {
+		location, err := touchCursor.Current()
+		touchVisited = append(touchVisited, fmt.Sprintf("%d/%t", location.Id(), err == nil))
+	}
+	afterEnd := touchCursor.MoveNext()
+	_, afterEndError := touchCursor.Current()
+	check("touch-collection.enumerator", "TOUCH_COLLECTION", "true,1/true,2/true,false,true",
+		fmt.Sprintf("%t,%s,%t,%t", beforeStart != nil, strings.Join(touchVisited, ","), afterEnd, afterEndError != nil))
+
+	// Value semantics: a copy is an equal touchSnapshot, and the touchCursor touchCaptured a
+	// copy rather than following the source variable.
+	touchSnapshot := touches
+	touchCapturedCursor := touches.GetEnumerator()
+	touches, _ = touch.NewTouchCollection([]touch.TouchLocation{touchSample(7, 7, 7), touchSample(8, 8, 8), touchSample(9, 9, 9)})
+	touchCaptured := 0
+	for touchCapturedCursor.MoveNext() {
+		touchCaptured++
+	}
+	check("touch-collection.value-semantics", "TOUCH_COLLECTION", "true,2,3,2",
+		fmt.Sprintf("%t,%d,%d,%d", touchSnapshot == touchMutable, touchSnapshot.Count(), touches.Count(), touchCaptured))
+
 	return report
 }
 

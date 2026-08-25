@@ -289,8 +289,18 @@ quirk, and why XNA 4.0 has no `Clear` here. `PresentationParameters` is a
 descriptor, not a device: it stores a platform window handle and creates,
 resets, enumerates, and presents nothing.
 
-The `Media` and `Input/Touch` packages contain enum metadata only and carry no
-media or touch runtime capability claim. The `Audio` package adds two pure
+See [Foundation 20 touch collection evidence](docs/foundation-20-touch-collection-evidence.md)
+for why `TouchCollection` was reachable after all, the first cluster that is at
+once a CLR value type and fallible, the unconditional `NotSupportedException`
+write side, `CopyTo`'s 64-bit overflow arithmetic, the operator-versus-`Equals`
+search asymmetry, and the cursor's behavior at both ends. Completing it claims
+no touch capability: CNA-Go has no `TouchPanel` and reads no device.
+
+The `Media` package contains enum metadata only and carries no media runtime
+capability claim. The `Input/Touch` package adds `TouchLocation`,
+`GestureSample`, and the read-only `TouchCollection` alongside its enums, and
+still carries no touch runtime capability claim: nothing there polls a panel,
+reads a device, or recognizes a gesture. The `Audio` package adds two pure
 managed positional descriptors alongside its enums and still carries no audio
 runtime capability claim: nothing there opens a device, creates XACT state, or
 plays a sound.

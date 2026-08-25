@@ -190,6 +190,12 @@ one instance observe the same mutations. It never becomes a copied Go value.
 `Audio.AudioListener` and `Audio.AudioEmitter` are the first classes admitted
 on this general rule rather than because they are value types.
 
+The classification spans both CLR kinds. Admitting a CLR *struct* changes only
+its fallibility, never its value semantics: `TouchCollection` is admitted so
+that its measured argument validation and its unconditional
+`NotSupportedException` mutators can be projected honestly, and it remains a
+copied Go value struct.
+
 ## System.IntPtr and the raw-handle rule
 
 `System.IntPtr` projects to Go `uintptr`. That is a **language projection of an
@@ -294,6 +300,26 @@ type IPackedVectorOfTPacked[TPacked any] interface {
 
 This is an explicit reusable classification; it does not remove error results
 from unrelated interfaces.
+
+## Collections and enumerators
+
+`System.Collections.Generic.IList<T>` projects the same way as `ICollection<T>`:
+a concrete Go method set on the XNA collection, with no fabricated BCL package.
+It needs nothing extra, because the indexer and index methods it adds are
+already declared public members of the XNA collection and map as ordinary
+members.
+
+A collection that declares its own public enumerator type projects that type
+from `GetEnumerator`. The `Iterator<T>` adapter is for collections that declare
+none. `CurveKeyCollection` uses the adapter; `TouchCollection` declares
+`TouchCollection.Enumerator` and so projects
+`GetEnumerator() TouchCollectionEnumerator`.
+
+A read-only collection keeps its mutators. `TouchCollection` declares the whole
+`IList<T>` surface, and the reference implements every mutator as an
+unconditional `NotSupportedException`. Those throws project as errors rather
+than being dropped: a caller that mutates a read-only view has a real bug, and
+silently accepting the call would hide it.
 
 ## Mutable struct interface projection
 

@@ -258,6 +258,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation17ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation17ManagedClasses)
 	result.Foundation18Interfaces = measureManagedInterfaceClosures(expected, actual, typeDiagnostics, foundation18Interfaces)
 	result.Foundation19ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation19ManagedClasses)
+	result.Foundation20ValueContracts = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation20ValueContracts)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -2024,33 +2025,41 @@ var foundation19ManagedClasses = []string{
 // allManagedClasses is every pinned pure-managed CLR class measured by the
 // shared table-driven closure category, across milestones.
 func allManagedClasses() []string {
-	all := make([]string, 0, len(foundation17ManagedClasses)+len(foundation19ManagedClasses))
+	all := make([]string, 0, len(foundation17ManagedClasses)+len(foundation19ManagedClasses)+len(foundation20ValueContracts))
 	all = append(all, foundation17ManagedClasses...)
 	all = append(all, foundation19ManagedClasses...)
+	all = append(all, foundation20ValueContracts...)
 	return all
 }
 
-func measureManagedClassClosures(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, batch []string) []managedClassClosure {
-	measurements := make([]managedClassClosure, 0, len(batch))
+func measureManagedClassClosures(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, batch []string) []managedTypeClosure {
+	measurements := make([]managedTypeClosure, 0, len(batch))
 	for _, identity := range batch {
 		measurements = append(measurements, measureManagedClassClosure(expected, actual, typeDiagnostics, identity))
 	}
 	return measurements
 }
 
-func measureManagedClassClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, identity string) managedClassClosure {
-	measurement := managedClassClosure{
-		XNA:          identity,
-		SourceTypes:  1,
-		ExpectedKind: "class",
-		ActualKind:   "missing",
-		PureManaged:  pureManagedTypes[identity],
-		Status:       "FAIL",
+func measureManagedClassClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, identity string) managedTypeClosure {
+	measurement := managedTypeClosure{
+		XNA:         identity,
+		SourceTypes: 1,
+		ActualKind:  "missing",
+		PureManaged: pureManagedTypes[identity],
+		Status:      "FAIL",
 	}
 	owner := expected.typeForXNA(identity)
 	if owner == nil {
 		return measurement
 	}
+	// The category spans both CLR kinds. A class keeps reference semantics and
+	// projects a pointer constructor; a struct keeps value semantics and
+	// projects a value constructor. Getting that backwards is the defect the
+	// ReferenceProjection check exists to catch, so the expected shape is
+	// derived from the pinned metadata rather than assumed.
+	measurement.SourceKind = owner.Kind
+	measurement.ExpectedKind = owner.Kind
+	measurement.ValueSemantics = owner.Kind == "struct"
 	measurement.GoName = owner.GoName
 	measurement.PackagePath = owner.PackagePath
 	measurement.SourceIdentities = owner.SourceMembers
@@ -2067,7 +2076,7 @@ func measureManagedClassClosure(expected *expectedSurface, actual *actualSurface
 	setters := make(map[string]bool)
 	for _, key := range owner.Members {
 		em := expected.Members[key]
-		row := managedClassMember{
+		row := managedTypeMember{
 			XNA:              em.XNA,
 			SourceKind:       em.SourceKind,
 			Accessor:         em.Accessor,
@@ -2119,8 +2128,15 @@ func measureManagedClassClosure(expected *expectedSurface, actual *actualSurface
 	}
 
 	// A CLR class keeps reference semantics whether or not it is pure managed,
-	// so its constructor must produce a Go pointer. A value result here would
-	// silently turn shared mutation into copy-on-assign.
+	// so its constructor must produce a Go pointer; a CLR struct keeps value
+	// semantics and must not. Either way, projecting the wrong one silently
+	// changes whether two variables share mutations.
+	wantedProjection := owner.GoName
+	wantedBase := "System.ValueType"
+	if owner.Kind == "class" {
+		wantedProjection = "*" + owner.GoName
+		wantedBase = "System.Object"
+	}
 	for _, key := range owner.Members {
 		em := expected.Members[key]
 		if em.SourceKind != "constructor" || len(em.Results) == 0 {
@@ -2129,15 +2145,31 @@ func measureManagedClassClosure(expected *expectedSurface, actual *actualSurface
 		measurement.ReferenceProjection = em.Results[0]
 		break
 	}
+	projectionPass := measurement.ReferenceProjection == wantedProjection
+	if measurement.ReferenceProjection == "" {
+		// A type with no public constructor cannot state its semantics
+		// through one; the type-kind check carries the whole claim there.
+		projectionPass = true
+	}
 
 	if measurement.TargetTypes == 1 && measurement.ActualKind == "struct" &&
-		measurement.PureManaged && measurement.BaseType == "System.Object" &&
+		measurement.PureManaged && measurement.BaseType == wantedBase &&
 		measurement.LocalDiagnostics == 0 &&
 		measurement.TargetGoIdentities == measurement.ExpectedGoIdentities &&
-		measurement.ReferenceProjection == "*"+owner.GoName && membersPass {
+		projectionPass && membersPass {
 		measurement.Status = "PASS"
 	}
 	return measurement
+}
+
+// foundation20ValueContracts is the Foundation-20 closure. It is the first
+// cluster that is simultaneously a CLR value type and fallible: TouchCollection
+// is a System.ValueType, so it keeps copy semantics, yet nine of its sixteen
+// projected operations carry an error because the reference validates or
+// unconditionally throws.
+var foundation20ValueContracts = []string{
+	"Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
 }
 
 // foundation18Interface pins one projected CLR interface contract together

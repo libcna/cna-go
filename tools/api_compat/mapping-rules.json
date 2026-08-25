@@ -145,8 +145,11 @@
       "Microsoft.Xna.Framework.CurveKeyCollection",
       "Microsoft.Xna.Framework.Audio.AudioListener",
       "Microsoft.Xna.Framework.Audio.AudioEmitter",
-      "Microsoft.Xna.Framework.Graphics.PresentationParameters"
-    ]
+      "Microsoft.Xna.Framework.Graphics.PresentationParameters",
+      "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+      "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator"
+    ],
+    "appliesToBothCLRKinds": "a-CLR-struct-may-also-be-admitted; admission-decides-fallibility-only-and-never-changes-value-or-reference-semantics"
   },
   "pointerSizedHandles": {
     "projection": "System.IntPtr -> uintptr",
@@ -185,13 +188,15 @@
   },
   "collectionInterfaces": {
     "System.Collections.Generic.ICollection<T>": "concrete-go-method-set-on-the-xna-collection-no-fake-bcl-package",
+    "System.Collections.Generic.IList<T>": "concrete-go-method-set-on-the-xna-collection-no-fake-bcl-package; its indexer and index methods are already declared public members of the XNA collection and map as ordinary members",
     "System.Collections.Generic.IEnumerable<T>": "GetEnumerator-returning-Iterator<T>",
     "System.Collections.IEnumerable": "satisfied-by-the-same-generic-GetEnumerator-projection",
     "System.Collections.Generic.IEnumerator<T>": "Iterator<T>",
     "iteratorMethod": "Next()-(T,bool,error)",
     "enumerationOrder": "source-order",
     "mutationPolicy": "versioned-fail-fast-error-on-next",
-    "sliceExposure": "forbidden"
+    "sliceExposure": "forbidden",
+    "concreteEnumeratorRule": "a-collection-that-declares-its-own-public-enumerator-type-projects-that-type-from-GetEnumerator; the Iterator<T> adapter is for collections that declare none"
   },
   "bcl": {
     "System.Boolean": "bool",
