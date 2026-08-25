@@ -3,15 +3,21 @@
 ## Current state
 
 Foundation Milestones 1 through 29 are complete. Milestones 26 through 29 were
-produced in one session as **five local commits that have not been pushed**;
-`develop` is 5 ahead of `origin/develop`.
+produced in one session as **local commits that have not been pushed**;
+`develop` is ahead of `origin/develop` by the five milestone commits below plus
+the docs commits that record them.
 
 ```text
 START   HEAD = origin/develop = ec7d14cdcb92be21b2ffd7da16b2bc2d23474c7b
-FINAL   HEAD = 8e87678
+LAST SOURCE-BEARING COMMIT  = 8e87678
         origin/develop unchanged at ec7d14c
         worktree clean, git diff --check clean
+        PUSHED = false
 ```
+
+Every artifact hash below is taken at `8e87678`, the last source-bearing
+commit; the docs commits that follow it change the artifact hash and nothing
+else, so re-run the command in this file to get the current one.
 
 | #  | commit    | milestone                                            | types | Go identities |
 | -- | --------- | ---------------------------------------------------- | ----- | ------------- |
