@@ -124,6 +124,27 @@
       "System.IServiceProvider"
     ]
   },
+  "bclInterfaceRelationships": {
+    "rule": "a non-XNA CLR interface an XNA type declares contributes NO projected Go surface of its own",
+    "satisfiedBy": [
+      "the XNA type already declares the interface's members publicly, so the concrete method set is the whole projection",
+      "the XNA type implements the interface explicitly, so the CLR member is private .override and is not public surface at all"
+    ],
+    "exhaustive": "every non-XNA direct interface in the profile is declared here; an undeclared one is INTERFACE_MAPPING_MISMATCH",
+    "projectedMembers": 0,
+    "declared": {
+      "System.IDisposable": "adds no Disposable interface, no Close alias, no io.Closer adaptation, no finalizer, and no ownership wrapper; 28 of its 29 declaring types declare Dispose publicly and it maps as an ordinary member, while GraphicsDeviceManager implements it explicitly so nothing is projected for it",
+      "System.IEquatable`1": "the declaring type already declares the strongly typed Equals publicly",
+      "System.IComparable`1": "CurveKey already declares CompareTo publicly",
+      "System.IServiceProvider": "GameServiceContainer already declares GetService publicly",
+      "System.Collections.Generic.IEnumerable`1": "projected by the collection rule as GetEnumerator",
+      "System.Collections.Generic.IEnumerator`1": "projected by the collection rule as Iterator<T> or the collection's own enumerator",
+      "System.Collections.Generic.ICollection`1": "a concrete Go method set on the XNA collection",
+      "System.Collections.Generic.IList`1": "its indexer and index methods are already public members of the XNA collection"
+    },
+    "disposeMembersRemainPerType": "a Dispose() or Dispose(bool) the XNA type declares itself stays an ordinary XNA member under the existing overload and per-operation fallibility rules; none is ever synthesized from CLR ancestry",
+    "ownershipIsNotSettled": "mapping the interface makes a dependency syntactically complete; it does not decide native ownership or lifetime for any concrete type"
+  },
   "pureManagedClasses": {
     "classification": "explicit-type-identity-policy-proved-by-authoritative-XNA-IL-not-CLR-kind-fallback",
     "admission": "selected-public-behavior-is-backed-entirely-by-managed-fields-and-deterministic-managed-code",

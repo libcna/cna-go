@@ -219,6 +219,101 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 	},
 }
 
+// bclInterfaceRelationship is how one non-XNA CLR interface a projected XNA
+// type declares is accounted for.
+//
+// The general rule every entry shares is that the interface itself contributes
+// **no projected Go surface**. That is not an assumption: in the pinned profile
+// each of these interfaces is satisfied one of two ways, and neither produces a
+// new Go identity.
+//
+//   - The XNA type already declares the interface's members publicly, so the
+//     concrete method set is the whole projection. IEquatable<T>'s Equals(T),
+//     IComparable<T>'s CompareTo(T), IServiceProvider's GetService(Type), and
+//     the collection interfaces all work this way.
+//   - The type implements the interface explicitly, so the CLR member is
+//     `private ... .override` and is not public surface at all. GraphicsDeviceManager
+//     does this for System.IDisposable: its Dispose() is
+//     `.method private hidebysig newslot virtual final instance void
+//     System.IDisposable.Dispose()` with `.override [mscorlib]System.IDisposable::Dispose`,
+//     so the public contract carries only Dispose(bool), and projecting a
+//     Dispose() for it would invent surface the reference does not expose.
+//
+// Declaring an interface here therefore does not make any type safe or
+// complete. It records that the BCL name is accounted for, so the dependency
+// frontier no longer treats it as unmapped, and so a new BCL interface cannot
+// arrive unnoticed.
+type bclInterfaceRelationship struct {
+	// Status is MAPPED_NO_SURFACE for every entry the profile currently needs.
+	Status string
+	// Members are the interface's CLR members, recorded so the no-surface claim
+	// names what it is claiming about.
+	Members []string
+	// Rationale is why the interface adds nothing.
+	Rationale string
+}
+
+// bclInterfaceRelationships declares every non-XNA interface any type in the
+// pinned profile lists as a direct interface. It is exhaustive by construction:
+// an undeclared one raises INTERFACE_MAPPING_MISMATCH.
+var bclInterfaceRelationships = map[string]bclInterfaceRelationship{
+	"System.IDisposable": {
+		Status:  "MAPPED_NO_SURFACE",
+		Members: []string{"Dispose"},
+		Rationale: "adds no Go surface of its own: no Disposable interface, no Close alias, no io.Closer adaptation, and no finalizer. " +
+			"Twenty-eight of the twenty-nine declaring types already declare Dispose publicly and it maps as an ordinary member; " +
+			"GraphicsDeviceManager implements it explicitly, so its Dispose() is not public surface and nothing is projected for it. " +
+			"Ownership and lifetime remain a per-type question that this relationship does not answer.",
+	},
+	"System.IEquatable`1": {
+		Status:    "MAPPED_NO_SURFACE",
+		Members:   []string{"Equals"},
+		Rationale: "every declaring XNA type already declares the strongly typed Equals publicly, so the concrete method set is the whole projection",
+	},
+	"System.IComparable`1": {
+		Status:    "MAPPED_NO_SURFACE",
+		Members:   []string{"CompareTo"},
+		Rationale: "CurveKey already declares CompareTo publicly",
+	},
+	"System.IServiceProvider": {
+		Status:    "MAPPED_NO_SURFACE",
+		Members:   []string{"GetService"},
+		Rationale: "GameServiceContainer already declares GetService publicly; settled in Foundation 21",
+	},
+	"System.Collections.Generic.IEnumerable`1": {
+		Status:    "MAPPED_NO_SURFACE",
+		Members:   []string{"GetEnumerator"},
+		Rationale: "projected by the declared collection rule as GetEnumerator, returning either the collection's own public enumerator type or the Iterator<T> adapter",
+	},
+	"System.Collections.Generic.IEnumerator`1": {
+		Status:    "MAPPED_NO_SURFACE",
+		Members:   []string{"Current", "MoveNext", "Reset", "Dispose"},
+		Rationale: "projected by the declared collection rule as the Iterator<T> adapter or the collection's own enumerator members",
+	},
+	"System.Collections.Generic.ICollection`1": {
+		Status:    "MAPPED_NO_SURFACE",
+		Members:   []string{"Count", "IsReadOnly", "Add", "Clear", "Contains", "CopyTo", "Remove"},
+		Rationale: "a concrete Go method set on the XNA collection, never a fake BCL package; settled in Foundation 20",
+	},
+	"System.Collections.Generic.IList`1": {
+		Status:    "MAPPED_NO_SURFACE",
+		Members:   []string{"Item", "IndexOf", "Insert", "RemoveAt"},
+		Rationale: "its indexer and index methods are already public members of the declaring XNA collection; settled in Foundation 20",
+	},
+}
+
+// inventedDisposalNames are Go identities a binding might synthesize from
+// System.IDisposable and that the no-surface rule forbids. None of them is an
+// XNA identity anywhere in the profile.
+var inventedDisposalNames = map[string]string{
+	"Close":        "Close alias invented from System.IDisposable",
+	"Closer":       "io.Closer adaptation invented from System.IDisposable",
+	"Disposable":   "Disposable interface invented from System.IDisposable",
+	"IDisposable":  "IDisposable interface invented from System.IDisposable",
+	"DisposeAll":   "ownership wrapper invented from System.IDisposable",
+	"SetFinalizer": "finalizer surface invented from System.IDisposable",
+}
+
 // baseIdentityWithoutArguments strips generic arguments so a constructed base
 // such as ReadOnlyCollection`1[ModelBone] is looked up by its open identity.
 func baseIdentityWithoutArguments(raw string) string {

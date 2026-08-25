@@ -435,5 +435,14 @@
   {"id":"f23-managed-class-resourcedestroyedeventargs-renamed-last-member","mutation":"f17mc_renamed_last_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs","category":"MISSING_MEMBER"},
   {"id":"f23-managed-class-resourcedestroyedeventargs-unexpected-member","mutation":"f17mc_unexpected_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs","category":"UNEXPECTED_MEMBER"},
   {"id":"f23-managed-class-resourcedestroyedeventargs-artificial-getter-error","mutation":"f17mc_artificial_getter_error__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs","category":"ERROR_MAPPING_MISMATCH"},
-  {"id":"f23-managed-class-resourcedestroyedeventargs-native-facade-projection","mutation":"f17mc_native_facade_projection__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs","category":"ERROR_MAPPING_MISMATCH"}
+  {"id":"f23-managed-class-resourcedestroyedeventargs-native-facade-projection","mutation":"f17mc_native_facade_projection__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs","category":"ERROR_MAPPING_MISMATCH"},
+  {"id":"f24-bcl-interface-soundeffect-invented-close-alias","mutation":"f24bcli_invented-close-alias__Microsoft.Xna.Framework.Audio.SoundEffect","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"f24-bcl-interface-soundeffect-invented-disposable-interface-embedding","mutation":"f24bcli_invented-disposable-interface-embedding__Microsoft.Xna.Framework.Audio.SoundEffect","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"f24-bcl-interface-soundeffect-invented-qualified-disposable-embedding","mutation":"f24bcli_invented-qualified-disposable-embedding__Microsoft.Xna.Framework.Audio.SoundEffect","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"f24-bcl-interface-soundeffect-invented-finalizer-surface","mutation":"f24bcli_invented-finalizer-surface__Microsoft.Xna.Framework.Audio.SoundEffect","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"f24-bcl-interface-soundeffect-invented-ownership-wrapper","mutation":"f24bcli_invented-ownership-wrapper__Microsoft.Xna.Framework.Audio.SoundEffect","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"f24-bcl-interface-soundeffect-undeclared-bcl-interface","mutation":"f24bcli_undeclared-bcl-interface__Microsoft.Xna.Framework.Audio.SoundEffect","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"f24-bcl-interface-soundeffect-declared-dispose-dropped","mutation":"f24bcli_declared-dispose-dropped__Microsoft.Xna.Framework.Audio.SoundEffect","category":"MISSING_MEMBER"},
+  {"id":"f24-bcl-interface-soundeffect-declared-dispose-fallibility-changed","mutation":"f24bcli_declared-dispose-fallibility-changed__Microsoft.Xna.Framework.Audio.SoundEffect","category":"ERROR_MAPPING_MISMATCH"},
+  {"id":"f24-bcl-interface-curve-synthetic-dispose","mutation":"f24bcli_synthetic_dispose__Microsoft.Xna.Framework.Curve","category":"INTERFACE_MAPPING_MISMATCH"}
 ]

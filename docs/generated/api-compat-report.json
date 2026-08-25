@@ -8312,9 +8312,91 @@
       "verdict": "PASS"
     }
   ],
+  "bclInterfaceRelationships": [
+    {
+      "clrInterface": "System.Collections.Generic.ICollection`1",
+      "status": "MAPPED_NO_SURFACE",
+      "clrMembers": 7,
+      "projectedMembers": 0,
+      "declaringTypes": 1,
+      "projectedTypes": 1,
+      "rationale": "a concrete Go method set on the XNA collection, never a fake BCL package; settled in Foundation 20",
+      "verdict": "PASS"
+    },
+    {
+      "clrInterface": "System.Collections.Generic.IEnumerable`1",
+      "status": "MAPPED_NO_SURFACE",
+      "clrMembers": 1,
+      "projectedMembers": 0,
+      "declaringTypes": 12,
+      "projectedTypes": 0,
+      "rationale": "projected by the declared collection rule as GetEnumerator, returning either the collection's own public enumerator type or the Iterator\u003cT\u003e adapter",
+      "verdict": "PASS"
+    },
+    {
+      "clrInterface": "System.Collections.Generic.IEnumerator`1",
+      "status": "MAPPED_NO_SURFACE",
+      "clrMembers": 4,
+      "projectedMembers": 0,
+      "declaringTypes": 5,
+      "projectedTypes": 1,
+      "rationale": "projected by the declared collection rule as the Iterator\u003cT\u003e adapter or the collection's own enumerator members",
+      "verdict": "PASS"
+    },
+    {
+      "clrInterface": "System.Collections.Generic.IList`1",
+      "status": "MAPPED_NO_SURFACE",
+      "clrMembers": 4,
+      "projectedMembers": 0,
+      "declaringTypes": 1,
+      "projectedTypes": 1,
+      "rationale": "its indexer and index methods are already public members of the declaring XNA collection; settled in Foundation 20",
+      "verdict": "PASS"
+    },
+    {
+      "clrInterface": "System.IComparable`1",
+      "status": "MAPPED_NO_SURFACE",
+      "clrMembers": 1,
+      "projectedMembers": 0,
+      "declaringTypes": 1,
+      "projectedTypes": 1,
+      "rationale": "CurveKey already declares CompareTo publicly",
+      "verdict": "PASS"
+    },
+    {
+      "clrInterface": "System.IDisposable",
+      "status": "MAPPED_NO_SURFACE",
+      "clrMembers": 1,
+      "projectedMembers": 0,
+      "declaringTypes": 29,
+      "projectedTypes": 3,
+      "rationale": "adds no Go surface of its own: no Disposable interface, no Close alias, no io.Closer adaptation, and no finalizer. Twenty-eight of the twenty-nine declaring types already declare Dispose publicly and it maps as an ordinary member; GraphicsDeviceManager implements it explicitly, so its Dispose() is not public surface and nothing is projected for it. Ownership and lifetime remain a per-type question that this relationship does not answer.",
+      "verdict": "PASS"
+    },
+    {
+      "clrInterface": "System.IEquatable`1",
+      "status": "MAPPED_NO_SURFACE",
+      "clrMembers": 1,
+      "projectedMembers": 0,
+      "declaringTypes": 40,
+      "projectedTypes": 32,
+      "rationale": "every declaring XNA type already declares the strongly typed Equals publicly, so the concrete method set is the whole projection",
+      "verdict": "PASS"
+    },
+    {
+      "clrInterface": "System.IServiceProvider",
+      "status": "MAPPED_NO_SURFACE",
+      "clrMembers": 1,
+      "projectedMembers": 0,
+      "declaringTypes": 1,
+      "projectedTypes": 1,
+      "rationale": "GameServiceContainer already declares GetService publicly; settled in Foundation 21",
+      "verdict": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "ecdd8d19409293507d947564d9ba4c78ea3983343e1dac3dccac546ac8275430",
+    "mappingSha256": "61aeba47c571762ca5c2d0b754b84c2b16feab762193061f4ed5192d8a50d788",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

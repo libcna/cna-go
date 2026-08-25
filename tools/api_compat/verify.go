@@ -170,6 +170,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 			typeDiagnostics[et.XNA]++
 		}
 		verifyBCLBaseProjection(&result, typeDiagnostics, et, at)
+		verifyBCLInterfaceRelationships(&result, expected, actual, typeDiagnostics, et)
 		if et.Kind == "interface" && at.Kind != "interface" {
 			addDiagnostic(&result, diagnostic{Category: "INTERFACE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(), Message: "XNA interface is not a Go interface"})
 			typeDiagnostics[et.XNA]++
@@ -272,6 +273,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation23Interfaces = measureManagedInterfaceClosures(expected, actual, typeDiagnostics, foundation23Interfaces)
 	result.Foundation23ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation23ManagedClasses)
 	result.BCLBaseRelationships = measureBCLBaseRelationships(expected, actual)
+	result.BCLInterfaceRelationships = measureBCLInterfaceRelationships(expected, actual)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -2657,4 +2659,119 @@ func verifyEventGroupLeaks(result *report, expected *expectedSurface, actual *ac
 			})
 		}
 	}
+}
+
+// verifyBCLInterfaceRelationships measures the non-XNA interfaces one XNA type
+// declares.
+//
+// The claim is that such an interface contributes no projected Go surface, so
+// the check is not "is it mapped" but "did anything appear because of it". It
+// enforces three things:
+//
+//   - every non-XNA direct interface is a declared relationship, so a new BCL
+//     interface cannot arrive unnoticed;
+//   - none of the invented disposal shapes exists on the projected type -- no
+//     Close alias, no Disposable interface, no io.Closer adaptation, no
+//     finalizer surface, no ownership wrapper;
+//   - no Dispose member exists on a type whose XNA contract declares none,
+//     which is the exact defect System.IDisposable would cause if it were
+//     treated as adding surface. GraphicsDeviceManager is the profile's real
+//     instance: it implements IDisposable explicitly, so its Dispose() is not
+//     public surface.
+//
+// A Dispose the XNA contract does declare is an ordinary member and is measured
+// by the ordinary member comparison, with its own fallibility, exactly like any
+// other method.
+func verifyBCLInterfaceRelationships(result *report, expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, et *expectedType) {
+	declaresDispose := false
+	for _, memberKey := range et.Members {
+		if strings.HasPrefix(memberKey.Name, "Dispose") {
+			declaresDispose = true
+			break
+		}
+	}
+	for _, raw := range et.Interfaces {
+		identity := baseIdentityWithoutArguments(raw)
+		if strings.HasPrefix(identity, "Microsoft.Xna.Framework") {
+			continue
+		}
+		if _, declared := bclInterfaceRelationships[identity]; !declared {
+			addDiagnostic(result, diagnostic{
+				Category: "INTERFACE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+				Message: fmt.Sprintf("CLR interface %q is not a declared BCL interface relationship", identity),
+			})
+			typeDiagnostics[et.XNA]++
+		}
+	}
+	target := actual.Types[et.Key]
+	if target == nil {
+		return
+	}
+	for _, embedded := range target.ExportedEmbeddings {
+		if reason, invented := inventedDisposalNames[strings.TrimPrefix(embedded, "framework.")]; invented {
+			addDiagnostic(result, diagnostic{
+				Category: "INTERFACE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+				Message: reason + " was embedded in the projected type",
+			})
+			typeDiagnostics[et.XNA]++
+		}
+	}
+	for key := range actual.Members {
+		if key.Package != et.Key.Package || key.Receiver != et.GoName {
+			continue
+		}
+		if _, mapped := expected.Members[key]; mapped {
+			continue
+		}
+		if reason, invented := inventedDisposalNames[key.Name]; invented {
+			addDiagnostic(result, diagnostic{
+				Category: "INTERFACE_MAPPING_MISMATCH", XNA: et.XNA, Go: key.String(), Message: reason,
+			})
+			typeDiagnostics[et.XNA]++
+			continue
+		}
+		if strings.HasPrefix(key.Name, "Dispose") && !declaresDispose {
+			addDiagnostic(result, diagnostic{
+				Category: "INTERFACE_MAPPING_MISMATCH", XNA: et.XNA, Go: key.String(),
+				Message: "Dispose was synthesized on a type whose XNA contract declares none; System.IDisposable adds no projected surface",
+			})
+			typeDiagnostics[et.XNA]++
+		}
+	}
+}
+
+// measureBCLInterfaceRelationships summarises the declared no-surface
+// interfaces across the whole profile, so the report carries the claim and its
+// arithmetic rather than only the failures.
+func measureBCLInterfaceRelationships(expected *expectedSurface, actual *actualSurface) []bclInterfaceProjection {
+	rows := make(map[string]*bclInterfaceProjection, len(bclInterfaceRelationships))
+	for identity, relationship := range bclInterfaceRelationships {
+		rows[identity] = &bclInterfaceProjection{
+			CLRInterface: identity, Status: relationship.Status,
+			CLRMembers: len(relationship.Members), ProjectedMembers: 0,
+			Rationale: relationship.Rationale, Verdict: "PASS",
+		}
+	}
+	for _, et := range sortedExpectedTypes(expected) {
+		for _, raw := range et.Interfaces {
+			identity := baseIdentityWithoutArguments(raw)
+			row := rows[identity]
+			if row == nil {
+				continue
+			}
+			row.DeclaringTypes++
+			if actual.Types[et.Key] != nil {
+				row.ProjectedTypes++
+			}
+		}
+	}
+	measurements := make([]bclInterfaceProjection, 0, len(rows))
+	for _, row := range rows {
+		if row.ProjectedMembers != 0 {
+			row.Verdict = "FAIL"
+		}
+		measurements = append(measurements, *row)
+	}
+	sort.Slice(measurements, func(i, j int) bool { return measurements[i].CLRInterface < measurements[j].CLRInterface })
+	return measurements
 }

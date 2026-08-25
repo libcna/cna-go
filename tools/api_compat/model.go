@@ -203,6 +203,7 @@ type report struct {
 	Foundation23Interfaces       []managedInterfaceClosure     `json:"foundation23InterfaceClosures"`
 	Foundation23ManagedClasses   []managedTypeClosure          `json:"foundation23ManagedClassClosures"`
 	BCLBaseRelationships         []bclBaseProjection           `json:"bclBaseRelationships"`
+	BCLInterfaceRelationships    []bclInterfaceProjection      `json:"bclInterfaceRelationships"`
 	Metadata                     reportMetadata                `json:"metadata"`
 }
 
@@ -235,6 +236,30 @@ type bclBaseProjection struct {
 	ExportedEmbeddings int    `json:"exportedEmbeddings"`
 	Rationale          string `json:"rationale"`
 	Verdict            string `json:"verdict"`
+}
+
+// bclInterfaceProjection measures one non-XNA CLR interface that XNA types
+// declare.
+//
+// The measured claim is ProjectedMembers == 0: the interface itself contributes
+// no Go member identity. Its CLR members reach the Go surface only when the XNA
+// type declares them publicly in its own right, in which case they are ordinary
+// members of that type, or not at all, when the type implements the interface
+// explicitly.
+type bclInterfaceProjection struct {
+	CLRInterface string `json:"clrInterface"`
+	Status       string `json:"status"`
+	// CLRMembers is how many members the interface declares.
+	CLRMembers int `json:"clrMembers"`
+	// ProjectedMembers is how many Go identities the interface itself
+	// contributes. It must stay zero.
+	ProjectedMembers int `json:"projectedMembers"`
+	// DeclaringTypes is every XNA type in the profile that lists it directly.
+	DeclaringTypes int `json:"declaringTypes"`
+	// ProjectedTypes is how many of those are present in the Go surface.
+	ProjectedTypes int    `json:"projectedTypes"`
+	Rationale      string `json:"rationale"`
+	Verdict        string `json:"verdict"`
 }
 
 // enumClosure is the reusable ordinary/flags enum closure measurement. The

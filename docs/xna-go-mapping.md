@@ -447,6 +447,36 @@ rather than the handler. Adding one handler twice therefore produces two
 registrations and two distinct tokens, where CLR `Delegate.Remove` would match
 by delegate identity.
 
+## CLR interfaces from the BCL
+
+A non-XNA interface an XNA type declares contributes **no projected Go surface
+of its own**. In the pinned profile each is satisfied one of two ways, and
+neither produces a new Go identity: either the XNA type already declares the
+interface's members publicly, so the concrete method set is the whole
+projection, or it implements the interface explicitly, so the CLR member is
+`private ... .override` and is not public surface at all.
+
+The table is exhaustive over the profile's eight non-XNA direct interfaces —
+`IDisposable`, `IEquatable<T>`, `IComparable<T>`, `IServiceProvider`,
+`IEnumerable<T>`, `IEnumerator<T>`, `ICollection<T>`, `IList<T>` — and an
+undeclared one is `INTERFACE_MAPPING_MISMATCH`.
+
+`System.IDisposable` is the case that most invites invention, so the rule is
+stated explicitly: it creates **no** `Disposable` or `IDisposable` Go interface,
+**no** `Close` alias, **no** `io.Closer` adaptation, **no**
+`runtime.SetFinalizer`, and **no** ownership wrapper. Twenty-eight of its
+twenty-nine declaring types declare `Dispose` publicly in their own right, and
+it maps as an ordinary member with its own fallibility.
+`GraphicsDeviceManager` is the twenty-ninth and the proof: it implements the
+interface explicitly, so its `Dispose()` is not public surface and nothing is
+projected for it — its only projected `Dispose` is the `Dispose(bool)` its
+public contract declares. A `Dispose` is never synthesized from CLR ancestry.
+
+Mapping the interface makes a dependency syntactically complete. It does not
+decide native ownership or lifetime for `GraphicsResource`, `GraphicsDevice`,
+`Texture2D`, `SpriteBatch`, `Effect`, or any audio type; that stays a per-type
+question this relationship does not answer.
+
 ## CLR base types
 
 Go has no CLR inheritance and CNA-Go never fakes one with exported embedding,

@@ -1047,6 +1047,14 @@ func TestMutationFixtures(t *testing.T) {
 				}
 				return
 			}
+			if strings.HasPrefix(fixture.Mutation, "f24bcli_") {
+				expected, actual = bclInterfaceMutationCase(t, fixture.Mutation)
+				result := verify(expected, actual, 0, "report", "contract", "mapping")
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
 			if strings.HasPrefix(fixture.Mutation, "f22ev_") {
 				expected, actual = eventProjectionMutationCase(t, fixture.Mutation)
 				result := verify(expected, actual, 0, "report", "contract", "mapping")
@@ -4606,4 +4614,321 @@ func baseProjectionMutationCase(t *testing.T, mutation string) (*expectedSurface
 		t.Fatalf("unknown base defect %q", parts[0])
 	}
 	return expected, actual
+}
+
+// isolateTypeSurface builds an isolated, initially correct expected/actual pair
+// for one XNA type with every projected member present.
+func isolateTypeSurface(t *testing.T, identity string) (*expectedSurface, *actualSurface, *expectedType) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(identity)
+	if fullType == nil {
+		t.Fatalf("%s is not in the pinned contract", identity)
+	}
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	kind := "struct"
+	if fullType.Kind == "interface" {
+		kind = "interface"
+	}
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   copiedType.SourceMembers,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  len(copiedType.Members),
+	}
+	actual := &actualSurface{
+		Types:       map[symbolKey]*actualType{copiedType.Key: {Key: copiedType.Key, Kind: kind}},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		actual.Members[memberKey] = &actualMember{
+			Key:        memberKey,
+			Kind:       copiedMember.GoKind,
+			Parameters: append([]string(nil), copiedMember.Parameters...),
+			Results:    append([]string(nil), copiedMember.Results...),
+			Value:      copiedMember.EnumValue,
+		}
+	}
+	return expected, actual, &copiedType
+}
+
+func disposeMemberKey(t *testing.T, owner *expectedType) symbolKey {
+	t.Helper()
+	for _, key := range owner.Members {
+		if key.Name == "Dispose" {
+			return key
+		}
+	}
+	t.Fatalf("%s declares no projected Dispose", owner.XNA)
+	return symbolKey{}
+}
+
+// TestBCLInterfaceRelationshipsAreExhaustive proves the interface table covers
+// every non-XNA direct interface in the profile, and that each entry claims
+// exactly one thing: it contributes no projected Go surface.
+func TestBCLInterfaceRelationshipsAreExhaustive(t *testing.T) {
+	reference := loadPinnedContract(t)
+	seen := make(map[string]int)
+	for _, declared := range reference.Types {
+		for _, raw := range declared.DirectInterfaces {
+			identity := baseIdentityWithoutArguments(raw)
+			if strings.HasPrefix(identity, "Microsoft.Xna.Framework") {
+				continue
+			}
+			seen[identity]++
+			if _, ok := bclInterfaceRelationships[identity]; !ok {
+				t.Fatalf("%s declares undeclared BCL interface %q", declared.Name, identity)
+			}
+		}
+	}
+	for identity := range bclInterfaceRelationships {
+		if seen[identity] == 0 {
+			t.Fatalf("declared BCL interface %q has no declaring type in the profile", identity)
+		}
+		if bclInterfaceRelationships[identity].Status != "MAPPED_NO_SURFACE" {
+			t.Fatalf("%s status = %q", identity, bclInterfaceRelationships[identity].Status)
+		}
+	}
+	if len(bclInterfaceRelationships) != 8 {
+		t.Fatalf("declared BCL interface relationships = %d, want 8", len(bclInterfaceRelationships))
+	}
+	if seen["System.IDisposable"] != 29 {
+		t.Fatalf("System.IDisposable declaring types = %d, want 29", seen["System.IDisposable"])
+	}
+}
+
+// TestIDisposableAddsNoProjectedSurface is the arithmetic behind the rule: the
+// interface's own member never becomes a Go identity, and the only Dispose
+// identities anywhere in the profile come from types that declare Dispose in
+// their own public contract.
+func TestIDisposableAddsNoProjectedSurface(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	declaresDispose := make(map[string]bool)
+	implementsIDisposable := make(map[string]bool)
+	for _, declared := range reference.Types {
+		for _, raw := range declared.DirectInterfaces {
+			if baseIdentityWithoutArguments(raw) == "System.IDisposable" {
+				implementsIDisposable[declared.Name] = true
+			}
+		}
+		for _, member := range declared.Members {
+			if strings.HasPrefix(member.Name, "Dispose") && member.Kind == "method" {
+				declaresDispose[declared.Name] = true
+			}
+		}
+	}
+
+	// Every projected Dispose identity traces to a declared XNA member.
+	for key, member := range surface.Members {
+		if !strings.HasPrefix(key.Name, "Dispose") {
+			continue
+		}
+		if !declaresDispose[member.Owner] {
+			t.Fatalf("%s projects %s but declares no Dispose member", member.Owner, key.Name)
+		}
+	}
+
+	// The profile's proof case: GraphicsDeviceManager implements IDisposable
+	// but implements it explicitly, so its Dispose() is not public surface and
+	// nothing may be projected for it.
+	manager := surface.typeForXNA("Microsoft.Xna.Framework.GraphicsDeviceManager")
+	if manager == nil || !implementsIDisposable["Microsoft.Xna.Framework.GraphicsDeviceManager"] {
+		t.Fatal("GraphicsDeviceManager is not the expected IDisposable implementor")
+	}
+	// Its public contract declares exactly one Dispose, the protected
+	// Dispose(bool), so exactly one Dispose identity is projected and it takes
+	// the Boolean. A parameterless Dispose() here would be the interface's
+	// member leaking into public surface it does not occupy.
+	disposeIdentities := 0
+	for _, key := range manager.Members {
+		if !strings.HasPrefix(key.Name, "Dispose") {
+			continue
+		}
+		disposeIdentities++
+		member := surface.Members[key]
+		if !equalStrings(member.Parameters, []string{"bool"}) {
+			t.Fatalf("GraphicsDeviceManager.%s takes %v; its CLR Dispose() is an explicit interface implementation and is not public surface",
+				key.Name, member.Parameters)
+		}
+	}
+	if disposeIdentities != 1 {
+		t.Fatalf("GraphicsDeviceManager projects %d Dispose identities, want exactly the declared Dispose(bool)", disposeIdentities)
+	}
+
+	// No language adapter, and no projected type anywhere, is a disposal shape
+	// invented from the interface.
+	for name := range inventedDisposalNames {
+		if adapterTypes[name] {
+			t.Fatalf("%q is registered as a language adapter; System.IDisposable adds no Go type", name)
+		}
+		for key := range surface.Types {
+			if key.Name == name {
+				t.Fatalf("%q is a projected XNA type name, so it cannot also be a forbidden disposal shape", name)
+			}
+		}
+		for key := range surface.Members {
+			if key.Name == name {
+				t.Fatalf("%q is a projected XNA member, so it cannot also be a forbidden disposal shape", name)
+			}
+		}
+	}
+}
+
+// bclInterfaceDefects are the target-side defects the no-surface rule is
+// negatively fixtured against.
+var bclInterfaceDefects = []struct {
+	Name     string
+	Category string
+	Apply    func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType)
+}{
+	{"invented-close-alias", "INTERFACE_MAPPING_MISMATCH", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
+		key := symbolKey{Package: owner.Key.Package, Receiver: owner.GoName, Name: "Close"}
+		a.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"error"}}
+	}},
+	{"invented-disposable-interface-embedding", "INTERFACE_MAPPING_MISMATCH", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
+		a.Types[owner.Key].ExportedEmbeddings = []string{"Disposable"}
+	}},
+	{"invented-qualified-disposable-embedding", "INTERFACE_MAPPING_MISMATCH", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
+		a.Types[owner.Key].ExportedEmbeddings = []string{"framework.IDisposable"}
+	}},
+	{"invented-finalizer-surface", "INTERFACE_MAPPING_MISMATCH", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
+		key := symbolKey{Package: owner.Key.Package, Receiver: owner.GoName, Name: "SetFinalizer"}
+		a.Members[key] = &actualMember{Key: key, Kind: "method"}
+	}},
+	{"invented-ownership-wrapper", "INTERFACE_MAPPING_MISMATCH", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
+		key := symbolKey{Package: owner.Key.Package, Receiver: owner.GoName, Name: "DisposeAll"}
+		a.Members[key] = &actualMember{Key: key, Kind: "method"}
+	}},
+	{"undeclared-bcl-interface", "INTERFACE_MAPPING_MISMATCH", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
+		owner.Interfaces = append(owner.Interfaces, "System.Something.Undecided")
+	}},
+	{"declared-dispose-dropped", "MISSING_MEMBER", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
+		delete(a.Members, disposeMemberKey(t, owner))
+	}},
+	{"declared-dispose-fallibility-changed", "ERROR_MAPPING_MISMATCH", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
+		key := disposeMemberKey(t, owner)
+		member := a.Members[key]
+		if len(member.Results) > 0 && member.Results[len(member.Results)-1] == "error" {
+			member.Results = member.Results[:len(member.Results)-1]
+			return
+		}
+		member.Results = append(member.Results, "error")
+	}},
+}
+
+// TestBCLInterfaceRelationshipDefectsAreRejected attacks the no-surface rule on
+// a type that declares Dispose publicly.
+func TestBCLInterfaceRelationshipDefectsAreRejected(t *testing.T) {
+	const identity = "Microsoft.Xna.Framework.Audio.SoundEffect"
+	baseExpected, baseActual, _ := isolateTypeSurface(t, identity)
+	baseline := verify(baseExpected, baseActual, 0, "report", "contract", "mapping")
+	if baseline.Summary["TOTAL_DIAGNOSTICS"] != 0 {
+		t.Fatalf("unmutated %s baseline is not clean: %v", identity, baseline.Diagnostics)
+	}
+	for _, defect := range bclInterfaceDefects {
+		defect := defect
+		t.Run(defect.Name, func(t *testing.T) {
+			expected, actual, owner := isolateTypeSurface(t, identity)
+			defect.Apply(t, expected, actual, owner)
+			result := verify(expected, actual, 0, "report", "contract", "mapping")
+			if result.Summary[defect.Category] == 0 {
+				t.Fatalf("defect %q did not raise %s; summary=%v", defect.Name, defect.Category, result.Summary)
+			}
+		})
+	}
+}
+
+// TestSyntheticDisposeIsRejected is the defect System.IDisposable would cause if
+// it were treated as adding surface: a Dispose on a type whose XNA contract
+// declares none.
+func TestSyntheticDisposeIsRejected(t *testing.T) {
+	// Curve implements no IDisposable and declares no Dispose.
+	const identity = "Microsoft.Xna.Framework.Curve"
+	expected, actual, owner := isolateTypeSurface(t, identity)
+	baseline := verify(expected, actual, 0, "report", "contract", "mapping")
+	if baseline.Summary["INTERFACE_MAPPING_MISMATCH"] != 0 {
+		t.Fatalf("unmutated %s baseline is not clean: %v", identity, baseline.Diagnostics)
+	}
+	for _, key := range owner.Members {
+		if strings.HasPrefix(key.Name, "Dispose") {
+			t.Fatalf("%s already declares %s", identity, key.Name)
+		}
+	}
+	expected, actual, owner = isolateTypeSurface(t, identity)
+	key := symbolKey{Package: owner.Key.Package, Receiver: owner.GoName, Name: "Dispose"}
+	actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"error"}}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	if result.Summary["INTERFACE_MAPPING_MISMATCH"] == 0 {
+		t.Fatalf("a synthesized Dispose was not rejected; summary=%v", result.Summary)
+	}
+}
+
+// TestBCLInterfaceMeasurementIsReported proves every declared interface reaches
+// the report with the no-surface arithmetic.
+func TestBCLInterfaceMeasurementIsReported(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := &actualSurface{
+		Types:       make(map[symbolKey]*actualType),
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	measurements := measureBCLInterfaceRelationships(expected, actual)
+	if len(measurements) != len(bclInterfaceRelationships) {
+		t.Fatalf("measured %d interfaces, want %d", len(measurements), len(bclInterfaceRelationships))
+	}
+	for _, row := range measurements {
+		if row.Verdict != "PASS" || row.ProjectedMembers != 0 {
+			t.Fatalf("%s = %+v", row.CLRInterface, row)
+		}
+		if row.DeclaringTypes == 0 || row.CLRMembers == 0 {
+			t.Fatalf("%s declares nothing: %+v", row.CLRInterface, row)
+		}
+	}
+}
+
+// bclInterfaceMutationCase applies one named BCL interface defect. Mutation ids
+// have the form f24bcli_<defect>__<identity>.
+func bclInterfaceMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	parts := strings.SplitN(strings.TrimPrefix(mutation, "f24bcli_"), "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed BCL interface mutation %q", mutation)
+	}
+	expected, actual, owner := isolateTypeSurface(t, parts[1])
+	if parts[0] == "synthetic_dispose" {
+		key := symbolKey{Package: owner.Key.Package, Receiver: owner.GoName, Name: "Dispose"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"error"}}
+		return expected, actual
+	}
+	for _, defect := range bclInterfaceDefects {
+		if defect.Name != parts[0] {
+			continue
+		}
+		defect.Apply(t, expected, actual, owner)
+		return expected, actual
+	}
+	t.Fatalf("unknown BCL interface defect %q", parts[0])
+	return nil, nil
 }
