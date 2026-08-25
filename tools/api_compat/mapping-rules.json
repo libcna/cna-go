@@ -93,10 +93,28 @@
     "classification": "explicit-interface-identity-policy-not-owner-kind-fallback",
     "pureValue": "no-synthetic-error-result-solely-because-the-owner-is-an-interface",
     "nativeRuntime": "may-add-final-error-when-the-operation-crosses-a-qualified-runtime-boundary",
+    "fallibilityScope": "per-projected-operation-so-one-contract-may-mix-infallible-accessors-with-runtime-boundary-operations",
+    "evidenceRule": "the-boundary-is-read-from-the-reference-implementor-IL-in-the-assembly-that-declares-the-interface-never-from-speculation-about-an-unknown-implementor",
+    "classifiedIdentities": [
+      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
+      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
+      "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+      "Microsoft.Xna.Framework.Graphics.IEffectFog"
+    ],
     "pureValueIdentities": [
       "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
-      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1"
-    ]
+      "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1",
+      "Microsoft.Xna.Framework.Graphics.IEffectMatrices"
+    ],
+    "runtimeBoundaryOperations": [
+      "Microsoft.Xna.Framework.Graphics.IEffectFog::FogColor get",
+      "Microsoft.Xna.Framework.Graphics.IEffectFog::FogColor set"
+    ],
+    "runtimeIdentities": [
+      "Microsoft.Xna.Framework.IGameComponent",
+      "Microsoft.Xna.Framework.IGraphicsDeviceManager"
+    ],
+    "unclassifiedDefault": "every-operation-is-fallible-which-is-correct-for-a-contract-whose-purpose-is-to-cross-a-runtime-boundary"
   },
   "pureManagedClasses": {
     "classification": "explicit-type-identity-policy-proved-by-authoritative-XNA-IL-not-CLR-kind-fallback",

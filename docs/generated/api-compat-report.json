@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 100,
+    "COMPLETE_TYPES": 104,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 152,
-    "MISSING_TYPES": 152,
+    "MISSING_TYPE": 148,
+    "MISSING_TYPES": 148,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1639,
-    "TARGET_TYPES": 105,
-    "TOTAL_DIAGNOSTICS": 329,
+    "TARGET_MEMBERS": 1657,
+    "TARGET_TYPES": 109,
+    "TOTAL_DIAGNOSTICS": 325,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1126,20 +1126,8 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IEffectFog",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.IEffectLights",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IEffectLights",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IEffectMatrices",
       "message": "mapped Go type is absent"
     },
     {
@@ -1798,18 +1786,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.IGameComponent",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:IGameComponent",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.IGraphicsDeviceManager",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:IGraphicsDeviceManager",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.IUpdateable",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:IUpdateable",
       "message": "mapped Go type is absent"
@@ -2053,6 +2029,8 @@
     "Microsoft.Xna.Framework.Graphics.FillMode",
     "Microsoft.Xna.Framework.Graphics.GraphicsDeviceStatus",
     "Microsoft.Xna.Framework.Graphics.GraphicsProfile",
+    "Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
     "Microsoft.Xna.Framework.Graphics.IndexElementSize",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
@@ -2087,6 +2065,8 @@
     "Microsoft.Xna.Framework.Graphics.VertexElementFormat",
     "Microsoft.Xna.Framework.Graphics.VertexElementUsage",
     "Microsoft.Xna.Framework.Graphics.Viewport",
+    "Microsoft.Xna.Framework.IGameComponent",
+    "Microsoft.Xna.Framework.IGraphicsDeviceManager",
     "Microsoft.Xna.Framework.Input.ButtonState",
     "Microsoft.Xna.Framework.Input.Buttons",
     "Microsoft.Xna.Framework.Input.GamePadButtons",
@@ -2402,9 +2382,7 @@
     "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
     "Microsoft.Xna.Framework.Graphics.GraphicsAdapter",
     "Microsoft.Xna.Framework.Graphics.GraphicsResource",
-    "Microsoft.Xna.Framework.Graphics.IEffectFog",
     "Microsoft.Xna.Framework.Graphics.IEffectLights",
-    "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
     "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
     "Microsoft.Xna.Framework.Graphics.IVertexType",
     "Microsoft.Xna.Framework.Graphics.IndexBuffer",
@@ -2446,8 +2424,6 @@
     "Microsoft.Xna.Framework.Graphics.VertexPositionTexture",
     "Microsoft.Xna.Framework.GraphicsDeviceInformation",
     "Microsoft.Xna.Framework.IDrawable",
-    "Microsoft.Xna.Framework.IGameComponent",
-    "Microsoft.Xna.Framework.IGraphicsDeviceManager",
     "Microsoft.Xna.Framework.IUpdateable",
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadCapabilities",
@@ -6659,9 +6635,349 @@
       "status": "PASS"
     }
   ],
+  "foundation18InterfaceClosures": [
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+      "goName": "IEffectMatrices",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 3,
+      "expectedGoIdentities": 6,
+      "targetTypes": 1,
+      "targetGoIdentities": 6,
+      "localDiagnostics": 0,
+      "expectedKind": "interface",
+      "actualKind": "interface",
+      "classified": true,
+      "boundary": "PURE_MANAGED",
+      "accessorPairs": 3,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 0,
+      "errorResults": 0,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectMatrices::World()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "World",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Matrix"
+          ],
+          "actualResults": [
+            "framework.Matrix"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectMatrices::World()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "name": "SetWorld",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectMatrices::View()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "View",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Matrix"
+          ],
+          "actualResults": [
+            "framework.Matrix"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectMatrices::View()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "name": "SetView",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectMatrices::Projection()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "Projection",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Matrix"
+          ],
+          "actualResults": [
+            "framework.Matrix"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectMatrices::Projection()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "name": "SetProjection",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog",
+      "goName": "IEffectFog",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 8,
+      "targetTypes": 1,
+      "targetGoIdentities": 8,
+      "localDiagnostics": 0,
+      "expectedKind": "interface",
+      "actualKind": "interface",
+      "classified": true,
+      "boundary": "MIXED_MANAGED_AND_RUNTIME",
+      "accessorPairs": 4,
+      "fallibleGetters": 1,
+      "fallibleSetters": 1,
+      "fallibleOperations": 0,
+      "errorResults": 2,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog::FogEnabled()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "FogEnabled",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog::FogEnabled()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "name": "SetFogEnabled",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog::FogStart()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "FogStart",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "float32"
+          ],
+          "actualResults": [
+            "float32"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog::FogStart()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "name": "SetFogStart",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog::FogEnd()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "FogEnd",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "float32"
+          ],
+          "actualResults": [
+            "float32"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog::FogEnd()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "name": "SetFogEnd",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog::FogColor()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "FogColor",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "framework.Vector3",
+            "error"
+          ],
+          "actualResults": [
+            "framework.Vector3",
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.IEffectFog::FogColor()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "name": "SetFogColor",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.IGameComponent",
+      "goName": "IGameComponent",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework",
+      "sourceTypes": 1,
+      "sourceIdentities": 1,
+      "expectedGoIdentities": 1,
+      "targetTypes": 1,
+      "targetGoIdentities": 1,
+      "localDiagnostics": 0,
+      "expectedKind": "interface",
+      "actualKind": "interface",
+      "classified": false,
+      "boundary": "RUNTIME",
+      "accessorPairs": 0,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 1,
+      "errorResults": 1,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.IGameComponent::Initialize()",
+          "sourceKind": "method",
+          "name": "Initialize",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.IGraphicsDeviceManager",
+      "goName": "IGraphicsDeviceManager",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework",
+      "sourceTypes": 1,
+      "sourceIdentities": 3,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "interface",
+      "actualKind": "interface",
+      "classified": false,
+      "boundary": "RUNTIME",
+      "accessorPairs": 0,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 3,
+      "errorResults": 3,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.IGraphicsDeviceManager::CreateDevice()",
+          "sourceKind": "method",
+          "name": "CreateDevice",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IGraphicsDeviceManager::BeginDraw()",
+          "sourceKind": "method",
+          "name": "BeginDraw",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "bool",
+            "error"
+          ],
+          "actualResults": [
+            "bool",
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IGraphicsDeviceManager::EndDraw()",
+          "sourceKind": "method",
+          "name": "EndDraw",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "020b887a9b38b4f3e3b644ea8d443854fe771dd9e5e66ab15f36a8836b87e6cc",
+    "mappingSha256": "16ae6bd7a73335e98754f88f8a4df5a035ac5a8a837e8618e8ad1009b67db4f4",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

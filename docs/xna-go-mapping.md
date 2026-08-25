@@ -229,10 +229,30 @@ failure. An `out Nullable<T>` still retains `OutNullableOfT` in its deterministi
 overload shape even though its Go result expands to two values.
 
 Interface kind alone does not make an operation fallible. Interface identities
-are explicitly classified by their execution boundary. A native/runtime
-interface may retain a final `error`; a pure managed value interface does not
-gain one merely because its owner is an interface. Both PackedVector
-interfaces are pure managed value interfaces, so their mapped contracts are:
+are explicitly classified by their execution boundary, and the boundary is read
+from the reference implementor IL in the assembly that declares the interface,
+never from speculation about an implementor that does not exist. A
+native/runtime interface may retain a final `error`; a pure managed value
+interface does not gain one merely because its owner is an interface.
+
+Because fallibility is per operation, a single contract may legitimately mix
+the two. `IEffectMatrices` is uniformly managed: all five shipped implementors
+back `World`, `View`, and `Projection` with a managed field access plus a dirty
+flag, so none of its six operations is fallible. `IEffectFog` is not: those
+same implementors back `FogEnabled`, `FogStart`, and `FogEnd` the same managed
+way but route `FogColor` through `EffectParameter`, which calls unmanaged D3DX
+and throws on a failed HRESULT, so exactly its two `FogColor` operations are
+fallible and its six siblings are not.
+
+`IGameComponent` and `IGraphicsDeviceManager` are unclassified and keep the
+runtime default in which every operation is fallible, which is correct for
+contracts whose whole purpose is to reach the game and device runtime.
+`IGraphicsDeviceManager.BeginDraw` shows the channel rule: its source Boolean
+says whether drawing may proceed and stays distinct from the `error`, which
+says whether the call itself failed.
+
+Both PackedVector interfaces are pure managed value interfaces, so their mapped
+contracts are:
 
 ```go
 type IPackedVector interface {

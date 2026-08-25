@@ -878,6 +878,47 @@ Exact evidence is in `docs/foundation-17-managed-class-evidence.md`.
 FOUNDATION_MILESTONE_17_COMPLETE=true
 ```
 
+## Foundation 18 managed interface projection policy
+
+An interface contributes no fallibility of its own. Each projected operation is
+classified by the execution boundary it crosses, and the boundary is read from
+the reference implementor IL in the assembly that declares the interface, never
+from a guess about an implementor that does not exist. Where every shipped
+implementor agrees, that agreement is the contract's measured behavior; where
+no implementor's behavior can be read, the interface stays deferred.
+
+Because Foundation 17 made fallibility per operation, one contract may mix the
+two boundaries honestly, and `IEffectFog` is the first that does.
+
+Foundation 18 closes four contracts and implements none of them:
+
+```text
+Graphics.IEffectMatrices   3 -> 6   uniformly managed, 0 errors
+Graphics.IEffectFog        4 -> 8   mixed, 2 errors on FogColor alone
+IGameComponent             1 -> 1   runtime boundary, 1 error
+IGraphicsDeviceManager     3 -> 3   runtime boundary, 3 errors
+```
+
+`IUpdateable`, `IDrawable`, and `IGraphicsDeviceService` remain deferred on one
+specific mapping gap: their events are typed `System.EventHandler<System.EventArgs>`,
+a BCL generic delegate with no declared mapping that currently degrades to
+`any`. That gap is recorded rather than papered over.
+
+## Foundation 18 qualification evidence
+
+- [x] Read both interface declarations and all five shipped effect implementors, plus both game-component implementors and the device manager, from hash-verified retained assemblies.
+- [x] Prove the `IEffectFog` split rather than assume it: `FogColor` reaches `EffectParameter`, which calls unmanaged D3DX and throws on a failed HRESULT, while its six siblings are managed field access.
+- [x] Add the `managedInterfaceClosure` category with a pinned per-operation fallibility table that the mapping tables cannot silently override.
+- [x] Add 37 applied and 7 accounted-for skipped target-side cases plus 4 classification-side cases; grow the mutation inventory from 249 to 290.
+- [x] Add compile-time conformance doubles in both packages and grow the behavior corpus from 535 to 541 with zero failures.
+- [x] Keep `MISSING_MEMBER` at 177 and `PARTIAL_TYPES` at 5, and assert that `GraphicsDeviceManager` is *not* bound to `IGraphicsDeviceManager`.
+
+Exact evidence is in `docs/foundation-18-interface-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_18_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

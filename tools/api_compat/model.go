@@ -196,6 +196,7 @@ type report struct {
 	Foundation15ValueStructs     []valueStructClosure          `json:"foundation15ValueStructClosures"`
 	Foundation16ValueStructs     []valueStructClosure          `json:"foundation16ValueStructClosures"`
 	Foundation17ManagedClasses   []managedClassClosure         `json:"foundation17ManagedClassClosures"`
+	Foundation18Interfaces       []managedInterfaceClosure     `json:"foundation18InterfaceClosures"`
 	Metadata                     reportMetadata                `json:"metadata"`
 }
 
@@ -243,6 +244,47 @@ type valueStructClosure struct {
 	ErrorResults         int                 `json:"errorResults"`
 	Members              []valueStructMember `json:"members"`
 	Status               string              `json:"status"`
+}
+
+// managedInterfaceClosure measures one projected CLR interface contract. The
+// claim it records is that interface kind alone decides nothing: each
+// operation's fallibility comes from the reference implementor IL, so one
+// contract may legitimately mix infallible managed accessors with operations
+// that cross a qualified runtime boundary.
+type managedInterfaceClosure struct {
+	XNA                  string                   `json:"xna"`
+	GoName               string                   `json:"goName"`
+	PackagePath          string                   `json:"packagePath"`
+	SourceTypes          int                      `json:"sourceTypes"`
+	SourceIdentities     int                      `json:"sourceIdentities"`
+	ExpectedGoIdentities int                      `json:"expectedGoIdentities"`
+	TargetTypes          int                      `json:"targetTypes"`
+	TargetGoIdentities   int                      `json:"targetGoIdentities"`
+	LocalDiagnostics     int                      `json:"localDiagnostics"`
+	ExpectedKind         string                   `json:"expectedKind"`
+	ActualKind           string                   `json:"actualKind"`
+	Classified           bool                     `json:"classified"`
+	Boundary             string                   `json:"boundary"`
+	AccessorPairs        int                      `json:"accessorPairs"`
+	FallibleGetters      int                      `json:"fallibleGetters"`
+	FallibleSetters      int                      `json:"fallibleSetters"`
+	FallibleOperations   int                      `json:"fallibleOperations"`
+	ErrorResults         int                      `json:"errorResults"`
+	Members              []managedInterfaceMember `json:"members"`
+	Status               string                   `json:"status"`
+}
+
+// managedInterfaceMember is one projected operation of a CLR interface.
+type managedInterfaceMember struct {
+	XNA              string   `json:"xna"`
+	SourceKind       string   `json:"sourceKind"`
+	Accessor         string   `json:"accessor,omitempty"`
+	Name             string   `json:"name"`
+	ExpectedFallible bool     `json:"expectedFallible"`
+	ActualFallible   bool     `json:"actualFallible"`
+	ExpectedResults  []string `json:"expectedResults"`
+	ActualResults    []string `json:"actualResults"`
+	Status           string   `json:"status"`
 }
 
 // managedClassClosure measures one pure-managed CLR class: a type whose CLR

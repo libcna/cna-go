@@ -99,12 +99,39 @@ var pureManagedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.Audio.AudioEmitter":  true,
 }
 
-// managedPureValueInterfaces is the explicit, reusable policy boundary for
-// structural interfaces whose operations are entirely managed value work.
-// Interface ownership alone must never add a synthetic Go error result.
-var managedPureValueInterfaces = map[string]bool{
+// classifiedInterfaces is the explicit, reusable policy boundary for
+// structural interfaces whose fallibility is decided per projected operation
+// from authoritative evidence rather than by the interface-kind default.
+//
+// Interface ownership alone must never add a synthetic Go error result. An
+// interface listed here starts from "no operation is fallible" and gains an
+// error only where managedFallibleMembers records one, using the same
+// accessor-level keys as any other owner. An interface that is *not* listed
+// here keeps the native/runtime default in which every operation is fallible,
+// which is correct for a contract whose whole purpose is to cross a qualified
+// runtime boundary.
+//
+// The evidence for an entry is the reference implementor IL in the assembly
+// that declares the interface, not a guess about what an unknown implementor
+// might do. Where every shipped implementor agrees, that agreement is the
+// contract's measured behavior.
+var classifiedInterfaces = map[string]bool{
 	"Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector":   true,
 	"Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1": true,
+
+	// Foundation 18. In Microsoft.Xna.Framework.Graphics.dll
+	// (sha256 560080fc39021c611ca9d076dcebed312faf6d7d1413c2dc523683ea635e9f55)
+	// all five shipped implementors -- AlphaTestEffect, BasicEffect,
+	// DualTextureEffect, EnvironmentMapEffect, and SkinnedEffect -- back
+	// World, View, and Projection with a managed field read/write plus a
+	// managed dirty-flag OR, on both accessors, with no device access.
+	"Microsoft.Xna.Framework.Graphics.IEffectMatrices": true,
+	// The same five implementors back FogEnabled, FogStart, and FogEnd the
+	// same managed way, but route FogColor through EffectParameter, which
+	// calls unmanaged D3DX and throws on a failed HRESULT. That single
+	// operation is therefore fallible and the other six are not; see
+	// managedFallibleMembers.
+	"Microsoft.Xna.Framework.Graphics.IEffectFog": true,
 }
 
 // managedFallibleMembers records, per pure-managed owner, exactly which
@@ -146,6 +173,17 @@ var managedFallibleMembers = map[string]map[string]bool{
 	// not taken. get_DopplerScale is one ldfld and cannot fail.
 	"Microsoft.Xna.Framework.Audio.AudioEmitter": {
 		"property-set|DopplerScale": true,
+	},
+	// IEffectFog::FogColor is the first measured runtime-boundary operation
+	// on an otherwise managed interface. Every shipped implementor reads and
+	// writes it through EffectParameter::GetValueVector3/SetValue, which end
+	// in `calli unmanaged stdcall` into ID3DXBaseEffect and throw
+	// GraphicsHelpers::GetExceptionFromResult on a negative HRESULT. Both
+	// accessors cross the boundary, so both are fallible -- unlike
+	// AudioEmitter::DopplerScale, where only one accessor is.
+	"Microsoft.Xna.Framework.Graphics.IEffectFog": {
+		"property-get|FogColor": true,
+		"property-set|FogColor": true,
 	},
 }
 
@@ -628,7 +666,7 @@ func genericTypeArgument(raw, prefix string) (string, bool) {
 // classified independently.
 func isFallible(t contractType, m contractMember, accessor string) bool {
 	keys := fallibilityKeys(m, accessor)
-	if pureManagedTypes[t.Name] || managedPureValueInterfaces[t.Name] || t.Kind == "enum" {
+	if pureManagedTypes[t.Name] || classifiedInterfaces[t.Name] || t.Kind == "enum" {
 		for _, key := range keys {
 			if managedFallibleMembers[t.Name][key] {
 				return true

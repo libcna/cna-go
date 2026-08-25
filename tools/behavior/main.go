@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"math"
@@ -1427,8 +1428,111 @@ func runCorpus() corpusReport {
 	_ = sharedEmitterAlias.SetDopplerScale(9)
 	check("audio-emitter.reference-semantics", "AUDIO_DESCRIPTOR", bits(9), bits(sharedEmitter.DopplerScale()))
 
+	// --- Foundation 18: projected CLR interface contracts -------------------
+	//
+	// These contracts have no implementation in CNA-Go, so there is no XNA
+	// runtime behavior to observe. What is observable, and worth recording, is
+	// the Go language projection: the contracts are satisfiable, the
+	// per-operation fallibility split survives into the method set, and a
+	// source result stays a separate channel from the error.
+	//
+	// The boundary each split comes from is measured from reference
+	// implementor IL and is recorded in the api-compat report's Foundation-18
+	// closures, not here.
+	var matrices graphics.IEffectMatrices = &interfaceProbe{}
+	matrices.SetWorld(framework.MatrixIdentity())
+	matrices.SetView(framework.MatrixCreateTranslationBySingleAndSingleAndSingle(1, 2, 3))
+	checkGoProjection("effect-matrices.infallible-round-trip", "INTERFACE_CONTRACT",
+		"true,true", fmt.Sprintf("%t,%t",
+			matrices.World() == framework.MatrixIdentity(),
+			matrices.View() == framework.MatrixCreateTranslationBySingleAndSingleAndSingle(1, 2, 3)))
+
+	fogProbe := &interfaceProbe{}
+	var fog graphics.IEffectFog = fogProbe
+	fog.SetFogEnabled(true)
+	fog.SetFogStart(1)
+	fog.SetFogEnd(2)
+	fogColorError := fog.SetFogColor(framework.Vector3{X: 1, Y: 2, Z: 3})
+	fogColor, fogColorReadError := fog.FogColor()
+	checkGoProjection("effect-fog.managed-operations-are-infallible", "INTERFACE_CONTRACT",
+		"true,0x3f800000,0x40000000", fmt.Sprintf("%t,%s,%s", fog.FogEnabled(), bits(fog.FogStart()), bits(fog.FogEnd())))
+	checkGoProjection("effect-fog.runtime-operations-carry-an-error", "INTERFACE_CONTRACT",
+		"true,true,0x3f800000,0x40000000,0x40400000",
+		fmt.Sprintf("%t,%t,%s", fogColorError == nil, fogColorReadError == nil, vector3Bits(fogColor)))
+	fogProbe.fogColorFailure = errors.New("D3DX HRESULT")
+	_, failedRead := fog.FogColor()
+	checkGoProjection("effect-fog.runtime-failure-reaches-the-caller", "INTERFACE_CONTRACT",
+		"true,true", fmt.Sprintf("%t,%t", fog.SetFogColor(framework.Vector3{}) != nil, failedRead != nil))
+
+	var component framework.IGameComponent = &interfaceProbe{}
+	var deviceManagerContract framework.IGraphicsDeviceManager = &interfaceProbe{proceed: true}
+	proceed, beginError := deviceManagerContract.BeginDraw()
+	declining := &interfaceProbe{proceed: false}
+	declined, declineError := framework.IGraphicsDeviceManager(declining).BeginDraw()
+	checkGoProjection("graphics-device-manager-contract.begin-draw-channels", "INTERFACE_CONTRACT",
+		"true,true,false,true", fmt.Sprintf("%t,%t,%t,%t", proceed, beginError == nil, declined, declineError == nil))
+	checkGoProjection("game-component-contract.initialize-channel", "INTERFACE_CONTRACT",
+		"true,true", fmt.Sprintf("%t,%t", component.Initialize() == nil, deviceManagerContract.CreateDevice() == nil))
+
 	return report
 }
+
+// interfaceProbe is a corpus-local double for the Foundation-18 contracts. It
+// exists to observe the Go projection of the contracts -- that they are
+// satisfiable and that their channels are separate -- and reproduces no XNA
+// effect, component, or device behavior. Every observation it takes part in is
+// labeled GO_LANGUAGE_PROJECTION for that reason.
+type interfaceProbe struct {
+	world           framework.Matrix
+	view            framework.Matrix
+	projection      framework.Matrix
+	fogEnabled      bool
+	fogStart        float32
+	fogEnd          float32
+	fogColor        framework.Vector3
+	fogColorFailure error
+	proceed         bool
+}
+
+func (p *interfaceProbe) World() framework.Matrix              { return p.world }
+func (p *interfaceProbe) SetWorld(value framework.Matrix)      { p.world = value }
+func (p *interfaceProbe) View() framework.Matrix               { return p.view }
+func (p *interfaceProbe) SetView(value framework.Matrix)       { p.view = value }
+func (p *interfaceProbe) Projection() framework.Matrix         { return p.projection }
+func (p *interfaceProbe) SetProjection(value framework.Matrix) { p.projection = value }
+func (p *interfaceProbe) FogEnabled() bool                     { return p.fogEnabled }
+func (p *interfaceProbe) SetFogEnabled(value bool)             { p.fogEnabled = value }
+func (p *interfaceProbe) FogStart() float32                    { return p.fogStart }
+func (p *interfaceProbe) SetFogStart(value float32)            { p.fogStart = value }
+func (p *interfaceProbe) FogEnd() float32                      { return p.fogEnd }
+func (p *interfaceProbe) SetFogEnd(value float32)              { p.fogEnd = value }
+
+func (p *interfaceProbe) FogColor() (framework.Vector3, error) {
+	if p.fogColorFailure != nil {
+		return framework.Vector3{}, p.fogColorFailure
+	}
+	return p.fogColor, nil
+}
+
+func (p *interfaceProbe) SetFogColor(value framework.Vector3) error {
+	if p.fogColorFailure != nil {
+		return p.fogColorFailure
+	}
+	p.fogColor = value
+	return nil
+}
+
+func (p *interfaceProbe) Initialize() error        { return nil }
+func (p *interfaceProbe) CreateDevice() error      { return nil }
+func (p *interfaceProbe) BeginDraw() (bool, error) { return p.proceed, nil }
+func (p *interfaceProbe) EndDraw() error           { return nil }
+
+var (
+	_ graphics.IEffectMatrices         = (*interfaceProbe)(nil)
+	_ graphics.IEffectFog              = (*interfaceProbe)(nil)
+	_ framework.IGameComponent         = (*interfaceProbe)(nil)
+	_ framework.IGraphicsDeviceManager = (*interfaceProbe)(nil)
+)
 
 // enumBitStructure reports the union of a pinned flags enum's literals and
 // whether every non-zero literal is a distinct single bit. Both facts come

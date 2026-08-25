@@ -1039,6 +1039,21 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
+			if strings.HasPrefix(fixture.Mutation, "f18cls_") {
+				result := interfaceClassificationMutationCase(t, fixture.Mutation)
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
+			if strings.HasPrefix(fixture.Mutation, "f18if_") {
+				expected, actual = managedInterfaceMutationCase(t, fixture.Mutation)
+				result := verify(expected, actual, 0, "report", "contract", "mapping")
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
 			if strings.HasPrefix(fixture.Mutation, "f17cls_") {
 				result := classificationMutationCase(t, fixture.Mutation)
 				if result.Summary[fixture.Category] == 0 {
@@ -2912,6 +2927,10 @@ func withClassification(t *testing.T, mutate func(), fn func()) {
 	for key, value := range pureManagedTypes {
 		savedTypes[key] = value
 	}
+	savedInterfaces := make(map[string]bool, len(classifiedInterfaces))
+	for key, value := range classifiedInterfaces {
+		savedInterfaces[key] = value
+	}
 	savedFallible := make(map[string]map[string]bool, len(managedFallibleMembers))
 	for owner, keys := range managedFallibleMembers {
 		copied := make(map[string]bool, len(keys))
@@ -2922,6 +2941,7 @@ func withClassification(t *testing.T, mutate func(), fn func()) {
 	}
 	defer func() {
 		pureManagedTypes = savedTypes
+		classifiedInterfaces = savedInterfaces
 		managedFallibleMembers = savedFallible
 	}()
 	mutate()
@@ -3221,5 +3241,471 @@ var classificationDefects = map[string]func(){
 	},
 	"accessor_fallibility_dropped": func() {
 		delete(managedFallibleMembers, audioEmitterIdentity)
+	},
+}
+
+// managedInterfaceSurfaces builds an isolated correct expected/actual surface
+// pair for one projected CLR interface.
+func managedInterfaceSurfaces(t *testing.T, identity string) (*expectedSurface, *actualSurface, *expectedType) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return isolateManagedInterface(t, full, identity)
+}
+
+func isolateManagedInterface(t *testing.T, full *expectedSurface, identity string) (*expectedSurface, *actualSurface, *expectedType) {
+	t.Helper()
+	fullType := full.typeForXNA(identity)
+	if fullType == nil {
+		t.Fatalf("%s is not in the pinned contract", identity)
+	}
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   copiedType.SourceMembers,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  len(copiedType.Members),
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			copiedType.Key: {Key: copiedType.Key, Kind: "interface"},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		actual.Members[memberKey] = &actualMember{
+			Key:        memberKey,
+			Kind:       copiedMember.GoKind,
+			Parameters: append([]string(nil), copiedMember.Parameters...),
+			Results:    append([]string(nil), copiedMember.Results...),
+		}
+	}
+	return expected, actual, &copiedType
+}
+
+// firstMemberWithFallibility returns the first projected operation whose
+// expected fallibility matches want, in declared order.
+func firstMemberWithFallibility(t *testing.T, expected *expectedSurface, owner *expectedType, want bool) symbolKey {
+	t.Helper()
+	for _, key := range owner.Members {
+		if expected.Members[key].ErrorAdded == want {
+			return key
+		}
+	}
+	t.Fatalf("%s has no operation with fallible=%t", owner.XNA, want)
+	return symbolKey{}
+}
+
+// managedInterfaceDefects are the target-side defects every projected
+// interface is negatively fixtured against. The fallibility entries cover both
+// directions of the per-operation rule on an interface owner.
+//
+// Requires, when set, reports whether a contract has the shape a defect needs.
+// The cluster deliberately spans a uniformly infallible contract, a uniformly
+// fallible one, and a mixed one, so not every defect is expressible on every
+// member; a skipped case is counted rather than silently dropped.
+var managedInterfaceDefects = []struct {
+	Name     string
+	Category string
+	Requires func(expected *expectedSurface, owner *expectedType) bool
+	Apply    func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType)
+}{
+	{Name: "missing_type", Category: "MISSING_TYPE", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		delete(actual.Types, owner.Key)
+	}},
+	{Name: "wrong_package", Category: "MISSING_TYPE", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		const elsewhere = modulePath + "/Microsoft/Xna/Framework/Media"
+		moved := *actual.Types[owner.Key]
+		delete(actual.Types, owner.Key)
+		moved.Key.Package = elsewhere
+		actual.Types[moved.Key] = &moved
+	}},
+	{Name: "projected_as_struct", Category: "TYPE_KIND_MISMATCH", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// A concrete struct cannot stand in for a contract with no
+		// implementation in scope.
+		actual.Types[owner.Key].Kind = "struct"
+	}},
+	{Name: "missing_first_member", Category: "MISSING_MEMBER", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		delete(actual.Members, owner.Members[0])
+	}},
+	{Name: "missing_last_member", Category: "MISSING_MEMBER", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		delete(actual.Members, owner.Members[len(owner.Members)-1])
+	}},
+	{Name: "renamed_last_member", Category: "MISSING_MEMBER", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := owner.Members[len(owner.Members)-1]
+		member := *actual.Members[key]
+		delete(actual.Members, key)
+		member.Key = symbolKey{Package: key.Package, Receiver: key.Receiver, Name: key.Name + "Renamed"}
+		actual.Members[member.Key] = &member
+	}},
+	{Name: "unexpected_member", Category: "UNEXPECTED_MEMBER", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := symbolKey{Package: owner.PackagePath, Receiver: owner.GoName, Name: "Invented"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method"}
+	}},
+	{Name: "wrong_parameter", Category: "PARAMETER_MAPPING_MISMATCH", Requires: interfaceHasParameterizedOperation, Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+		for _, key := range owner.Members {
+			if len(expected.Members[key].Parameters) == 1 {
+				actual.Members[key].Parameters = []string{"complex128"}
+				return
+			}
+		}
+		t.Fatalf("%s projects no single-parameter operation", owner.XNA)
+	}},
+	{Name: "artificial_error", Category: "ERROR_MAPPING_MISMATCH", Requires: interfaceHasInfallibleOperation, Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// Interface ownership alone must never add an error result.
+		key := firstMemberWithFallibility(t, expected, owner, false)
+		member := actual.Members[key]
+		member.Results = append(append([]string(nil), member.Results...), "error")
+	}},
+	{Name: "dropped_error", Category: "ERROR_MAPPING_MISMATCH", Requires: interfaceHasFallibleOperation, Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// An operation that measurably crosses a runtime boundary must keep
+		// somewhere to report failure.
+		key := firstMemberWithFallibility(t, expected, owner, true)
+		member := actual.Members[key]
+		member.Results = member.Results[:len(member.Results)-1]
+	}},
+	{Name: "error_replaces_source_result", Category: "RETURN_MAPPING_MISMATCH", Requires: interfaceHasFallibleValueOperation, Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// BeginDraw's Boolean and FogColor's Vector3 are source results and
+		// must stay channels of their own rather than collapsing into the
+		// error.
+		for _, key := range owner.Members {
+			if member := expected.Members[key]; member.ErrorAdded && len(member.Results) > 1 {
+				actual.Members[key].Results = []string{"error"}
+				return
+			}
+		}
+		t.Fatalf("%s projects no fallible value-producing operation", owner.XNA)
+	}},
+}
+
+func interfaceHasParameterizedOperation(expected *expectedSurface, owner *expectedType) bool {
+	for _, key := range owner.Members {
+		if len(expected.Members[key].Parameters) == 1 {
+			return true
+		}
+	}
+	return false
+}
+
+func interfaceHasInfallibleOperation(expected *expectedSurface, owner *expectedType) bool {
+	for _, key := range owner.Members {
+		if !expected.Members[key].ErrorAdded {
+			return true
+		}
+	}
+	return false
+}
+
+func interfaceHasFallibleOperation(expected *expectedSurface, owner *expectedType) bool {
+	for _, key := range owner.Members {
+		if expected.Members[key].ErrorAdded {
+			return true
+		}
+	}
+	return false
+}
+
+func interfaceHasFallibleValueOperation(expected *expectedSurface, owner *expectedType) bool {
+	for _, key := range owner.Members {
+		if member := expected.Members[key]; member.ErrorAdded && len(member.Results) > 1 {
+			return true
+		}
+	}
+	return false
+}
+
+// TestFoundation18InterfaceDefectsRejectedForEveryType applies every
+// target-side defect to every projected interface, asserting a clean baseline
+// first so no defect can pass by accident.
+func TestFoundation18InterfaceDefectsRejectedForEveryType(t *testing.T) {
+	if len(allManagedInterfaces()) != 4 {
+		t.Fatalf("interface cluster size = %d, want 4", len(allManagedInterfaces()))
+	}
+	cases, skipped := 0, 0
+	for _, pinned := range allManagedInterfaces() {
+		pinned := pinned
+		t.Run(pinned.XNA, func(t *testing.T) {
+			baseExpected, baseActual, baseOwner := managedInterfaceSurfaces(t, pinned.XNA)
+			baseline := verify(baseExpected, baseActual, 0, "report", "contract", "mapping")
+			if baseline.Summary["TOTAL_DIAGNOSTICS"] != 0 {
+				t.Fatalf("unmutated %s baseline is not clean: %v", pinned.XNA, baseline.Diagnostics)
+			}
+			for _, closure := range baseline.Foundation18Interfaces {
+				if closure.XNA == pinned.XNA && closure.Status != "PASS" {
+					t.Fatalf("unmutated %s closure = %q", pinned.XNA, closure.Status)
+				}
+			}
+			for _, defect := range managedInterfaceDefects {
+				defect := defect
+				if defect.Requires != nil && !defect.Requires(baseExpected, baseOwner) {
+					skipped++
+					continue
+				}
+				t.Run(defect.Name, func(t *testing.T) {
+					expected, actual, owner := managedInterfaceSurfaces(t, pinned.XNA)
+					defect.Apply(t, expected, actual, owner)
+					result := verify(expected, actual, 0, "report", "contract", "mapping")
+					if result.Summary[defect.Category] == 0 {
+						t.Fatalf("defect %q on %s did not raise %s; summary=%v",
+							defect.Name, pinned.XNA, defect.Category, result.Summary)
+					}
+					for _, closure := range result.Foundation18Interfaces {
+						if closure.XNA == pinned.XNA && closure.Status != "FAIL" {
+							t.Fatalf("defect %q on %s left the closure measurement at %q",
+								defect.Name, pinned.XNA, closure.Status)
+						}
+					}
+				})
+				cases++
+			}
+		})
+	}
+	// The seven shape-dependent skips, by contract:
+	//   IEffectMatrices        2  no fallible operation exists, so
+	//                             dropped_error and error_replaces_source_result
+	//                             have nothing to attack
+	//   IEffectFog             0  the mixed contract expresses every defect
+	//   IGameComponent         3  takes no parameters, has no infallible
+	//                             operation, and its one fallible operation
+	//                             produces no value alongside the error
+	//   IGraphicsDeviceManager 2  takes no parameters and has no infallible
+	//                             operation; BeginDraw does produce a value,
+	//                             so error_replaces_source_result applies
+	if cases+skipped != len(allManagedInterfaces())*len(managedInterfaceDefects) {
+		t.Fatalf("interface fixture accounting = %d applied + %d skipped", cases, skipped)
+	}
+	if cases != 37 || skipped != 7 {
+		t.Fatalf("interface negative fixtures = %d applied, %d skipped", cases, skipped)
+	}
+}
+
+// TestFoundation18InterfaceMappedContracts pins the exact projected contract of
+// each interface, including which operations are fallible and why.
+func TestFoundation18InterfaceMappedContracts(t *testing.T) {
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const graphicsPackage = modulePath + "/Microsoft/Xna/Framework/Graphics"
+	const frameworkPackage = modulePath + "/Microsoft/Xna/Framework"
+
+	for _, pinned := range allManagedInterfaces() {
+		pinned := pinned
+		t.Run(pinned.XNA, func(t *testing.T) {
+			owner := surface.typeForXNA(pinned.XNA)
+			if owner == nil || owner.Kind != "interface" {
+				t.Fatalf("%s = %+v", pinned.XNA, owner)
+			}
+			if len(owner.Interfaces) != 0 {
+				t.Fatalf("%s declares base interfaces %v", pinned.XNA, owner.Interfaces)
+			}
+			if classifiedInterfaces[pinned.XNA] != pinned.Classified {
+				t.Fatalf("%s classification = %t, want %t",
+					pinned.XNA, classifiedInterfaces[pinned.XNA], pinned.Classified)
+			}
+			fallible := make(map[string]bool, len(pinned.FallibleOperations))
+			for _, name := range pinned.FallibleOperations {
+				fallible[name] = true
+			}
+			seen := 0
+			for _, key := range owner.Members {
+				member := surface.Members[key]
+				if member.GoKind != "method" || key.Receiver != owner.GoName {
+					t.Fatalf("%s.%s = kind %q receiver %q", pinned.XNA, key.Name, member.GoKind, key.Receiver)
+				}
+				if member.ErrorAdded != fallible[key.Name] {
+					t.Fatalf("%s.%s fallible = %t, want %t",
+						pinned.XNA, key.Name, member.ErrorAdded, fallible[key.Name])
+				}
+				if fallible[key.Name] {
+					seen++
+				}
+			}
+			if seen != len(pinned.FallibleOperations) {
+				t.Fatalf("%s matched %d of %d fallible operations",
+					pinned.XNA, seen, len(pinned.FallibleOperations))
+			}
+		})
+	}
+
+	// The exact signatures that make the mixed contract legible.
+	for name, wanted := range map[string]struct {
+		parameters []string
+		results    []string
+	}{
+		"World":         {nil, []string{"framework.Matrix"}},
+		"SetWorld":      {[]string{"framework.Matrix"}, nil},
+		"FogEnabled":    {nil, []string{"bool"}},
+		"SetFogEnabled": {[]string{"bool"}, nil},
+		"FogStart":      {nil, []string{"float32"}},
+		"FogEnd":        {nil, []string{"float32"}},
+		"FogColor":      {nil, []string{"framework.Vector3", "error"}},
+		"SetFogColor":   {[]string{"framework.Vector3"}, []string{"error"}},
+	} {
+		receiver := "IEffectFog"
+		if strings.Contains(name, "World") {
+			receiver = "IEffectMatrices"
+		}
+		member := surface.Members[symbolKey{Package: graphicsPackage, Receiver: receiver, Name: name}]
+		if member == nil || !equalStrings(member.Parameters, wanted.parameters) ||
+			!equalStrings(member.Results, wanted.results) {
+			t.Fatalf("%s.%s = %+v", receiver, name, member)
+		}
+	}
+
+	// BeginDraw keeps its source Boolean and its error as separate channels.
+	beginDraw := surface.Members[symbolKey{Package: frameworkPackage, Receiver: "IGraphicsDeviceManager", Name: "BeginDraw"}]
+	if beginDraw == nil || !equalStrings(beginDraw.Results, []string{"bool", "error"}) {
+		t.Fatalf("IGraphicsDeviceManager.BeginDraw = %+v", beginDraw)
+	}
+}
+
+// TestInterfaceClassificationDefectsAreRejected attacks the interface
+// classification rule in both directions using the real classification tables.
+func TestInterfaceClassificationDefectsAreRejected(t *testing.T) {
+	cases := []struct {
+		name        string
+		identity    string
+		wantMessage string
+	}{
+		// Dropping the classification restores the interface-kind default,
+		// which would make six measurably managed accessors fallible.
+		{"pure_managed_interface_demoted_to_runtime", effectMatricesIdentity,
+			"property getter expected fallible, projected infallible"},
+		// A runtime-boundary contract must not be admitted as classified with
+		// no fallible operation recorded.
+		{"runtime_interface_admitted_as_pure_managed", graphicsDeviceManagerInterfaceIdentity,
+			"method expected infallible, projected fallible"},
+		// Losing the FogColor entry drops the one measured D3DX boundary.
+		{"interface_runtime_operation_dropped", effectFogIdentity,
+			"property getter expected infallible, projected fallible"},
+		// Widening it to every fog operation would invent six errors.
+		{"interface_runtime_operation_widened", effectFogIdentity,
+			"property getter expected fallible, projected infallible"},
+	}
+	if len(cases) != len(interfaceClassificationDefects) {
+		t.Fatalf("interface classification coverage = %d of %d", len(cases), len(interfaceClassificationDefects))
+	}
+	for _, testCase := range cases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			mutate, ok := interfaceClassificationDefects[testCase.name]
+			if !ok {
+				t.Fatalf("interface classification defect %q is not in the shared table", testCase.name)
+			}
+			_, actual, _ := managedInterfaceSurfaces(t, testCase.identity)
+			var result report
+			withClassification(t, mutate, func() {
+				full, err := buildExpected(loadPinnedContract(t))
+				if err != nil {
+					t.Fatal(err)
+				}
+				mutated, _, _ := isolateManagedInterface(t, full, testCase.identity)
+				result = verify(mutated, actual, 0, "report", "contract", "mapping")
+			})
+			if result.Summary["ERROR_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("interface classification defect %q did not raise ERROR_MAPPING_MISMATCH; summary=%v",
+					testCase.name, result.Summary)
+			}
+			found := false
+			for _, item := range result.Diagnostics {
+				if item.Category == "ERROR_MAPPING_MISMATCH" && strings.Contains(item.Message, testCase.wantMessage) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("interface classification defect %q raised no diagnostic saying %q; diagnostics=%v",
+					testCase.name, testCase.wantMessage, result.Diagnostics)
+			}
+		})
+	}
+}
+
+const (
+	effectMatricesIdentity                 = "Microsoft.Xna.Framework.Graphics.IEffectMatrices"
+	effectFogIdentity                      = "Microsoft.Xna.Framework.Graphics.IEffectFog"
+	graphicsDeviceManagerInterfaceIdentity = "Microsoft.Xna.Framework.IGraphicsDeviceManager"
+)
+
+// managedInterfaceMutationCase applies one named Foundation-18 target-side
+// interface defect. Mutation ids have the form f18if_<defect>__<identity>.
+func managedInterfaceMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	parts := strings.SplitN(strings.TrimPrefix(mutation, "f18if_"), "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed interface mutation %q", mutation)
+	}
+	expected, actual, owner := managedInterfaceSurfaces(t, parts[1])
+	for _, defect := range managedInterfaceDefects {
+		if defect.Name != parts[0] {
+			continue
+		}
+		if defect.Requires != nil && !defect.Requires(expected, owner) {
+			t.Fatalf("interface defect %q is not expressible on %s", parts[0], parts[1])
+		}
+		defect.Apply(t, expected, actual, owner)
+		return expected, actual
+	}
+	t.Fatalf("unknown interface defect %q", parts[0])
+	return nil, nil
+}
+
+// interfaceClassificationMutationCase applies one named Foundation-18
+// interface classification defect. Mutation ids have the form
+// f18cls_<defect>__<identity>.
+func interfaceClassificationMutationCase(t *testing.T, mutation string) report {
+	t.Helper()
+	parts := strings.SplitN(strings.TrimPrefix(mutation, "f18cls_"), "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed interface classification mutation %q", mutation)
+	}
+	mutate, ok := interfaceClassificationDefects[parts[0]]
+	if !ok {
+		t.Fatalf("unknown interface classification defect %q", parts[0])
+	}
+	_, actual, _ := managedInterfaceSurfaces(t, parts[1])
+	var result report
+	withClassification(t, mutate, func() {
+		full, err := buildExpected(loadPinnedContract(t))
+		if err != nil {
+			t.Fatal(err)
+		}
+		mutated, _, _ := isolateManagedInterface(t, full, parts[1])
+		result = verify(mutated, actual, 0, "report", "contract", "mapping")
+	})
+	return result
+}
+
+// interfaceClassificationDefects is the shared table behind both the named
+// interface classification test and the mutation inventory.
+var interfaceClassificationDefects = map[string]func(){
+	"pure_managed_interface_demoted_to_runtime": func() {
+		delete(classifiedInterfaces, effectMatricesIdentity)
+	},
+	"runtime_interface_admitted_as_pure_managed": func() {
+		classifiedInterfaces[graphicsDeviceManagerInterfaceIdentity] = true
+	},
+	"interface_runtime_operation_dropped": func() {
+		delete(managedFallibleMembers, effectFogIdentity)
+	},
+	"interface_runtime_operation_widened": func() {
+		managedFallibleMembers[effectFogIdentity] = map[string]bool{
+			"property|FogColor": true, "property|FogEnabled": true,
+			"property|FogStart": true, "property|FogEnd": true,
+		}
 	},
 }

@@ -273,6 +273,14 @@ The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
 Windows, macOS, Android, iOS, and Web/Wasm are not qualified. Content/XNB,
 Effects/3D, Audio, Media, Storage, Touch, and most of XNA remain unimplemented.
+See [Foundation 18 interface evidence](docs/foundation-18-interface-evidence.md)
+for the managed-interface projection rule, the measured `IEffectFog` split in
+which only `FogColor` reaches D3DX, the two runtime-boundary contracts, the
+separate Boolean and error channels of `BeginDraw`, and the exact event-mapping
+gap that keeps `IUpdateable`, `IDrawable`, and `IGraphicsDeviceService`
+deferred. The four contracts are declarations only: CNA-Go has no effect
+runtime, no game component, and no device manager bound to the contract.
+
 The `Media` and `Input/Touch` packages contain enum metadata only and carry no
 media or touch runtime capability claim. The `Audio` package adds two pure
 managed positional descriptors alongside its enums and still carries no audio

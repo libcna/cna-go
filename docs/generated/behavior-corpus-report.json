@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 535,
-    "ASSERTIONS": 535,
+    "OBSERVATIONS": 541,
+    "ASSERTIONS": 541,
     "FAILURES": 0
   },
   "observations": [
@@ -4285,6 +4285,54 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "0x41100000",
       "actual": "0x41100000",
+      "passed": true
+    },
+    {
+      "id": "effect-matrices.infallible-round-trip",
+      "group": "INTERFACE_CONTRACT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "effect-fog.managed-operations-are-infallible",
+      "group": "INTERFACE_CONTRACT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,0x3f800000,0x40000000",
+      "actual": "true,0x3f800000,0x40000000",
+      "passed": true
+    },
+    {
+      "id": "effect-fog.runtime-operations-carry-an-error",
+      "group": "INTERFACE_CONTRACT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true,0x3f800000,0x40000000,0x40400000",
+      "actual": "true,true,0x3f800000,0x40000000,0x40400000",
+      "passed": true
+    },
+    {
+      "id": "effect-fog.runtime-failure-reaches-the-caller",
+      "group": "INTERFACE_CONTRACT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-manager-contract.begin-draw-channels",
+      "group": "INTERFACE_CONTRACT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true,false,true",
+      "actual": "true,true,false,true",
+      "passed": true
+    },
+    {
+      "id": "game-component-contract.initialize-channel",
+      "group": "INTERFACE_CONTRACT",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true",
+      "actual": "true,true",
       "passed": true
     }
   ]

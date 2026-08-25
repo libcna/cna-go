@@ -255,6 +255,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation15ValueStructs = measureValueStructClosures(expected, actual, typeDiagnostics, foundation15ValueStructs)
 	result.Foundation16ValueStructs = measureValueStructClosures(expected, actual, typeDiagnostics, foundation16ValueStructs)
 	result.Foundation17ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation17ManagedClasses)
+	result.Foundation18Interfaces = measureManagedInterfaceClosures(expected, actual, typeDiagnostics, foundation18Interfaces)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -2058,6 +2059,164 @@ func measureManagedClassClosure(expected *expectedSurface, actual *actualSurface
 		measurement.LocalDiagnostics == 0 &&
 		measurement.TargetGoIdentities == measurement.ExpectedGoIdentities &&
 		measurement.ReferenceProjection == "*"+owner.GoName && membersPass {
+		measurement.Status = "PASS"
+	}
+	return measurement
+}
+
+// foundation18Interface pins one projected CLR interface contract together
+// with the boundary classification its reference implementor IL proves and the
+// exact set of operations that classification makes fallible.
+type foundation18Interface struct {
+	XNA        string
+	Boundary   string
+	Classified bool
+	// FallibleOperations are the projected Go names that must carry an error
+	// result. Every other projected name must not.
+	FallibleOperations []string
+}
+
+// foundation18Interfaces is the Foundation-18 interface cluster. The two
+// boundaries are measured from the assembly that declares each interface, not
+// inferred from the interface kind.
+var foundation18Interfaces = []foundation18Interface{
+	{
+		XNA:                "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+		Boundary:           "PURE_MANAGED",
+		Classified:         true,
+		FallibleOperations: nil,
+	},
+	{
+		XNA:        "Microsoft.Xna.Framework.Graphics.IEffectFog",
+		Boundary:   "MIXED_MANAGED_AND_RUNTIME",
+		Classified: true,
+		// Only FogColor reaches EffectParameter and therefore D3DX.
+		FallibleOperations: []string{"FogColor", "SetFogColor"},
+	},
+	{
+		XNA:                "Microsoft.Xna.Framework.IGameComponent",
+		Boundary:           "RUNTIME",
+		Classified:         false,
+		FallibleOperations: []string{"Initialize"},
+	},
+	{
+		XNA:                "Microsoft.Xna.Framework.IGraphicsDeviceManager",
+		Boundary:           "RUNTIME",
+		Classified:         false,
+		FallibleOperations: []string{"CreateDevice", "BeginDraw", "EndDraw"},
+	},
+}
+
+// allManagedInterfaces is every pinned interface measured by the shared
+// table-driven closure category, across milestones.
+func allManagedInterfaces() []foundation18Interface {
+	all := make([]foundation18Interface, 0, len(foundation18Interfaces))
+	all = append(all, foundation18Interfaces...)
+	return all
+}
+
+func measureManagedInterfaceClosures(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, batch []foundation18Interface) []managedInterfaceClosure {
+	measurements := make([]managedInterfaceClosure, 0, len(batch))
+	for _, pinned := range batch {
+		measurements = append(measurements, measureManagedInterfaceClosure(expected, actual, typeDiagnostics, pinned))
+	}
+	return measurements
+}
+
+func measureManagedInterfaceClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, pinned foundation18Interface) managedInterfaceClosure {
+	measurement := managedInterfaceClosure{
+		XNA:          pinned.XNA,
+		SourceTypes:  1,
+		ExpectedKind: "interface",
+		ActualKind:   "missing",
+		Classified:   classifiedInterfaces[pinned.XNA],
+		Boundary:     pinned.Boundary,
+		Status:       "FAIL",
+	}
+	owner := expected.typeForXNA(pinned.XNA)
+	if owner == nil {
+		return measurement
+	}
+	measurement.GoName = owner.GoName
+	measurement.PackagePath = owner.PackagePath
+	measurement.SourceIdentities = owner.SourceMembers
+	measurement.ExpectedGoIdentities = len(owner.Members)
+	measurement.LocalDiagnostics = typeDiagnostics[owner.XNA]
+	if target := actual.Types[owner.Key]; target != nil {
+		measurement.TargetTypes = 1
+		measurement.ActualKind = target.Kind
+	}
+
+	fallible := make(map[string]bool, len(pinned.FallibleOperations))
+	for _, name := range pinned.FallibleOperations {
+		fallible[name] = true
+	}
+	membersPass := true
+	getters := make(map[string]bool)
+	setters := make(map[string]bool)
+	for _, key := range owner.Members {
+		em := expected.Members[key]
+		row := managedInterfaceMember{
+			XNA:              em.XNA,
+			SourceKind:       em.SourceKind,
+			Accessor:         em.Accessor,
+			Name:             key.Name,
+			ExpectedFallible: em.ErrorAdded,
+			ExpectedResults:  append([]string(nil), em.Results...),
+			Status:           "FAIL",
+		}
+		// The pinned table, not the mapping tables, decides which operations
+		// may be fallible, so a classification edit alone cannot move the
+		// boundary without failing here.
+		if em.ErrorAdded != fallible[key.Name] {
+			membersPass = false
+			measurement.Members = append(measurement.Members, row)
+			continue
+		}
+		switch em.Accessor {
+		case "get":
+			getters[em.XNA] = true
+			if em.ErrorAdded {
+				measurement.FallibleGetters++
+			}
+		case "set":
+			setters[em.XNA] = true
+			if em.ErrorAdded {
+				measurement.FallibleSetters++
+			}
+		default:
+			if em.ErrorAdded {
+				measurement.FallibleOperations++
+			}
+		}
+		if em.ErrorAdded {
+			measurement.ErrorResults++
+		}
+		if am := actual.Members[key]; am != nil {
+			measurement.TargetGoIdentities++
+			row.ActualResults = append([]string(nil), am.Results...)
+			row.ActualFallible = len(am.Results) > 0 && am.Results[len(am.Results)-1] == "error"
+			if am.Kind == "method" && equalStrings(row.ExpectedResults, row.ActualResults) &&
+				equalStrings(em.Parameters, am.Parameters) &&
+				row.ExpectedFallible == row.ActualFallible {
+				row.Status = "PASS"
+			}
+		}
+		if row.Status != "PASS" {
+			membersPass = false
+		}
+		measurement.Members = append(measurement.Members, row)
+	}
+	for xna := range getters {
+		if setters[xna] {
+			measurement.AccessorPairs++
+		}
+	}
+	if measurement.TargetTypes == 1 && measurement.ActualKind == "interface" &&
+		measurement.Classified == pinned.Classified &&
+		measurement.LocalDiagnostics == 0 &&
+		measurement.TargetGoIdentities == measurement.ExpectedGoIdentities &&
+		measurement.ErrorResults == len(pinned.FallibleOperations) && membersPass {
 		measurement.Status = "PASS"
 	}
 	return measurement
