@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 60,
+    "COMPLETE_TYPES": 85,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 192,
-    "MISSING_TYPES": 192,
+    "MISSING_TYPE": 167,
+    "MISSING_TYPES": 167,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1361,
-    "TARGET_TYPES": 65,
-    "TOTAL_DIAGNOSTICS": 369,
+    "TARGET_MEMBERS": 1482,
+    "TARGET_TYPES": 90,
+    "TOTAL_DIAGNOSTICS": 344,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -48,12 +48,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.AudioCategory",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:AudioCategory",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.AudioChannels",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:AudioChannels",
       "message": "mapped Go type is absent"
     },
     {
@@ -72,12 +66,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.AudioListener",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:AudioListener",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.AudioStopOptions",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:AudioStopOptions",
       "message": "mapped Go type is absent"
     },
     {
@@ -102,12 +90,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.Microphone",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:Microphone",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.MicrophoneState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:MicrophoneState",
       "message": "mapped Go type is absent"
     },
     {
@@ -144,12 +126,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:SoundEffectInstance",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.SoundState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:SoundState",
       "message": "mapped Go type is absent"
     },
     {
@@ -610,12 +586,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.BlendFunction",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:BlendFunction",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.BlendState",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:BlendState",
       "message": "mapped Go type is absent"
@@ -624,24 +594,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ColorWriteChannels",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.CompareFunction",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:CompareFunction",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.CubeMapFace",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:CubeMapFace",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.CullMode",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:CullMode",
       "message": "mapped Go type is absent"
     },
     {
@@ -730,20 +682,8 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.EffectParameterClass",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:EffectParameterClass",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.EffectParameterCollection",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:EffectParameterCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.EffectParameterType",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:EffectParameterType",
       "message": "mapped Go type is absent"
     },
     {
@@ -774,12 +714,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:EnvironmentMapEffect",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.FillMode",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:FillMode",
       "message": "mapped Go type is absent"
     },
     {
@@ -1210,12 +1144,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDeviceStatus",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceStatus",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsResource",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsResource",
       "message": "mapped Go type is absent"
@@ -1254,12 +1182,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IndexBuffer",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.IndexElementSize",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IndexElementSize",
       "message": "mapped Go type is absent"
     },
     {
@@ -1348,20 +1270,8 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PresentInterval",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:PresentInterval",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.PresentationParameters",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:PresentationParameters",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.PrimitiveType",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:PrimitiveType",
       "message": "mapped Go type is absent"
     },
     {
@@ -1390,12 +1300,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:RenderTargetUsage",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ResourceCreatedEventArgs",
       "message": "mapped Go type is absent"
@@ -1416,12 +1320,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.SamplerStateCollection",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SamplerStateCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.SetDataOptions",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SetDataOptions",
       "message": "mapped Go type is absent"
     },
     {
@@ -1620,12 +1518,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.Texture3D",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture3D",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.TextureAddressMode",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:TextureAddressMode",
       "message": "mapped Go type is absent"
     },
     {
@@ -1960,12 +1852,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.Buttons",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:Buttons",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.GamePad",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePad",
       "message": "mapped Go type is absent"
@@ -1986,12 +1872,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.GamePadDPad",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePadDPad",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.GamePadDeadZone",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePadDeadZone",
       "message": "mapped Go type is absent"
     },
     {
@@ -2038,12 +1918,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.Touch.GestureType",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:GestureType",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:TouchCollection",
       "message": "mapped Go type is absent"
@@ -2058,12 +1932,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.Touch.TouchLocation",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:TouchLocation",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.Touch.TouchLocationState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:TouchLocationState",
       "message": "mapped Go type is absent"
     },
     {
@@ -2146,18 +2014,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.MediaSourceType",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:MediaSourceType",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.MediaState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:MediaState",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Media.Picture",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:Picture",
       "message": "mapped Go type is absent"
@@ -2218,12 +2074,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.VideoSoundtrackType",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:VideoSoundtrackType",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Media.VisualizationData",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:VisualizationData",
       "message": "mapped Go type is absent"
@@ -2260,6 +2110,10 @@
     }
   ],
   "completeTypes": [
+    "Microsoft.Xna.Framework.Audio.AudioChannels",
+    "Microsoft.Xna.Framework.Audio.AudioStopOptions",
+    "Microsoft.Xna.Framework.Audio.MicrophoneState",
+    "Microsoft.Xna.Framework.Audio.SoundState",
     "Microsoft.Xna.Framework.BoundingBox",
     "Microsoft.Xna.Framework.BoundingFrustum",
     "Microsoft.Xna.Framework.BoundingSphere",
@@ -2273,10 +2127,19 @@
     "Microsoft.Xna.Framework.CurveTangent",
     "Microsoft.Xna.Framework.DisplayOrientation",
     "Microsoft.Xna.Framework.GameTime",
+    "Microsoft.Xna.Framework.Graphics.BlendFunction",
     "Microsoft.Xna.Framework.Graphics.BufferUsage",
     "Microsoft.Xna.Framework.Graphics.ClearOptions",
+    "Microsoft.Xna.Framework.Graphics.CompareFunction",
+    "Microsoft.Xna.Framework.Graphics.CubeMapFace",
+    "Microsoft.Xna.Framework.Graphics.CullMode",
     "Microsoft.Xna.Framework.Graphics.DepthFormat",
+    "Microsoft.Xna.Framework.Graphics.EffectParameterClass",
+    "Microsoft.Xna.Framework.Graphics.EffectParameterType",
+    "Microsoft.Xna.Framework.Graphics.FillMode",
+    "Microsoft.Xna.Framework.Graphics.GraphicsDeviceStatus",
     "Microsoft.Xna.Framework.Graphics.GraphicsProfile",
+    "Microsoft.Xna.Framework.Graphics.IndexElementSize",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
@@ -2296,20 +2159,32 @@
     "Microsoft.Xna.Framework.Graphics.PackedVector.Rgba64",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Short2",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Short4",
+    "Microsoft.Xna.Framework.Graphics.PresentInterval",
+    "Microsoft.Xna.Framework.Graphics.PrimitiveType",
+    "Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "Microsoft.Xna.Framework.Graphics.SetDataOptions",
     "Microsoft.Xna.Framework.Graphics.SpriteEffects",
     "Microsoft.Xna.Framework.Graphics.SpriteSortMode",
     "Microsoft.Xna.Framework.Graphics.SurfaceFormat",
+    "Microsoft.Xna.Framework.Graphics.TextureAddressMode",
     "Microsoft.Xna.Framework.Graphics.VertexElement",
     "Microsoft.Xna.Framework.Graphics.VertexElementFormat",
     "Microsoft.Xna.Framework.Graphics.VertexElementUsage",
     "Microsoft.Xna.Framework.Graphics.Viewport",
     "Microsoft.Xna.Framework.Input.ButtonState",
+    "Microsoft.Xna.Framework.Input.Buttons",
+    "Microsoft.Xna.Framework.Input.GamePadDeadZone",
     "Microsoft.Xna.Framework.Input.KeyState",
     "Microsoft.Xna.Framework.Input.Keyboard",
     "Microsoft.Xna.Framework.Input.KeyboardState",
     "Microsoft.Xna.Framework.Input.Keys",
+    "Microsoft.Xna.Framework.Input.Touch.GestureType",
+    "Microsoft.Xna.Framework.Input.Touch.TouchLocationState",
     "Microsoft.Xna.Framework.MathHelper",
     "Microsoft.Xna.Framework.Matrix",
+    "Microsoft.Xna.Framework.Media.MediaSourceType",
+    "Microsoft.Xna.Framework.Media.MediaState",
+    "Microsoft.Xna.Framework.Media.VideoSoundtrackType",
     "Microsoft.Xna.Framework.Plane",
     "Microsoft.Xna.Framework.PlaneIntersectionType",
     "Microsoft.Xna.Framework.PlayerIndex",
@@ -2532,23 +2407,19 @@
   ],
   "missingTypes": [
     "Microsoft.Xna.Framework.Audio.AudioCategory",
-    "Microsoft.Xna.Framework.Audio.AudioChannels",
     "Microsoft.Xna.Framework.Audio.AudioEmitter",
     "Microsoft.Xna.Framework.Audio.AudioEngine",
     "Microsoft.Xna.Framework.Audio.AudioListener",
-    "Microsoft.Xna.Framework.Audio.AudioStopOptions",
     "Microsoft.Xna.Framework.Audio.Cue",
     "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
     "Microsoft.Xna.Framework.Audio.Microphone",
-    "Microsoft.Xna.Framework.Audio.MicrophoneState",
     "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
     "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
     "Microsoft.Xna.Framework.Audio.RendererDetail",
     "Microsoft.Xna.Framework.Audio.SoundBank",
     "Microsoft.Xna.Framework.Audio.SoundEffect",
     "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
-    "Microsoft.Xna.Framework.Audio.SoundState",
     "Microsoft.Xna.Framework.Audio.WaveBank",
     "Microsoft.Xna.Framework.Content.ContentLoadException",
     "Microsoft.Xna.Framework.Content.ContentManager",
@@ -2586,12 +2457,8 @@
     "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
     "Microsoft.Xna.Framework.Graphics.BasicEffect",
     "Microsoft.Xna.Framework.Graphics.Blend",
-    "Microsoft.Xna.Framework.Graphics.BlendFunction",
     "Microsoft.Xna.Framework.Graphics.BlendState",
     "Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
-    "Microsoft.Xna.Framework.Graphics.CompareFunction",
-    "Microsoft.Xna.Framework.Graphics.CubeMapFace",
-    "Microsoft.Xna.Framework.Graphics.CullMode",
     "Microsoft.Xna.Framework.Graphics.DepthStencilState",
     "Microsoft.Xna.Framework.Graphics.DeviceLostException",
     "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
@@ -2606,17 +2473,13 @@
     "Microsoft.Xna.Framework.Graphics.EffectAnnotationCollection",
     "Microsoft.Xna.Framework.Graphics.EffectMaterial",
     "Microsoft.Xna.Framework.Graphics.EffectParameter",
-    "Microsoft.Xna.Framework.Graphics.EffectParameterClass",
     "Microsoft.Xna.Framework.Graphics.EffectParameterCollection",
-    "Microsoft.Xna.Framework.Graphics.EffectParameterType",
     "Microsoft.Xna.Framework.Graphics.EffectPass",
     "Microsoft.Xna.Framework.Graphics.EffectPassCollection",
     "Microsoft.Xna.Framework.Graphics.EffectTechnique",
     "Microsoft.Xna.Framework.Graphics.EffectTechniqueCollection",
     "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
-    "Microsoft.Xna.Framework.Graphics.FillMode",
     "Microsoft.Xna.Framework.Graphics.GraphicsAdapter",
-    "Microsoft.Xna.Framework.Graphics.GraphicsDeviceStatus",
     "Microsoft.Xna.Framework.Graphics.GraphicsResource",
     "Microsoft.Xna.Framework.Graphics.IEffectFog",
     "Microsoft.Xna.Framework.Graphics.IEffectLights",
@@ -2624,7 +2487,6 @@
     "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
     "Microsoft.Xna.Framework.Graphics.IVertexType",
     "Microsoft.Xna.Framework.Graphics.IndexBuffer",
-    "Microsoft.Xna.Framework.Graphics.IndexElementSize",
     "Microsoft.Xna.Framework.Graphics.Model",
     "Microsoft.Xna.Framework.Graphics.ModelBone",
     "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
@@ -2639,25 +2501,20 @@
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
     "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
     "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
-    "Microsoft.Xna.Framework.Graphics.PresentInterval",
     "Microsoft.Xna.Framework.Graphics.PresentationParameters",
-    "Microsoft.Xna.Framework.Graphics.PrimitiveType",
     "Microsoft.Xna.Framework.Graphics.RasterizerState",
     "Microsoft.Xna.Framework.Graphics.RenderTarget2D",
     "Microsoft.Xna.Framework.Graphics.RenderTargetBinding",
     "Microsoft.Xna.Framework.Graphics.RenderTargetCube",
-    "Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
     "Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
     "Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
     "Microsoft.Xna.Framework.Graphics.SamplerState",
     "Microsoft.Xna.Framework.Graphics.SamplerStateCollection",
-    "Microsoft.Xna.Framework.Graphics.SetDataOptions",
     "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
     "Microsoft.Xna.Framework.Graphics.SpriteFont",
     "Microsoft.Xna.Framework.Graphics.StencilOperation",
     "Microsoft.Xna.Framework.Graphics.Texture",
     "Microsoft.Xna.Framework.Graphics.Texture3D",
-    "Microsoft.Xna.Framework.Graphics.TextureAddressMode",
     "Microsoft.Xna.Framework.Graphics.TextureCollection",
     "Microsoft.Xna.Framework.Graphics.TextureCube",
     "Microsoft.Xna.Framework.Graphics.TextureFilter",
@@ -2673,12 +2530,10 @@
     "Microsoft.Xna.Framework.IGameComponent",
     "Microsoft.Xna.Framework.IGraphicsDeviceManager",
     "Microsoft.Xna.Framework.IUpdateable",
-    "Microsoft.Xna.Framework.Input.Buttons",
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadButtons",
     "Microsoft.Xna.Framework.Input.GamePadCapabilities",
     "Microsoft.Xna.Framework.Input.GamePadDPad",
-    "Microsoft.Xna.Framework.Input.GamePadDeadZone",
     "Microsoft.Xna.Framework.Input.GamePadState",
     "Microsoft.Xna.Framework.Input.GamePadThumbSticks",
     "Microsoft.Xna.Framework.Input.GamePadTriggers",
@@ -2686,11 +2541,9 @@
     "Microsoft.Xna.Framework.Input.Mouse",
     "Microsoft.Xna.Framework.Input.MouseState",
     "Microsoft.Xna.Framework.Input.Touch.GestureSample",
-    "Microsoft.Xna.Framework.Input.Touch.GestureType",
     "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
     "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
     "Microsoft.Xna.Framework.Input.Touch.TouchLocation",
-    "Microsoft.Xna.Framework.Input.Touch.TouchLocationState",
     "Microsoft.Xna.Framework.Input.Touch.TouchPanel",
     "Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities",
     "Microsoft.Xna.Framework.LaunchParameters",
@@ -2704,8 +2557,6 @@
     "Microsoft.Xna.Framework.Media.MediaPlayer",
     "Microsoft.Xna.Framework.Media.MediaQueue",
     "Microsoft.Xna.Framework.Media.MediaSource",
-    "Microsoft.Xna.Framework.Media.MediaSourceType",
-    "Microsoft.Xna.Framework.Media.MediaState",
     "Microsoft.Xna.Framework.Media.Picture",
     "Microsoft.Xna.Framework.Media.PictureAlbum",
     "Microsoft.Xna.Framework.Media.PictureAlbumCollection",
@@ -2716,7 +2567,6 @@
     "Microsoft.Xna.Framework.Media.SongCollection",
     "Microsoft.Xna.Framework.Media.Video",
     "Microsoft.Xna.Framework.Media.VideoPlayer",
-    "Microsoft.Xna.Framework.Media.VideoSoundtrackType",
     "Microsoft.Xna.Framework.Media.VisualizationData",
     "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
     "Microsoft.Xna.Framework.Storage.StorageContainer",
@@ -3697,6 +3547,1234 @@
     ],
     "status": "PASS"
   },
+  "foundation14EnumClosures": [
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+      "goName": "RenderTargetUsage",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "DiscardContents",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "PreserveContents",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "PlatformContents",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.CubeMapFace",
+      "goName": "CubeMapFace",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 7,
+      "expectedGoIdentities": 6,
+      "targetTypes": 1,
+      "targetGoIdentities": 6,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "PositiveX",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "NegativeX",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "PositiveY",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "NegativeY",
+          "expectedValue": "3",
+          "actualValue": "3",
+          "status": "PASS"
+        },
+        {
+          "name": "PositiveZ",
+          "expectedValue": "4",
+          "actualValue": "4",
+          "status": "PASS"
+        },
+        {
+          "name": "NegativeZ",
+          "expectedValue": "5",
+          "actualValue": "5",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Audio.AudioChannels",
+      "goName": "AudioChannels",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio",
+      "sourceTypes": 1,
+      "sourceIdentities": 3,
+      "expectedGoIdentities": 2,
+      "targetTypes": 1,
+      "targetGoIdentities": 2,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Mono",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Stereo",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Audio.AudioStopOptions",
+      "goName": "AudioStopOptions",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio",
+      "sourceTypes": 1,
+      "sourceIdentities": 3,
+      "expectedGoIdentities": 2,
+      "targetTypes": 1,
+      "targetGoIdentities": 2,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "AsAuthored",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Immediate",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.IndexElementSize",
+      "goName": "IndexElementSize",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 3,
+      "expectedGoIdentities": 2,
+      "targetTypes": 1,
+      "targetGoIdentities": 2,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "SixteenBits",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "ThirtyTwoBits",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.SetDataOptions",
+      "goName": "SetDataOptions",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": true,
+      "flags": true,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "None",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Discard",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "NoOverwrite",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Media.MediaState",
+      "goName": "MediaState",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Stopped",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Playing",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Paused",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.EffectParameterClass",
+      "goName": "EffectParameterClass",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 6,
+      "expectedGoIdentities": 5,
+      "targetTypes": 1,
+      "targetGoIdentities": 5,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Scalar",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Vector",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Matrix",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "Object",
+          "expectedValue": "3",
+          "actualValue": "3",
+          "status": "PASS"
+        },
+        {
+          "name": "Struct",
+          "expectedValue": "4",
+          "actualValue": "4",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.CompareFunction",
+      "goName": "CompareFunction",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 9,
+      "expectedGoIdentities": 8,
+      "targetTypes": 1,
+      "targetGoIdentities": 8,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Always",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Never",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Less",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "LessEqual",
+          "expectedValue": "3",
+          "actualValue": "3",
+          "status": "PASS"
+        },
+        {
+          "name": "Equal",
+          "expectedValue": "4",
+          "actualValue": "4",
+          "status": "PASS"
+        },
+        {
+          "name": "GreaterEqual",
+          "expectedValue": "5",
+          "actualValue": "5",
+          "status": "PASS"
+        },
+        {
+          "name": "Greater",
+          "expectedValue": "6",
+          "actualValue": "6",
+          "status": "PASS"
+        },
+        {
+          "name": "NotEqual",
+          "expectedValue": "7",
+          "actualValue": "7",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.EffectParameterType",
+      "goName": "EffectParameterType",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 11,
+      "expectedGoIdentities": 10,
+      "targetTypes": 1,
+      "targetGoIdentities": 10,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Void",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Bool",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Int32",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "Single",
+          "expectedValue": "3",
+          "actualValue": "3",
+          "status": "PASS"
+        },
+        {
+          "name": "String",
+          "expectedValue": "4",
+          "actualValue": "4",
+          "status": "PASS"
+        },
+        {
+          "name": "Texture",
+          "expectedValue": "5",
+          "actualValue": "5",
+          "status": "PASS"
+        },
+        {
+          "name": "Texture1D",
+          "expectedValue": "6",
+          "actualValue": "6",
+          "status": "PASS"
+        },
+        {
+          "name": "Texture2D",
+          "expectedValue": "7",
+          "actualValue": "7",
+          "status": "PASS"
+        },
+        {
+          "name": "Texture3D",
+          "expectedValue": "8",
+          "actualValue": "8",
+          "status": "PASS"
+        },
+        {
+          "name": "TextureCube",
+          "expectedValue": "9",
+          "actualValue": "9",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Input.Touch.GestureType",
+      "goName": "GestureType",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch",
+      "sourceTypes": 1,
+      "sourceIdentities": 12,
+      "expectedGoIdentities": 11,
+      "targetTypes": 1,
+      "targetGoIdentities": 11,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": true,
+      "flags": true,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "None",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Tap",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "DoubleTap",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "Hold",
+          "expectedValue": "4",
+          "actualValue": "4",
+          "status": "PASS"
+        },
+        {
+          "name": "HorizontalDrag",
+          "expectedValue": "8",
+          "actualValue": "8",
+          "status": "PASS"
+        },
+        {
+          "name": "VerticalDrag",
+          "expectedValue": "16",
+          "actualValue": "16",
+          "status": "PASS"
+        },
+        {
+          "name": "FreeDrag",
+          "expectedValue": "32",
+          "actualValue": "32",
+          "status": "PASS"
+        },
+        {
+          "name": "Pinch",
+          "expectedValue": "64",
+          "actualValue": "64",
+          "status": "PASS"
+        },
+        {
+          "name": "Flick",
+          "expectedValue": "128",
+          "actualValue": "128",
+          "status": "PASS"
+        },
+        {
+          "name": "DragComplete",
+          "expectedValue": "256",
+          "actualValue": "256",
+          "status": "PASS"
+        },
+        {
+          "name": "PinchComplete",
+          "expectedValue": "512",
+          "actualValue": "512",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Input.Buttons",
+      "goName": "Buttons",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input",
+      "sourceTypes": 1,
+      "sourceIdentities": 26,
+      "expectedGoIdentities": 25,
+      "targetTypes": 1,
+      "targetGoIdentities": 25,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": true,
+      "flags": true,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "DPadUp",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "DPadDown",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "DPadLeft",
+          "expectedValue": "4",
+          "actualValue": "4",
+          "status": "PASS"
+        },
+        {
+          "name": "DPadRight",
+          "expectedValue": "8",
+          "actualValue": "8",
+          "status": "PASS"
+        },
+        {
+          "name": "Start",
+          "expectedValue": "16",
+          "actualValue": "16",
+          "status": "PASS"
+        },
+        {
+          "name": "Back",
+          "expectedValue": "32",
+          "actualValue": "32",
+          "status": "PASS"
+        },
+        {
+          "name": "LeftStick",
+          "expectedValue": "64",
+          "actualValue": "64",
+          "status": "PASS"
+        },
+        {
+          "name": "RightStick",
+          "expectedValue": "128",
+          "actualValue": "128",
+          "status": "PASS"
+        },
+        {
+          "name": "LeftShoulder",
+          "expectedValue": "256",
+          "actualValue": "256",
+          "status": "PASS"
+        },
+        {
+          "name": "RightShoulder",
+          "expectedValue": "512",
+          "actualValue": "512",
+          "status": "PASS"
+        },
+        {
+          "name": "BigButton",
+          "expectedValue": "2048",
+          "actualValue": "2048",
+          "status": "PASS"
+        },
+        {
+          "name": "A",
+          "expectedValue": "4096",
+          "actualValue": "4096",
+          "status": "PASS"
+        },
+        {
+          "name": "B",
+          "expectedValue": "8192",
+          "actualValue": "8192",
+          "status": "PASS"
+        },
+        {
+          "name": "X",
+          "expectedValue": "16384",
+          "actualValue": "16384",
+          "status": "PASS"
+        },
+        {
+          "name": "Y",
+          "expectedValue": "32768",
+          "actualValue": "32768",
+          "status": "PASS"
+        },
+        {
+          "name": "RightThumbstickUp",
+          "expectedValue": "16777216",
+          "actualValue": "16777216",
+          "status": "PASS"
+        },
+        {
+          "name": "RightThumbstickDown",
+          "expectedValue": "33554432",
+          "actualValue": "33554432",
+          "status": "PASS"
+        },
+        {
+          "name": "RightThumbstickRight",
+          "expectedValue": "67108864",
+          "actualValue": "67108864",
+          "status": "PASS"
+        },
+        {
+          "name": "RightThumbstickLeft",
+          "expectedValue": "134217728",
+          "actualValue": "134217728",
+          "status": "PASS"
+        },
+        {
+          "name": "LeftThumbstickUp",
+          "expectedValue": "268435456",
+          "actualValue": "268435456",
+          "status": "PASS"
+        },
+        {
+          "name": "LeftThumbstickDown",
+          "expectedValue": "536870912",
+          "actualValue": "536870912",
+          "status": "PASS"
+        },
+        {
+          "name": "LeftThumbstickRight",
+          "expectedValue": "1073741824",
+          "actualValue": "1073741824",
+          "status": "PASS"
+        },
+        {
+          "name": "LeftThumbstickLeft",
+          "expectedValue": "2097152",
+          "actualValue": "2097152",
+          "status": "PASS"
+        },
+        {
+          "name": "LeftTrigger",
+          "expectedValue": "8388608",
+          "actualValue": "8388608",
+          "status": "PASS"
+        },
+        {
+          "name": "RightTrigger",
+          "expectedValue": "4194304",
+          "actualValue": "4194304",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Audio.MicrophoneState",
+      "goName": "MicrophoneState",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio",
+      "sourceTypes": 1,
+      "sourceIdentities": 3,
+      "expectedGoIdentities": 2,
+      "targetTypes": 1,
+      "targetGoIdentities": 2,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Started",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Stopped",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.FillMode",
+      "goName": "FillMode",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 3,
+      "expectedGoIdentities": 2,
+      "targetTypes": 1,
+      "targetGoIdentities": 2,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Solid",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "WireFrame",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Media.MediaSourceType",
+      "goName": "MediaSourceType",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media",
+      "sourceTypes": 1,
+      "sourceIdentities": 3,
+      "expectedGoIdentities": 2,
+      "targetTypes": 1,
+      "targetGoIdentities": 2,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "LocalDevice",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "WindowsMediaConnect",
+          "expectedValue": "4",
+          "actualValue": "4",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Audio.SoundState",
+      "goName": "SoundState",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Playing",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Paused",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Stopped",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.CullMode",
+      "goName": "CullMode",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "None",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "CullClockwiseFace",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "CullCounterClockwiseFace",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDeviceStatus",
+      "goName": "GraphicsDeviceStatus",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Normal",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Lost",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "NotReset",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.TextureAddressMode",
+      "goName": "TextureAddressMode",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Wrap",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Clamp",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Mirror",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Input.GamePadDeadZone",
+      "goName": "GamePadDeadZone",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "None",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "IndependentAxes",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Circular",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Media.VideoSoundtrackType",
+      "goName": "VideoSoundtrackType",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 3,
+      "targetTypes": 1,
+      "targetGoIdentities": 3,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Music",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Dialog",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "MusicAndDialog",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PresentInterval",
+      "goName": "PresentInterval",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 5,
+      "expectedGoIdentities": 4,
+      "targetTypes": 1,
+      "targetGoIdentities": 4,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Default",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "One",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Two",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "Immediate",
+          "expectedValue": "3",
+          "actualValue": "3",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.PrimitiveType",
+      "goName": "PrimitiveType",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 5,
+      "expectedGoIdentities": 4,
+      "targetTypes": 1,
+      "targetGoIdentities": 4,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "TriangleList",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "TriangleStrip",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "LineList",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "LineStrip",
+          "expectedValue": "3",
+          "actualValue": "3",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Input.Touch.TouchLocationState",
+      "goName": "TouchLocationState",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch",
+      "sourceTypes": 1,
+      "sourceIdentities": 5,
+      "expectedGoIdentities": 4,
+      "targetTypes": 1,
+      "targetGoIdentities": 4,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Invalid",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Released",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "Pressed",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "Moved",
+          "expectedValue": "3",
+          "actualValue": "3",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.BlendFunction",
+      "goName": "BlendFunction",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 6,
+      "expectedGoIdentities": 5,
+      "targetTypes": 1,
+      "targetGoIdentities": 5,
+      "localDiagnostics": 0,
+      "expectedKind": "enum",
+      "actualKind": "named",
+      "underlyingType": "int32",
+      "expectedFlags": false,
+      "flags": false,
+      "valueStorageExcluded": true,
+      "values": [
+        {
+          "name": "Add",
+          "expectedValue": "0",
+          "actualValue": "0",
+          "status": "PASS"
+        },
+        {
+          "name": "Subtract",
+          "expectedValue": "1",
+          "actualValue": "1",
+          "status": "PASS"
+        },
+        {
+          "name": "ReverseSubtract",
+          "expectedValue": "2",
+          "actualValue": "2",
+          "status": "PASS"
+        },
+        {
+          "name": "Min",
+          "expectedValue": "3",
+          "actualValue": "3",
+          "status": "PASS"
+        },
+        {
+          "name": "Max",
+          "expectedValue": "4",
+          "actualValue": "4",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
     "mappingSha256": "9055788ecf1b55f64e2ccb5174a261dbfd4cd343dc48d02e82a80d757f7f5468",

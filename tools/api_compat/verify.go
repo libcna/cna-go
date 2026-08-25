@@ -250,6 +250,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.DepthFormatClosure = measureDepthFormatClosure(expected, actual, typeDiagnostics)
 	result.GraphicsProfileClosure = measureGraphicsProfileClosure(expected, actual, typeDiagnostics)
 	result.ButtonStateClosure = measureButtonStateClosure(expected, actual, typeDiagnostics)
+	result.Foundation14EnumClosures = measureFoundation14EnumClosures(expected, actual, typeDiagnostics)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -281,6 +282,383 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	}
 	result.Summary["TOTAL_DIAGNOSTICS"] = len(result.Diagnostics)
 	return result
+}
+
+// enumLiteral is one pinned XNA enum literal: its exact source name and its
+// exact source raw value.
+type enumLiteral struct {
+	Name  string
+	Value string
+}
+
+// foundation14Enum pins one Foundation-14 ordinary or flags enum against the
+// XNA 4.0 Windows contract. The table is authoritative for the verifier: a
+// literal that is renamed, revalued, dropped, or invented in Go source is
+// rejected because it no longer matches this table and the pinned contract at
+// the same time.
+type foundation14Enum struct {
+	Identity string
+	Flags    bool
+	Values   []enumLiteral
+}
+
+// foundation14Enums is the complete Foundation-14 pure-managed batch: 25 enums
+// carrying 121 mapped Go identities. Every entry is an ordinary or flags enum
+// whose only public-signature dependency is System.Int32, so none of them adds
+// a runtime, native, or capability route.
+var foundation14Enums = []foundation14Enum{
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"DiscardContents", "0"},
+			{"PreserveContents", "1"},
+			{"PlatformContents", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.CubeMapFace",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"PositiveX", "0"},
+			{"NegativeX", "1"},
+			{"PositiveY", "2"},
+			{"NegativeY", "3"},
+			{"PositiveZ", "4"},
+			{"NegativeZ", "5"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Audio.AudioChannels",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Mono", "1"},
+			{"Stereo", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Audio.AudioStopOptions",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"AsAuthored", "0"},
+			{"Immediate", "1"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.IndexElementSize",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"SixteenBits", "0"},
+			{"ThirtyTwoBits", "1"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.SetDataOptions",
+		Flags:    true,
+		Values: []enumLiteral{
+			{"None", "0"},
+			{"Discard", "1"},
+			{"NoOverwrite", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Media.MediaState",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Stopped", "0"},
+			{"Playing", "1"},
+			{"Paused", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.EffectParameterClass",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Scalar", "0"},
+			{"Vector", "1"},
+			{"Matrix", "2"},
+			{"Object", "3"},
+			{"Struct", "4"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.CompareFunction",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Always", "0"},
+			{"Never", "1"},
+			{"Less", "2"},
+			{"LessEqual", "3"},
+			{"Equal", "4"},
+			{"GreaterEqual", "5"},
+			{"Greater", "6"},
+			{"NotEqual", "7"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.EffectParameterType",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Void", "0"},
+			{"Bool", "1"},
+			{"Int32", "2"},
+			{"Single", "3"},
+			{"String", "4"},
+			{"Texture", "5"},
+			{"Texture1D", "6"},
+			{"Texture2D", "7"},
+			{"Texture3D", "8"},
+			{"TextureCube", "9"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Input.Touch.GestureType",
+		Flags:    true,
+		Values: []enumLiteral{
+			{"None", "0"},
+			{"Tap", "1"},
+			{"DoubleTap", "2"},
+			{"Hold", "4"},
+			{"HorizontalDrag", "8"},
+			{"VerticalDrag", "16"},
+			{"FreeDrag", "32"},
+			{"Pinch", "64"},
+			{"Flick", "128"},
+			{"DragComplete", "256"},
+			{"PinchComplete", "512"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Input.Buttons",
+		Flags:    true,
+		Values: []enumLiteral{
+			{"DPadUp", "1"},
+			{"DPadDown", "2"},
+			{"DPadLeft", "4"},
+			{"DPadRight", "8"},
+			{"Start", "16"},
+			{"Back", "32"},
+			{"LeftStick", "64"},
+			{"RightStick", "128"},
+			{"LeftShoulder", "256"},
+			{"RightShoulder", "512"},
+			{"BigButton", "2048"},
+			{"A", "4096"},
+			{"B", "8192"},
+			{"X", "16384"},
+			{"Y", "32768"},
+			{"RightThumbstickUp", "16777216"},
+			{"RightThumbstickDown", "33554432"},
+			{"RightThumbstickRight", "67108864"},
+			{"RightThumbstickLeft", "134217728"},
+			{"LeftThumbstickUp", "268435456"},
+			{"LeftThumbstickDown", "536870912"},
+			{"LeftThumbstickRight", "1073741824"},
+			{"LeftThumbstickLeft", "2097152"},
+			{"LeftTrigger", "8388608"},
+			{"RightTrigger", "4194304"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Audio.MicrophoneState",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Started", "0"},
+			{"Stopped", "1"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.FillMode",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Solid", "0"},
+			{"WireFrame", "1"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Media.MediaSourceType",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"LocalDevice", "0"},
+			{"WindowsMediaConnect", "4"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Audio.SoundState",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Playing", "0"},
+			{"Paused", "1"},
+			{"Stopped", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.CullMode",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"None", "0"},
+			{"CullClockwiseFace", "1"},
+			{"CullCounterClockwiseFace", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.GraphicsDeviceStatus",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Normal", "0"},
+			{"Lost", "1"},
+			{"NotReset", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.TextureAddressMode",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Wrap", "0"},
+			{"Clamp", "1"},
+			{"Mirror", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Input.GamePadDeadZone",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"None", "0"},
+			{"IndependentAxes", "1"},
+			{"Circular", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Media.VideoSoundtrackType",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Music", "0"},
+			{"Dialog", "1"},
+			{"MusicAndDialog", "2"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.PresentInterval",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Default", "0"},
+			{"One", "1"},
+			{"Two", "2"},
+			{"Immediate", "3"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.PrimitiveType",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"TriangleList", "0"},
+			{"TriangleStrip", "1"},
+			{"LineList", "2"},
+			{"LineStrip", "3"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Input.Touch.TouchLocationState",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Invalid", "0"},
+			{"Released", "1"},
+			{"Pressed", "2"},
+			{"Moved", "3"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.BlendFunction",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Add", "0"},
+			{"Subtract", "1"},
+			{"ReverseSubtract", "2"},
+			{"Min", "3"},
+			{"Max", "4"},
+		},
+	},
+}
+
+func measureFoundation14EnumClosures(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) []enumClosure {
+	measurements := make([]enumClosure, 0, len(foundation14Enums))
+	for _, pinned := range foundation14Enums {
+		measurements = append(measurements, measureEnumClosure(expected, actual, typeDiagnostics, pinned))
+	}
+	return measurements
+}
+
+// measureEnumClosure applies the established enum-storage rule to one pinned
+// enum: the synthetic value__ storage field is never projected, every named
+// literal must exist with its exact raw value, the Go type must be a named
+// int32, and the xna:flags marker must match the pinned flags bit exactly.
+func measureEnumClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, pinned foundation14Enum) enumClosure {
+	measurement := enumClosure{
+		XNA:                  pinned.Identity,
+		SourceTypes:          1,
+		ExpectedKind:         "enum",
+		ActualKind:           "missing",
+		UnderlyingType:       "missing",
+		ExpectedFlags:        pinned.Flags,
+		ValueStorageExcluded: true,
+		Status:               "FAIL",
+	}
+	owner := expected.typeForXNA(pinned.Identity)
+	if owner == nil {
+		return measurement
+	}
+	measurement.GoName = owner.GoName
+	measurement.PackagePath = owner.PackagePath
+	measurement.SourceIdentities = owner.SourceMembers
+	measurement.ExpectedGoIdentities = len(owner.Members)
+	measurement.LocalDiagnostics = typeDiagnostics[owner.XNA]
+	if target := actual.Types[owner.Key]; target != nil {
+		measurement.TargetTypes = 1
+		measurement.ActualKind = target.Kind
+		measurement.UnderlyingType = target.Underlying
+		measurement.Flags = target.FlagsMarker
+	}
+
+	valuesPass := true
+	for _, wanted := range pinned.Values {
+		row := enumValueMeasurement{
+			Name:          wanted.Name,
+			ExpectedValue: wanted.Value,
+			ActualValue:   "missing",
+			Status:        "FAIL",
+		}
+		key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + wanted.Name}
+		expectedMember := expected.Members[key]
+		actualMember := actual.Members[key]
+		if actualMember != nil {
+			measurement.TargetGoIdentities++
+			if actualMember.Value != nil {
+				row.ActualValue = normalizeInteger(*actualMember.Value)
+			}
+		}
+		if expectedMember != nil && expectedMember.EnumValue != nil &&
+			normalizeInteger(*expectedMember.EnumValue) == wanted.Value && row.ActualValue == wanted.Value {
+			row.Status = "PASS"
+		} else {
+			valuesPass = false
+		}
+		measurement.Values = append(measurement.Values, row)
+	}
+	for key := range actual.Members {
+		if key.Package != owner.PackagePath || !strings.HasPrefix(key.Name, owner.GoName) {
+			continue
+		}
+		if strings.EqualFold(strings.TrimPrefix(key.Name, owner.GoName), "value__") {
+			measurement.ValueStorageExcluded = false
+		}
+	}
+	if measurement.SourceIdentities == len(pinned.Values)+1 && measurement.ExpectedGoIdentities == len(pinned.Values) &&
+		measurement.TargetTypes == 1 && measurement.TargetGoIdentities == len(pinned.Values) && measurement.LocalDiagnostics == 0 &&
+		measurement.ActualKind == "named" && measurement.UnderlyingType == "int32" && measurement.Flags == pinned.Flags &&
+		measurement.ValueStorageExcluded && len(measurement.Values) == len(pinned.Values) && valuesPass {
+		measurement.Status = "PASS"
+	}
+	return measurement
 }
 
 func measureButtonStateClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) buttonStateClosure {

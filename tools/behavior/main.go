@@ -11,9 +11,12 @@ import (
 	"strings"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
+	audio "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
+	touch "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch"
+	media "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media"
 )
 
 type observation struct {
@@ -223,6 +226,327 @@ func runCorpus() corpusReport {
 	checkGoProjection("button-state.zero-value-released", "BUTTON_STATE", input.ButtonStateReleased, zeroButtonState)
 	checkGoProjection("button-state.arbitrary-positive-raw", "BUTTON_STATE", "2,12345", fmt.Sprintf("%d,%d", input.ButtonState(2), input.ButtonState(12345)))
 	checkGoProjection("button-state.negative-raw", "BUTTON_STATE", int32(-1), int32(input.ButtonState(-1)))
+
+	// Foundation 14 pure-managed batch: 25 ordinary and flags enums whose only
+	// public-signature dependency is System.Int32. Every raw value asserted below
+	// is pinned XNA 4.0 Windows metadata. Completing these enums is a metadata
+	// fact only; it proves no renderer, device, audio, media, touch, or game pad
+	// runtime capability, and no backend route exists for any of them.
+
+	check("render-target-usage.complete-raw-table", "RENDER_TARGET_USAGE",
+		"DiscardContents=0,PreserveContents=1,PlatformContents=2",
+		fmt.Sprintf("DiscardContents=%d,PreserveContents=%d,PlatformContents=%d",
+			graphics.RenderTargetUsageDiscardContents, graphics.RenderTargetUsagePreserveContents, graphics.RenderTargetUsagePlatformContents))
+	check("render-target-usage.underlying-system-int32", "RENDER_TARGET_USAGE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.RenderTargetUsageDiscardContents).Kind()])
+	var zeroRenderTargetUsage graphics.RenderTargetUsage
+	checkGoProjection("render-target-usage.zero-value-discard-contents", "RENDER_TARGET_USAGE", graphics.RenderTargetUsageDiscardContents, zeroRenderTargetUsage)
+	checkGoProjection("render-target-usage.arbitrary-positive-raw", "RENDER_TARGET_USAGE", "3,12345",
+		fmt.Sprintf("%d,%d", graphics.RenderTargetUsage(3), graphics.RenderTargetUsage(12345)))
+	checkGoProjection("render-target-usage.negative-raw", "RENDER_TARGET_USAGE", int32(-1), int32(graphics.RenderTargetUsage(-1)))
+
+	check("cube-map-face.complete-raw-table", "CUBE_MAP_FACE",
+		"PositiveX=0,NegativeX=1,PositiveY=2,NegativeY=3,PositiveZ=4,NegativeZ=5",
+		fmt.Sprintf("PositiveX=%d,NegativeX=%d,PositiveY=%d,NegativeY=%d,PositiveZ=%d,NegativeZ=%d",
+			graphics.CubeMapFacePositiveX, graphics.CubeMapFaceNegativeX, graphics.CubeMapFacePositiveY, graphics.CubeMapFaceNegativeY, graphics.CubeMapFacePositiveZ, graphics.CubeMapFaceNegativeZ))
+	check("cube-map-face.underlying-system-int32", "CUBE_MAP_FACE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.CubeMapFacePositiveX).Kind()])
+	var zeroCubeMapFace graphics.CubeMapFace
+	checkGoProjection("cube-map-face.zero-value-positive-x", "CUBE_MAP_FACE", graphics.CubeMapFacePositiveX, zeroCubeMapFace)
+	checkGoProjection("cube-map-face.arbitrary-positive-raw", "CUBE_MAP_FACE", "6,12345",
+		fmt.Sprintf("%d,%d", graphics.CubeMapFace(6), graphics.CubeMapFace(12345)))
+	checkGoProjection("cube-map-face.negative-raw", "CUBE_MAP_FACE", int32(-1), int32(graphics.CubeMapFace(-1)))
+
+	check("audio-channels.complete-raw-table", "AUDIO_CHANNELS",
+		"Mono=1,Stereo=2",
+		fmt.Sprintf("Mono=%d,Stereo=%d",
+			audio.AudioChannelsMono, audio.AudioChannelsStereo))
+	check("audio-channels.underlying-system-int32", "AUDIO_CHANNELS", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(audio.AudioChannelsMono).Kind()])
+	var zeroAudioChannels audio.AudioChannels
+	// The pinned contract declares no zero literal, so the Go zero value is
+	// an ordinary undefined raw value rather than a named constant.
+	checkGoProjection("audio-channels.zero-value-unnamed", "AUDIO_CHANNELS", "0,false,false",
+		fmt.Sprintf("%d,%t,%t", int32(zeroAudioChannels), zeroAudioChannels == audio.AudioChannelsMono, zeroAudioChannels == audio.AudioChannelsStereo))
+	checkGoProjection("audio-channels.arbitrary-positive-raw", "AUDIO_CHANNELS", "3,12345",
+		fmt.Sprintf("%d,%d", audio.AudioChannels(3), audio.AudioChannels(12345)))
+	checkGoProjection("audio-channels.negative-raw", "AUDIO_CHANNELS", int32(-1), int32(audio.AudioChannels(-1)))
+
+	check("audio-stop-options.complete-raw-table", "AUDIO_STOP_OPTIONS",
+		"AsAuthored=0,Immediate=1",
+		fmt.Sprintf("AsAuthored=%d,Immediate=%d",
+			audio.AudioStopOptionsAsAuthored, audio.AudioStopOptionsImmediate))
+	check("audio-stop-options.underlying-system-int32", "AUDIO_STOP_OPTIONS", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(audio.AudioStopOptionsAsAuthored).Kind()])
+	var zeroAudioStopOptions audio.AudioStopOptions
+	checkGoProjection("audio-stop-options.zero-value-as-authored", "AUDIO_STOP_OPTIONS", audio.AudioStopOptionsAsAuthored, zeroAudioStopOptions)
+	checkGoProjection("audio-stop-options.arbitrary-positive-raw", "AUDIO_STOP_OPTIONS", "2,12345",
+		fmt.Sprintf("%d,%d", audio.AudioStopOptions(2), audio.AudioStopOptions(12345)))
+	checkGoProjection("audio-stop-options.negative-raw", "AUDIO_STOP_OPTIONS", int32(-1), int32(audio.AudioStopOptions(-1)))
+
+	check("index-element-size.complete-raw-table", "INDEX_ELEMENT_SIZE",
+		"SixteenBits=0,ThirtyTwoBits=1",
+		fmt.Sprintf("SixteenBits=%d,ThirtyTwoBits=%d",
+			graphics.IndexElementSizeSixteenBits, graphics.IndexElementSizeThirtyTwoBits))
+	check("index-element-size.underlying-system-int32", "INDEX_ELEMENT_SIZE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.IndexElementSizeSixteenBits).Kind()])
+	var zeroIndexElementSize graphics.IndexElementSize
+	checkGoProjection("index-element-size.zero-value-sixteen-bits", "INDEX_ELEMENT_SIZE", graphics.IndexElementSizeSixteenBits, zeroIndexElementSize)
+	checkGoProjection("index-element-size.arbitrary-positive-raw", "INDEX_ELEMENT_SIZE", "2,12345",
+		fmt.Sprintf("%d,%d", graphics.IndexElementSize(2), graphics.IndexElementSize(12345)))
+	checkGoProjection("index-element-size.negative-raw", "INDEX_ELEMENT_SIZE", int32(-1), int32(graphics.IndexElementSize(-1)))
+
+	check("set-data-options.complete-raw-table", "SET_DATA_OPTIONS",
+		"None=0,Discard=1,NoOverwrite=2",
+		fmt.Sprintf("None=%d,Discard=%d,NoOverwrite=%d",
+			graphics.SetDataOptionsNone, graphics.SetDataOptionsDiscard, graphics.SetDataOptionsNoOverwrite))
+	check("set-data-options.underlying-system-int32", "SET_DATA_OPTIONS", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.SetDataOptionsNone).Kind()])
+	setDataOptionsUnion, setDataOptionsSingleBits := enumBitStructure([]int32{int32(graphics.SetDataOptionsNone), int32(graphics.SetDataOptionsDiscard), int32(graphics.SetDataOptionsNoOverwrite)})
+	check("set-data-options.flags-union", "SET_DATA_OPTIONS", int32(3), setDataOptionsUnion)
+	check("set-data-options.flags-disjoint-single-bits", "SET_DATA_OPTIONS", true, setDataOptionsSingleBits)
+	var zeroSetDataOptions graphics.SetDataOptions
+	checkGoProjection("set-data-options.zero-value-none", "SET_DATA_OPTIONS", graphics.SetDataOptionsNone, zeroSetDataOptions)
+	checkGoProjection("set-data-options.arbitrary-positive-raw", "SET_DATA_OPTIONS", "3,12345",
+		fmt.Sprintf("%d,%d", graphics.SetDataOptions(3), graphics.SetDataOptions(12345)))
+	checkGoProjection("set-data-options.negative-raw", "SET_DATA_OPTIONS", int32(-1), int32(graphics.SetDataOptions(-1)))
+
+	check("media-state.complete-raw-table", "MEDIA_STATE",
+		"Stopped=0,Playing=1,Paused=2",
+		fmt.Sprintf("Stopped=%d,Playing=%d,Paused=%d",
+			media.MediaStateStopped, media.MediaStatePlaying, media.MediaStatePaused))
+	check("media-state.underlying-system-int32", "MEDIA_STATE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(media.MediaStateStopped).Kind()])
+	var zeroMediaState media.MediaState
+	checkGoProjection("media-state.zero-value-stopped", "MEDIA_STATE", media.MediaStateStopped, zeroMediaState)
+	checkGoProjection("media-state.arbitrary-positive-raw", "MEDIA_STATE", "3,12345",
+		fmt.Sprintf("%d,%d", media.MediaState(3), media.MediaState(12345)))
+	checkGoProjection("media-state.negative-raw", "MEDIA_STATE", int32(-1), int32(media.MediaState(-1)))
+
+	check("effect-parameter-class.complete-raw-table", "EFFECT_PARAMETER_CLASS",
+		"Scalar=0,Vector=1,Matrix=2,Object=3,Struct=4",
+		fmt.Sprintf("Scalar=%d,Vector=%d,Matrix=%d,Object=%d,Struct=%d",
+			graphics.EffectParameterClassScalar, graphics.EffectParameterClassVector, graphics.EffectParameterClassMatrix, graphics.EffectParameterClassObject, graphics.EffectParameterClassStruct))
+	check("effect-parameter-class.underlying-system-int32", "EFFECT_PARAMETER_CLASS", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.EffectParameterClassScalar).Kind()])
+	var zeroEffectParameterClass graphics.EffectParameterClass
+	checkGoProjection("effect-parameter-class.zero-value-scalar", "EFFECT_PARAMETER_CLASS", graphics.EffectParameterClassScalar, zeroEffectParameterClass)
+	checkGoProjection("effect-parameter-class.arbitrary-positive-raw", "EFFECT_PARAMETER_CLASS", "5,12345",
+		fmt.Sprintf("%d,%d", graphics.EffectParameterClass(5), graphics.EffectParameterClass(12345)))
+	checkGoProjection("effect-parameter-class.negative-raw", "EFFECT_PARAMETER_CLASS", int32(-1), int32(graphics.EffectParameterClass(-1)))
+
+	check("compare-function.complete-raw-table", "COMPARE_FUNCTION",
+		"Always=0,Never=1,Less=2,LessEqual=3,Equal=4,GreaterEqual=5,Greater=6,NotEqual=7",
+		fmt.Sprintf("Always=%d,Never=%d,Less=%d,LessEqual=%d,Equal=%d,GreaterEqual=%d,Greater=%d,NotEqual=%d",
+			graphics.CompareFunctionAlways, graphics.CompareFunctionNever, graphics.CompareFunctionLess, graphics.CompareFunctionLessEqual, graphics.CompareFunctionEqual, graphics.CompareFunctionGreaterEqual, graphics.CompareFunctionGreater, graphics.CompareFunctionNotEqual))
+	check("compare-function.underlying-system-int32", "COMPARE_FUNCTION", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.CompareFunctionAlways).Kind()])
+	var zeroCompareFunction graphics.CompareFunction
+	checkGoProjection("compare-function.zero-value-always", "COMPARE_FUNCTION", graphics.CompareFunctionAlways, zeroCompareFunction)
+	checkGoProjection("compare-function.arbitrary-positive-raw", "COMPARE_FUNCTION", "8,12345",
+		fmt.Sprintf("%d,%d", graphics.CompareFunction(8), graphics.CompareFunction(12345)))
+	checkGoProjection("compare-function.negative-raw", "COMPARE_FUNCTION", int32(-1), int32(graphics.CompareFunction(-1)))
+
+	check("effect-parameter-type.complete-raw-table", "EFFECT_PARAMETER_TYPE",
+		"Void=0,Bool=1,Int32=2,Single=3,String=4,Texture=5,Texture1D=6,Texture2D=7,Texture3D=8,TextureCube=9",
+		fmt.Sprintf("Void=%d,Bool=%d,Int32=%d,Single=%d,String=%d,Texture=%d,Texture1D=%d,Texture2D=%d,Texture3D=%d,TextureCube=%d",
+			graphics.EffectParameterTypeVoid, graphics.EffectParameterTypeBool, graphics.EffectParameterTypeInt32, graphics.EffectParameterTypeSingle, graphics.EffectParameterTypeString, graphics.EffectParameterTypeTexture, graphics.EffectParameterTypeTexture1D, graphics.EffectParameterTypeTexture2D, graphics.EffectParameterTypeTexture3D, graphics.EffectParameterTypeTextureCube))
+	check("effect-parameter-type.underlying-system-int32", "EFFECT_PARAMETER_TYPE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.EffectParameterTypeVoid).Kind()])
+	var zeroEffectParameterType graphics.EffectParameterType
+	checkGoProjection("effect-parameter-type.zero-value-void", "EFFECT_PARAMETER_TYPE", graphics.EffectParameterTypeVoid, zeroEffectParameterType)
+	checkGoProjection("effect-parameter-type.arbitrary-positive-raw", "EFFECT_PARAMETER_TYPE", "10,12345",
+		fmt.Sprintf("%d,%d", graphics.EffectParameterType(10), graphics.EffectParameterType(12345)))
+	checkGoProjection("effect-parameter-type.negative-raw", "EFFECT_PARAMETER_TYPE", int32(-1), int32(graphics.EffectParameterType(-1)))
+
+	check("gesture-type.complete-raw-table", "GESTURE_TYPE",
+		"None=0,Tap=1,DoubleTap=2,Hold=4,HorizontalDrag=8,VerticalDrag=16,FreeDrag=32,Pinch=64,Flick=128,DragComplete=256,PinchComplete=512",
+		fmt.Sprintf("None=%d,Tap=%d,DoubleTap=%d,Hold=%d,HorizontalDrag=%d,VerticalDrag=%d,FreeDrag=%d,Pinch=%d,Flick=%d,DragComplete=%d,PinchComplete=%d",
+			touch.GestureTypeNone, touch.GestureTypeTap, touch.GestureTypeDoubleTap, touch.GestureTypeHold, touch.GestureTypeHorizontalDrag, touch.GestureTypeVerticalDrag, touch.GestureTypeFreeDrag, touch.GestureTypePinch, touch.GestureTypeFlick, touch.GestureTypeDragComplete, touch.GestureTypePinchComplete))
+	check("gesture-type.underlying-system-int32", "GESTURE_TYPE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(touch.GestureTypeNone).Kind()])
+	gestureTypeUnion, gestureTypeSingleBits := enumBitStructure([]int32{int32(touch.GestureTypeNone), int32(touch.GestureTypeTap), int32(touch.GestureTypeDoubleTap), int32(touch.GestureTypeHold), int32(touch.GestureTypeHorizontalDrag), int32(touch.GestureTypeVerticalDrag), int32(touch.GestureTypeFreeDrag), int32(touch.GestureTypePinch), int32(touch.GestureTypeFlick), int32(touch.GestureTypeDragComplete), int32(touch.GestureTypePinchComplete)})
+	check("gesture-type.flags-union", "GESTURE_TYPE", int32(1023), gestureTypeUnion)
+	check("gesture-type.flags-disjoint-single-bits", "GESTURE_TYPE", true, gestureTypeSingleBits)
+	var zeroGestureType touch.GestureType
+	checkGoProjection("gesture-type.zero-value-none", "GESTURE_TYPE", touch.GestureTypeNone, zeroGestureType)
+	checkGoProjection("gesture-type.arbitrary-positive-raw", "GESTURE_TYPE", "513,12345",
+		fmt.Sprintf("%d,%d", touch.GestureType(513), touch.GestureType(12345)))
+	checkGoProjection("gesture-type.negative-raw", "GESTURE_TYPE", int32(-1), int32(touch.GestureType(-1)))
+
+	check("buttons.complete-raw-table", "BUTTONS",
+		"DPadUp=1,DPadDown=2,DPadLeft=4,DPadRight=8,Start=16,Back=32,LeftStick=64,RightStick=128,LeftShoulder=256,RightShoulder=512,BigButton=2048,A=4096,B=8192,X=16384,Y=32768,RightThumbstickUp=16777216,RightThumbstickDown=33554432,RightThumbstickRight=67108864,RightThumbstickLeft=134217728,LeftThumbstickUp=268435456,LeftThumbstickDown=536870912,LeftThumbstickRight=1073741824,LeftThumbstickLeft=2097152,LeftTrigger=8388608,RightTrigger=4194304",
+		fmt.Sprintf("DPadUp=%d,DPadDown=%d,DPadLeft=%d,DPadRight=%d,Start=%d,Back=%d,LeftStick=%d,RightStick=%d,LeftShoulder=%d,RightShoulder=%d,BigButton=%d,A=%d,B=%d,X=%d,Y=%d,RightThumbstickUp=%d,RightThumbstickDown=%d,RightThumbstickRight=%d,RightThumbstickLeft=%d,LeftThumbstickUp=%d,LeftThumbstickDown=%d,LeftThumbstickRight=%d,LeftThumbstickLeft=%d,LeftTrigger=%d,RightTrigger=%d",
+			input.ButtonsDPadUp, input.ButtonsDPadDown, input.ButtonsDPadLeft, input.ButtonsDPadRight, input.ButtonsStart, input.ButtonsBack, input.ButtonsLeftStick, input.ButtonsRightStick, input.ButtonsLeftShoulder, input.ButtonsRightShoulder, input.ButtonsBigButton, input.ButtonsA, input.ButtonsB, input.ButtonsX, input.ButtonsY, input.ButtonsRightThumbstickUp, input.ButtonsRightThumbstickDown, input.ButtonsRightThumbstickRight, input.ButtonsRightThumbstickLeft, input.ButtonsLeftThumbstickUp, input.ButtonsLeftThumbstickDown, input.ButtonsLeftThumbstickRight, input.ButtonsLeftThumbstickLeft, input.ButtonsLeftTrigger, input.ButtonsRightTrigger))
+	check("buttons.underlying-system-int32", "BUTTONS", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(input.ButtonsDPadUp).Kind()])
+	buttonsUnion, buttonsSingleBits := enumBitStructure([]int32{int32(input.ButtonsDPadUp), int32(input.ButtonsDPadDown), int32(input.ButtonsDPadLeft), int32(input.ButtonsDPadRight), int32(input.ButtonsStart), int32(input.ButtonsBack), int32(input.ButtonsLeftStick), int32(input.ButtonsRightStick), int32(input.ButtonsLeftShoulder), int32(input.ButtonsRightShoulder), int32(input.ButtonsBigButton), int32(input.ButtonsA), int32(input.ButtonsB), int32(input.ButtonsX), int32(input.ButtonsY), int32(input.ButtonsRightThumbstickUp), int32(input.ButtonsRightThumbstickDown), int32(input.ButtonsRightThumbstickRight), int32(input.ButtonsRightThumbstickLeft), int32(input.ButtonsLeftThumbstickUp), int32(input.ButtonsLeftThumbstickDown), int32(input.ButtonsLeftThumbstickRight), int32(input.ButtonsLeftThumbstickLeft), int32(input.ButtonsLeftTrigger), int32(input.ButtonsRightTrigger)})
+	check("buttons.flags-union", "BUTTONS", int32(2145451007), buttonsUnion)
+	check("buttons.flags-disjoint-single-bits", "BUTTONS", true, buttonsSingleBits)
+	var zeroButtons input.Buttons
+	// The pinned contract declares no zero literal, so the Go zero value is
+	// an ordinary undefined raw value rather than a named constant.
+	checkGoProjection("buttons.zero-value-unnamed", "BUTTONS", "0,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false",
+		fmt.Sprintf("%d,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t,%t", int32(zeroButtons), zeroButtons == input.ButtonsDPadUp, zeroButtons == input.ButtonsDPadDown, zeroButtons == input.ButtonsDPadLeft, zeroButtons == input.ButtonsDPadRight, zeroButtons == input.ButtonsStart, zeroButtons == input.ButtonsBack, zeroButtons == input.ButtonsLeftStick, zeroButtons == input.ButtonsRightStick, zeroButtons == input.ButtonsLeftShoulder, zeroButtons == input.ButtonsRightShoulder, zeroButtons == input.ButtonsBigButton, zeroButtons == input.ButtonsA, zeroButtons == input.ButtonsB, zeroButtons == input.ButtonsX, zeroButtons == input.ButtonsY, zeroButtons == input.ButtonsRightThumbstickUp, zeroButtons == input.ButtonsRightThumbstickDown, zeroButtons == input.ButtonsRightThumbstickRight, zeroButtons == input.ButtonsRightThumbstickLeft, zeroButtons == input.ButtonsLeftThumbstickUp, zeroButtons == input.ButtonsLeftThumbstickDown, zeroButtons == input.ButtonsLeftThumbstickRight, zeroButtons == input.ButtonsLeftThumbstickLeft, zeroButtons == input.ButtonsLeftTrigger, zeroButtons == input.ButtonsRightTrigger))
+	checkGoProjection("buttons.arbitrary-positive-raw", "BUTTONS", "1073741825,12345",
+		fmt.Sprintf("%d,%d", input.Buttons(1073741825), input.Buttons(12345)))
+	checkGoProjection("buttons.negative-raw", "BUTTONS", int32(-1), int32(input.Buttons(-1)))
+
+	check("microphone-state.complete-raw-table", "MICROPHONE_STATE",
+		"Started=0,Stopped=1",
+		fmt.Sprintf("Started=%d,Stopped=%d",
+			audio.MicrophoneStateStarted, audio.MicrophoneStateStopped))
+	check("microphone-state.underlying-system-int32", "MICROPHONE_STATE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(audio.MicrophoneStateStarted).Kind()])
+	var zeroMicrophoneState audio.MicrophoneState
+	checkGoProjection("microphone-state.zero-value-started", "MICROPHONE_STATE", audio.MicrophoneStateStarted, zeroMicrophoneState)
+	checkGoProjection("microphone-state.arbitrary-positive-raw", "MICROPHONE_STATE", "2,12345",
+		fmt.Sprintf("%d,%d", audio.MicrophoneState(2), audio.MicrophoneState(12345)))
+	checkGoProjection("microphone-state.negative-raw", "MICROPHONE_STATE", int32(-1), int32(audio.MicrophoneState(-1)))
+
+	check("fill-mode.complete-raw-table", "FILL_MODE",
+		"Solid=0,WireFrame=1",
+		fmt.Sprintf("Solid=%d,WireFrame=%d",
+			graphics.FillModeSolid, graphics.FillModeWireFrame))
+	check("fill-mode.underlying-system-int32", "FILL_MODE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.FillModeSolid).Kind()])
+	var zeroFillMode graphics.FillMode
+	checkGoProjection("fill-mode.zero-value-solid", "FILL_MODE", graphics.FillModeSolid, zeroFillMode)
+	checkGoProjection("fill-mode.arbitrary-positive-raw", "FILL_MODE", "2,12345",
+		fmt.Sprintf("%d,%d", graphics.FillMode(2), graphics.FillMode(12345)))
+	checkGoProjection("fill-mode.negative-raw", "FILL_MODE", int32(-1), int32(graphics.FillMode(-1)))
+
+	check("media-source-type.complete-raw-table", "MEDIA_SOURCE_TYPE",
+		"LocalDevice=0,WindowsMediaConnect=4",
+		fmt.Sprintf("LocalDevice=%d,WindowsMediaConnect=%d",
+			media.MediaSourceTypeLocalDevice, media.MediaSourceTypeWindowsMediaConnect))
+	check("media-source-type.underlying-system-int32", "MEDIA_SOURCE_TYPE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(media.MediaSourceTypeLocalDevice).Kind()])
+	var zeroMediaSourceType media.MediaSourceType
+	checkGoProjection("media-source-type.zero-value-local-device", "MEDIA_SOURCE_TYPE", media.MediaSourceTypeLocalDevice, zeroMediaSourceType)
+	checkGoProjection("media-source-type.arbitrary-positive-raw", "MEDIA_SOURCE_TYPE", "5,12345",
+		fmt.Sprintf("%d,%d", media.MediaSourceType(5), media.MediaSourceType(12345)))
+	checkGoProjection("media-source-type.negative-raw", "MEDIA_SOURCE_TYPE", int32(-1), int32(media.MediaSourceType(-1)))
+
+	check("sound-state.complete-raw-table", "SOUND_STATE",
+		"Playing=0,Paused=1,Stopped=2",
+		fmt.Sprintf("Playing=%d,Paused=%d,Stopped=%d",
+			audio.SoundStatePlaying, audio.SoundStatePaused, audio.SoundStateStopped))
+	check("sound-state.underlying-system-int32", "SOUND_STATE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(audio.SoundStatePlaying).Kind()])
+	var zeroSoundState audio.SoundState
+	checkGoProjection("sound-state.zero-value-playing", "SOUND_STATE", audio.SoundStatePlaying, zeroSoundState)
+	checkGoProjection("sound-state.arbitrary-positive-raw", "SOUND_STATE", "3,12345",
+		fmt.Sprintf("%d,%d", audio.SoundState(3), audio.SoundState(12345)))
+	checkGoProjection("sound-state.negative-raw", "SOUND_STATE", int32(-1), int32(audio.SoundState(-1)))
+
+	check("cull-mode.complete-raw-table", "CULL_MODE",
+		"None=0,CullClockwiseFace=1,CullCounterClockwiseFace=2",
+		fmt.Sprintf("None=%d,CullClockwiseFace=%d,CullCounterClockwiseFace=%d",
+			graphics.CullModeNone, graphics.CullModeCullClockwiseFace, graphics.CullModeCullCounterClockwiseFace))
+	check("cull-mode.underlying-system-int32", "CULL_MODE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.CullModeNone).Kind()])
+	var zeroCullMode graphics.CullMode
+	checkGoProjection("cull-mode.zero-value-none", "CULL_MODE", graphics.CullModeNone, zeroCullMode)
+	checkGoProjection("cull-mode.arbitrary-positive-raw", "CULL_MODE", "3,12345",
+		fmt.Sprintf("%d,%d", graphics.CullMode(3), graphics.CullMode(12345)))
+	checkGoProjection("cull-mode.negative-raw", "CULL_MODE", int32(-1), int32(graphics.CullMode(-1)))
+
+	check("graphics-device-status.complete-raw-table", "GRAPHICS_DEVICE_STATUS",
+		"Normal=0,Lost=1,NotReset=2",
+		fmt.Sprintf("Normal=%d,Lost=%d,NotReset=%d",
+			graphics.GraphicsDeviceStatusNormal, graphics.GraphicsDeviceStatusLost, graphics.GraphicsDeviceStatusNotReset))
+	check("graphics-device-status.underlying-system-int32", "GRAPHICS_DEVICE_STATUS", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.GraphicsDeviceStatusNormal).Kind()])
+	var zeroGraphicsDeviceStatus graphics.GraphicsDeviceStatus
+	checkGoProjection("graphics-device-status.zero-value-normal", "GRAPHICS_DEVICE_STATUS", graphics.GraphicsDeviceStatusNormal, zeroGraphicsDeviceStatus)
+	checkGoProjection("graphics-device-status.arbitrary-positive-raw", "GRAPHICS_DEVICE_STATUS", "3,12345",
+		fmt.Sprintf("%d,%d", graphics.GraphicsDeviceStatus(3), graphics.GraphicsDeviceStatus(12345)))
+	checkGoProjection("graphics-device-status.negative-raw", "GRAPHICS_DEVICE_STATUS", int32(-1), int32(graphics.GraphicsDeviceStatus(-1)))
+
+	check("texture-address-mode.complete-raw-table", "TEXTURE_ADDRESS_MODE",
+		"Wrap=0,Clamp=1,Mirror=2",
+		fmt.Sprintf("Wrap=%d,Clamp=%d,Mirror=%d",
+			graphics.TextureAddressModeWrap, graphics.TextureAddressModeClamp, graphics.TextureAddressModeMirror))
+	check("texture-address-mode.underlying-system-int32", "TEXTURE_ADDRESS_MODE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.TextureAddressModeWrap).Kind()])
+	var zeroTextureAddressMode graphics.TextureAddressMode
+	checkGoProjection("texture-address-mode.zero-value-wrap", "TEXTURE_ADDRESS_MODE", graphics.TextureAddressModeWrap, zeroTextureAddressMode)
+	checkGoProjection("texture-address-mode.arbitrary-positive-raw", "TEXTURE_ADDRESS_MODE", "3,12345",
+		fmt.Sprintf("%d,%d", graphics.TextureAddressMode(3), graphics.TextureAddressMode(12345)))
+	checkGoProjection("texture-address-mode.negative-raw", "TEXTURE_ADDRESS_MODE", int32(-1), int32(graphics.TextureAddressMode(-1)))
+
+	check("game-pad-dead-zone.complete-raw-table", "GAME_PAD_DEAD_ZONE",
+		"None=0,IndependentAxes=1,Circular=2",
+		fmt.Sprintf("None=%d,IndependentAxes=%d,Circular=%d",
+			input.GamePadDeadZoneNone, input.GamePadDeadZoneIndependentAxes, input.GamePadDeadZoneCircular))
+	check("game-pad-dead-zone.underlying-system-int32", "GAME_PAD_DEAD_ZONE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(input.GamePadDeadZoneNone).Kind()])
+	var zeroGamePadDeadZone input.GamePadDeadZone
+	checkGoProjection("game-pad-dead-zone.zero-value-none", "GAME_PAD_DEAD_ZONE", input.GamePadDeadZoneNone, zeroGamePadDeadZone)
+	checkGoProjection("game-pad-dead-zone.arbitrary-positive-raw", "GAME_PAD_DEAD_ZONE", "3,12345",
+		fmt.Sprintf("%d,%d", input.GamePadDeadZone(3), input.GamePadDeadZone(12345)))
+	checkGoProjection("game-pad-dead-zone.negative-raw", "GAME_PAD_DEAD_ZONE", int32(-1), int32(input.GamePadDeadZone(-1)))
+
+	check("video-soundtrack-type.complete-raw-table", "VIDEO_SOUNDTRACK_TYPE",
+		"Music=0,Dialog=1,MusicAndDialog=2",
+		fmt.Sprintf("Music=%d,Dialog=%d,MusicAndDialog=%d",
+			media.VideoSoundtrackTypeMusic, media.VideoSoundtrackTypeDialog, media.VideoSoundtrackTypeMusicAndDialog))
+	check("video-soundtrack-type.underlying-system-int32", "VIDEO_SOUNDTRACK_TYPE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(media.VideoSoundtrackTypeMusic).Kind()])
+	var zeroVideoSoundtrackType media.VideoSoundtrackType
+	checkGoProjection("video-soundtrack-type.zero-value-music", "VIDEO_SOUNDTRACK_TYPE", media.VideoSoundtrackTypeMusic, zeroVideoSoundtrackType)
+	checkGoProjection("video-soundtrack-type.arbitrary-positive-raw", "VIDEO_SOUNDTRACK_TYPE", "3,12345",
+		fmt.Sprintf("%d,%d", media.VideoSoundtrackType(3), media.VideoSoundtrackType(12345)))
+	checkGoProjection("video-soundtrack-type.negative-raw", "VIDEO_SOUNDTRACK_TYPE", int32(-1), int32(media.VideoSoundtrackType(-1)))
+
+	check("present-interval.complete-raw-table", "PRESENT_INTERVAL",
+		"Default=0,One=1,Two=2,Immediate=3",
+		fmt.Sprintf("Default=%d,One=%d,Two=%d,Immediate=%d",
+			graphics.PresentIntervalDefault, graphics.PresentIntervalOne, graphics.PresentIntervalTwo, graphics.PresentIntervalImmediate))
+	check("present-interval.underlying-system-int32", "PRESENT_INTERVAL", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.PresentIntervalDefault).Kind()])
+	var zeroPresentInterval graphics.PresentInterval
+	checkGoProjection("present-interval.zero-value-default", "PRESENT_INTERVAL", graphics.PresentIntervalDefault, zeroPresentInterval)
+	checkGoProjection("present-interval.arbitrary-positive-raw", "PRESENT_INTERVAL", "4,12345",
+		fmt.Sprintf("%d,%d", graphics.PresentInterval(4), graphics.PresentInterval(12345)))
+	checkGoProjection("present-interval.negative-raw", "PRESENT_INTERVAL", int32(-1), int32(graphics.PresentInterval(-1)))
+
+	check("primitive-type.complete-raw-table", "PRIMITIVE_TYPE",
+		"TriangleList=0,TriangleStrip=1,LineList=2,LineStrip=3",
+		fmt.Sprintf("TriangleList=%d,TriangleStrip=%d,LineList=%d,LineStrip=%d",
+			graphics.PrimitiveTypeTriangleList, graphics.PrimitiveTypeTriangleStrip, graphics.PrimitiveTypeLineList, graphics.PrimitiveTypeLineStrip))
+	check("primitive-type.underlying-system-int32", "PRIMITIVE_TYPE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.PrimitiveTypeTriangleList).Kind()])
+	var zeroPrimitiveType graphics.PrimitiveType
+	checkGoProjection("primitive-type.zero-value-triangle-list", "PRIMITIVE_TYPE", graphics.PrimitiveTypeTriangleList, zeroPrimitiveType)
+	checkGoProjection("primitive-type.arbitrary-positive-raw", "PRIMITIVE_TYPE", "4,12345",
+		fmt.Sprintf("%d,%d", graphics.PrimitiveType(4), graphics.PrimitiveType(12345)))
+	checkGoProjection("primitive-type.negative-raw", "PRIMITIVE_TYPE", int32(-1), int32(graphics.PrimitiveType(-1)))
+
+	check("touch-location-state.complete-raw-table", "TOUCH_LOCATION_STATE",
+		"Invalid=0,Released=1,Pressed=2,Moved=3",
+		fmt.Sprintf("Invalid=%d,Released=%d,Pressed=%d,Moved=%d",
+			touch.TouchLocationStateInvalid, touch.TouchLocationStateReleased, touch.TouchLocationStatePressed, touch.TouchLocationStateMoved))
+	check("touch-location-state.underlying-system-int32", "TOUCH_LOCATION_STATE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(touch.TouchLocationStateInvalid).Kind()])
+	var zeroTouchLocationState touch.TouchLocationState
+	checkGoProjection("touch-location-state.zero-value-invalid", "TOUCH_LOCATION_STATE", touch.TouchLocationStateInvalid, zeroTouchLocationState)
+	checkGoProjection("touch-location-state.arbitrary-positive-raw", "TOUCH_LOCATION_STATE", "4,12345",
+		fmt.Sprintf("%d,%d", touch.TouchLocationState(4), touch.TouchLocationState(12345)))
+	checkGoProjection("touch-location-state.negative-raw", "TOUCH_LOCATION_STATE", int32(-1), int32(touch.TouchLocationState(-1)))
+
+	check("blend-function.complete-raw-table", "BLEND_FUNCTION",
+		"Add=0,Subtract=1,ReverseSubtract=2,Min=3,Max=4",
+		fmt.Sprintf("Add=%d,Subtract=%d,ReverseSubtract=%d,Min=%d,Max=%d",
+			graphics.BlendFunctionAdd, graphics.BlendFunctionSubtract, graphics.BlendFunctionReverseSubtract, graphics.BlendFunctionMin, graphics.BlendFunctionMax))
+	check("blend-function.underlying-system-int32", "BLEND_FUNCTION", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.BlendFunctionAdd).Kind()])
+	var zeroBlendFunction graphics.BlendFunction
+	checkGoProjection("blend-function.zero-value-add", "BLEND_FUNCTION", graphics.BlendFunctionAdd, zeroBlendFunction)
+	checkGoProjection("blend-function.arbitrary-positive-raw", "BLEND_FUNCTION", "5,12345",
+		fmt.Sprintf("%d,%d", graphics.BlendFunction(5), graphics.BlendFunction(12345)))
+	checkGoProjection("blend-function.negative-raw", "BLEND_FUNCTION", int32(-1), int32(graphics.BlendFunction(-1)))
 
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))
@@ -756,4 +1080,24 @@ func runCorpus() corpusReport {
 	check("packed.value64.copy-and-equality", "PACKED_INTERFACE", "true,true,false,true", fmt.Sprintf("%t,%t,%t,%t", packedValue64.EqualsByObject(packedValue64), packedvector.HalfVector4OperatorEqualityByHalfVector4AndHalfVector4(packedValue64, packedValue64), packedValue64.EqualsByHalfVector4(packedValue64Copy), packedvector.HalfVector4OperatorInequalityByHalfVector4AndHalfVector4(packedValue64, packedValue64Copy)))
 
 	return report
+}
+
+// enumBitStructure reports the union of a pinned flags enum's literals and
+// whether every non-zero literal is a distinct single bit. Both facts come
+// from the pinned XNA metadata values, not from any runtime behavior.
+func enumBitStructure(values []int32) (int32, bool) {
+	var union int32
+	seen := make(map[int32]bool, len(values))
+	singleBits := true
+	for _, value := range values {
+		union |= value
+		if value == 0 {
+			continue
+		}
+		if value&(value-1) != 0 || seen[value] {
+			singleBits = false
+		}
+		seen[value] = true
+	}
+	return union, singleBits
 }

@@ -637,6 +637,68 @@ Exact evidence is in `docs/button-state-evidence.md`.
 FOUNDATION_MILESTONE_13_COMPLETE=true
 ```
 
+## Foundation 14 pure-managed batch A policy
+
+Foundation 14 is the first multi-type autonomous batch. It completes exactly
+25 public XNA types carrying 121 mapped Go identities, every one an ordinary or
+flags enum whose only public-signature dependency is `System.Int32`.
+
+Types were consumed by the established ranking — highest reverse fan-out first,
+ties broken by the smallest source closure — with the dependency graph
+regenerated and reranked after every completed type. Batch membership required
+all sixteen safety conditions: mapped dependencies, pure managed logic, no CNA
+ABI or cgo expansion, no renderer, `GraphicsDevice`, `Texture2D`, or
+`SpriteBatch` work, no ownership/lifetime architecture, no callbacks, no thread
+affinity, no hardware-positive behavior, no platform service, no new BCL
+projection subsystem, an exactly known pinned surface, deterministic semantics
+established from retained authoritative XNA evidence, and no stub behavior.
+
+Every enum reuses the established projection unchanged: a named `int32` type,
+explicit raw values, no `iota`, the `// xna:flags` directive present exactly for
+the pinned flags enums, the synthetic CLR `value__` field excluded, and no
+validation, Stringer, parser, helper API, native mirror, or backend mapping.
+Two enums (`AudioChannels`, `Buttons`) declare no zero literal, so their Go zero
+value is an ordinary undefined raw value and equals no named constant. No new
+general mapping rule was required, so `docs/xna-go-mapping.md` is unchanged.
+
+The batch removed `MISSING_TYPE` diagnostics only. The five partial runtime
+types were off limits: `MISSING_MEMBER` stayed at 177 and `PARTIAL_TYPES` at 5
+through all 25 steps, even though `CubeMapFace`, `GraphicsDeviceStatus`, and
+`PrimitiveType` have `GraphicsDevice` among their deferred reverse consumers.
+
+Three namespaces gained their first Go package — `Audio`, `Media`, and nested
+`Input/Touch` — each by the deterministic `packagePathForNamespace` rule and
+each carrying only a `doc.go` and enum files. This is a namespace fact and no
+audio, media, or touch capability claim.
+
+Completion of these enum contracts claims managed metadata only. No render
+target, cube map, primitive draw, render state, sampler, buffer, presentation,
+device-loss, effect, audio, microphone, media, video, touch panel, or game pad
+capability is claimed, and no completed literal authorizes its consumer.
+
+## Foundation 14 qualification evidence
+
+- [x] Independently confirm all 25 pinned enum contracts, admitting kind, flags, underlying storage, base type, interfaces, `value__`, exact literal names, and exact raw values.
+- [x] Complete 25 types and 121 identities with compiler-measured local strict zero for every one.
+- [x] Move the scoreboard by exactly the predicted delta at every one of the 25 steps.
+- [x] Add one table-driven `foundation14EnumClosures` verifier category covering all 25 types with no allowlist or mapping exception.
+- [x] Add 304 exhaustive negative verifier cases across 14 structural defects, each with an asserted clean baseline.
+- [x] Grow the declared mutation inventory from 157 to 177 cases.
+- [x] Add per-package source-level `xna:flags` self-tests and a negative fixture for the detector itself.
+- [x] Grow the behavior corpus from 280 to 411 with explicit XNA/Go provenance and zero failures.
+- [x] Preserve all five partial types and their combined 177 missing members.
+- [x] Preserve every mismatch, leak, allowlist, unmeasured, interface-witness, and CNA ABI counter.
+- [x] Requalify Go, native stress, unchanged template, deterministic artifact, and isolated-consumer gates.
+
+Normal strict verification remains red only for 167 genuinely missing types
+and 177 members on five explicitly deferred native/runtime partial types.
+Exact evidence is in `docs/foundation-14-pure-managed-batch-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_14_COMPLETE=true
+BATCH_NAME=PURE_MANAGED_BATCH_A
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -646,11 +708,15 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 13, regenerate the scoreboard and dependency graph before
-selecting one next closure. Do not automatically choose a ButtonState,
-GraphicsProfile, DepthFormat, or SurfaceFormat consumer, continue
-GraphicsDeviceManager or GraphicsDevice, infer runtime support from a managed
-enum, or combine independent families.
+After Foundation 14, regenerate the scoreboard and dependency graph before
+selecting the next closure or batch. Do not automatically choose a consumer of
+any completed enum, continue GraphicsDeviceManager or GraphicsDevice, infer
+runtime support from a managed enum, or combine independent families.
+
+A multi-type batch is selected the same way as a single closure: rank the
+dependency-complete missing nodes, then consume only candidates that satisfy
+every safety condition, skipping and recording any that do not rather than
+stopping the batch.
 
 The dependency-complete node count is measured with direct interfaces included
 as public-signature dependencies. That rule is authoritative; a historical

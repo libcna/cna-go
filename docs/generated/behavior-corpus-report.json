@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 280,
-    "ASSERTIONS": 280,
+    "OBSERVATIONS": 411,
+    "ASSERTIONS": 411,
     "FAILURES": 0
   },
   "observations": [
@@ -426,6 +426,1054 @@
     {
       "id": "button-state.negative-raw",
       "group": "BUTTON_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "render-target-usage.complete-raw-table",
+      "group": "RENDER_TARGET_USAGE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "DiscardContents=0,PreserveContents=1,PlatformContents=2",
+      "actual": "DiscardContents=0,PreserveContents=1,PlatformContents=2",
+      "passed": true
+    },
+    {
+      "id": "render-target-usage.underlying-system-int32",
+      "group": "RENDER_TARGET_USAGE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "render-target-usage.zero-value-discard-contents",
+      "group": "RENDER_TARGET_USAGE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "render-target-usage.arbitrary-positive-raw",
+      "group": "RENDER_TARGET_USAGE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "render-target-usage.negative-raw",
+      "group": "RENDER_TARGET_USAGE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "cube-map-face.complete-raw-table",
+      "group": "CUBE_MAP_FACE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "PositiveX=0,NegativeX=1,PositiveY=2,NegativeY=3,PositiveZ=4,NegativeZ=5",
+      "actual": "PositiveX=0,NegativeX=1,PositiveY=2,NegativeY=3,PositiveZ=4,NegativeZ=5",
+      "passed": true
+    },
+    {
+      "id": "cube-map-face.underlying-system-int32",
+      "group": "CUBE_MAP_FACE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "cube-map-face.zero-value-positive-x",
+      "group": "CUBE_MAP_FACE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "cube-map-face.arbitrary-positive-raw",
+      "group": "CUBE_MAP_FACE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "6,12345",
+      "actual": "6,12345",
+      "passed": true
+    },
+    {
+      "id": "cube-map-face.negative-raw",
+      "group": "CUBE_MAP_FACE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "audio-channels.complete-raw-table",
+      "group": "AUDIO_CHANNELS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Mono=1,Stereo=2",
+      "actual": "Mono=1,Stereo=2",
+      "passed": true
+    },
+    {
+      "id": "audio-channels.underlying-system-int32",
+      "group": "AUDIO_CHANNELS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "audio-channels.zero-value-unnamed",
+      "group": "AUDIO_CHANNELS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "0,false,false",
+      "actual": "0,false,false",
+      "passed": true
+    },
+    {
+      "id": "audio-channels.arbitrary-positive-raw",
+      "group": "AUDIO_CHANNELS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "audio-channels.negative-raw",
+      "group": "AUDIO_CHANNELS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "audio-stop-options.complete-raw-table",
+      "group": "AUDIO_STOP_OPTIONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "AsAuthored=0,Immediate=1",
+      "actual": "AsAuthored=0,Immediate=1",
+      "passed": true
+    },
+    {
+      "id": "audio-stop-options.underlying-system-int32",
+      "group": "AUDIO_STOP_OPTIONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "audio-stop-options.zero-value-as-authored",
+      "group": "AUDIO_STOP_OPTIONS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "audio-stop-options.arbitrary-positive-raw",
+      "group": "AUDIO_STOP_OPTIONS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "2,12345",
+      "actual": "2,12345",
+      "passed": true
+    },
+    {
+      "id": "audio-stop-options.negative-raw",
+      "group": "AUDIO_STOP_OPTIONS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "index-element-size.complete-raw-table",
+      "group": "INDEX_ELEMENT_SIZE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "SixteenBits=0,ThirtyTwoBits=1",
+      "actual": "SixteenBits=0,ThirtyTwoBits=1",
+      "passed": true
+    },
+    {
+      "id": "index-element-size.underlying-system-int32",
+      "group": "INDEX_ELEMENT_SIZE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "index-element-size.zero-value-sixteen-bits",
+      "group": "INDEX_ELEMENT_SIZE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "index-element-size.arbitrary-positive-raw",
+      "group": "INDEX_ELEMENT_SIZE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "2,12345",
+      "actual": "2,12345",
+      "passed": true
+    },
+    {
+      "id": "index-element-size.negative-raw",
+      "group": "INDEX_ELEMENT_SIZE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "set-data-options.complete-raw-table",
+      "group": "SET_DATA_OPTIONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "None=0,Discard=1,NoOverwrite=2",
+      "actual": "None=0,Discard=1,NoOverwrite=2",
+      "passed": true
+    },
+    {
+      "id": "set-data-options.underlying-system-int32",
+      "group": "SET_DATA_OPTIONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "set-data-options.flags-union",
+      "group": "SET_DATA_OPTIONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 3,
+      "actual": 3,
+      "passed": true
+    },
+    {
+      "id": "set-data-options.flags-disjoint-single-bits",
+      "group": "SET_DATA_OPTIONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "set-data-options.zero-value-none",
+      "group": "SET_DATA_OPTIONS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "set-data-options.arbitrary-positive-raw",
+      "group": "SET_DATA_OPTIONS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "set-data-options.negative-raw",
+      "group": "SET_DATA_OPTIONS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "media-state.complete-raw-table",
+      "group": "MEDIA_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Stopped=0,Playing=1,Paused=2",
+      "actual": "Stopped=0,Playing=1,Paused=2",
+      "passed": true
+    },
+    {
+      "id": "media-state.underlying-system-int32",
+      "group": "MEDIA_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "media-state.zero-value-stopped",
+      "group": "MEDIA_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "media-state.arbitrary-positive-raw",
+      "group": "MEDIA_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "media-state.negative-raw",
+      "group": "MEDIA_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-class.complete-raw-table",
+      "group": "EFFECT_PARAMETER_CLASS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Scalar=0,Vector=1,Matrix=2,Object=3,Struct=4",
+      "actual": "Scalar=0,Vector=1,Matrix=2,Object=3,Struct=4",
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-class.underlying-system-int32",
+      "group": "EFFECT_PARAMETER_CLASS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-class.zero-value-scalar",
+      "group": "EFFECT_PARAMETER_CLASS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-class.arbitrary-positive-raw",
+      "group": "EFFECT_PARAMETER_CLASS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "5,12345",
+      "actual": "5,12345",
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-class.negative-raw",
+      "group": "EFFECT_PARAMETER_CLASS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "compare-function.complete-raw-table",
+      "group": "COMPARE_FUNCTION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Always=0,Never=1,Less=2,LessEqual=3,Equal=4,GreaterEqual=5,Greater=6,NotEqual=7",
+      "actual": "Always=0,Never=1,Less=2,LessEqual=3,Equal=4,GreaterEqual=5,Greater=6,NotEqual=7",
+      "passed": true
+    },
+    {
+      "id": "compare-function.underlying-system-int32",
+      "group": "COMPARE_FUNCTION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "compare-function.zero-value-always",
+      "group": "COMPARE_FUNCTION",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "compare-function.arbitrary-positive-raw",
+      "group": "COMPARE_FUNCTION",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "8,12345",
+      "actual": "8,12345",
+      "passed": true
+    },
+    {
+      "id": "compare-function.negative-raw",
+      "group": "COMPARE_FUNCTION",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-type.complete-raw-table",
+      "group": "EFFECT_PARAMETER_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Void=0,Bool=1,Int32=2,Single=3,String=4,Texture=5,Texture1D=6,Texture2D=7,Texture3D=8,TextureCube=9",
+      "actual": "Void=0,Bool=1,Int32=2,Single=3,String=4,Texture=5,Texture1D=6,Texture2D=7,Texture3D=8,TextureCube=9",
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-type.underlying-system-int32",
+      "group": "EFFECT_PARAMETER_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-type.zero-value-void",
+      "group": "EFFECT_PARAMETER_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-type.arbitrary-positive-raw",
+      "group": "EFFECT_PARAMETER_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "10,12345",
+      "actual": "10,12345",
+      "passed": true
+    },
+    {
+      "id": "effect-parameter-type.negative-raw",
+      "group": "EFFECT_PARAMETER_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "gesture-type.complete-raw-table",
+      "group": "GESTURE_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "None=0,Tap=1,DoubleTap=2,Hold=4,HorizontalDrag=8,VerticalDrag=16,FreeDrag=32,Pinch=64,Flick=128,DragComplete=256,PinchComplete=512",
+      "actual": "None=0,Tap=1,DoubleTap=2,Hold=4,HorizontalDrag=8,VerticalDrag=16,FreeDrag=32,Pinch=64,Flick=128,DragComplete=256,PinchComplete=512",
+      "passed": true
+    },
+    {
+      "id": "gesture-type.underlying-system-int32",
+      "group": "GESTURE_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "gesture-type.flags-union",
+      "group": "GESTURE_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 1023,
+      "actual": 1023,
+      "passed": true
+    },
+    {
+      "id": "gesture-type.flags-disjoint-single-bits",
+      "group": "GESTURE_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "gesture-type.zero-value-none",
+      "group": "GESTURE_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "gesture-type.arbitrary-positive-raw",
+      "group": "GESTURE_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "513,12345",
+      "actual": "513,12345",
+      "passed": true
+    },
+    {
+      "id": "gesture-type.negative-raw",
+      "group": "GESTURE_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "buttons.complete-raw-table",
+      "group": "BUTTONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "DPadUp=1,DPadDown=2,DPadLeft=4,DPadRight=8,Start=16,Back=32,LeftStick=64,RightStick=128,LeftShoulder=256,RightShoulder=512,BigButton=2048,A=4096,B=8192,X=16384,Y=32768,RightThumbstickUp=16777216,RightThumbstickDown=33554432,RightThumbstickRight=67108864,RightThumbstickLeft=134217728,LeftThumbstickUp=268435456,LeftThumbstickDown=536870912,LeftThumbstickRight=1073741824,LeftThumbstickLeft=2097152,LeftTrigger=8388608,RightTrigger=4194304",
+      "actual": "DPadUp=1,DPadDown=2,DPadLeft=4,DPadRight=8,Start=16,Back=32,LeftStick=64,RightStick=128,LeftShoulder=256,RightShoulder=512,BigButton=2048,A=4096,B=8192,X=16384,Y=32768,RightThumbstickUp=16777216,RightThumbstickDown=33554432,RightThumbstickRight=67108864,RightThumbstickLeft=134217728,LeftThumbstickUp=268435456,LeftThumbstickDown=536870912,LeftThumbstickRight=1073741824,LeftThumbstickLeft=2097152,LeftTrigger=8388608,RightTrigger=4194304",
+      "passed": true
+    },
+    {
+      "id": "buttons.underlying-system-int32",
+      "group": "BUTTONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "buttons.flags-union",
+      "group": "BUTTONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 2145451007,
+      "actual": 2145451007,
+      "passed": true
+    },
+    {
+      "id": "buttons.flags-disjoint-single-bits",
+      "group": "BUTTONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "buttons.zero-value-unnamed",
+      "group": "BUTTONS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "0,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false",
+      "actual": "0,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false",
+      "passed": true
+    },
+    {
+      "id": "buttons.arbitrary-positive-raw",
+      "group": "BUTTONS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "1073741825,12345",
+      "actual": "1073741825,12345",
+      "passed": true
+    },
+    {
+      "id": "buttons.negative-raw",
+      "group": "BUTTONS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "microphone-state.complete-raw-table",
+      "group": "MICROPHONE_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Started=0,Stopped=1",
+      "actual": "Started=0,Stopped=1",
+      "passed": true
+    },
+    {
+      "id": "microphone-state.underlying-system-int32",
+      "group": "MICROPHONE_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "microphone-state.zero-value-started",
+      "group": "MICROPHONE_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "microphone-state.arbitrary-positive-raw",
+      "group": "MICROPHONE_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "2,12345",
+      "actual": "2,12345",
+      "passed": true
+    },
+    {
+      "id": "microphone-state.negative-raw",
+      "group": "MICROPHONE_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "fill-mode.complete-raw-table",
+      "group": "FILL_MODE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Solid=0,WireFrame=1",
+      "actual": "Solid=0,WireFrame=1",
+      "passed": true
+    },
+    {
+      "id": "fill-mode.underlying-system-int32",
+      "group": "FILL_MODE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "fill-mode.zero-value-solid",
+      "group": "FILL_MODE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "fill-mode.arbitrary-positive-raw",
+      "group": "FILL_MODE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "2,12345",
+      "actual": "2,12345",
+      "passed": true
+    },
+    {
+      "id": "fill-mode.negative-raw",
+      "group": "FILL_MODE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "media-source-type.complete-raw-table",
+      "group": "MEDIA_SOURCE_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "LocalDevice=0,WindowsMediaConnect=4",
+      "actual": "LocalDevice=0,WindowsMediaConnect=4",
+      "passed": true
+    },
+    {
+      "id": "media-source-type.underlying-system-int32",
+      "group": "MEDIA_SOURCE_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "media-source-type.zero-value-local-device",
+      "group": "MEDIA_SOURCE_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "media-source-type.arbitrary-positive-raw",
+      "group": "MEDIA_SOURCE_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "5,12345",
+      "actual": "5,12345",
+      "passed": true
+    },
+    {
+      "id": "media-source-type.negative-raw",
+      "group": "MEDIA_SOURCE_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "sound-state.complete-raw-table",
+      "group": "SOUND_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Playing=0,Paused=1,Stopped=2",
+      "actual": "Playing=0,Paused=1,Stopped=2",
+      "passed": true
+    },
+    {
+      "id": "sound-state.underlying-system-int32",
+      "group": "SOUND_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "sound-state.zero-value-playing",
+      "group": "SOUND_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "sound-state.arbitrary-positive-raw",
+      "group": "SOUND_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "sound-state.negative-raw",
+      "group": "SOUND_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "cull-mode.complete-raw-table",
+      "group": "CULL_MODE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "None=0,CullClockwiseFace=1,CullCounterClockwiseFace=2",
+      "actual": "None=0,CullClockwiseFace=1,CullCounterClockwiseFace=2",
+      "passed": true
+    },
+    {
+      "id": "cull-mode.underlying-system-int32",
+      "group": "CULL_MODE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "cull-mode.zero-value-none",
+      "group": "CULL_MODE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "cull-mode.arbitrary-positive-raw",
+      "group": "CULL_MODE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "cull-mode.negative-raw",
+      "group": "CULL_MODE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "graphics-device-status.complete-raw-table",
+      "group": "GRAPHICS_DEVICE_STATUS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Normal=0,Lost=1,NotReset=2",
+      "actual": "Normal=0,Lost=1,NotReset=2",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-status.underlying-system-int32",
+      "group": "GRAPHICS_DEVICE_STATUS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-status.zero-value-normal",
+      "group": "GRAPHICS_DEVICE_STATUS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "graphics-device-status.arbitrary-positive-raw",
+      "group": "GRAPHICS_DEVICE_STATUS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-status.negative-raw",
+      "group": "GRAPHICS_DEVICE_STATUS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "texture-address-mode.complete-raw-table",
+      "group": "TEXTURE_ADDRESS_MODE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Wrap=0,Clamp=1,Mirror=2",
+      "actual": "Wrap=0,Clamp=1,Mirror=2",
+      "passed": true
+    },
+    {
+      "id": "texture-address-mode.underlying-system-int32",
+      "group": "TEXTURE_ADDRESS_MODE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "texture-address-mode.zero-value-wrap",
+      "group": "TEXTURE_ADDRESS_MODE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "texture-address-mode.arbitrary-positive-raw",
+      "group": "TEXTURE_ADDRESS_MODE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "texture-address-mode.negative-raw",
+      "group": "TEXTURE_ADDRESS_MODE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "game-pad-dead-zone.complete-raw-table",
+      "group": "GAME_PAD_DEAD_ZONE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "None=0,IndependentAxes=1,Circular=2",
+      "actual": "None=0,IndependentAxes=1,Circular=2",
+      "passed": true
+    },
+    {
+      "id": "game-pad-dead-zone.underlying-system-int32",
+      "group": "GAME_PAD_DEAD_ZONE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "game-pad-dead-zone.zero-value-none",
+      "group": "GAME_PAD_DEAD_ZONE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "game-pad-dead-zone.arbitrary-positive-raw",
+      "group": "GAME_PAD_DEAD_ZONE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "game-pad-dead-zone.negative-raw",
+      "group": "GAME_PAD_DEAD_ZONE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "video-soundtrack-type.complete-raw-table",
+      "group": "VIDEO_SOUNDTRACK_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Music=0,Dialog=1,MusicAndDialog=2",
+      "actual": "Music=0,Dialog=1,MusicAndDialog=2",
+      "passed": true
+    },
+    {
+      "id": "video-soundtrack-type.underlying-system-int32",
+      "group": "VIDEO_SOUNDTRACK_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "video-soundtrack-type.zero-value-music",
+      "group": "VIDEO_SOUNDTRACK_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "video-soundtrack-type.arbitrary-positive-raw",
+      "group": "VIDEO_SOUNDTRACK_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "3,12345",
+      "actual": "3,12345",
+      "passed": true
+    },
+    {
+      "id": "video-soundtrack-type.negative-raw",
+      "group": "VIDEO_SOUNDTRACK_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "present-interval.complete-raw-table",
+      "group": "PRESENT_INTERVAL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Default=0,One=1,Two=2,Immediate=3",
+      "actual": "Default=0,One=1,Two=2,Immediate=3",
+      "passed": true
+    },
+    {
+      "id": "present-interval.underlying-system-int32",
+      "group": "PRESENT_INTERVAL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "present-interval.zero-value-default",
+      "group": "PRESENT_INTERVAL",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "present-interval.arbitrary-positive-raw",
+      "group": "PRESENT_INTERVAL",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "4,12345",
+      "actual": "4,12345",
+      "passed": true
+    },
+    {
+      "id": "present-interval.negative-raw",
+      "group": "PRESENT_INTERVAL",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "primitive-type.complete-raw-table",
+      "group": "PRIMITIVE_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "TriangleList=0,TriangleStrip=1,LineList=2,LineStrip=3",
+      "actual": "TriangleList=0,TriangleStrip=1,LineList=2,LineStrip=3",
+      "passed": true
+    },
+    {
+      "id": "primitive-type.underlying-system-int32",
+      "group": "PRIMITIVE_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "primitive-type.zero-value-triangle-list",
+      "group": "PRIMITIVE_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "primitive-type.arbitrary-positive-raw",
+      "group": "PRIMITIVE_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "4,12345",
+      "actual": "4,12345",
+      "passed": true
+    },
+    {
+      "id": "primitive-type.negative-raw",
+      "group": "PRIMITIVE_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "touch-location-state.complete-raw-table",
+      "group": "TOUCH_LOCATION_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Invalid=0,Released=1,Pressed=2,Moved=3",
+      "actual": "Invalid=0,Released=1,Pressed=2,Moved=3",
+      "passed": true
+    },
+    {
+      "id": "touch-location-state.underlying-system-int32",
+      "group": "TOUCH_LOCATION_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "touch-location-state.zero-value-invalid",
+      "group": "TOUCH_LOCATION_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "touch-location-state.arbitrary-positive-raw",
+      "group": "TOUCH_LOCATION_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "4,12345",
+      "actual": "4,12345",
+      "passed": true
+    },
+    {
+      "id": "touch-location-state.negative-raw",
+      "group": "TOUCH_LOCATION_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "blend-function.complete-raw-table",
+      "group": "BLEND_FUNCTION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Add=0,Subtract=1,ReverseSubtract=2,Min=3,Max=4",
+      "actual": "Add=0,Subtract=1,ReverseSubtract=2,Min=3,Max=4",
+      "passed": true
+    },
+    {
+      "id": "blend-function.underlying-system-int32",
+      "group": "BLEND_FUNCTION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "blend-function.zero-value-add",
+      "group": "BLEND_FUNCTION",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "blend-function.arbitrary-positive-raw",
+      "group": "BLEND_FUNCTION",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "5,12345",
+      "actual": "5,12345",
+      "passed": true
+    },
+    {
+      "id": "blend-function.negative-raw",
+      "group": "BLEND_FUNCTION",
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": -1,
       "actual": -1,

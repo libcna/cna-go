@@ -25,8 +25,8 @@ nor native handles.
 
 The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,243 expected Go members. The current target has 65 types and 1,361 members:
-60 types are complete, five native/runtime types are partial, and 192 are
+3,243 expected Go members. The current target has 90 types and 1,482 members:
+85 types are complete, five native/runtime types are partial, and 167 are
 missing. The strict verifier remains red because most XNA surface is
 intentionally absent. Every mismatch, leak, allowlist, and unmeasured-category
 gate is green.
@@ -243,10 +243,19 @@ two-literal raw table, non-flags projection, focused verifier negatives, the
 three deferred `System.ValueType` reverse consumers, and the strict
 metadata-only input boundary.
 
+See [Foundation 14 pure-managed batch A evidence](docs/foundation-14-pure-managed-batch-evidence.md)
+for the 25 completed enums and their 121 mapped identities, the per-type pinned
+raw tables and deferred reverse consumers, the table-driven verifier closure
+category, the 304 exhaustive negative cases, the ranked skip list with exact
+reasons, and the strict no-capability-inflation boundary for the new `Audio`,
+`Media`, and `Input/Touch` namespaces.
+
 The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
 Windows, macOS, Android, iOS, and Web/Wasm are not qualified. Content/XNB,
 Effects/3D, Audio, Media, Storage, Touch, and most of XNA remain unimplemented.
+The `Audio`, `Media`, and `Input/Touch` packages contain enum metadata only and
+carry no audio, media, or touch runtime capability claim.
 
 See the generated [runtime capability inventory](docs/generated/runtime-capabilities.md)
 for evidence and limitations by capability.
@@ -289,7 +298,7 @@ go run ./tools/native_stress
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its 369 missing-surface diagnostics are the work queue, not a
+surface exists; its 344 missing-surface diagnostics are the work queue, not a
 compatibility claim.
 The native ABI and stress commands require the qualified native environment.
 

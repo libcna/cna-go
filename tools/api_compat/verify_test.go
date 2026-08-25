@@ -8,6 +8,7 @@ import (
 	"go/types"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -1038,7 +1039,9 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "button_state_") {
+			if strings.HasPrefix(fixture.Mutation, "f14_") {
+				expected, actual = foundation14EnumMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "button_state_") {
 				expected, actual = buttonStateMutationCase(t, fixture.Mutation)
 			} else if strings.HasPrefix(fixture.Mutation, "graphics_profile_") {
 				expected, actual = graphicsProfileMutationCase(t, fixture.Mutation)
@@ -2087,4 +2090,347 @@ func mutationCase(mutation string) (*expectedSurface, *actualSurface) {
 		actual.Types[wrongKey] = at
 	}
 	return expected, actual
+}
+
+// foundation14EnumByIdentity returns the pinned Foundation-14 batch entry for
+// an XNA identity.
+func foundation14EnumByIdentity(t *testing.T, identity string) foundation14Enum {
+	t.Helper()
+	for _, pinned := range foundation14Enums {
+		if pinned.Identity == identity {
+			return pinned
+		}
+	}
+	t.Fatalf("%s is not a Foundation-14 batch enum", identity)
+	return foundation14Enum{}
+}
+
+// TestFoundation14EnumMappedContracts admits every enum in the Foundation-14
+// pure-managed batch against the pinned XNA 4.0 Windows contract. The verifier
+// table and the contract must agree on kind, flags, underlying storage, the
+// exact literal names, and the exact raw values, and the synthetic value__
+// storage field must never reach the Go projection.
+func TestFoundation14EnumMappedContracts(t *testing.T) {
+	reference := loadPinnedContract(t)
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(foundation14Enums) != 25 {
+		t.Fatalf("Foundation-14 batch size = %d, want 25", len(foundation14Enums))
+	}
+	contractTypes := make(map[string]contractType, len(reference.Types))
+	for _, declared := range reference.Types {
+		contractTypes[declared.Name] = declared
+	}
+	seen := make(map[string]bool, len(foundation14Enums))
+	identities := 0
+	for _, pinned := range foundation14Enums {
+		if seen[pinned.Identity] {
+			t.Fatalf("%s appears twice in the batch table", pinned.Identity)
+		}
+		seen[pinned.Identity] = true
+
+		declared, ok := contractTypes[pinned.Identity]
+		if !ok {
+			t.Fatalf("%s is not in the pinned contract", pinned.Identity)
+		}
+		if declared.Kind != "enum" || declared.Flags != pinned.Flags ||
+			valueOrEmpty(declared.UnderlyingType) != "System.Int32" ||
+			valueOrEmpty(declared.BaseType) != "System.Enum" || len(declared.DirectInterfaces) != 0 {
+			t.Fatalf("%s pinned shape = kind %q flags %t underlying %q base %q interfaces %v",
+				pinned.Identity, declared.Kind, declared.Flags, valueOrEmpty(declared.UnderlyingType),
+				valueOrEmpty(declared.BaseType), declared.DirectInterfaces)
+		}
+
+		// The contract's own literal table must match the verifier table
+		// exactly, in both directions.
+		contractValues := make(map[string]string)
+		storage := 0
+		for _, member := range declared.Members {
+			if member.Kind != "field" {
+				t.Fatalf("%s declares a non-field member %q", pinned.Identity, member.Name)
+			}
+			if member.Name == "value__" {
+				storage++
+				continue
+			}
+			contractValues[member.Name] = normalizeInteger(strings.Trim(string(member.Value), "\""))
+		}
+		if storage != 1 {
+			t.Fatalf("%s declares %d value__ storage fields, want 1", pinned.Identity, storage)
+		}
+		if len(contractValues) != len(pinned.Values) {
+			t.Fatalf("%s literal count = %d, want %d", pinned.Identity, len(contractValues), len(pinned.Values))
+		}
+		for _, wanted := range pinned.Values {
+			got, ok := contractValues[wanted.Name]
+			if !ok {
+				t.Fatalf("%s.%s is not declared by the pinned contract", pinned.Identity, wanted.Name)
+			}
+			if got != normalizeInteger(wanted.Value) {
+				t.Fatalf("%s.%s pinned value = %s, want %s", pinned.Identity, wanted.Name, got, wanted.Value)
+			}
+			delete(contractValues, wanted.Name)
+		}
+		if len(contractValues) != 0 {
+			t.Fatalf("%s has unmapped pinned literals %v", pinned.Identity, contractValues)
+		}
+
+		mapped := surface.typeForXNA(pinned.Identity)
+		if mapped == nil || mapped.Kind != "enum" || mapped.Flags != pinned.Flags ||
+			mapped.SourceMembers != len(pinned.Values)+1 || len(mapped.Members) != len(pinned.Values) ||
+			len(mapped.Interfaces) != 0 {
+			t.Fatalf("%s projection = %+v", pinned.Identity, mapped)
+		}
+		namespace := pinned.Identity[:strings.LastIndex(pinned.Identity, ".")]
+		if mapped.PackagePath != packagePathForNamespace(namespace) {
+			t.Fatalf("%s package = %q", pinned.Identity, mapped.PackagePath)
+		}
+		if mapped.GoName != pinned.Identity[strings.LastIndex(pinned.Identity, ".")+1:] {
+			t.Fatalf("%s Go name = %q", pinned.Identity, mapped.GoName)
+		}
+		for _, wanted := range pinned.Values {
+			member := surface.Members[symbolKey{Package: mapped.PackagePath, Name: mapped.GoName + wanted.Name}]
+			if member == nil || member.GoKind != "const" || member.EnumValue == nil ||
+				normalizeInteger(*member.EnumValue) != normalizeInteger(wanted.Value) ||
+				!equalStrings(member.Results, []string{mapped.GoName}) {
+				t.Fatalf("%s%s projection = %+v", mapped.GoName, wanted.Name, member)
+			}
+		}
+		for _, name := range []string{"Value__", "value__"} {
+			if surface.Members[symbolKey{Package: mapped.PackagePath, Name: mapped.GoName + name}] != nil {
+				t.Fatalf("enum storage %s%s was projected", mapped.GoName, name)
+			}
+		}
+		identities += len(pinned.Values)
+	}
+	if identities != 121 {
+		t.Fatalf("Foundation-14 mapped identities = %d, want 121", identities)
+	}
+}
+
+// foundation14EnumSurfaces builds an isolated correct expected/actual surface
+// pair for one Foundation-14 batch enum, so a mutation applied afterwards is
+// the only defect the verifier can see.
+func foundation14EnumSurfaces(t *testing.T, identity string) (*expectedSurface, *actualSurface, *expectedType, foundation14Enum) {
+	t.Helper()
+	pinned := foundation14EnumByIdentity(t, identity)
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(identity)
+	if fullType == nil {
+		t.Fatalf("%s is not in the pinned contract", identity)
+	}
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   len(pinned.Values) + 1,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  len(pinned.Values),
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			copiedType.Key: {Key: copiedType.Key, Kind: "named", Underlying: "int32", FlagsMarker: pinned.Flags},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		value := *copiedMember.EnumValue
+		actual.Members[memberKey] = &actualMember{
+			Key: memberKey, Kind: "const", Results: []string{copiedType.GoName}, Value: &value,
+		}
+	}
+	return expected, actual, &copiedType, pinned
+}
+
+// foundation14EnumDefects are the structural defects every Foundation-14 batch
+// enum is negatively fixtured against. Each one is a way an enum projection
+// could silently drift from the pinned contract.
+var foundation14EnumDefects = []struct {
+	Name     string
+	Category string
+	// FlagsOnly restricts a defect to flags enums, OrdinaryOnly to
+	// non-flags enums; both false means the defect applies to every enum.
+	FlagsOnly    bool
+	OrdinaryOnly bool
+	Apply        func(expected *expectedSurface, actual *actualSurface, owner *expectedType, pinned foundation14Enum)
+}{
+	{Name: "missing_type", Category: "MISSING_TYPE", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, _ foundation14Enum) {
+		delete(actual.Types, owner.Key)
+	}},
+	{Name: "wrong_package", Category: "MISSING_TYPE", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, pinned foundation14Enum) {
+		const elsewhere = modulePath + "/Microsoft/Xna/Framework"
+		moved := *actual.Types[owner.Key]
+		delete(actual.Types, owner.Key)
+		moved.Key.Package = elsewhere
+		actual.Types[moved.Key] = &moved
+		for _, literal := range pinned.Values {
+			key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + literal.Name}
+			member := *actual.Members[key]
+			delete(actual.Members, key)
+			member.Key.Package = elsewhere
+			actual.Members[member.Key] = &member
+		}
+	}},
+	{Name: "wrong_kind", Category: "TYPE_KIND_MISMATCH", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, _ foundation14Enum) {
+		actual.Types[owner.Key].Kind = "struct"
+	}},
+	{Name: "wrong_underlying_type", Category: "TYPE_KIND_MISMATCH", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, _ foundation14Enum) {
+		actual.Types[owner.Key].Underlying = "uint32"
+	}},
+	{Name: "accidentally_flags", Category: "FLAGS_MAPPING_MISMATCH", OrdinaryOnly: true, Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, _ foundation14Enum) {
+		actual.Types[owner.Key].FlagsMarker = true
+	}},
+	{Name: "flags_directive_dropped", Category: "FLAGS_MAPPING_MISMATCH", FlagsOnly: true, Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, _ foundation14Enum) {
+		actual.Types[owner.Key].FlagsMarker = false
+	}},
+	{Name: "wrong_first_value", Category: "ENUM_VALUE_MISMATCH", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, pinned foundation14Enum) {
+		key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + pinned.Values[0].Name}
+		drifted := "9999"
+		actual.Members[key].Value = &drifted
+	}},
+	{Name: "wrong_last_value", Category: "ENUM_VALUE_MISMATCH", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, pinned foundation14Enum) {
+		last := pinned.Values[len(pinned.Values)-1]
+		key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + last.Name}
+		drifted := "-7"
+		actual.Members[key].Value = &drifted
+	}},
+	{Name: "iota_renumbering", Category: "ENUM_VALUE_MISMATCH", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, pinned foundation14Enum) {
+		// An `iota` block renumbers every literal 0, 1, 2, ... in source
+		// order, which is exactly why the enum policy forbids iota.
+		for index, literal := range pinned.Values {
+			key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + literal.Name}
+			renumbered := strconv.Itoa(index)
+			actual.Members[key].Value = &renumbered
+		}
+	}},
+	{Name: "missing_last_literal", Category: "MISSING_MEMBER", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, pinned foundation14Enum) {
+		last := pinned.Values[len(pinned.Values)-1]
+		delete(actual.Members, symbolKey{Package: owner.PackagePath, Name: owner.GoName + last.Name})
+	}},
+	{Name: "renamed_literal", Category: "MISSING_MEMBER", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, pinned foundation14Enum) {
+		key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + pinned.Values[0].Name}
+		member := *actual.Members[key]
+		delete(actual.Members, key)
+		member.Key = symbolKey{Package: owner.PackagePath, Name: owner.GoName + pinned.Values[0].Name + "Renamed"}
+		actual.Members[member.Key] = &member
+	}},
+	{Name: "value_storage_projected", Category: "UNEXPECTED_MEMBER", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, _ foundation14Enum) {
+		key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + "Value__"}
+		value := "0"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{"int32"}, Value: &value}
+	}},
+	{Name: "invented_constant", Category: "UNEXPECTED_MEMBER", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, _ foundation14Enum) {
+		// None/Default/All must never be invented for an enum whose pinned
+		// contract does not declare them.
+		key := symbolKey{Package: owner.PackagePath, Name: owner.GoName + "AllInvented"}
+		value := "255"
+		actual.Members[key] = &actualMember{Key: key, Kind: "const", Results: []string{owner.GoName}, Value: &value}
+	}},
+	{Name: "exported_helper", Category: "UNEXPECTED_MEMBER", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType, _ foundation14Enum) {
+		key := symbolKey{Package: owner.PackagePath, Receiver: owner.GoName, Name: "String"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"string"}}
+	}},
+}
+
+// foundation14EnumMutationCase applies one named Foundation-14 defect to one
+// batch enum. Mutation ids have the form
+// f14_<defect>__<Namespace-qualified identity>.
+func foundation14EnumMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	trimmed := strings.TrimPrefix(mutation, "f14_")
+	parts := strings.SplitN(trimmed, "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed Foundation-14 mutation %q", mutation)
+	}
+	defectName, identity := parts[0], parts[1]
+	expected, actual, owner, pinned := foundation14EnumSurfaces(t, identity)
+	for _, defect := range foundation14EnumDefects {
+		if defect.Name != defectName {
+			continue
+		}
+		defect.Apply(expected, actual, owner, pinned)
+		return expected, actual
+	}
+	t.Fatalf("unknown Foundation-14 defect %q", defectName)
+	return nil, nil
+}
+
+// TestFoundation14EnumDefectsRejectedForEveryType is the exhaustive negative
+// fixture for the batch: every applicable structural defect is applied to
+// every one of the 25 completed enums, and each one must raise its category.
+// A clean baseline is asserted first so a defect cannot pass by accident.
+func TestFoundation14EnumDefectsRejectedForEveryType(t *testing.T) {
+	cases := 0
+	for _, pinned := range foundation14Enums {
+		pinned := pinned
+		t.Run(pinned.Identity, func(t *testing.T) {
+			baselineExpected, baselineActual, _, _ := foundation14EnumSurfaces(t, pinned.Identity)
+			baseline := verify(baselineExpected, baselineActual, 0, "report", "contract", "mapping")
+			if baseline.Summary["TOTAL_DIAGNOSTICS"] != 0 {
+				t.Fatalf("unmutated %s baseline is not clean: %v", pinned.Identity, baseline.Diagnostics)
+			}
+			if len(baseline.Foundation14EnumClosures) != len(foundation14Enums) {
+				t.Fatalf("closure count = %d", len(baseline.Foundation14EnumClosures))
+			}
+			for _, defect := range foundation14EnumDefects {
+				if defect.FlagsOnly && !pinned.Flags {
+					continue
+				}
+				if defect.OrdinaryOnly && pinned.Flags {
+					continue
+				}
+				if defect.Name == "iota_renumbering" && enumAlreadySequentialFromZero(pinned) {
+					// Renumbering is invisible for an enum whose pinned
+					// values already are 0, 1, 2, ... in source order.
+					continue
+				}
+				defect := defect
+				t.Run(defect.Name, func(t *testing.T) {
+					expected, actual, owner, entry := foundation14EnumSurfaces(t, pinned.Identity)
+					defect.Apply(expected, actual, owner, entry)
+					result := verify(expected, actual, 0, "report", "contract", "mapping")
+					if result.Summary[defect.Category] == 0 {
+						t.Fatalf("defect %q on %s did not raise %s; summary=%v",
+							defect.Name, pinned.Identity, defect.Category, result.Summary)
+					}
+					for _, closure := range result.Foundation14EnumClosures {
+						if closure.XNA == pinned.Identity && closure.Status != "FAIL" {
+							t.Fatalf("defect %q on %s left the closure measurement at %q",
+								defect.Name, pinned.Identity, closure.Status)
+						}
+					}
+				})
+				cases++
+			}
+		})
+	}
+	if cases < 300 {
+		t.Fatalf("Foundation-14 negative fixture count = %d, want at least 300", cases)
+	}
+}
+
+// enumAlreadySequentialFromZero reports whether a pinned enum's literals are
+// already 0, 1, 2, ... in source order.
+func enumAlreadySequentialFromZero(pinned foundation14Enum) bool {
+	for index, literal := range pinned.Values {
+		if normalizeInteger(literal.Value) != strconv.Itoa(index) {
+			return false
+		}
+	}
+	return true
 }

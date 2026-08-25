@@ -186,7 +186,32 @@ type report struct {
 	DepthFormatClosure           depthFormatClosure            `json:"depthFormatClosure"`
 	GraphicsProfileClosure       graphicsProfileClosure        `json:"graphicsProfileClosure"`
 	ButtonStateClosure           buttonStateClosure            `json:"buttonStateClosure"`
+	Foundation14EnumClosures     []enumClosure                 `json:"foundation14EnumClosures"`
 	Metadata                     reportMetadata                `json:"metadata"`
+}
+
+// enumClosure is the reusable ordinary/flags enum closure measurement. The
+// Foundation-14 pure-managed batch completed 25 enums that differ only in
+// their pinned literal table, so they are measured by one table-driven
+// category rather than 25 near-identical bespoke closures.
+type enumClosure struct {
+	XNA                  string                 `json:"xna"`
+	GoName               string                 `json:"goName"`
+	PackagePath          string                 `json:"packagePath"`
+	SourceTypes          int                    `json:"sourceTypes"`
+	SourceIdentities     int                    `json:"sourceIdentities"`
+	ExpectedGoIdentities int                    `json:"expectedGoIdentities"`
+	TargetTypes          int                    `json:"targetTypes"`
+	TargetGoIdentities   int                    `json:"targetGoIdentities"`
+	LocalDiagnostics     int                    `json:"localDiagnostics"`
+	ExpectedKind         string                 `json:"expectedKind"`
+	ActualKind           string                 `json:"actualKind"`
+	UnderlyingType       string                 `json:"underlyingType"`
+	ExpectedFlags        bool                   `json:"expectedFlags"`
+	Flags                bool                   `json:"flags"`
+	ValueStorageExcluded bool                   `json:"valueStorageExcluded"`
+	Values               []enumValueMeasurement `json:"values"`
+	Status               string                 `json:"status"`
 }
 
 type buttonStateClosure struct {
