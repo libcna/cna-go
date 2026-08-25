@@ -259,6 +259,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation18Interfaces = measureManagedInterfaceClosures(expected, actual, typeDiagnostics, foundation18Interfaces)
 	result.Foundation19ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation19ManagedClasses)
 	result.Foundation20ValueContracts = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation20ValueContracts)
+	result.Foundation21ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation21ManagedClasses)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -2022,13 +2023,23 @@ var foundation19ManagedClasses = []string{
 	"Microsoft.Xna.Framework.Graphics.PresentationParameters",
 }
 
+// foundation21ManagedClasses is the Foundation-21 closure. GameServiceContainer
+// is a pure managed registry whose only unsatisfied dependency was the declared
+// System.IServiceProvider, an interface whose single member the class already
+// declares publicly and which therefore adds no projected surface.
+var foundation21ManagedClasses = []string{
+	"Microsoft.Xna.Framework.GameServiceContainer",
+}
+
 // allManagedClasses is every pinned pure-managed CLR class measured by the
 // shared table-driven closure category, across milestones.
 func allManagedClasses() []string {
-	all := make([]string, 0, len(foundation17ManagedClasses)+len(foundation19ManagedClasses)+len(foundation20ValueContracts))
+	all := make([]string, 0, len(foundation17ManagedClasses)+len(foundation19ManagedClasses)+
+		len(foundation20ValueContracts)+len(foundation21ManagedClasses))
 	all = append(all, foundation17ManagedClasses...)
 	all = append(all, foundation19ManagedClasses...)
 	all = append(all, foundation20ValueContracts...)
+	all = append(all, foundation21ManagedClasses...)
 	return all
 }
 

@@ -296,6 +296,12 @@ write side, `CopyTo`'s 64-bit overflow arithmetic, the operator-versus-`Equals`
 search asymmetry, and the cursor's behavior at both ends. Completing it claims
 no touch capability: CNA-Go has no `TouchPanel` and reads no device.
 
+See [Foundation 21 service container evidence](docs/foundation-21-game-service-container-evidence.md)
+for the general rule that a BCL interface whose members the XNA type already
+declares publicly adds no projected surface, the duplicate-before-assignability
+check order, and why a missing or absent service is an absence rather than a
+failure. Completing it wires nothing up: `Game` exposes no `Services` property.
+
 The `Media` package contains enum metadata only and carries no media runtime
 capability claim. The `Input/Touch` package adds `TouchLocation`,
 `GestureSample`, and the read-only `TouchCollection` alongside its enums, and

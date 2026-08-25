@@ -199,6 +199,7 @@ type report struct {
 	Foundation18Interfaces       []managedInterfaceClosure     `json:"foundation18InterfaceClosures"`
 	Foundation19ManagedClasses   []managedTypeClosure          `json:"foundation19ManagedClassClosures"`
 	Foundation20ValueContracts   []managedTypeClosure          `json:"foundation20ValueContractClosures"`
+	Foundation21ManagedClasses   []managedTypeClosure          `json:"foundation21ManagedClassClosures"`
 	Metadata                     reportMetadata                `json:"metadata"`
 }
 

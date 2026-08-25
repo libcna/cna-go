@@ -1003,6 +1003,40 @@ Exact evidence is in `docs/foundation-20-touch-collection-evidence.md`.
 FOUNDATION_MILESTONE_20_COMPLETE=true
 ```
 
+## Foundation 21 service registry and the exhausted frontier
+
+`GameServiceContainer`'s only unsatisfied dependency was the declared direct
+interface `System.IServiceProvider`, whose single member `GetService(Type)` is
+already an ordinary public member of the class. That generalizes the rule
+Foundation 20 established for `IList<T>`: a BCL interface whose members the XNA
+type already declares publicly adds no projected surface and needs no separate
+Go interface.
+
+The type is one private `Dictionary<Type, object>`: 4 source members, 4 Go
+identities, 3 with an error. Two reference behaviors are preserved that a
+reimplementation would likely get wrong. `AddService` checks for a duplicate
+**before** checking assignability, so an unassignable provider for an
+already-registered type reports the duplicate. And a miss is an absence rather
+than a failure: `RemoveService` on an unregistered type succeeds, and
+`GetService` on one returns nil with no error.
+
+Completing it wires nothing up. CNA-Go's `Game` exposes no `Services` property,
+so nothing in the binding populates or consults a container.
+
+## Foundation 21 qualification evidence
+
+- [x] Read the whole type and its four `Resources` strings from the hash-verified retained assembly.
+- [x] Preserve the duplicate-before-assignability ordering and the absence-is-not-failure rule.
+- [x] Document the one Go/CLR boundary honestly: a non-nil interface holding a typed nil pointer has no CLR counterpart.
+- [x] Extend the shared type closure to 6 types: 72 applied and 12 accounted-for skipped cases; mutation inventory 336 to 347.
+- [x] Grow the behavior corpus from 558 to 564 with zero failures.
+
+Exact evidence is in `docs/foundation-21-game-service-container-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_21_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

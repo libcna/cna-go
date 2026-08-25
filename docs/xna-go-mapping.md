@@ -321,6 +321,13 @@ unconditional `NotSupportedException`. Those throws project as errors rather
 than being dropped: a caller that mutates a read-only view has a real bug, and
 silently accepting the call would hide it.
 
+A BCL interface whose members the XNA type already declares publicly adds no
+projected surface and needs no separate Go interface. `TouchCollection`'s
+`IList<TouchLocation>` and `GameServiceContainer`'s `System.IServiceProvider`
+are both this shape: every member of the declared interface is already an
+ordinary public member of the class, so the concrete method set is the whole
+projection.
+
 ## Mutable struct interface projection
 
 A mutable CLR struct remains a Go value struct. Its non-mutating operations use

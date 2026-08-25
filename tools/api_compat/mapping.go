@@ -117,6 +117,14 @@ var pureManagedTypes = map[string]bool{
 	// members throw from authoritative managed argument validation.
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection":            true,
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": true,
+
+	// Foundation 21. Microsoft.Xna.Framework.Game.dll IL
+	// (sha256 b5dffdd8125abef2a4507ba4e1d2f11062143f0a63d48fe4f298b95ad746a1f0)
+	// shows GameServiceContainer as one private Dictionary<Type, object> with
+	// three methods that validate their arguments and then add, remove, or
+	// look up an entry. It creates no device, starts no game, and reaches no
+	// native code.
+	"Microsoft.Xna.Framework.GameServiceContainer": true,
 }
 
 // classifiedInterfaces is the explicit, reusable policy boundary for
@@ -228,6 +236,13 @@ var managedFallibleMembers = map[string]map[string]bool{
 	// MoveNext is pure arithmetic and Dispose is a bare `ret`.
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": {
 		"property-get|Current": true,
+	},
+	// All three GameServiceContainer methods validate and throw; the
+	// constructor only allocates the backing dictionary and cannot fail.
+	"Microsoft.Xna.Framework.GameServiceContainer": {
+		"method|AddService":    true,
+		"method|RemoveService": true,
+		"method|GetService":    true,
 	},
 }
 

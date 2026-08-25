@@ -1639,8 +1639,69 @@ func runCorpus() corpusReport {
 	check("touch-collection.value-semantics", "TOUCH_COLLECTION", "true,2,3,2",
 		fmt.Sprintf("%t,%d,%d,%d", touchSnapshot == touchMutable, touchSnapshot.Count(), touches.Count(), touchCaptured))
 
+	// --- Foundation 21: pure managed service registry -----------------------
+	//
+	// Read from Microsoft.Xna.Framework.Game.dll IL
+	// (sha256 b5dffdd8125abef2a4507ba4e1d2f11062143f0a63d48fe4f298b95ad746a1f0).
+	// GameServiceContainer is one private Dictionary<Type, object>. Completing
+	// it wires nothing up: CNA-Go's Game exposes no Services property, so
+	// nothing in the binding populates or consults a container.
+	services := framework.NewGameServiceContainer()
+	serviceKey := reflect.TypeOf((*serviceCorpusProbe)(nil)).Elem()
+	unrelatedKey := reflect.TypeOf(0)
+	registered := &serviceCorpusProvider{}
+
+	missingBefore, missingBeforeError := services.GetService(serviceKey)
+	// A missing service is an absence, not a failure: `ldnull; ret`.
+	check("game-service-container.missing-is-not-a-failure", "GAME_SERVICE_CONTAINER", "true,true",
+		fmt.Sprintf("%t,%t", missingBefore == nil, missingBeforeError == nil))
+	// Removing a service that was never registered is not an error either:
+	// the reference discards the dictionary's Boolean result.
+	check("game-service-container.absent-removal-is-not-a-failure", "GAME_SERVICE_CONTAINER", "true",
+		fmt.Sprintf("%t", services.RemoveService(serviceKey) == nil))
+	// All three methods reject a nil service type, and AddService also rejects
+	// a nil provider.
+	_, nilLookupError := services.GetService(nil)
+	check("game-service-container.nil-arguments", "GAME_SERVICE_CONTAINER", "true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t",
+			services.AddService(nil, registered) != nil,
+			services.AddService(serviceKey, nil) != nil,
+			services.RemoveService(nil) != nil,
+			nilLookupError != nil))
+
+	addError := services.AddService(serviceKey, registered)
+	resolved, resolvedError := services.GetService(serviceKey)
+	check("game-service-container.add-and-resolve", "GAME_SERVICE_CONTAINER", "true,true,true",
+		fmt.Sprintf("%t,%t,%t", addError == nil, resolvedError == nil, resolved == any(registered)))
+	// The duplicate check runs before the assignability check, so an
+	// unassignable provider for an already-registered type reports the
+	// duplicate.
+	duplicateError := services.AddService(serviceKey, registered)
+	unassignableError := services.AddService(unrelatedKey, registered)
+	check("game-service-container.rejections", "GAME_SERVICE_CONTAINER", "true,true,true",
+		fmt.Sprintf("%t,%t,%t", duplicateError != nil, unassignableError != nil,
+			strings.Contains(fmt.Sprint(services.AddService(serviceKey, "not a probe")), "already contains")))
+
+	// Reference semantics: two variables naming one container share
+	// registrations, and a separate container shares nothing.
+	servicesAlias := services
+	_ = servicesAlias.RemoveService(serviceKey)
+	afterAliasRemoval, _ := services.GetService(serviceKey)
+	separate, _ := framework.NewGameServiceContainer().GetService(serviceKey)
+	check("game-service-container.reference-semantics", "GAME_SERVICE_CONTAINER", "true,true",
+		fmt.Sprintf("%t,%t", afterAliasRemoval == nil, separate == nil))
+
 	return report
 }
+
+// serviceCorpusProbe and serviceCorpusProvider are corpus-local doubles used to
+// exercise GameServiceContainer's assignability rule. They reproduce no XNA
+// service.
+type serviceCorpusProbe interface{ CorpusPing() }
+
+type serviceCorpusProvider struct{}
+
+func (*serviceCorpusProvider) CorpusPing() {}
 
 // interfaceProbe is a corpus-local double for the Foundation-18 contracts. It
 // exists to observe the Go projection of the contracts -- that they are

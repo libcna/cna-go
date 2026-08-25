@@ -334,5 +334,16 @@
   {"id":"f20-value-contract-touchcollectionenumerator-unexpected-member","mutation":"f17mc_unexpected_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator","category":"UNEXPECTED_MEMBER"},
   {"id":"f20-value-contract-touchcollectionenumerator-native-facade-projection","mutation":"f17mc_native_facade_projection__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator","category":"ERROR_MAPPING_MISMATCH"},
   {"id":"f20-value-contract-touchcollectionenumerator-dropped-error","mutation":"f17mc_dropped_error__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator","category":"ERROR_MAPPING_MISMATCH"},
-  {"id":"f17-managed-class-audioemitter-dropped-error","mutation":"f17mc_dropped_error__Microsoft.Xna.Framework.Audio.AudioEmitter","category":"ERROR_MAPPING_MISMATCH"}
+  {"id":"f17-managed-class-audioemitter-dropped-error","mutation":"f17mc_dropped_error__Microsoft.Xna.Framework.Audio.AudioEmitter","category":"ERROR_MAPPING_MISMATCH"},
+  {"id":"f21-managed-class-gameservicecontainer-missing-type","mutation":"f17mc_missing_type__Microsoft.Xna.Framework.GameServiceContainer","category":"MISSING_TYPE"},
+  {"id":"f21-managed-class-gameservicecontainer-wrong-package","mutation":"f17mc_wrong_package__Microsoft.Xna.Framework.GameServiceContainer","category":"MISSING_TYPE"},
+  {"id":"f21-managed-class-gameservicecontainer-projected-as-named-type","mutation":"f17mc_projected_as_named_type__Microsoft.Xna.Framework.GameServiceContainer","category":"TYPE_KIND_MISMATCH"},
+  {"id":"f21-managed-class-gameservicecontainer-wrong-constructor-semantics","mutation":"f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.GameServiceContainer","category":"RETURN_MAPPING_MISMATCH"},
+  {"id":"f21-managed-class-gameservicecontainer-missing-first-member","mutation":"f17mc_missing_first_member__Microsoft.Xna.Framework.GameServiceContainer","category":"MISSING_MEMBER"},
+  {"id":"f21-managed-class-gameservicecontainer-missing-last-member","mutation":"f17mc_missing_last_member__Microsoft.Xna.Framework.GameServiceContainer","category":"MISSING_MEMBER"},
+  {"id":"f21-managed-class-gameservicecontainer-renamed-last-member","mutation":"f17mc_renamed_last_member__Microsoft.Xna.Framework.GameServiceContainer","category":"MISSING_MEMBER"},
+  {"id":"f21-managed-class-gameservicecontainer-unexpected-member","mutation":"f17mc_unexpected_member__Microsoft.Xna.Framework.GameServiceContainer","category":"UNEXPECTED_MEMBER"},
+  {"id":"f21-managed-class-gameservicecontainer-artificial-constructor-error","mutation":"f17mc_artificial_constructor_error__Microsoft.Xna.Framework.GameServiceContainer","category":"ERROR_MAPPING_MISMATCH"},
+  {"id":"f21-managed-class-gameservicecontainer-native-facade-projection","mutation":"f17mc_native_facade_projection__Microsoft.Xna.Framework.GameServiceContainer","category":"ERROR_MAPPING_MISMATCH"},
+  {"id":"f21-managed-class-gameservicecontainer-dropped-error","mutation":"f17mc_dropped_error__Microsoft.Xna.Framework.GameServiceContainer","category":"ERROR_MAPPING_MISMATCH"}
 ]

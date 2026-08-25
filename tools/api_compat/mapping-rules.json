@@ -114,7 +114,15 @@
       "Microsoft.Xna.Framework.IGameComponent",
       "Microsoft.Xna.Framework.IGraphicsDeviceManager"
     ],
-    "unclassifiedDefault": "every-operation-is-fallible-which-is-correct-for-a-contract-whose-purpose-is-to-cross-a-runtime-boundary"
+    "unclassifiedDefault": "every-operation-is-fallible-which-is-correct-for-a-contract-whose-purpose-is-to-cross-a-runtime-boundary",
+    "bclInterfacesAlreadyDeclaredByTheOwner": "a-BCL-interface-whose-members-the-XNA-type-already-declares-publicly-adds-no-projected-surface-and-needs-no-separate-Go-interface",
+    "bclInterfaceIdentities": [
+      "System.Collections.Generic.ICollection`1",
+      "System.Collections.Generic.IList`1",
+      "System.Collections.Generic.IEnumerable`1",
+      "System.Collections.IEnumerable",
+      "System.IServiceProvider"
+    ]
   },
   "pureManagedClasses": {
     "classification": "explicit-type-identity-policy-proved-by-authoritative-XNA-IL-not-CLR-kind-fallback",
@@ -147,7 +155,8 @@
       "Microsoft.Xna.Framework.Audio.AudioEmitter",
       "Microsoft.Xna.Framework.Graphics.PresentationParameters",
       "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-      "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator"
+      "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+      "Microsoft.Xna.Framework.GameServiceContainer"
     ],
     "appliesToBothCLRKinds": "a-CLR-struct-may-also-be-admitted; admission-decides-fallibility-only-and-never-changes-value-or-reference-semantics"
   },

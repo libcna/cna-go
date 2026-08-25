@@ -2997,8 +2997,8 @@ func constructorKey(t *testing.T, expected *expectedSurface, owner *expectedType
 // target-side defect to every pure-managed CLR class, asserting a clean
 // baseline first so no defect can pass by accident.
 func TestFoundation17ManagedClassDefectsRejectedForEveryType(t *testing.T) {
-	if len(allManagedClasses()) != 5 {
-		t.Fatalf("pure-managed type cluster size = %d, want 5", len(allManagedClasses()))
+	if len(allManagedClasses()) != 6 {
+		t.Fatalf("pure-managed type cluster size = %d, want 6", len(allManagedClasses()))
 	}
 	cases, skipped := 0, 0
 	for _, identity := range allManagedClasses() {
@@ -3053,10 +3053,11 @@ func TestFoundation17ManagedClassDefectsRejectedForEveryType(t *testing.T) {
 	//                                  already fallible
 	//   TouchCollection+Enumerator  5  no constructor, no setter, and no
 	//                                  infallible getter
+	//   GameServiceContainer        3  no property accessors at all
 	if cases+skipped != len(allManagedClasses())*len(managedClassDefects) {
 		t.Fatalf("pure-managed type fixture accounting = %d applied + %d skipped", cases, skipped)
 	}
-	if cases != 61 || skipped != 9 {
+	if cases != 72 || skipped != 12 {
 		t.Fatalf("pure-managed type negative fixtures = %d applied, %d skipped", cases, skipped)
 	}
 }
@@ -3862,7 +3863,8 @@ var interfaceClassificationDefects = map[string]func(){
 func allManagedClassClosures(result report) []managedTypeClosure {
 	all := append([]managedTypeClosure(nil), result.Foundation17ManagedClasses...)
 	all = append(all, result.Foundation19ManagedClasses...)
-	return append(all, result.Foundation20ValueContracts...)
+	all = append(all, result.Foundation20ValueContracts...)
+	return append(all, result.Foundation21ManagedClasses...)
 }
 
 // somewhereElse returns a mapped package path that is never the given one, so

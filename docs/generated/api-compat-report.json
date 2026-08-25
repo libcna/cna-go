@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 107,
+    "COMPLETE_TYPES": 108,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 145,
-    "MISSING_TYPES": 145,
+    "MISSING_TYPE": 144,
+    "MISSING_TYPES": 144,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1699,
-    "TARGET_TYPES": 112,
-    "TOTAL_DIAGNOSTICS": 322,
+    "TARGET_MEMBERS": 1703,
+    "TARGET_TYPES": 113,
+    "TOTAL_DIAGNOSTICS": 321,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -534,12 +534,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GameComponentCollectionEventArgs",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.GameServiceContainer",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GameServiceContainer",
       "message": "mapped Go type is absent"
     },
     {
@@ -1996,6 +1990,7 @@
     "Microsoft.Xna.Framework.CurveLoopType",
     "Microsoft.Xna.Framework.CurveTangent",
     "Microsoft.Xna.Framework.DisplayOrientation",
+    "Microsoft.Xna.Framework.GameServiceContainer",
     "Microsoft.Xna.Framework.GameTime",
     "Microsoft.Xna.Framework.Graphics.Blend",
     "Microsoft.Xna.Framework.Graphics.BlendFunction",
@@ -2339,7 +2334,6 @@
     "Microsoft.Xna.Framework.GameComponent",
     "Microsoft.Xna.Framework.GameComponentCollection",
     "Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-    "Microsoft.Xna.Framework.GameServiceContainer",
     "Microsoft.Xna.Framework.GameWindow",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
     "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
@@ -7706,9 +7700,102 @@
       "status": "PASS"
     }
   ],
+  "foundation21ManagedClassClosures": [
+    {
+      "xna": "Microsoft.Xna.Framework.GameServiceContainer",
+      "sourceKind": "class",
+      "valueSemantics": false,
+      "goName": "GameServiceContainer",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework",
+      "sourceTypes": 1,
+      "sourceIdentities": 4,
+      "expectedGoIdentities": 4,
+      "targetTypes": 1,
+      "targetGoIdentities": 4,
+      "localDiagnostics": 0,
+      "expectedKind": "class",
+      "actualKind": "struct",
+      "baseType": "System.Object",
+      "pureManaged": true,
+      "referenceProjection": "*GameServiceContainer",
+      "accessorPairs": 0,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 3,
+      "errorResults": 3,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.GameServiceContainer::.ctor()",
+          "sourceKind": "constructor",
+          "goKind": "func",
+          "name": "NewGameServiceContainer",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "*GameServiceContainer"
+          ],
+          "actualResults": [
+            "*GameServiceContainer"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.GameServiceContainer::AddService(System.Type,System.Object)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "GameServiceContainer",
+          "name": "AddService",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.GameServiceContainer::RemoveService(System.Type)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "GameServiceContainer",
+          "name": "RemoveService",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.GameServiceContainer::GetService(System.Type)",
+          "sourceKind": "method",
+          "goKind": "method",
+          "receiver": "GameServiceContainer",
+          "name": "GetService",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "any",
+            "error"
+          ],
+          "actualResults": [
+            "any",
+            "error"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "137c228f41acf33881d38291bd7e93eb5c54a0ce1edf01b584c9ba02fb994afc",
+    "mappingSha256": "7ab61cf6619ab8c1a2b4a078c41b1cc758522652cd63c9c87265c3b5e1a883fd",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }
