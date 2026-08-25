@@ -125,15 +125,29 @@ hash-matching:
 sha256 e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f
 ```
 
-It survives in two Foundation-11 era working directories under the system
-temporary directory, one of which also still carries the canonical CNA header
-root it was measured against (`canonical-cna/modules/c-api/include`). Locate
-both with:
+It had survived only in a Foundation-11 era working directory under the system
+temporary directory. It has since been **preserved durably**, byte-identical,
+at:
+
+```text
+~/deps/cna-c-abi-0.7.0-pinned-foundation11/libcna_c_api.so
+```
+
+That directory carries a `PROVENANCE.md` recording the three distinctions
+below. Verify the copy by hash rather than by trusting any path:
 
 ```sh
-find "${TMPDIR:-/tmp}" -name libcna_c_api.so \
+sha256sum ~/deps/cna-c-abi-0.7.0-pinned-foundation11/libcna_c_api.so
+# e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f
+
+# Or rediscover it anywhere on the machine by hash alone:
+find / -name 'libcna_c_api.so*' -type f 2>/dev/null \
   -exec sha256sum {} + | grep ^e912cd1d
 ```
+
+The header root `~/deps/cna-c-abi-0.7.0/include` reproduces the committed
+report against it, so no part of the recipe depends on the temporary
+directory any more.
 
 Re-running `native_abi` against that exact binary reproduces the committed
 report key for key, differing only in `header_root`, which the committed
@@ -151,10 +165,8 @@ REPRODUCED_BUILD_OUTPUT=NOT_ESTABLISHED   CNA was not rebuilt from source
 (`c62949d23d3745964f5e557a06665875621ed4cb6e2930e3f282afd5911f2dcb`) is a
 **different, more recent build** of the same ABI. It passes every gate
 identically but is not the admitted binary and must never be described as
-byte-identical to it.
-
-**Operational risk:** the admitted binary currently exists only under `/tmp`.
-Copying it somewhere durable would protect the pinned provenance.
+byte-identical to it. The preservation step did not replace, modify, or rebuild
+it, and CNA was not rebuilt from source at any point.
 
 ## Re-running gates
 
