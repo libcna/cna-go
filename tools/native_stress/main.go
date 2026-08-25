@@ -43,6 +43,8 @@ type counters struct {
 	GameEventOrderChecks     int `json:"GAME_EVENT_ORDER_CHECKS"`
 	GameEventRemovalChecks   int `json:"GAME_EVENT_REMOVAL_CHECKS"`
 	GameEventOwnerThreadHits int `json:"GAME_EVENT_OWNER_THREAD_CHECKS"`
+	GameEventRerunCycles     int `json:"GAME_EVENT_RERUN_CYCLES"`
+	GameEventPostRunChecks   int `json:"GAME_EVENT_POST_RUN_CHECKS"`
 }
 
 type stressReport struct {
@@ -128,7 +130,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -158,8 +160,14 @@ func runParent() (counters, error) {
 	if total.GameEventOrderChecks < 20 || total.GameEventOwnerThreadHits < 20 {
 		return total, errors.New("native game-event ordering or owner-goroutine minimum was not met")
 	}
-	if total.GameEventRemovalChecks < 60 {
+	if total.GameEventRemovalChecks < 80 {
 		return total, errors.New("native game-event removal was not proved in every isolated cycle")
+	}
+	// The rerun scenario is the lifetime proof: a second Run on the same Go
+	// Game installs four fresh registrations after the first four were
+	// released, and Add/Remove work with no native game alive at all.
+	if total.GameEventRerunCycles < 20 || total.GameEventPostRunChecks < 20 {
+		return total, errors.New("native game-event rerun minimum was not met")
 	}
 	return total, nil
 }
@@ -192,6 +200,9 @@ func runChild(scenario string, index int) error {
 	}
 	err = host.Run()
 	game.recordGameEventDeliveries()
+	if scenario == "event-rerun" {
+		return runEventRerunChild(game, host, err)
+	}
 	if unavailableErr := verifyKeyboardUnavailable("after Game shutdown"); unavailableErr != nil {
 		return unavailableErr
 	}
@@ -368,6 +379,78 @@ func currentGoroutineLabel() string {
 		return line[:index]
 	}
 	return line
+}
+
+// runEventRerunChild proves the native subscription lifetime claim end to end:
+// the four registrations installed for one run are released when that run ends,
+// a SECOND Run on the same Go Game installs four fresh ones, and the projected
+// accessors keep working across both without a consumer resubscribing.
+//
+// It also records the one behavior a second run makes visible. Game::isActive
+// is a private field the reference never resets, and the two activation events
+// are edge-triggered on it, so a second run's activation signal is SUPPRESSED --
+// the game was already active as far as the managed half is concerned. That is
+// what HostActivated does in CLR too, and it is recorded here rather than
+// smoothed over.
+func runEventRerunChild(game *stressGame, host *framework.Game, firstErr error) error {
+	if firstErr != nil {
+		return fmt.Errorf("first run: %w", firstErr)
+	}
+	first := game.result
+	if first.GameEventActivated != 1 || first.GameEventExiting != 1 || first.GameEventDisposed != 1 {
+		return fmt.Errorf("first run delivered %v", game.eventOrder)
+	}
+
+	// Add and remove handlers with no native game alive at all. Both are pure
+	// managed list work, so both must be ordinary successes.
+	postRun, err := host.AddExitingHandler(func(any, *framework.EventArgs) error { return nil })
+	if err != nil {
+		return fmt.Errorf("subscribe after the run ended: %w", err)
+	}
+	if err := host.RemoveExitingHandler(postRun); err != nil {
+		return fmt.Errorf("unsubscribe after the run ended: %w", err)
+	}
+	game.result.GameEventPostRunChecks++
+
+	game.eventOrder = nil
+	game.eventGoroutines = map[string]bool{}
+	game.manager = nil
+	game.device = nil
+	if err := host.Run(); err != nil {
+		return fmt.Errorf("second run: %w", err)
+	}
+	second := game.eventOrder
+	activated, exiting, disposed := 0, 0, 0
+	for _, name := range second {
+		switch name {
+		case "Activated":
+			activated++
+		case "Exiting":
+			exiting++
+		case "Disposed":
+			disposed++
+		}
+	}
+	if exiting != 1 || disposed != 1 {
+		return fmt.Errorf("second run delivered %v; Exiting and Disposed must each arrive exactly once", second)
+	}
+	// The edge-trigger guard is the whole point: the managed half never saw a
+	// deactivation, so the second run's activation signal raises nothing.
+	if activated != 0 {
+		return fmt.Errorf("second run raised Activated %d times; isActive was already true, so the guard must suppress it", activated)
+	}
+	if len(game.eventGoroutines) != 1 || !game.eventGoroutines[game.ownerGoroutine] {
+		return fmt.Errorf("second run delivered on %d goroutines", len(game.eventGoroutines))
+	}
+	game.result.GameEventRerunCycles++
+	game.result.GameEventActivated = first.GameEventActivated + activated
+	game.result.GameEventExiting = first.GameEventExiting + exiting
+	game.result.GameEventDisposed = first.GameEventDisposed + disposed
+	runtime.GC()
+	game.result.GCStressPoints++
+	data, _ := json.Marshal(game.result)
+	fmt.Println(string(data))
+	return nil
 }
 
 func (g *stressGame) Initialize(host *framework.Game) error {
@@ -561,4 +644,6 @@ func addCounters(target *counters, value counters) {
 	target.GameEventOrderChecks += value.GameEventOrderChecks
 	target.GameEventRemovalChecks += value.GameEventRemovalChecks
 	target.GameEventOwnerThreadHits += value.GameEventOwnerThreadHits
+	target.GameEventRerunCycles += value.GameEventRerunCycles
+	target.GameEventPostRunChecks += value.GameEventPostRunChecks
 }

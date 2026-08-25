@@ -1399,6 +1399,34 @@ Exact evidence is in `docs/foundation-36-signal-registry-evidence.md`.
 FOUNDATION_MILESTONE_36_COMPLETE=true
 ```
 
+## Foundation 37 the bridge lifetime, proved
+
+- [x] Foundation 34's three lifetime claims were supported by a C probe and
+      prose. A probe proves what the C API does, not what the binding does with
+      it.
+- [x] A fourth `native_stress` scenario runs the SAME Go `Game` twice: the first
+      run's four registrations are released and four fresh ones installed, with
+      `Exiting` and `Disposed` arriving exactly once per run over 20 isolated
+      cycles and zero crashes, use-after-free or double frees.
+- [x] The second run's activation is SUPPRESSED, and the scenario asserts it.
+      `Game::isActive` is never reset by the reference, so the edge-trigger
+      guard sees no transition -- exactly as `HostActivated` does in CLR. That
+      is why the activation total is 80 and not 100.
+- [x] `Add` and `Remove` with no native game alive are ordinary successes, proved
+      20 times.
+- [x] `internal/interop` gained its first tests: eight, over the decisions that
+      do not reach C -- routing, a dead runtime, first-failure-wins, panic
+      containment, release idempotency, name coverage, the Go end of the
+      constant chain, and `Callbacks` gaining exactly one internal member.
+
+## Foundation 37 qualification evidence
+
+Exact evidence is in `docs/foundation-37-bridge-lifetime-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_37_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

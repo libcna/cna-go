@@ -2,15 +2,19 @@
 
 ## Current state
 
-Foundation Milestones 1 through 36 are complete. Milestones 34 through 36 were
-produced in one session, as the three milestone commits listed below plus the
-docs commit that records them. Whether they have reached `origin/develop` is a
-live fact rather than a stored one — see the note under the block.
+Foundation Milestones 1 through 37 are complete. Milestones 34 through 37 were
+produced in one session, as the milestone commits listed below plus the docs
+commits that record them. Whether they have reached `origin/develop` is a live
+fact rather than a stored one — see the note under the block.
 
 ```text
 SESSION START HEAD          = 605b350a509af8399f742be989a580fb83db22cf
                               (== origin/develop at session start)
-LAST SOURCE-BEARING COMMIT  = 16181b0
+LAST SOURCE-BEARING COMMIT  = the Foundation 37 commit this file is
+                              committed alongside; `16181b0` is the last one
+                              that was already an ancestor when this line was
+                              written, and is what the artifact hash below is
+                              pinned to
 SESSION END                 = the develop HEAD this file is committed in;
                               resolve with `git rev-parse HEAD`
 PUSHED AT COMMIT TIME       = false; resolve the live relationship with
@@ -35,9 +39,12 @@ the last source-bearing commit for the same reason.
 | 34 | `9f661db` | the native Game event bridge, and Game's four events    | 0     | 11            |
 | 35 | `9872de1` | Game's four frame-boundary protected virtuals           | 0     | 4             |
 | 36 | `16181b0` | the signal and frame-hook registries, measured          | 0     | 0             |
+| 37 | *(this session's last source commit)* | the bridge lifetime, proved | 0 | 0 |
 
 Fifteen members completed, all in `Game`, all inside the authorized native
-lifecycle slice. No type became complete and none was meant to.
+lifecycle slice. No type became complete and none was meant to. Two of the four
+milestones complete nothing on purpose: one is measurement, one is
+qualification depth.
 
 ## Scoreboard
 
@@ -73,6 +80,8 @@ mutation inventory                        500      531
 behavior corpus                           620      628
 external canary tests                      34       42
 native ABI mutation controls                0       19
+native stress scenarios                     3        4
+internal/interop tests                      0        8
 ```
 
 Every mismatch, leak, allowlist and unmeasured counter is zero throughout.
@@ -421,20 +430,31 @@ BEHAVIORAL_EQUIVALENCE=VERIFIED     native_stress reproduces every counter byte-
 REPRODUCED_BUILD_OUTPUT=NOT_ESTABLISHED
 ```
 
-`native_stress` gained six counters and the minimums that go with them:
+`native_stress` gained a fourth scenario and eight counters:
 
 ```text
-GAME_EVENT_ACTIVATED_DELIVERIES     60
+GAME_EVENT_ACTIVATED_DELIVERIES     80     <- 60 + 20, NOT 60 + 40; see below
 GAME_EVENT_DEACTIVATED_DELIVERIES    0     <- HEADLESS cannot produce one
-GAME_EVENT_EXITING_DELIVERIES       60
-GAME_EVENT_DISPOSED_DELIVERIES      60
+GAME_EVENT_EXITING_DELIVERIES      100
+GAME_EVENT_DISPOSED_DELIVERIES     100
 GAME_EVENT_ORDER_CHECKS             20
-GAME_EVENT_REMOVAL_CHECKS           60
-GAME_EVENT_OWNER_THREAD_CHECKS      60
+GAME_EVENT_REMOVAL_CHECKS           80
+GAME_EVENT_OWNER_THREAD_CHECKS      80
+GAME_EVENT_RERUN_CYCLES             20
+GAME_EVENT_POST_RUN_CHECKS          20
 ```
 
 The deactivation zero has **no minimum** and is deliberately left at zero.
 Inventing a way to move it would be fabricating evidence.
+
+The activation total is the other number worth reading. The `event-rerun`
+scenario runs the SAME Go `Game` twice, and the second run's activation signal
+is **suppressed**: `Game::isActive` is a private field the reference never
+resets, so the edge-trigger guard treats the second activation as no transition
+at all — exactly as `HostActivated` does in CLR. `Exiting` and `Disposed` arrive
+once per run, which is the release-then-reinstall proof: a leak would have
+delivered them twice in the second run, and an early release would have lost the
+first run's `Disposed`.
 
 ## Maintained template
 
@@ -463,6 +483,7 @@ fires where the native game is disposed rather than where a consumer calls
 FOUNDATION_MILESTONE_34_COMPLETE=true
 FOUNDATION_MILESTONE_35_COMPLETE=true
 FOUNDATION_MILESTONE_36_COMPLETE=true
+FOUNDATION_MILESTONE_37_COMPLETE=true
 PUSHED_AT_COMMIT_TIME=false
 PUSH_STATE=RESOLVE_WITH_GIT_STATUS_SHORT_BRANCH
 GAME_NATIVE_LIFECYCLE_SLICE=EXHAUSTED
