@@ -25,11 +25,17 @@ nor native handles.
 
 The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,243 expected Go members. The current target has 103 types and 1,619 members:
-98 types are complete, five native/runtime types are partial, and 154 are
-missing. The strict verifier remains red because most XNA surface is
-intentionally absent. Every mismatch, leak, allowlist, and unmeasured-category
-gate is green.
+3,255 expected Go members — 3,243 projected from XNA-declared members plus 12
+projected from the public surface a supported BCL base contributes. The current
+target has 122 types and 1,776 members: 117 types are complete, five
+native/runtime types are partial, and 135 are missing. The strict verifier
+remains red because most XNA surface is intentionally absent. Every mismatch,
+leak, allowlist, and unmeasured-category gate is green.
+
+Forty-one of the missing types inherit from another type in the profile whose
+base relationship is deferred; they are recorded with classified blockers rather
+than left silent, and none of them is selectable until XNA-to-XNA class
+inheritance is decided.
 
 Foundation 1 qualifies on **Linux amd64 desktop with cgo**:
 
@@ -278,8 +284,11 @@ for the managed-interface projection rule, the measured `IEffectFog` split in
 which only `FogColor` reaches D3DX, the two runtime-boundary contracts, the
 separate Boolean and error channels of `BeginDraw`, and the exact event-mapping
 gap that keeps `IUpdateable`, `IDrawable`, and `IGraphicsDeviceService`
-deferred. The four contracts are declarations only: CNA-Go has no effect
-runtime, no game component, and no device manager bound to the contract.
+deferred. `IUpdateable`, `IDrawable` and `IGameComponent` became live in
+Foundations 30-32: `Game` keeps ordered lists of every `IUpdateable` and
+`IDrawable` in `Components`, and `GameComponent` is a shipped implementor. The
+other contracts remain declarations only: CNA-Go has no effect runtime and no
+device manager bound to `IGraphicsDeviceManager`.
 
 See [Foundation 19 IntPtr and PresentationParameters evidence](docs/foundation-19-intptr-presentation-parameters-evidence.md)
 for the `System.IntPtr` to `uintptr` projection and exactly what it does not
@@ -300,7 +309,56 @@ See [Foundation 21 service container evidence](docs/foundation-21-game-service-c
 for the general rule that a BCL interface whose members the XNA type already
 declares publicly adds no projected surface, the duplicate-before-assignability
 check order, and why a missing or absent service is an absence rather than a
-failure. Completing it wires nothing up: `Game` exposes no `Services` property.
+failure. As of Foundation 30, `Game` exposes it and hands back one stable
+container per Game; nothing in the binding registers into it, because the
+reference's only registrar is `GraphicsDeviceManager` and CNA-Go's partial one
+satisfies neither service contract.
+
+Foundations 30 through 33 qualify the managed Game component slice, with no
+ABI expansion and no CNA change:
+
+- `Game.Components` and `Game.Services`, each one stable managed identity;
+- the component engine the reference keeps around them: two incrementally
+  ordered derived lists, a pending-initialization queue, and the collection and
+  order-changed handlers that maintain them;
+- five explicit base-call functions, so an override decides whether and when
+  base behavior runs, exactly as `base.Update(t)` does in CLR;
+- complete `GameComponent`, satisfying `IGameComponent` and `IUpdateable` under
+  a compiler-checked conformance rule;
+- 34 external-consumer tests proving the whole loop from outside the module.
+
+Nothing there renders. Component `Update` and `Draw` are called on the owner
+thread with a tick-exact `GameTime`; what a component does there is its own.
+
+See [Foundation 30 Game managed state evidence](docs/foundation-30-game-managed-state-evidence.md)
+for why `Game::get_Components` and `::get_Services` are seven bytes of `ldfld`
+each and therefore belong in Go rather than behind the C ABI, the component
+engine derived from IL rather than from memory — Game does **not** sort its
+components, both order comparers return 0 only for reference identity, and ties
+are stable through an explicit forward walk rather than a stable sort — and the
+`inRun` guard that decides whether an added component is queued or initialized
+on the spot.
+
+See [Foundation 31 base-call evidence](docs/foundation-31-game-base-call-evidence.md)
+for why base behavior is never automatic: in CLR the override decides whether
+and when the base runs, so CNA-Go supplies five package-level `GameBase...`
+functions a callback may call, or not, or call in a different place. They are
+measured language support and add nothing to any XNA identity counter. The
+native callback order is audited against XNA's there.
+
+See [Foundation 32 GameComponent evidence](docs/foundation-32-game-component-evidence.md)
+for the class the engine was built for, the four load-bearing quirks it must
+keep — including `On...` methods that ignore their sender and raise with `this`,
+which is what makes the engine work — the `TryLock` projection of a reentrant
+CLR `Monitor`, and the new general rule that a complete projected class must
+satisfy every XNA interface its metadata declares, checked by `go/types`.
+
+See [Foundation 33 XNA base frontier evidence](docs/foundation-33-xna-base-frontier-evidence.md)
+for the second base frontier, which was silent until now: `Texture2D` inherits
+nine public members from `Texture` and `GraphicsResource` that CNA-Go does not
+project. Twelve relationships over 41 derived types are recorded with classified
+blockers, and no derived type of a deferred XNA base may be reported complete.
+That decision — XNA-to-XNA class inheritance — is the next architectural one.
 
 The `Media` package contains enum metadata only and carries no media runtime
 capability claim. The `Input/Touch` package adds `TouchLocation`,

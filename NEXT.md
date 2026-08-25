@@ -2,227 +2,291 @@
 
 ## Current state
 
-Foundation Milestones 1 through 29 are complete. Milestones 26 through 29 were
-produced in one session as **local commits that have not been pushed**;
-`develop` is ahead of `origin/develop` by the five milestone commits below plus
-the docs commits that record them.
+Foundation Milestones 1 through 33 are complete. Milestones 26 through 33 were
+produced across two sessions as **local commits that have not been pushed**;
+`develop` is ahead of `origin/develop` by those milestone commits plus the docs
+commits that record them.
 
 ```text
-START   HEAD = origin/develop = ec7d14cdcb92be21b2ffd7da16b2bc2d23474c7b
-LAST SOURCE-BEARING COMMIT  = 8e87678
-        origin/develop unchanged at ec7d14c
-        worktree clean, git diff --check clean
-        PUSHED = false
+SESSION START   HEAD = origin/develop = cc8d18001935aacf7179341d14c034bc18c2b0a4
+SESSION END     HEAD = 0cfe535
+LAST SOURCE-BEARING COMMIT = 5653899
+                origin/develop unchanged at cc8d180
+                worktree clean, git diff --check clean
+                PUSHED = false
 ```
 
-Every artifact hash below is taken at `8e87678`, the last source-bearing
-commit; the docs commits that follow it change the artifact hash and nothing
-else, so re-run the command in this file to get the current one.
+| #  | commit    | milestone                                             | types | Go identities |
+| -- | --------- | ----------------------------------------------------- | ----- | ------------- |
+| 30 | `b71d3c1` | Game's managed Components and Services; the engine     | 0     | 2             |
+| 31 | `d0b4913` | the explicit base-call architecture                    | 0     | 0             |
+| 32 | `e9eb653` | GameComponent; compiler-checked interface conformance  | 1     | 19            |
+| 33 | `5653899` | the XNA-to-XNA base frontier, measured                 | 0     | 0             |
 
-| #  | commit    | milestone                                            | types | Go identities |
-| -- | --------- | ---------------------------------------------------- | ----- | ------------- |
-| 26 | `8624662` | BCL base-class composition; GameComponentCollection  | 1     | 21            |
-| 26 | `bdb747a` | the collection proved from outside the repository    | 0     | 0             |
-| 27 | `612aebc` | ReadOnlyCollection<T> signature adapter; VisualizationData | 1 | 3         |
-| 28 | `62be078` | IGraphicsDeviceService; frontier re-derived          | 1     | 9             |
-| 29 | `8e87678` | the System.Exception audit; every deferral measured  | 0     | 0             |
-
-Three types, 33 mapped Go identities. Two of the five commits deliberately
-complete no type: they are proof and measurement.
+One type completed. Two of the four commits complete nothing on purpose: one is
+language support that makes an existing surface usable, one is measurement.
 
 ## Scoreboard
 
-```text                        start    final
-TARGET_TYPES                   118      121
-TARGET_MEMBERS                1722     1755
-TOTAL_DIAGNOSTICS              316      313
-MISSING_TYPE                   139      136
-MISSING_MEMBER                 177      177
-COMPLETE_TYPES                 113      116
-PARTIAL_TYPES                    5        5
+```text                                     start    final
+TARGET_TYPES                              121      122
+TARGET_MEMBERS                           1755     1776
+TOTAL_DIAGNOSTICS                         313      310
+MISSING_TYPE                              136      135
+MISSING_MEMBER                            177      175
+COMPLETE_TYPES                            116      117
+PARTIAL_TYPES                               5        5
 
-REFERENCE_XNA_MEMBERS         2964     2964
-BCL_INHERITED_PUBLIC_MEMBERS     0       11
-BCL_INHERITED_MEMBER_PROJECTIONS 0       12
-EXPECTED_GO_MEMBERS           3243     3255
+REFERENCE_MEMBERS / REFERENCE_XNA_MEMBERS 2964     2964
+EXPECTED_GO_MEMBERS                      3255     3255
+BCL_INHERITED_MEMBER_PROJECTIONS           12       12
 
-BCL_BASE_ADAPTERS                0        1
-BCL_BASE_ADAPTER_CONSUMERS       0        1
-BCL_SIGNATURE_ADAPTERS           0        1
-BCL_SIGNATURE_ADAPTER_CARRIERS   0        6
-BCL_DEFERRED_BASE_BLOCKERS       0       21
+GAME_BASE_CALL_ADAPTERS                     0        5
+GAME_BASE_CALL_DEFERRED_STEPS               0        4
+DECLARED_INTERFACE_CONFORMANCE              0        2
+XNA_BASE_RELATIONSHIPS                      0       12
+XNA_BASE_DERIVED_TYPES                      0       41
+XNA_DEFERRED_BASE_BLOCKERS                  0       25
+XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED    0      245
 
-INTERFACE_WITNESS_PROJECTIONS   25       25
-mutation inventory             447      478
-behavior corpus                575      598
-external canary tests            7       16
+mutation inventory                        478      500
+behavior corpus                           598      620
+external canary tests                      16       34
 ```
 
-Every mismatch, leak, allowlist and unmeasured counter is zero throughout. The
-five protected partial runtime types are untouched: `MISSING_MEMBER` stayed at
-177 on purpose.
+Every mismatch, leak, allowlist and unmeasured counter is zero throughout.
+**`MISSING_MEMBER` moved by exactly two**, both in the coherent slice:
+`Game::Components` and `Game::Services`. No other partial type was touched.
 
-## The BCL base-class composition architecture
+## Game is a hybrid host, and the split is per member
 
-> A CLR class that inherits a supported BCL collection base projects as a
-> concrete Go reference type that **contains a private generic adapter** for
-> that base and re-exposes the base's **public** surface through measured
-> forwarding members.
-
-Two rules follow:
-
-- **A public member inherited from a supported BCL base is still public CLR
-  surface**, so it must not disappear because the XNA metadata does not declare
-  it. Projecting only the seven members `GameComponentCollection` declares would
-  have produced a collection nothing can be added to.
-- **The adapter is implementation machinery.** Not an XNA type, not an exported
-  field, not a public base-class object, not an embedded public API, not a
-  handle.
-
-```go
-type GameComponentCollection struct {
-    base collectionBase[IGameComponent]   // unexported, not embedded
-    ...
-}
-```
-
-Exported embedding is rejected by the verifier, and so is embedding the
-*unexported* adapter: promotion would publish forwarding nobody measured. The
-base's four protected virtuals are an **unexported** Go interface, so only a
-type declared in this module can supply or reach a hook, and every mutating
-public operation routes through it.
-
-**A second, independent role** exists for the same family. A BCL type the
-contract carries at a **public signature position** needs a public Go spelling —
-the `System.TimeSpan` and `System.EventHandler<T>` footing —
-so `ReadOnlyCollection<T>` is `*framework.ReadOnlyCollection[T]`. It is
-`SUPPORTED` as a signature adapter and `DEFERRED` as a base, and neither implies
-the other.
-
-### Identity accounting
-
-Three provenance classes, kept distinct. **`REFERENCE_MEMBERS` is not
-falsified**: it still names exactly what Microsoft declares, and the pinned 3243
-XNA-declared projection count did not move. Every expected Go member has exactly
-one provenance class, and a test partitions the whole surface to prove the two
-halves are disjoint and exhaustive.
-
-## Reference authority
-
-The six XNA assemblies are unchanged and re-verified by hash. **New this
-session**, and the authority for every inherited behavior:
+The native CNA runtime owns the host, the frame loop, the window, the device and
+the platform — `GameHost`'s role in the reference. Go owns the managed CLR
+state. The split is read from IL per member, never assumed per type:
 
 ```text
-mscorlib.dll  4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0
-              5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63
-              ~/.wine-cna-xna40/drive_c/windows/Microsoft.NET/Framework/v4.0.30319/
+Game::get_Components   ldarg.0; ldfld gameComponents; ret     7 bytes
+Game::get_Services     ldarg.0; ldfld gameServices;   ret     7 bytes
 ```
 
-It is the right binary and not merely a plausible one: every pinned XNA assembly
-declares `.assembly extern mscorlib 4.0.0.0` with public key token
-`b77a5c561934e089`, which is that identity, and it is an implementation assembly
-so `Collection<T>`, `List<T>`, `Dictionary<K,V>` and `ReadOnlyCollection<T>`
-carry real IL. Modern .NET was not consulted; Mono's mscorlib was not consulted.
+Both fields are assigned once in the constructor and never reassigned, so the
+getters cannot fail, allocate nothing, and return one stable identity. Routing
+either through the C ABI would invent a native owner and a native failure mode
+the reference does not have. **No C ABI function was added this session and no
+CNA C++ changed.**
+
+`GameCallbacks` is unchanged. Its five members are exactly what they were.
+
+## Base behavior is never automatic
+
+The load-bearing decision of the session. In CLR the derived class decides
+whether and when the base runs, and the call site *is* the semantics: omitting
+`base.Update(t)` means the component loop does not run that frame; moving it
+changes what runs before what.
+
+Running the base body around each callback would make every override a mandatory
+base call at a position CNA-Go picked — a different contract that resembles
+XNA's. So base bodies are reached explicitly:
+
+```go
+GameBaseInitialize(game) error
+GameBaseLoadContent(game) error
+GameBaseUpdate(game, gameTime) error
+GameBaseDraw(game, gameTime) error
+GameBaseUnloadContent(game) error
+```
+
+Package-level functions, so `Game`'s projected member surface gains no name
+Microsoft never declared. They are **measured language support**, not XNA
+identity: the registry pins each one to a real protected virtual `GameCallbacks`
+projects, forbids an extra `GameBase*` helper, requires one per callback member,
+and admits the names into `adapterFunctions` **from the registry** — there is no
+allowlist. 13 negative controls; `REFERENCE_MEMBERS` and `EXPECTED_GO_MEMBERS`
+did not move.
 
 ## Reference quirks now preserved — do not "correct" them
 
-Everything in the Foundation 17-25 list still holds, plus:
+Everything in the Foundation 17-29 list still holds, plus:
 
-- **`GameComponentCollection` mutates before it announces on Insert and Remove,
-  and announces the whole collection before it mutates on Clear.** A failing
-  handler therefore leaves an `Add` applied and a `Clear` unapplied.
-- **`ClearItems` has no null check**, unlike `RemoveItem`, so it announces a nil
-  element with a nil `GameComponent`. It also re-reads `base.Count` every
-  iteration, so a handler that adds a component extends the loop.
-- `Collection<T>.Insert` guards `index > Count` where `set_Item` and `RemoveAt`
-  guard `index >= Count`; `set_Item` validates its index *before* reaching a
-  `SetItem` that never succeeds.
-- **`List<T>.Clear` increments `_version` unconditionally**, so clearing an
-  already empty collection still invalidates live enumerators.
-- `List<T>.Enumerator.MoveNext` checks the version **before** the bounds, so a
-  mutation is reported even past the end.
-- **An array-backed `ReadOnlyCollection<T>` is NOT version-checked.**
-  `SZGenericArrayEnumerator<T>` holds only `_array`, `_index`, `_endIndex`.
-- **`System.Single::Equals` returns true for two NaNs**, where Go's `==` is
-  false, so a NaN search finds a NaN element.
-- `ReadOnlyCollection<T>` stores the list rather than copying it, and is bound
-  to the list *instance*: a captured Go slice header is exact where a `*[]T`
-  would be too live and a copy too dead.
-- `GraphicsDeviceManager::get_GraphicsDevice` is one `ldfld`, which is why
-  `IGraphicsDeviceService` is infallible while `IGraphicsDeviceManager`, on the
-  same class, is not.
+- **Game does NOT sort its components.** It keeps two derived lists ordered
+  incrementally and copies them per frame. There is no sort anywhere.
+- **`UpdateOrderComparer` and `DrawOrderComparer` return 0 only for reference
+  identity or two nulls; EQUAL orders return 1.** So `BinarySearch` can only
+  succeed on a component already in the list, and `if (index < 0)` is a **"not
+  already present"** guard, not an "equal order found" guard.
+- **Ties are stable because of an explicit forward walk** past the run of
+  equal-order elements, not because of a stable sort. `Array.BinarySearch`
+  guarantees no ordering among equals, so the walk is what makes it
+  deterministic. An order change re-places the component at the **end** of its
+  new tie run.
+- **The order-changed handlers read the SENDER, not the event args**, and
+  re-place without re-subscribing. That is why `GameComponent` raises with
+  `this`.
+- **`GameComponent.OnEnabledChanged`/`OnUpdateOrderChanged` accept a sender,
+  ignore it, and raise with `this`.** The engine depends on it.
+- **`inRun` is raised only after `Initialize` returns**, so a component added
+  from inside the override is still queued — and the drain re-reads `Count`, so
+  it is initialized by that same drain — while one added later initializes
+  immediately.
+- **Initialization order is ADD order, not `UpdateOrder`.** `notYetInitialized`
+  is a plain list; only the update and draw lists are ordered.
+- **base `Initialize` calls `Initialize()` before `RemoveAt(0)`**, so a failing
+  component stays at the head of the queue and a retry resumes there.
+- **base `Update`/`Draw` snapshot before iterating**, so a mid-frame mutation
+  applies to the next frame — but `Enabled`/`Visible` are read at **iteration**
+  time, so a component disabled earlier that frame is skipped.
+- **There is no `try`/`finally` in base `Update`.** A component that panics
+  leaves the snapshot list populated and the next frame appends to it. The
+  straight-line `Clear` is reproduced as such.
+- **base `Draw` touches no device at all** — that is `BeginDraw`/`EndDraw`.
+- **`GameComponent.Dispose` removes from `Components` before it announces, and
+  is not idempotent**: a second `Dispose` raises `Disposed` again.
+- **`GameComponent`'s constructor does not null-check its Game.**
+- **`GameComponent.Initialize` is fallible because of the contract it
+  implements**, not its own body, which is a bare `ret`. First member in the
+  profile with that provenance.
+
+## Two new general verifier rules
+
+### Compiler-checked declared interface conformance
+
+> a **complete** projected class that CLR metadata says implements a projected
+> XNA interface must satisfy that interface's Go projection, on the **pointer**
+> method set, and `go/types` must say so
+
+Previously only the PackedVector family was checked that way; everything else
+was structural, which cannot catch a method with the right name and the wrong
+signature. It runs only for complete types, because a partial type's gap is
+already `MISSING_MEMBER`. Five negative controls built from synthetic
+`go/types` evidence.
+
+### The XNA-to-XNA base frontier
+
+Foundation 29 made a deferred **BCL** base name its blockers. There is a second
+frontier and it was silent: `Texture2D` inherits nine public members from
+`Texture` and `GraphicsResource` that CNA-Go does not project, and nothing
+recorded it. `SpriteBatch` had the same silence over seven.
+
+Twelve relationships, 41 derived types, 25 blockers, 245 unprojected inherited
+public members. The substantive rule:
+
+> **no derived type of a DEFERRED XNA base may be reported COMPLETE**
+
+`Texture2D` and `SpriteBatch` are legitimately partial today, and that is now a
+checked fact rather than a coincidence.
+
+## A mapper defect this session fixed
+
+The property branch rebuilt each accessor's results from scratch but **inherited**
+the whole-member fallibility flag, making the accessor-level decision
+one-directional: it could raise fallibility on a pure-managed owner but never
+lower it on a native-backed one. `Game::Components` is the first get-only stored
+property on a fallible-by-default owner and exposed the skew. Guarded now by a
+structural invariant over **all 3255** expected members: every member's
+`ErrorAdded` equals whether its results end in `error`.
 
 ## The frontier — measured, not summarised
 
-Eighteen missing types are dependency-complete and every one is behavior
-blocked. Three that the type-level graph calls reachable were shown from IL not
-to be, each named to the exact member:
+**The exact next architecture decision is XNA-to-XNA class inheritance**, and
+every remaining component type needs it. Projecting a derived XNA class needs
+three things CNA-Go does not have:
 
-- **`GameComponent`** → blocked on `Game::Components`. Its `Dispose(bool)` runs
-  `get_Game().get_Components().Remove(this)`, and `Components` is one of the 39
-  missing members of the protected partial `Game`. The gap is now very small:
-  `Components` returns a `GameComponentCollection`, which is **complete**. What
-  stands between CNA-Go and a component loop is no longer a mapping question but
-  the runtime decision about `Game`. Blocks `DrawableGameComponent` and
-  `GamerServicesComponent`.
-- **`GraphicsResource`** → blocked on native ownership three ways: `public
-  abstract` with an `assembly` constructor, `.field assembly uint64
-  _internalHandle`, and a `Dispose(bool)` that dispatches to the C++/CLI
-  `~GraphicsResource`/`!GraphicsResource` pair. It alone blocks seven types.
-- **`Microphone`** → became dependency-complete only because milestone 27
-  unblocked `ReadOnlyCollection<Microphone>`. The adapter unblocked its
-  signature, not its behavior; it stays device-blocked.
+1. a composition and forwarding rule for a base that is itself an XNA identity
+   (the BCL rule holds a private *generic adapter*; an XNA base is a projected
+   type with its own identity, constructor and scoreboard entry);
+2. a **third provenance class** beside XNA-declared and BCL-inherited, so no
+   member is counted twice — this moves `EXPECTED_GO_MEMBERS` for 41 types;
+3. an override adapter for the base's protected virtuals, which is Foundation
+   31's architecture generalised from one class to a family.
 
-Every deferred base now names its blockers — 21 across seven bases, each
-`SUBSYSTEM` (an inherited member's type belongs to an unmapped .NET subsystem)
-or `ARCHITECTURE` (a cross-cutting decision no single member carries). The
-verifier **fails a deferred base that records nothing**.
+Exported Go embedding of an XNA base stays refused by `BASE_MAPPING_MISMATCH`.
 
-```text
-IMPLIED   System.Object / ValueType / Enum
-MAPPED    System.EventArgs
-COMPOSED  Collection`1                        1 consumer, adds 12 identities
-DEFERRED  Dictionary`2                        1 derived,  6 blockers
-DEFERRED  ReadOnlyCollection`1 (base role)    4 derived,  2 blockers
-DEFERRED  System.Exception                    5 derived,  5 blockers
-DEFERRED  ExternalException                   3 derived,  1 blocker
-DEFERRED  System.Attribute                    5 derived,  3 blockers
-DEFERRED  ExpandableObjectConverter           1 derived,  3 blockers
-DEFERRED  System.IO.BinaryReader              1 derived,  1 blocker
+### `DrawableGameComponent` — blocked five ways
+
+XNA base composition; a derived-class override adapter for its protected
+`LoadContent`/`UnloadContent`; `get_GraphicsDevice` returning a partial
+`Graphics.GraphicsDevice` across the package boundary; an `Initialize` that
+throws `InvalidOperationException(MissingGraphicsDeviceService)` when the
+service is absent — which it always is; and a `Dispose(bool)` that base-calls
+`GameComponent.Dispose(bool)` non-virtually.
+
+### `GamerServicesComponent` — blocked three ways
+
+XNA base composition; `Game.Window.Handle`, where `GameWindow` is a missing
+type and `Game::Window` a missing member; and `GamerServicesDispatcher`, which
+lives in `Microsoft.Xna.Framework.GamerServices.dll` — **not one of the seven
+pinned assemblies**. Admitting it would not help: CNA has no GamerServices
+runtime, so every member would be inert.
+
+### `GraphicsDeviceManager` service publication — audited, blocked
+
+The constructor registers itself under **both** `IGraphicsDeviceManager` and
+`IGraphicsDeviceService`, with the duplicate check **before** the registration
+and on the manager key only. CNA-Go can perform neither: `AddService` reproduces
+the reference's assignability check, and the partial manager satisfies neither
+contract — `CreateDevice`/`BeginDraw`/`EndDraw` are missing, `GraphicsDevice()`
+is missing, and **the four device events have no raise path in CNA at all**.
+Faking either would put an event on a contract that never fires.
+
+Worth recording for whoever resolves it: the reference registers the services
+**before** it touches `game.Window`, so the managed half precedes every blocked
+step and nothing observable would be reordered by supplying it later.
+
+### `Game`'s four events — the raise path EXISTS and is unbound
+
+This is the most actionable unstarted work in the repository. `Game::Activated`,
+`Deactivated`, `Exiting` and `Disposed` are eight missing accessors, and CNA
+already publishes all four signals as canonical, **unbound** surface:
+
+```c
+CNA_GAME_EVENT_ACTIVATED    0
+CNA_GAME_EVENT_DEACTIVATED  1
+CNA_GAME_EVENT_DISPOSED     2
+CNA_GAME_EVENT_EXITING      3
+
+CNA_C_API CNA_Result cna_game_subscribe(CNA_Handle, CNA_GameEvent,
+                                        CNA_GameEventCallback, void*,
+                                        CNA_GameEventRegistrationHandle*);
+CNA_C_API CNA_Result cna_game_unsubscribe(...);
 ```
 
-### `Dictionary<K,V>` — blocked on surface, not behavior
+They were **deliberately not implemented this session**: activation and disposal
+are outside the components-and-services slice. Binding them would be additive
+canonical surface with no CNA C++ change, and would move the ABI counters from
+23 bound functions — a legitimate additive delta. Everything needed is audited.
 
-The IL is readable. Six public members cannot be projected in already-decided
-terms: `GetObjectData` and `OnDeserialization` are declared **public, not
-explicit**, so `LaunchParameters` genuinely exposes them and they need
-`System.Runtime.Serialization`; `Keys`/`Values` return public nested collections
-with their own surfaces; `Comparer` needs `IEqualityComparer<TKey>`;
-`GetEnumerator` needs the nested `Enumerator` over `KeyValuePair<K,V>`.
-Projecting a subset would make `LaunchParameters` a partial type, which is not a
-BCL-mapping outcome. It is the only consumer.
+`begin_run`, `end_run`, `begin_draw` and `end_draw` are likewise unbound in
+`CNA_GameFrameHooks`; they correspond to four more missing `Game` members and
+are not `GameCallbacks` members.
 
-### `System.Exception` — the audited decision
+## Native callback order — audited
 
-All eight derived types declare **only constructors**, so this is the
-`GameComponentCollection` shape again and a partial projection is not an escape.
-Three inherited members are blocked on three distinct subsystems
-(`IDictionary`, `MethodBase`, `Serialization`), and two architecture obstacles
-are the material ones:
+```text
+CNA (documented contract)  initialize -> [components + device] -> load_content
+                           -> begin_run -> update -> draw
+XNA (Game::RunGame)        CreateDevice -> Initialize -> inRun = true
+                           -> BeginRun -> Update -> loop{Update, Draw}
+```
 
-1. **Is an XNA exception type a Go `error`?** If yes, every fallible operation's
-   error contract changes from an opaque error to a possibly typed CLR
-   exception, reopening ~30 individually evidenced fallibility decisions
-   together and making four unexported sentinel error families public API. If
-   no, the eight types are inert objects nothing constructs, returns, or
-   catches — worse than the collection nothing could be added to.
-2. **`StackTrace`** is captured at throw time; a constructed Go value has no
-   throw site.
+**The relative order of everything CNA-Go owns is preserved.** Managed component
+initialization happens in the Initialize step and content loading after it, in
+both; the device is created before content loads, in both. Where CNA-Go
+substitutes the native host for `GameHost` it is recorded rather than hidden:
+`inRun` is raised on the native `initialize` hook boundary and lowered when the
+blocking `Run` returns, which are the two points `RunGame` assigns it.
 
-`System.Attribute` was audited too and is not easier: Go has no attribute
-metadata, so the five types would be inert; and the inherited statics raise a
-question that has never arisen — are inherited **statics** part of a derived
-type's projected surface at all?
+## Deliberate concurrency projection
+
+`GameComponent.Dispose(bool)`'s `lock (this)` is projected with `TryLock`. CLR's
+`Monitor` is reentrant per thread and reentry is reachable here — a `Disposed` or
+`ComponentRemoved` handler may dispose again — so a plain `Lock` would
+**deadlock** where the reference merely recurses. The divergence is that a
+genuinely concurrent second disposer proceeds instead of blocking; component
+state is owner-thread state, the binding promises no cross-goroutine safety for
+it, and a deadlock is the worse of the two errors. The whole suite is race-clean.
+
+Nothing else gained a lock. Game's component state is single-threaded by the
+same contract.
 
 ## Re-running gates
 
@@ -233,9 +297,9 @@ export CNA_NATIVE_LIBRARY=~/deps/cna-c-abi-0.7.0-pinned-foundation11/libcna_c_ap
 gofmt -l .
 go vet ./...
 go test ./...
-go test -race ./...          # api_compat takes ~260s under -race
+go test -race ./...          # api_compat takes ~320s under -race
 go build ./... && go build -trimpath ./...
-go run ./tools/api_compat --mode strict -report "" -missing ""   # expected red: 313 deferred
+go run ./tools/api_compat --mode strict -report "" -missing ""   # expected red: 310 deferred
 go run ./tools/api_compat --mode leak-only -report "" -missing ""
 go run ./tools/behavior
 go run ./tools/packed_vector_qualify
@@ -250,6 +314,11 @@ git diff --check
 Pass `-report "" -missing ""` on any non-report run so committed evidence keeps
 report mode, and send native reports to an explicit scratch `-output`.
 
+The mscorlib IL cache added this session lives at
+`~/deps/xna-il-cache/mscorlib.il` (42 MB, from the admitted 4.0.30319.1 binary)
+alongside the seven XNA disassemblies. It is reusable; do not regenerate it into
+a scratch directory.
+
 ### Deterministic artifact, isolated consumer, external canary
 
 ```sh
@@ -258,31 +327,36 @@ git ls-files -z | sort -z | tar --null --files-from=- \
   --mtime='@0' --mode='u+rw,go+r,go-w' --sort=name -cf - | gzip -n > OUT.tar.gz
 ```
 
-At `8e87678` that yields sha256
-`546ef5098bebd38d98e502f562b5087c13d8a55c1eaaa5f0d9f730278b04ddc1` over 264
-entries, reproduced twice in the same run. Extracted into
+At `5653899`, the last source-bearing commit, that yields sha256
+`45c09221be12d7578c5433b82bf39e3e89e27d05ed83c80a1e19355c9f293d71` over 274
+entries, reproduced twice in the same run. The docs commit that follows changes
+the artifact hash and nothing else — it edits three tracked files and adds none
+— so re-run the command above to get the current one. Extracted into
 `build-consumer/isolated`, it passes every gate with no development-checkout
 dependency and regenerates `api-compat-report.json`,
-`behavior-corpus-report.json` and `missing-type-inventory.md` byte-identically.
-The Foundation-1 consumer fixture in `build-consumer/consumer` builds against it
-and runs at exactly 60 and 600 native Draw callbacks.
+`behavior-corpus-report.json`, `packed-vector-exhaustive-report.json` and
+`missing-type-inventory.md` **byte-identically**. The Foundation-1 consumer
+fixture in `build-consumer/consumer` builds against it and runs at exactly 60
+and 600 native Draw callbacks.
 
-The external canary now runs **16** tests and is mandatory for both the event
-architecture and the collection projection:
+The external canary now runs **34** tests:
 
 ```sh
 go run ./tools/external_consumer -source build-consumer/isolated/cna-go
 ```
 
-Its `CollectionProbe` records what each handler observed `Count` to be at the
-moment it ran, so an outside caller can tell "mutate then announce" from
-"announce then mutate" **without seeing any implementation** — which is the
-sharpest available proof that the projection is faithful.
+All twelve required component-loop claims are proved from outside: construct a
+Game, obtain stable Components and Services identities, add components,
+subscribe to collection and component events, call each base explicitly, observe
+update and draw ordering (deliberately the reverse of each other), prove that
+**omitting** the base call prevents base iteration, prove that **moving** the
+base call changes ordering relative to user code, prove that disposing a
+component removes it from `Game.Components` and stops its iteration, and prove
+no native handle appears anywhere in the family's signatures.
 
 ## Native provenance — unchanged
 
-CNA was **not rebuilt**. The exact Foundation-11 pinned binary reproduces both
-committed native reports.
+CNA was **not rebuilt**, and no C ABI function was added.
 
 ```text
 ~/deps/cna-c-abi-0.7.0-pinned-foundation11/libcna_c_api.so
@@ -300,7 +374,7 @@ REPRODUCED_BUILD_OUTPUT=NOT_ESTABLISHED
 ## Maintained template
 
 `cna-go-template` is unchanged, on `develop` at `6525484`, worktree clean.
-`SOURCE_CHANGED=NO`.
+`SOURCE_CHANGED=NO`. Ruby and Swift sibling worktrees were not touched.
 
 ## Qualification artifact caveats — unchanged
 
@@ -309,18 +383,21 @@ visible rendering is not. Windows, macOS, Android, iOS and Web/Wasm are not
 qualified. Content/XNB, Effects/3D, Audio, Media, Storage and most of XNA remain
 unimplemented.
 
-Nothing completed in Foundations 26-29 claims a runtime capability.
-`GameComponentCollection` is usable by an external consumer and is used by
-nothing: CNA-Go has no `GameComponent` and `Game` exposes no `Components`.
-`VisualizationData` starts no playback — there is no media backend, so both its
-buffers stay 256 zeros. `IGraphicsDeviceService` publishes no device.
+What is new and what it does **not** claim: `Game` now owns a real component
+engine, and a consumer can build one from outside the repository — but nothing
+in it renders. `GameComponent.Update` and `IDrawable.Draw` are called on the
+owner thread with a tick-exact `GameTime`; what a component does there is its
+own. `Game.Services` is a working registry that **nothing in the binding
+registers into**, because the reference's only registrar is
+`GraphicsDeviceManager` and it cannot satisfy either service contract.
 
 ```text
-FOUNDATION_MILESTONE_26_COMPLETE=true
-FOUNDATION_MILESTONE_27_COMPLETE=true
-FOUNDATION_MILESTONE_28_COMPLETE=true
-FOUNDATION_MILESTONE_29_COMPLETE=true
+FOUNDATION_MILESTONE_30_COMPLETE=true
+FOUNDATION_MILESTONE_31_COMPLETE=true
+FOUNDATION_MILESTONE_32_COMPLETE=true
+FOUNDATION_MILESTONE_33_COMPLETE=true
 PUSHED=false
-SAFE_MANAGED_FRONTIER=EXHAUSTED
-NEXT_STEP=RUNTIME_DECISION_GAME_COMPONENTS_OR_PUBLIC_API_DECISION_SYSTEM_EXCEPTION
+SAFE_MANAGED_COMPONENT_FRONTIER=EXHAUSTED
+NEXT_STEP=ARCHITECTURE_DECISION_XNA_TO_XNA_INHERITANCE
+NEXT_STEP_ALTERNATIVE=BIND_CNA_GAME_EVENT_SIGNALS_FOR_GAME_ACTIVATED_DEACTIVATED_EXITING_DISPOSED
 ```

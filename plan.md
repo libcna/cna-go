@@ -1200,6 +1200,110 @@ Exact evidence is in `docs/foundation-29-exception-frontier-evidence.md`.
 FOUNDATION_MILESTONE_29_COMPLETE=true
 ```
 
+## Foundation 30 Game's managed Components and Services
+
+- [x] `Game::get_Components` and `::get_Services` derived from IL as seven
+      bytes each — one `ldfld` over a field the constructor assigns once — so
+      both are managed CLR state, infallible, and stable in identity.
+- [x] Both are Go-owned. Routing either through the C ABI would invent a
+      native owner and a native failure mode the reference does not have.
+- [x] `Game` allocates one collection and one container at the reference's
+      construction point and subscribes its own two handlers to the collection
+      before any consumer can, so a consumer's handler always runs second.
+- [x] The component engine derived, not remembered: Game does NOT sort; both
+      order comparers return 0 only for reference identity; ties are stable
+      through an explicit forward walk, not a stable sort; the order-changed
+      handlers read the SENDER; `inRun` is raised only after `Initialize`
+      returns; initialization precedes both placements.
+- [x] Mapper defect fixed: a property accessor's fallibility flag was
+      inherited rather than recomputed, so an accessor-level classification
+      could raise fallibility but never lower it. Guarded by a structural
+      invariant over all 3255 expected members.
+
+## Foundation 30 qualification evidence
+
+Exact evidence is in `docs/foundation-30-game-managed-state-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_30_COMPLETE=true
+```
+
+## Foundation 31 base behavior is never automatic
+
+- [x] `GameCallbacks` projects CLR protected virtual OVERRIDES, and in CLR the
+      override decides whether and when the base runs. Running the base body
+      around a callback would be a different contract that resembles XNA's.
+- [x] Five package-level base-call functions, so `Game`'s projected member
+      surface gains no name Microsoft never declared.
+- [x] Measured language support, not XNA identity: each adapter pinned to a
+      real protected virtual, no arbitrary `GameBase*` helper admitted, one per
+      callback member required, and the names admitted FROM the registry rather
+      than by an allowlist. `REFERENCE_MEMBERS` and `EXPECTED_GO_MEMBERS`
+      unmoved.
+- [x] Four deferred reference steps, each classified and each proved
+      unobservable from the managed component surface.
+- [x] Native callback order audited against XNA's; the relative order of
+      everything CNA-Go owns is preserved, and the `GameHost` substitution is
+      recorded rather than hidden.
+
+## Foundation 31 qualification evidence
+
+Exact evidence is in `docs/foundation-31-game-base-call-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_31_COMPLETE=true
+```
+
+## Foundation 32 GameComponent
+
+- [x] Completed; pure managed on IL that is field access, comparison and
+      delegate invoke throughout.
+- [x] `Initialize` is the first member in the profile whose fallibility comes
+      from a CONTRACT IT IMPLEMENTS rather than its own body.
+- [x] Four load-bearing quirks preserved: no constructor validation; the
+      `On...` methods ignore their sender and raise with `this`; the setters
+      suppress an unchanged value; `Dispose` removes before it announces and is
+      not idempotent.
+- [x] `lock (this)` projected with `TryLock`, because CLR's Monitor is
+      reentrant and reentry is reachable, so a plain Lock would deadlock where
+      the reference recurses. The divergence is recorded.
+- [x] New general rule: a COMPLETE projected class must satisfy the Go
+      projection of every XNA interface its CLR metadata declares, on the
+      pointer method set, and `go/types` must say so.
+
+## Foundation 32 qualification evidence
+
+Exact evidence is in `docs/foundation-32-game-component-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_32_COMPLETE=true
+```
+
+## Foundation 33 the XNA base frontier
+
+- [x] A second base frontier existed and was silent: `Texture2D` inherits nine
+      public members from `Texture` and `GraphicsResource` that CNA-Go does not
+      project, and nothing recorded it.
+- [x] Twelve XNA-to-XNA relationships, 41 derived types, 25 classified
+      blockers, 245 unprojected inherited public members.
+- [x] The substantive rule: no derived type of a DEFERRED XNA base may be
+      reported COMPLETE. `Texture2D` and `SpriteBatch` are partial for the
+      right reason, and that is now checked.
+- [x] The open architecture decision stated exactly: a composition rule for an
+      XNA-identity base, a third provenance class, and an override adapter for
+      the base's protected virtuals.
+- [x] `GraphicsDeviceManager` service publication audited in full and blocked:
+      the partial manager satisfies neither service contract, and the four
+      device events have no raise path in CNA at all.
+
+## Foundation 33 qualification evidence
+
+Exact evidence is in `docs/foundation-33-xna-base-frontier-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_33_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -1221,5 +1325,13 @@ stopping the batch.
 
 The dependency-complete node count is measured with direct interfaces included
 as public-signature dependencies. That rule is authoritative; a historical
-count taken without interface edges differs by exactly one node
-(`Microsoft.Xna.Framework.GameComponent`) and never changes the ranking.
+count taken without interface edges differed by exactly one node
+(`Microsoft.Xna.Framework.GameComponent`, completed in Foundation 32) and never
+changed the ranking.
+
+From Foundation 33 the ranking has a second gate. A missing type whose CLR base
+is another type in the profile is NOT selectable while that base is DEFERRED in
+`xnaBaseRelationships`, however dependency-complete its own signature looks:
+its inherited public surface is unprojectable, so completing it would report a
+whole surface that is not there. Forty-one of the missing types are in that
+state, and every one of them waits on the same architecture decision.
