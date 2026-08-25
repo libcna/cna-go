@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 487,
-    "ASSERTIONS": 487,
+    "OBSERVATIONS": 535,
+    "ASSERTIONS": 535,
     "FAILURES": 0
   },
   "observations": [
@@ -3901,6 +3901,390 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true,false,true",
       "actual": "true,true,false,true",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.default-position",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0x80000000",
+      "actual": "0x00000000,0x00000000,0x80000000",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.default-velocity",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0x80000000",
+      "actual": "0x00000000,0x00000000,0x80000000",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.default-forward",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0xbf800000",
+      "actual": "0x00000000,0x00000000,0xbf800000",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.default-up",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x3f800000,0x00000000",
+      "actual": "0x00000000,0x3f800000,0x00000000",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.default-position-equals-zero",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.default-position",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0x80000000",
+      "actual": "0x00000000,0x00000000,0x80000000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.default-velocity",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0x80000000",
+      "actual": "0x00000000,0x00000000,0x80000000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.default-forward",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0xbf800000",
+      "actual": "0x00000000,0x00000000,0xbf800000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.default-up",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x3f800000,0x00000000",
+      "actual": "0x00000000,0x3f800000,0x00000000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.default-doppler-scale",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x3f800000",
+      "actual": "0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.round-trip.ordinary",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x3f800000,0x40000000,0x40400000|0x3f800000,0x40000000,0x40400000",
+      "actual": "0x3f800000,0x40000000,0x40400000|0x3f800000,0x40000000,0x40400000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.round-trip.ordinary",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x3f800000,0x40000000,0x40400000|0x3f800000,0x40000000,0x40400000",
+      "actual": "0x3f800000,0x40000000,0x40400000|0x3f800000,0x40000000,0x40400000",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.round-trip.positive-zero",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0x00000000|0x00000000,0x00000000,0x00000000",
+      "actual": "0x00000000,0x00000000,0x00000000|0x00000000,0x00000000,0x00000000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.round-trip.positive-zero",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0x00000000|0x00000000,0x00000000,0x00000000",
+      "actual": "0x00000000,0x00000000,0x00000000|0x00000000,0x00000000,0x00000000",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.round-trip.negative-zero",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0x80000000|0x00000000,0x00000000,0x80000000",
+      "actual": "0x00000000,0x00000000,0x80000000|0x00000000,0x00000000,0x80000000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.round-trip.negative-zero",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000000,0x00000000,0x80000000|0x00000000,0x00000000,0x80000000",
+      "actual": "0x00000000,0x00000000,0x80000000|0x00000000,0x00000000,0x80000000",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.round-trip.infinities",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0xff800000,0x7f800000,0x7f800000|0xff800000,0x7f800000,0x7f800000",
+      "actual": "0xff800000,0x7f800000,0x7f800000|0xff800000,0x7f800000,0x7f800000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.round-trip.infinities",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0xff800000,0x7f800000,0x7f800000|0xff800000,0x7f800000,0x7f800000",
+      "actual": "0xff800000,0x7f800000,0x7f800000|0xff800000,0x7f800000,0x7f800000",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.round-trip.denormal",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000001,0x80000001,0x00000001|0x00000001,0x80000001,0x00000001",
+      "actual": "0x00000001,0x80000001,0x00000001|0x00000001,0x80000001,0x00000001",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.round-trip.denormal",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x00000001,0x80000001,0x00000001|0x00000001,0x80000001,0x00000001",
+      "actual": "0x00000001,0x80000001,0x00000001|0x00000001,0x80000001,0x00000001",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.round-trip.nan",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x7fc00000,0x7fc00000,0x7fc00000|0x7fc00000,0x7fc00000,0x7fc00000",
+      "actual": "0x7fc00000,0x7fc00000,0x7fc00000|0x7fc00000,0x7fc00000,0x7fc00000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.round-trip.nan",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x7fc00000,0x7fc00000,0x7fc00000|0x7fc00000,0x7fc00000,0x7fc00000",
+      "actual": "0x7fc00000,0x7fc00000,0x7fc00000|0x7fc00000,0x7fc00000,0x7fc00000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.positive",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0x40200000",
+      "actual": "true,0x40200000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.positive",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "false",
+      "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.one",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0x3f800000",
+      "actual": "true,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.one",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "false",
+      "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.positive-denormal",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0x00000001",
+      "actual": "true,0x00000001",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.positive-denormal",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "false",
+      "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.largest-finite",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0x7f7fffff",
+      "actual": "true,0x7f7fffff",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.largest-finite",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "false",
+      "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.positive-zero",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0x00000000",
+      "actual": "true,0x00000000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.positive-zero",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "false",
+      "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.negative-zero",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0x80000000",
+      "actual": "true,0x80000000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.negative-zero",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "false",
+      "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.positive-infinity",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0x7f800000",
+      "actual": "true,0x7f800000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.positive-infinity",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "false",
+      "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.nan",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0x7fc00000",
+      "actual": "true,0x7fc00000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.nan",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "false",
+      "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.negative",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false,0x3f800000",
+      "actual": "false,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.negative",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.negative-denormal",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false,0x3f800000",
+      "actual": "false,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.negative-denormal",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.lowest-finite",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false,0x3f800000",
+      "actual": "false,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.lowest-finite",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.negative-infinity",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false,0x3f800000",
+      "actual": "false,0x3f800000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.doppler-scale.error-channel.negative-infinity",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "audio-listener.reference-semantics",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x40a00000,0x40c00000,0x40e00000",
+      "actual": "0x40a00000,0x40c00000,0x40e00000",
+      "passed": true
+    },
+    {
+      "id": "audio-emitter.reference-semantics",
+      "group": "AUDIO_DESCRIPTOR",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0x41100000",
+      "actual": "0x41100000",
       "passed": true
     }
   ]

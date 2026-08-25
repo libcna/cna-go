@@ -1039,7 +1039,16 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "f15vs_") {
+			if strings.HasPrefix(fixture.Mutation, "f17cls_") {
+				result := classificationMutationCase(t, fixture.Mutation)
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
+			if strings.HasPrefix(fixture.Mutation, "f17mc_") {
+				expected, actual = managedClassMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "f15vs_") {
 				expected, actual = valueStructMutationCase(t, fixture.Mutation)
 			} else if strings.HasPrefix(fixture.Mutation, "f14_") {
 				expected, actual = foundation14EnumMutationCase(t, fixture.Mutation)
@@ -2669,4 +2678,548 @@ func valueStructMutationCase(t *testing.T, mutation string) (*expectedSurface, *
 	}
 	t.Fatalf("unknown value-struct defect %q", parts[0])
 	return nil, nil
+}
+
+// managedClassSurfaces builds an isolated correct expected/actual surface pair
+// for one pure-managed CLR class, so a defect applied afterwards is the only
+// thing the verifier can see. The actual side is generated from the expected
+// side, which makes an unmutated baseline clean by construction.
+func managedClassSurfaces(t *testing.T, identity string) (*expectedSurface, *actualSurface, *expectedType) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return isolateManagedClass(t, full, identity)
+}
+
+func isolateManagedClass(t *testing.T, full *expectedSurface, identity string) (*expectedSurface, *actualSurface, *expectedType) {
+	t.Helper()
+	fullType := full.typeForXNA(identity)
+	if fullType == nil {
+		t.Fatalf("%s is not in the pinned contract", identity)
+	}
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   copiedType.SourceMembers,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  len(copiedType.Members),
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			copiedType.Key: {Key: copiedType.Key, Kind: "struct"},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		actual.Members[memberKey] = &actualMember{
+			Key:        memberKey,
+			Kind:       copiedMember.GoKind,
+			Parameters: append([]string(nil), copiedMember.Parameters...),
+			Results:    append([]string(nil), copiedMember.Results...),
+		}
+	}
+	return expected, actual, &copiedType
+}
+
+// accessorKey returns the projected member key of one accessor of one property
+// on a pure-managed class, so a defect can target exactly one accessor.
+func accessorKey(t *testing.T, expected *expectedSurface, owner *expectedType, property, accessor string) symbolKey {
+	t.Helper()
+	for _, key := range owner.Members {
+		member := expected.Members[key]
+		if member.Accessor != accessor {
+			continue
+		}
+		if !strings.HasPrefix(member.XNA, owner.XNA+"::"+property+"(") {
+			continue
+		}
+		return key
+	}
+	t.Fatalf("%s has no projected %s accessor for %s", owner.XNA, accessor, property)
+	return symbolKey{}
+}
+
+// anyAccessorKey returns the projected key of the first accessor of the given
+// kind, in declared order. Every class in the cluster has at least one of each.
+func anyAccessorKey(t *testing.T, expected *expectedSurface, owner *expectedType, accessor string, fallible bool) symbolKey {
+	t.Helper()
+	for _, key := range owner.Members {
+		if member := expected.Members[key]; member.Accessor == accessor && member.ErrorAdded == fallible {
+			return key
+		}
+	}
+	t.Fatalf("%s has no %s accessor with fallible=%t", owner.XNA, accessor, fallible)
+	return symbolKey{}
+}
+
+// managedClassDefects are the target-side structural and fallibility defects
+// every pure-managed CLR class is negatively fixtured against. The fallibility
+// entries cover all four accessor cases the per-operation rule creates:
+// an invented error on a getter or on an infallible setter, and a dropped
+// error on the one setter that genuinely has one.
+var managedClassDefects = []struct {
+	Name     string
+	Category string
+	Apply    func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType)
+}{
+	{Name: "missing_type", Category: "MISSING_TYPE", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		delete(actual.Types, owner.Key)
+	}},
+	{Name: "wrong_package", Category: "MISSING_TYPE", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		const elsewhere = modulePath + "/Microsoft/Xna/Framework/Graphics"
+		moved := *actual.Types[owner.Key]
+		delete(actual.Types, owner.Key)
+		moved.Key.Package = elsewhere
+		actual.Types[moved.Key] = &moved
+	}},
+	{Name: "projected_as_named_type", Category: "TYPE_KIND_MISMATCH", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		actual.Types[owner.Key].Kind = "named"
+	}},
+	{Name: "value_semantics_constructor", Category: "RETURN_MAPPING_MISMATCH", Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// A CLR class keeps reference semantics. Returning the value would
+		// silently turn shared mutation into copy-on-assign.
+		key := constructorKey(t, expected, owner)
+		actual.Members[key].Results = []string{owner.GoName}
+	}},
+	{Name: "missing_first_member", Category: "MISSING_MEMBER", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		delete(actual.Members, owner.Members[0])
+	}},
+	{Name: "missing_last_member", Category: "MISSING_MEMBER", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		delete(actual.Members, owner.Members[len(owner.Members)-1])
+	}},
+	{Name: "renamed_last_member", Category: "MISSING_MEMBER", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := owner.Members[len(owner.Members)-1]
+		member := *actual.Members[key]
+		delete(actual.Members, key)
+		member.Key = symbolKey{Package: key.Package, Receiver: key.Receiver, Name: key.Name + "Renamed"}
+		actual.Members[member.Key] = &member
+	}},
+	{Name: "unexpected_member", Category: "UNEXPECTED_MEMBER", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := symbolKey{Package: owner.PackagePath, Receiver: owner.GoName, Name: "SetInvented"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Parameters: []string{"int32"}}
+	}},
+	{Name: "wrong_setter_parameter", Category: "PARAMETER_MAPPING_MISMATCH", Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+		actual.Members[anyAccessorKey(t, expected, owner, "set", false)].Parameters = []string{"int32"}
+	}},
+	{Name: "artificial_getter_error", Category: "ERROR_MAPPING_MISMATCH", Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// Every getter in the cluster is one ldfld. None may gain an error.
+		key := anyAccessorKey(t, expected, owner, "get", false)
+		member := actual.Members[key]
+		member.Results = append(append([]string(nil), member.Results...), "error")
+	}},
+	{Name: "artificial_setter_error", Category: "ERROR_MAPPING_MISMATCH", Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// A setter that validates nothing must not gain an error just
+		// because a sibling setter on the same type validates.
+		actual.Members[anyAccessorKey(t, expected, owner, "set", false)].Results = []string{"error"}
+	}},
+	{Name: "artificial_constructor_error", Category: "ERROR_MAPPING_MISMATCH", Apply: func(t *testing.T, expected *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := constructorKey(t, expected, owner)
+		member := actual.Members[key]
+		member.Results = append(append([]string(nil), member.Results...), "error")
+	}},
+	{Name: "native_facade_projection", Category: "ERROR_MAPPING_MISMATCH", Apply: func(_ *testing.T, _ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// The whole-type defect: a pure-managed class written as if it were a
+		// native-backed facade, so every projected operation carries an error.
+		for _, key := range owner.Members {
+			member := actual.Members[key]
+			if len(member.Results) > 0 && member.Results[len(member.Results)-1] == "error" {
+				continue
+			}
+			member.Results = append(append([]string(nil), member.Results...), "error")
+		}
+	}},
+}
+
+// constructorKey returns the projected constructor of a pure-managed class.
+func constructorKey(t *testing.T, expected *expectedSurface, owner *expectedType) symbolKey {
+	t.Helper()
+	for _, key := range owner.Members {
+		if expected.Members[key].SourceKind == "constructor" {
+			return key
+		}
+	}
+	t.Fatalf("%s projects no constructor", owner.XNA)
+	return symbolKey{}
+}
+
+// TestFoundation17ManagedClassDefectsRejectedForEveryType applies every
+// target-side defect to every pure-managed CLR class, asserting a clean
+// baseline first so no defect can pass by accident.
+func TestFoundation17ManagedClassDefectsRejectedForEveryType(t *testing.T) {
+	if len(allManagedClasses()) != 2 {
+		t.Fatalf("managed-class cluster size = %d, want 2", len(allManagedClasses()))
+	}
+	cases := 0
+	for _, identity := range allManagedClasses() {
+		identity := identity
+		t.Run(identity, func(t *testing.T) {
+			baseExpected, baseActual, _ := managedClassSurfaces(t, identity)
+			baseline := verify(baseExpected, baseActual, 0, "report", "contract", "mapping")
+			if baseline.Summary["TOTAL_DIAGNOSTICS"] != 0 {
+				t.Fatalf("unmutated %s baseline is not clean: %v", identity, baseline.Diagnostics)
+			}
+			for _, closure := range baseline.Foundation17ManagedClasses {
+				if closure.XNA == identity && closure.Status != "PASS" {
+					t.Fatalf("unmutated %s closure = %q", identity, closure.Status)
+				}
+			}
+			for _, defect := range managedClassDefects {
+				defect := defect
+				t.Run(defect.Name, func(t *testing.T) {
+					expected, actual, owner := managedClassSurfaces(t, identity)
+					defect.Apply(t, expected, actual, owner)
+					result := verify(expected, actual, 0, "report", "contract", "mapping")
+					if result.Summary[defect.Category] == 0 {
+						t.Fatalf("defect %q on %s did not raise %s; summary=%v",
+							defect.Name, identity, defect.Category, result.Summary)
+					}
+					for _, closure := range result.Foundation17ManagedClasses {
+						if closure.XNA == identity && closure.Status != "FAIL" {
+							t.Fatalf("defect %q on %s left the closure measurement at %q",
+								defect.Name, identity, closure.Status)
+						}
+					}
+				})
+				cases++
+			}
+		})
+	}
+	if cases != len(allManagedClasses())*len(managedClassDefects) {
+		t.Fatalf("managed-class negative fixture count = %d", cases)
+	}
+}
+
+// withClassification runs fn with the pure-managed classification tables
+// temporarily mutated, then restores them exactly. It lets the negative
+// fixtures below attack the classification rule itself rather than only the Go
+// target, which is where the two directions of the class rule live.
+func withClassification(t *testing.T, mutate func(), fn func()) {
+	t.Helper()
+	savedTypes := make(map[string]bool, len(pureManagedTypes))
+	for key, value := range pureManagedTypes {
+		savedTypes[key] = value
+	}
+	savedFallible := make(map[string]map[string]bool, len(managedFallibleMembers))
+	for owner, keys := range managedFallibleMembers {
+		copied := make(map[string]bool, len(keys))
+		for key, value := range keys {
+			copied[key] = value
+		}
+		savedFallible[owner] = copied
+	}
+	defer func() {
+		pureManagedTypes = savedTypes
+		managedFallibleMembers = savedFallible
+	}()
+	mutate()
+	fn()
+}
+
+// classificationDefectResult verifies the correct Go projection of identity
+// against an expected surface rebuilt under a mutated classification, which is
+// exactly what a wrong classification decision would produce.
+func classificationDefectResult(t *testing.T, identity string, mutate func()) report {
+	t.Helper()
+	_, actual, _ := managedClassSurfaces(t, identity)
+	var result report
+	withClassification(t, mutate, func() {
+		full, err := buildExpected(loadPinnedContract(t))
+		if err != nil {
+			t.Fatal(err)
+		}
+		mutated, _, _ := isolateManagedClass(t, full, identity)
+		result = verify(mutated, actual, 0, "report", "contract", "mapping")
+	})
+	return result
+}
+
+const (
+	audioListenerIdentity = "Microsoft.Xna.Framework.Audio.AudioListener"
+	audioEmitterIdentity  = "Microsoft.Xna.Framework.Audio.AudioEmitter"
+	texture2DIdentity     = "Microsoft.Xna.Framework.Graphics.Texture2D"
+)
+
+// TestClassClassificationDefectsAreRejected attacks the two general rules this
+// milestone introduced -- pure-managed class classification and per-operation
+// fallibility -- in both directions, using the real classification tables.
+func TestClassClassificationDefectsAreRejected(t *testing.T) {
+	cases := []struct {
+		name     string
+		identity string
+		// wantMessage pins the exact accessor and direction the diagnostic
+		// must name, so a defect cannot pass by raising the right category for
+		// the wrong reason.
+		wantMessage string
+	}{
+		// CLR `class` alone must never make a type fallible. Dropping the
+		// classification is exactly the pre-Foundation-17 behavior.
+		{"managed_class_demoted_to_native_facade", audioListenerIdentity,
+			"property getter expected fallible, projected infallible"},
+		{"managed_class_with_validating_setter_demoted", audioEmitterIdentity,
+			"property getter expected fallible, projected infallible"},
+		// The opposite direction: a genuinely native-backed class must not be
+		// admitted as pure managed, which would strip the error result from
+		// every operation that crosses the native boundary.
+		{"native_backed_class_admitted_as_pure_managed", texture2DIdentity,
+			"expected infallible, projected fallible"},
+		// Accessor-level fallibility must not silently widen to the whole
+		// property: DopplerScale's getter is one ldfld and cannot fail.
+		{"accessor_fallibility_widened_to_whole_property", audioEmitterIdentity,
+			"property getter expected fallible, projected infallible"},
+		// And must not silently narrow to the wrong accessor.
+		{"accessor_fallibility_moved_to_the_getter", audioEmitterIdentity,
+			"property setter expected infallible, projected fallible"},
+		// Dropping the accessor-level entry loses the one genuine throw.
+		{"accessor_fallibility_dropped", audioEmitterIdentity,
+			"property setter expected infallible, projected fallible"},
+	}
+	if len(cases) != len(classificationDefects) {
+		t.Fatalf("classification defect coverage = %d of %d", len(cases), len(classificationDefects))
+	}
+	for _, testCase := range cases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			mutate, ok := classificationDefects[testCase.name]
+			if !ok {
+				t.Fatalf("classification defect %q is not in the shared table", testCase.name)
+			}
+			result := classificationDefectResult(t, testCase.identity, mutate)
+			if result.Summary["ERROR_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("classification defect %q did not raise ERROR_MAPPING_MISMATCH; summary=%v",
+					testCase.name, result.Summary)
+			}
+			found := false
+			for _, item := range result.Diagnostics {
+				if item.Category == "ERROR_MAPPING_MISMATCH" && strings.Contains(item.Message, testCase.wantMessage) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("classification defect %q raised ERROR_MAPPING_MISMATCH but no diagnostic said %q; diagnostics=%v",
+					testCase.name, testCase.wantMessage, result.Diagnostics)
+			}
+		})
+	}
+}
+
+// TestFoundation17ManagedClassMappedContracts pins the exact projected contract
+// of both audio descriptors against the reference contract, including the one
+// asymmetry that motivated per-operation fallibility.
+func TestFoundation17ManagedClassMappedContracts(t *testing.T) {
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const audioPackage = modulePath + "/Microsoft/Xna/Framework/Audio"
+	positional := []string{"Position", "Velocity", "Forward", "Up"}
+
+	for _, owner := range []struct {
+		identity   string
+		goName     string
+		source     int
+		identities int
+	}{
+		{audioListenerIdentity, "AudioListener", 5, 9},
+		{audioEmitterIdentity, "AudioEmitter", 6, 11},
+	} {
+		owner := owner
+		t.Run(owner.identity, func(t *testing.T) {
+			et := surface.typeForXNA(owner.identity)
+			if et == nil {
+				t.Fatalf("%s is absent from the pinned contract", owner.identity)
+			}
+			if et.Kind != "class" || et.BaseType != "System.Object" {
+				t.Fatalf("%s = kind %q base %q", owner.identity, et.Kind, et.BaseType)
+			}
+			if len(et.Interfaces) != 0 {
+				t.Fatalf("%s declares interfaces %v", owner.identity, et.Interfaces)
+			}
+			if et.PackagePath != audioPackage || et.GoName != owner.goName {
+				t.Fatalf("%s = %s.%s", owner.identity, et.PackagePath, et.GoName)
+			}
+			if et.SourceMembers != owner.source || len(et.Members) != owner.identities {
+				t.Fatalf("%s = %d source members, %d Go identities",
+					owner.identity, et.SourceMembers, len(et.Members))
+			}
+			if !pureManagedTypes[owner.identity] {
+				t.Fatalf("%s is not classified pure managed", owner.identity)
+			}
+
+			// Reference semantics: the constructor yields a pointer.
+			constructor := surface.Members[symbolKey{Package: audioPackage, Name: "New" + owner.goName}]
+			if constructor == nil || len(constructor.Parameters) != 0 ||
+				!equalStrings(constructor.Results, []string{"*" + owner.goName}) {
+				t.Fatalf("%s constructor = %+v", owner.identity, constructor)
+			}
+
+			// The four positional properties are infallible on both accessors
+			// in both types.
+			for _, name := range positional {
+				getter := surface.Members[symbolKey{Package: audioPackage, Receiver: owner.goName, Name: name}]
+				if getter == nil || getter.Accessor != "get" || getter.ErrorAdded ||
+					len(getter.Parameters) != 0 || !equalStrings(getter.Results, []string{"framework.Vector3"}) {
+					t.Fatalf("%s.%s getter = %+v", owner.identity, name, getter)
+				}
+				setter := surface.Members[symbolKey{Package: audioPackage, Receiver: owner.goName, Name: "Set" + name}]
+				if setter == nil || setter.Accessor != "set" || setter.ErrorAdded ||
+					!equalStrings(setter.Parameters, []string{"framework.Vector3"}) || len(setter.Results) != 0 {
+					t.Fatalf("%s.Set%s = %+v", owner.identity, name, setter)
+				}
+			}
+		})
+	}
+
+	// DopplerScale is the whole point of accessor-level fallibility: one
+	// property whose getter cannot fail and whose setter can.
+	getter := surface.Members[symbolKey{Package: audioPackage, Receiver: "AudioEmitter", Name: "DopplerScale"}]
+	if getter == nil || getter.ErrorAdded || !equalStrings(getter.Results, []string{"float32"}) {
+		t.Fatalf("AudioEmitter.DopplerScale getter = %+v", getter)
+	}
+	setter := surface.Members[symbolKey{Package: audioPackage, Receiver: "AudioEmitter", Name: "SetDopplerScale"}]
+	if setter == nil || !setter.ErrorAdded ||
+		!equalStrings(setter.Parameters, []string{"float32"}) || !equalStrings(setter.Results, []string{"error"}) {
+		t.Fatalf("AudioEmitter.SetDopplerScale = %+v", setter)
+	}
+	if getterKey := accessorKey(t, surface, surface.typeForXNA(audioEmitterIdentity), "DopplerScale", "get"); getterKey.Name != "DopplerScale" {
+		t.Fatalf("DopplerScale getter key = %+v", getterKey)
+	}
+	if setterKey := accessorKey(t, surface, surface.typeForXNA(audioEmitterIdentity), "DopplerScale", "set"); setterKey.Name != "SetDopplerScale" {
+		t.Fatalf("DopplerScale setter key = %+v", setterKey)
+	}
+}
+
+// TestFallibilityKeysAreAccessorSpecific pins the general key scheme itself,
+// independently of any one type, so a future validating setter is expressible
+// without touching verifier logic.
+func TestFallibilityKeysAreAccessorSpecific(t *testing.T) {
+	property := contractMember{Kind: "property", Name: "Sample"}
+	if got := fallibilityKeys(property, "get"); !equalStrings(got, []string{"property-get|Sample", "property|Sample"}) {
+		t.Fatalf("getter keys = %v", got)
+	}
+	if got := fallibilityKeys(property, "set"); !equalStrings(got, []string{"property-set|Sample", "property|Sample"}) {
+		t.Fatalf("setter keys = %v", got)
+	}
+	if got := fallibilityKeys(property, ""); !equalStrings(got, []string{"property|Sample"}) {
+		t.Fatalf("whole-property keys = %v", got)
+	}
+	for _, kind := range []string{"constructor", "method", "field", "event"} {
+		member := contractMember{Kind: kind, Name: "Sample"}
+		if got := fallibilityKeys(member, ""); !equalStrings(got, []string{kind + "|Sample"}) {
+			t.Fatalf("%s keys = %v", kind, got)
+		}
+	}
+
+	// A pure-managed owner with an accessor-level entry marks exactly one
+	// accessor; the same entry spelled as a whole property marks both.
+	owner := contractType{Name: "Synthetic.Owner", Kind: "class"}
+	withClassification(t, func() {
+		pureManagedTypes[owner.Name] = true
+		managedFallibleMembers[owner.Name] = map[string]bool{"property-set|Sample": true}
+	}, func() {
+		if isFallible(owner, property, "get") || !isFallible(owner, property, "set") {
+			t.Fatal("accessor-level entry did not isolate the setter")
+		}
+	})
+	withClassification(t, func() {
+		pureManagedTypes[owner.Name] = true
+		managedFallibleMembers[owner.Name] = map[string]bool{"property|Sample": true}
+	}, func() {
+		if !isFallible(owner, property, "get") || !isFallible(owner, property, "set") {
+			t.Fatal("whole-property entry did not mark both accessors")
+		}
+	})
+	// Classification alone, with no entry, never adds an error.
+	withClassification(t, func() {
+		pureManagedTypes[owner.Name] = true
+		delete(managedFallibleMembers, owner.Name)
+	}, func() {
+		if isFallible(owner, property, "get") || isFallible(owner, property, "set") {
+			t.Fatal("pure-managed classification invented an error result")
+		}
+	})
+	// Without the classification, CLR `class` alone makes both accessors
+	// fallible; that is the native-facade default this milestone narrowed.
+	withClassification(t, func() {
+		delete(pureManagedTypes, owner.Name)
+		delete(managedFallibleMembers, owner.Name)
+	}, func() {
+		if !isFallible(owner, property, "get") || !isFallible(owner, property, "set") {
+			t.Fatal("native facade default did not make the class fallible")
+		}
+	})
+}
+
+// managedClassMutationCase applies one named Foundation-17 target-side
+// managed-class defect. Mutation ids have the form f17mc_<defect>__<identity>.
+func managedClassMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	parts := strings.SplitN(strings.TrimPrefix(mutation, "f17mc_"), "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed managed-class mutation %q", mutation)
+	}
+	expected, actual, owner := managedClassSurfaces(t, parts[1])
+	for _, defect := range managedClassDefects {
+		if defect.Name != parts[0] {
+			continue
+		}
+		defect.Apply(t, expected, actual, owner)
+		return expected, actual
+	}
+	t.Fatalf("unknown managed-class defect %q", parts[0])
+	return nil, nil
+}
+
+// classificationMutationCase applies one named Foundation-17 classification
+// defect. These mutate the classification tables rather than the Go target, so
+// they return a finished report rather than a surface pair. Mutation ids have
+// the form f17cls_<defect>__<identity>.
+func classificationMutationCase(t *testing.T, mutation string) report {
+	t.Helper()
+	parts := strings.SplitN(strings.TrimPrefix(mutation, "f17cls_"), "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed classification mutation %q", mutation)
+	}
+	identity := parts[1]
+	mutate, ok := classificationDefects[parts[0]]
+	if !ok {
+		t.Fatalf("unknown classification defect %q", parts[0])
+	}
+	return classificationDefectResult(t, identity, mutate)
+}
+
+// classificationDefects is the shared table behind both the named
+// classification test and the mutation inventory, so the two cannot drift.
+var classificationDefects = map[string]func(){
+	"managed_class_demoted_to_native_facade": func() {
+		delete(pureManagedTypes, audioListenerIdentity)
+	},
+	"managed_class_with_validating_setter_demoted": func() {
+		delete(pureManagedTypes, audioEmitterIdentity)
+	},
+	"native_backed_class_admitted_as_pure_managed": func() {
+		pureManagedTypes[texture2DIdentity] = true
+	},
+	"accessor_fallibility_widened_to_whole_property": func() {
+		managedFallibleMembers[audioEmitterIdentity] = map[string]bool{"property|DopplerScale": true}
+	},
+	"accessor_fallibility_moved_to_the_getter": func() {
+		managedFallibleMembers[audioEmitterIdentity] = map[string]bool{"property-get|DopplerScale": true}
+	},
+	"accessor_fallibility_dropped": func() {
+		delete(managedFallibleMembers, audioEmitterIdentity)
+	},
 }

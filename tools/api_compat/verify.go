@@ -254,6 +254,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation15EnumClosures = measureBatchEnumClosures(expected, actual, typeDiagnostics, foundation15Enums)
 	result.Foundation15ValueStructs = measureValueStructClosures(expected, actual, typeDiagnostics, foundation15ValueStructs)
 	result.Foundation16ValueStructs = measureValueStructClosures(expected, actual, typeDiagnostics, foundation16ValueStructs)
+	result.Foundation17ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation17ManagedClasses)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -1648,7 +1649,7 @@ func compareMember(result *report, expected *expectedMember, actual *actualMembe
 	expectedError := expected.ErrorAdded
 	actualError := len(actual.Results) > 0 && actual.Results[len(actual.Results)-1] == "error"
 	if expectedError != actualError {
-		addDiagnostic(result, diagnostic{Category: "ERROR_MAPPING_MISMATCH", XNA: expected.XNA, Go: actual.Key.String(), Message: fmt.Sprintf("expected language-added error=%t, found %t", expectedError, actualError)})
+		addDiagnostic(result, diagnostic{Category: "ERROR_MAPPING_MISMATCH", XNA: expected.XNA, Go: actual.Key.String(), Message: errorMappingMessage(expected, expectedError, actualError)})
 	}
 	if expected.EnumValue != nil {
 		if actual.Value == nil || normalizeInteger(*actual.Value) != normalizeInteger(*expected.EnumValue) {
@@ -1659,6 +1660,38 @@ func compareMember(result *report, expected *expectedMember, actual *actualMembe
 			addDiagnostic(result, diagnostic{Category: "ENUM_VALUE_MISMATCH", XNA: expected.XNA, Go: actual.Key.String(), Message: fmt.Sprintf("expected raw enum value %s, found %s", *expected.EnumValue, found)})
 		}
 	}
+}
+
+// errorMappingMessage names the exact fallibility defect. Because fallibility
+// is decided per projected operation, the two accessors of one CLR property
+// are separate members that can disagree, so the message distinguishes all
+// four accessor cases -- getter expected fallible but projected infallible and
+// the reverse, and the same pair for the setter -- from the ordinary
+// constructor/method case.
+func errorMappingMessage(expected *expectedMember, expectedError, actualError bool) string {
+	subject := "operation"
+	switch expected.Accessor {
+	case "get":
+		subject = "property getter"
+	case "set":
+		subject = "property setter"
+	default:
+		switch expected.SourceKind {
+		case "constructor":
+			subject = "constructor"
+		case "method":
+			subject = "method"
+		case "field":
+			subject = "field projection"
+		case "event":
+			subject = "event accessor"
+		}
+	}
+	direction := "expected infallible, projected fallible"
+	if expectedError {
+		direction = "expected fallible, projected infallible"
+	}
+	return fmt.Sprintf("%s %s: expected language-added error=%t, found %t", subject, direction, expectedError, actualError)
 }
 
 func addMissingSpecialization(result *report, expected *expectedSurface, actual *actualSurface, member *expectedMember) {
@@ -1893,6 +1926,138 @@ func measureValueStructClosure(expected *expectedSurface, actual *actualSurface,
 		measurement.TargetGoIdentities == measurement.ExpectedGoIdentities &&
 		measurement.ExpectedGoIdentities == measurement.SourceIdentities &&
 		measurement.ErrorResults == 0 && membersPass {
+		measurement.Status = "PASS"
+	}
+	return measurement
+}
+
+// foundation17ManagedClasses is the Foundation-17 pure-managed CLR class
+// cluster: the first types admitted under the general class-classification
+// rule rather than because they are value types.
+//
+// Both are declared `class` in Microsoft.Xna.Framework.dll
+// (sha256 38e7093f52d7474bbc6256906519781a1210d7da50a1c667b52716fcf49ca130) and
+// both keep CLR reference semantics, but neither owns a native object: every
+// public accessor is one ldfld/stfld over an assembly-private XACT descriptor
+// value plus the managed UnsafeNativeStructures::FlipHandedness.
+var foundation17ManagedClasses = []string{
+	"Microsoft.Xna.Framework.Audio.AudioListener",
+	"Microsoft.Xna.Framework.Audio.AudioEmitter",
+}
+
+// allManagedClasses is every pinned pure-managed CLR class measured by the
+// shared table-driven closure category, across milestones.
+func allManagedClasses() []string {
+	all := make([]string, 0, len(foundation17ManagedClasses))
+	all = append(all, foundation17ManagedClasses...)
+	return all
+}
+
+func measureManagedClassClosures(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, batch []string) []managedClassClosure {
+	measurements := make([]managedClassClosure, 0, len(batch))
+	for _, identity := range batch {
+		measurements = append(measurements, measureManagedClassClosure(expected, actual, typeDiagnostics, identity))
+	}
+	return measurements
+}
+
+func measureManagedClassClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, identity string) managedClassClosure {
+	measurement := managedClassClosure{
+		XNA:          identity,
+		SourceTypes:  1,
+		ExpectedKind: "class",
+		ActualKind:   "missing",
+		PureManaged:  pureManagedTypes[identity],
+		Status:       "FAIL",
+	}
+	owner := expected.typeForXNA(identity)
+	if owner == nil {
+		return measurement
+	}
+	measurement.GoName = owner.GoName
+	measurement.PackagePath = owner.PackagePath
+	measurement.SourceIdentities = owner.SourceMembers
+	measurement.ExpectedGoIdentities = len(owner.Members)
+	measurement.LocalDiagnostics = typeDiagnostics[owner.XNA]
+	measurement.BaseType = owner.BaseType
+	if target := actual.Types[owner.Key]; target != nil {
+		measurement.TargetTypes = 1
+		measurement.ActualKind = target.Kind
+	}
+
+	membersPass := true
+	getters := make(map[string]bool)
+	setters := make(map[string]bool)
+	for _, key := range owner.Members {
+		em := expected.Members[key]
+		row := managedClassMember{
+			XNA:              em.XNA,
+			SourceKind:       em.SourceKind,
+			Accessor:         em.Accessor,
+			GoKind:           em.GoKind,
+			Receiver:         key.Receiver,
+			Name:             key.Name,
+			ExpectedFallible: em.ErrorAdded,
+			ExpectedResults:  append([]string(nil), em.Results...),
+			Status:           "FAIL",
+		}
+		switch em.Accessor {
+		case "get":
+			getters[em.XNA] = true
+			if em.ErrorAdded {
+				measurement.FallibleGetters++
+			}
+		case "set":
+			setters[em.XNA] = true
+			if em.ErrorAdded {
+				measurement.FallibleSetters++
+			}
+		default:
+			if em.ErrorAdded {
+				measurement.FallibleOperations++
+			}
+		}
+		if em.ErrorAdded {
+			measurement.ErrorResults++
+		}
+		if am := actual.Members[key]; am != nil {
+			measurement.TargetGoIdentities++
+			row.ActualResults = append([]string(nil), am.Results...)
+			row.ActualFallible = len(am.Results) > 0 && am.Results[len(am.Results)-1] == "error"
+			if equalStrings(row.ExpectedResults, row.ActualResults) &&
+				equalStrings(em.Parameters, am.Parameters) &&
+				row.ExpectedFallible == row.ActualFallible {
+				row.Status = "PASS"
+			}
+		}
+		if row.Status != "PASS" {
+			membersPass = false
+		}
+		measurement.Members = append(measurement.Members, row)
+	}
+	for xna := range getters {
+		if setters[xna] {
+			measurement.AccessorPairs++
+		}
+	}
+
+	// A CLR class keeps reference semantics whether or not it is pure managed,
+	// so its constructor must produce a Go pointer. A value result here would
+	// silently turn shared mutation into copy-on-assign.
+	for _, key := range owner.Members {
+		em := expected.Members[key]
+		if em.SourceKind != "constructor" || len(em.Results) == 0 {
+			continue
+		}
+		measurement.ReferenceProjection = em.Results[0]
+		break
+	}
+
+	if measurement.TargetTypes == 1 && measurement.ActualKind == "struct" &&
+		measurement.PureManaged && measurement.BaseType == "System.Object" &&
+		measurement.LocalDiagnostics == 0 &&
+		measurement.TargetGoIdentities == measurement.ExpectedGoIdentities &&
+		measurement.ReferenceProjection == "*"+owner.GoName && membersPass {
 		measurement.Status = "PASS"
 	}
 	return measurement

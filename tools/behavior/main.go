@@ -1322,6 +1322,111 @@ func runCorpus() corpusReport {
 	packedValue64Copy.SetPackedValue(0)
 	check("packed.value64.copy-and-equality", "PACKED_INTERFACE", "true,true,false,true", fmt.Sprintf("%t,%t,%t,%t", packedValue64.EqualsByObject(packedValue64), packedvector.HalfVector4OperatorEqualityByHalfVector4AndHalfVector4(packedValue64, packedValue64), packedValue64.EqualsByHalfVector4(packedValue64Copy), packedvector.HalfVector4OperatorInequalityByHalfVector4AndHalfVector4(packedValue64, packedValue64Copy)))
 
+	// --- Foundation 17: pure managed CLR audio descriptors ------------------
+	//
+	// Read from Microsoft.Xna.Framework.dll IL
+	// (sha256 38e7093f52d7474bbc6256906519781a1210d7da50a1c667b52716fcf49ca130).
+	// Every accessor is one ldfld/stfld plus UnsafeNativeStructures::
+	// FlipHandedness, which copies X and Y and stores `neg` of Z.
+	vector3Bits := func(v framework.Vector3) string { return floatBits(v.X, v.Y, v.Z) }
+
+	// The constructor stores Vector3.Zero unflipped into _Position/_Velocity
+	// while the getter flips, so both read back with a negative-zero Z. It
+	// stores FlipHandedness of Vector3.Forward/Vector3.Up, so those two read
+	// back bit-exactly as the source constants.
+	listener := audio.NewAudioListener()
+	check("audio-listener.default-position", "AUDIO_DESCRIPTOR", "0x00000000,0x00000000,0x80000000", vector3Bits(listener.Position()))
+	check("audio-listener.default-velocity", "AUDIO_DESCRIPTOR", "0x00000000,0x00000000,0x80000000", vector3Bits(listener.Velocity()))
+	check("audio-listener.default-forward", "AUDIO_DESCRIPTOR", vector3Bits(framework.Vector3Forward()), vector3Bits(listener.Forward()))
+	check("audio-listener.default-up", "AUDIO_DESCRIPTOR", vector3Bits(framework.Vector3Up()), vector3Bits(listener.Up()))
+	// The negative zero is invisible to Vector3 equality, exactly as in the
+	// reference: only the sign bit distinguishes it.
+	check("audio-listener.default-position-equals-zero", "AUDIO_DESCRIPTOR", "true", fmt.Sprintf("%t", listener.Position() == framework.Vector3Zero()))
+
+	emitter := audio.NewAudioEmitter()
+	check("audio-emitter.default-position", "AUDIO_DESCRIPTOR", "0x00000000,0x00000000,0x80000000", vector3Bits(emitter.Position()))
+	check("audio-emitter.default-velocity", "AUDIO_DESCRIPTOR", "0x00000000,0x00000000,0x80000000", vector3Bits(emitter.Velocity()))
+	check("audio-emitter.default-forward", "AUDIO_DESCRIPTOR", vector3Bits(framework.Vector3Forward()), vector3Bits(emitter.Forward()))
+	check("audio-emitter.default-up", "AUDIO_DESCRIPTOR", vector3Bits(framework.Vector3Up()), vector3Bits(emitter.Up()))
+	check("audio-emitter.default-doppler-scale", "AUDIO_DESCRIPTOR", bits(1), bits(emitter.DopplerScale()))
+
+	// FlipHandedness is a sign-bit flip, so applying it on write and again on
+	// read is a bit-exact identity for every binary32 value.
+	negativeZero := float32(math.Copysign(0, -1))
+	for _, roundTrip := range []struct {
+		name  string
+		value framework.Vector3
+	}{
+		{"ordinary", framework.Vector3{X: 1, Y: 2, Z: 3}},
+		{"positive-zero", framework.Vector3Zero()},
+		{"negative-zero", framework.Vector3{Z: negativeZero}},
+		{"infinities", framework.Vector3{X: float32(math.Inf(-1)), Y: float32(math.Inf(1)), Z: float32(math.Inf(1))}},
+		{"denormal", framework.Vector3{X: math.SmallestNonzeroFloat32, Y: -math.SmallestNonzeroFloat32, Z: math.SmallestNonzeroFloat32}},
+		{"nan", framework.Vector3{X: float32(math.NaN()), Y: float32(math.NaN()), Z: float32(math.NaN())}},
+	} {
+		fresh := audio.NewAudioListener()
+		fresh.SetPosition(roundTrip.value)
+		fresh.SetForward(roundTrip.value)
+		check("audio-listener.round-trip."+roundTrip.name, "AUDIO_DESCRIPTOR",
+			vector3Bits(roundTrip.value)+"|"+vector3Bits(roundTrip.value),
+			vector3Bits(fresh.Position())+"|"+vector3Bits(fresh.Forward()))
+		freshEmitter := audio.NewAudioEmitter()
+		freshEmitter.SetVelocity(roundTrip.value)
+		freshEmitter.SetUp(roundTrip.value)
+		check("audio-emitter.round-trip."+roundTrip.name, "AUDIO_DESCRIPTOR",
+			vector3Bits(roundTrip.value)+"|"+vector3Bits(roundTrip.value),
+			vector3Bits(freshEmitter.Velocity())+"|"+vector3Bits(freshEmitter.Up()))
+	}
+
+	// AudioEmitter::set_DopplerScale guards its store with `bge.un.s`, which
+	// branches to the store on an ordered value >= 0 *and* on an unordered
+	// comparison. So every NaN is accepted and only negative-ordered values
+	// throw. The XNA behavior is a thrown ArgumentOutOfRangeException; the
+	// projected Go behavior is a non-nil error on the setter alone, which is
+	// why the acceptance/rejection column is PURE_XNA_DERIVED while the error
+	// channel itself is a GO_LANGUAGE_PROJECTION.
+	for _, dopplerCase := range []struct {
+		name     string
+		value    float32
+		accepted bool
+	}{
+		{"positive", 2.5, true},
+		{"one", 1, true},
+		{"positive-denormal", math.SmallestNonzeroFloat32, true},
+		{"largest-finite", math.MaxFloat32, true},
+		{"positive-zero", 0, true},
+		{"negative-zero", negativeZero, true},
+		{"positive-infinity", float32(math.Inf(1)), true},
+		{"nan", float32(math.NaN()), true},
+		{"negative", -2.5, false},
+		{"negative-denormal", -math.SmallestNonzeroFloat32, false},
+		{"lowest-finite", -math.MaxFloat32, false},
+		{"negative-infinity", float32(math.Inf(-1)), false},
+	} {
+		fresh := audio.NewAudioEmitter()
+		err := fresh.SetDopplerScale(dopplerCase.value)
+		stored := bits(dopplerCase.value)
+		if !dopplerCase.accepted {
+			stored = bits(1) // a rejected assignment leaves the default in place
+		}
+		check("audio-emitter.doppler-scale."+dopplerCase.name, "AUDIO_DESCRIPTOR",
+			fmt.Sprintf("%t,%s", dopplerCase.accepted, stored),
+			fmt.Sprintf("%t,%s", err == nil, bits(fresh.DopplerScale())))
+		checkGoProjection("audio-emitter.doppler-scale.error-channel."+dopplerCase.name, "AUDIO_DESCRIPTOR",
+			fmt.Sprintf("%t", !dopplerCase.accepted), fmt.Sprintf("%t", err != nil))
+	}
+
+	// CLR reference semantics survive the pure-managed classification: two
+	// variables referencing one instance observe the same mutations.
+	shared := audio.NewAudioListener()
+	sharedAlias := shared
+	sharedAlias.SetVelocity(framework.Vector3{X: 5, Y: 6, Z: 7})
+	check("audio-listener.reference-semantics", "AUDIO_DESCRIPTOR", "0x40a00000,0x40c00000,0x40e00000", vector3Bits(shared.Velocity()))
+	sharedEmitter := audio.NewAudioEmitter()
+	sharedEmitterAlias := sharedEmitter
+	_ = sharedEmitterAlias.SetDopplerScale(9)
+	check("audio-emitter.reference-semantics", "AUDIO_DESCRIPTOR", bits(9), bits(sharedEmitter.DopplerScale()))
+
 	return report
 }
 

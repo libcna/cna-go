@@ -823,12 +823,60 @@ Exact evidence is in `docs/foundation-16-game-pad-state-evidence.md`.
 FOUNDATION_MILESTONE_16_COMPLETE=true
 ```
 
-## Safe pure-managed seam exhausted
+## Safe pure-managed seam exhausted at the old rules
 
-After Foundation 16 no dependency-complete missing type can be completed
+After Foundation 16 no dependency-complete missing type could be completed
 without either a public-API policy decision or a fabricated device capability.
-Search is no longer the bottleneck; the three blocked groups are recorded in
-the Foundation-16 evidence and in NEXT.md.
+Search was no longer the bottleneck; the blocked groups were recorded in the
+Foundation-16 evidence and in NEXT.md. Foundation 17 settles the first two of
+those decisions.
+
+## Foundation 17 pure managed class and per-operation fallibility policy
+
+Two mapping rules were too coarse and are replaced.
+
+CLR `class` is not evidence of native backing. A class is classified as pure
+managed only when authoritative Microsoft XNA IL proves the selected public
+behavior is backed entirely by managed fields and deterministic managed code,
+so it owns no CNA native object and needs no FFI, native allocation, device
+query, native destruction, callback registration, thread-affinity lifecycle, or
+external hardware state. `Game`, `GraphicsDeviceManager`, `GraphicsDevice`,
+`SpriteBatch`, and `Texture2D` are excluded and keep their fallible facades.
+Classification changes fallibility only: an admitted class is still a CLR
+reference type and still projects as `*T`.
+
+Fallibility belongs to one projected operation, never to a type or a property.
+A constructor, a method, a property getter, and that same property's setter are
+each classified independently, keyed as `constructor|Name`, `method|Name`,
+`field|Name`, `property-get|Name`, `property-set|Name`, and `property|Name`.
+The whole-property key stays supported for properties that genuinely validate
+on read and on write, and using it for an assignment-only validation is a
+measured defect.
+
+Foundation 17 closes `Audio.AudioListener` (9 identities, no error result) and
+`Audio.AudioEmitter` (11 identities, exactly one error result, on
+`SetDopplerScale` alone). `set_DopplerScale` guards its store with `bge.un.s`,
+so every NaN and both zeros are accepted and only negative-ordered values
+throw; that is reproduced rather than corrected. Both constructors leave
+`Position` and `Velocity` reading back with a negative-zero Z because the
+constructor stores `Vector3.Zero` unflipped while the getter flips; that is
+also reproduced rather than normalized.
+
+## Foundation 17 qualification evidence
+
+- [x] Read both classes, `UnsafeNativeStructures::FlipHandedness`, the `Vector3` static constructor, and the thrown `FrameworkResources` string from the hash-verified retained assembly.
+- [x] Generalize the classification and fallibility tables without hard-coding any type into verifier logic.
+- [x] Add the `managedClassClosure` category measuring reference projection, accessor pairs, and per-accessor fallibility.
+- [x] Name the accessor and the direction in every `ERROR_MAPPING_MISMATCH`, covering all four accessor cases.
+- [x] Add 26 target-side and 6 classification-side negative cases; grow the mutation inventory from 217 to 249.
+- [x] Grow the behavior corpus from 487 to 535 with zero failures.
+- [x] Keep `MISSING_MEMBER` at 177 and `PARTIAL_TYPES` at 5, with every mismatch, leak, allowlist, and unmeasured counter at zero.
+
+Exact evidence is in `docs/foundation-17-managed-class-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_17_COMPLETE=true
+```
 
 ## Deferred families
 

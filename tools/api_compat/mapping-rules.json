@@ -16,7 +16,9 @@
     "interface": "go-structural-interface",
     "enum": "named-int32",
     "flagsZeroMemberRule": "raw-zero-is-representable-but-no-None-Default-or-other-named-zero-is-synthesized",
-    "delegate": "named-func"
+    "delegate": "named-func",
+    "classClassification": "pure-managed-or-native-backed-decided-by-authoritative-IL-never-by-CLR-kind",
+    "classReferenceSemantics": "both-classifications-keep-CLR-reference-semantics-and-project-as-a-Go-pointer"
   },
   "genericParameters": {
     "ownerTokenRule": "CLR !n maps to the nth declared owner generic parameter name",
@@ -75,7 +77,17 @@
       "Microsoft.Xna.Framework.GraphicsDeviceManager.SupportedOrientations"
     ],
     "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
-    "panicPolicy": "programmer-invariant-only-never-native-runtime-failure"
+    "panicPolicy": "programmer-invariant-only-never-native-runtime-failure",
+    "fallibilityScope": "per-projected-operation-never-per-type",
+    "fallibilityKeys": [
+      "constructor|Name",
+      "method|Name",
+      "field|Name",
+      "property-get|Name",
+      "property-set|Name",
+      "property|Name"
+    ],
+    "propertyAccessorRule": "a-getter-and-its-own-setter-are-classified-independently; property|Name marks both and is only correct when the reference IL validates on read and on write"
   },
   "managedInterfaces": {
     "classification": "explicit-interface-identity-policy-not-owner-kind-fallback",
@@ -84,6 +96,37 @@
     "pureValueIdentities": [
       "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector",
       "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1"
+    ]
+  },
+  "pureManagedClasses": {
+    "classification": "explicit-type-identity-policy-proved-by-authoritative-XNA-IL-not-CLR-kind-fallback",
+    "admission": "selected-public-behavior-is-backed-entirely-by-managed-fields-and-deterministic-managed-code",
+    "requires": [
+      "owns-no-CNA-native-object",
+      "no-FFI",
+      "no-native-allocation",
+      "no-renderer-or-device-query",
+      "no-native-destruction",
+      "no-callback-registration",
+      "no-thread-affinity-lifecycle",
+      "no-external-hardware-state"
+    ],
+    "referenceSemantics": "an-admitted-CLR-class-still-projects-as-*T-so-shared-instances-observe-shared-mutation",
+    "effect": "removes-only-the-synthetic-native-runtime-error-result; it never removes an authoritative managed argument failure",
+    "nativeBackedTypesExcluded": [
+      "Microsoft.Xna.Framework.Game",
+      "Microsoft.Xna.Framework.GraphicsDeviceManager",
+      "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
+      "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+      "Microsoft.Xna.Framework.Graphics.Texture2D"
+    ],
+    "classIdentities": [
+      "Microsoft.Xna.Framework.GameTime",
+      "Microsoft.Xna.Framework.Curve",
+      "Microsoft.Xna.Framework.CurveKey",
+      "Microsoft.Xna.Framework.CurveKeyCollection",
+      "Microsoft.Xna.Framework.Audio.AudioListener",
+      "Microsoft.Xna.Framework.Audio.AudioEmitter"
     ]
   },
   "mutableStructInterfaces": {

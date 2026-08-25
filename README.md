@@ -259,14 +259,25 @@ the re-verified native ABI provenance.
 See [Foundation 16 GamePadState evidence](docs/foundation-16-game-pad-state-evidence.md)
 for the managed XInput packing, the IndependentAxes dead-zone reproduction, the
 measured bit-for-bit agreement with the pinned `Buttons` literals, and why the
-safe pure-managed seam is now exhausted.
+safe pure-managed seam was exhausted at the old mapping rules.
+
+See [Foundation 17 managed class evidence](docs/foundation-17-managed-class-evidence.md)
+for the general pure-managed CLR class rule, per-operation fallibility and its
+accessor-level keys, the bit-exact `FlipHandedness` involution, the
+negative-zero constructor defaults, the exact `bge.un.s` validation that accepts
+NaN, and the 32 new negative fixtures. `AudioListener` and `AudioEmitter` are
+pure managed descriptors: completing them claims no audio runtime capability
+and creates no XACT state.
 
 The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
 Windows, macOS, Android, iOS, and Web/Wasm are not qualified. Content/XNB,
 Effects/3D, Audio, Media, Storage, Touch, and most of XNA remain unimplemented.
-The `Audio`, `Media`, and `Input/Touch` packages contain enum metadata only and
-carry no audio, media, or touch runtime capability claim.
+The `Media` and `Input/Touch` packages contain enum metadata only and carry no
+media or touch runtime capability claim. The `Audio` package adds two pure
+managed positional descriptors alongside its enums and still carries no audio
+runtime capability claim: nothing there opens a device, creates XACT state, or
+plays a sound.
 
 See the generated [runtime capability inventory](docs/generated/runtime-capabilities.md)
 for evidence and limitations by capability.

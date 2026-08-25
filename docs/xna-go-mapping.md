@@ -172,6 +172,49 @@ stores the exact bits and marks private future device configuration dirty.
 Construction and disposal remain fallible native operations, but this stored
 property remains managed before and after native resource disposal.
 
+## Pure managed CLR classes
+
+CLR `class` is not evidence of native backing. A class is classified as *pure
+managed* when authoritative Microsoft XNA IL proves that its selected public
+behavior is backed entirely by managed fields and deterministic managed code,
+and therefore owns no CNA native object and needs no FFI, no native allocation,
+no renderer or device query, no native destruction, no callback registration,
+no thread-affinity lifecycle, and no external hardware state. Anything short of
+that proof keeps the fallible native facade, so `Game`, `GraphicsDeviceManager`,
+`GraphicsDevice`, `SpriteBatch`, and `Texture2D` are deliberately excluded.
+
+Classification changes fallibility, never semantics. An admitted class is still
+a CLR reference type: its constructor returns `*T`, and two variables holding
+one instance observe the same mutations. It never becomes a copied Go value.
+
+`Audio.AudioListener` and `Audio.AudioEmitter` are the first classes admitted
+on this general rule rather than because they are value types.
+
+## Fallibility is per operation
+
+An `error` result belongs to one projected operation, not to a type and not to
+a property. A constructor, an ordinary method, a property getter, and that same
+property's setter are each classified independently, so a property may project
+as
+
+```go
+func (x *AudioEmitter) DopplerScale() float32
+func (x *AudioEmitter) SetDopplerScale(value float32) error
+```
+
+when the reference getter is one field read and only the setter validates. The
+reverse pairing is equally expressible. A getter never gains an `error` because
+its setter validates, and an unrelated member never gains one because a sibling
+throws.
+
+The mapping keys follow that scope: `constructor|Name`, `method|Name`,
+`field|Name`, `property-get|Name`, `property-set|Name`, and `property|Name`.
+The last one marks both accessors and is correct only where the reference IL
+validates on read *and* on write, as `CurveKeyCollection`'s indexer does. Using
+it for a property that only validates on assignment is a measured defect: the
+verifier compares each accessor separately and names the accessor and the
+direction of the disagreement.
+
 An `out T` parameter is removed from the input list and appended to Go results.
 For the conventional `TryX` pattern the value precedes the final `bool`. A
 mutable `ref T` input maps to `*T`. Source direction remains in the overload

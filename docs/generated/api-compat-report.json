@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 98,
+    "COMPLETE_TYPES": 100,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 154,
-    "MISSING_TYPES": 154,
+    "MISSING_TYPE": 152,
+    "MISSING_TYPES": 152,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1619,
-    "TARGET_TYPES": 103,
-    "TOTAL_DIAGNOSTICS": 331,
+    "TARGET_MEMBERS": 1639,
+    "TARGET_TYPES": 105,
+    "TOTAL_DIAGNOSTICS": 329,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -52,20 +52,8 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:AudioEmitter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.AudioEngine",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:AudioEngine",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.AudioListener",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:AudioListener",
       "message": "mapped Go type is absent"
     },
     {
@@ -2033,6 +2021,8 @@
   ],
   "completeTypes": [
     "Microsoft.Xna.Framework.Audio.AudioChannels",
+    "Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "Microsoft.Xna.Framework.Audio.AudioListener",
     "Microsoft.Xna.Framework.Audio.AudioStopOptions",
     "Microsoft.Xna.Framework.Audio.MicrophoneState",
     "Microsoft.Xna.Framework.Audio.SoundState",
@@ -2342,9 +2332,7 @@
   ],
   "missingTypes": [
     "Microsoft.Xna.Framework.Audio.AudioCategory",
-    "Microsoft.Xna.Framework.Audio.AudioEmitter",
     "Microsoft.Xna.Framework.Audio.AudioEngine",
-    "Microsoft.Xna.Framework.Audio.AudioListener",
     "Microsoft.Xna.Framework.Audio.Cue",
     "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
@@ -6317,9 +6305,363 @@
       "status": "PASS"
     }
   ],
+  "foundation17ManagedClassClosures": [
+    {
+      "xna": "Microsoft.Xna.Framework.Audio.AudioListener",
+      "goName": "AudioListener",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio",
+      "sourceTypes": 1,
+      "sourceIdentities": 5,
+      "expectedGoIdentities": 9,
+      "targetTypes": 1,
+      "targetGoIdentities": 9,
+      "localDiagnostics": 0,
+      "expectedKind": "class",
+      "actualKind": "struct",
+      "baseType": "System.Object",
+      "pureManaged": true,
+      "referenceProjection": "*AudioListener",
+      "accessorPairs": 4,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 0,
+      "errorResults": 0,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioListener::.ctor()",
+          "sourceKind": "constructor",
+          "goKind": "func",
+          "name": "NewAudioListener",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "*AudioListener"
+          ],
+          "actualResults": [
+            "*AudioListener"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioListener::Position()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "AudioListener",
+          "name": "Position",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Vector3"
+          ],
+          "actualResults": [
+            "framework.Vector3"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioListener::Position()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "AudioListener",
+          "name": "SetPosition",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioListener::Velocity()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "AudioListener",
+          "name": "Velocity",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Vector3"
+          ],
+          "actualResults": [
+            "framework.Vector3"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioListener::Velocity()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "AudioListener",
+          "name": "SetVelocity",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioListener::Forward()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "AudioListener",
+          "name": "Forward",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Vector3"
+          ],
+          "actualResults": [
+            "framework.Vector3"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioListener::Forward()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "AudioListener",
+          "name": "SetForward",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioListener::Up()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "AudioListener",
+          "name": "Up",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Vector3"
+          ],
+          "actualResults": [
+            "framework.Vector3"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioListener::Up()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "AudioListener",
+          "name": "SetUp",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter",
+      "goName": "AudioEmitter",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio",
+      "sourceTypes": 1,
+      "sourceIdentities": 6,
+      "expectedGoIdentities": 11,
+      "targetTypes": 1,
+      "targetGoIdentities": 11,
+      "localDiagnostics": 0,
+      "expectedKind": "class",
+      "actualKind": "struct",
+      "baseType": "System.Object",
+      "pureManaged": true,
+      "referenceProjection": "*AudioEmitter",
+      "accessorPairs": 5,
+      "fallibleGetters": 0,
+      "fallibleSetters": 1,
+      "fallibleOperations": 0,
+      "errorResults": 1,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::.ctor()",
+          "sourceKind": "constructor",
+          "goKind": "func",
+          "name": "NewAudioEmitter",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "*AudioEmitter"
+          ],
+          "actualResults": [
+            "*AudioEmitter"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::Position()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "Position",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Vector3"
+          ],
+          "actualResults": [
+            "framework.Vector3"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::Position()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "SetPosition",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::Velocity()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "Velocity",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Vector3"
+          ],
+          "actualResults": [
+            "framework.Vector3"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::Velocity()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "SetVelocity",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::Forward()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "Forward",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Vector3"
+          ],
+          "actualResults": [
+            "framework.Vector3"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::Forward()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "SetForward",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::Up()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "Up",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "framework.Vector3"
+          ],
+          "actualResults": [
+            "framework.Vector3"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::Up()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "SetUp",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::DopplerScale()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "DopplerScale",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "float32"
+          ],
+          "actualResults": [
+            "float32"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.AudioEmitter::DopplerScale()",
+          "sourceKind": "property",
+          "accessor": "set",
+          "goKind": "method",
+          "receiver": "AudioEmitter",
+          "name": "SetDopplerScale",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "9055788ecf1b55f64e2ccb5174a261dbfd4cd343dc48d02e82a80d757f7f5468",
+    "mappingSha256": "020b887a9b38b4f3e3b644ea8d443854fe771dd9e5e66ab15f36a8836b87e6cc",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

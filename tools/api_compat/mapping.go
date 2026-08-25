@@ -46,7 +46,26 @@ var operatorNames = map[string]string{
 	"op_Explicit":      "Explicit",
 }
 
-var managedTypes = map[string]bool{
+// pureManagedTypes is the explicit pure-managed CLR type classification. It is
+// the general class/struct-classification boundary of the binding, not a list
+// of value structs: CLR `class` alone is never evidence of native backing.
+//
+// A CLR type is admitted here only when authoritative Microsoft XNA IL proves
+// that its selected public behavior is backed entirely by managed fields and
+// deterministic managed code, and therefore owns no CNA native object and
+// needs no FFI, no native allocation, no renderer/device query, no native
+// destruction, no callback registration, no thread-affinity lifecycle, and no
+// external hardware state.
+//
+// Admission does not change CLR reference semantics: an admitted `class` still
+// projects as a Go pointer facade, so two variables that reference the same
+// instance observe the same mutations. It only removes the synthetic native
+// runtime `error` that a native-backed facade would carry.
+//
+// Genuinely native-backed classes -- Game, GraphicsDeviceManager,
+// GraphicsDevice, SpriteBatch, Texture2D -- are deliberately absent and keep
+// their fallible native facade behavior.
+var pureManagedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.MathHelper":         true,
 	"Microsoft.Xna.Framework.Vector2":            true,
 	"Microsoft.Xna.Framework.Vector3":            true,
@@ -68,6 +87,16 @@ var managedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.CurveContinuity":    true,
 	"Microsoft.Xna.Framework.CurveLoopType":      true,
 	"Microsoft.Xna.Framework.CurveTangent":       true,
+
+	// Foundation 17. Microsoft.Xna.Framework.dll IL
+	// (sha256 38e7093f52d7474bbc6256906519781a1210d7da50a1c667b52716fcf49ca130)
+	// shows both audio positional descriptors as plain managed field storage
+	// over an assembly-private XACT_LISTENER_DATA/XACT_EMITTER_DATA value:
+	// every public accessor is one ldfld/stfld plus the managed, side-effect
+	// free UnsafeNativeStructures::FlipHandedness. No public member reaches
+	// XACT, a device, or any native allocation.
+	"Microsoft.Xna.Framework.Audio.AudioListener": true,
+	"Microsoft.Xna.Framework.Audio.AudioEmitter":  true,
 }
 
 // managedPureValueInterfaces is the explicit, reusable policy boundary for
@@ -78,6 +107,26 @@ var managedPureValueInterfaces = map[string]bool{
 	"Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector`1": true,
 }
 
+// managedFallibleMembers records, per pure-managed owner, exactly which
+// projected operations carry a Go error result. Fallibility is a property of a
+// single projected operation, never of a whole type: a CLR property may throw
+// from its setter while its getter is one ldfld that cannot fail.
+//
+// Keys are produced by fallibilityKeys and are, from most to least specific:
+//
+//	constructor|.ctor          one constructor (overloads share the CLR name)
+//	method|<Name>              one ordinary or static method
+//	field|<Name>               one field projection
+//	property-get|<Name>        that property's getter only
+//	property-set|<Name>        that property's setter only
+//	property|<Name>            both accessors of that property
+//
+// property|<Name> stays supported because some XNA properties genuinely throw
+// from both accessors -- CurveKeyCollection's indexer validates its index on
+// read and on write. Marking a property whose IL only validates on assignment
+// with property|<Name> is a defect, not a shorthand: it would add an error
+// result to a getter that cannot fail. The verifier measures both accessors
+// independently so that substitution is rejected.
 var managedFallibleMembers = map[string]map[string]bool{
 	"Microsoft.Xna.Framework.Curve": {
 		"method|ComputeTangent": true,
@@ -91,6 +140,25 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"method|RemoveAt": true,
 		"property|Item":   true,
 	},
+	// AudioEmitter::set_DopplerScale is the first measured accessor-level
+	// case. Its IL guards the store with `ldarg.1; ldc.r4 0.0; bge.un.s`,
+	// throwing System.ArgumentOutOfRangeException only when the branch is
+	// not taken. get_DopplerScale is one ldfld and cannot fail.
+	"Microsoft.Xna.Framework.Audio.AudioEmitter": {
+		"property-set|DopplerScale": true,
+	},
+}
+
+// fallibilityKeys returns the managedFallibleMembers keys that can mark one
+// projected operation fallible, most specific first. accessor is "get" or
+// "set" for a projected property accessor and empty for every other member
+// kind, so an accessor-level key wins over the whole-property key while the
+// whole-property key still marks both accessors.
+func fallibilityKeys(m contractMember, accessor string) []string {
+	if m.Kind == "property" && accessor != "" {
+		return []string{"property-" + accessor + "|" + m.Name, "property|" + m.Name}
+	}
+	return []string{m.Kind + "|" + m.Name}
 }
 
 // managedStoredMembers identifies members on otherwise native-backed class
@@ -251,7 +319,7 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 	base.Parameters = parameters
 	base.Results = mapReturn(s, byIdentity, owner, m.ReturnType)
 	base.Results = append(base.Results, outResults...)
-	if isFallible(t, m) {
+	if isFallible(t, m, "") {
 		base.Results = append(base.Results, "error")
 		base.ErrorAdded = true
 	}
@@ -313,7 +381,8 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 			}
 			get.Parameters = mapIndexerParameters(s, byIdentity, owner, m.Parameters)
 			get.Results = mapResultType(s, byIdentity, owner, valueOrEmpty(m.Type))
-			if isFallible(t, m) {
+			get.Accessor = "get"
+			if isFallible(t, m, "get") {
 				get.Results = append(get.Results, "error")
 				get.ErrorAdded = true
 			}
@@ -329,7 +398,8 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 			}
 			set.Parameters = append(mapIndexerParameters(s, byIdentity, owner, m.Parameters), mappedType)
 			set.Results = nil
-			if isFallible(t, m) {
+			set.Accessor = "set"
+			if isFallible(t, m, "set") {
 				set.Results = []string{"error"}
 				set.ErrorAdded = true
 			}
@@ -347,7 +417,7 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 					item.GoName = owner.GoName + m.Name
 					item.Parameters = []string{"*framework." + owner.GoName}
 					item.Results = []string{mapType(s, byIdentity, target, valueOrEmpty(m.Type))}
-					if isFallible(t, m) {
+					if isFallible(t, m, "get") {
 						item.Results = append(item.Results, "error")
 					}
 				}
@@ -552,12 +622,24 @@ func genericTypeArgument(raw, prefix string) (string, bool) {
 	return strings.TrimSuffix(strings.TrimPrefix(raw, prefix), "]"), true
 }
 
-func isFallible(t contractType, m contractMember) bool {
-	if managedTypes[t.Name] || managedPureValueInterfaces[t.Name] || t.Kind == "enum" {
-		return managedFallibleMembers[t.Name][m.Kind+"|"+m.Name]
-	}
-	if managedStoredMembers[t.Name][m.Kind+"|"+m.Name] {
+// isFallible decides whether one projected operation gains a Go error result.
+// accessor is "get" or "set" when the operation is a projected property
+// accessor and empty otherwise, so the two accessors of one CLR property are
+// classified independently.
+func isFallible(t contractType, m contractMember, accessor string) bool {
+	keys := fallibilityKeys(m, accessor)
+	if pureManagedTypes[t.Name] || managedPureValueInterfaces[t.Name] || t.Kind == "enum" {
+		for _, key := range keys {
+			if managedFallibleMembers[t.Name][key] {
+				return true
+			}
+		}
 		return false
+	}
+	for _, key := range keys {
+		if managedStoredMembers[t.Name][key] {
+			return false
+		}
 	}
 	if m.Kind == "field" || m.Name == "ToString" || m.Name == "GetHashCode" || strings.HasPrefix(m.Name, "op_") {
 		return false
