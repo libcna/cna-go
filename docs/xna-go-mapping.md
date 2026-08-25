@@ -477,6 +477,17 @@ decide native ownership or lifetime for `GraphicsResource`, `GraphicsDevice`,
 `Texture2D`, `SpriteBatch`, `Effect`, or any audio type; that stays a per-type
 question this relationship does not answer.
 
+The same accounting covers XNA-namespaced interfaces that are **not** public
+contract types. `Graphics.IGraphicsResource` and
+`Graphics.IDynamicGraphicsResource` are both `.class interface private` —
+assembly-visible device-loss and content-loss plumbing declared by seven and
+four public graphics types. They contribute no public surface for a stronger
+reason than a BCL interface does: they have no public member to project at all.
+They are declared `INTERNAL_NO_SURFACE` rather than skipped, so the dependency
+frontier does not count them as unmapped names, and an XNA interface that is
+neither a public contract type nor a declared internal one is
+`INTERFACE_MAPPING_MISMATCH`.
+
 ## CLR base types
 
 Go has no CLR inheritance and CNA-Go never fakes one with exported embedding,

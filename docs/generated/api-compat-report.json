@@ -8314,6 +8314,26 @@
   ],
   "bclInterfaceRelationships": [
     {
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IDynamicGraphicsResource",
+      "status": "INTERNAL_NO_SURFACE",
+      "clrMembers": 3,
+      "projectedMembers": 0,
+      "declaringTypes": 4,
+      "projectedTypes": 0,
+      "rationale": "assembly-visible content-loss plumbing declared by four public graphics types; the public ContentLost event those types expose is their own declared member, not this interface's",
+      "verdict": "PASS"
+    },
+    {
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IGraphicsResource",
+      "status": "INTERNAL_NO_SURFACE",
+      "clrMembers": 3,
+      "projectedMembers": 0,
+      "declaringTypes": 7,
+      "projectedTypes": 1,
+      "rationale": "assembly-visible device-loss plumbing declared by seven public graphics types; none of its three members appears in any public contract, and projecting one would expose CNA-internal recreation machinery",
+      "verdict": "PASS"
+    },
+    {
       "clrInterface": "System.Collections.Generic.ICollection`1",
       "status": "MAPPED_NO_SURFACE",
       "clrMembers": 7,
@@ -8396,7 +8416,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "61aeba47c571762ca5c2d0b754b84c2b16feab762193061f4ed5192d8a50d788",
+    "mappingSha256": "bb2949ea4ffd1ac84f124bfd57a25cb873d82ad9c89628b13a86bb1842124391",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

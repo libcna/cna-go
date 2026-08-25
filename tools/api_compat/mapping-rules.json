@@ -143,7 +143,15 @@
       "System.Collections.Generic.IList`1": "its indexer and index methods are already public members of the XNA collection"
     },
     "disposeMembersRemainPerType": "a Dispose() or Dispose(bool) the XNA type declares itself stays an ordinary XNA member under the existing overload and per-operation fallibility rules; none is ever synthesized from CLR ancestry",
-    "ownershipIsNotSettled": "mapping the interface makes a dependency syntactically complete; it does not decide native ownership or lifetime for any concrete type"
+    "ownershipIsNotSettled": "mapping the interface makes a dependency syntactically complete; it does not decide native ownership or lifetime for any concrete type",
+    "internalXNAInterfaces": {
+      "rule": "an XNA-namespaced interface that is not a public contract type is assembly-visible, so it contributes no public surface for a stronger reason than a BCL interface: it has no public member to project",
+      "exhaustive": "declared like the BCL set; an XNA interface that is neither a public contract type nor declared internal is INTERFACE_MAPPING_MISMATCH",
+      "declared": {
+        "Microsoft.Xna.Framework.Graphics.IGraphicsResource": "`.class interface private`; device-loss plumbing declared by seven public graphics types",
+        "Microsoft.Xna.Framework.Graphics.IDynamicGraphicsResource": "`.class interface private`; content-loss plumbing declared by four public graphics types, whose public ContentLost event is their own declared member"
+      }
+    }
   },
   "pureManagedClasses": {
     "classification": "explicit-type-identity-policy-proved-by-authoritative-XNA-IL-not-CLR-kind-fallback",

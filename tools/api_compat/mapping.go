@@ -302,6 +302,35 @@ var bclInterfaceRelationships = map[string]bclInterfaceRelationship{
 	},
 }
 
+// internalXNAInterfaces are XNA-namespaced interfaces that public XNA types
+// declare but that are not public surface themselves.
+//
+// Both are declared `.class interface private` in
+// Microsoft.Xna.Framework.Graphics.dll, so they are assembly-visible only and
+// correctly absent from the 257-type public contract. An internal interface
+// cannot contribute public surface by definition, so the no-surface rule
+// applies to them for a stronger reason than it applies to a BCL interface:
+// there is no public member to project in the first place.
+//
+// They are declared rather than skipped so the dependency frontier does not
+// count them as unmapped names and so a newly internal-implemented interface
+// cannot appear unnoticed. Their members are recorded to name what the
+// no-surface claim is about.
+var internalXNAInterfaces = map[string]bclInterfaceRelationship{
+	"Microsoft.Xna.Framework.Graphics.IGraphicsResource": {
+		Status:  "INTERNAL_NO_SURFACE",
+		Members: []string{"ReleaseNativeObject", "SaveDataForRecreation", "RecreateAndPopulateObject"},
+		Rationale: "assembly-visible device-loss plumbing declared by seven public graphics types; " +
+			"none of its three members appears in any public contract, and projecting one would expose CNA-internal recreation machinery",
+	},
+	"Microsoft.Xna.Framework.Graphics.IDynamicGraphicsResource": {
+		Status:  "INTERNAL_NO_SURFACE",
+		Members: []string{"ContentLost", "IsContentLost", "SetContentLost"},
+		Rationale: "assembly-visible content-loss plumbing declared by four public graphics types; " +
+			"the public ContentLost event those types expose is their own declared member, not this interface's",
+	},
+}
+
 // inventedDisposalNames are Go identities a binding might synthesize from
 // System.IDisposable and that the no-surface rule forbids. None of them is an
 // XNA identity anywhere in the profile.

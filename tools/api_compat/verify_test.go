@@ -4709,6 +4709,58 @@ func TestBCLInterfaceRelationshipsAreExhaustive(t *testing.T) {
 	if seen["System.IDisposable"] != 29 {
 		t.Fatalf("System.IDisposable declaring types = %d, want 29", seen["System.IDisposable"])
 	}
+
+	// The same exhaustiveness applies to XNA-namespaced interfaces that are not
+	// public contract types: they are assembly-visible, so they must be
+	// declared internal rather than silently skipped.
+	surface, err := buildExpected(reference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	internal := make(map[string]int)
+	for _, declared := range reference.Types {
+		for _, raw := range declared.DirectInterfaces {
+			identity := baseIdentityWithoutArguments(raw)
+			if !strings.HasPrefix(identity, "Microsoft.Xna.Framework") {
+				continue
+			}
+			if surface.typeForXNA(identity) != nil {
+				continue
+			}
+			internal[identity]++
+			if _, ok := internalXNAInterfaces[identity]; !ok {
+				t.Fatalf("%s declares undeclared internal XNA interface %q", declared.Name, identity)
+			}
+		}
+	}
+	for identity, relationship := range internalXNAInterfaces {
+		if internal[identity] == 0 {
+			t.Fatalf("declared internal XNA interface %q has no declaring type", identity)
+		}
+		if relationship.Status != "INTERNAL_NO_SURFACE" {
+			t.Fatalf("%s status = %q", identity, relationship.Status)
+		}
+		// An internal interface must not also be a public contract type.
+		if surface.typeForXNA(identity) != nil {
+			t.Fatalf("%s is declared internal but is a public contract type", identity)
+		}
+		// None of its members may be projected anywhere.
+		for _, member := range relationship.Members {
+			for key := range surface.Members {
+				if key.Name == member && strings.HasPrefix(key.Package, modulePath+"/Microsoft/Xna/Framework/Graphics") &&
+					key.Receiver != "" && surface.Members[key].SourceKind == "method" {
+					t.Fatalf("internal interface member %q is projected as %s", member, key.String())
+				}
+			}
+		}
+	}
+	if len(internalXNAInterfaces) != 2 {
+		t.Fatalf("declared internal XNA interfaces = %d, want 2", len(internalXNAInterfaces))
+	}
+	if internal["Microsoft.Xna.Framework.Graphics.IGraphicsResource"] != 7 ||
+		internal["Microsoft.Xna.Framework.Graphics.IDynamicGraphicsResource"] != 4 {
+		t.Fatalf("internal interface declaring types = %v", internal)
+	}
 }
 
 // TestIDisposableAddsNoProjectedSurface is the arithmetic behind the rule: the
@@ -4820,6 +4872,9 @@ var bclInterfaceDefects = []struct {
 	{"undeclared-bcl-interface", "INTERFACE_MAPPING_MISMATCH", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
 		owner.Interfaces = append(owner.Interfaces, "System.Something.Undecided")
 	}},
+	{"undeclared-internal-xna-interface", "INTERFACE_MAPPING_MISMATCH", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
+		owner.Interfaces = append(owner.Interfaces, "Microsoft.Xna.Framework.Graphics.IUndecidedInternal")
+	}},
 	{"declared-dispose-dropped", "MISSING_MEMBER", func(t *testing.T, e *expectedSurface, a *actualSurface, owner *expectedType) {
 		delete(a.Members, disposeMemberKey(t, owner))
 	}},
@@ -4895,8 +4950,9 @@ func TestBCLInterfaceMeasurementIsReported(t *testing.T) {
 		Packages:    make(map[string]*types.Package),
 	}
 	measurements := measureBCLInterfaceRelationships(expected, actual)
-	if len(measurements) != len(bclInterfaceRelationships) {
-		t.Fatalf("measured %d interfaces, want %d", len(measurements), len(bclInterfaceRelationships))
+	want := len(bclInterfaceRelationships) + len(internalXNAInterfaces)
+	if len(measurements) != want {
+		t.Fatalf("measured %d interfaces, want %d", len(measurements), want)
 	}
 	for _, row := range measurements {
 		if row.Verdict != "PASS" || row.ProjectedMembers != 0 {

@@ -2692,7 +2692,19 @@ func verifyBCLInterfaceRelationships(result *report, expected *expectedSurface, 
 	}
 	for _, raw := range et.Interfaces {
 		identity := baseIdentityWithoutArguments(raw)
+		if expected.typeForXNA(identity) != nil {
+			// A public XNA interface is measured by the ordinary interface
+			// machinery, not here.
+			continue
+		}
 		if strings.HasPrefix(identity, "Microsoft.Xna.Framework") {
+			if _, declared := internalXNAInterfaces[identity]; !declared {
+				addDiagnostic(result, diagnostic{
+					Category: "INTERFACE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+					Message: fmt.Sprintf("XNA interface %q is neither a public contract type nor a declared internal interface", identity),
+				})
+				typeDiagnostics[et.XNA]++
+			}
 			continue
 		}
 		if _, declared := bclInterfaceRelationships[identity]; !declared {
@@ -2744,12 +2756,14 @@ func verifyBCLInterfaceRelationships(result *report, expected *expectedSurface, 
 // interfaces across the whole profile, so the report carries the claim and its
 // arithmetic rather than only the failures.
 func measureBCLInterfaceRelationships(expected *expectedSurface, actual *actualSurface) []bclInterfaceProjection {
-	rows := make(map[string]*bclInterfaceProjection, len(bclInterfaceRelationships))
-	for identity, relationship := range bclInterfaceRelationships {
-		rows[identity] = &bclInterfaceProjection{
-			CLRInterface: identity, Status: relationship.Status,
-			CLRMembers: len(relationship.Members), ProjectedMembers: 0,
-			Rationale: relationship.Rationale, Verdict: "PASS",
+	rows := make(map[string]*bclInterfaceProjection, len(bclInterfaceRelationships)+len(internalXNAInterfaces))
+	for _, table := range []map[string]bclInterfaceRelationship{bclInterfaceRelationships, internalXNAInterfaces} {
+		for identity, relationship := range table {
+			rows[identity] = &bclInterfaceProjection{
+				CLRInterface: identity, Status: relationship.Status,
+				CLRMembers: len(relationship.Members), ProjectedMembers: 0,
+				Rationale: relationship.Rationale, Verdict: "PASS",
+			}
 		}
 	}
 	for _, et := range sortedExpectedTypes(expected) {

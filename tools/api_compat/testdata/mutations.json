@@ -444,5 +444,6 @@
   {"id":"f24-bcl-interface-soundeffect-undeclared-bcl-interface","mutation":"f24bcli_undeclared-bcl-interface__Microsoft.Xna.Framework.Audio.SoundEffect","category":"INTERFACE_MAPPING_MISMATCH"},
   {"id":"f24-bcl-interface-soundeffect-declared-dispose-dropped","mutation":"f24bcli_declared-dispose-dropped__Microsoft.Xna.Framework.Audio.SoundEffect","category":"MISSING_MEMBER"},
   {"id":"f24-bcl-interface-soundeffect-declared-dispose-fallibility-changed","mutation":"f24bcli_declared-dispose-fallibility-changed__Microsoft.Xna.Framework.Audio.SoundEffect","category":"ERROR_MAPPING_MISMATCH"},
-  {"id":"f24-bcl-interface-curve-synthetic-dispose","mutation":"f24bcli_synthetic_dispose__Microsoft.Xna.Framework.Curve","category":"INTERFACE_MAPPING_MISMATCH"}
+  {"id":"f24-bcl-interface-curve-synthetic-dispose","mutation":"f24bcli_synthetic_dispose__Microsoft.Xna.Framework.Curve","category":"INTERFACE_MAPPING_MISMATCH"},
+  {"id":"f25-bcl-interface-soundeffect-undeclared-internal-xna-interface","mutation":"f24bcli_undeclared-internal-xna-interface__Microsoft.Xna.Framework.Audio.SoundEffect","category":"INTERFACE_MAPPING_MISMATCH"}
 ]
