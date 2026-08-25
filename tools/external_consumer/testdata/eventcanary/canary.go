@@ -33,6 +33,8 @@ type Rotator struct {
 	Updates int
 	Draws   int
 
+	initialized bool
+
 	enabledChanged     framework.EventSource[*framework.EventArgs]
 	updateOrderChanged framework.EventSource[*framework.EventArgs]
 	visibleChanged     framework.EventSource[*framework.EventArgs]
@@ -44,6 +46,23 @@ func NewRotator(name string) *Rotator {
 }
 
 func (r *Rotator) Name() string { return r.name }
+
+// Initialized records whether the collection's owner ever initialized this
+// component. Nothing in CNA-Go calls it: there is no component loop.
+func (r *Rotator) Initialized() bool { return r.initialized }
+
+// Initialize satisfies IGameComponent, which is what a GameComponentCollection
+// stores. XNA's own GameComponent satisfies IGameComponent, IUpdateable and
+// IDisposable on one class, and an external conformer does the same here.
+//
+// IGameComponent stays fallible where IUpdateable and IDrawable do not,
+// because the reference implementor's Initialize can throw: DrawableGameComponent
+// resolves IGraphicsDeviceService out of Game.Services and throws when it is
+// absent. This conformer reaches no service and cannot fail.
+func (r *Rotator) Initialize() error {
+	r.initialized = true
+	return nil
+}
 
 func (r *Rotator) Enabled() bool      { return r.enabled }
 func (r *Rotator) UpdateOrder() int32 { return r.updateOrder }
@@ -118,3 +137,52 @@ var (
 	_ framework.IUpdateable = (*Rotator)(nil)
 	_ framework.IDrawable   = (*Rotator)(nil)
 )
+
+// CollectionProbe is an external observer of a GameComponentCollection.
+//
+// It exists to prove that a caller holding nothing but the published contract
+// can subscribe to both events and reconstruct the exact order in which the
+// collection mutates and announces. It reaches no CNA-Go internal: the
+// collection's backing store, its private Collection<T> adapter, and its
+// override hooks are all unreachable from here, which is the point.
+type CollectionProbe struct {
+	Events     []string
+	Senders    []any
+	Args       []*framework.GameComponentCollectionEventArgs
+	Components []framework.IGameComponent
+	// Counts is what each handler observed Count to be at the moment it ran,
+	// which is how an outside caller can tell "mutate then announce" from
+	// "announce then mutate" without seeing any implementation.
+	Counts []int32
+}
+
+// Handler returns a handler that records one raise under the given label.
+func (p *CollectionProbe) Handler(label string) framework.EventHandler[*framework.GameComponentCollectionEventArgs] {
+	return func(sender any, args *framework.GameComponentCollectionEventArgs) error {
+		p.Events = append(p.Events, label)
+		p.Senders = append(p.Senders, sender)
+		p.Args = append(p.Args, args)
+		p.Components = append(p.Components, args.GameComponent())
+		if collection, ok := sender.(*framework.GameComponentCollection); ok {
+			p.Counts = append(p.Counts, collection.Count())
+		} else {
+			p.Counts = append(p.Counts, -1)
+		}
+		return nil
+	}
+}
+
+// Failing returns a handler that records the raise and then fails, so a caller
+// can observe what a failed announcement leaves behind.
+func (p *CollectionProbe) Failing(label string, err error) framework.EventHandler[*framework.GameComponentCollectionEventArgs] {
+	inner := p.Handler(label)
+	return func(sender any, args *framework.GameComponentCollectionEventArgs) error {
+		_ = inner(sender, args)
+		return err
+	}
+}
+
+// Reset clears everything the probe has recorded.
+func (p *CollectionProbe) Reset() {
+	p.Events, p.Senders, p.Args, p.Components, p.Counts = nil, nil, nil, nil, nil
+}
