@@ -20,6 +20,12 @@ type engineComponent struct {
 	initializeCount int
 	initializeError error
 
+	// onInitialize and onUpdate let a test drive the engine from INSIDE a
+	// component's own lifecycle, which is where the mutation and ordering
+	// semantics actually differ.
+	onInitialize func()
+	onUpdate     func()
+
 	log *[]string
 
 	enabledChanged     EventSource[*EventArgs]
@@ -35,7 +41,13 @@ func newEngineComponent(name string, log *[]string) *engineComponent {
 func (c *engineComponent) Initialize() error {
 	c.initializeCount++
 	c.record("init:" + c.name)
-	return c.initializeError
+	if c.initializeError != nil {
+		return c.initializeError
+	}
+	if c.onInitialize != nil {
+		c.onInitialize()
+	}
+	return nil
 }
 
 func (c *engineComponent) record(entry string) {
@@ -49,8 +61,13 @@ func (c *engineComponent) UpdateOrder() int32 { return c.updateOrder }
 func (c *engineComponent) Visible() bool      { return c.visible }
 func (c *engineComponent) DrawOrder() int32   { return c.drawOrder }
 
-func (c *engineComponent) Update(GameTime) { c.record("update:" + c.name) }
-func (c *engineComponent) Draw(GameTime)   { c.record("draw:" + c.name) }
+func (c *engineComponent) Update(GameTime) {
+	c.record("update:" + c.name)
+	if c.onUpdate != nil {
+		c.onUpdate()
+	}
+}
+func (c *engineComponent) Draw(GameTime) { c.record("draw:" + c.name) }
 
 func (c *engineComponent) AddEnabledChangedHandler(h EventHandler[*EventArgs]) (EventSubscription, error) {
 	return c.enabledChanged.Add(h)

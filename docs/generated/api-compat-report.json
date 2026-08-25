@@ -20,6 +20,8 @@
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
+    "GAME_BASE_CALL_ADAPTERS": 5,
+    "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GENERIC_MAPPING_MISMATCH": 0,
     "INTERFACE_MAPPING_MISMATCH": 0,
     "INTERFACE_WITNESS_PROJECTIONS": 25,
@@ -8952,9 +8954,168 @@
       "verdict": "PASS"
     }
   ],
+  "gameBaseCallAdapters": [
+    {
+      "clrMember": "Microsoft.Xna.Framework.Game::Draw",
+      "clrAccess": "protected",
+      "callbackMember": "Draw",
+      "goFunction": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GameBaseDraw",
+      "parameters": [
+        "*Game",
+        "GameTime"
+      ],
+      "results": [
+        "error"
+      ],
+      "fallibility": [
+        {
+          "kind": "GUARD",
+          "reason": "Go can produce a Game whose constructor never ran"
+        }
+      ],
+      "referenceBody": [
+        "for (i = 0; i \u003c drawableComponents.Count; i++) currentlyDrawingComponents.Add(drawableComponents[i])",
+        "for (j = 0; j \u003c currentlyDrawingComponents.Count; j++) if (currentlyDrawingComponents[j].Visible) currentlyDrawingComponents[j].Draw(gameTime)",
+        "currentlyDrawingComponents.Clear()"
+      ],
+      "deferredSteps": null,
+      "verdict": "PASS"
+    },
+    {
+      "clrMember": "Microsoft.Xna.Framework.Game::Initialize",
+      "clrAccess": "protected",
+      "callbackMember": "Initialize",
+      "goFunction": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GameBaseInitialize",
+      "parameters": [
+        "*Game"
+      ],
+      "results": [
+        "error"
+      ],
+      "fallibility": [
+        {
+          "kind": "GUARD",
+          "reason": "Go can produce a Game whose constructor never ran; Game.Run and Game.Exit already report exactly this condition"
+        },
+        {
+          "kind": "REFERENCE",
+          "reason": "the drain calls IGameComponent::Initialize, which the settled contract projects as fallible because DrawableGameComponent.Initialize throws when IGraphicsDeviceService is absent"
+        }
+      ],
+      "referenceBody": [
+        "HookDeviceEvents()",
+        "while (notYetInitialized.Count \u003e 0) { notYetInitialized[0].Initialize(); notYetInitialized.RemoveAt(0); }",
+        "if (graphicsDeviceService != null \u0026\u0026 graphicsDeviceService.GraphicsDevice != null) LoadContent();"
+      ],
+      "deferredSteps": [
+        {
+          "step": "HookDeviceEvents()",
+          "class": "ARCHITECTURE",
+          "reason": "it resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Services and subscribes four device handlers to it. The contract lives in the GRAPHICS package, which imports the framework package, so the settled cross-package cycle rule already projects Game's device-typed members into the descendant package and the framework package cannot name the type. Independently, nothing in CNA-Go can publish that service: the reference's registrar is GraphicsDeviceManager, whose CNA-Go projection is a partial native-backed facade satisfying neither IGraphicsDeviceService nor IGraphicsDeviceManager, so GetService would find nothing to store",
+          "observable": false
+        },
+        {
+          "step": "if (graphicsDeviceService != null \u0026\u0026 ...) LoadContent()",
+          "class": "ARCHITECTURE",
+          "reason": "its condition is the field HookDeviceEvents assigns, so with no device service the reference does not call LoadContent from Initialize either. CNA-Go's LoadContent arrives from the native CNA load_content callback, whose documented order is initialize, then the runtime's own component and device setup, then load_content",
+          "observable": false
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrMember": "Microsoft.Xna.Framework.Game::LoadContent",
+      "clrAccess": "protected",
+      "callbackMember": "LoadContent",
+      "goFunction": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GameBaseLoadContent",
+      "parameters": [
+        "*Game"
+      ],
+      "results": [
+        "error"
+      ],
+      "fallibility": [
+        {
+          "kind": "GUARD",
+          "reason": "Go can produce a Game whose constructor never ran"
+        }
+      ],
+      "referenceBody": [
+        "ret  // code size 1"
+      ],
+      "deferredSteps": null,
+      "verdict": "PASS"
+    },
+    {
+      "clrMember": "Microsoft.Xna.Framework.Game::UnloadContent",
+      "clrAccess": "protected",
+      "callbackMember": "UnloadContent",
+      "goFunction": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GameBaseUnloadContent",
+      "parameters": [
+        "*Game"
+      ],
+      "results": [
+        "error"
+      ],
+      "fallibility": [
+        {
+          "kind": "GUARD",
+          "reason": "Go can produce a Game whose constructor never ran"
+        }
+      ],
+      "referenceBody": [
+        "ret  // code size 1"
+      ],
+      "deferredSteps": null,
+      "verdict": "PASS"
+    },
+    {
+      "clrMember": "Microsoft.Xna.Framework.Game::Update",
+      "clrAccess": "protected",
+      "callbackMember": "Update",
+      "goFunction": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GameBaseUpdate",
+      "parameters": [
+        "*Game",
+        "GameTime"
+      ],
+      "results": [
+        "error"
+      ],
+      "fallibility": [
+        {
+          "kind": "GUARD",
+          "reason": "Go can produce a Game whose constructor never ran"
+        }
+      ],
+      "referenceBody": [
+        "Logger.BeginLogEvent(Update, \"\")",
+        "for (i = 0; i \u003c updateableComponents.Count; i++) currentlyUpdatingComponents.Add(updateableComponents[i])",
+        "for (j = 0; j \u003c currentlyUpdatingComponents.Count; j++) if (currentlyUpdatingComponents[j].Enabled) currentlyUpdatingComponents[j].Update(gameTime)",
+        "currentlyUpdatingComponents.Clear()",
+        "FrameworkDispatcher.Update()",
+        "doneFirstUpdate = true",
+        "Logger.EndLogEvent(Update, \"\")"
+      ],
+      "deferredSteps": [
+        {
+          "step": "FrameworkDispatcher.Update()",
+          "class": "SUBSYSTEM",
+          "reason": "it pumps the media and audio subsystems; CNA-Go has no media backend and no audio backend, so there is nothing to pump and nothing is invented in its place",
+          "observable": false
+        },
+        {
+          "step": "Logger.BeginLogEvent / Logger.EndLogEvent",
+          "class": "UNOBSERVABLE",
+          "reason": "XNA's private profiling channel; it is not public surface and produces no effect any projected member can observe",
+          "observable": false
+        }
+      ],
+      "verdict": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "63cd108733d9e5137603581c11a9a1bb1fa653d4d60edf0d3ab62af2a50eaf6f",
+    "mappingSha256": "a56fd484a016786716f86ca1379144a56bbc4dd5d60c751639948082a3b57e0a",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

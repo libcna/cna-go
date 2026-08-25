@@ -112,6 +112,13 @@ func init() {
 	for name := range bclSignatureAdapterConstructors {
 		adapterFunctions[name] = true
 	}
+	// The Game base-call helpers are admitted FROM the measured registry
+	// rather than by hand, so a helper can only be admitted by being declared
+	// -- and being declared is what subjects it to measureGameBaseCallAdapters.
+	// There is no allowlist here and no way to add one.
+	for _, adapter := range gameBaseCallAdapters {
+		adapterFunctions[adapter.GoFunction] = true
+	}
 }
 
 func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries int, mode string, contractHash, mappingHash string) report {
@@ -130,6 +137,11 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	for _, category := range diagnosticCategories {
 		result.Summary[category] = 0
 	}
+	// Both base-call counters are seeded so a run that measures nothing still
+	// reports 0 rather than omitting the key, which is what keeps a silently
+	// unmeasured family from reading like a clean one.
+	result.Summary["GAME_BASE_CALL_ADAPTERS"] = 0
+	result.Summary["GAME_BASE_CALL_DEFERRED_STEPS"] = 0
 	typeDiagnostics := make(map[string]int)
 	missingMembers := make(map[string][]string)
 	result.Summary["REFERENCE_TYPES"] = expected.ReferenceTypes
@@ -151,6 +163,8 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	for _, adapter := range result.BCLSignatureAdapters {
 		result.Summary["BCL_SIGNATURE_ADAPTER_CARRIERS"] += adapter.SignaturePositions
 	}
+	result.GameBaseCallAdapters = measureGameBaseCallAdapters(&result, expected, actual)
+	result.Summary["GAME_BASE_CALL_ADAPTERS"] = len(result.GameBaseCallAdapters)
 	result.Summary["BCL_BASE_ADAPTERS"] = len(result.BCLBaseAdapters)
 	for _, adapter := range result.BCLBaseAdapters {
 		result.Summary["BCL_BASE_ADAPTER_CONSUMERS"] += len(adapter.Consumers)
@@ -3271,4 +3285,199 @@ func sortedMemberKeys(expected *expectedSurface) []symbolKey {
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
 	return keys
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 31 — measuring the Game base-call language adapters.
+// ---------------------------------------------------------------------------
+
+// gameBaseCallDeferralClasses are the only classes a deferred reference step
+// may carry. An unclassified deferral is a verifier failure, exactly as an
+// unrecorded blocker on a deferred BCL base is.
+var gameBaseCallDeferralClasses = map[string]bool{
+	// The step needs a .NET or CNA subsystem CNA-Go does not have.
+	"SUBSYSTEM": true,
+	// A cross-cutting decision blocks the step; no single member carries it.
+	"ARCHITECTURE": true,
+	// The step has no effect any projected surface can observe.
+	"UNOBSERVABLE": true,
+}
+
+// measureGameBaseCallAdapters proves that CNA-Go's base-call family is exactly
+// the set of protected virtuals GameCallbacks projects -- no more and no fewer
+// -- and that each adapter's Go signature, fallibility and deferrals are the
+// declared ones.
+//
+// The four claims it exists to defend:
+//
+//  1. Every adapter corresponds to a REAL protected XNA virtual. The CLR
+//     member is looked up in the expected surface built from the pinned
+//     contract, and its declared accessibility must be `protected`.
+//  2. No arbitrary extra base helper exists. Every exported package-level
+//     framework function whose name begins with GameBase must be a declared
+//     adapter, so a helper nobody measured cannot be added.
+//  3. No supported virtual is missing its helper. Every GameCallbacks member
+//     must have exactly one adapter, so an override cannot be left unable to
+//     reach its base.
+//  4. Nothing here is XNA identity. The measurement adds no expected member
+//     and no reference member; the adapters live in adapterFunctions, which
+//     is populated FROM this registry rather than by hand.
+func measureGameBaseCallAdapters(result *report, expected *expectedSurface, actual *actualSurface) []gameBaseCallMeasurement {
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	// Like the BCL adapter measurements, this is a claim about the real
+	// framework package. An isolated per-type fixture models one XNA type and
+	// no package at all, so demanding the family of it would say nothing.
+	//
+	// The family is equally a claim about Game: every adapter must correspond
+	// to a protected virtual GameCallbacks projects, and an expected surface
+	// that does not carry Game cannot answer that. Both conditions therefore
+	// gate the measurement, so a fixture is measured on what it actually
+	// models rather than failed for what it does not.
+	if actual.PackageDirs[frameworkPackage] == "" || expected.typeForXNA("Microsoft.Xna.Framework.Game") == nil {
+		return nil
+	}
+
+	// The callback members the mapper redirects, taken from the expected
+	// surface rather than from a second hand-written list, so the two cannot
+	// drift.
+	callbackMembers := make(map[string]*expectedMember)
+	for _, member := range expected.Members {
+		if member.PackagePath == frameworkPackage && member.Receiver == "GameCallbacks" {
+			callbackMembers[member.GoName] = member
+		}
+	}
+
+	names := make([]string, 0, len(gameBaseCallAdapters))
+	for name := range gameBaseCallAdapters {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	declaredFunctions := make(map[string]bool, len(gameBaseCallAdapters))
+	measurements := make([]gameBaseCallMeasurement, 0, len(gameBaseCallAdapters))
+	for _, name := range names {
+		adapter := gameBaseCallAdapters[name]
+		declaredFunctions[adapter.GoFunction] = true
+		measurement := gameBaseCallMeasurement{
+			CLRMember: adapter.CLRMember, CallbackMember: name,
+			GoFunction:    frameworkPackage + ":" + adapter.GoFunction,
+			Parameters:    append([]string(nil), adapter.Parameters...),
+			Results:       append([]string(nil), adapter.Results...),
+			ReferenceBody: append([]string(nil), adapter.ReferenceBody...),
+			Verdict:       "PASS",
+		}
+		fail := func(message string) {
+			addDiagnostic(result, diagnostic{
+				Category: "LANGUAGE_MAPPING_MISMATCH", XNA: adapter.CLRMember,
+				Go: measurement.GoFunction, Message: message,
+			})
+			measurement.Verdict = "FAIL"
+		}
+
+		// (1) the adapter names a real protected virtual GameCallbacks projects.
+		callback, projected := callbackMembers[name]
+		if !projected {
+			fail("declared base-call adapter does not correspond to a GameCallbacks member")
+		} else {
+			measurement.CLRAccess = callback.SourceAccess
+			if callback.SourceAccess != "protected" {
+				fail(fmt.Sprintf("base-call adapter names a %q member; only a protected virtual has a base a CLR override can call", callback.SourceAccess))
+			}
+			if wanted := callback.XNA; !strings.HasPrefix(wanted, adapter.CLRMember+"(") && wanted != adapter.CLRMember {
+				fail(fmt.Sprintf("base-call adapter declares CLR member %q but the projected callback member is %q", adapter.CLRMember, wanted))
+			}
+		}
+
+		// The Go function must exist with the exact declared signature.
+		key := symbolKey{Package: frameworkPackage, Name: adapter.GoFunction}
+		member, present := actual.Members[key]
+		switch {
+		case !present:
+			fail("declared base-call adapter is absent from the framework package")
+		default:
+			if member.Kind != "func" {
+				fail(fmt.Sprintf("base-call adapter is a Go %s; it must be a package-level func so Game's projected member surface gains no name Microsoft never declared", member.Kind))
+			}
+			if !equalStrings(adapter.Parameters, member.Parameters) {
+				fail(fmt.Sprintf("base-call adapter expects parameters %v, found %v", adapter.Parameters, member.Parameters))
+			}
+			if !equalStrings(adapter.Results, member.Results) {
+				fail(fmt.Sprintf("base-call adapter expects results %v, found %v", adapter.Results, member.Results))
+			}
+			if len(adapter.Parameters) == 0 || adapter.Parameters[0] != "*Game" {
+				fail("a base-call adapter's first parameter must be *Game, which is the `this` a CLR base call passes implicitly")
+			}
+		}
+
+		// Fallibility must be justified rather than assumed, in both
+		// directions: an error result with no recorded reason is a synthetic
+		// failure mode, and a recorded reason with no error result is a claim
+		// the signature does not make.
+		endsWithError := len(adapter.Results) > 0 && adapter.Results[len(adapter.Results)-1] == "error"
+		if endsWithError != (len(adapter.Fallibility) > 0) {
+			fail(fmt.Sprintf("base-call adapter results %v and %d recorded fallibility reasons disagree",
+				adapter.Results, len(adapter.Fallibility)))
+		}
+		for _, reason := range adapter.Fallibility {
+			measurement.Fallibility = append(measurement.Fallibility,
+				gameBaseCallFallibilityRow{Kind: reason.Kind, Reason: reason.Reason})
+			if reason.Kind != "GUARD" && reason.Kind != "REFERENCE" {
+				fail(fmt.Sprintf("base-call adapter fallibility kind %q is not GUARD or REFERENCE", reason.Kind))
+			}
+			if strings.TrimSpace(reason.Reason) == "" {
+				fail(fmt.Sprintf("base-call adapter fallibility %q records no reason", reason.Kind))
+			}
+		}
+
+		if len(adapter.ReferenceBody) == 0 {
+			fail("base-call adapter records no reference body, so there is nothing to check the projection against")
+		}
+
+		// Every unreproduced reference step must be recorded, classified, and
+		// unobservable. A deferral that IS observable from the managed surface
+		// is a stop condition rather than a deferral, so it is rejected here.
+		for _, deferral := range adapter.Deferred {
+			measurement.Deferred = append(measurement.Deferred, gameBaseCallDeferralRow{
+				Step: deferral.Step, Class: deferral.Class,
+				Reason: deferral.Reason, Observable: deferral.Observable,
+			})
+			result.Summary["GAME_BASE_CALL_DEFERRED_STEPS"]++
+			if !gameBaseCallDeferralClasses[deferral.Class] {
+				fail(fmt.Sprintf("deferred reference step %q carries unclassified class %q", deferral.Step, deferral.Class))
+			}
+			if strings.TrimSpace(deferral.Reason) == "" {
+				fail(fmt.Sprintf("deferred reference step %q records no reason", deferral.Step))
+			}
+			if deferral.Observable {
+				fail(fmt.Sprintf("deferred reference step %q is observable from the managed component surface, which makes it a stop condition rather than a deferral", deferral.Step))
+			}
+		}
+		measurements = append(measurements, measurement)
+	}
+
+	// (3) no supported virtual may be left without a helper.
+	for goName, member := range callbackMembers {
+		if _, declared := gameBaseCallAdapters[goName]; !declared {
+			addDiagnostic(result, diagnostic{
+				Category: "LANGUAGE_MAPPING_MISMATCH", XNA: member.XNA,
+				Go:      frameworkPackage + ":GameCallbacks." + goName,
+				Message: "GameCallbacks projects a protected virtual with no base-call adapter, so an override cannot reach its base",
+			})
+		}
+	}
+
+	// (2) and no arbitrary extra helper may exist.
+	for key := range actual.Members {
+		if key.Package != frameworkPackage || key.Receiver != "" || !strings.HasPrefix(key.Name, "GameBase") {
+			continue
+		}
+		if declaredFunctions[key.Name] {
+			continue
+		}
+		addDiagnostic(result, diagnostic{
+			Category: "LANGUAGE_MAPPING_MISMATCH", Go: key.String(),
+			Message: "exported base-call helper is not a declared Game base-call adapter",
+		})
+	}
+	return measurements
 }

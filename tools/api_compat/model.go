@@ -144,6 +144,12 @@ type expectedMember struct {
 	// BCLBase and Key it is the full attribution the inherited projection
 	// promises: exact BCL base, exact CLR member, exact projected Go member.
 	BCLMember string
+	// SourceAccess is the CLR accessibility the pinned contract declares for
+	// this member -- "public", "protected", and so on. It is carried so a
+	// claim about accessibility can be MEASURED against the contract rather
+	// than asserted in prose: the Game base-call adapters, for instance, may
+	// only exist for a member the contract declares protected.
+	SourceAccess string
 }
 
 type actualSurface struct {
@@ -242,7 +248,54 @@ type report struct {
 	BCLBaseAdapters              []bclBaseAdapterMeasurement      `json:"bclBaseAdapters"`
 	BCLSignatureAdapters         []bclSignatureAdapterMeasurement `json:"bclSignatureAdapters"`
 	BCLInterfaceRelationships    []bclInterfaceProjection         `json:"bclInterfaceRelationships"`
+	GameBaseCallAdapters         []gameBaseCallMeasurement        `json:"gameBaseCallAdapters"`
 	Metadata                     reportMetadata                   `json:"metadata"`
+}
+
+// gameBaseCallMeasurement records one Game base-call language adapter: the
+// protected virtual it runs the base body of, the exact Go function that does
+// it, and every reference step the projection does not reproduce.
+//
+// It is a LANGUAGE-SUPPORT measurement, deliberately kept out of the XNA
+// identity accounting. The adapters add nothing to REFERENCE_MEMBERS, nothing
+// to EXPECTED_GO_MEMBERS, and nothing to any type's projected member set: they
+// are the Go spelling of a CLR `base.X(...)` call site, which is syntax rather
+// than surface.
+type gameBaseCallMeasurement struct {
+	// CLRMember is the protected virtual whose base body the function runs.
+	CLRMember string `json:"clrMember"`
+	// CLRAccess and CLRVirtual are read from the pinned contract, so an
+	// adapter cannot be declared for a member that is not a protected virtual.
+	CLRAccess string `json:"clrAccess"`
+	// CallbackMember is the GameCallbacks member that projects the override.
+	// Every adapter has exactly one and every callback member has exactly one
+	// adapter.
+	CallbackMember string `json:"callbackMember"`
+	// GoFunction is the fully qualified package-level Go function.
+	GoFunction string   `json:"goFunction"`
+	Parameters []string `json:"parameters"`
+	Results    []string `json:"results"`
+	// Fallibility names every reason the function can report an error.
+	Fallibility []gameBaseCallFallibilityRow `json:"fallibility"`
+	// ReferenceBody is the reference base body, in order.
+	ReferenceBody []string `json:"referenceBody"`
+	// Deferred is every reference step not reproduced, each with a class and a
+	// reason. A deferral that is observable from the managed component surface
+	// is rejected rather than recorded.
+	Deferred []gameBaseCallDeferralRow `json:"deferredSteps"`
+	Verdict  string                    `json:"verdict"`
+}
+
+type gameBaseCallFallibilityRow struct {
+	Kind   string `json:"kind"`
+	Reason string `json:"reason"`
+}
+
+type gameBaseCallDeferralRow struct {
+	Step       string `json:"step"`
+	Class      string `json:"class"`
+	Reason     string `json:"reason"`
+	Observable bool   `json:"observable"`
 }
 
 // bclBaseProjection measures one non-XNA CLR base type across every XNA type

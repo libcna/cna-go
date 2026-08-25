@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 603,
-    "ASSERTIONS": 603,
+    "OBSERVATIONS": 612,
+    "ASSERTIONS": 612,
     "FAILURES": 0
   },
   "observations": [
@@ -4829,6 +4829,78 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,consumer",
       "actual": "true,consumer",
+      "passed": true
+    },
+    {
+      "id": "game-base-call.adding-before-the-run-initializes-nothing",
+      "group": "GAME_BASE_CALL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "3,",
+      "actual": "3,",
+      "passed": true
+    },
+    {
+      "id": "game-base-call.base-initialize-drains-in-add-order",
+      "group": "GAME_BASE_CALL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,init:mid,init:last,init:first",
+      "actual": "true,init:mid,init:last,init:first",
+      "passed": true
+    },
+    {
+      "id": "game-base-call.base-initialize-is-not-repeatable",
+      "group": "GAME_BASE_CALL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,",
+      "actual": "true,",
+      "passed": true
+    },
+    {
+      "id": "game-base-call.update-and-draw-orders-are-independent",
+      "group": "GAME_BASE_CALL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,update:first,update:mid,update:last,draw:last,draw:mid,draw:first",
+      "actual": "true,true,update:first,update:mid,update:last,draw:last,draw:mid,draw:first",
+      "passed": true
+    },
+    {
+      "id": "game-base-call.enabled-and-visible-gate-one-loop-each",
+      "group": "GAME_BASE_CALL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "update:first,update:last,draw:last,draw:mid",
+      "actual": "update:first,update:last,draw:last,draw:mid",
+      "passed": true
+    },
+    {
+      "id": "game-base-call.order-change-lands-after-an-equal-order-run",
+      "group": "GAME_BASE_CALL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "update:mid,update:last,update:first",
+      "actual": "update:mid,update:last,update:first",
+      "passed": true
+    },
+    {
+      "id": "game-base-call.mid-frame-mutation-applies-to-the-next-frame",
+      "group": "GAME_BASE_CALL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "update:mid,update:last,update:first|update:late,update:mid,update:first",
+      "actual": "update:mid,update:last,update:first|update:late,update:mid,update:first",
+      "passed": true
+    },
+    {
+      "id": "game-base-call.an-unconstructed-game-is-refused",
+      "group": "GAME_BASE_CALL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,true,true",
+      "actual": "true,true,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-base-call.load-and-unload-content-are-faithful-no-ops",
+      "group": "GAME_BASE_CALL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,,1",
+      "actual": "true,true,,1",
       "passed": true
     }
   ]

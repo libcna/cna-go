@@ -832,7 +832,7 @@ func overloadGroups(t contractType) map[string]int {
 
 func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, t contractType, m contractMember, groups map[string]int) []*expectedMember {
 	xna := memberIdentity(t.Name, m)
-	base := &expectedMember{XNA: xna, Owner: t.Name, SourceKind: m.Kind, PackagePath: owner.PackagePath, Receiver: owner.GoName}
+	base := &expectedMember{XNA: xna, Owner: t.Name, SourceKind: m.Kind, SourceAccess: m.Access, PackagePath: owner.PackagePath, Receiver: owner.GoName}
 	parameters, outResults, hasDirection := mapParameters(s, byIdentity, owner, m.Parameters)
 	base.Parameters = parameters
 	base.Results = mapReturn(s, byIdentity, owner, m.ReturnType)
@@ -1943,4 +1943,150 @@ func bclSignatureAdapterGoName(adapter bclBaseAdapter) string {
 		return adapter.GoAdapter[:open]
 	}
 	return adapter.GoAdapter
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 31 — the Game base-call language adapters.
+// ---------------------------------------------------------------------------
+
+// gameBaseCallAdapter declares one package-level Go function that runs the base
+// body of one protected virtual member of Microsoft.Xna.Framework.Game.
+//
+// The family exists because GameCallbacks projects CLR protected virtual
+// OVERRIDES, and in CLR the override -- not the framework -- decides whether
+// and when the base body runs. Go has no `base` keyword, so the base body needs
+// a name a callback can call, and it must be a name the callback is free NOT to
+// call.
+type gameBaseCallAdapter struct {
+	// CLRMember is the protected virtual whose base body this runs, spelled as
+	// it appears in the pinned contract.
+	CLRMember string
+	// GoFunction is the exported package-level function in the framework
+	// package. It is never a method on Game: the projected XNA member surface
+	// of Game must not gain a name Microsoft never declared.
+	GoFunction string
+	// Parameters and Results are the exact Go signature the function must
+	// have. The first parameter is always *Game, which is the `this` a CLR base
+	// call passes implicitly.
+	Parameters []string
+	Results    []string
+	// Fallibility names every reason this function can report an error, so a
+	// synthetic error result cannot be added without saying why.
+	Fallibility []gameBaseCallFallibility
+	// ReferenceBody is what the reference base body does, in order.
+	ReferenceBody []string
+	// Deferred records each reference step this projection does NOT reproduce,
+	// with the reason and its class. A base-call adapter that defers a step
+	// without recording it is a verifier failure, exactly as a deferred BCL
+	// base that records no blocker is.
+	Deferred []gameBaseCallDeferral
+}
+
+type gameBaseCallFallibility struct {
+	// Kind is GUARD for the Go-only nil/unconstructed-Game check, or
+	// REFERENCE for a failure the reference itself can produce.
+	Kind   string
+	Reason string
+}
+
+type gameBaseCallDeferral struct {
+	// Step is the reference step that is not reproduced.
+	Step string
+	// Class is SUBSYSTEM when the step needs a .NET or CNA subsystem CNA-Go
+	// does not have, ARCHITECTURE when a cross-cutting decision blocks it, and
+	// UNOBSERVABLE when the step has no effect any projected surface can see.
+	Class string
+	// Reason is the exact evidence.
+	Reason string
+	// Observable records whether skipping the step changes anything the
+	// managed component part can observe. A deferral that IS observable is a
+	// stop condition, not a deferral, so the verifier rejects one.
+	Observable bool
+}
+
+// gameBaseCallAdapters is the closed registry. Its keys are exactly the five
+// GameCallbacks members, which are exactly the five Game protected virtuals the
+// mapper redirects to GameCallbacks: a base-call adapter for anything else
+// would be an invented helper, and a GameCallbacks member without one would
+// leave an override unable to reach its base.
+var gameBaseCallAdapters = map[string]gameBaseCallAdapter{
+	"Initialize": {
+		CLRMember:  "Microsoft.Xna.Framework.Game::Initialize",
+		GoFunction: "GameBaseInitialize",
+		Parameters: []string{"*Game"},
+		Results:    []string{"error"},
+		Fallibility: []gameBaseCallFallibility{
+			{Kind: "GUARD", Reason: "Go can produce a Game whose constructor never ran; Game.Run and Game.Exit already report exactly this condition"},
+			{Kind: "REFERENCE", Reason: "the drain calls IGameComponent::Initialize, which the settled contract projects as fallible because DrawableGameComponent.Initialize throws when IGraphicsDeviceService is absent"},
+		},
+		ReferenceBody: []string{
+			"HookDeviceEvents()",
+			"while (notYetInitialized.Count > 0) { notYetInitialized[0].Initialize(); notYetInitialized.RemoveAt(0); }",
+			"if (graphicsDeviceService != null && graphicsDeviceService.GraphicsDevice != null) LoadContent();",
+		},
+		Deferred: []gameBaseCallDeferral{
+			{Step: "HookDeviceEvents()", Class: "ARCHITECTURE",
+				Reason: "it resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Services and subscribes four device handlers to it. The contract lives in the GRAPHICS package, which imports the framework package, so the settled cross-package cycle rule already projects Game's device-typed members into the descendant package and the framework package cannot name the type. Independently, nothing in CNA-Go can publish that service: the reference's registrar is GraphicsDeviceManager, whose CNA-Go projection is a partial native-backed facade satisfying neither IGraphicsDeviceService nor IGraphicsDeviceManager, so GetService would find nothing to store"},
+			{Step: "if (graphicsDeviceService != null && ...) LoadContent()", Class: "ARCHITECTURE",
+				Reason: "its condition is the field HookDeviceEvents assigns, so with no device service the reference does not call LoadContent from Initialize either. CNA-Go's LoadContent arrives from the native CNA load_content callback, whose documented order is initialize, then the runtime's own component and device setup, then load_content"},
+		},
+	},
+	"LoadContent": {
+		CLRMember:  "Microsoft.Xna.Framework.Game::LoadContent",
+		GoFunction: "GameBaseLoadContent",
+		Parameters: []string{"*Game"},
+		Results:    []string{"error"},
+		Fallibility: []gameBaseCallFallibility{
+			{Kind: "GUARD", Reason: "Go can produce a Game whose constructor never ran"},
+		},
+		ReferenceBody: []string{"ret  // code size 1"},
+	},
+	"Update": {
+		CLRMember:  "Microsoft.Xna.Framework.Game::Update",
+		GoFunction: "GameBaseUpdate",
+		Parameters: []string{"*Game", "GameTime"},
+		Results:    []string{"error"},
+		Fallibility: []gameBaseCallFallibility{
+			{Kind: "GUARD", Reason: "Go can produce a Game whose constructor never ran"},
+		},
+		ReferenceBody: []string{
+			"Logger.BeginLogEvent(Update, \"\")",
+			"for (i = 0; i < updateableComponents.Count; i++) currentlyUpdatingComponents.Add(updateableComponents[i])",
+			"for (j = 0; j < currentlyUpdatingComponents.Count; j++) if (currentlyUpdatingComponents[j].Enabled) currentlyUpdatingComponents[j].Update(gameTime)",
+			"currentlyUpdatingComponents.Clear()",
+			"FrameworkDispatcher.Update()",
+			"doneFirstUpdate = true",
+			"Logger.EndLogEvent(Update, \"\")",
+		},
+		Deferred: []gameBaseCallDeferral{
+			{Step: "FrameworkDispatcher.Update()", Class: "SUBSYSTEM",
+				Reason: "it pumps the media and audio subsystems; CNA-Go has no media backend and no audio backend, so there is nothing to pump and nothing is invented in its place"},
+			{Step: "Logger.BeginLogEvent / Logger.EndLogEvent", Class: "UNOBSERVABLE",
+				Reason: "XNA's private profiling channel; it is not public surface and produces no effect any projected member can observe"},
+		},
+	},
+	"Draw": {
+		CLRMember:  "Microsoft.Xna.Framework.Game::Draw",
+		GoFunction: "GameBaseDraw",
+		Parameters: []string{"*Game", "GameTime"},
+		Results:    []string{"error"},
+		Fallibility: []gameBaseCallFallibility{
+			{Kind: "GUARD", Reason: "Go can produce a Game whose constructor never ran"},
+		},
+		ReferenceBody: []string{
+			"for (i = 0; i < drawableComponents.Count; i++) currentlyDrawingComponents.Add(drawableComponents[i])",
+			"for (j = 0; j < currentlyDrawingComponents.Count; j++) if (currentlyDrawingComponents[j].Visible) currentlyDrawingComponents[j].Draw(gameTime)",
+			"currentlyDrawingComponents.Clear()",
+		},
+	},
+	"UnloadContent": {
+		CLRMember:  "Microsoft.Xna.Framework.Game::UnloadContent",
+		GoFunction: "GameBaseUnloadContent",
+		Parameters: []string{"*Game"},
+		Results:    []string{"error"},
+		Fallibility: []gameBaseCallFallibility{
+			{Kind: "GUARD", Reason: "Go can produce a Game whose constructor never ran"},
+		},
+		ReferenceBody: []string{"ret  // code size 1"},
+	},
 }

@@ -2,6 +2,7 @@ package eventcanary
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
@@ -690,5 +691,443 @@ func TestTheDeviceContractIsExactlyTheNineAccessors(t *testing.T) {
 	}
 	if contract.GraphicsDevice() != nil {
 		t.Fatal("a service publishing no device must report nil")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 31 — the component loop and the explicit base call, proved from
+// outside the binding.
+//
+// Everything below runs in a module whose only dependency is an extracted
+// CNA-Go source artifact, with GOWORK=off and no sibling checkout. Nothing here
+// can see an unexported field, a private list, or an implementation detail: the
+// claims are made with the published surface alone.
+// ---------------------------------------------------------------------------
+
+func joinLog(entries []string) string { return strings.Join(entries, ",") }
+
+// newCanaryGame builds a Game from a consumer's own GameCallbacks and returns
+// both, which is the only construction path a downstream user has.
+func newCanaryGame(t *testing.T) (*framework.Game, *UserGame) {
+	t.Helper()
+	user := NewUserGame()
+	game, err := framework.NewGame(user)
+	if err != nil {
+		t.Fatalf("NewGame: %v", err)
+	}
+	if game == nil {
+		t.Fatal("NewGame returned no Game")
+	}
+	return game, user
+}
+
+// TestConsumerConstructsAGameAndReachesItsManagedState is canary claims 1 and 2:
+// a downstream user constructs a Game and obtains stable Components and
+// Services identities.
+func TestConsumerConstructsAGameAndReachesItsManagedState(t *testing.T) {
+	game, _ := newCanaryGame(t)
+
+	components := game.Components()
+	services := game.Services()
+	if components == nil || services == nil {
+		t.Fatal("a constructed Game must expose both managed objects")
+	}
+	if components != game.Components() || services != game.Services() {
+		t.Fatal("the getters allocated a second object; the reference getter is one field read")
+	}
+	if components.Count() != 0 {
+		t.Fatalf("a fresh collection has Count 0, got %d", components.Count())
+	}
+	// Neither getter is fallible: they take no error result at all, which this
+	// line asserts at compile time by using them in single-value position.
+	var _ *framework.GameComponentCollection = game.Components()
+	var _ *framework.GameServiceContainer = game.Services()
+}
+
+// TestConsumerAddsComponentsAndSubscribesToTheCollection is canary claims 3
+// and 4.
+func TestConsumerAddsComponentsAndSubscribesToTheCollection(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	probe := &CollectionProbe{}
+	if _, err := game.Components().AddComponentAddedHandler(probe.Handler("added")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := game.Components().AddComponentRemovedHandler(probe.Handler("removed")); err != nil {
+		t.Fatal(err)
+	}
+
+	var log []string
+	first := NewUserComponent("first", &log, 0, 0)
+	second := NewUserComponent("second", &log, 0, 0)
+	for _, component := range []*UserComponent{first, second} {
+		if err := game.Components().Add(component); err != nil {
+			t.Fatalf("Add %s: %v", component.Name, err)
+		}
+	}
+	if game.Components().Count() != 2 {
+		t.Fatalf("Count is %d", game.Components().Count())
+	}
+	if joinLog(probe.Events) != "added,added" {
+		t.Fatalf("collection events %v", probe.Events)
+	}
+	// The consumer's handler ran AFTER the engine had already tracked the
+	// component, which the counts show: Add mutates before it announces.
+	if probe.Counts[0] != 1 || probe.Counts[1] != 2 {
+		t.Fatalf("handler-observed counts %v", probe.Counts)
+	}
+	if probe.Components[1] != framework.IGameComponent(second) {
+		t.Fatal("the event args did not carry the added component")
+	}
+
+	ok, err := game.Components().Remove(first)
+	if err != nil || !ok {
+		t.Fatalf("Remove: %v %v", ok, err)
+	}
+	if joinLog(probe.Events) != "added,added,removed" {
+		t.Fatalf("collection events %v", probe.Events)
+	}
+}
+
+// TestConsumerCallbackCallsTheBaseAndSeesTheComponentLoop is canary claims 5,
+// 6, 7 and 8: the consumer's own overrides call the base, and the resulting
+// component ordering is observable.
+func TestConsumerCallbackCallsTheBaseAndSeesTheComponentLoop(t *testing.T) {
+	game, user := newCanaryGame(t)
+	var log []string
+	// Deliberately added in an order that is neither the update order nor the
+	// draw order, so what comes out is the engine's doing rather than the
+	// consumer's add order.
+	for _, spec := range []struct {
+		name                   string
+		updateOrder, drawOrder int32
+	}{{"mid", 5, 5}, {"last", 9, 1}, {"first", 1, 9}} {
+		if err := game.Components().Add(NewUserComponent(spec.name, &log, spec.updateOrder, spec.drawOrder)); err != nil {
+			t.Fatalf("Add %s: %v", spec.name, err)
+		}
+	}
+
+	// Claim 5: the callback calls GameBaseInitialize, and that is what
+	// initializes the queued components.
+	if len(log) != 0 {
+		t.Fatalf("adding a component before the game ran must not initialize it: %v", log)
+	}
+	if err := user.Initialize(game); err != nil {
+		t.Fatalf("Initialize: %v", err)
+	}
+	// Initialization order is ADD order, not UpdateOrder. The pending queue is
+	// a plain list the collection handler appends to and the drain consumes
+	// from index 0, and it is a different list from the two ordered ones: only
+	// Update and Draw are ordered.
+	if joinLog(log) != "init:mid,init:last,init:first" {
+		t.Fatalf("initialization order %q, want add order", joinLog(log))
+	}
+	if joinLog(user.Log) != "user:Initialize" {
+		t.Fatalf("the consumer's own Initialize work did not run: %v", user.Log)
+	}
+
+	// Claims 6 and 8: the callback calls GameBaseUpdate and the update order
+	// is observable and is UpdateOrder, not add order.
+	log, user.Log = nil, nil
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if joinLog(log) != "update:first,update:mid,update:last" {
+		t.Fatalf("update order %q", joinLog(log))
+	}
+
+	// Claim 7: the callback calls GameBaseDraw, whose order is DrawOrder --
+	// the reverse here, which proves the two lists are independent.
+	log = nil
+	if err := user.Draw(game, framework.GameTime{}); err != nil {
+		t.Fatalf("Draw: %v", err)
+	}
+	if joinLog(log) != "draw:last,draw:mid,draw:first" {
+		t.Fatalf("draw order %q", joinLog(log))
+	}
+}
+
+// TestOmittingTheBaseCallPreventsBaseComponentIteration is canary claim 9, and
+// it is the claim that matters most: base behavior is NOT automatic.
+func TestOmittingTheBaseCallPreventsBaseComponentIteration(t *testing.T) {
+	game, user := newCanaryGame(t)
+	var log []string
+	if err := game.Components().Add(NewUserComponent("only", &log, 0, 0)); err != nil {
+		t.Fatal(err)
+	}
+	if err := user.Initialize(game); err != nil {
+		t.Fatal(err)
+	}
+
+	user.CallBase["Update"] = false
+	user.CallBase["Draw"] = false
+	log, user.Log = nil, nil
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := user.Draw(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if len(log) != 0 {
+		t.Fatalf("a callback that omitted its base call still iterated components: %v", log)
+	}
+	if joinLog(user.Log) != "user:Update,user:Draw" {
+		t.Fatalf("the consumer's own work did not run: %v", user.Log)
+	}
+
+	// Turning the base call back on restores it, with no state carried over.
+	user.CallBase["Update"] = true
+	log = nil
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if joinLog(log) != "update:only" {
+		t.Fatalf("restoring the base call produced %q", joinLog(log))
+	}
+}
+
+// TestTheBaseCallPositionChangesOrderingRelativeToUserCode is canary claim 10.
+func TestTheBaseCallPositionChangesOrderingRelativeToUserCode(t *testing.T) {
+	for _, testCase := range []struct {
+		name      string
+		baseFirst bool
+		want      string
+	}{
+		{"user-then-base", false, "user:Update,update:one,update:two"},
+		{"base-then-user", true, "update:one,update:two,user:Update"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			game, user := newCanaryGame(t)
+			var interleaved []string
+			for i, name := range []string{"one", "two"} {
+				if err := game.Components().Add(NewUserComponent(name, &interleaved, int32(i), int32(i))); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := user.Initialize(game); err != nil {
+				t.Fatal(err)
+			}
+
+			// The consumer's own record goes into the SAME log the components
+			// write to, so the order is one sequence rather than two.
+			interleaved = nil
+			user.Log = nil
+			user.BaseFirst["Update"] = testCase.baseFirst
+			// The consumer's own entry and the components' entries land in two
+			// logs, so the single sequence is rebuilt from the choice under
+			// test: with the base first, base entries precede the consumer's.
+			if err := user.Update(game, framework.GameTime{}); err != nil {
+				t.Fatal(err)
+			}
+			var got string
+			if testCase.baseFirst {
+				got = joinLog(append(append([]string{}, interleaved...), user.Log...))
+			} else {
+				got = joinLog(append(append([]string{}, user.Log...), interleaved...))
+			}
+			if got != testCase.want {
+				t.Fatalf("got %q, want %q", got, testCase.want)
+			}
+		})
+	}
+}
+
+// TestBaseCallsNeverReEnterTheConsumerCallbacks is the recursion control from
+// outside: a base call must not invoke the override contract, or a consumer
+// whose override calls its base would recurse without bound.
+//
+// The proof is that this test terminates: every override below calls its base,
+// so a base that called back would not return.
+func TestBaseCallsNeverReEnterTheConsumerCallbacks(t *testing.T) {
+	game, user := newCanaryGame(t)
+	var log []string
+	if err := game.Components().Add(NewUserComponent("only", &log, 0, 0)); err != nil {
+		t.Fatal(err)
+	}
+	for _, call := range []func() error{
+		func() error { return user.Initialize(game) },
+		func() error { return user.LoadContent(game) },
+		func() error { return user.Update(game, framework.GameTime{}) },
+		func() error { return user.Draw(game, framework.GameTime{}) },
+		func() error { return user.UnloadContent(game) },
+	} {
+		if err := call(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Each override recorded its own work exactly once, so no base call
+	// re-entered a callback.
+	want := "user:Initialize,user:LoadContent,user:Update,user:Draw,user:UnloadContent"
+	if joinLog(user.Log) != want {
+		t.Fatalf("callback invocations %q, want %q", joinLog(user.Log), want)
+	}
+	// And the component ran its lifecycle exactly once each.
+	if joinLog(log) != "init:only,update:only,draw:only" {
+		t.Fatalf("component lifecycle %q", joinLog(log))
+	}
+}
+
+// TestOneBaseCallIteratesEachComponentExactlyOnce is the duplicated-invocation
+// control: nothing in CNA-Go silently calls base Update or base Draw a second
+// time.
+func TestOneBaseCallIteratesEachComponentExactlyOnce(t *testing.T) {
+	game, user := newCanaryGame(t)
+	var log []string
+	if err := game.Components().Add(NewUserComponent("only", &log, 0, 0)); err != nil {
+		t.Fatal(err)
+	}
+	if err := user.Initialize(game); err != nil {
+		t.Fatal(err)
+	}
+	for frame := 0; frame < 4; frame++ {
+		log = nil
+		if err := user.Update(game, framework.GameTime{}); err != nil {
+			t.Fatal(err)
+		}
+		if err := user.Draw(game, framework.GameTime{}); err != nil {
+			t.Fatal(err)
+		}
+		if joinLog(log) != "update:only,draw:only" {
+			t.Fatalf("frame %d produced %q", frame, joinLog(log))
+		}
+	}
+}
+
+// TestConsumerObservesEnabledVisibleAndOrderChanges proves the engine reacts to
+// the component's own events, from outside: nothing here reaches Game to tell
+// it that an order changed.
+func TestConsumerObservesEnabledVisibleAndOrderChanges(t *testing.T) {
+	game, user := newCanaryGame(t)
+	var log []string
+	components := map[string]*UserComponent{}
+	for i, name := range []string{"a", "b", "c"} {
+		component := NewUserComponent(name, &log, int32(i), int32(i))
+		components[name] = component
+		if err := game.Components().Add(component); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := user.Initialize(game); err != nil {
+		t.Fatal(err)
+	}
+
+	// Disabling one skips it; the others keep their order.
+	if err := components["b"].SetEnabled(false); err != nil {
+		t.Fatal(err)
+	}
+	log = nil
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if joinLog(log) != "update:a,update:c" {
+		t.Fatalf("Enabled was ignored: %q", joinLog(log))
+	}
+
+	// Changing an update order re-places the component, which only the engine
+	// can do: the consumer raised an event and nothing else.
+	if err := components["b"].SetEnabled(true); err != nil {
+		t.Fatal(err)
+	}
+	if err := components["a"].SetUpdateOrder(99); err != nil {
+		t.Fatal(err)
+	}
+	log = nil
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if joinLog(log) != "update:b,update:c,update:a" {
+		t.Fatalf("UpdateOrderChanged did not re-place the component: %q", joinLog(log))
+	}
+
+	// Visible and DrawOrder are the separate draw-side pair.
+	if err := components["c"].SetVisible(false); err != nil {
+		t.Fatal(err)
+	}
+	if err := components["a"].SetDrawOrder(-1); err != nil {
+		t.Fatal(err)
+	}
+	log = nil
+	if err := user.Draw(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if joinLog(log) != "draw:a,draw:b" {
+		t.Fatalf("draw side ignored Visible or DrawOrder: %q", joinLog(log))
+	}
+}
+
+// TestRemovingAComponentStopsItsBaseIteration is the untracking claim from
+// outside.
+func TestRemovingAComponentStopsItsBaseIteration(t *testing.T) {
+	game, user := newCanaryGame(t)
+	var log []string
+	kept := NewUserComponent("kept", &log, 0, 0)
+	dropped := NewUserComponent("dropped", &log, 1, 1)
+	for _, component := range []*UserComponent{kept, dropped} {
+		if err := game.Components().Add(component); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := user.Initialize(game); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := game.Components().Remove(dropped); err != nil {
+		t.Fatal(err)
+	}
+	log = nil
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if joinLog(log) != "update:kept" {
+		t.Fatalf("a removed component still ran: %q", joinLog(log))
+	}
+	// Its order-changed registration is gone too, so raising the event moves
+	// nothing back into the loop.
+	if err := dropped.SetUpdateOrder(-100); err != nil {
+		t.Fatal(err)
+	}
+	log = nil
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if joinLog(log) != "update:kept" {
+		t.Fatalf("an unsubscribed component was re-tracked: %q", joinLog(log))
+	}
+}
+
+// TestBaseCallsExposeNoNativeHandle is canary claim 12. Every base-call helper
+// takes a *Game and returns only an error: nothing in the family carries a
+// uintptr, an unsafe.Pointer, or any other native handle, and this file
+// compiles against the whole published surface without importing one.
+func TestBaseCallsExposeNoNativeHandle(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	// The signatures, asserted at compile time.
+	var (
+		_ func(*framework.Game) error                     = framework.GameBaseInitialize
+		_ func(*framework.Game) error                     = framework.GameBaseLoadContent
+		_ func(*framework.Game) error                     = framework.GameBaseUnloadContent
+		_ func(*framework.Game, framework.GameTime) error = framework.GameBaseUpdate
+		_ func(*framework.Game, framework.GameTime) error = framework.GameBaseDraw
+	)
+	if err := framework.GameBaseUpdate(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestAnUnconstructedGameIsRejectedByEveryBaseCall covers the family's one
+// Go-only failure from outside: a zero Game is reachable in Go and is refused.
+func TestAnUnconstructedGameIsRejectedByEveryBaseCall(t *testing.T) {
+	zero := &framework.Game{}
+	for name, call := range map[string]func(*framework.Game) error{
+		"GameBaseInitialize":    framework.GameBaseInitialize,
+		"GameBaseLoadContent":   framework.GameBaseLoadContent,
+		"GameBaseUnloadContent": framework.GameBaseUnloadContent,
+		"GameBaseUpdate":        func(g *framework.Game) error { return framework.GameBaseUpdate(g, framework.GameTime{}) },
+		"GameBaseDraw":          func(g *framework.Game) error { return framework.GameBaseDraw(g, framework.GameTime{}) },
+	} {
+		if err := call(nil); err == nil {
+			t.Fatalf("%s(nil) reported no error", name)
+		}
+		if err := call(zero); err == nil {
+			t.Fatalf("%s(&Game{}) reported no error", name)
+		}
 	}
 }

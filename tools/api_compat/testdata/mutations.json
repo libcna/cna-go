@@ -2398,5 +2398,70 @@
   "id": "f30-classification-stored-getter-classified-for-one-member-only",
   "mutation": "f17cls_stored_getter_classified_for_one_member_only__Microsoft.Xna.Framework.Game",
   "category": "ERROR_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-adapter-absent-from-the-package",
+  "mutation": "f31base_adapter_absent_from_the_package",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-adapter-projected-as-a-method-on-game",
+  "mutation": "f31base_adapter_projected_as_a_method_on_game",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-adapter-signature-drops-the-game-parameter",
+  "mutation": "f31base_adapter_signature_drops_the_game_parameter",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-adapter-signature-gains-a-result",
+  "mutation": "f31base_adapter_signature_gains_a_result",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-arbitrary-extra-base-helper",
+  "mutation": "f31base_arbitrary_extra_base_helper",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-adapter-missing-for-a-supported-virtual",
+  "mutation": "f31base_adapter_missing_for_a_supported_virtual",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-adapter-declared-for-a-member-that-is-not-a-supported-virtual",
+  "mutation": "f31base_adapter_declared_for_a_member_that_is_not_a_supported_virtual",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-error-result-with-no-recorded-reason",
+  "mutation": "f31base_error_result_with_no_recorded_reason",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-recorded-reason-with-no-error-result",
+  "mutation": "f31base_recorded_reason_with_no_error_result",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-deferred-step-records-no-reason",
+  "mutation": "f31base_deferred_step_records_no_reason",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-deferred-step-unclassified",
+  "mutation": "f31base_deferred_step_unclassified",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-deferred-step-marked-observable",
+  "mutation": "f31base_deferred_step_marked_observable",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f31-base-call-adapter-records-no-reference-body",
+  "mutation": "f31base_adapter_records_no_reference_body",
+  "category": "LANGUAGE_MAPPING_MISMATCH"
  }
 ]

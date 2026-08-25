@@ -54,6 +54,13 @@ type Game struct {
 	currentlyDrawingComponents  []IDrawable
 	notYetInitialized           []IGameComponent
 
+	// doneFirstUpdate is Game::doneFirstUpdate, which base Update assigns.
+	// Its readers in the reference -- Paint, Tick and DrawFrame -- are not
+	// projected yet, so nothing observes it; it is kept because base Update
+	// genuinely assigns it and omitting the assignment would make the
+	// projected base body incomplete.
+	doneFirstUpdate bool
+
 	// inRun is Game::inRun. The reference sets it true in RunGame after
 	// Initialize() returns and back to false in RunGame's finally; CNA-Go sets
 	// it at the equivalent boundary of the native run sequence, because the

@@ -236,3 +236,209 @@ func (s *DeviceService) RemoveDeviceResettingHandler(sub framework.EventSubscrip
 func (s *DeviceService) RaiseDeviceCreated() error {
 	return s.created.Raise(s, framework.EventArgsEmpty())
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 31 — a realistic user Game from OUTSIDE the binding.
+// ---------------------------------------------------------------------------
+
+// UserGame is what a downstream consumer actually writes: their own type that
+// satisfies GameCallbacks, holding their own state, deciding for itself whether
+// and where to call the XNA base behavior.
+//
+// It exists to prove the override contract from outside the module. Nothing
+// here imports anything unexported, nothing here embeds Game, and nothing here
+// subclasses anything: the callback interface and the package-level base-call
+// functions are the whole mechanism.
+type UserGame struct {
+	// Log is the interleaved record of what the consumer's own code did and
+	// what base behavior did, in the order it happened.
+	Log []string
+
+	// CallBase decides, per lifecycle member, whether this override calls its
+	// base at all -- which is the CLR choice `base.Update(t)` represents.
+	CallBase map[string]bool
+	// BaseFirst puts the base call before the consumer's own work instead of
+	// after it, which in CLR is simply where the statement sits.
+	BaseFirst map[string]bool
+
+	// Failure, when set, is returned from Update instead of doing anything.
+	Failure error
+}
+
+func NewUserGame() *UserGame {
+	return &UserGame{
+		CallBase:  map[string]bool{"Initialize": true, "LoadContent": true, "Update": true, "Draw": true, "UnloadContent": true},
+		BaseFirst: map[string]bool{},
+	}
+}
+
+func (u *UserGame) record(entry string) { u.Log = append(u.Log, entry) }
+
+// Reset clears the log without changing the consumer's choices.
+func (u *UserGame) Reset() { u.Log = nil }
+
+// run is the shape of every override below: optional base call, the consumer's
+// own work, in whichever order the consumer chose.
+func (u *UserGame) run(member string, own func(), base func() error) error {
+	callBase := u.CallBase[member]
+	if callBase && u.BaseFirst[member] {
+		if err := base(); err != nil {
+			return err
+		}
+	}
+	own()
+	if callBase && !u.BaseFirst[member] {
+		return base()
+	}
+	return nil
+}
+
+func (u *UserGame) Initialize(game *framework.Game) error {
+	return u.run("Initialize",
+		func() { u.record("user:Initialize") },
+		func() error { return framework.GameBaseInitialize(game) },
+	)
+}
+
+func (u *UserGame) LoadContent(game *framework.Game) error {
+	return u.run("LoadContent",
+		func() { u.record("user:LoadContent") },
+		func() error { return framework.GameBaseLoadContent(game) },
+	)
+}
+
+func (u *UserGame) Update(game *framework.Game, gameTime framework.GameTime) error {
+	if u.Failure != nil {
+		return u.Failure
+	}
+	return u.run("Update",
+		func() { u.record("user:Update") },
+		func() error { return framework.GameBaseUpdate(game, gameTime) },
+	)
+}
+
+func (u *UserGame) Draw(game *framework.Game, gameTime framework.GameTime) error {
+	return u.run("Draw",
+		func() { u.record("user:Draw") },
+		func() error { return framework.GameBaseDraw(game, gameTime) },
+	)
+}
+
+func (u *UserGame) UnloadContent(game *framework.Game) error {
+	return u.run("UnloadContent",
+		func() { u.record("user:UnloadContent") },
+		func() error { return framework.GameBaseUnloadContent(game) },
+	)
+}
+
+// A downstream type satisfies the override contract, from outside the module.
+var _ framework.GameCallbacks = (*UserGame)(nil)
+
+// UserComponent is a consumer's own component. It satisfies the three contracts
+// a component needs and records everything the engine does to it.
+type UserComponent struct {
+	Name string
+	log  *[]string
+
+	enabled     bool
+	visible     bool
+	updateOrder int32
+	drawOrder   int32
+
+	Initializes int
+
+	enabledChanged     framework.EventSource[*framework.EventArgs]
+	updateOrderChanged framework.EventSource[*framework.EventArgs]
+	visibleChanged     framework.EventSource[*framework.EventArgs]
+	drawOrderChanged   framework.EventSource[*framework.EventArgs]
+}
+
+func NewUserComponent(name string, log *[]string, updateOrder, drawOrder int32) *UserComponent {
+	return &UserComponent{Name: name, log: log, enabled: true, visible: true,
+		updateOrder: updateOrder, drawOrder: drawOrder}
+}
+
+func (c *UserComponent) record(entry string) {
+	if c.log != nil {
+		*c.log = append(*c.log, entry)
+	}
+}
+
+func (c *UserComponent) Initialize() error {
+	c.Initializes++
+	c.record("init:" + c.Name)
+	return nil
+}
+
+func (c *UserComponent) Enabled() bool      { return c.enabled }
+func (c *UserComponent) Visible() bool      { return c.visible }
+func (c *UserComponent) UpdateOrder() int32 { return c.updateOrder }
+func (c *UserComponent) DrawOrder() int32   { return c.drawOrder }
+
+func (c *UserComponent) Update(framework.GameTime) { c.record("update:" + c.Name) }
+func (c *UserComponent) Draw(framework.GameTime)   { c.record("draw:" + c.Name) }
+
+func (c *UserComponent) SetEnabled(value bool) error {
+	if c.enabled == value {
+		return nil
+	}
+	c.enabled = value
+	return c.enabledChanged.Raise(c, framework.EventArgsEmpty())
+}
+
+func (c *UserComponent) SetVisible(value bool) error {
+	if c.visible == value {
+		return nil
+	}
+	c.visible = value
+	return c.visibleChanged.Raise(c, framework.EventArgsEmpty())
+}
+
+// SetUpdateOrder mirrors GameComponent::set_UpdateOrder, including raising with
+// the component ITSELF as sender, which is what the engine's handler reads.
+func (c *UserComponent) SetUpdateOrder(value int32) error {
+	if c.updateOrder == value {
+		return nil
+	}
+	c.updateOrder = value
+	return c.updateOrderChanged.Raise(c, framework.EventArgsEmpty())
+}
+
+func (c *UserComponent) SetDrawOrder(value int32) error {
+	if c.drawOrder == value {
+		return nil
+	}
+	c.drawOrder = value
+	return c.drawOrderChanged.Raise(c, framework.EventArgsEmpty())
+}
+
+func (c *UserComponent) AddEnabledChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.enabledChanged.Add(h)
+}
+func (c *UserComponent) RemoveEnabledChangedHandler(s framework.EventSubscription) error {
+	return c.enabledChanged.Remove(s)
+}
+func (c *UserComponent) AddUpdateOrderChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.updateOrderChanged.Add(h)
+}
+func (c *UserComponent) RemoveUpdateOrderChangedHandler(s framework.EventSubscription) error {
+	return c.updateOrderChanged.Remove(s)
+}
+func (c *UserComponent) AddVisibleChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.visibleChanged.Add(h)
+}
+func (c *UserComponent) RemoveVisibleChangedHandler(s framework.EventSubscription) error {
+	return c.visibleChanged.Remove(s)
+}
+func (c *UserComponent) AddDrawOrderChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.drawOrderChanged.Add(h)
+}
+func (c *UserComponent) RemoveDrawOrderChangedHandler(s framework.EventSubscription) error {
+	return c.drawOrderChanged.Remove(s)
+}
+
+var (
+	_ framework.IGameComponent = (*UserComponent)(nil)
+	_ framework.IUpdateable    = (*UserComponent)(nil)
+	_ framework.IDrawable      = (*UserComponent)(nil)
+)

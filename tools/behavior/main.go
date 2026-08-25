@@ -2189,6 +2189,117 @@ func runCorpus() corpusReport {
 	check("game-managed-state.consumer-handler-runs-after-the-engine", "GAME_MANAGED_STATE", "true,consumer",
 		fmt.Sprintf("%t,%s", orderAdd == nil, strings.Join(subscriptionOrder, ",")))
 
+	// ------------------------------------------------------------------
+	// Foundation 31. The explicit Game base-call family.
+	//
+	// These observations are what an outside caller can see, so they are the
+	// component engine's real qualification: the ordering, the snapshot, the
+	// Enabled/Visible gates and the mutation semantics all become visible
+	// through the base calls and through nothing else.
+	// ------------------------------------------------------------------
+	var engineLog []string
+	engineGame, _ := framework.NewGame(corpusCallbacks{})
+	addEngineComponent := func(name string, updateOrder, drawOrder int32) *orderedCorpusComponent {
+		component := newOrderedCorpusComponent(name, &engineLog, updateOrder, drawOrder)
+		_ = engineGame.Components().Add(component)
+		return component
+	}
+	// Added in an order that is neither the update order nor the draw order.
+	engineMid := addEngineComponent("mid", 5, 5)
+	engineLast := addEngineComponent("last", 9, 1)
+	engineFirst := addEngineComponent("first", 1, 9)
+
+	// Nothing has been initialized: inRun is false, so the add handler queued
+	// each component instead of initializing it.
+	check("game-base-call.adding-before-the-run-initializes-nothing", "GAME_BASE_CALL", "3,",
+		fmt.Sprintf("%d,%s", engineGame.Components().Count(), strings.Join(engineLog, ",")))
+
+	// base Initialize drains that queue, in ADD order: notYetInitialized is a
+	// plain list, and only the update and draw lists are ordered.
+	engineLog = nil
+	initializeError := framework.GameBaseInitialize(engineGame)
+	check("game-base-call.base-initialize-drains-in-add-order", "GAME_BASE_CALL",
+		"true,init:mid,init:last,init:first",
+		fmt.Sprintf("%t,%s", initializeError == nil, strings.Join(engineLog, ",")))
+
+	// A second call has nothing left: each component is removed as it is
+	// initialized, so the drain is not repeatable.
+	engineLog = nil
+	secondInitialize := framework.GameBaseInitialize(engineGame)
+	check("game-base-call.base-initialize-is-not-repeatable", "GAME_BASE_CALL", "true,",
+		fmt.Sprintf("%t,%s", secondInitialize == nil, strings.Join(engineLog, ",")))
+
+	// base Update iterates by UpdateOrder; base Draw by DrawOrder, which here
+	// is the reverse, so the two derived lists are provably independent.
+	engineLog = nil
+	updateError := framework.GameBaseUpdate(engineGame, framework.NewGameTimeByNone())
+	drawError := framework.GameBaseDraw(engineGame, framework.NewGameTimeByNone())
+	check("game-base-call.update-and-draw-orders-are-independent", "GAME_BASE_CALL",
+		"true,true,update:first,update:mid,update:last,draw:last,draw:mid,draw:first",
+		fmt.Sprintf("%t,%t,%s", updateError == nil, drawError == nil, strings.Join(engineLog, ",")))
+
+	// Enabled and Visible are read at iteration time and gate one loop each.
+	_ = engineMid.SetEnabled(false)
+	_ = engineFirst.SetVisible(false)
+	engineLog = nil
+	_ = framework.GameBaseUpdate(engineGame, framework.NewGameTimeByNone())
+	_ = framework.GameBaseDraw(engineGame, framework.NewGameTimeByNone())
+	check("game-base-call.enabled-and-visible-gate-one-loop-each", "GAME_BASE_CALL",
+		"update:first,update:last,draw:last,draw:mid",
+		strings.Join(engineLog, ","))
+	_ = engineMid.SetEnabled(true)
+	_ = engineFirst.SetVisible(true)
+
+	// An order change re-places the component, and lands it AFTER an existing
+	// run of the same order because of the reference's forward walk.
+	_ = engineFirst.SetUpdateOrder(9)
+	engineLog = nil
+	_ = framework.GameBaseUpdate(engineGame, framework.NewGameTimeByNone())
+	check("game-base-call.order-change-lands-after-an-equal-order-run", "GAME_BASE_CALL",
+		"update:mid,update:last,update:first",
+		strings.Join(engineLog, ","))
+
+	// Mutating the collection during the frame does not change that frame: the
+	// first loop copies the ordered list and the second iterates the copy.
+	engineLate := newOrderedCorpusComponent("late", &engineLog, -99, -99)
+	engineMid.onUpdate = func() {
+		_ = engineGame.Components().Add(engineLate)
+		_, _ = engineGame.Components().Remove(engineLast)
+	}
+	engineLog = nil
+	_ = framework.GameBaseUpdate(engineGame, framework.NewGameTimeByNone())
+	thisFrame := strings.Join(engineLog, ",")
+	engineMid.onUpdate = nil
+	engineLog = nil
+	_ = framework.GameBaseUpdate(engineGame, framework.NewGameTimeByNone())
+	check("game-base-call.mid-frame-mutation-applies-to-the-next-frame", "GAME_BASE_CALL",
+		"update:mid,update:last,update:first|update:late,update:mid,update:first",
+		thisFrame+"|"+strings.Join(engineLog, ","))
+
+	// The family's one Go-only failure. It has no CLR counterpart: a CLR Game
+	// always ran its constructor, and Go can produce one that did not.
+	unconstructed := &framework.Game{}
+	check("game-base-call.an-unconstructed-game-is-refused", "GAME_BASE_CALL",
+		"true,true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t,%t",
+			framework.GameBaseInitialize(unconstructed) != nil,
+			framework.GameBaseLoadContent(unconstructed) != nil,
+			framework.GameBaseUnloadContent(unconstructed) != nil,
+			framework.GameBaseUpdate(unconstructed, framework.NewGameTimeByNone()) != nil,
+			framework.GameBaseDraw(unconstructed, framework.NewGameTimeByNone()) != nil))
+
+	// Both no-op base bodies are a bare `ret` of code size 1 in the reference,
+	// so they must do nothing at all -- not even to the pending queue.
+	noOpGame, _ := framework.NewGame(corpusCallbacks{})
+	var noOpLog []string
+	_ = noOpGame.Components().Add(newOrderedCorpusComponent("untouched", &noOpLog, 0, 0))
+	loadError := framework.GameBaseLoadContent(noOpGame)
+	unloadError := framework.GameBaseUnloadContent(noOpGame)
+	check("game-base-call.load-and-unload-content-are-faithful-no-ops", "GAME_BASE_CALL",
+		"true,true,,1",
+		fmt.Sprintf("%t,%t,%s,%d", loadError == nil, unloadError == nil,
+			strings.Join(noOpLog, ","), noOpGame.Components().Count()))
+
 	return report
 }
 
@@ -2249,6 +2360,115 @@ func (corpusCallbacks) LoadContent(*framework.Game) error                { retur
 func (corpusCallbacks) Update(*framework.Game, framework.GameTime) error { return nil }
 func (corpusCallbacks) Draw(*framework.Game, framework.GameTime) error   { return nil }
 func (corpusCallbacks) UnloadContent(*framework.Game) error              { return nil }
+
+// orderedCorpusComponent is a corpus-local component whose update and draw
+// orders differ, which is what makes the two derived lists distinguishable. It
+// reproduces GameComponent's setter shape -- suppress when unchanged, store,
+// then raise with itself as sender -- because the engine's handlers read the
+// sender.
+type orderedCorpusComponent struct {
+	name        string
+	log         *[]string
+	enabled     bool
+	visible     bool
+	updateOrder int32
+	drawOrder   int32
+	onUpdate    func()
+
+	enabledChanged     framework.EventSource[*framework.EventArgs]
+	updateOrderChanged framework.EventSource[*framework.EventArgs]
+	visibleChanged     framework.EventSource[*framework.EventArgs]
+	drawOrderChanged   framework.EventSource[*framework.EventArgs]
+}
+
+func newOrderedCorpusComponent(name string, log *[]string, updateOrder, drawOrder int32) *orderedCorpusComponent {
+	return &orderedCorpusComponent{name: name, log: log, enabled: true, visible: true,
+		updateOrder: updateOrder, drawOrder: drawOrder}
+}
+
+func (c *orderedCorpusComponent) record(entry string) {
+	if c.log != nil {
+		*c.log = append(*c.log, entry)
+	}
+}
+
+func (c *orderedCorpusComponent) Initialize() error  { c.record("init:" + c.name); return nil }
+func (c *orderedCorpusComponent) Enabled() bool      { return c.enabled }
+func (c *orderedCorpusComponent) Visible() bool      { return c.visible }
+func (c *orderedCorpusComponent) UpdateOrder() int32 { return c.updateOrder }
+func (c *orderedCorpusComponent) DrawOrder() int32   { return c.drawOrder }
+
+func (c *orderedCorpusComponent) Update(framework.GameTime) {
+	c.record("update:" + c.name)
+	if c.onUpdate != nil {
+		c.onUpdate()
+	}
+}
+
+func (c *orderedCorpusComponent) Draw(framework.GameTime) { c.record("draw:" + c.name) }
+
+func (c *orderedCorpusComponent) SetEnabled(value bool) error {
+	if c.enabled == value {
+		return nil
+	}
+	c.enabled = value
+	return c.enabledChanged.Raise(c, framework.EventArgsEmpty())
+}
+
+func (c *orderedCorpusComponent) SetVisible(value bool) error {
+	if c.visible == value {
+		return nil
+	}
+	c.visible = value
+	return c.visibleChanged.Raise(c, framework.EventArgsEmpty())
+}
+
+func (c *orderedCorpusComponent) SetUpdateOrder(value int32) error {
+	if c.updateOrder == value {
+		return nil
+	}
+	c.updateOrder = value
+	return c.updateOrderChanged.Raise(c, framework.EventArgsEmpty())
+}
+
+func (c *orderedCorpusComponent) SetDrawOrder(value int32) error {
+	if c.drawOrder == value {
+		return nil
+	}
+	c.drawOrder = value
+	return c.drawOrderChanged.Raise(c, framework.EventArgsEmpty())
+}
+
+func (c *orderedCorpusComponent) AddEnabledChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.enabledChanged.Add(h)
+}
+func (c *orderedCorpusComponent) RemoveEnabledChangedHandler(s framework.EventSubscription) error {
+	return c.enabledChanged.Remove(s)
+}
+func (c *orderedCorpusComponent) AddUpdateOrderChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.updateOrderChanged.Add(h)
+}
+func (c *orderedCorpusComponent) RemoveUpdateOrderChangedHandler(s framework.EventSubscription) error {
+	return c.updateOrderChanged.Remove(s)
+}
+func (c *orderedCorpusComponent) AddVisibleChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.visibleChanged.Add(h)
+}
+func (c *orderedCorpusComponent) RemoveVisibleChangedHandler(s framework.EventSubscription) error {
+	return c.visibleChanged.Remove(s)
+}
+func (c *orderedCorpusComponent) AddDrawOrderChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.drawOrderChanged.Add(h)
+}
+func (c *orderedCorpusComponent) RemoveDrawOrderChangedHandler(s framework.EventSubscription) error {
+	return c.drawOrderChanged.Remove(s)
+}
+
+var (
+	_ framework.IGameComponent = (*orderedCorpusComponent)(nil)
+	_ framework.IUpdateable    = (*orderedCorpusComponent)(nil)
+	_ framework.IDrawable      = (*orderedCorpusComponent)(nil)
+)
 
 type corpusComponent struct {
 	enabled bool

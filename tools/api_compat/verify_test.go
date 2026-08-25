@@ -8,6 +8,7 @@ import (
 	"go/types"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -1087,6 +1088,13 @@ func TestMutationFixtures(t *testing.T) {
 			if strings.HasPrefix(fixture.Mutation, "f22ev_") {
 				expected, actual = eventProjectionMutationCase(t, fixture.Mutation)
 				result := verify(expected, actual, 0, "report", "contract", "mapping")
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
+			if strings.HasPrefix(fixture.Mutation, "f31base_") {
+				result := gameBaseCallMutationCase(t, fixture.Mutation)
 				if result.Summary[fixture.Category] == 0 {
 					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
 				}
@@ -5688,5 +5696,368 @@ func TestSystemExceptionAuditIsRecorded(t *testing.T) {
 	}
 	if derived != 8 {
 		t.Fatalf("the audit covered 8 derived types, the contract has %d", derived)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 31 — negative controls for the Game base-call language adapters.
+// ---------------------------------------------------------------------------
+
+// gameBaseCallFixture builds a surface pair that exercises the base-call family
+// and nothing else about it is clean: the expected surface is the whole pinned
+// contract, so Game is present and its five callback members exist, while the
+// actual surface carries only the framework package and the five adapters.
+//
+// Every defect below is measured as a DELTA against this fixture's own
+// baseline, so the fixture's unrelated MISSING_TYPE noise cannot make a defect
+// look detected.
+func gameBaseCallFixture(t *testing.T) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := &actualSurface{
+		Types:       make(map[symbolKey]*actualType),
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: map[string]string{modulePath + "/Microsoft/Xna/Framework": "Microsoft/Xna/Framework"},
+		Packages:    make(map[string]*types.Package),
+	}
+	// The framework package always carries the BCL signature adapters too, so
+	// they are seeded as well: an incomplete fixture would report their
+	// absence and drown the defect this test is about.
+	seedSignatureAdapters(actual)
+	seedGameBaseCallAdapters(actual)
+	return expected, actual
+}
+
+// seedGameBaseCallAdapters puts the exact declared adapters into an actual
+// surface, so a fixture starts VALID and a mutation's diagnostic is caused by
+// the mutation.
+func seedGameBaseCallAdapters(actual *actualSurface) {
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	for _, adapter := range gameBaseCallAdapters {
+		key := symbolKey{Package: frameworkPackage, Name: adapter.GoFunction}
+		actual.Members[key] = &actualMember{
+			Key: key, Kind: "func",
+			Parameters: append([]string(nil), adapter.Parameters...),
+			Results:    append([]string(nil), adapter.Results...),
+		}
+	}
+}
+
+// withGameBaseCallAdapters runs fn with the registry mutated and restores it.
+func withGameBaseCallAdapters(t *testing.T, mutate func(), fn func()) {
+	t.Helper()
+	saved := make(map[string]gameBaseCallAdapter, len(gameBaseCallAdapters))
+	for name, adapter := range gameBaseCallAdapters {
+		saved[name] = adapter
+	}
+	defer func() { gameBaseCallAdapters = saved }()
+	mutate()
+	fn()
+}
+
+// gameBaseCallDefects is the shared table behind both the named test and the
+// mutation inventory, so the two cannot drift. Each entry mutates either the
+// registry or the actual surface and must raise LANGUAGE_MAPPING_MISMATCH.
+var gameBaseCallDefects = map[string]func(actual *actualSurface){
+	// The helper simply is not there, so a callback cannot reach its base.
+	"adapter_absent_from_the_package": func(actual *actualSurface) {
+		delete(actual.Members, symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBaseUpdate"})
+	},
+	// A helper projected as a method on Game would put a name Microsoft never
+	// declared onto Game's projected member surface.
+	"adapter_projected_as_a_method_on_game": func(actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBaseUpdate"}
+		actual.Members[key].Kind = "method"
+	},
+	// Dropping the *Game parameter would make the helper operate on state it
+	// was not handed, which is not what a CLR base call does.
+	"adapter_signature_drops_the_game_parameter": func(actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBaseUpdate"}
+		actual.Members[key].Parameters = []string{"GameTime"}
+	},
+	// A result the registry does not declare.
+	"adapter_signature_gains_a_result": func(actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBaseDraw"}
+		actual.Members[key].Results = []string{"bool", "error"}
+	},
+	// An exported base-call helper nobody declared and therefore nobody
+	// measured.
+	"arbitrary_extra_base_helper": func(actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBaseTick"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "func", Parameters: []string{"*Game"}, Results: []string{"error"}}
+	},
+	// A supported virtual left with no way to reach its base.
+	"adapter_missing_for_a_supported_virtual": func(actual *actualSurface) {
+		delete(gameBaseCallAdapters, "Draw")
+		delete(actual.Members, symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBaseDraw"})
+	},
+	// An adapter for a member GameCallbacks does not project. Game::Run is
+	// public and non-virtual, so it has no base a CLR override could call.
+	"adapter_declared_for_a_member_that_is_not_a_supported_virtual": func(actual *actualSurface) {
+		gameBaseCallAdapters["Run"] = gameBaseCallAdapter{
+			CLRMember: "Microsoft.Xna.Framework.Game::Run", GoFunction: "GameBaseRun",
+			Parameters: []string{"*Game"}, Results: []string{"error"},
+			Fallibility:   []gameBaseCallFallibility{{Kind: "GUARD", Reason: "invented"}},
+			ReferenceBody: []string{"invented"},
+		}
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBaseRun"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "func", Parameters: []string{"*Game"}, Results: []string{"error"}}
+	},
+	// An error result nobody justified is a synthetic failure mode.
+	"error_result_with_no_recorded_reason": func(actual *actualSurface) {
+		adapter := gameBaseCallAdapters["Update"]
+		adapter.Fallibility = nil
+		gameBaseCallAdapters["Update"] = adapter
+	},
+	// A fallibility reason with no error result claims something the
+	// signature does not.
+	"recorded_reason_with_no_error_result": func(actual *actualSurface) {
+		adapter := gameBaseCallAdapters["Draw"]
+		adapter.Results = nil
+		gameBaseCallAdapters["Draw"] = adapter
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBaseDraw"}
+		actual.Members[key].Results = nil
+	},
+	// A deferred reference step that records nothing is exactly the defect the
+	// deferred-BCL-base rule already forbids.
+	"deferred_step_records_no_reason": func(actual *actualSurface) {
+		adapter := gameBaseCallAdapters["Update"]
+		adapter.Deferred = []gameBaseCallDeferral{{Step: "FrameworkDispatcher.Update()", Class: "SUBSYSTEM"}}
+		gameBaseCallAdapters["Update"] = adapter
+	},
+	// An unclassified deferral hides which kind of gap it is.
+	"deferred_step_unclassified": func(actual *actualSurface) {
+		adapter := gameBaseCallAdapters["Update"]
+		adapter.Deferred = []gameBaseCallDeferral{{Step: "FrameworkDispatcher.Update()", Class: "LATER", Reason: "not now"}}
+		gameBaseCallAdapters["Update"] = adapter
+	},
+	// A deferral that IS observable is a stop condition, not a deferral: it
+	// means the projection changed what a consumer can see.
+	"deferred_step_marked_observable": func(actual *actualSurface) {
+		adapter := gameBaseCallAdapters["Initialize"]
+		deferred := append([]gameBaseCallDeferral(nil), adapter.Deferred...)
+		deferred[0].Observable = true
+		adapter.Deferred = deferred
+		gameBaseCallAdapters["Initialize"] = adapter
+	},
+	// Without a recorded reference body there is nothing to check the
+	// projection against.
+	"adapter_records_no_reference_body": func(actual *actualSurface) {
+		adapter := gameBaseCallAdapters["LoadContent"]
+		adapter.ReferenceBody = nil
+		gameBaseCallAdapters["LoadContent"] = adapter
+	},
+}
+
+// TestGameBaseCallDefectsAreRejected attacks every rule the base-call family
+// rests on. The family is language support, so the danger is not a wrong XNA
+// signature but an INVENTED one: a helper nobody declared, a helper for a
+// member that has no base, a silent deferral, or a synthetic error.
+func TestGameBaseCallDefectsAreRejected(t *testing.T) {
+	baselineExpected, baselineActual := gameBaseCallFixture(t)
+	baseline := verify(baselineExpected, baselineActual, 0, "report", "contract", "mapping")
+	if baseline.Summary["LANGUAGE_MAPPING_MISMATCH"] != 0 {
+		t.Fatalf("the unmutated base-call fixture is not clean: %d LANGUAGE_MAPPING_MISMATCH", baseline.Summary["LANGUAGE_MAPPING_MISMATCH"])
+	}
+	if baseline.Summary["GAME_BASE_CALL_ADAPTERS"] != len(gameBaseCallAdapters) {
+		t.Fatalf("fixture measured %d adapters, registry declares %d",
+			baseline.Summary["GAME_BASE_CALL_ADAPTERS"], len(gameBaseCallAdapters))
+	}
+
+	names := make([]string, 0, len(gameBaseCallDefects))
+	for name := range gameBaseCallDefects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		defect := gameBaseCallDefects[name]
+		t.Run(name, func(t *testing.T) {
+			expected, actual := gameBaseCallFixture(t)
+			var result report
+			withGameBaseCallAdapters(t, func() { defect(actual) }, func() {
+				result = verify(expected, actual, 0, "report", "contract", "mapping")
+			})
+			if result.Summary["LANGUAGE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("base-call defect %q raised no LANGUAGE_MAPPING_MISMATCH", name)
+			}
+		})
+	}
+}
+
+// TestGameBaseCallAdaptersAreNotXNAIdentities is the accounting claim: the
+// family is language support and must not inflate any identity counter.
+//
+// It compares the pinned expected surface against itself with the registry
+// present, which is the only state the binding ever runs in, and asserts that
+// none of the five function names appears anywhere in the expected surface as
+// a projected XNA member or type.
+func TestGameBaseCallAdaptersAreNotXNAIdentities(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	for _, adapter := range gameBaseCallAdapters {
+		key := symbolKey{Package: frameworkPackage, Name: adapter.GoFunction}
+		if member, present := expected.Members[key]; present {
+			t.Fatalf("base-call adapter %s is a projected XNA member (%s); it is language support and must never be one",
+				adapter.GoFunction, member.XNA)
+		}
+		if _, present := expected.Types[key]; present {
+			t.Fatalf("base-call adapter %s is a projected XNA type", adapter.GoFunction)
+		}
+		// Nor may it be a member of Game or of GameCallbacks under any name.
+		for memberKey := range expected.Members {
+			if memberKey.Package == frameworkPackage && memberKey.Name == adapter.GoFunction {
+				t.Fatalf("base-call adapter %s appears as a projected member on receiver %q",
+					adapter.GoFunction, memberKey.Receiver)
+			}
+		}
+	}
+	if expected.ReferenceMembers != 2964 {
+		t.Fatalf("REFERENCE_MEMBERS moved to %d; the base-call family must not touch it", expected.ReferenceMembers)
+	}
+	if expected.ExpectedGoMembers != 3255 {
+		t.Fatalf("EXPECTED_GO_MEMBERS moved to %d; the base-call family must not touch it", expected.ExpectedGoMembers)
+	}
+}
+
+// TestEveryGameCallbacksMemberHasExactlyOneBaseCallAdapter is claim (3) as a
+// direct assertion rather than as a defect: the registry is closed, and it is
+// closed around exactly the five protected virtuals GameCallbacks projects.
+func TestEveryGameCallbacksMemberHasExactlyOneBaseCallAdapter(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	callbacks := make(map[string]bool)
+	for _, member := range expected.Members {
+		if member.PackagePath == frameworkPackage && member.Receiver == "GameCallbacks" {
+			callbacks[member.GoName] = true
+			if member.SourceAccess != "protected" {
+				t.Fatalf("GameCallbacks projects %s, which the contract declares %q; the adapter family assumes protected virtuals",
+					member.GoName, member.SourceAccess)
+			}
+		}
+	}
+	if len(callbacks) != 5 {
+		t.Fatalf("expected 5 GameCallbacks members, found %d: %v", len(callbacks), callbacks)
+	}
+	for name := range callbacks {
+		if _, declared := gameBaseCallAdapters[name]; !declared {
+			t.Fatalf("GameCallbacks member %s has no base-call adapter", name)
+		}
+	}
+	for name := range gameBaseCallAdapters {
+		if !callbacks[name] {
+			t.Fatalf("base-call adapter %s corresponds to no GameCallbacks member", name)
+		}
+	}
+}
+
+// gameBaseCallMutationCase applies one named Foundation-31 base-call defect
+// from the shared table, so the mutation inventory and the named test cannot
+// drift. Mutation ids have the form f31base_<defect>.
+func gameBaseCallMutationCase(t *testing.T, mutation string) report {
+	t.Helper()
+	name := strings.TrimPrefix(mutation, "f31base_")
+	defect, ok := gameBaseCallDefects[name]
+	if !ok {
+		t.Fatalf("unknown base-call defect %q", name)
+	}
+	expected, actual := gameBaseCallFixture(t)
+	var result report
+	withGameBaseCallAdapters(t, func() { defect(actual) }, func() {
+		result = verify(expected, actual, 0, "report", "contract", "mapping")
+	})
+	return result
+}
+
+// TestMappingRulesDeclareTheSameBaseCallAdaptersAsTheRegistry keeps the
+// documented rules file and the executable registry from drifting.
+//
+// mapping-rules.json is hashed into every report, so it is the record of what
+// the binding claims its rules are; gameBaseCallAdapters is what the verifier
+// actually enforces. A family documented in one and not the other would let a
+// reader of the report believe something the tool never checks.
+func TestMappingRulesDeclareTheSameBaseCallAdaptersAsTheRegistry(t *testing.T) {
+	data, err := os.ReadFile("mapping-rules.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rules struct {
+		GameBaseCallAdapters struct {
+			Adapters map[string]struct {
+				CLRMember  string `json:"clrMember"`
+				GoFunction string `json:"goFunction"`
+				Signature  string `json:"signature"`
+			} `json:"adapters"`
+		} `json:"gameBaseCallAdapters"`
+	}
+	if err := json.Unmarshal(data, &rules); err != nil {
+		t.Fatal(err)
+	}
+	documented := rules.GameBaseCallAdapters.Adapters
+	if len(documented) != len(gameBaseCallAdapters) {
+		t.Fatalf("mapping-rules.json documents %d base-call adapters, the registry declares %d",
+			len(documented), len(gameBaseCallAdapters))
+	}
+	for name, adapter := range gameBaseCallAdapters {
+		entry, present := documented[name]
+		if !present {
+			t.Fatalf("base-call adapter %q is in the registry but not in mapping-rules.json", name)
+		}
+		if entry.CLRMember != adapter.CLRMember {
+			t.Fatalf("base-call adapter %q: rules say CLR member %q, registry says %q", name, entry.CLRMember, adapter.CLRMember)
+		}
+		if entry.GoFunction != adapter.GoFunction {
+			t.Fatalf("base-call adapter %q: rules say Go function %q, registry says %q", name, entry.GoFunction, adapter.GoFunction)
+		}
+		// The documented signature must spell the registry's exact parameters
+		// and results, so a widened signature cannot hide behind prose.
+		wanted := "func " + adapter.GoFunction + "(game *Game"
+		for _, parameter := range adapter.Parameters[1:] {
+			wanted += ", " + strings.ToLower(parameter[:1]) + parameter[1:] + " " + parameter
+		}
+		wanted += ")"
+		if len(adapter.Results) > 0 {
+			wanted += " " + strings.Join(adapter.Results, ", ")
+		}
+		if entry.Signature != wanted {
+			t.Fatalf("base-call adapter %q: rules document signature %q, registry implies %q", name, entry.Signature, wanted)
+		}
+	}
+}
+
+// TestEveryBaseCallDefectHasAMutationFixture keeps the shared defect table and
+// the mutation inventory from drifting.
+func TestEveryBaseCallDefectHasAMutationFixture(t *testing.T) {
+	data, err := os.ReadFile("testdata/mutations.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixtures []mutationFixture
+	if err := json.Unmarshal(data, &fixtures); err != nil {
+		t.Fatal(err)
+	}
+	inventoried := make(map[string]bool)
+	for _, fixture := range fixtures {
+		if strings.HasPrefix(fixture.Mutation, "f31base_") {
+			inventoried[strings.TrimPrefix(fixture.Mutation, "f31base_")] = true
+		}
+	}
+	for name := range gameBaseCallDefects {
+		if !inventoried[name] {
+			t.Fatalf("base-call defect %q has no mutation fixture", name)
+		}
+	}
+	for name := range inventoried {
+		if _, declared := gameBaseCallDefects[name]; !declared {
+			t.Fatalf("mutation fixture f31base_%s names no defect in the shared table", name)
+		}
 	}
 }

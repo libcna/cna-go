@@ -436,5 +436,73 @@
       }
     },
     "allowlist": "forbidden"
+  },
+  "gameBaseCallAdapters": {
+    "rule": "GameCallbacks projects CLR protected virtual OVERRIDES, and in CLR the override -- not the framework -- decides whether and when the base body runs. Go has no `base` keyword, so each supported override gets ONE package-level function in the framework package that runs the base body, and a callback that never calls one gets no base behavior at all",
+    "baseBehaviorIsNeverAutomatic": "CNA-Go must not run a base body around a callback. Doing so would make every override a mandatory base call at a position CNA-Go picked, which is a different contract that merely resembles XNA's: omitting base.Update(t) is legal and means the component loop does not run that frame, and moving the call changes what runs before what",
+    "theseAreNot": [
+      "an XNA identity: they add nothing to REFERENCE_MEMBERS, EXPECTED_GO_MEMBERS, or any type's projected member set",
+      "a member of Game: they are package-level functions so Game's projected member surface gains no name Microsoft never declared",
+      "a member of GameCallbacks: the callback contract is unchanged",
+      "a way to invoke GameCallbacks: no base body in the reference calls the virtual it is the base of, and neither does any of these",
+      "an allowlist entry: they are admitted from the measured registry, which is what subjects them to measurement"
+    ],
+    "closure": "the registry keys are exactly the GameCallbacks members, which are exactly the Game protected virtuals the mapper redirects. An adapter for anything else is an invented helper; a callback member without one leaves an override unable to reach its base. Both are verifier failures",
+    "firstParameter": "*Game, which is the `this` a CLR base call passes implicitly",
+    "fallibility": "every error result names its reasons. GUARD is the Go-only nil/unconstructed-Game check, which has no CLR counterpart and is the condition Game.Run and Game.Exit already report; REFERENCE is a failure the reference base body itself can produce. An error result with no recorded reason, and a recorded reason with no error result, are both rejected",
+    "deferredSteps": "every reference step the projection does not reproduce is recorded with a class -- SUBSYSTEM, ARCHITECTURE or UNOBSERVABLE -- and a reason. A deferral marked observable from the managed component surface is REJECTED: that is a stop condition, not a deferral",
+    "adapters": {
+      "Initialize": {
+        "clrMember": "Microsoft.Xna.Framework.Game::Initialize",
+        "goFunction": "GameBaseInitialize",
+        "signature": "func GameBaseInitialize(game *Game) error",
+        "referenceBody": "HookDeviceEvents(); while (notYetInitialized.Count > 0) { notYetInitialized[0].Initialize(); notYetInitialized.RemoveAt(0); } if (graphicsDeviceService != null && graphicsDeviceService.GraphicsDevice != null) LoadContent();",
+        "deferredSteps": [
+          {
+            "step": "HookDeviceEvents()",
+            "class": "ARCHITECTURE"
+          },
+          {
+            "step": "if (graphicsDeviceService != null && ...) LoadContent()",
+            "class": "ARCHITECTURE"
+          }
+        ]
+      },
+      "LoadContent": {
+        "clrMember": "Microsoft.Xna.Framework.Game::LoadContent",
+        "goFunction": "GameBaseLoadContent",
+        "signature": "func GameBaseLoadContent(game *Game) error",
+        "referenceBody": "ret  // code size 1, a true authoritative no-op"
+      },
+      "Update": {
+        "clrMember": "Microsoft.Xna.Framework.Game::Update",
+        "goFunction": "GameBaseUpdate",
+        "signature": "func GameBaseUpdate(game *Game, gameTime GameTime) error",
+        "referenceBody": "snapshot updateableComponents into currentlyUpdatingComponents, iterate the snapshot calling Update on each Enabled component, Clear the snapshot, FrameworkDispatcher.Update(), doneFirstUpdate = true",
+        "deferredSteps": [
+          {
+            "step": "FrameworkDispatcher.Update()",
+            "class": "SUBSYSTEM"
+          },
+          {
+            "step": "Logger.BeginLogEvent / Logger.EndLogEvent",
+            "class": "UNOBSERVABLE"
+          }
+        ]
+      },
+      "Draw": {
+        "clrMember": "Microsoft.Xna.Framework.Game::Draw",
+        "goFunction": "GameBaseDraw",
+        "signature": "func GameBaseDraw(game *Game, gameTime GameTime) error",
+        "referenceBody": "snapshot drawableComponents into currentlyDrawingComponents, iterate the snapshot calling Draw on each Visible component, Clear the snapshot",
+        "touchesNoDevice": "base Draw does not clear, present, or reach GraphicsDevice at all; the device work lives in Game::BeginDraw and Game::EndDraw, which delegate to IGraphicsDeviceManager and are separate protected virtuals CNA-Go does not project"
+      },
+      "UnloadContent": {
+        "clrMember": "Microsoft.Xna.Framework.Game::UnloadContent",
+        "goFunction": "GameBaseUnloadContent",
+        "signature": "func GameBaseUnloadContent(game *Game) error",
+        "referenceBody": "ret  // code size 1, a true authoritative no-op"
+      }
+    }
   }
 }
