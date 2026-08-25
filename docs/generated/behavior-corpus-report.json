@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 575,
-    "ASSERTIONS": 575,
+    "OBSERVATIONS": 588,
+    "ASSERTIONS": 588,
     "FAILURES": 0
   },
   "observations": [
@@ -4605,6 +4605,110 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true,false",
       "actual": "true,true,false",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.starts-empty",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,true,true",
+      "actual": "0,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.add-mutates-before-it-announces",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,2,added:component:count=1,added:component:count=2",
+      "actual": "true,true,2,added:component:count=1,added:component:count=2",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.duplicate-is-rejected-without-effect",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,2,",
+      "actual": "true,2,",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.inherited-readers",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,true,true,true,true,-1",
+      "actual": "0,true,true,true,true,-1",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.assignment-is-never-supported",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,2",
+      "actual": "true,true,true,2",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.enumeration-fails-fast",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,false,true",
+      "actual": "true,true,false,true",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.remove-mutates-before-it-announces",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,false,true,2,removed:component:count=2",
+      "actual": "true,true,false,true,2,removed:component:count=2",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.clear-announces-before-it-mutates",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0,removed:component:count=2,removed:component:count=2",
+      "actual": "true,0,removed:component:count=2,removed:component:count=2",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.nil-component-asymmetry",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,,true,removed:\u003cnil\u003e:count=1",
+      "actual": "true,true,,true,removed:\u003cnil\u003e:count=1",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.empty-clear-still-invalidates",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,false,true",
+      "actual": "true,false,true",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.index-guards-differ-per-operation",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,true,2",
+      "actual": "true,true,true,true,2",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.copyto-validates-and-copies",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,true,true",
+      "actual": "true,true,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-component-collection.handler-failure-preserves-the-mutation-order",
+      "group": "BCL_BASE_COMPOSITION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,1,true,1",
+      "actual": "true,1,true,1",
       "passed": true
     }
   ]

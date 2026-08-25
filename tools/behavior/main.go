@@ -1844,6 +1844,173 @@ func runCorpus() corpusReport {
 			framework.NewGameComponentCollectionEventArgs(nil).GameComponent() == nil,
 			carrierIsBase))
 
+	// ---------------------------------------------------------------------
+	// Foundation 26. The BCL base-class composition projection, proved by
+	// GameComponentCollection over Collection<IGameComponent>.
+	//
+	// Behavior is PURE_XNA_DERIVED from two pinned binaries: the four
+	// overrides from Microsoft.Xna.Framework.Game.dll, and the inherited
+	// Collection<T>/List<T> surface from mscorlib 4.0.30319.1, the .NET
+	// Framework 4.0 RTM assembly every pinned XNA assembly binds against.
+	// ---------------------------------------------------------------------
+
+	components := framework.NewGameComponentCollection()
+	var collectionOrder []string
+	collectionHandler := func(name string) framework.EventHandler[*framework.GameComponentCollectionEventArgs] {
+		return func(sender any, args *framework.GameComponentCollectionEventArgs) error {
+			// The sender is the collection itself and the args are freshly
+			// allocated per raise, so both identities are recorded rather
+			// than assumed.
+			label := "<nil>"
+			if args.GameComponent() != nil {
+				label = "component"
+			}
+			owner, senderIsCollection := sender.(*framework.GameComponentCollection)
+			if !senderIsCollection {
+				collectionOrder = append(collectionOrder, name+":sender-lost")
+				return nil
+			}
+			collectionOrder = append(collectionOrder, fmt.Sprintf("%s:%s:count=%d", name, label, owner.Count()))
+			return nil
+		}
+	}
+	_, addedHandlerError := components.AddComponentAddedHandler(collectionHandler("added"))
+	_, removedHandlerError := components.AddComponentRemovedHandler(collectionHandler("removed"))
+
+	// A fresh collection is empty and its inherited store is mutable.
+	check("game-component-collection.starts-empty", "BCL_BASE_COMPOSITION", "0,true,true",
+		fmt.Sprintf("%d,%t,%t", components.Count(), addedHandlerError == nil, removedHandlerError == nil))
+
+	firstComponent, secondComponent := &corpusComponent{}, &corpusComponent{}
+
+	// Add is InsertItem(Count, item): it mutates and only THEN announces, so
+	// the handler already sees the new count.
+	collectionOrder = nil
+	addFirst := components.Add(firstComponent)
+	addSecond := components.Add(secondComponent)
+	check("game-component-collection.add-mutates-before-it-announces", "BCL_BASE_COMPOSITION",
+		"true,true,2,added:component:count=1,added:component:count=2",
+		fmt.Sprintf("%t,%t,%d,%s", addFirst == nil, addSecond == nil, components.Count(), strings.Join(collectionOrder, ",")))
+
+	// The duplicate test runs before the insertion, so a rejected duplicate
+	// neither mutates nor announces.
+	collectionOrder = nil
+	duplicate := components.Add(firstComponent)
+	check("game-component-collection.duplicate-is-rejected-without-effect", "BCL_BASE_COMPOSITION",
+		"true,2,",
+		fmt.Sprintf("%t,%d,%s", duplicate != nil, components.Count(), strings.Join(collectionOrder, ",")))
+
+	// The inherited readers.
+	firstIndex := components.IndexOf(firstComponent)
+	indexedComponent, indexError := components.Item(1)
+	outOfRange := func() bool { _, err := components.Item(2); return err != nil }()
+	check("game-component-collection.inherited-readers", "BCL_BASE_COMPOSITION", "0,true,true,true,true,-1",
+		fmt.Sprintf("%d,%t,%t,%t,%t,%d", firstIndex, indexError == nil,
+			indexedComponent == framework.IGameComponent(secondComponent), outOfRange,
+			components.Contains(firstComponent), components.IndexOf(&corpusComponent{})))
+
+	// The indexer setter always fails, and reports the range failure first.
+	inRangeAssignment := components.SetItemProperty(0, secondComponent)
+	outOfRangeAssignment := components.SetItemProperty(9, secondComponent)
+	directOverride := components.SetItemMethod(0, secondComponent)
+	check("game-component-collection.assignment-is-never-supported", "BCL_BASE_COMPOSITION", "true,true,true,2",
+		fmt.Sprintf("%t,%t,%t,%d", inRangeAssignment != nil, outOfRangeAssignment != nil,
+			directOverride != nil, components.Count()))
+
+	// Enumeration is source order, and every mutation invalidates it.
+	componentIterator := components.GetEnumerator()
+	firstYield, firstOK, _ := componentIterator.Next()
+	_ = components.Add(&corpusComponent{})
+	_, staleOK, staleError := componentIterator.Next()
+	check("game-component-collection.enumeration-fails-fast", "BCL_BASE_COMPOSITION", "true,true,false,true",
+		fmt.Sprintf("%t,%t,%t,%t", firstOK, firstYield == framework.IGameComponent(firstComponent),
+			staleOK, staleError != nil))
+
+	// Remove mutates before it announces; removing an absent component
+	// changes nothing.
+	collectionOrder = nil
+	removed, removeError := components.Remove(firstComponent)
+	absent, absentError := components.Remove(&corpusComponent{})
+	check("game-component-collection.remove-mutates-before-it-announces", "BCL_BASE_COMPOSITION",
+		"true,true,false,true,2,removed:component:count=2",
+		fmt.Sprintf("%t,%t,%t,%t,%d,%s", removed, removeError == nil, absent, absentError == nil,
+			components.Count(), strings.Join(collectionOrder, ",")))
+
+	// Clear announces the WHOLE collection before it mutates, which is the
+	// opposite order from Insert and Remove.
+	collectionOrder = nil
+	clearError := components.Clear()
+	check("game-component-collection.clear-announces-before-it-mutates", "BCL_BASE_COMPOSITION",
+		"true,0,removed:component:count=2,removed:component:count=2",
+		fmt.Sprintf("%t,%d,%s", clearError == nil, components.Count(), strings.Join(collectionOrder, ",")))
+
+	// A nil component is stored and announces nothing on insert, is announced
+	// by Clear, and duplicates as a nil.
+	nilBearing := framework.NewGameComponentCollection()
+	collectionOrder = nil
+	_, _ = nilBearing.AddComponentAddedHandler(collectionHandler("added"))
+	_, _ = nilBearing.AddComponentRemovedHandler(collectionHandler("removed"))
+	nilAdd := nilBearing.Add(nil)
+	nilDuplicate := nilBearing.Add(nil)
+	afterInsert := strings.Join(collectionOrder, ",")
+	collectionOrder = nil
+	nilClear := nilBearing.Clear()
+	check("game-component-collection.nil-component-asymmetry", "BCL_BASE_COMPOSITION",
+		"true,true,,true,removed:<nil>:count=1",
+		fmt.Sprintf("%t,%t,%s,%t,%s", nilAdd == nil, nilDuplicate != nil, afterInsert,
+			nilClear == nil, strings.Join(collectionOrder, ",")))
+
+	// Clearing an already empty collection still invalidates enumerators,
+	// because List<T>.Clear increments its version unconditionally.
+	emptyCollection := framework.NewGameComponentCollection()
+	emptyIterator := emptyCollection.GetEnumerator()
+	emptyClear := emptyCollection.Clear()
+	_, emptyOK, emptyError := emptyIterator.Next()
+	check("game-component-collection.empty-clear-still-invalidates", "BCL_BASE_COMPOSITION", "true,false,true",
+		fmt.Sprintf("%t,%t,%t", emptyClear == nil, emptyOK, emptyError != nil))
+
+	// Insert admits Count itself; RemoveAt and the indexer setter do not.
+	guards := framework.NewGameComponentCollection()
+	_ = guards.Add(&corpusComponent{})
+	insertAtCount := guards.Insert(1, &corpusComponent{})
+	insertPastCount := guards.Insert(3, &corpusComponent{})
+	insertNegative := guards.Insert(-1, &corpusComponent{})
+	removeAtCount := guards.RemoveAt(2)
+	check("game-component-collection.index-guards-differ-per-operation", "BCL_BASE_COMPOSITION",
+		"true,true,true,true,2",
+		fmt.Sprintf("%t,%t,%t,%t,%d", insertAtCount == nil, insertPastCount != nil,
+			insertNegative != nil, removeAtCount != nil, guards.Count()))
+
+	// CopyTo reports Array.Copy's three failures and hands out a copy.
+	copyTarget := make([]framework.IGameComponent, 3)
+	nilDestination := guards.CopyTo(nil, 0)
+	negativeIndex := guards.CopyTo(copyTarget, -1)
+	tooSmall := guards.CopyTo(copyTarget, 2)
+	copied := guards.CopyTo(copyTarget, 1)
+	copyTarget[1] = nil
+	survivor, _ := guards.Item(0)
+	check("game-component-collection.copyto-validates-and-copies", "BCL_BASE_COMPOSITION",
+		"true,true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t,%t", nilDestination != nil, negativeIndex != nil, tooSmall != nil,
+			copied == nil, survivor != nil))
+
+	// A handler failure leaves an applied mutation applied and an unapplied
+	// Clear unapplied. That is the same asymmetry, observed through failure.
+	failingCollection := framework.NewGameComponentCollection()
+	collectionFailure := errors.New("corpus collection handler failure")
+	_, _ = failingCollection.AddComponentAddedHandler(
+		func(any, *framework.GameComponentCollectionEventArgs) error { return collectionFailure })
+	failedAdd := failingCollection.Add(&corpusComponent{})
+	clearedCollection := framework.NewGameComponentCollection()
+	_ = clearedCollection.Add(&corpusComponent{})
+	_, _ = clearedCollection.AddComponentRemovedHandler(
+		func(any, *framework.GameComponentCollectionEventArgs) error { return collectionFailure })
+	failedClear := clearedCollection.Clear()
+	check("game-component-collection.handler-failure-preserves-the-mutation-order", "BCL_BASE_COMPOSITION",
+		"true,1,true,1",
+		fmt.Sprintf("%t,%d,%t,%d", errors.Is(failedAdd, collectionFailure), failingCollection.Count(),
+			errors.Is(failedClear, collectionFailure), clearedCollection.Count()))
+
 	return report
 }
 

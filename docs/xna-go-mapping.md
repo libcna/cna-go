@@ -499,11 +499,60 @@ The relationship table is exhaustive over the profile, so a base nobody has
 decided about is `BASE_MAPPING_MISMATCH` rather than a silent omission. Three
 CLR roots are implied by the existing projections (`System.Object`,
 `System.ValueType`, `System.Enum`); `System.EventArgs` is mapped to the
-`framework.EventArgs` adapter; and eight remain deferred as open public-API
-decisions — `System.Exception`, `ExternalException`, `System.Attribute`,
-`System.IO.BinaryReader`, `ExpandableObjectConverter`, `Collection<T>`,
-`ReadOnlyCollection<T>`, and `Dictionary<K,V>`. A **deferred** base means no
-derived type may be projected yet, and projecting one anyway is a diagnostic.
+`framework.EventArgs` adapter; `Collection<T>` is **composed** (below); and
+seven remain deferred as open public-API decisions — `System.Exception`,
+`ExternalException`, `System.Attribute`, `System.IO.BinaryReader`,
+`ExpandableObjectConverter`, `ReadOnlyCollection<T>`, and `Dictionary<K,V>`. A
+**deferred** base means no derived type may be projected yet, and projecting
+one anyway is a diagnostic.
+
+### BCL base-class composition
+
+A **supported BCL collection base** is the one exception to "the base
+contributes no Go member identity", and it is an exception for a reason the
+other statuses do not face: a public member inherited from such a base is
+**still public CLR surface**. Projecting only the members the XNA assembly
+declares would leave `GameComponentCollection` with a constructor, four
+protected overrides and two events — a collection nothing can be added to.
+
+The projection is composition plus measured forwarding:
+
+```go
+type GameComponentCollection struct {
+    base collectionBase[IGameComponent]   // unexported, not embedded
+    ...
+}
+```
+
+The adapter is implementation machinery. It is not an XNA type, not an exported
+field, not a public base-class object, not an embedded public API, and not a
+native handle, and the verifier rejects each of those shapes — including
+embedding the unexported adapter, whose promotion would publish forwarding
+nobody measured. The base's protected virtuals become an **unexported** Go
+interface, so only a type declared in this module can supply or reach a hook,
+and every mutating public operation routes through it so a subclass override
+always runs.
+
+Which inherited members are projected is measured, not guessed. Constructors
+are not inherited; `family` members are not public; and an explicitly
+implemented interface member is not public surface at all, so
+`Collection<T>`'s `IsReadOnly`, `IsSynchronized`, `SyncRoot` and `IsFixedSize`
+are **absent by rule** and the verifier checks their absence. Inherited members
+run through the identical naming, overload, direction and fallibility
+machinery, so they take part in ordinary collision resolution: the declared
+protected `SetItem` override and the inherited `Item` setter both spell
+`SetItem`, and the settled rule resolves them to `SetItemMethod` and
+`SetItemProperty`.
+
+Inherited behavior is read from the exact .NET Framework BCL the pinned XNA
+assemblies bind against — mscorlib 4.0.30319.1, SHA-256
+`5634668d…d98acc63` — never from modern .NET and never from Go convention. A
+family whose exact behavior cannot be established stays deferred.
+
+Provenance is tracked per member. `REFERENCE_MEMBERS` keeps naming exactly what
+the Microsoft assemblies declare and is never inflated with inherited mscorlib
+members; inherited projections are counted separately, and the two partitions
+are disjoint and exhaustive, so no member is ever counted twice.
 
 ## Structural counts
 
@@ -512,8 +561,15 @@ projection removes 49 enum backing fields, expands 840 properties into 1,119
 accessors, and expands 49 events into 98 add/remove accessors:
 
 ```text
-EXPECTED_GO_MEMBERS = 2964 - 49 - 840 + 1119 - 49 + 98 = 3243
+XNA-declared        = 2964 - 49 - 840 + 1119 - 49 + 98 = 3243
+BCL-inherited                                          =   12
+EXPECTED_GO_MEMBERS                                    = 3255
 ```
+
+The XNA-declared total is pinned and does not move. The BCL-inherited total is
+the surface the composition projection makes representable: eleven public CLR
+members of `Collection<IGameComponent>`, of which the indexer contributes two
+accessors.
 
 Language adapter types (`EventArgs`, `EventHandler<T>`, `EventSource<T>`,
 `EventSubscription`, `GameCallbacks`, `Iterator<T>`, and `TimeSpan`) and error
@@ -521,3 +577,9 @@ results are measured separately and do not inflate these XNA counts. Every
 adapter is declared in the framework package and takes the same package
 qualification as any other framework-package name, so a graphics-package event
 reads `framework.EventHandler[*framework.EventArgs]`.
+
+The BCL base adapters are a separate, **unexported** family and are not
+language adapters in this sense: `collectionBase[T]` is named by no projected
+signature and cannot be reached, referenced, or type-asserted from outside the
+module. When a composed base gains a consumer outside the framework package the
+adapter moves to an internal package rather than becoming exported.

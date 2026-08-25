@@ -234,7 +234,8 @@
     "enumerationOrder": "source-order",
     "mutationPolicy": "versioned-fail-fast-error-on-next",
     "sliceExposure": "forbidden",
-    "concreteEnumeratorRule": "a-collection-that-declares-its-own-public-enumerator-type-projects-that-type-from-GetEnumerator; the Iterator<T> adapter is for collections that declare none"
+    "concreteEnumeratorRule": "a-collection-that-declares-its-own-public-enumerator-type-projects-that-type-from-GetEnumerator; the Iterator<T> adapter is for collections that declare none",
+    "inheritedFromAComposedBase": "a type that acquires ICollection<T>/IList<T> through a COMPOSED BCL base projects what that base makes PUBLIC, not the full interface: Collection<T> implements ICollection<T>.IsReadOnly explicitly, so it is not public surface and is not projected, and every member the adapter records as excluded is verified ABSENT from the Go type"
   },
   "bcl": {
     "System.Boolean": "bool",
@@ -276,25 +277,34 @@
   "bclBaseRelationships": {
     "rule": "a non-XNA CLR base is a measured relationship, never exported Go embedding; Go has no CLR inheritance and embedding would promote members the XNA contract never declared",
     "derivedProjection": "a derived XNA class projects as its own pointer reference type",
-    "addsProjectedSurface": false,
+    "addsProjectedSurface": "false for IMPLIED, MAPPED and DEFERRED; a COMPOSED base is the one exception and its contribution is counted as BCL_INHERITED_MEMBER_PROJECTIONS, never as an XNA-declared reference member",
     "exhaustive": "every non-XNA base in the profile is declared here; an undeclared base is BASE_MAPPING_MISMATCH, so no base can be dropped in silence",
     "deferredMeaning": "a DEFERRED base is still an open public-API decision, and no derived type may be projected until it is taken",
-    "implied": ["System.Object", "System.ValueType", "System.Enum"],
-    "mapped": {"System.EventArgs": "framework.EventArgs"},
+    "implied": [
+      "System.Object",
+      "System.ValueType",
+      "System.Enum"
+    ],
+    "mapped": {
+      "System.EventArgs": "framework.EventArgs"
+    },
     "deferred": [
       "System.Exception",
       "System.Runtime.InteropServices.ExternalException",
       "System.Attribute",
       "System.IO.BinaryReader",
       "System.ComponentModel.ExpandableObjectConverter",
-      "System.Collections.ObjectModel.Collection`1",
       "System.Collections.ObjectModel.ReadOnlyCollection`1",
       "System.Collections.Generic.Dictionary`2"
-    ]
+    ],
+    "composedMeaning": "a COMPOSED base is a supported BCL family whose PUBLIC members remain part of the observable public CLR surface of every derived type; the derived Go type holds a PRIVATE generic adapter for the base and re-exposes those members through measured forwarding, so the surface does not disappear merely because the XNA assembly metadata does not declare it",
+    "composed": {
+      "System.Collections.ObjectModel.Collection`1": "collectionBase[T]"
+    }
   },
   "expectedCountFormula": {
     "types": "one-per-reference-type",
-    "members": "reference-members-minus-enum-value__-minus-properties-minus-events-plus-property-accessors-plus-two-event-accessors",
+    "members": "reference-members-minus-enum-value__-minus-properties-minus-events-plus-property-accessors-plus-two-event-accessors-plus-bcl-inherited-member-projections",
     "referenceTypes": 257,
     "referenceMembers": 2964,
     "enumBackingFieldsRemoved": 49,
@@ -303,7 +313,11 @@
     "eventsRemoved": 49,
     "eventAccessorsAdded": 98,
     "expectedGoTypes": 257,
-    "expectedGoMembers": 3243
+    "expectedGoMembers": 3255,
+    "xnaDeclaredGoMembers": 3243,
+    "bclInheritedPublicMembers": 11,
+    "bclInheritedMemberProjections": 12,
+    "provenance": "REFERENCE_MEMBERS names only what the Microsoft XNA assemblies declare and is never inflated with inherited mscorlib members; BCL_INHERITED_MEMBER_PROJECTIONS is counted separately and the two partitions are disjoint and exhaustive"
   },
   "languageAdapters": [
     "EventArgs",
@@ -315,5 +329,57 @@
     "TimeSpan"
   ],
   "languageAdapterPackage": "every language adapter is declared in the framework package and takes the same package qualification as any other framework-package name",
-  "crossPackageCycleRule": "when an ancestor namespace member returns a descendant namespace type that imports ancestor values, project the accessor as a descendant-package function named OwnerTypeMember"
+  "crossPackageCycleRule": "when an ancestor namespace member returns a descendant namespace type that imports ancestor values, project the accessor as a descendant-package function named OwnerTypeMember",
+  "bclBaseAdapters": {
+    "rule": "a CLR class that inherits a supported BCL collection base projects as a concrete Go reference type CONTAINING a private generic adapter for that base, which re-exposes the inherited public surface through measured forwarding members",
+    "theAdapterIsNot": [
+      "an XNA type",
+      "an exported field",
+      "a public base-class object",
+      "an embedded public API",
+      "a native or CNA handle"
+    ],
+    "exportedEmbeddingIsForbidden": "type X struct { Collection[T] } is refused: it publishes a Go type the contract never declares, promotes a method set the derived type never declared, implies a Go subtype relationship CLR inheritance does not create, and exposes support implementation; the verifier rejects it",
+    "adapterVisibility": "the adapter type and the field that holds it are both unexported, and no projected signature ever names either; when a COMPOSED base gains a consumer outside the framework package the adapter moves to an internal package rather than becoming exported",
+    "hookArchitecture": "the base's protected virtual members are projected as an UNEXPORTED Go interface, so only a type declared in this module can supply or reach a hook; every mutating public operation routes through it, so a subclass override always runs and nothing appends to the backing store and separately fakes the override's observable effect",
+    "storageExposure": "forbidden: the backing store is never returned, never aliased into a caller's hands, and never an exported field, and a Dictionary-derived or Collection-derived type is never projected as a bare map[K]V or []T",
+    "behaviorAuthority": "inherited behavior comes from the exact .NET Framework BCL the pinned XNA assemblies bind against, read from IL, never from modern .NET and never from Go convention; a family whose exact behavior cannot be established stays DEFERRED",
+    "registry": {
+      "System.Collections.ObjectModel.Collection`1": {
+        "goAdapter": "collectionBase[T]",
+        "adapterField": "base",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0, public key token b77a5c561934e089",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "backingStore": "the parameterless constructor assigns new List<T>(), which is the only overload any pinned XNA subclass calls, so items.IsReadOnly is statically false and the read-only guard on six public mutators is dead for every consumer in the profile",
+        "inheritedPublicMembers": [
+          "Count",
+          "Item",
+          "Add",
+          "Clear",
+          "Contains",
+          "CopyTo",
+          "GetEnumerator",
+          "IndexOf",
+          "Insert",
+          "Remove",
+          "RemoveAt"
+        ],
+        "projectedGoIdentitiesPerConsumer": 12,
+        "excluded": {
+          "constructors": "the CLR does not inherit constructors; a derived type projects its own",
+          "protectedMembers": "Items and the four virtual hooks are `family`; Items would hand out the backing store and the hooks are the private override interface",
+          "explicitInterfaceImplementations": "fourteen private .override members of IList, ICollection, IEnumerable and ICollection<T>.IsReadOnly; the settled BCL-interface rule projects nothing for them, so no IsReadOnly, IsSynchronized, SyncRoot or IsFixedSize is invented"
+        },
+        "enumeration": "GetEnumerator returns the backing List<T>'s enumerator boxed as IEnumerator<T>, so enumeration is source order and fail-fast against List<T>._version; the version check runs BEFORE the bounds test, and List<T>.Clear increments the version unconditionally, so clearing an already empty collection still invalidates a live enumerator",
+        "enumeratorProjection": "the settled Iterator<T> adapter; fusing MoveNext and Current makes the CLR enumerator's default(T) states before the first step and after the last unrepresentable rather than reinvented, and Reset is a private explicit implementation that projects nothing",
+        "elementEquality": "EqualityComparer<T>.Default, supplied per consumer rather than assumed; for an element type whose CLR form is a reference type that does not override Object.Equals it reduces to reference identity, which Go's == on an interface value spells exactly",
+        "consumers": [
+          "Microsoft.Xna.Framework.GameComponentCollection"
+        ]
+      }
+    },
+    "identityAccounting": "every projected Go member has exactly one provenance class -- XNA-declared or BCL-inherited -- and every inherited projection is attributable to an exact BCL base, an exact CLR member, and an exact projected Go member",
+    "allowlist": "forbidden"
+  }
 }

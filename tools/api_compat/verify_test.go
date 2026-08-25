@@ -38,8 +38,37 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	if surface.ReferenceTypes != 257 || surface.ReferenceMembers != 2964 {
 		t.Fatalf("reference counts = %d/%d", surface.ReferenceTypes, surface.ReferenceMembers)
 	}
-	if surface.ExpectedGoTypes != 257 || surface.ExpectedGoMembers != 3243 {
+	// The expected Go surface is pinned by its two provenance classes rather
+	// than by one total. 3243 is the projection of the 2,964 XNA-declared
+	// reference members and must never move; the BCL-inherited projections are
+	// the surface the composition projection makes representable, and are
+	// pinned separately so a change in either class is attributed.
+	declared := surface.ExpectedGoMembers - surface.BCLInheritedProjections
+	if surface.ExpectedGoTypes != 257 || declared != 3243 {
+		t.Fatalf("XNA-declared mapped counts = %d/%d", surface.ExpectedGoTypes, declared)
+	}
+	if surface.BCLInheritedCLRMembers != 11 || surface.BCLInheritedProjections != 12 {
+		t.Fatalf("BCL inherited counts = %d CLR members/%d projections", surface.BCLInheritedCLRMembers, surface.BCLInheritedProjections)
+	}
+	if surface.ExpectedGoMembers != 3255 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
+	}
+	// Every expected Go member has exactly one provenance class, so the two
+	// partitions are disjoint and exhaust the surface.
+	declaredMembers, inheritedMembers := 0, 0
+	for _, member := range surface.Members {
+		if member.BCLBase == "" {
+			declaredMembers++
+			continue
+		}
+		inheritedMembers++
+		if member.BCLMember == "" {
+			t.Fatalf("inherited member %s names no CLR base member", member.Key.String())
+		}
+	}
+	if declaredMembers != declared || inheritedMembers != surface.BCLInheritedProjections {
+		t.Fatalf("provenance partition = %d declared/%d inherited, want %d/%d",
+			declaredMembers, inheritedMembers, declared, surface.BCLInheritedProjections)
 	}
 }
 
@@ -1057,6 +1086,14 @@ func TestMutationFixtures(t *testing.T) {
 			}
 			if strings.HasPrefix(fixture.Mutation, "f22ev_") {
 				expected, actual = eventProjectionMutationCase(t, fixture.Mutation)
+				result := verify(expected, actual, 0, "report", "contract", "mapping")
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
+			if strings.HasPrefix(fixture.Mutation, "f26bcl_") {
+				expected, actual = bclCompositionMutationCase(t, fixture.Mutation)
 				result := verify(expected, actual, 0, "report", "contract", "mapping")
 				if result.Summary[fixture.Category] == 0 {
 					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
@@ -4987,4 +5024,287 @@ func bclInterfaceMutationCase(t *testing.T, mutation string) (*expectedSurface, 
 	}
 	t.Fatalf("unknown BCL interface defect %q", parts[0])
 	return nil, nil
+}
+
+// bclCompositionFixture builds an isolated, initially correct expected/actual
+// pair for one XNA type whose CLR base is a supported BCL family, including
+// the private adapter field the composition projection requires and the
+// Iterator<T> adapter the inherited GetEnumerator returns.
+func bclCompositionFixture(t *testing.T, identity string) (*expectedSurface, *actualSurface, *expectedType) {
+	t.Helper()
+	expected, actual, owner := isolateTypeSurface(t, identity)
+	adapter, composed := composedBaseAdapter(owner)
+	if !composed {
+		t.Fatalf("%s does not inherit a supported BCL base", identity)
+	}
+	actual.Types[owner.Key].Fields = []actualField{
+		{Name: adapter.AdapterField, Type: adapterFieldType(adapter, owner.BaseType)},
+		{Name: "componentAdded", Type: "EventSource[*GameComponentCollectionEventArgs]"},
+	}
+	iteratorKey := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "Iterator"}
+	actual.Types[iteratorKey] = &actualType{Key: iteratorKey, Kind: "interface", TypeParameters: []string{"T"}}
+	nextKey := symbolKey{Package: iteratorKey.Package, Receiver: "Iterator", Name: "Next"}
+	actual.Members[nextKey] = &actualMember{Key: nextKey, Kind: "method", Results: []string{"T", "bool", "error"}}
+	return expected, actual, owner
+}
+
+// inheritedMemberKey is the projected Go key of one inherited BCL member on
+// one consumer, found by its CLR provenance rather than by its Go spelling, so
+// a mutation names the CLR member it is attacking.
+func inheritedMemberKey(t *testing.T, expected *expectedSurface, owner *expectedType, clrMember, accessor string) symbolKey {
+	t.Helper()
+	for _, key := range owner.Members {
+		member := expected.Members[key]
+		if member.BCLBase != "" && member.BCLMember == clrMember && member.Accessor == accessor {
+			return key
+		}
+	}
+	t.Fatalf("%s projects no inherited %s (accessor %q)", owner.XNA, clrMember, accessor)
+	return symbolKey{}
+}
+
+// declaredMemberKey is the projected Go key of one XNA-DECLARED member, used to
+// prove a declared member and an inherited one never share a provenance class.
+func declaredMemberKey(t *testing.T, expected *expectedSurface, owner *expectedType, clrMember string) symbolKey {
+	t.Helper()
+	for _, key := range owner.Members {
+		member := expected.Members[key]
+		if member.BCLBase != "" {
+			continue
+		}
+		name := member.XNA[strings.Index(member.XNA, "::")+2:]
+		if open := strings.Index(name, "("); open >= 0 {
+			name = name[:open]
+		}
+		if name == clrMember {
+			return key
+		}
+	}
+	t.Fatalf("%s declares no %s", owner.XNA, clrMember)
+	return symbolKey{}
+}
+
+// bclCompositionMutationCase attacks the BCL base-class composition projection
+// in every direction the architecture forbids.
+func bclCompositionMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	parts := strings.SplitN(strings.TrimPrefix(mutation, "f26bcl_"), "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed composition mutation %q", mutation)
+	}
+	expected, actual, owner := bclCompositionFixture(t, parts[1])
+	adapter, _ := composedBaseAdapter(owner)
+	switch parts[0] {
+	case "base_silently_dropped":
+		// A base nobody declared must never pass unnoticed.
+		owner.BaseType = "System.Collections.ObjectModel.SomeOtherCollection`1[Microsoft.Xna.Framework.IGameComponent]"
+	case "exported_embedding":
+		// The refused shape: `type X struct { Collection[T] }`.
+		actual.Types[owner.Key].ExportedEmbeddings = []string{"Collection[IGameComponent]"}
+	case "unexported_embedding":
+		// Embedding the private adapter still promotes a method set CNA-Go
+		// never measured, so it is refused too.
+		actual.Types[owner.Key].Fields = append(actual.Types[owner.Key].Fields,
+			actualField{Name: "collectionBase", Type: adapterFieldType(adapter, owner.BaseType), Embedded: true})
+	case "raw_slice_projection":
+		// `type GameComponentCollection []IGameComponent` is not a struct.
+		actual.Types[owner.Key].Kind = "other"
+		actual.Types[owner.Key].Underlying = "[]IGameComponent"
+	case "exported_raw_slice_field":
+		actual.Types[owner.Key].Fields = append(actual.Types[owner.Key].Fields,
+			actualField{Name: "Items", Type: "[]IGameComponent", Exported: true})
+	case "exported_raw_map_field":
+		actual.Types[owner.Key].Fields = append(actual.Types[owner.Key].Fields,
+			actualField{Name: "Entries", Type: "map[string]string", Exported: true})
+	case "missing_adapter_field":
+		actual.Types[owner.Key].Fields = nil
+	case "exported_adapter_field":
+		actual.Types[owner.Key].Fields[0].Exported = true
+	case "wrong_adapter_generic":
+		actual.Types[owner.Key].Fields[0].Type = "collectionBase[IUpdateable]"
+	case "wrong_adapter_family":
+		actual.Types[owner.Key].Fields[0].Type = "[]IGameComponent"
+	case "inherited_member_missing":
+		delete(actual.Members, inheritedMemberKey(t, expected, owner, "Add", ""))
+	case "inherited_indexer_setter_missing":
+		delete(actual.Members, inheritedMemberKey(t, expected, owner, "Item", "set"))
+	case "extra_inherited_member":
+		key := symbolKey{Package: owner.Key.Package, Receiver: owner.GoName, Name: "AddRange"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Parameters: []string{"[]IGameComponent"}, Results: []string{"error"}}
+	case "excluded_member_projected":
+		// IsReadOnly is a private explicit implementation on Collection<T>,
+		// so promoting it invents surface the CLR does not expose.
+		key := symbolKey{Package: owner.Key.Package, Receiver: owner.GoName, Name: "IsReadOnly"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"bool"}}
+	case "wrong_count_projection":
+		actual.Members[inheritedMemberKey(t, expected, owner, "Count", "get")].Results = []string{"int"}
+	case "wrong_indexer_projection":
+		actual.Members[inheritedMemberKey(t, expected, owner, "Item", "get")].Results = []string{"IGameComponent"}
+	case "wrong_enumerator_type":
+		actual.Members[inheritedMemberKey(t, expected, owner, "GetEnumerator", "")].Results = []string{"[]IGameComponent"}
+	case "enumerator_adapter_absent":
+		delete(actual.Types, symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "Iterator"})
+	case "infallible_mutator":
+		// Add reaches a hook that rejects duplicates, so dropping its error
+		// result hides a real failure mode.
+		actual.Members[inheritedMemberKey(t, expected, owner, "Add", "")].Results = nil
+	case "infallible_indexer_setter":
+		actual.Members[inheritedMemberKey(t, expected, owner, "Item", "set")].Results = nil
+	case "fallible_reader":
+		actual.Members[inheritedMemberKey(t, expected, owner, "IndexOf", "")].Results = []string{"int32", "error"}
+	case "declared_override_missing":
+		delete(actual.Members, declaredMemberKey(t, expected, owner, "InsertItem"))
+	default:
+		t.Fatalf("unknown composition defect %q", parts[0])
+	}
+	return expected, actual
+}
+
+// TestBCLBaseCompositionIsMeasuredNotAssumed proves the registry describes the
+// pinned reality rather than restating the implementation.
+func TestBCLBaseCompositionIsMeasuredNotAssumed(t *testing.T) {
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Every COMPOSED base must have an adapter, and every adapter must belong
+	// to a COMPOSED base: neither half can drift.
+	for identity, relationship := range bclBaseRelationships {
+		_, hasAdapter := bclBaseAdapters[identity]
+		if (relationship.Status == "COMPOSED") != hasAdapter {
+			t.Fatalf("%s has status %q but adapter presence %v", identity, relationship.Status, hasAdapter)
+		}
+	}
+	for identity, adapter := range bclBaseAdapters {
+		if adapter.GoAdapter == "" || adapter.AdapterField == "" || adapter.Authority == "" || adapter.AuthoritySHA256 == "" {
+			t.Fatalf("%s adapter is under-specified: %+v", identity, adapter)
+		}
+		if strings.ToUpper(adapter.GoAdapter[:1]) == adapter.GoAdapter[:1] {
+			t.Fatalf("%s adapter %q must be unexported", identity, adapter.GoAdapter)
+		}
+		if strings.ToUpper(adapter.AdapterField[:1]) == adapter.AdapterField[:1] {
+			t.Fatalf("%s adapter field %q must be unexported", identity, adapter.AdapterField)
+		}
+		if len(adapter.Members) == 0 || len(adapter.Excluded) == 0 {
+			t.Fatalf("%s must inventory both its projected and its excluded members", identity)
+		}
+		seen := make(map[string]bool)
+		for _, entry := range adapter.Members {
+			if entry.Rationale == "" {
+				t.Fatalf("%s::%s has no recorded rationale", identity, entry.Member.Name)
+			}
+			key := entry.Member.Kind + "|" + entry.Member.Name
+			if seen[key] {
+				t.Fatalf("%s inventories %s twice", identity, key)
+			}
+			seen[key] = true
+		}
+		for _, excluded := range adapter.Excluded {
+			if excluded.Reason == "" {
+				t.Fatalf("%s excludes %s with no reason", identity, excluded.CLRMember)
+			}
+		}
+	}
+
+	owner := surface.typeForXNA("Microsoft.Xna.Framework.GameComponentCollection")
+	if owner.SourceMembers != 7 || owner.BCLInheritedCLRMembers != 11 || owner.BCLInheritedProjections != 12 {
+		t.Fatalf("GameComponentCollection accounting = %d declared/%d inherited CLR/%d inherited projections",
+			owner.SourceMembers, owner.BCLInheritedCLRMembers, owner.BCLInheritedProjections)
+	}
+	if len(owner.Members) != 21 {
+		t.Fatalf("GameComponentCollection projects %d Go members, want 21", len(owner.Members))
+	}
+	// The collision between the declared protected SetItem override and the
+	// inherited Item setter is resolved by the settled rule, not by a bespoke
+	// exception, so both colliders carry their source-kind suffix.
+	setter := surface.Members[inheritedMemberKey(t, surface, owner, "Item", "set")]
+	if setter.GoName != "SetItemProperty" {
+		t.Fatalf("inherited indexer setter = %q, want SetItemProperty", setter.GoName)
+	}
+	override := surface.Members[declaredMemberKey(t, surface, owner, "SetItem")]
+	if override.GoName != "SetItemMethod" {
+		t.Fatalf("declared SetItem override = %q, want SetItemMethod", override.GoName)
+	}
+	if setter.BCLBase != "System.Collections.ObjectModel.Collection`1" || override.BCLBase != "" {
+		t.Fatalf("provenance = setter %q, override %q", setter.BCLBase, override.BCLBase)
+	}
+	// The inherited getter keeps the plain name because nothing collides with
+	// it, and it carries the bounds failure List<T> owns.
+	getter := surface.Members[inheritedMemberKey(t, surface, owner, "Item", "get")]
+	if getter.GoName != "Item" || !equalStrings(getter.Results, []string{"IGameComponent", "error"}) {
+		t.Fatalf("inherited indexer getter = %q %v", getter.GoName, getter.Results)
+	}
+	// The read-only members gain no error result.
+	for _, clrMember := range []string{"Count", "Contains", "IndexOf", "GetEnumerator"} {
+		accessor := ""
+		if clrMember == "Count" {
+			accessor = "get"
+		}
+		member := surface.Members[inheritedMemberKey(t, surface, owner, clrMember, accessor)]
+		for _, result := range member.Results {
+			if result == "error" {
+				t.Fatalf("inherited %s must not gain an error result: %v", clrMember, member.Results)
+			}
+		}
+	}
+	// Every mutator does.
+	for _, clrMember := range []string{"Add", "Clear", "CopyTo", "Insert", "Remove", "RemoveAt"} {
+		member := surface.Members[inheritedMemberKey(t, surface, owner, clrMember, "")]
+		if len(member.Results) == 0 || member.Results[len(member.Results)-1] != "error" {
+			t.Fatalf("inherited %s must be fallible: %v", clrMember, member.Results)
+		}
+	}
+}
+
+// TestBCLBaseCompositionDefectsAreRejected runs the composition negative
+// controls through the real verifier.
+func TestBCLBaseCompositionDefectsAreRejected(t *testing.T) {
+	cases := []struct {
+		mutation string
+		category string
+	}{
+		{"base_silently_dropped", "BASE_MAPPING_MISMATCH"},
+		{"exported_embedding", "BASE_MAPPING_MISMATCH"},
+		{"unexported_embedding", "BASE_MAPPING_MISMATCH"},
+		{"raw_slice_projection", "BASE_MAPPING_MISMATCH"},
+		{"exported_raw_slice_field", "BASE_MAPPING_MISMATCH"},
+		{"exported_raw_map_field", "BASE_MAPPING_MISMATCH"},
+		{"missing_adapter_field", "BASE_MAPPING_MISMATCH"},
+		{"exported_adapter_field", "BASE_MAPPING_MISMATCH"},
+		{"wrong_adapter_generic", "BASE_MAPPING_MISMATCH"},
+		{"wrong_adapter_family", "BASE_MAPPING_MISMATCH"},
+		{"excluded_member_projected", "BASE_MAPPING_MISMATCH"},
+		{"inherited_member_missing", "MISSING_MEMBER"},
+		{"inherited_indexer_setter_missing", "MISSING_MEMBER"},
+		{"declared_override_missing", "MISSING_MEMBER"},
+		{"extra_inherited_member", "UNEXPECTED_MEMBER"},
+		{"wrong_count_projection", "RETURN_MAPPING_MISMATCH"},
+		{"wrong_indexer_projection", "RETURN_MAPPING_MISMATCH"},
+		{"wrong_enumerator_type", "RETURN_MAPPING_MISMATCH"},
+		{"enumerator_adapter_absent", "INTERFACE_MAPPING_MISMATCH"},
+		{"infallible_mutator", "ERROR_MAPPING_MISMATCH"},
+		{"infallible_indexer_setter", "ERROR_MAPPING_MISMATCH"},
+		{"fallible_reader", "ERROR_MAPPING_MISMATCH"},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.mutation, func(t *testing.T) {
+			mutation := "f26bcl_" + testCase.mutation + "__Microsoft.Xna.Framework.GameComponentCollection"
+			expected, actual := bclCompositionMutationCase(t, mutation)
+			result := verify(expected, actual, 0, "report", "contract", "mapping")
+			if result.Summary[testCase.category] == 0 {
+				t.Fatalf("mutation %q did not trigger %s; summary=%v", mutation, testCase.category, result.Summary)
+			}
+		})
+	}
+}
+
+// TestBCLCompositionFixtureIsCleanBeforeMutation is the control the negative
+// controls depend on: the unmutated fixture must produce no diagnostic, so a
+// mutation's diagnostic is caused by the mutation.
+func TestBCLCompositionFixtureIsCleanBeforeMutation(t *testing.T) {
+	expected, actual, _ := bclCompositionFixture(t, "Microsoft.Xna.Framework.GameComponentCollection")
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	if result.Summary["TOTAL_DIAGNOSTICS"] != 0 {
+		t.Fatalf("clean composition fixture produced %d diagnostics: %v", result.Summary["TOTAL_DIAGNOSTICS"], result.Diagnostics)
+	}
 }

@@ -137,6 +137,17 @@ var pureManagedTypes = map[string]bool{
 	// look up an entry. It creates no device, starts no game, and reaches no
 	// native code.
 	"Microsoft.Xna.Framework.GameServiceContainer": true,
+
+	// Foundation 26. Microsoft.Xna.Framework.Game.dll shows
+	// GameComponentCollection as a sealed Collection<IGameComponent> subclass
+	// whose whole implementation is managed list work plus two delegate
+	// fields: the constructor is one `call base..ctor`, the four overrides
+	// index, insert, remove and clear the inherited List<IGameComponent> and
+	// raise two events, and the two raise helpers are a null test and an
+	// Invoke. Its inherited base, System.Collections.ObjectModel.Collection`1,
+	// is equally managed in the pinned mscorlib. Nothing reaches a device, an
+	// allocation, or native code.
+	"Microsoft.Xna.Framework.GameComponentCollection": true,
 }
 
 // bclBaseRelationship is how one non-XNA CLR base type is projected.
@@ -154,9 +165,16 @@ type bclBaseRelationship struct {
 	// empty when the relationship needs none.
 	Adapter string
 	// Status is IMPLIED for the three universal CLR roots that no projection
-	// ever names, MAPPED when a derived XNA type may be projected today, and
-	// DEFERRED when the relationship is still an open public-API decision and
-	// no derived type may be projected yet.
+	// ever names, MAPPED when a derived XNA type may be projected today and
+	// the base contributes no inherited surface, COMPOSED when the base is a
+	// supported BCL family whose public members the derived type re-exposes
+	// through a private adapter, and DEFERRED when the relationship is still
+	// an open public-API decision and no derived type may be projected yet.
+	//
+	// COMPOSED is the one status under which a base contributes projected Go
+	// identities. They are counted as BCL-inherited projections and never as
+	// XNA-declared reference members, so no member is ever counted twice and
+	// the pinned XNA-declared member count is unaffected.
 	Status string
 	// Rationale records why the relationship is where it is.
 	Rationale string
@@ -206,8 +224,9 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 		Rationale: "part of the System.ComponentModel TypeConverter subsystem, which is a separate mapping",
 	},
 	"System.Collections.ObjectModel.Collection`1": {
-		Status:    "DEFERRED",
-		Rationale: "a mutable BCL collection base whose projected surface is a separate mapping",
+		Adapter:   "collectionBase[T]",
+		Status:    "COMPOSED",
+		Rationale: "modelled by the private collectionBase[T] adapter; a derived XNA class holds it in an unexported field and re-exposes the eleven inherited public members through measured forwarding, with no exported embedding",
 	},
 	"System.Collections.ObjectModel.ReadOnlyCollection`1": {
 		Status:    "DEFERRED",
@@ -492,6 +511,37 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"method|RemoveService": true,
 		"method|GetService":    true,
 	},
+	// GameComponentCollection mixes both provenance classes in one
+	// fallibility table, which is correct: fallibility is a property of a
+	// projected operation, and an inherited operation's failures come from the
+	// pinned Collection<T>/List<T> IL plus whatever this subclass's hooks add.
+	//
+	// The four XNA-declared overrides all fail: InsertItem rejects a
+	// duplicate, RemoveItem reads an element that may be out of range,
+	// SetItem throws unconditionally, and ClearItems propagates a handler
+	// failure. The constructor is one `call base..ctor` and cannot.
+	//
+	// Of the eleven inherited members, Count, Contains, IndexOf and
+	// GetEnumerator only read. Add, Clear, Insert, Remove and RemoveAt each
+	// reach a hook that can fail, and Insert and RemoveAt validate their index
+	// first. CopyTo carries Array.Copy's three argument failures.
+	//
+	// property|Item marks both accessors, and both genuinely fail: the getter
+	// forwards to List<T>'s bounds check, and the setter validates the index
+	// and then reaches a SetItem that never succeeds.
+	"Microsoft.Xna.Framework.GameComponentCollection": {
+		"method|InsertItem": true,
+		"method|RemoveItem": true,
+		"method|SetItem":    true,
+		"method|ClearItems": true,
+		"property|Item":     true,
+		"method|Add":        true,
+		"method|Clear":      true,
+		"method|CopyTo":     true,
+		"method|Insert":     true,
+		"method|Remove":     true,
+		"method|RemoveAt":   true,
+	},
 }
 
 // fallibilityKeys returns the managedFallibleMembers keys that can mark one
@@ -563,6 +613,12 @@ func buildExpected(c contract) (*expectedSurface, error) {
 			mapped := mapMember(s, byIdentity, owner, *t, *m, groups)
 			allMembers = append(allMembers, mapped...)
 		}
+		inherited := mapInheritedBaseMembers(s, byIdentity, owner, *t)
+		owner.BCLInheritedCLRMembers = inheritedCLRMemberCount(*t)
+		owner.BCLInheritedProjections = len(inherited)
+		s.BCLInheritedCLRMembers += owner.BCLInheritedCLRMembers
+		s.BCLInheritedProjections += owner.BCLInheritedProjections
+		allMembers = append(allMembers, inherited...)
 	}
 	resolveMemberCollisions(allMembers)
 	for _, em := range allMembers {
@@ -1309,4 +1365,342 @@ func sortedExpectedTypes(s *expectedSurface) []*expectedType {
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].XNA < result[j].XNA })
 	return result
+}
+
+// ---------------------------------------------------------------------------
+// The general BCL base-class composition projection.
+// ---------------------------------------------------------------------------
+
+// bclBaseAdapter is one supported BCL base-class family.
+//
+// A CLR class that inherits a supported BCL collection base is projected as a
+// concrete Go reference type that CONTAINS a private generic adapter for that
+// base and re-exposes the base's public surface through measured forwarding
+// members. The adapter is implementation machinery: it is not an XNA type, not
+// an exported field, not a public base-class object, not an embedded public
+// API, and not a native handle.
+//
+// Exported embedding is refused rather than merely discouraged. Writing
+//
+//	type GameComponentCollection struct { Collection[IGameComponent] }
+//
+// would publish a Go type the XNA contract never declares, promote a whole
+// method set the derived type never declared, imply a Go subtype relationship
+// CLR inheritance does not create, and let a consumer type-assert to support
+// machinery. verifyBCLBaseProjection rejects it.
+//
+// The registry is deliberately not a general .NET runtime. Only the families a
+// pinned XNA public type actually inherits are represented, and a family is
+// only usable once its exact behavior has been read from the pinned BCL.
+type bclBaseAdapter struct {
+	// GoAdapter is the unexported Go type family that models the base. It is
+	// never exported and never named by any projected signature.
+	GoAdapter string
+	// AdapterField is the unexported field name a consumer must hold it in.
+	AdapterField string
+	// GenericArity is how many type arguments the CLR base takes.
+	GenericArity int
+	// BehaviorLevel is SUPPORTED when every inherited public member below has
+	// its exact pinned behavior established, and PARTIAL when some inherited
+	// member is present in the inventory but not yet faithful.
+	BehaviorLevel string
+	// Authority is the exact BCL binary the behavior was read from.
+	Authority string
+	// AuthoritySHA256 pins that binary.
+	AuthoritySHA256 string
+	// Members is the exact public member inventory the base contributes to
+	// every derived type. Constructors are excluded because the CLR does not
+	// inherit them; protected and explicitly implemented members are excluded
+	// because they are not public surface.
+	Members []bclInheritedMember
+	// Excluded records the base members deliberately left unprojected, with
+	// the reason, so an exclusion is measured rather than silent.
+	Excluded  []bclExcludedMember
+	Rationale string
+}
+
+// bclInheritedMember is one public CLR member of a BCL base, expressed as the
+// same contractMember shape a declared XNA member uses so it runs through the
+// identical naming, overload, direction, and fallibility machinery. Type
+// strings use the CLR generic-argument tokens !0 and !1, which are substituted
+// with the derived type's actual base arguments before mapping.
+type bclInheritedMember struct {
+	Member    contractMember
+	Rationale string
+}
+
+// bclExcludedMember records one public-looking base member that is not
+// projected, and why.
+type bclExcludedMember struct {
+	CLRMember string
+	Reason    string
+}
+
+func bclMethod(name string, returnType string, parameters ...contractParameter) contractMember {
+	member := contractMember{Kind: "method", Name: name, Access: "public", Parameters: parameters}
+	if returnType != "" {
+		member.ReturnType = &returnType
+	} else {
+		void := "System.Void"
+		member.ReturnType = &void
+	}
+	return member
+}
+
+func bclProperty(name string, propertyType string, get, set bool, parameters ...contractParameter) contractMember {
+	access := "public"
+	member := contractMember{Kind: "property", Name: name, Access: access, Type: &propertyType, Get: get, Set: set, Parameters: parameters}
+	if get {
+		member.GetAccess = &access
+	}
+	if set {
+		member.SetAccess = &access
+	}
+	return member
+}
+
+func bclParameter(name, clrType string) contractParameter {
+	return contractParameter{Name: name, Type: clrType}
+}
+
+// bclBaseAdapters declares every supported BCL base-class family.
+//
+// A base listed here has status COMPOSED in bclBaseRelationships, which is what
+// admits its derived XNA types for projection.
+var bclBaseAdapters = map[string]bclBaseAdapter{
+	// System.Collections.ObjectModel.Collection<T>.
+	//
+	// Read from mscorlib 4.0.30319.1, the .NET Framework 4.0 RTM binary every
+	// pinned XNA assembly binds against with `.assembly extern mscorlib
+	// 4.0.0.0` and public key token b77a5c561934e089.
+	//
+	// The class stores its elements in a private IList<T> field, `items`. Its
+	// parameterless constructor -- the only one any pinned XNA subclass calls
+	// -- assigns `new List<T>()`, so the store is always List<T> and its
+	// IsReadOnly is always false; the `items.IsReadOnly` guard that opens six
+	// of the public mutators is therefore statically dead for every consumer
+	// in the profile and is not projected as a failure mode.
+	//
+	// Its public surface is exactly the eleven members below. Everything else
+	// the class declares is one of three things that are not public surface:
+	// two constructors, which the CLR does not inherit; the protected Items
+	// property and the four protected virtual hooks; and fourteen private
+	// explicit implementations of IList, ICollection, IEnumerable and
+	// ICollection<T>.IsReadOnly, which the settled BCL-interface rule already
+	// excludes.
+	"System.Collections.ObjectModel.Collection`1": {
+		GoAdapter:       "collectionBase[T]",
+		AdapterField:    "base",
+		GenericArity:    1,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "a mutable BCL collection base projected as private composition plus measured forwarding; every public mutator routes through the equivalent overridable hook so a subclass override runs",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Count", "System.Int32", true, false),
+				Rationale: "get_Count is `items.Count`; it cannot fail"},
+			{Member: bclProperty("Item", "!0", true, true, bclParameter("index", "System.Int32")),
+				Rationale: "get_Item is one `items[index]` whose bounds check is List<T>'s unsigned `(uint)index >= (uint)_size`; set_Item validates `index < 0 || index >= Count` itself and only then reaches the SetItem hook"},
+			{Member: bclMethod("Add", "System.Void", bclParameter("item", "!0")),
+				Rationale: "Add is `InsertItem(Count, item)` and validates nothing of its own"},
+			{Member: bclMethod("Clear", "System.Void"),
+				Rationale: "Clear is `ClearItems()`"},
+			{Member: bclMethod("Contains", "System.Boolean", bclParameter("item", "!0")),
+				Rationale: "Contains is `items.Contains(item)`, a forward linear scan over EqualityComparer<T>.Default that stops at the first match"},
+			{Member: bclMethod("CopyTo", "System.Void", bclParameter("array", "!0[]"), bclParameter("index", "System.Int32")),
+				Rationale: "CopyTo is `items.CopyTo(array, index)` and then Array.Copy, whose three failures are a null destination, a negative index, and a destination too small for Count elements"},
+			{Member: bclMethod("GetEnumerator", "System.Collections.Generic.IEnumerator`1[!0]"),
+				Rationale: "GetEnumerator returns `items.GetEnumerator()` boxed as IEnumerator<T>, so the observed enumerator is List<T>.Enumerator and its version invalidation is List<T>'s"},
+			{Member: bclMethod("IndexOf", "System.Int32", bclParameter("item", "!0")),
+				Rationale: "IndexOf is `items.IndexOf(item)`, ending in Array.IndexOf<T> over the same default comparer"},
+			{Member: bclMethod("Insert", "System.Void", bclParameter("index", "System.Int32"), bclParameter("item", "!0")),
+				Rationale: "Insert guards `index < 0 || index > Count`, which admits Count itself, and then reaches the InsertItem hook"},
+			{Member: bclMethod("Remove", "System.Boolean", bclParameter("item", "!0")),
+				Rationale: "Remove returns false without touching the collection when IndexOf finds nothing, and otherwise reaches the RemoveItem hook and returns true"},
+			{Member: bclMethod("RemoveAt", "System.Void", bclParameter("index", "System.Int32")),
+				Rationale: "RemoveAt guards `index < 0 || index >= Count` and then reaches the RemoveItem hook"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: ".ctor()", Reason: "the CLR does not inherit constructors; a derived type projects its own"},
+			{CLRMember: ".ctor(IList`1<T>)", Reason: "the CLR does not inherit constructors, and no pinned XNA subclass calls this overload"},
+			{CLRMember: "Items", Reason: "`family`, so it is not public surface; exposing it would hand out the backing store"},
+			{CLRMember: "InsertItem", Reason: "`family` virtual hook, projected as the private collectionOverrides interface rather than as public Go API"},
+			{CLRMember: "RemoveItem", Reason: "`family` virtual hook, projected as the private collectionOverrides interface"},
+			{CLRMember: "SetItem", Reason: "`family` virtual hook, projected as the private collectionOverrides interface"},
+			{CLRMember: "ClearItems", Reason: "`family` virtual hook, projected as the private collectionOverrides interface"},
+			{CLRMember: "ICollection<T>.IsReadOnly", Reason: "private explicit implementation; the settled BCL-interface rule projects nothing for it"},
+			{CLRMember: "IEnumerable.GetEnumerator", Reason: "private explicit implementation, and the generic GetEnumerator already carries enumeration"},
+			{CLRMember: "ICollection.IsSynchronized", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.SyncRoot", Reason: "private explicit implementation, and CNA-Go projects no CLR sync root"},
+			{CLRMember: "ICollection.CopyTo", Reason: "private explicit implementation; the generic CopyTo carries the operation"},
+			{CLRMember: "IList.Item", Reason: "private explicit implementation of the non-generic indexer"},
+			{CLRMember: "IList.IsReadOnly", Reason: "private explicit implementation"},
+			{CLRMember: "IList.IsFixedSize", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Add", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Contains", Reason: "private explicit implementation"},
+			{CLRMember: "IList.IndexOf", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Insert", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Remove", Reason: "private explicit implementation"},
+		},
+	},
+}
+
+// bclBaseArguments splits the CLR generic arguments off a base identity, so
+// `System.Collections.ObjectModel.Collection`1[Microsoft.Xna.Framework.IGameComponent]`
+// yields exactly one argument. It splits at top-level commas so a nested
+// generic argument survives intact.
+func bclBaseArguments(raw string) []string {
+	open := strings.Index(raw, "[")
+	if open < 0 || !strings.HasSuffix(raw, "]") {
+		return nil
+	}
+	inner := raw[open+1 : len(raw)-1]
+	var arguments []string
+	depth, start := 0, 0
+	for i := 0; i < len(inner); i++ {
+		switch inner[i] {
+		case '[':
+			depth++
+		case ']':
+			depth--
+		case ',':
+			if depth == 0 {
+				arguments = append(arguments, strings.TrimSpace(inner[start:i]))
+				start = i + 1
+			}
+		}
+	}
+	arguments = append(arguments, strings.TrimSpace(inner[start:]))
+	return arguments
+}
+
+// substituteBaseArguments replaces the CLR generic-argument tokens !0 and !1 in
+// one inherited member's type strings with the derived type's actual base
+// arguments. Longer tokens are substituted first so !10 could never be read as
+// !1 followed by a literal 0.
+func substituteBaseArguments(raw string, arguments []string) string {
+	for i := len(arguments) - 1; i >= 0; i-- {
+		raw = strings.ReplaceAll(raw, "!"+strconv.Itoa(i), arguments[i])
+	}
+	return raw
+}
+
+// instantiateInheritedMember produces the contractMember one BCL base
+// contributes to one derived XNA type, with the base's generic arguments
+// substituted.
+func instantiateInheritedMember(member contractMember, arguments []string) contractMember {
+	instance := member
+	if member.ReturnType != nil {
+		substituted := substituteBaseArguments(*member.ReturnType, arguments)
+		instance.ReturnType = &substituted
+	}
+	if member.Type != nil {
+		substituted := substituteBaseArguments(*member.Type, arguments)
+		instance.Type = &substituted
+	}
+	instance.Parameters = make([]contractParameter, len(member.Parameters))
+	for i, parameter := range member.Parameters {
+		instance.Parameters[i] = parameter
+		instance.Parameters[i].Type = substituteBaseArguments(parameter.Type, arguments)
+	}
+	return instance
+}
+
+// mapInheritedBaseMembers projects the public members a supported BCL base
+// contributes to one derived XNA type.
+//
+// The inherited members run through the same mapMember machinery a declared
+// XNA member does, so they obey the identical naming, overload, parameter
+// direction, and per-operation fallibility rules, and they take part in the
+// same collision resolution. That is deliberate: GameComponentCollection
+// declares a protected SetItem override AND inherits a public Item setter,
+// which the settled rules both spell SetItem, and the established collision
+// rule must resolve that rather than a bespoke exception.
+//
+// Provenance is recorded on every member it produces. An inherited member is
+// never counted as an XNA-declared reference member, so REFERENCE_MEMBERS
+// keeps naming exactly what the Microsoft assemblies declare while
+// EXPECTED_GO_MEMBERS grows by the surface that is now representable.
+func mapInheritedBaseMembers(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, t contractType) []*expectedMember {
+	if t.BaseType == nil {
+		return nil
+	}
+	raw := *t.BaseType
+	identity := baseIdentityWithoutArguments(raw)
+	relationship, declared := bclBaseRelationships[identity]
+	if !declared || relationship.Status != "COMPOSED" {
+		return nil
+	}
+	adapter, present := bclBaseAdapters[identity]
+	if !present {
+		return nil
+	}
+	arguments := bclBaseArguments(raw)
+	if len(arguments) != adapter.GenericArity {
+		s.MappingIssues = append(s.MappingIssues, diagnostic{
+			Category: "BASE_MAPPING_MISMATCH", XNA: t.Name, Go: owner.Key.String(),
+			Message: fmt.Sprintf("CLR base %q takes %d generic arguments, the derived type supplies %d", identity, adapter.GenericArity, len(arguments)),
+		})
+		return nil
+	}
+
+	// The inherited members form their own overload namespace. None of the
+	// supported families declares two public members with one CLR name, so
+	// every inherited member is a unique-name projection; the assertion below
+	// keeps that a measured fact rather than an assumption.
+	inheritedGroups := make(map[string]int)
+	synthetic := contractType{Name: t.Name, Kind: t.Kind, Sealed: t.Sealed}
+	for _, entry := range adapter.Members {
+		instance := instantiateInheritedMember(entry.Member, arguments)
+		synthetic.Members = append(synthetic.Members, instance)
+		if instance.Kind == "method" {
+			inheritedGroups[instance.Name]++
+		}
+	}
+	for name, count := range inheritedGroups {
+		if count > 1 {
+			s.MappingIssues = append(s.MappingIssues, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: t.Name, Go: owner.Key.String(),
+				Message: fmt.Sprintf("inherited BCL member %q from %q is overloaded, which the inherited projection does not model", name, identity),
+			})
+		}
+	}
+
+	var mapped []*expectedMember
+	groups := overloadGroups(synthetic)
+	for _, instance := range synthetic.Members {
+		for _, member := range mapMember(s, byIdentity, owner, synthetic, instance, groups) {
+			member.BCLBase = identity
+			member.BCLMember = instance.Name
+			member.XNA = identity + "::" + strings.TrimPrefix(member.XNA, t.Name+"::")
+			mapped = append(mapped, member)
+		}
+	}
+	return mapped
+}
+
+// inheritedCLRMemberCount is how many public CLR members one derived type's
+// supported BCL base contributes, before any of them is projected. It is the
+// BCL-INHERITED provenance class of the identity accounting, kept separate
+// from the XNA-declared reference members the Microsoft assemblies declare.
+func inheritedCLRMemberCount(t contractType) int {
+	if t.BaseType == nil {
+		return 0
+	}
+	identity := baseIdentityWithoutArguments(*t.BaseType)
+	if relationship, declared := bclBaseRelationships[identity]; !declared || relationship.Status != "COMPOSED" {
+		return 0
+	}
+	return len(bclBaseAdapters[identity].Members)
+}
+
+// goAdapterArgument is the Go spelling of one CLR generic argument as it
+// appears in a private BCL adapter field type. The adapter is declared in the
+// same package as the consumers that hold it, so an XNA argument needs no
+// package qualifier.
+func goAdapterArgument(clr string) string {
+	if mapped, ok := bclTypes[clr]; ok {
+		return mapped
+	}
+	return flattenedBaseName(clr)
 }

@@ -66,6 +66,13 @@ type expectedSurface struct {
 	ReferenceMembers   int
 	ExpectedGoTypes    int
 	ExpectedGoMembers  int
+	// BCLInheritedCLRMembers is how many public CLR members the supported BCL
+	// bases contribute across the profile, counted once per derived type.
+	BCLInheritedCLRMembers int
+	// BCLInheritedProjections is how many Go identities those members project
+	// to. It differs from BCLInheritedCLRMembers because a CLR property with
+	// both accessors projects two Go members.
+	BCLInheritedProjections int
 }
 
 type expectedType struct {
@@ -82,6 +89,12 @@ type expectedType struct {
 	MappedInterfaces []mappedInterface
 	Members          []symbolKey
 	SourceMembers    int
+	// BCLInheritedCLRMembers is how many public CLR members this type's
+	// supported BCL base contributes, and BCLInheritedProjections is how many
+	// Go identities they become. Both are zero for a type with no COMPOSED
+	// base, which is every type in the profile but the collection consumers.
+	BCLInheritedCLRMembers  int
+	BCLInheritedProjections int
 }
 
 type mappedInterface struct {
@@ -121,6 +134,16 @@ type expectedMember struct {
 	// decided per accessor, so the two accessors of one property are separate
 	// expected members that can disagree about their error result.
 	Accessor string
+	// BCLBase is the CLR identity of the supported BCL base class this member
+	// is inherited from, and is empty for a member the XNA assembly declares
+	// itself. It is the member's provenance class: every expected Go member
+	// has exactly one, so no member is counted both as XNA-declared and as
+	// BCL-inherited.
+	BCLBase string
+	// BCLMember is the exact CLR member name on that base. Together with
+	// BCLBase and Key it is the full attribution the inherited projection
+	// promises: exact BCL base, exact CLR member, exact projected Go member.
+	BCLMember string
 }
 
 type actualSurface struct {
@@ -139,6 +162,19 @@ type actualType struct {
 	FlagsMarker        bool
 	TypeParameters     []string
 	ExportedEmbeddings []string
+	// Fields is every struct field the type declares, exported or not. The
+	// unexported ones are measured because the BCL base-class composition
+	// projection makes a private field load-bearing: a COMPOSED base must be
+	// held in an unexported field of a declared name and adapter type, and
+	// that claim cannot be checked from the public surface alone.
+	Fields []actualField
+}
+
+type actualField struct {
+	Name     string
+	Type     string
+	Exported bool
+	Embedded bool
 }
 
 type actualMember struct {
@@ -203,6 +239,7 @@ type report struct {
 	Foundation23Interfaces       []managedInterfaceClosure     `json:"foundation23InterfaceClosures"`
 	Foundation23ManagedClasses   []managedTypeClosure          `json:"foundation23ManagedClassClosures"`
 	BCLBaseRelationships         []bclBaseProjection           `json:"bclBaseRelationships"`
+	BCLBaseAdapters              []bclBaseAdapterMeasurement   `json:"bclBaseAdapters"`
 	BCLInterfaceRelationships    []bclInterfaceProjection      `json:"bclInterfaceRelationships"`
 	Metadata                     reportMetadata                `json:"metadata"`
 }
@@ -236,6 +273,81 @@ type bclBaseProjection struct {
 	ExportedEmbeddings int    `json:"exportedEmbeddings"`
 	Rationale          string `json:"rationale"`
 	Verdict            string `json:"verdict"`
+}
+
+// bclBaseAdapterMeasurement measures one supported BCL base-class family: the
+// registry entry, the private Go adapter that models it, the exact inherited
+// public member inventory, and every concrete XNA consumer.
+//
+// It is the whole identity accounting for the composition projection. Each
+// inherited projection is attributable to an exact BCL base, an exact CLR
+// member, and an exact projected Go member, and none of them is counted as an
+// XNA-declared reference member.
+type bclBaseAdapterMeasurement struct {
+	CLRBase string `json:"clrBase"`
+	// GoAdapter is the unexported adapter family. It is never exported and
+	// never named by a projected signature.
+	GoAdapter string `json:"goAdapter"`
+	// AdapterField is the unexported field a consumer holds it in.
+	AdapterField  string `json:"adapterField"`
+	BehaviorLevel string `json:"behaviorLevel"`
+	// Authority is the exact BCL binary the behavior was read from, pinned by
+	// AuthoritySHA256.
+	Authority       string `json:"authority"`
+	AuthoritySHA256 string `json:"authoritySha256"`
+	// InheritedCLRMembers is the size of the public member inventory, and
+	// InheritedProjections is how many Go identities one consumer gains.
+	InheritedCLRMembers  int `json:"inheritedClrMembers"`
+	InheritedProjections int `json:"inheritedProjectionsPerConsumer"`
+	// ExcludedMembers is how many base members are deliberately unprojected.
+	ExcludedMembers int `json:"excludedMembers"`
+	// Consumers is every XNA type that inherits this base.
+	Consumers []bclBaseAdapterConsumer `json:"consumers"`
+	// Inventory is the exact per-member attribution.
+	Inventory  []bclInheritedMemberMeasurement `json:"inheritedMemberInventory"`
+	Exclusions []bclInheritedExclusion         `json:"exclusions"`
+	Rationale  string                          `json:"rationale"`
+	Verdict    string                          `json:"verdict"`
+}
+
+type bclBaseAdapterConsumer struct {
+	XNA string `json:"xna"`
+	Go  string `json:"go"`
+	// BaseArguments is the CLR generic arguments this consumer supplies.
+	BaseArguments []string `json:"baseArguments"`
+	// Projected is whether the consumer is present in the Go surface.
+	Projected bool `json:"projected"`
+	// AdapterFieldType is the exact private field type the consumer must
+	// declare, and AdapterFieldPresent whether it does.
+	AdapterFieldType    string `json:"adapterFieldType"`
+	AdapterFieldPresent bool   `json:"adapterFieldPresent"`
+	// ExportedEmbeddings must stay zero: the base is never Go embedding.
+	ExportedEmbeddings int `json:"exportedEmbeddings"`
+	// DeclaredMembers and InheritedMembers are this consumer's two provenance
+	// classes, and their projections never overlap.
+	DeclaredMembers      int    `json:"xnaDeclaredMembers"`
+	DeclaredProjections  int    `json:"xnaDeclaredProjections"`
+	InheritedProjections int    `json:"bclInheritedProjections"`
+	Verdict              string `json:"verdict"`
+}
+
+// bclInheritedMemberMeasurement is one row of the attribution table: exact BCL
+// base, exact CLR member, exact projected Go member.
+type bclInheritedMemberMeasurement struct {
+	CLRBase   string `json:"clrBase"`
+	CLRMember string `json:"clrMember"`
+	CLRKind   string `json:"clrKind"`
+	Consumer  string `json:"consumer"`
+	GoMember  string `json:"goMember"`
+	GoResults string `json:"goResults"`
+	Accessor  string `json:"accessor,omitempty"`
+	Present   bool   `json:"present"`
+	Rationale string `json:"rationale"`
+}
+
+type bclInheritedExclusion struct {
+	CLRMember string `json:"clrMember"`
+	Reason    string `json:"reason"`
 }
 
 // bclInterfaceProjection measures one non-XNA CLR interface that XNA types

@@ -62,8 +62,17 @@ func run(root, contractFile, mappingFile, reportFile, missingFile, mode string) 
 	if expected.ReferenceTypes != 257 || expected.ReferenceMembers != 2964 {
 		return fmt.Errorf("reference admission failed: got %d types/%d members", expected.ReferenceTypes, expected.ReferenceMembers)
 	}
-	if expected.ExpectedGoTypes != 257 || expected.ExpectedGoMembers != 3243 {
-		return fmt.Errorf("mapping count admission failed: got %d types/%d members", expected.ExpectedGoTypes, expected.ExpectedGoMembers)
+	// The expected Go surface is admitted by its parts rather than by one
+	// total, so a change in either provenance class is attributed instead of
+	// being absorbed. 3243 is the pinned projection of the 2,964 XNA-declared
+	// reference members and never moves; BCL-inherited projections are added
+	// on top and are separately pinned by the adapter registry.
+	declaredProjections := expected.ExpectedGoMembers - expected.BCLInheritedProjections
+	if expected.ExpectedGoTypes != 257 || declaredProjections != 3243 {
+		return fmt.Errorf("mapping count admission failed: got %d types/%d XNA-declared member projections", expected.ExpectedGoTypes, declaredProjections)
+	}
+	if expected.BCLInheritedProjections != expectedBCLInheritedProjections(expected) {
+		return fmt.Errorf("BCL inherited projection admission failed: got %d, registry implies %d", expected.BCLInheritedProjections, expectedBCLInheritedProjections(expected))
 	}
 	actual, err := extractActual(absoluteRoot)
 	if err != nil {
@@ -171,10 +180,13 @@ func writeMissingInventory(filename string, result report) error {
 
 func printSummary(result report) {
 	order := []string{
-		"REFERENCE_TYPES", "REFERENCE_MEMBERS", "EXPECTED_GO_TYPES", "EXPECTED_GO_MEMBERS",
+		"REFERENCE_TYPES", "REFERENCE_MEMBERS", "REFERENCE_XNA_MEMBERS",
+		"BCL_INHERITED_PUBLIC_MEMBERS", "BCL_INHERITED_MEMBER_PROJECTIONS",
+		"EXPECTED_GO_TYPES", "EXPECTED_GO_MEMBERS",
 		"TARGET_TYPES", "TARGET_MEMBERS", "TOTAL_DIAGNOSTICS", "MISSING_TYPE", "MISSING_MEMBER",
 		"COMPLETE_TYPES", "PARTIAL_TYPES", "MISSING_TYPES",
 		"INTERFACE_WITNESS_PROJECTIONS", "PACKFROMVECTOR4_WITNESS_PROJECTIONS", "TOVECTOR4_WITNESS_PROJECTIONS",
+		"BCL_BASE_ADAPTERS", "BCL_BASE_ADAPTER_CONSUMERS",
 	}
 	order = append(order, diagnosticCategories[2:]...)
 	seen := make(map[string]bool)
@@ -199,4 +211,28 @@ func sortedKeys(values map[string]int) []string {
 	}
 	sort.Strings(result)
 	return result
+}
+
+// expectedBCLInheritedProjections recomputes the BCL-inherited projection
+// count straight from the adapter registry and the pinned contract, so the
+// number the mapper produced is admitted against an independent derivation
+// rather than against itself. A CLR property with two accessors projects two
+// Go members; every other inherited member projects one.
+func expectedBCLInheritedProjections(expected *expectedSurface) int {
+	total := 0
+	for _, et := range expected.Types {
+		if et.BCLInheritedCLRMembers == 0 {
+			continue
+		}
+		adapter := bclBaseAdapters[baseIdentityWithoutArguments(et.BaseType)]
+		for _, entry := range adapter.Members {
+			switch {
+			case entry.Member.Kind == "property" && entry.Member.Get && entry.Member.Set:
+				total += 2
+			default:
+				total++
+			}
+		}
+	}
+	return total
 }

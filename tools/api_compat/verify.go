@@ -123,10 +123,29 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	typeDiagnostics := make(map[string]int)
 	missingMembers := make(map[string][]string)
 	result.Summary["REFERENCE_TYPES"] = expected.ReferenceTypes
+	// REFERENCE_MEMBERS keeps naming exactly what the Microsoft XNA
+	// assemblies declare. It is deliberately NOT inflated with inherited
+	// mscorlib members: pretending a BCL member was declared in the XNA
+	// metadata would falsify the pinned contract. The two names below are
+	// aliases that make the three provenance classes explicit in the report.
 	result.Summary["REFERENCE_MEMBERS"] = expected.ReferenceMembers
+	result.Summary["REFERENCE_XNA_MEMBERS"] = expected.ReferenceMembers
+	result.Summary["BCL_INHERITED_PUBLIC_MEMBERS"] = expected.BCLInheritedCLRMembers
+	result.Summary["BCL_INHERITED_MEMBER_PROJECTIONS"] = expected.BCLInheritedProjections
 	result.Summary["EXPECTED_GO_TYPES"] = expected.ExpectedGoTypes
 	result.Summary["EXPECTED_GO_MEMBERS"] = expected.ExpectedGoMembers
 	result.Summary["INTERFACE_WITNESS_PROJECTIONS"] = len(expected.InterfaceWitnesses)
+	result.BCLBaseAdapters = measureBCLBaseAdapters(expected, actual)
+	result.Summary["BCL_BASE_ADAPTERS"] = len(result.BCLBaseAdapters)
+	for _, adapter := range result.BCLBaseAdapters {
+		result.Summary["BCL_BASE_ADAPTER_CONSUMERS"] += len(adapter.Consumers)
+		if adapter.Verdict != "PASS" {
+			addDiagnostic(&result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: adapter.CLRBase,
+				Message: "BCL base adapter measurement failed",
+			})
+		}
+	}
 	result.Summary["ALLOWLIST_ENTRIES"] = allowlistEntries
 	if allowlistEntries > 0 {
 		addDiagnostic(&result, diagnostic{Category: "ALLOWLIST_ENTRIES", Message: fmt.Sprintf("mapping allowlist has %d entries", allowlistEntries)})
@@ -1583,7 +1602,34 @@ func measureCollectionInterfaceProjection(result *report, expected *expectedSurf
 		return
 	}
 
+	// The required set depends on how the type acquires ICollection<T>.
+	//
+	// A type that DECLARES the interface, such as TouchCollection or
+	// CurveKeyCollection, declares its members publicly in the XNA metadata,
+	// so all eight are public surface and all eight must be projected.
+	//
+	// A type that INHERITS it from a supported BCL base acquires whatever
+	// that base makes public, which is not the same set. Collection<T>
+	// implements ICollection<T>.IsReadOnly EXPLICITLY --
+	//
+	//	.method private hidebysig newslot specialname virtual final
+	//	        instance bool 'System.Collections.Generic.ICollection<T>.get_IsReadOnly'()
+	//
+	// -- so it is not public surface at all, and `new Collection<int>()
+	// .IsReadOnly` does not compile in C# either. Requiring it here would
+	// force CNA-Go to invent a public member the CLR does not expose, which
+	// is exactly the failure the no-surface rule exists to prevent. The
+	// required set for such a type is therefore the adapter's measured public
+	// inventory, and every member the adapter records as excluded is checked
+	// to be ABSENT rather than present.
 	required := []string{"Add", "Clear", "Contains", "CopyTo", "Remove", "Count", "IsReadOnly", "GetEnumerator"}
+	if adapter, composed := composedBaseAdapter(owner); composed {
+		required = nil
+		for _, entry := range adapter.Members {
+			required = append(required, entry.Member.Name)
+		}
+		verifyExcludedBaseMembersAbsent(result, expected, actual, owner, adapter)
+	}
 	for _, name := range required {
 		found := false
 		for _, key := range owner.Members {
@@ -2541,7 +2587,7 @@ func verifyBCLBaseProjection(result *report, typeDiagnostics map[string]int, et 
 		typeDiagnostics[et.XNA]++
 		return
 	}
-	if relationship.Status != "MAPPED" {
+	if relationship.Status != "MAPPED" && relationship.Status != "COMPOSED" {
 		return
 	}
 	if len(actual.ExportedEmbeddings) > 0 {
@@ -2558,6 +2604,100 @@ func verifyBCLBaseProjection(result *report, typeDiagnostics map[string]int, et 
 		})
 		typeDiagnostics[et.XNA]++
 	}
+	if relationship.Status == "COMPOSED" {
+		verifyBCLBaseComposition(result, typeDiagnostics, et, actual, identity)
+	}
+}
+
+// verifyBCLBaseComposition enforces the composition model on one derived type
+// whose CLR base is a supported BCL family.
+//
+// The claims are the whole content of the architecture:
+//
+//   - the concrete Go type must be a struct reference type, so a Dictionary
+//     consumer can never be `type LaunchParameters map[string]string` and a
+//     Collection consumer can never be a bare slice;
+//   - it must hold the adapter in an UNEXPORTED field of the declared name and
+//     the declared adapter family, so the base state is real and private;
+//   - it must expose no exported field whose type is the raw backing store,
+//     so the storage can never be reached or replaced from outside;
+//   - it must not embed the adapter, exported or not, because promotion would
+//     publish forwarding CNA-Go never measured.
+func verifyBCLBaseComposition(result *report, typeDiagnostics map[string]int, et *expectedType, actual *actualType, identity string) {
+	adapter, present := bclBaseAdapters[identity]
+	if !present {
+		addDiagnostic(result, diagnostic{
+			Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+			Message: fmt.Sprintf("CLR base %q is COMPOSED but declares no BCL base adapter", identity),
+		})
+		typeDiagnostics[et.XNA]++
+		return
+	}
+	wanted := adapterFieldType(adapter, et.BaseType)
+	found := false
+	for _, field := range actual.Fields {
+		if field.Embedded {
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+				Message: fmt.Sprintf("BCL base adapter for %q must be a named private field, found embedded %s", identity, field.Type),
+			})
+			typeDiagnostics[et.XNA]++
+			continue
+		}
+		if field.Name != adapter.AdapterField {
+			continue
+		}
+		found = true
+		if field.Exported {
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+				Message: fmt.Sprintf("BCL base adapter field %q for %q must be unexported", field.Name, identity),
+			})
+			typeDiagnostics[et.XNA]++
+		}
+		if field.Type != wanted {
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+				Message: fmt.Sprintf("BCL base adapter field %q for %q must have type %s, found %s", field.Name, identity, wanted, field.Type),
+			})
+			typeDiagnostics[et.XNA]++
+		}
+	}
+	if !found {
+		addDiagnostic(result, diagnostic{
+			Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+			Message: fmt.Sprintf("CLR base %q must be held in the private adapter field %q of type %s", identity, adapter.AdapterField, wanted),
+		})
+		typeDiagnostics[et.XNA]++
+	}
+	for _, field := range actual.Fields {
+		if !field.Exported {
+			continue
+		}
+		if strings.HasPrefix(field.Type, "[]") || strings.HasPrefix(field.Type, "map[") {
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: et.XNA, Go: et.Key.String(),
+				Message: fmt.Sprintf("BCL base %q consumer exposes raw backing storage as exported field %s %s", identity, field.Name, field.Type),
+			})
+			typeDiagnostics[et.XNA]++
+		}
+	}
+}
+
+// adapterFieldType is the exact Go spelling the private adapter field must
+// have on one derived type: the adapter family with the CLR base's own generic
+// arguments substituted for its parameters.
+func adapterFieldType(adapter bclBaseAdapter, baseType string) string {
+	arguments := bclBaseArguments(baseType)
+	open := strings.Index(adapter.GoAdapter, "[")
+	if open < 0 || len(arguments) != adapter.GenericArity {
+		return adapter.GoAdapter
+	}
+	mapped := make([]string, 0, len(arguments))
+	for _, argument := range arguments {
+		mapped = append(mapped, goAdapterArgument(argument))
+	}
+	return adapter.GoAdapter[:open] + "[" + strings.Join(mapped, ", ") + "]"
 }
 
 // measureBCLBaseRelationships summarises every declared non-XNA base across the
@@ -2788,4 +2928,168 @@ func measureBCLInterfaceRelationships(expected *expectedSurface, actual *actualS
 	}
 	sort.Slice(measurements, func(i, j int) bool { return measurements[i].CLRInterface < measurements[j].CLRInterface })
 	return measurements
+}
+
+// measureBCLBaseAdapters produces the whole BCL base-class adapter registry
+// measurement: every supported family, its private Go adapter, its exact
+// inherited public member inventory, its deliberate exclusions, and every
+// concrete XNA consumer with that consumer's two provenance classes.
+//
+// The registry is measured whether or not a consumer is projected yet, so a
+// family that is declared but unused is visible rather than absent, and a
+// consumer that regresses is a FAIL rather than a silently missing row.
+func measureBCLBaseAdapters(expected *expectedSurface, actual *actualSurface) []bclBaseAdapterMeasurement {
+	measurements := make([]bclBaseAdapterMeasurement, 0, len(bclBaseAdapters))
+	for identity, adapter := range bclBaseAdapters {
+		measurement := bclBaseAdapterMeasurement{
+			CLRBase: identity, GoAdapter: adapter.GoAdapter, AdapterField: adapter.AdapterField,
+			BehaviorLevel: adapter.BehaviorLevel, Authority: adapter.Authority,
+			AuthoritySHA256: adapter.AuthoritySHA256, InheritedCLRMembers: len(adapter.Members),
+			ExcludedMembers: len(adapter.Excluded), Rationale: adapter.Rationale, Verdict: "PASS",
+		}
+		for _, excluded := range adapter.Excluded {
+			measurement.Exclusions = append(measurement.Exclusions, bclInheritedExclusion{CLRMember: excluded.CLRMember, Reason: excluded.Reason})
+		}
+		for _, et := range sortedExpectedTypes(expected) {
+			if baseIdentityWithoutArguments(et.BaseType) != identity {
+				continue
+			}
+			at := actual.Types[et.Key]
+			consumer := bclBaseAdapterConsumer{
+				XNA: et.XNA, Go: et.Key.String(), BaseArguments: bclBaseArguments(et.BaseType),
+				Projected: at != nil, AdapterFieldType: adapterFieldType(adapter, et.BaseType),
+				DeclaredMembers: et.SourceMembers, InheritedProjections: et.BCLInheritedProjections,
+				DeclaredProjections: len(et.Members) - et.BCLInheritedProjections, Verdict: "PASS",
+			}
+			if at != nil {
+				consumer.ExportedEmbeddings = len(at.ExportedEmbeddings)
+				for _, field := range at.Fields {
+					if field.Name == adapter.AdapterField && !field.Exported && !field.Embedded && field.Type == consumer.AdapterFieldType {
+						consumer.AdapterFieldPresent = true
+					}
+				}
+				if !consumer.AdapterFieldPresent || consumer.ExportedEmbeddings != 0 {
+					consumer.Verdict = "FAIL"
+					measurement.Verdict = "FAIL"
+				}
+			}
+			measurement.Consumers = append(measurement.Consumers, consumer)
+			measurement.Inventory = append(measurement.Inventory, inheritedMemberInventory(expected, actual, adapter, et)...)
+			if measurement.InheritedProjections == 0 {
+				measurement.InheritedProjections = et.BCLInheritedProjections
+			}
+		}
+		if adapter.BehaviorLevel != "SUPPORTED" && adapter.BehaviorLevel != "PARTIAL" {
+			measurement.Verdict = "FAIL"
+		}
+		measurements = append(measurements, measurement)
+	}
+	sort.Slice(measurements, func(i, j int) bool { return measurements[i].CLRBase < measurements[j].CLRBase })
+	return measurements
+}
+
+// inheritedMemberInventory is the per-member attribution table for one
+// consumer: for every public CLR member of the base, the exact projected Go
+// member and whether the Go surface actually carries it.
+func inheritedMemberInventory(expected *expectedSurface, actual *actualSurface, adapter bclBaseAdapter, et *expectedType) []bclInheritedMemberMeasurement {
+	rationale := make(map[string]string, len(adapter.Members))
+	for _, entry := range adapter.Members {
+		rationale[entry.Member.Name] = entry.Rationale
+	}
+	var rows []bclInheritedMemberMeasurement
+	for _, key := range et.Members {
+		member := expected.Members[key]
+		if member == nil || member.BCLBase == "" {
+			continue
+		}
+		row := bclInheritedMemberMeasurement{
+			CLRBase: member.BCLBase, CLRMember: member.BCLMember, CLRKind: member.SourceKind,
+			Consumer: et.XNA, GoMember: member.Key.String(), GoResults: strings.Join(member.Results, ","),
+			Accessor: member.Accessor, Present: actual.Members[member.Key] != nil,
+			Rationale: rationale[member.BCLMember],
+		}
+		rows = append(rows, row)
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].CLRMember != rows[j].CLRMember {
+			return rows[i].CLRMember < rows[j].CLRMember
+		}
+		return rows[i].Accessor < rows[j].Accessor
+	})
+	return rows
+}
+
+// composedBaseAdapter returns the supported BCL base adapter one XNA type
+// inherits, when it has one.
+func composedBaseAdapter(owner *expectedType) (bclBaseAdapter, bool) {
+	if owner.BaseType == "" {
+		return bclBaseAdapter{}, false
+	}
+	identity := baseIdentityWithoutArguments(owner.BaseType)
+	if relationship, declared := bclBaseRelationships[identity]; !declared || relationship.Status != "COMPOSED" {
+		return bclBaseAdapter{}, false
+	}
+	adapter, present := bclBaseAdapters[identity]
+	return adapter, present
+}
+
+// verifyExcludedBaseMembersAbsent is the negative half of the inherited
+// projection claim: a base member the registry records as deliberately
+// unprojected must not appear on the Go type.
+//
+// It is what stops the composition projection from quietly growing surface the
+// CLR does not have -- an IsReadOnly or a SyncRoot promoted from an explicit
+// implementation, or an Items accessor that would hand out the backing store.
+//
+// An explicitly implemented member is recorded under its CLR interface, as
+// `ICollection<T>.IsReadOnly`. Go has no explicit interface implementation, so
+// the only way such a member could reach the Go surface is under its bare
+// name, and that bare name is what is checked. When the bare name is also a
+// projected inherited member -- `IList.Add` against the generic Add -- the
+// projected one owns it and there is nothing to reject. Constructors are
+// skipped outright: the CLR does not inherit them and no Go method spells one.
+func verifyExcludedBaseMembersAbsent(result *report, expected *expectedSurface, actual *actualSurface, owner *expectedType, adapter bclBaseAdapter) {
+	projected := make(map[string]bool, len(adapter.Members))
+	for _, entry := range adapter.Members {
+		projected[entry.Member.Name] = true
+	}
+	// A name the derived XNA type declares ITSELF is out of scope. The claim
+	// is about provenance, not about the spelling: GameComponentCollection
+	// declares its own InsertItem, RemoveItem, SetItem and ClearItems
+	// overrides in the pinned metadata, and CNA-Go projects a declared
+	// protected member like any other, so those Go members exist because the
+	// XNA assembly declares them and not because the base leaked them.
+	declared := make(map[string]bool)
+	for _, key := range owner.Members {
+		member := expected.Members[key]
+		if member == nil || member.BCLBase != "" {
+			continue
+		}
+		if separator := strings.Index(member.XNA, "::"); separator >= 0 {
+			name := member.XNA[separator+2:]
+			if open := strings.Index(name, "("); open >= 0 {
+				name = name[:open]
+			}
+			declared[name] = true
+		}
+	}
+	for _, excluded := range adapter.Excluded {
+		name := excluded.CLRMember
+		if strings.Contains(name, "(") {
+			continue
+		}
+		if dot := strings.LastIndex(name, "."); dot >= 0 {
+			name = name[dot+1:]
+		}
+		if projected[name] || declared[name] {
+			continue
+		}
+		key := symbolKey{Package: owner.Key.Package, Receiver: owner.GoName, Name: name}
+		if _, present := actual.Members[key]; present {
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: owner.XNA, Go: key.String(),
+				Message: fmt.Sprintf("BCL base member %q is excluded from the inherited projection (%s) but the Go type declares it", name, excluded.Reason),
+			})
+		}
+	}
 }

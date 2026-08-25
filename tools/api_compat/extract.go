@@ -212,10 +212,19 @@ func extractGeneralDeclaration(surface *actualSurface, packagePath string, fset 
 				for _, field := range structType.Fields.List {
 					if len(field.Names) == 0 {
 						text := normalizeExpr(field.Type, aliases)
+						actual.Fields = append(actual.Fields, actualField{
+							Name: embeddedFieldName(text), Type: text,
+							Exported: ast.IsExported(strings.TrimPrefix(text, "*")), Embedded: true,
+						})
 						if ast.IsExported(strings.TrimPrefix(text, "*")) {
 							actual.ExportedEmbeddings = append(actual.ExportedEmbeddings, text)
 						}
 						continue
+					}
+					for _, name := range field.Names {
+						actual.Fields = append(actual.Fields, actualField{
+							Name: name.Name, Type: normalizeExpr(field.Type, aliases), Exported: name.IsExported(),
+						})
 					}
 					for _, name := range field.Names {
 						if !name.IsExported() {
@@ -382,4 +391,17 @@ func hasDirectiveNamed(name string, groups ...*ast.CommentGroup) bool {
 		}
 	}
 	return false
+}
+
+// embeddedFieldName is the field name Go gives an embedded field: the type's
+// own name, with any pointer, package qualifier, and type arguments removed.
+func embeddedFieldName(text string) string {
+	text = strings.TrimPrefix(text, "*")
+	if bracket := strings.Index(text, "["); bracket >= 0 {
+		text = text[:bracket]
+	}
+	if dot := strings.LastIndex(text, "."); dot >= 0 {
+		text = text[dot+1:]
+	}
+	return text
 }
