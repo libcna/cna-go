@@ -185,8 +185,8 @@ take. Ranked by how many missing types each would unblock:
 
 ```text
   26  System.IDisposable                             disposal / ownership design
-  24  System.EventArgs        \ 
-  21  System.EventHandler`1   / the event handler type
+  24  System.EventArgs                               the event handler type
+  21  System.EventHandler`1                          (one decision, two shapes)
   13  System.ComponentModel.ITypeDescriptorContext   the Design namespace
   12  System.Globalization.CultureInfo
   12  System.Collections.IDictionary
