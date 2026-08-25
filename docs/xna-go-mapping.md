@@ -447,6 +447,62 @@ rather than the handler. Adding one handler twice therefore produces two
 registrations and two distinct tokens, where CLR `Delegate.Remove` would match
 by delegate identity.
 
+### A native signal behind a projected event
+
+Three of `Game`'s four events are raised by `GameHost` in the reference, and the
+native CNA runtime plays `GameHost`'s part. Those signals are bound to the
+already-published canonical C API rather than re-raised in Go, and the binding
+follows one rule:
+
+> exactly **one** native subscription per event per Game, never one per
+> consumer handler.
+
+Ordering is why. CNA invokes multiple native registrations on one event in
+REVERSE registration order, measured against the pinned artifact, so registering
+one native callback per Go handler would silently invert the dispatch order
+`EventSource` promises. Routing every handler through one `EventSource` makes the
+question moot, and it also removes the native API's owner-thread affinity from
+the projected accessors: `Add` and `Remove` touch a mutex-guarded Go list and
+never reach C, so a consumer may subscribe from any goroutine even though
+`cna_game_subscribe` itself answers `CNA_RESULT_THREAD` from any thread but the
+owner.
+
+The subscription is installed eagerly when the native game is created — the
+point at which the reference's `EnsureHost` subscribes — and released only after
+the native game is destroyed, because the disposal signal is raised from inside
+that destruction and a registration handle stays valid across it.
+
+`CNA_GameEventCallback` returns `void`, so this boundary has no result channel:
+a handler failure cannot stop the game the way a lifecycle callback can. It is
+recorded through the same callback-failure path every lifecycle failure uses and
+surfaces from `Game.Run`, so nothing is discarded; a panic is recovered in the
+trampoline and recorded the same way. Nothing crosses the C frame.
+
+The sender a raise pushes is read from IL and is not uniform.
+`Game::OnActivated` and `OnDeactivated` accept a sender, ignore it, and raise
+with `this`; `Game::OnExiting` pushes `ldnull` instead, so an `Exiting` handler
+receives a **nil** sender. `Game::Disposed` has no protected raise method at
+all — `Dispose(bool)` invokes the delegate field directly.
+
+### Protected virtuals outside the callback contract
+
+`GameCallbacks` projects exactly five protected virtuals. Every other protected
+virtual projects as an ordinary method on its declaring type whose body is the
+reference base body — the same rule that makes `GameComponent.OnEnabledChanged`,
+`GameComponent.Initialize` and `Game.BeginRun` methods rather than contract
+members.
+
+`Game.BeginDraw` is the one with a value channel:
+
+```go
+func (g *Game) BeginDraw() (bool, error)
+```
+
+The Boolean is the frame's drawing decision, not a success flag: `DrawFrame`
+runs `if (BeginDraw()) { Draw(); EndDraw(); }`, so a false answer skips both.
+Collapsing it into the error would destroy a channel the reference has, so the
+two stay separate and a refused call answers `(false, err)`.
+
 ## CLR interfaces from the BCL
 
 A non-XNA interface an XNA type declares contributes **no projected Go surface

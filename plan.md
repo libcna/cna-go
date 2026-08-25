@@ -1304,6 +1304,101 @@ Exact evidence is in `docs/foundation-33-xna-base-frontier-evidence.md`.
 FOUNDATION_MILESTONE_33_COMPLETE=true
 ```
 
+## Foundation 34 the native Game event bridge
+
+- [x] `Game::Activated`, `Deactivated`, `Exiting` and `Disposed` are eight
+      accessors plus the three protected raise sites Microsoft declares --
+      eleven fewer missing members.
+- [x] The four signals were ALREADY published by the pinned CNA C API and had
+      never been reached from Go. No CNA C++ changed, CNA was not rebuilt, and
+      the artifact is still `e912cd1d...b116f`; the ABI counters moved because
+      CNA-Go binds more of that unchanged binary.
+- [x] `OnActivated`/`OnDeactivated` accept a sender, ignore it, and raise with
+      `this`. `OnExiting` pushes `ldnull` instead -- one instruction, and
+      observable from every handler. `Disposed` has no `On...` method at all.
+- [x] Exactly ONE native subscription per event per Game. CNA invokes multiple
+      native registrations on one event in REVERSE order, measured, so
+      per-handler registration would have inverted the promised dispatch order.
+- [x] Installed eagerly at native game creation, because CNA answers
+      `CNA_RESULT_THREAD` for `cna_game_subscribe` from any other thread.
+      Released after `cna_game_destroy`, because the disposal signal is raised
+      from inside it. The `cgo.Handle` is deleted last.
+- [x] `CNA_GameEventCallback` returns void, so a handler failure cannot stop the
+      game. It is recorded through the existing callback-failure path and
+      surfaces from `Run` rather than being discarded, and `inCallback` is
+      deliberately not raised.
+- [x] `GameCallbacks` untouched: the bridge method went on the INTERNAL
+      `interop.Callbacks`, so every existing five-member implementation still
+      compiles.
+- [x] `Activated`, `Exiting` and `Disposed` are VERIFIED_NATIVE at 60 isolated
+      deliveries each. `Deactivated` is NOT_RUN_ENVIRONMENT: HEADLESS has no
+      window manager and cannot lose focus, and the counter stays at zero.
+
+## Foundation 34 qualification evidence
+
+Exact evidence is in `docs/foundation-34-game-event-bridge-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_34_COMPLETE=true
+```
+
+## Foundation 35 the frame-boundary virtuals
+
+- [x] `Game::BeginRun`, `EndRun`, `BeginDraw` and `EndDraw` complete as methods
+      on `Game`, by the rule that already made `GameComponent` complete: the
+      mapper redirects exactly the five protected virtuals `GameCallbacks`
+      declares, and every other protected virtual is a method whose body is the
+      reference base body.
+- [x] The two run hooks are `IL_0000: ret`. `inRun` is NOT raised by `BeginRun`:
+      `RunGame` raises it before it calls the virtual.
+- [x] `Game::graphicsDeviceManager` has one assignment in the whole class, and
+      the statement after it calls `CreateDevice`. The native runtime owns the
+      device and Foundation 30 already audited that nothing can register into
+      `IGraphicsDeviceManager`, so the field is permanently null -- a state the
+      reference itself has whenever no manager is registered.
+- [x] `BeginDraw`'s Boolean stays a value channel: `DrawFrame` runs
+      `if (BeginDraw()) { Draw(); EndDraw(); }`, and the measured native
+      `begin_draw` hook does the same. A refused call answers `(false, err)`.
+- [x] CNA's `begin_run`, `end_run`, `begin_draw` and `end_draw` correspond
+      position for position and are deliberately NOT installed. Base behavior is
+      never automatic; forwarding would run the base where CNA-Go picked, make
+      it mandatory, and prejudge the override design.
+- [x] The override mechanism is STOPPED and reported, not guessed:
+      `GameCallbacks` keeps five members, no `GameBase*` helper was added, and
+      three materially different public designs remain plausible.
+
+## Foundation 35 qualification evidence
+
+Exact evidence is in `docs/foundation-35-game-frame-hook-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_35_COMPLETE=true
+```
+
+## Foundation 36 the signal and frame-hook registries
+
+- [x] Two decisions that lived only in prose became closed registries the strict
+      run enforces.
+- [x] `gameNativeSignals`: 4 signals, 3 raise sites, 1 runtime-deferred. Three
+      is not two short of four -- `Disposed` genuinely has no `On...` method, and
+      declaring one now fails. `NOT_RUN_ENVIRONMENT` requires a reason and
+      `VERIFIED_NATIVE` forbids one.
+- [x] `gameFrameHooks`: 4 hooks, 0 installed, 4 deferred steps. The zero is a
+      measured zero with four recorded reasons behind it.
+- [x] The base-call closure stated from the other side: no `GameBaseBeginRun`
+      may exist, and `BeginDraw`'s Boolean is pinned as a channel separate from
+      its error in both the registry and `mapping-rules.json`.
+- [x] 31 negative controls from one shared table, plus two accounting controls
+      proving neither registry is an XNA identity. Mutation inventory 500 -> 531.
+
+## Foundation 36 qualification evidence
+
+Exact evidence is in `docs/foundation-36-signal-registry-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_36_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

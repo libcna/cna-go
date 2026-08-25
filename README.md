@@ -27,7 +27,7 @@ The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
 3,255 expected Go members — 3,243 projected from XNA-declared members plus 12
 projected from the public surface a supported BCL base contributes. The current
-target has 122 types and 1,776 members: 117 types are complete, five
+target has 122 types and 1,791 members: 117 types are complete, five
 native/runtime types are partial, and 135 are missing. The strict verifier
 remains red because most XNA surface is intentionally absent. Every mismatch,
 leak, allowlist, and unmeasured-category gate is green.
@@ -360,6 +360,31 @@ project. Twelve relationships over 41 derived types are recorded with classified
 blockers, and no derived type of a deferred XNA base may be reported complete.
 That decision — XNA-to-XNA class inheritance — is the next architectural one.
 
+See [Foundation 34 game event bridge evidence](docs/foundation-34-game-event-bridge-evidence.md)
+for `Game.Activated`, `Deactivated`, `Exiting` and `Disposed`, bound to CNA
+signals that were already published and had never been reached from Go. No CNA
+C++ changed and CNA was not rebuilt; the ABI counters moved because CNA-Go binds
+more of the same unchanged binary. `OnExiting` raises with a **null** sender
+where its two siblings raise with the Game, and that one IL instruction is
+preserved. Exactly one native subscription per event per Game, because CNA
+invokes multiple registrations on one event in reverse order. `Deactivated` is
+structurally complete but recorded as `NOT_RUN_ENVIRONMENT`: a HEADLESS artifact
+has no window manager and can never lose focus.
+
+See [Foundation 35 frame hook evidence](docs/foundation-35-game-frame-hook-evidence.md)
+for `Game.BeginRun`, `EndRun`, `BeginDraw` and `EndDraw`. `BeginDraw`'s Boolean
+stays a value channel separate from the error, because `DrawFrame` runs
+`if (BeginDraw()) { Draw(); EndDraw(); }` and a false answer skips both. CNA's
+four canonical frame hooks correspond position for position and are deliberately
+**not** installed: base behavior is never automatic, so forwarding them would
+prejudge an override design that has not been made. `GameCallbacks` still has
+exactly five members.
+
+See [Foundation 36 signal registry evidence](docs/foundation-36-signal-registry-evidence.md)
+for the two registries that turn those decisions into measured facts: four
+signals with three raise sites and one honest runtime deferral, and four frame
+hooks with a measured zero installed and four recorded reasons behind it.
+
 The `Media` package contains enum metadata only and carries no media runtime
 capability claim. The `Input/Touch` package adds `TouchLocation`,
 `GestureSample`, and the read-only `TouchCollection` alongside its enums, and
@@ -410,7 +435,7 @@ go run ./tools/native_stress
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its 331 missing-surface diagnostics are the work queue, not a
+surface exists; its 295 missing-surface diagnostics are the work queue, not a
 compatibility claim.
 The native ABI and stress commands require the qualified native environment.
 
