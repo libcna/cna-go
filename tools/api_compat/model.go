@@ -187,6 +187,8 @@ type report struct {
 	GraphicsProfileClosure       graphicsProfileClosure        `json:"graphicsProfileClosure"`
 	ButtonStateClosure           buttonStateClosure            `json:"buttonStateClosure"`
 	Foundation14EnumClosures     []enumClosure                 `json:"foundation14EnumClosures"`
+	Foundation15EnumClosures     []enumClosure                 `json:"foundation15EnumClosures"`
+	Foundation15ValueStructs     []valueStructClosure          `json:"foundation15ValueStructClosures"`
 	Metadata                     reportMetadata                `json:"metadata"`
 }
 
@@ -212,6 +214,37 @@ type enumClosure struct {
 	ValueStorageExcluded bool                   `json:"valueStorageExcluded"`
 	Values               []enumValueMeasurement `json:"values"`
 	Status               string                 `json:"status"`
+}
+
+// valueStructClosure measures one pure managed XNA value struct. Beyond the
+// identity arithmetic it records the central semantic claim of the family:
+// every member is infallible managed value work, so no member may carry a
+// synthetic Go error result.
+type valueStructClosure struct {
+	XNA                  string              `json:"xna"`
+	GoName               string              `json:"goName"`
+	PackagePath          string              `json:"packagePath"`
+	SourceTypes          int                 `json:"sourceTypes"`
+	SourceIdentities     int                 `json:"sourceIdentities"`
+	ExpectedGoIdentities int                 `json:"expectedGoIdentities"`
+	TargetTypes          int                 `json:"targetTypes"`
+	TargetGoIdentities   int                 `json:"targetGoIdentities"`
+	LocalDiagnostics     int                 `json:"localDiagnostics"`
+	ExpectedKind         string              `json:"expectedKind"`
+	ActualKind           string              `json:"actualKind"`
+	BaseType             string              `json:"baseType"`
+	ErrorResults         int                 `json:"errorResults"`
+	Members              []valueStructMember `json:"members"`
+	Status               string              `json:"status"`
+}
+
+type valueStructMember struct {
+	GoKind          string   `json:"goKind"`
+	Receiver        string   `json:"receiver"`
+	Name            string   `json:"name"`
+	ExpectedResults []string `json:"expectedResults"`
+	ActualResults   []string `json:"actualResults"`
+	Status          string   `json:"status"`
 }
 
 type buttonStateClosure struct {

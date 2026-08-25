@@ -699,6 +699,79 @@ FOUNDATION_MILESTONE_14_COMPLETE=true
 BATCH_NAME=PURE_MANAGED_BATCH_A
 ```
 
+## Foundation 15 pure-managed batch B policy
+
+Foundation 15 completes 12 public XNA types carrying 122 mapped Go identities
+in three clusters: the last five safe pure-managed leaf enums, the five
+GamePad and Mouse value structs, and the two Touch value structs. Cluster A
+closes the safe leaf-enum category — no dependency-complete missing enum
+remains.
+
+Public surface authority remains the pinned XNA 4.0 Windows contract.
+Reference *behavior* for the value structs is read as IL from the retained
+original assemblies, whose hashes are recorded in the milestone evidence. Every
+clamping rule, hash algorithm, ToString layout, and equality rule is taken from
+that IL. Nothing is inferred from a third-party reimplementation.
+
+Pure managed value structs project as Go value types with no synthetic error
+result on any member, because their reference implementations are infallible
+managed value work. The verifier measures that claim directly as
+`errorResults` in the value-struct closure category, and a dedicated negative
+fixture rejects any member that gains an error.
+
+Two reference asymmetries are reproduced deliberately and must not be
+"corrected":
+
+- `GamePadThumbSticks` clamps NaN to 1 because the XNA Vector2 minimum keeps
+  its second operand, while `GamePadTriggers` propagates NaN because
+  `System.Math.Min`/`Max` do; and `Math.Max(-0, 0)` turns negative zero into
+  positive zero.
+- `TouchLocation.op_Equality` compares all seven fields including both
+  `TouchLocationState` values, while `Equals(TouchLocation)` ignores both. The
+  two therefore disagree, exactly as the reference does.
+
+`MouseState` uses its own XOR hash with no `Int32.MaxValue` substitution,
+while the four game pad values use `Helpers.SmartGetHashCode`, which does
+substitute. The resulting compatible collisions are intentional.
+
+A verifier defect was fixed: `System.TimeSpan` is now package-qualified as
+`framework.TimeSpan` outside the framework package, matching what
+`mapping-rules.json` has always declared and the qualification rule already
+applied to XNA types and `Iterator`. Expected type and member counts are
+unchanged.
+
+Completing these types claims managed metadata and managed value behavior
+only. No game pad, mouse, or touch capability is claimed; CNA-Go still exposes
+no GamePad, GamePadState, GamePadCapabilities, Mouse, or TouchPanel type and no
+input backend.
+
+Types whose only public surface is read-only device capability with no public
+constructor — `TouchPanelCapabilities`, `GamePadCapabilities`, `RendererDetail`,
+`DisplayMode` — remain deferred. Implementing them would expose getters that
+can only ever report a fabricated capability.
+
+## Foundation 15 qualification evidence
+
+- [x] Independently confirm all 12 pinned contracts and read cluster B/C behavior from hash-verified retained assemblies.
+- [x] Complete 12 types and 122 identities with compiler-measured local strict zero for every one.
+- [x] Add a `foundation15ValueStructClosures` category that measures the zero-synthetic-error claim directly.
+- [x] Generalise the enum closure and defect machinery across milestones; 366 enum negative cases and 70 value-struct negative cases.
+- [x] Grow the declared mutation inventory from 177 to 210 cases.
+- [x] Grow the behavior corpus from 411 to 476 with explicit XNA/Go provenance and zero failures.
+- [x] Fix the `System.TimeSpan` package-qualification defect without moving any expected count.
+- [x] Preserve all five partial types and their combined 177 missing members.
+- [x] Re-verify the exact Foundation-11 pinned native library by hash and reproduce both native reports against it.
+- [x] Requalify Go, native stress, unchanged template, deterministic artifact, and isolated-consumer gates.
+
+Normal strict verification remains red only for 155 genuinely missing types
+and 177 members on five explicitly deferred native/runtime partial types.
+Exact evidence is in `docs/foundation-15-pure-managed-batch-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_15_COMPLETE=true
+BATCH_NAME=PURE_MANAGED_BATCH_B
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -708,7 +781,7 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 14, regenerate the scoreboard and dependency graph before
+After Foundation 15, regenerate the scoreboard and dependency graph before
 selecting the next closure or batch. Do not automatically choose a consumer of
 any completed enum, continue GraphicsDeviceManager or GraphicsDevice, infer
 runtime support from a managed enum, or combine independent families.

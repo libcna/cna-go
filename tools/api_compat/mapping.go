@@ -499,6 +499,13 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 		return name + "[" + mapType(s, byIdentity, owner, inner) + "]"
 	}
 	if mapped, ok := bclTypes[raw]; ok {
+		// TimeSpan is the one BCL entry that maps to a CNA-Go type rather
+		// than a Go builtin or standard-library type, so it obeys the same
+		// package-qualification rule as every other framework-package value.
+		// mapping-rules.json already declares it as framework.TimeSpan.
+		if raw == "System.TimeSpan" && owner.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
+			return "framework." + mapped
+		}
 		return mapped
 	}
 	if raw == "System.Void" || raw == "" {

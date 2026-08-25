@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 411,
-    "ASSERTIONS": 411,
+    "OBSERVATIONS": 476,
+    "ASSERTIONS": 476,
     "FAILURES": 0
   },
   "observations": [
@@ -1477,6 +1477,526 @@
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": -1,
       "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "color-write-channels.complete-raw-table",
+      "group": "COLOR_WRITE_CHANNELS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "None=0,Red=1,Green=2,Blue=4,Alpha=8,All=15",
+      "actual": "None=0,Red=1,Green=2,Blue=4,Alpha=8,All=15",
+      "passed": true
+    },
+    {
+      "id": "color-write-channels.underlying-system-int32",
+      "group": "COLOR_WRITE_CHANNELS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "color-write-channels.flags-union",
+      "group": "COLOR_WRITE_CHANNELS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 15,
+      "actual": 15,
+      "passed": true
+    },
+    {
+      "id": "color-write-channels.flags-disjoint-single-bits",
+      "group": "COLOR_WRITE_CHANNELS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "color-write-channels.pinned-all-equals-channel-union",
+      "group": "COLOR_WRITE_CHANNELS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 15,
+      "actual": 15,
+      "passed": true
+    },
+    {
+      "id": "color-write-channels.zero-value-none",
+      "group": "COLOR_WRITE_CHANNELS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "color-write-channels.arbitrary-positive-raw",
+      "group": "COLOR_WRITE_CHANNELS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "16,12345",
+      "actual": "16,12345",
+      "passed": true
+    },
+    {
+      "id": "color-write-channels.negative-raw",
+      "group": "COLOR_WRITE_CHANNELS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "stencil-operation.complete-raw-table",
+      "group": "STENCIL_OPERATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Keep=0,Zero=1,Replace=2,Increment=3,Decrement=4,IncrementSaturation=5,DecrementSaturation=6,Invert=7",
+      "actual": "Keep=0,Zero=1,Replace=2,Increment=3,Decrement=4,IncrementSaturation=5,DecrementSaturation=6,Invert=7",
+      "passed": true
+    },
+    {
+      "id": "stencil-operation.underlying-system-int32",
+      "group": "STENCIL_OPERATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "stencil-operation.zero-value-keep",
+      "group": "STENCIL_OPERATION",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "stencil-operation.arbitrary-positive-raw",
+      "group": "STENCIL_OPERATION",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "8,12345",
+      "actual": "8,12345",
+      "passed": true
+    },
+    {
+      "id": "stencil-operation.negative-raw",
+      "group": "STENCIL_OPERATION",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "texture-filter.complete-raw-table",
+      "group": "TEXTURE_FILTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Linear=0,Point=1,Anisotropic=2,LinearMipPoint=3,PointMipLinear=4,MinLinearMagPointMipLinear=5,MinLinearMagPointMipPoint=6,MinPointMagLinearMipLinear=7,MinPointMagLinearMipPoint=8",
+      "actual": "Linear=0,Point=1,Anisotropic=2,LinearMipPoint=3,PointMipLinear=4,MinLinearMagPointMipLinear=5,MinLinearMagPointMipPoint=6,MinPointMagLinearMipLinear=7,MinPointMagLinearMipPoint=8",
+      "passed": true
+    },
+    {
+      "id": "texture-filter.underlying-system-int32",
+      "group": "TEXTURE_FILTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "texture-filter.zero-value-linear",
+      "group": "TEXTURE_FILTER",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "texture-filter.arbitrary-positive-raw",
+      "group": "TEXTURE_FILTER",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "9,12345",
+      "actual": "9,12345",
+      "passed": true
+    },
+    {
+      "id": "texture-filter.negative-raw",
+      "group": "TEXTURE_FILTER",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "game-pad-type.complete-raw-table",
+      "group": "GAME_PAD_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Unknown=0,GamePad=1,Wheel=2,ArcadeStick=3,FlightStick=4,DancePad=5,Guitar=6,AlternateGuitar=7,DrumKit=8,BigButtonPad=768",
+      "actual": "Unknown=0,GamePad=1,Wheel=2,ArcadeStick=3,FlightStick=4,DancePad=5,Guitar=6,AlternateGuitar=7,DrumKit=8,BigButtonPad=768",
+      "passed": true
+    },
+    {
+      "id": "game-pad-type.underlying-system-int32",
+      "group": "GAME_PAD_TYPE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "game-pad-type.zero-value-unknown",
+      "group": "GAME_PAD_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "game-pad-type.arbitrary-positive-raw",
+      "group": "GAME_PAD_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "769,12345",
+      "actual": "769,12345",
+      "passed": true
+    },
+    {
+      "id": "game-pad-type.negative-raw",
+      "group": "GAME_PAD_TYPE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "blend.complete-raw-table",
+      "group": "BLEND",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "One=0,Zero=1,SourceColor=2,InverseSourceColor=3,SourceAlpha=4,InverseSourceAlpha=5,DestinationColor=6,InverseDestinationColor=7,DestinationAlpha=8,InverseDestinationAlpha=9,BlendFactor=10,InverseBlendFactor=11,SourceAlphaSaturation=12",
+      "actual": "One=0,Zero=1,SourceColor=2,InverseSourceColor=3,SourceAlpha=4,InverseSourceAlpha=5,DestinationColor=6,InverseDestinationColor=7,DestinationAlpha=8,InverseDestinationAlpha=9,BlendFactor=10,InverseBlendFactor=11,SourceAlphaSaturation=12",
+      "passed": true
+    },
+    {
+      "id": "blend.underlying-system-int32",
+      "group": "BLEND",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "System.Int32",
+      "actual": "System.Int32",
+      "passed": true
+    },
+    {
+      "id": "blend.zero-value-one",
+      "group": "BLEND",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "blend.arbitrary-positive-raw",
+      "group": "BLEND",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "13,12345",
+      "actual": "13,12345",
+      "passed": true
+    },
+    {
+      "id": "blend.negative-raw",
+      "group": "BLEND",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": -1,
+      "actual": -1,
+      "passed": true
+    },
+    {
+      "id": "game-pad-thumb-sticks.constructor-clamp",
+      "group": "GAME_PAD_THUMB_STICKS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{X:0.5 Y:-1},{X:1 Y:1}",
+      "actual": "{X:0.5 Y:-1},{X:1 Y:1}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-thumb-sticks.nan-clamps-to-one",
+      "group": "GAME_PAD_THUMB_STICKS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 1,
+      "actual": 1,
+      "passed": true
+    },
+    {
+      "id": "game-pad-thumb-sticks.smart-hash",
+      "group": "GAME_PAD_THUMB_STICKS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": -2139095040,
+      "actual": -2139095040,
+      "passed": true
+    },
+    {
+      "id": "game-pad-thumb-sticks.zero-hash-substitution",
+      "group": "GAME_PAD_THUMB_STICKS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 2147483647,
+      "actual": 2147483647,
+      "passed": true
+    },
+    {
+      "id": "game-pad-thumb-sticks.string",
+      "group": "GAME_PAD_THUMB_STICKS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{Left:{X:0.5 Y:-1} Right:{X:1 Y:1}}",
+      "actual": "{Left:{X:0.5 Y:-1} Right:{X:1 Y:1}}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-triggers.constructor-clamp",
+      "group": "GAME_PAD_TRIGGERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,0",
+      "actual": "1,0",
+      "passed": true
+    },
+    {
+      "id": "game-pad-triggers.nan-propagates",
+      "group": "GAME_PAD_TRIGGERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "game-pad-triggers.negative-zero-becomes-positive",
+      "group": "GAME_PAD_TRIGGERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "game-pad-triggers.smart-hash",
+      "group": "GAME_PAD_TRIGGERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 29360128,
+      "actual": 29360128,
+      "passed": true
+    },
+    {
+      "id": "game-pad-triggers.string",
+      "group": "GAME_PAD_TRIGGERS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{Left:0.25 Right:0.75}",
+      "actual": "{Left:0.25 Right:0.75}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-triggers.nan-not-self-equal",
+      "group": "GAME_PAD_TRIGGERS",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "game-pad-dpad.constructor-parameter-order",
+      "group": "GAME_PAD_DPAD",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,0,1,0",
+      "actual": "1,0,1,0",
+      "passed": true
+    },
+    {
+      "id": "game-pad-dpad.string",
+      "group": "GAME_PAD_DPAD",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{DPad:Up Left}",
+      "actual": "{DPad:Up Left}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-dpad.string-none",
+      "group": "GAME_PAD_DPAD",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{DPad:None}",
+      "actual": "{DPad:None}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-dpad.string-order",
+      "group": "GAME_PAD_DPAD",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{DPad:Up Down Left Right}",
+      "actual": "{DPad:Up Down Left Right}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-dpad.smart-hash",
+      "group": "GAME_PAD_DPAD",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 1,
+      "actual": 1,
+      "passed": true
+    },
+    {
+      "id": "game-pad-dpad.compatible-hash-collision",
+      "group": "GAME_PAD_DPAD",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "2147483647,2147483647",
+      "actual": "2147483647,2147483647",
+      "passed": true
+    },
+    {
+      "id": "game-pad-dpad.arbitrary-raw-is-not-pressed",
+      "group": "GAME_PAD_DPAD",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "{DPad:None}",
+      "actual": "{DPad:None}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-buttons.mask-derivation",
+      "group": "GAME_PAD_BUTTONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,1,1,0,0",
+      "actual": "1,1,1,0,0",
+      "passed": true
+    },
+    {
+      "id": "game-pad-buttons.thumbstick-literals-have-no-field",
+      "group": "GAME_PAD_BUTTONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{Buttons:None}",
+      "actual": "{Buttons:None}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-buttons.string-order",
+      "group": "GAME_PAD_BUTTONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{Buttons:A Y LeftStick Back}",
+      "actual": "{Buttons:A Y LeftStick Back}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-buttons.smart-hash",
+      "group": "GAME_PAD_BUTTONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 1,
+      "actual": 1,
+      "passed": true
+    },
+    {
+      "id": "game-pad-buttons.compatible-hash-collision",
+      "group": "GAME_PAD_BUTTONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 2147483647,
+      "actual": 2147483647,
+      "passed": true
+    },
+    {
+      "id": "mouse-state.constructor-parameter-order",
+      "group": "MOUSE_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,2,3,1,0,1,0,1",
+      "actual": "1,2,3,1,0,1,0,1",
+      "passed": true
+    },
+    {
+      "id": "mouse-state.direct-xor-hash",
+      "group": "MOUSE_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,0",
+      "actual": "1,0",
+      "passed": true
+    },
+    {
+      "id": "mouse-state.string",
+      "group": "MOUSE_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{X:1 Y:2 Buttons:Left Right XButton2 Wheel:3}",
+      "actual": "{X:1 Y:2 Buttons:Left Right XButton2 Wheel:3}",
+      "passed": true
+    },
+    {
+      "id": "mouse-state.string-none",
+      "group": "MOUSE_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{X:0 Y:0 Buttons:None Wheel:0}",
+      "actual": "{X:0 Y:0 Buttons:None Wheel:0}",
+      "passed": true
+    },
+    {
+      "id": "mouse-state.go-copy-semantics",
+      "group": "MOUSE_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "gesture-sample.stores-components-unchanged",
+      "group": "GESTURE_SAMPLE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "32,1234567,{X:1 Y:2},{X:3 Y:4},{X:5 Y:6},{X:7 Y:8}",
+      "actual": "32,1234567,{X:1 Y:2},{X:3 Y:4},{X:5 Y:6},{X:7 Y:8}",
+      "passed": true
+    },
+    {
+      "id": "touch-location.single-sample-constructor",
+      "group": "TOUCH_LOCATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "7,3,{X:1.5 Y:-2.5}",
+      "actual": "7,3,{X:1.5 Y:-2.5}",
+      "passed": true
+    },
+    {
+      "id": "touch-location.absent-previous-sample",
+      "group": "TOUCH_LOCATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false,-1,0,{X:0 Y:0}",
+      "actual": "false,-1,0,{X:0 Y:0}",
+      "passed": true
+    },
+    {
+      "id": "touch-location.previous-sample-promotion",
+      "group": "TOUCH_LOCATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,9,2,{X:30 Y:40},false",
+      "actual": "true,9,2,{X:30 Y:40},false",
+      "passed": true
+    },
+    {
+      "id": "touch-location.equals-ignores-state",
+      "group": "TOUCH_LOCATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "touch-location.operator-observes-state",
+      "group": "TOUCH_LOCATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "touch-location.hash",
+      "group": "TOUCH_LOCATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 2139095045,
+      "actual": 2139095045,
+      "passed": true
+    },
+    {
+      "id": "touch-location.signed-zero-hash-canonicalization",
+      "group": "TOUCH_LOCATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": 11,
+      "actual": 11,
+      "passed": true
+    },
+    {
+      "id": "touch-location.string-omits-state",
+      "group": "TOUCH_LOCATION",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "{Position:{X:1 Y:2}}",
+      "actual": "{Position:{X:1 Y:2}}",
       "passed": true
     },
     {

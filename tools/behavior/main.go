@@ -548,6 +548,202 @@ func runCorpus() corpusReport {
 		fmt.Sprintf("%d,%d", graphics.BlendFunction(5), graphics.BlendFunction(12345)))
 	checkGoProjection("blend-function.negative-raw", "BLEND_FUNCTION", int32(-1), int32(graphics.BlendFunction(-1)))
 
+	// Foundation 15 pure-managed batch B: the last five safe leaf enums. The
+	// same provenance split applies — pinned raw values are XNA metadata, the
+	// zero-value and arbitrary-raw facts are Go language projection, and none of
+	// these enums implies render state, sampling, blending, or game pad support.
+
+	check("color-write-channels.complete-raw-table", "COLOR_WRITE_CHANNELS",
+		"None=0,Red=1,Green=2,Blue=4,Alpha=8,All=15",
+		fmt.Sprintf("None=%d,Red=%d,Green=%d,Blue=%d,Alpha=%d,All=%d",
+			graphics.ColorWriteChannelsNone, graphics.ColorWriteChannelsRed, graphics.ColorWriteChannelsGreen, graphics.ColorWriteChannelsBlue, graphics.ColorWriteChannelsAlpha, graphics.ColorWriteChannelsAll))
+	check("color-write-channels.underlying-system-int32", "COLOR_WRITE_CHANNELS", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.ColorWriteChannelsNone).Kind()])
+	colorWriteChannelsUnion, colorWriteChannelsSingleBits := enumBitStructure([]int32{int32(graphics.ColorWriteChannelsNone), int32(graphics.ColorWriteChannelsRed), int32(graphics.ColorWriteChannelsGreen), int32(graphics.ColorWriteChannelsBlue), int32(graphics.ColorWriteChannelsAlpha)})
+	check("color-write-channels.flags-union", "COLOR_WRITE_CHANNELS", int32(15), colorWriteChannelsUnion)
+	check("color-write-channels.flags-disjoint-single-bits", "COLOR_WRITE_CHANNELS", true, colorWriteChannelsSingleBits)
+	// All=15 is a pinned aggregate literal, not an invented convenience.
+	check("color-write-channels.pinned-all-equals-channel-union", "COLOR_WRITE_CHANNELS", graphics.ColorWriteChannelsAll, graphics.ColorWriteChannelsRed|graphics.ColorWriteChannelsGreen|graphics.ColorWriteChannelsBlue|graphics.ColorWriteChannelsAlpha)
+	var zeroColorWriteChannels graphics.ColorWriteChannels
+	checkGoProjection("color-write-channels.zero-value-none", "COLOR_WRITE_CHANNELS", graphics.ColorWriteChannelsNone, zeroColorWriteChannels)
+	checkGoProjection("color-write-channels.arbitrary-positive-raw", "COLOR_WRITE_CHANNELS", "16,12345",
+		fmt.Sprintf("%d,%d", graphics.ColorWriteChannels(16), graphics.ColorWriteChannels(12345)))
+	checkGoProjection("color-write-channels.negative-raw", "COLOR_WRITE_CHANNELS", int32(-1), int32(graphics.ColorWriteChannels(-1)))
+
+	check("stencil-operation.complete-raw-table", "STENCIL_OPERATION",
+		"Keep=0,Zero=1,Replace=2,Increment=3,Decrement=4,IncrementSaturation=5,DecrementSaturation=6,Invert=7",
+		fmt.Sprintf("Keep=%d,Zero=%d,Replace=%d,Increment=%d,Decrement=%d,IncrementSaturation=%d,DecrementSaturation=%d,Invert=%d",
+			graphics.StencilOperationKeep, graphics.StencilOperationZero, graphics.StencilOperationReplace, graphics.StencilOperationIncrement, graphics.StencilOperationDecrement, graphics.StencilOperationIncrementSaturation, graphics.StencilOperationDecrementSaturation, graphics.StencilOperationInvert))
+	check("stencil-operation.underlying-system-int32", "STENCIL_OPERATION", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.StencilOperationKeep).Kind()])
+	var zeroStencilOperation graphics.StencilOperation
+	checkGoProjection("stencil-operation.zero-value-keep", "STENCIL_OPERATION", graphics.StencilOperationKeep, zeroStencilOperation)
+	checkGoProjection("stencil-operation.arbitrary-positive-raw", "STENCIL_OPERATION", "8,12345",
+		fmt.Sprintf("%d,%d", graphics.StencilOperation(8), graphics.StencilOperation(12345)))
+	checkGoProjection("stencil-operation.negative-raw", "STENCIL_OPERATION", int32(-1), int32(graphics.StencilOperation(-1)))
+
+	check("texture-filter.complete-raw-table", "TEXTURE_FILTER",
+		"Linear=0,Point=1,Anisotropic=2,LinearMipPoint=3,PointMipLinear=4,MinLinearMagPointMipLinear=5,MinLinearMagPointMipPoint=6,MinPointMagLinearMipLinear=7,MinPointMagLinearMipPoint=8",
+		fmt.Sprintf("Linear=%d,Point=%d,Anisotropic=%d,LinearMipPoint=%d,PointMipLinear=%d,MinLinearMagPointMipLinear=%d,MinLinearMagPointMipPoint=%d,MinPointMagLinearMipLinear=%d,MinPointMagLinearMipPoint=%d",
+			graphics.TextureFilterLinear, graphics.TextureFilterPoint, graphics.TextureFilterAnisotropic, graphics.TextureFilterLinearMipPoint, graphics.TextureFilterPointMipLinear, graphics.TextureFilterMinLinearMagPointMipLinear, graphics.TextureFilterMinLinearMagPointMipPoint, graphics.TextureFilterMinPointMagLinearMipLinear, graphics.TextureFilterMinPointMagLinearMipPoint))
+	check("texture-filter.underlying-system-int32", "TEXTURE_FILTER", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.TextureFilterLinear).Kind()])
+	var zeroTextureFilter graphics.TextureFilter
+	checkGoProjection("texture-filter.zero-value-linear", "TEXTURE_FILTER", graphics.TextureFilterLinear, zeroTextureFilter)
+	checkGoProjection("texture-filter.arbitrary-positive-raw", "TEXTURE_FILTER", "9,12345",
+		fmt.Sprintf("%d,%d", graphics.TextureFilter(9), graphics.TextureFilter(12345)))
+	checkGoProjection("texture-filter.negative-raw", "TEXTURE_FILTER", int32(-1), int32(graphics.TextureFilter(-1)))
+
+	check("game-pad-type.complete-raw-table", "GAME_PAD_TYPE",
+		"Unknown=0,GamePad=1,Wheel=2,ArcadeStick=3,FlightStick=4,DancePad=5,Guitar=6,AlternateGuitar=7,DrumKit=8,BigButtonPad=768",
+		fmt.Sprintf("Unknown=%d,GamePad=%d,Wheel=%d,ArcadeStick=%d,FlightStick=%d,DancePad=%d,Guitar=%d,AlternateGuitar=%d,DrumKit=%d,BigButtonPad=%d",
+			input.GamePadTypeUnknown, input.GamePadTypeGamePad, input.GamePadTypeWheel, input.GamePadTypeArcadeStick, input.GamePadTypeFlightStick, input.GamePadTypeDancePad, input.GamePadTypeGuitar, input.GamePadTypeAlternateGuitar, input.GamePadTypeDrumKit, input.GamePadTypeBigButtonPad))
+	check("game-pad-type.underlying-system-int32", "GAME_PAD_TYPE", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(input.GamePadTypeUnknown).Kind()])
+	var zeroGamePadType input.GamePadType
+	checkGoProjection("game-pad-type.zero-value-unknown", "GAME_PAD_TYPE", input.GamePadTypeUnknown, zeroGamePadType)
+	checkGoProjection("game-pad-type.arbitrary-positive-raw", "GAME_PAD_TYPE", "769,12345",
+		fmt.Sprintf("%d,%d", input.GamePadType(769), input.GamePadType(12345)))
+	checkGoProjection("game-pad-type.negative-raw", "GAME_PAD_TYPE", int32(-1), int32(input.GamePadType(-1)))
+
+	check("blend.complete-raw-table", "BLEND",
+		"One=0,Zero=1,SourceColor=2,InverseSourceColor=3,SourceAlpha=4,InverseSourceAlpha=5,DestinationColor=6,InverseDestinationColor=7,DestinationAlpha=8,InverseDestinationAlpha=9,BlendFactor=10,InverseBlendFactor=11,SourceAlphaSaturation=12",
+		fmt.Sprintf("One=%d,Zero=%d,SourceColor=%d,InverseSourceColor=%d,SourceAlpha=%d,InverseSourceAlpha=%d,DestinationColor=%d,InverseDestinationColor=%d,DestinationAlpha=%d,InverseDestinationAlpha=%d,BlendFactor=%d,InverseBlendFactor=%d,SourceAlphaSaturation=%d",
+			graphics.BlendOne, graphics.BlendZero, graphics.BlendSourceColor, graphics.BlendInverseSourceColor, graphics.BlendSourceAlpha, graphics.BlendInverseSourceAlpha, graphics.BlendDestinationColor, graphics.BlendInverseDestinationColor, graphics.BlendDestinationAlpha, graphics.BlendInverseDestinationAlpha, graphics.BlendBlendFactor, graphics.BlendInverseBlendFactor, graphics.BlendSourceAlphaSaturation))
+	check("blend.underlying-system-int32", "BLEND", "System.Int32",
+		map[reflect.Kind]string{reflect.Int32: "System.Int32"}[reflect.TypeOf(graphics.BlendOne).Kind()])
+	var zeroBlend graphics.Blend
+	checkGoProjection("blend.zero-value-one", "BLEND", graphics.BlendOne, zeroBlend)
+	checkGoProjection("blend.arbitrary-positive-raw", "BLEND", "13,12345",
+		fmt.Sprintf("%d,%d", graphics.Blend(13), graphics.Blend(12345)))
+	checkGoProjection("blend.negative-raw", "BLEND", int32(-1), int32(graphics.Blend(-1)))
+
+	// Foundation 15 value-struct cluster. Every constant below was read from
+	// the retained XNA assemblies' IL, not inferred. The clamping rules, hash
+	// algorithms, and ToString layouts are PURE_XNA_DERIVED; Go copy semantics
+	// and the permissive raw ButtonState domain are GO_LANGUAGE_PROJECTION.
+	// Completing these values claims no game pad or mouse capability: CNA-Go
+	// exposes no GamePad, GamePadState, or Mouse type and no input backend.
+
+	clampedSticks := input.NewGamePadThumbSticks(
+		framework.Vector2{X: 0.5, Y: -2},
+		framework.Vector2{X: 3, Y: float32(math.NaN())},
+	)
+	check("game-pad-thumb-sticks.constructor-clamp", "GAME_PAD_THUMB_STICKS",
+		"{X:0.5 Y:-1},{X:1 Y:1}",
+		fmt.Sprintf("%s,%s", clampedSticks.Left().ToString(), clampedSticks.Right().ToString()))
+	check("game-pad-thumb-sticks.nan-clamps-to-one", "GAME_PAD_THUMB_STICKS", float32(1), clampedSticks.Right().Y)
+	check("game-pad-thumb-sticks.smart-hash", "GAME_PAD_THUMB_STICKS", int32(-2139095040), clampedSticks.GetHashCode())
+	var zeroSticks input.GamePadThumbSticks
+	check("game-pad-thumb-sticks.zero-hash-substitution", "GAME_PAD_THUMB_STICKS", int32(math.MaxInt32), zeroSticks.GetHashCode())
+	check("game-pad-thumb-sticks.string", "GAME_PAD_THUMB_STICKS", "{Left:{X:0.5 Y:-1} Right:{X:1 Y:1}}", clampedSticks.ToString())
+
+	clampedTriggers := input.NewGamePadTriggers(1.5, -0.25)
+	check("game-pad-triggers.constructor-clamp", "GAME_PAD_TRIGGERS", "1,0",
+		fmt.Sprintf("%g,%g", clampedTriggers.Left(), clampedTriggers.Right()))
+	nanTriggers := input.NewGamePadTriggers(float32(math.NaN()), 0.5)
+	check("game-pad-triggers.nan-propagates", "GAME_PAD_TRIGGERS", true, math.IsNaN(float64(nanTriggers.Left())))
+	negativeZeroTriggers := input.NewGamePadTriggers(float32(math.Copysign(0, -1)), 0)
+	check("game-pad-triggers.negative-zero-becomes-positive", "GAME_PAD_TRIGGERS", false, math.Signbit(float64(negativeZeroTriggers.Left())))
+	quarterTriggers := input.NewGamePadTriggers(0.25, 0.75)
+	check("game-pad-triggers.smart-hash", "GAME_PAD_TRIGGERS", int32(29360128), quarterTriggers.GetHashCode())
+	check("game-pad-triggers.string", "GAME_PAD_TRIGGERS", "{Left:0.25 Right:0.75}", quarterTriggers.ToString())
+	checkGoProjection("game-pad-triggers.nan-not-self-equal", "GAME_PAD_TRIGGERS", false,
+		input.GamePadTriggersOperatorEqualityByGamePadTriggersAndGamePadTriggers(nanTriggers, nanTriggers))
+
+	dpad := input.NewGamePadDPad(input.ButtonStatePressed, input.ButtonStateReleased, input.ButtonStatePressed, input.ButtonStateReleased)
+	check("game-pad-dpad.constructor-parameter-order", "GAME_PAD_DPAD", "1,0,1,0",
+		fmt.Sprintf("%d,%d,%d,%d", dpad.Up(), dpad.Down(), dpad.Left(), dpad.Right()))
+	check("game-pad-dpad.string", "GAME_PAD_DPAD", "{DPad:Up Left}", dpad.ToString())
+	var noDPad input.GamePadDPad
+	check("game-pad-dpad.string-none", "GAME_PAD_DPAD", "{DPad:None}", noDPad.ToString())
+	allDPad := input.NewGamePadDPad(input.ButtonStatePressed, input.ButtonStatePressed, input.ButtonStatePressed, input.ButtonStatePressed)
+	check("game-pad-dpad.string-order", "GAME_PAD_DPAD", "{DPad:Up Down Left Right}", allDPad.ToString())
+	singleDPad := input.NewGamePadDPad(input.ButtonStatePressed, input.ButtonStateReleased, input.ButtonStateReleased, input.ButtonStateReleased)
+	check("game-pad-dpad.smart-hash", "GAME_PAD_DPAD", int32(1), singleDPad.GetHashCode())
+	pairDPad := input.NewGamePadDPad(input.ButtonStatePressed, input.ButtonStateReleased, input.ButtonStateReleased, input.ButtonStatePressed)
+	check("game-pad-dpad.compatible-hash-collision", "GAME_PAD_DPAD",
+		fmt.Sprintf("%d,%d", math.MaxInt32, math.MaxInt32),
+		fmt.Sprintf("%d,%d", pairDPad.GetHashCode(), noDPad.GetHashCode()))
+	arbitraryDPad := input.NewGamePadDPad(input.ButtonState(12345), input.ButtonStateReleased, input.ButtonStateReleased, input.ButtonStateReleased)
+	checkGoProjection("game-pad-dpad.arbitrary-raw-is-not-pressed", "GAME_PAD_DPAD", "{DPad:None}", arbitraryDPad.ToString())
+
+	buttons := input.NewGamePadButtons(input.ButtonsA | input.ButtonsStart | input.ButtonsBigButton)
+	check("game-pad-buttons.mask-derivation", "GAME_PAD_BUTTONS", "1,1,1,0,0",
+		fmt.Sprintf("%d,%d,%d,%d,%d", buttons.A(), buttons.Start(), buttons.BigButton(), buttons.B(), buttons.Back()))
+	strayButtons := input.NewGamePadButtons(input.ButtonsLeftThumbstickUp | input.ButtonsRightTrigger)
+	check("game-pad-buttons.thumbstick-literals-have-no-field", "GAME_PAD_BUTTONS", "{Buttons:None}", strayButtons.ToString())
+	orderedButtons := input.NewGamePadButtons(input.ButtonsBack | input.ButtonsA | input.ButtonsLeftStick | input.ButtonsY)
+	check("game-pad-buttons.string-order", "GAME_PAD_BUTTONS", "{Buttons:A Y LeftStick Back}", orderedButtons.ToString())
+	check("game-pad-buttons.smart-hash", "GAME_PAD_BUTTONS", int32(1), input.NewGamePadButtons(input.ButtonsA).GetHashCode())
+	check("game-pad-buttons.compatible-hash-collision", "GAME_PAD_BUTTONS", int32(math.MaxInt32),
+		input.NewGamePadButtons(input.ButtonsA|input.ButtonsStart).GetHashCode())
+
+	mouse := input.NewMouseState(1, 2, 3,
+		input.ButtonStatePressed, input.ButtonStateReleased, input.ButtonStatePressed,
+		input.ButtonStateReleased, input.ButtonStatePressed)
+	check("mouse-state.constructor-parameter-order", "MOUSE_STATE", "1,2,3,1,0,1,0,1",
+		fmt.Sprintf("%d,%d,%d,%d,%d,%d,%d,%d", mouse.X(), mouse.Y(), mouse.ScrollWheelValue(),
+			mouse.LeftButton(), mouse.MiddleButton(), mouse.RightButton(), mouse.XButton1(), mouse.XButton2()))
+	// MouseState does not use Helpers.SmartGetHashCode, so it has no
+	// Int32.MaxValue substitution and the zero value hashes to zero.
+	var zeroMouse input.MouseState
+	check("mouse-state.direct-xor-hash", "MOUSE_STATE", "1,0",
+		fmt.Sprintf("%d,%d", mouse.GetHashCode(), zeroMouse.GetHashCode()))
+	check("mouse-state.string", "MOUSE_STATE", "{X:1 Y:2 Buttons:Left Right XButton2 Wheel:3}", mouse.ToString())
+	check("mouse-state.string-none", "MOUSE_STATE", "{X:0 Y:0 Buttons:None Wheel:0}", zeroMouse.ToString())
+	movedMouse := mouse
+	checkGoProjection("mouse-state.go-copy-semantics", "MOUSE_STATE", true,
+		input.MouseStateOperatorEqualityByMouseStateAndMouseState(mouse, movedMouse))
+
+	// Foundation 15 touch value cluster, read from the retained
+	// Microsoft.Xna.Framework.Input.Touch assembly. Completing these values
+	// claims no touch capability: CNA-Go exposes no TouchPanel and reads no
+	// device.
+	gestureTimestamp := framework.TimeSpanFromTicks(1234567)
+	gesture := touch.NewGestureSample(
+		touch.GestureTypeFreeDrag, gestureTimestamp,
+		framework.Vector2{X: 1, Y: 2}, framework.Vector2{X: 3, Y: 4},
+		framework.Vector2{X: 5, Y: 6}, framework.Vector2{X: 7, Y: 8},
+	)
+	check("gesture-sample.stores-components-unchanged", "GESTURE_SAMPLE",
+		"32,1234567,{X:1 Y:2},{X:3 Y:4},{X:5 Y:6},{X:7 Y:8}",
+		fmt.Sprintf("%d,%d,%s,%s,%s,%s", gesture.GestureType(), gesture.Timestamp().Ticks(),
+			gesture.Position().ToString(), gesture.Position2().ToString(),
+			gesture.Delta().ToString(), gesture.Delta2().ToString()))
+
+	singleTouch := touch.NewTouchLocationByInt32AndTouchLocationStateAndVector2(
+		7, touch.TouchLocationStateMoved, framework.Vector2{X: 1.5, Y: -2.5})
+	check("touch-location.single-sample-constructor", "TOUCH_LOCATION", "7,3,{X:1.5 Y:-2.5}",
+		fmt.Sprintf("%d,%d,%s", singleTouch.Id(), singleTouch.State(), singleTouch.Position().ToString()))
+	noPrevious, emptyPrevious := singleTouch.TryGetPreviousLocation()
+	check("touch-location.absent-previous-sample", "TOUCH_LOCATION", "false,-1,0,{X:0 Y:0}",
+		fmt.Sprintf("%t,%d,%d,%s", noPrevious, emptyPrevious.Id(), emptyPrevious.State(), emptyPrevious.Position().ToString()))
+	pairedTouch := touch.NewTouchLocationByInt32AndTouchLocationStateAndVector2AndTouchLocationStateAndVector2(
+		9, touch.TouchLocationStateMoved, framework.Vector2{X: 10, Y: 20},
+		touch.TouchLocationStatePressed, framework.Vector2{X: 30, Y: 40})
+	hasPrevious, promoted := pairedTouch.TryGetPreviousLocation()
+	nestedPrevious, _ := promoted.TryGetPreviousLocation()
+	check("touch-location.previous-sample-promotion", "TOUCH_LOCATION", "true,9,2,{X:30 Y:40},false",
+		fmt.Sprintf("%t,%d,%d,%s,%t", hasPrevious, promoted.Id(), promoted.State(),
+			promoted.Position().ToString(), nestedPrevious))
+
+	// A genuine XNA asymmetry: the equality operator compares all seven
+	// fields while Equals(TouchLocation) ignores both state fields.
+	touchPosition := framework.Vector2{X: 1, Y: 2}
+	pressedTouch := touch.NewTouchLocationByInt32AndTouchLocationStateAndVector2(3, touch.TouchLocationStatePressed, touchPosition)
+	movedTouch := touch.NewTouchLocationByInt32AndTouchLocationStateAndVector2(3, touch.TouchLocationStateMoved, touchPosition)
+	check("touch-location.equals-ignores-state", "TOUCH_LOCATION", true, pressedTouch.EqualsByTouchLocation(movedTouch))
+	check("touch-location.operator-observes-state", "TOUCH_LOCATION", false,
+		touch.TouchLocationOperatorEqualityByTouchLocationAndTouchLocation(pressedTouch, movedTouch))
+	check("touch-location.hash", "TOUCH_LOCATION",
+		int32(5)+int32(math.Float32bits(1))+int32(math.Float32bits(2)),
+		touch.NewTouchLocationByInt32AndTouchLocationStateAndVector2(5, touch.TouchLocationStatePressed, framework.Vector2{X: 1, Y: 2}).GetHashCode())
+	check("touch-location.signed-zero-hash-canonicalization", "TOUCH_LOCATION", int32(11),
+		touch.NewTouchLocationByInt32AndTouchLocationStateAndVector2(11, touch.TouchLocationStatePressed,
+			framework.Vector2{X: 0, Y: float32(math.Copysign(0, -1))}).GetHashCode())
+	check("touch-location.string-omits-state", "TOUCH_LOCATION", "{Position:{X:1 Y:2}}", pressedTouch.ToString())
+
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))
 	check("math.lerp", "MathHelper", bits(4), bits(framework.MathHelperLerp(2, 10, 0.25)))

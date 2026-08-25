@@ -251,6 +251,8 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.GraphicsProfileClosure = measureGraphicsProfileClosure(expected, actual, typeDiagnostics)
 	result.ButtonStateClosure = measureButtonStateClosure(expected, actual, typeDiagnostics)
 	result.Foundation14EnumClosures = measureFoundation14EnumClosures(expected, actual, typeDiagnostics)
+	result.Foundation15EnumClosures = measureBatchEnumClosures(expected, actual, typeDiagnostics, foundation15Enums)
+	result.Foundation15ValueStructs = measureValueStructClosures(expected, actual, typeDiagnostics, foundation15ValueStructs)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -580,9 +582,105 @@ var foundation14Enums = []foundation14Enum{
 	},
 }
 
+// foundation15Enums is the Foundation-15 pure-managed batch B enum cluster:
+// the last five ordinary and flags enums whose only public-signature
+// dependency is System.Int32. Completing them closes the safe pure-managed
+// leaf-enum category entirely.
+var foundation15Enums = []foundation14Enum{
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
+		Flags:    true,
+		Values: []enumLiteral{
+			{"None", "0"},
+			{"Red", "1"},
+			{"Green", "2"},
+			{"Blue", "4"},
+			{"Alpha", "8"},
+			{"All", "15"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.StencilOperation",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Keep", "0"},
+			{"Zero", "1"},
+			{"Replace", "2"},
+			{"Increment", "3"},
+			{"Decrement", "4"},
+			{"IncrementSaturation", "5"},
+			{"DecrementSaturation", "6"},
+			{"Invert", "7"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.TextureFilter",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Linear", "0"},
+			{"Point", "1"},
+			{"Anisotropic", "2"},
+			{"LinearMipPoint", "3"},
+			{"PointMipLinear", "4"},
+			{"MinLinearMagPointMipLinear", "5"},
+			{"MinLinearMagPointMipPoint", "6"},
+			{"MinPointMagLinearMipLinear", "7"},
+			{"MinPointMagLinearMipPoint", "8"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Input.GamePadType",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"Unknown", "0"},
+			{"GamePad", "1"},
+			{"Wheel", "2"},
+			{"ArcadeStick", "3"},
+			{"FlightStick", "4"},
+			{"DancePad", "5"},
+			{"Guitar", "6"},
+			{"AlternateGuitar", "7"},
+			{"DrumKit", "8"},
+			{"BigButtonPad", "768"},
+		},
+	},
+	{
+		Identity: "Microsoft.Xna.Framework.Graphics.Blend",
+		Flags:    false,
+		Values: []enumLiteral{
+			{"One", "0"},
+			{"Zero", "1"},
+			{"SourceColor", "2"},
+			{"InverseSourceColor", "3"},
+			{"SourceAlpha", "4"},
+			{"InverseSourceAlpha", "5"},
+			{"DestinationColor", "6"},
+			{"InverseDestinationColor", "7"},
+			{"DestinationAlpha", "8"},
+			{"InverseDestinationAlpha", "9"},
+			{"BlendFactor", "10"},
+			{"InverseBlendFactor", "11"},
+			{"SourceAlphaSaturation", "12"},
+		},
+	},
+}
+
+// allBatchEnums is every pinned enum measured by the shared table-driven
+// closure category, across milestones.
+func allBatchEnums() []foundation14Enum {
+	all := make([]foundation14Enum, 0, len(foundation14Enums)+len(foundation15Enums))
+	all = append(all, foundation14Enums...)
+	all = append(all, foundation15Enums...)
+	return all
+}
+
 func measureFoundation14EnumClosures(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) []enumClosure {
-	measurements := make([]enumClosure, 0, len(foundation14Enums))
-	for _, pinned := range foundation14Enums {
+	return measureBatchEnumClosures(expected, actual, typeDiagnostics, foundation14Enums)
+}
+
+func measureBatchEnumClosures(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, batch []foundation14Enum) []enumClosure {
+	measurements := make([]enumClosure, 0, len(batch))
+	for _, pinned := range batch {
 		measurements = append(measurements, measureEnumClosure(expected, actual, typeDiagnostics, pinned))
 	}
 	return measurements
@@ -1692,4 +1790,92 @@ func contains(values []string, wanted string) (int, bool) {
 		}
 	}
 	return -1, false
+}
+
+// foundation15ValueStructs is the Foundation-15 pure managed value-struct
+// cluster. Every entry is a System.ValueType whose reference implementation is
+// deterministic managed value work read from the retained XNA assemblies, so
+// none of them may gain a synthetic error result, a native route, or a device
+// dependency.
+var foundation15ValueStructs = []string{
+	"Microsoft.Xna.Framework.Input.GamePadThumbSticks",
+	"Microsoft.Xna.Framework.Input.GamePadTriggers",
+	"Microsoft.Xna.Framework.Input.GamePadDPad",
+	"Microsoft.Xna.Framework.Input.GamePadButtons",
+	"Microsoft.Xna.Framework.Input.MouseState",
+	"Microsoft.Xna.Framework.Input.Touch.GestureSample",
+	"Microsoft.Xna.Framework.Input.Touch.TouchLocation",
+}
+
+func measureValueStructClosures(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, batch []string) []valueStructClosure {
+	measurements := make([]valueStructClosure, 0, len(batch))
+	for _, identity := range batch {
+		measurements = append(measurements, measureValueStructClosure(expected, actual, typeDiagnostics, identity))
+	}
+	return measurements
+}
+
+func measureValueStructClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, identity string) valueStructClosure {
+	measurement := valueStructClosure{
+		XNA:          identity,
+		SourceTypes:  1,
+		ExpectedKind: "struct",
+		ActualKind:   "missing",
+		Status:       "FAIL",
+	}
+	owner := expected.typeForXNA(identity)
+	if owner == nil {
+		return measurement
+	}
+	measurement.GoName = owner.GoName
+	measurement.PackagePath = owner.PackagePath
+	measurement.SourceIdentities = owner.SourceMembers
+	measurement.ExpectedGoIdentities = len(owner.Members)
+	measurement.LocalDiagnostics = typeDiagnostics[owner.XNA]
+	measurement.BaseType = owner.BaseType
+	if target := actual.Types[owner.Key]; target != nil {
+		measurement.TargetTypes = 1
+		measurement.ActualKind = target.Kind
+	}
+
+	membersPass := true
+	for _, key := range owner.Members {
+		expectedMember := expected.Members[key]
+		row := valueStructMember{
+			GoKind:   expectedMember.GoKind,
+			Receiver: key.Receiver,
+			Name:     key.Name,
+			Status:   "FAIL",
+		}
+		row.ExpectedResults = append([]string(nil), expectedMember.Results...)
+		for _, result := range expectedMember.Results {
+			if result == "error" {
+				measurement.ErrorResults++
+			}
+		}
+		if actualMember := actual.Members[key]; actualMember != nil {
+			measurement.TargetGoIdentities++
+			row.ActualResults = append([]string(nil), actualMember.Results...)
+			for _, result := range actualMember.Results {
+				if result == "error" {
+					measurement.ErrorResults++
+				}
+			}
+			if equalStrings(row.ExpectedResults, row.ActualResults) {
+				row.Status = "PASS"
+			}
+		}
+		if row.Status != "PASS" {
+			membersPass = false
+		}
+		measurement.Members = append(measurement.Members, row)
+	}
+	if measurement.TargetTypes == 1 && measurement.ActualKind == "struct" &&
+		measurement.BaseType == "System.ValueType" && measurement.LocalDiagnostics == 0 &&
+		measurement.TargetGoIdentities == measurement.ExpectedGoIdentities &&
+		measurement.ExpectedGoIdentities == measurement.SourceIdentities &&
+		measurement.ErrorResults == 0 && membersPass {
+		measurement.Status = "PASS"
+	}
+	return measurement
 }

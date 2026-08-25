@@ -1039,7 +1039,9 @@ func TestMutationFixtures(t *testing.T) {
 		t.Run(fixture.ID, func(t *testing.T) {
 			var expected *expectedSurface
 			var actual *actualSurface
-			if strings.HasPrefix(fixture.Mutation, "f14_") {
+			if strings.HasPrefix(fixture.Mutation, "f15vs_") {
+				expected, actual = valueStructMutationCase(t, fixture.Mutation)
+			} else if strings.HasPrefix(fixture.Mutation, "f14_") {
 				expected, actual = foundation14EnumMutationCase(t, fixture.Mutation)
 			} else if strings.HasPrefix(fixture.Mutation, "button_state_") {
 				expected, actual = buttonStateMutationCase(t, fixture.Mutation)
@@ -2096,21 +2098,21 @@ func mutationCase(mutation string) (*expectedSurface, *actualSurface) {
 // an XNA identity.
 func foundation14EnumByIdentity(t *testing.T, identity string) foundation14Enum {
 	t.Helper()
-	for _, pinned := range foundation14Enums {
+	for _, pinned := range allBatchEnums() {
 		if pinned.Identity == identity {
 			return pinned
 		}
 	}
-	t.Fatalf("%s is not a Foundation-14 batch enum", identity)
+	t.Fatalf("%s is not a pinned batch enum", identity)
 	return foundation14Enum{}
 }
 
-// TestFoundation14EnumMappedContracts admits every enum in the Foundation-14
+// TestBatchEnumMappedContracts admits every enum in the Foundation-14
 // pure-managed batch against the pinned XNA 4.0 Windows contract. The verifier
 // table and the contract must agree on kind, flags, underlying storage, the
 // exact literal names, and the exact raw values, and the synthetic value__
 // storage field must never reach the Go projection.
-func TestFoundation14EnumMappedContracts(t *testing.T) {
+func TestBatchEnumMappedContracts(t *testing.T) {
 	reference := loadPinnedContract(t)
 	surface, err := buildExpected(reference)
 	if err != nil {
@@ -2119,13 +2121,17 @@ func TestFoundation14EnumMappedContracts(t *testing.T) {
 	if len(foundation14Enums) != 25 {
 		t.Fatalf("Foundation-14 batch size = %d, want 25", len(foundation14Enums))
 	}
+	if len(foundation15Enums) != 5 {
+		t.Fatalf("Foundation-15 batch size = %d, want 5", len(foundation15Enums))
+	}
 	contractTypes := make(map[string]contractType, len(reference.Types))
 	for _, declared := range reference.Types {
 		contractTypes[declared.Name] = declared
 	}
-	seen := make(map[string]bool, len(foundation14Enums))
+	batch := allBatchEnums()
+	seen := make(map[string]bool, len(batch))
 	identities := 0
-	for _, pinned := range foundation14Enums {
+	for _, pinned := range batch {
 		if seen[pinned.Identity] {
 			t.Fatalf("%s appears twice in the batch table", pinned.Identity)
 		}
@@ -2205,8 +2211,8 @@ func TestFoundation14EnumMappedContracts(t *testing.T) {
 		}
 		identities += len(pinned.Values)
 	}
-	if identities != 121 {
-		t.Fatalf("Foundation-14 mapped identities = %d, want 121", identities)
+	if identities != 167 {
+		t.Fatalf("batch mapped identities = %d, want 167 (121 Foundation-14 + 46 Foundation-15)", identities)
 	}
 }
 
@@ -2370,13 +2376,13 @@ func foundation14EnumMutationCase(t *testing.T, mutation string) (*expectedSurfa
 	return nil, nil
 }
 
-// TestFoundation14EnumDefectsRejectedForEveryType is the exhaustive negative
+// TestBatchEnumDefectsRejectedForEveryType is the exhaustive negative
 // fixture for the batch: every applicable structural defect is applied to
 // every one of the 25 completed enums, and each one must raise its category.
 // A clean baseline is asserted first so a defect cannot pass by accident.
-func TestFoundation14EnumDefectsRejectedForEveryType(t *testing.T) {
+func TestBatchEnumDefectsRejectedForEveryType(t *testing.T) {
 	cases := 0
-	for _, pinned := range foundation14Enums {
+	for _, pinned := range allBatchEnums() {
 		pinned := pinned
 		t.Run(pinned.Identity, func(t *testing.T) {
 			baselineExpected, baselineActual, _, _ := foundation14EnumSurfaces(t, pinned.Identity)
@@ -2384,8 +2390,9 @@ func TestFoundation14EnumDefectsRejectedForEveryType(t *testing.T) {
 			if baseline.Summary["TOTAL_DIAGNOSTICS"] != 0 {
 				t.Fatalf("unmutated %s baseline is not clean: %v", pinned.Identity, baseline.Diagnostics)
 			}
-			if len(baseline.Foundation14EnumClosures) != len(foundation14Enums) {
-				t.Fatalf("closure count = %d", len(baseline.Foundation14EnumClosures))
+			if len(baseline.Foundation14EnumClosures) != len(foundation14Enums) ||
+				len(baseline.Foundation15EnumClosures) != len(foundation15Enums) {
+				t.Fatalf("closure counts = %d/%d", len(baseline.Foundation14EnumClosures), len(baseline.Foundation15EnumClosures))
 			}
 			for _, defect := range foundation14EnumDefects {
 				if defect.FlagsOnly && !pinned.Flags {
@@ -2408,7 +2415,8 @@ func TestFoundation14EnumDefectsRejectedForEveryType(t *testing.T) {
 						t.Fatalf("defect %q on %s did not raise %s; summary=%v",
 							defect.Name, pinned.Identity, defect.Category, result.Summary)
 					}
-					for _, closure := range result.Foundation14EnumClosures {
+					closures := append(append([]enumClosure(nil), result.Foundation14EnumClosures...), result.Foundation15EnumClosures...)
+					for _, closure := range closures {
 						if closure.XNA == pinned.Identity && closure.Status != "FAIL" {
 							t.Fatalf("defect %q on %s left the closure measurement at %q",
 								defect.Name, pinned.Identity, closure.Status)
@@ -2419,8 +2427,8 @@ func TestFoundation14EnumDefectsRejectedForEveryType(t *testing.T) {
 			}
 		})
 	}
-	if cases < 300 {
-		t.Fatalf("Foundation-14 negative fixture count = %d, want at least 300", cases)
+	if cases < 360 {
+		t.Fatalf("batch negative fixture count = %d, want at least 360", cases)
 	}
 }
 
@@ -2433,4 +2441,231 @@ func enumAlreadySequentialFromZero(pinned foundation14Enum) bool {
 		}
 	}
 	return true
+}
+
+// valueStructSurfaces builds an isolated correct expected/actual surface pair
+// for one Foundation-15 value struct, so a mutation applied afterwards is the
+// only defect the verifier can see.
+func valueStructSurfaces(t *testing.T, identity string) (*expectedSurface, *actualSurface, *expectedType) {
+	t.Helper()
+	full, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fullType := full.typeForXNA(identity)
+	if fullType == nil {
+		t.Fatalf("%s is not in the pinned contract", identity)
+	}
+	copiedType := *fullType
+	copiedType.Members = append([]symbolKey(nil), fullType.Members...)
+	expected := &expectedSurface{
+		Types:              map[symbolKey]*expectedType{copiedType.Key: &copiedType},
+		Members:            make(map[symbolKey]*expectedMember),
+		InterfaceWitnesses: make(map[symbolKey]*expectedInterfaceWitness),
+		ReferenceTypes:     1,
+		ReferenceMembers:   copiedType.SourceMembers,
+		ExpectedGoTypes:    1,
+		ExpectedGoMembers:  len(copiedType.Members),
+	}
+	actual := &actualSurface{
+		Types: map[symbolKey]*actualType{
+			copiedType.Key: {Key: copiedType.Key, Kind: "struct"},
+		},
+		Members:     make(map[symbolKey]*actualMember),
+		PackageDirs: make(map[string]string),
+		Packages:    make(map[string]*types.Package),
+	}
+	for _, memberKey := range copiedType.Members {
+		fullMember := full.Members[memberKey]
+		copiedMember := *fullMember
+		copiedMember.Parameters = append([]string(nil), fullMember.Parameters...)
+		copiedMember.Results = append([]string(nil), fullMember.Results...)
+		expected.Members[memberKey] = &copiedMember
+		actual.Members[memberKey] = &actualMember{
+			Key:        memberKey,
+			Kind:       copiedMember.GoKind,
+			Parameters: append([]string(nil), copiedMember.Parameters...),
+			Results:    append([]string(nil), copiedMember.Results...),
+		}
+	}
+	return expected, actual, &copiedType
+}
+
+// valueStructDefects are the structural defects every Foundation-15 value
+// struct is negatively fixtured against.
+var valueStructDefects = []struct {
+	Name     string
+	Category string
+	Apply    func(expected *expectedSurface, actual *actualSurface, owner *expectedType)
+}{
+	{Name: "missing_type", Category: "MISSING_TYPE", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		delete(actual.Types, owner.Key)
+	}},
+	{Name: "wrong_package", Category: "MISSING_TYPE", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		const elsewhere = modulePath + "/Microsoft/Xna/Framework/Graphics"
+		moved := *actual.Types[owner.Key]
+		delete(actual.Types, owner.Key)
+		moved.Key.Package = elsewhere
+		actual.Types[moved.Key] = &moved
+	}},
+	{Name: "projected_as_class", Category: "TYPE_KIND_MISMATCH", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// A reference-class projection would silently change copy semantics
+		// for a System.ValueType.
+		actual.Types[owner.Key].Kind = "named"
+	}},
+	{Name: "missing_last_member", Category: "MISSING_MEMBER", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		delete(actual.Members, owner.Members[len(owner.Members)-1])
+	}},
+	{Name: "missing_first_member", Category: "MISSING_MEMBER", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		delete(actual.Members, owner.Members[0])
+	}},
+	{Name: "synthetic_error_result", Category: "RETURN_MAPPING_MISMATCH", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// The central semantic claim of the family: infallible managed value
+		// work must never gain a synthetic Go error result.
+		key := firstResultBearingMember(owner)
+		member := actual.Members[key]
+		member.Results = append(append([]string(nil), member.Results...), "error")
+	}},
+	{Name: "wrong_result_type", Category: "RETURN_MAPPING_MISMATCH", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		actual.Members[firstResultBearingMember(owner)].Results = []string{"complex128"}
+	}},
+	{Name: "wrong_constructor_parameters", Category: "PARAMETER_MAPPING_MISMATCH", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// Mutate whichever constructor the type projects; overloaded
+		// constructors carry a By<Type> suffix.
+		for _, key := range owner.Members {
+			if key.Receiver == "" && strings.HasPrefix(key.Name, "New"+owner.GoName) {
+				actual.Members[key].Parameters = []string{"int32"}
+				return
+			}
+		}
+	}},
+	{Name: "renamed_last_member", Category: "MISSING_MEMBER", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		key := owner.Members[len(owner.Members)-1]
+		member := *actual.Members[key]
+		delete(actual.Members, key)
+		member.Key = symbolKey{Package: key.Package, Receiver: key.Receiver, Name: key.Name + "Renamed"}
+		actual.Members[member.Key] = &member
+	}},
+	{Name: "unexpected_mutator", Category: "UNEXPECTED_MEMBER", Apply: func(_ *expectedSurface, actual *actualSurface, owner *expectedType) {
+		// These values are immutable in the reference; an invented setter
+		// would be new public surface.
+		key := symbolKey{Package: owner.PackagePath, Receiver: owner.GoName, Name: "SetInvented"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Parameters: []string{"int32"}}
+	}},
+}
+
+// firstResultBearingMember returns the first member of a value struct that
+// produces a result, in the type's declared member order.
+func firstResultBearingMember(owner *expectedType) symbolKey {
+	for _, key := range owner.Members {
+		return key
+	}
+	return symbolKey{}
+}
+
+// TestFoundation15ValueStructDefectsRejectedForEveryType applies every
+// structural defect to every value struct in the cluster, asserting a clean
+// baseline first so no defect can pass by accident.
+func TestFoundation15ValueStructDefectsRejectedForEveryType(t *testing.T) {
+	if len(foundation15ValueStructs) != 7 {
+		t.Fatalf("value-struct cluster size = %d, want 7", len(foundation15ValueStructs))
+	}
+	cases := 0
+	for _, identity := range foundation15ValueStructs {
+		identity := identity
+		t.Run(identity, func(t *testing.T) {
+			baseExpected, baseActual, _ := valueStructSurfaces(t, identity)
+			baseline := verify(baseExpected, baseActual, 0, "report", "contract", "mapping")
+			if baseline.Summary["TOTAL_DIAGNOSTICS"] != 0 {
+				t.Fatalf("unmutated %s baseline is not clean: %v", identity, baseline.Diagnostics)
+			}
+			for _, defect := range valueStructDefects {
+				defect := defect
+				t.Run(defect.Name, func(t *testing.T) {
+					expected, actual, owner := valueStructSurfaces(t, identity)
+					defect.Apply(expected, actual, owner)
+					result := verify(expected, actual, 0, "report", "contract", "mapping")
+					if result.Summary[defect.Category] == 0 {
+						t.Fatalf("defect %q on %s did not raise %s; summary=%v",
+							defect.Name, identity, defect.Category, result.Summary)
+					}
+					for _, closure := range result.Foundation15ValueStructs {
+						if closure.XNA == identity && closure.Status != "FAIL" {
+							t.Fatalf("defect %q on %s left the closure measurement at %q",
+								defect.Name, identity, closure.Status)
+						}
+					}
+				})
+				cases++
+			}
+		})
+	}
+	if cases != len(foundation15ValueStructs)*len(valueStructDefects) {
+		t.Fatalf("value-struct negative fixture count = %d", cases)
+	}
+}
+
+// TestFoundation15ValueStructsAreInfallibleManagedValues asserts, against the
+// pinned contract, that the whole cluster projects as System.ValueType structs
+// with no synthetic Go error result on any member.
+func TestFoundation15ValueStructsAreInfallibleManagedValues(t *testing.T) {
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	identities := 0
+	for _, identity := range foundation15ValueStructs {
+		owner := surface.typeForXNA(identity)
+		if owner == nil || owner.Kind != "struct" || owner.BaseType != "System.ValueType" ||
+			len(owner.Members) != owner.SourceMembers {
+			t.Fatalf("%s projection = %+v", identity, owner)
+		}
+		namespace := identity[:strings.LastIndex(identity, ".")]
+		if owner.PackagePath != packagePathForNamespace(namespace) {
+			t.Fatalf("%s package = %q", identity, owner.PackagePath)
+		}
+		// TouchLocation is the one cluster member with a declared direct
+		// interface; it is the value-typed System.IEquatable`1 of itself,
+		// which the established managed-interface policy already covers.
+		for _, declared := range owner.Interfaces {
+			if !strings.HasPrefix(declared, "System.IEquatable`1[") {
+				t.Fatalf("%s declares unexpected interface %q", identity, declared)
+			}
+		}
+		for _, key := range owner.Members {
+			member := surface.Members[key]
+			for _, result := range member.Results {
+				if result == "error" {
+					t.Fatalf("%s.%s carries a synthetic error result", identity, key.Name)
+				}
+			}
+			if member.ErrorAdded {
+				t.Fatalf("%s.%s was marked as gaining an error result", identity, key.Name)
+			}
+		}
+		identities += len(owner.Members)
+	}
+	if identities != 76 {
+		t.Fatalf("value-struct cluster identities = %d, want 76", identities)
+	}
+}
+
+// valueStructMutationCase applies one named Foundation-15 value-struct defect.
+// Mutation ids have the form f15vs_<defect>__<identity>.
+func valueStructMutationCase(t *testing.T, mutation string) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	parts := strings.SplitN(strings.TrimPrefix(mutation, "f15vs_"), "__", 2)
+	if len(parts) != 2 {
+		t.Fatalf("malformed value-struct mutation %q", mutation)
+	}
+	expected, actual, owner := valueStructSurfaces(t, parts[1])
+	for _, defect := range valueStructDefects {
+		if defect.Name != parts[0] {
+			continue
+		}
+		defect.Apply(expected, actual, owner)
+		return expected, actual
+	}
+	t.Fatalf("unknown value-struct defect %q", parts[0])
+	return nil, nil
 }
