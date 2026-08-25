@@ -4,7 +4,7 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 
 - Profile: CNA-Go Foundations 1-13 / XNA 4.0 Windows runtime mapping
 - Qualified platform: linux/amd64 (HEADLESS renderer, NULL audio)
-- Capability rows: 40
+- Capability rows: 41
 
 | Status | Capability | Evidence | Notes |
 |---|---|---|---|
@@ -12,6 +12,7 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 | `BACKEND_BLOCKED` | Focus transitions away from the game | qualified artifact reports HEADLESS renderer with no window manager | The HEADLESS artifact raises activation once at startup and can never lose focus, so CNA_GAME_EVENT_DEACTIVATED is never delivered and the measured counter stays at zero. The Go accessors, the edge-trigger guard and the raise path are proved without it; delivery of a real deactivation is NOT_RUN_ENVIRONMENT and is not claimed. |
 | `BACKEND_BLOCKED` | Visible window rendering | qualified artifact reports HEADLESS renderer | Native draw calls are verified, but the retained artifact cannot provide visual evidence. |
 | `HARDWARE_PENDING` | Hardware renderer qualification | Foundation artifact is HEADLESS | Requires a separately admitted exact ABI artifact and visible-run evidence. |
+| `LANGUAGE_MAPPING_LIMITATION` | Frame-boundary override hooks | docs/foundation-35-game-frame-hook-evidence.md; measured CNA_GameFrameHooks ordering against the pinned artifact | Game.BeginRun, EndRun, BeginDraw and EndDraw are complete as base bodies and reachable as methods. CNA's begin_run, end_run, begin_draw and end_draw hooks correspond position for position and are deliberately NOT installed: base behavior is never automatic, so forwarding them would prejudge the override design. Overriding these four is not possible yet and no override mechanism is claimed. |
 | `LANGUAGE_MAPPING_LIMITATION` | CLR Game subclassing syntax | docs/xna-go-mapping.md | Go uses a concrete Game host plus an explicit GameCallbacks adapter. |
 | `PLATFORM_PENDING` | Android runtime | unsupported template entry point removed | Not claimed. |
 | `PLATFORM_PENDING` | iOS runtime | no iOS runtime qualification | Not claimed. |

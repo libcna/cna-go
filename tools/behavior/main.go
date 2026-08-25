@@ -2512,6 +2512,47 @@ func runCorpus() corpusReport {
 			errors.Is(firstFailure, failSentinel), errors.Is(secondFailure, failSentinel),
 			failRan, laterRan))
 
+	// ------------------------------------------------------------------
+	// Foundation 35. Game's four frame-boundary protected virtuals.
+	// ------------------------------------------------------------------
+	hookGame, _ := framework.NewGame(corpusCallbacks{})
+	var hookLog []string
+	hookComponent := newOrderedCorpusComponent("hooked", &hookLog, 0, 0)
+	_ = hookGame.Components().Add(hookComponent)
+	hookRaises := 0
+	_, _ = hookGame.AddExitingHandler(func(any, *framework.EventArgs) error { hookRaises++; return nil })
+	beginRunError := hookGame.BeginRun()
+	endRunError := hookGame.EndRun()
+	check("game-frame-hook.begin-run-and-end-run-are-authoritative-no-ops", "GAME_FRAME_HOOK",
+		"true,true,,1,0",
+		fmt.Sprintf("%t,%t,%s,%d,%d", beginRunError == nil, endRunError == nil,
+			strings.Join(hookLog, ","), hookGame.Components().Count(), hookRaises))
+
+	// BeginDraw's Boolean is the frame's drawing decision, and it is a channel
+	// separate from the error. The reference answers false only when a
+	// registered IGraphicsDeviceManager refuses; CNA-Go never assigns that
+	// private field, so the base falls through to its `ldc.i4.1; ret`.
+	shouldDraw, beginDrawError := hookGame.BeginDraw()
+	endDrawError := hookGame.EndDraw()
+	shouldDrawAgain, _ := hookGame.BeginDraw()
+	check("game-frame-hook.begin-draw-admits-the-frame-with-no-manager", "GAME_FRAME_HOOK",
+		"true,true,true,true,",
+		fmt.Sprintf("%t,%t,%t,%t,%s", shouldDraw, beginDrawError == nil,
+			endDrawError == nil, shouldDrawAgain, strings.Join(hookLog, ",")))
+
+	// The one Go-only failure, and the proof that a refused call does not also
+	// admit the frame.
+	unconstructedHooks := &framework.Game{}
+	refusedDraw, refusedDrawError := unconstructedHooks.BeginDraw()
+	checkGoProjection("game-frame-hook.an-unconstructed-game-is-refused", "GAME_FRAME_HOOK",
+		"true,true,true,true,false",
+		fmt.Sprintf("%t,%t,%t,%t,%t",
+			unconstructedHooks.BeginRun() != nil,
+			unconstructedHooks.EndRun() != nil,
+			unconstructedHooks.EndDraw() != nil,
+			refusedDrawError != nil,
+			refusedDraw))
+
 	return report
 }
 

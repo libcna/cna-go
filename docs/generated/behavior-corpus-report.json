@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 625,
-    "ASSERTIONS": 625,
+    "OBSERVATIONS": 628,
+    "ASSERTIONS": 628,
     "FAILURES": 0
   },
   "observations": [
@@ -5005,6 +5005,30 @@
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": "true,true,2,0",
       "actual": "true,true,2,0",
+      "passed": true
+    },
+    {
+      "id": "game-frame-hook.begin-run-and-end-run-are-authoritative-no-ops",
+      "group": "GAME_FRAME_HOOK",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,,1,0",
+      "actual": "true,true,,1,0",
+      "passed": true
+    },
+    {
+      "id": "game-frame-hook.begin-draw-admits-the-frame-with-no-manager",
+      "group": "GAME_FRAME_HOOK",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,true,",
+      "actual": "true,true,true,true,",
+      "passed": true
+    },
+    {
+      "id": "game-frame-hook.an-unconstructed-game-is-refused",
+      "group": "GAME_FRAME_HOOK",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true,true,true,false",
+      "actual": "true,true,true,true,false",
       "passed": true
     }
   ]

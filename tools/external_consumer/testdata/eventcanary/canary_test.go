@@ -1629,3 +1629,108 @@ func TestGameStaysUsableAfterEveryHandlerIsRemoved(t *testing.T) {
 	}
 	_ = user
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 35 — Game's four frame-boundary virtuals, from outside.
+// ---------------------------------------------------------------------------
+
+// TestConsumerReachesTheFourFrameHooks proves the four members exist on Game
+// with the exact signatures Microsoft's declarations map to, that BeginDraw's
+// Boolean is a separate channel from its error, and that none of them touches
+// the component engine.
+func TestConsumerReachesTheFourFrameHooks(t *testing.T) {
+	game, user := newCanaryGame(t)
+	// The signatures, asserted at compile time.
+	var (
+		_ func() error         = game.BeginRun
+		_ func() error         = game.EndRun
+		_ func() (bool, error) = game.BeginDraw
+		_ func() error         = game.EndDraw
+	)
+
+	component := NewRotator("frame-hooks")
+	if err := component.SetEnabled(true); err != nil {
+		t.Fatal(err)
+	}
+	if err := component.SetVisible(true); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.Components().Add(component); err != nil {
+		t.Fatal(err)
+	}
+	if err := user.Initialize(game); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := game.BeginRun(); err != nil {
+		t.Fatalf("BeginRun: %v", err)
+	}
+	shouldDraw, err := game.BeginDraw()
+	if err != nil {
+		t.Fatalf("BeginDraw: %v", err)
+	}
+	if !shouldDraw {
+		t.Fatal("BeginDraw refused the frame with no IGraphicsDeviceManager registered")
+	}
+	if err := game.EndDraw(); err != nil {
+		t.Fatalf("EndDraw: %v", err)
+	}
+	if err := game.EndRun(); err != nil {
+		t.Fatalf("EndRun: %v", err)
+	}
+	if component.Updates != 0 || component.Draws != 0 {
+		t.Fatalf("a frame hook ran the component loop: updates=%d draws=%d",
+			component.Updates, component.Draws)
+	}
+	// The component loop is still a different member, and still works.
+	if err := user.Update(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := user.Draw(game, framework.GameTime{}); err != nil {
+		t.Fatal(err)
+	}
+	if component.Updates != 1 || component.Draws != 1 {
+		t.Fatalf("after the base calls: updates=%d draws=%d, want 1 and 1",
+			component.Updates, component.Draws)
+	}
+}
+
+// TestFrameHooksRefuseAnUnconstructedGameFromOutside covers the family's one
+// Go-only failure, and proves a refused BeginDraw does not also admit the frame.
+func TestFrameHooksRefuseAnUnconstructedGameFromOutside(t *testing.T) {
+	zero := &framework.Game{}
+	for name, call := range map[string]func() error{
+		"BeginRun": zero.BeginRun,
+		"EndRun":   zero.EndRun,
+		"EndDraw":  zero.EndDraw,
+	} {
+		if err := call(); err == nil {
+			t.Fatalf("%s on an unconstructed Game reported no error", name)
+		}
+	}
+	shouldDraw, err := zero.BeginDraw()
+	if err == nil {
+		t.Fatal("BeginDraw on an unconstructed Game reported no error")
+	}
+	if shouldDraw {
+		t.Fatal("a refused BeginDraw also admitted the frame")
+	}
+}
+
+// TestTheOverrideContractStillHasExactlyFiveMembers is the compatibility claim
+// this milestone makes to every consumer who already wrote a GameCallbacks
+// implementation: nothing was added to the interface they satisfy, so their
+// code still compiles and still runs.
+func TestTheOverrideContractStillHasExactlyFiveMembers(t *testing.T) {
+	contract := reflect.TypeOf((*framework.GameCallbacks)(nil)).Elem()
+	if contract.NumMethod() != 5 {
+		names := make([]string, 0, contract.NumMethod())
+		for i := 0; i < contract.NumMethod(); i++ {
+			names = append(names, contract.Method(i).Name)
+		}
+		t.Fatalf("GameCallbacks has %d members (%s), want exactly 5", contract.NumMethod(), strings.Join(names, ","))
+	}
+	// And the canary's own conformer, written before any of this existed,
+	// still satisfies it.
+	var _ framework.GameCallbacks = (*UserGame)(nil)
+}
