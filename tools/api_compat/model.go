@@ -189,6 +189,7 @@ type report struct {
 	Foundation14EnumClosures     []enumClosure                 `json:"foundation14EnumClosures"`
 	Foundation15EnumClosures     []enumClosure                 `json:"foundation15EnumClosures"`
 	Foundation15ValueStructs     []valueStructClosure          `json:"foundation15ValueStructClosures"`
+	Foundation16ValueStructs     []valueStructClosure          `json:"foundation16ValueStructClosures"`
 	Metadata                     reportMetadata                `json:"metadata"`
 }
 

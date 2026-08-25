@@ -2,9 +2,10 @@
 
 ## Current state
 
-Foundation Milestones 1 through 15 are complete. Milestone 15,
-`PURE_MANAGED_BATCH_B`, completes 12 public XNA types carrying 122 mapped Go
-identities in three clusters.
+Foundation Milestones 1 through 16 are complete. Milestone 15,
+`PURE_MANAGED_BATCH_B`, completed 12 public XNA types carrying 122 mapped Go
+identities in three clusters; Milestone 16 then completed
+`Microsoft.Xna.Framework.Input.GamePadState`, the type that cluster B unlocked.
 
 Foundation 14 was committed and pushed at
 `186f6b163e85587cd949f3c284ac58cde730711c` before this milestone began, so
@@ -73,14 +74,14 @@ equality rule comes from that IL — nothing from a reimplementation.
 ## Structural scoreboard
 
 ```text
-TARGET_TYPES=102
-TARGET_MEMBERS=1604
-TOTAL_DIAGNOSTICS=332
-MISSING_TYPE=155
+TARGET_TYPES=103
+TARGET_MEMBERS=1619
+TOTAL_DIAGNOSTICS=331
+MISSING_TYPE=154
 MISSING_MEMBER=177
-COMPLETE_TYPES=97
+COMPLETE_TYPES=98
 PARTIAL_TYPES=5
-MISSING_TYPES=155
+MISSING_TYPES=154
 
 INTERFACE_WITNESS_PROJECTIONS=25
 PACKFROMVECTOR4_WITNESS_PROJECTIONS=17
@@ -97,7 +98,7 @@ GraphicsDevice 70, SpriteBatch 16, Texture2D 12; combined 177.
 
 ## Verifier and behavior evidence
 
-Behavior corpus: 476 observations, 476 assertions, zero failures.
+Behavior corpus: 487 observations, 487 assertions, zero failures.
 
 The enum machinery is now milestone-agnostic: `TestBatchEnumMappedContracts`
 and `TestBatchEnumDefectsRejectedForEveryType` cover all 30 pinned enums and
@@ -105,7 +106,8 @@ and `TestBatchEnumDefectsRejectedForEveryType` cover all 30 pinned enums and
 `TestFoundation15ValueStructDefectsRejectedForEveryType` adds 70 value-struct
 negative cases across 10 defects, including `projected_as_class` (value
 semantics), `synthetic_error_result` (infallibility), and `unexpected_mutator`
-(immutability). The declared mutation inventory is 210 cases.
+(immutability). The declared mutation inventory is 217 cases. The value-struct defect matrix
+spans 8 types, 91 identities, and 80 negative cases across both milestones.
 
 A verifier defect was fixed: `System.TimeSpan` is now package-qualified as
 `framework.TimeSpan` outside the framework package, matching what
@@ -164,7 +166,7 @@ go test -race ./...          # api_compat takes ~135s under -race
 go build ./...
 go build -trimpath ./...
 go run ./tools/api_compat --mode report
-go run ./tools/api_compat --mode strict   # expected 332 deferred diagnostics
+go run ./tools/api_compat --mode strict   # expected 331 deferred diagnostics
 go run ./tools/api_compat --mode leak-only
 go run ./tools/behavior
 go run ./tools/packed_vector_qualify
@@ -184,36 +186,18 @@ committed evidence.
 The counting rule is unchanged: base type, declared direct interfaces, and
 every member signature type are public-signature dependencies; mapped BCL
 types are satisfied; the five partial runtime types count as present. The
-count moved 55 → 47.
+count moved 55 → 46 across Foundations 15 and 16.
 
-Cluster B unlocked `Microsoft.Xna.Framework.Input.GamePadState`, which is the
-selected next milestone.
+Cluster B unlocked `Microsoft.Xna.Framework.Input.GamePadState`, which
+Foundation 16 completed. That unlocked nothing further that is safe.
 
-## One next selected milestone
+## No safe candidate remains
 
-```text
-Microsoft.Xna.Framework.Input.GamePadState
-```
-
-`GamePadState` is a `System.ValueType` struct with 15 source identities that
-became dependency-complete the moment cluster B landed. Its two constructors
-take exactly the Foundation-15 values — `(GamePadThumbSticks, GamePadTriggers,
-GamePadButtons, GamePadDPad)` and `(Vector2, Vector2, Single, Single,
-Buttons[])` — and its remaining surface is `IsButtonDown`, `IsButtonUp`,
-`Equals`, `GetHashCode`, `ToString`, both operators, and the `Buttons`,
-`DPad`, `IsConnected`, `PacketNumber`, `ThumbSticks`, and `Triggers`
-properties.
-
-It is the same safe category as cluster B: a pure managed value struct with no
-unmapped dependency, whose behavior is fully readable from the retained IL. It
-needs **no** new mapping policy. `IsConnected` is whatever the constructor
-stored — it is not a device read, and completing it still claims no game pad
-capability. `GamePad` the device class remains a hard skip.
-
-```text
-SELECTED_ONLY=true
-STARTED=false
-```
+**After Foundation 16 the safe pure-managed seam is exhausted.** Every
+dependency-complete missing type that is still fully resolved is blocked on
+either a public-API policy decision or a fabricated device capability. Search
+is no longer the bottleneck — a decision is. The next session should not spend
+effort re-ranking; it should start from the list below.
 
 ## Blocked on a policy decision, not on semantics
 
@@ -253,14 +237,47 @@ constructor — `TouchPanelCapabilities`, `GamePadCapabilities`,
 `RendererDetail`, `DisplayMode` — stay deferred permanently under the
 no-fabricated-capability rule, not pending a decision.
 
+## The next milestone is a decision, not a type
+
+Foundation 16 completed `GamePadState`: 15 source identities, 15 mapped Go
+identities, `errorResults: 0`. Its private XInput snapshot is reproduced as
+unexported managed bit packing, only the `IndependentAxes` dead-zone mode is
+reachable and therefore implemented, and every packed bit is measured to equal
+its pinned `Buttons` literal. See
+`docs/foundation-16-game-pad-state-evidence.md`.
+
+The productive frontier is now group 1 above. Recommended order once the policy
+is settled:
+
+1. Classify pure managed CLR classes so they stop projecting fallible members,
+   then complete `Audio.AudioListener` (9 identities, fan-out 3).
+2. Add setter-only fallibility, then complete `Audio.AudioEmitter`
+   (11 identities, fan-out 3).
+3. Decide managed-interface projection, then take `IEffectMatrices` and
+   `IEffectFog` (fan-out 5 each).
+4. Decide whether `System.IntPtr` may appear in public Go surface at all; that
+   gates `PresentationParameters` (13 identities, fan-out 2) and interacts with
+   the `RAW_HANDLE_LEAK` gate.
+
+`Graphics.GraphicsResource` (fan-out 11) remains the largest single unlock and
+the real architectural milestone, but it needs the disposal/ownership design
+plus the partial `GraphicsDevice`, so it is not a next step until the questions
+above are settled.
+
+```text
+SELECTED_ONLY=true
+STARTED=false
+```
+
 ## Worktree provenance
 
 Foundation 15 started on clean `develop` with `HEAD` and `origin/develop` both
-at `186f6b163e85587cd949f3c284ac58cde730711c`. The whole batch was accumulated
-without per-type commits and landed as exactly one commit. History was not
-rewritten.
+at `186f6b163e85587cd949f3c284ac58cde730711c` and landed as exactly one commit.
+Foundation 16 started from that commit and landed as one more. Neither used
+per-type commits and history was not rewritten.
 
 ```text
 FOUNDATION_MILESTONE_15_COMPLETE=true
 BATCH_NAME=PURE_MANAGED_BATCH_B
+FOUNDATION_MILESTONE_16_COMPLETE=true
 ```

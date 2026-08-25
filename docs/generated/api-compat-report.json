@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 97,
+    "COMPLETE_TYPES": 98,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 155,
-    "MISSING_TYPES": 155,
+    "MISSING_TYPE": 154,
+    "MISSING_TYPES": 154,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1604,
-    "TARGET_TYPES": 102,
-    "TOTAL_DIAGNOSTICS": 332,
+    "TARGET_MEMBERS": 1619,
+    "TARGET_TYPES": 103,
+    "TOTAL_DIAGNOSTICS": 331,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1840,12 +1840,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.GamePadState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePadState",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.Mouse",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:Mouse",
       "message": "mapped Go type is absent"
@@ -2108,6 +2102,7 @@
     "Microsoft.Xna.Framework.Input.GamePadButtons",
     "Microsoft.Xna.Framework.Input.GamePadDPad",
     "Microsoft.Xna.Framework.Input.GamePadDeadZone",
+    "Microsoft.Xna.Framework.Input.GamePadState",
     "Microsoft.Xna.Framework.Input.GamePadThumbSticks",
     "Microsoft.Xna.Framework.Input.GamePadTriggers",
     "Microsoft.Xna.Framework.Input.GamePadType",
@@ -2468,7 +2463,6 @@
     "Microsoft.Xna.Framework.IUpdateable",
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadCapabilities",
-    "Microsoft.Xna.Framework.Input.GamePadState",
     "Microsoft.Xna.Framework.Input.Mouse",
     "Microsoft.Xna.Framework.Input.Touch.TouchCollection",
     "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
@@ -6116,6 +6110,206 @@
           ],
           "actualResults": [
             "framework.Vector2"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
+  "foundation16ValueStructClosures": [
+    {
+      "xna": "Microsoft.Xna.Framework.Input.GamePadState",
+      "goName": "GamePadState",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input",
+      "sourceTypes": 1,
+      "sourceIdentities": 15,
+      "expectedGoIdentities": 15,
+      "targetTypes": 1,
+      "targetGoIdentities": 15,
+      "localDiagnostics": 0,
+      "expectedKind": "struct",
+      "actualKind": "struct",
+      "baseType": "System.ValueType",
+      "errorResults": 0,
+      "members": [
+        {
+          "goKind": "func",
+          "receiver": "",
+          "name": "NewGamePadStateByGamePadThumbSticksAndGamePadTriggersAndGamePadButtonsAndGamePadDPad",
+          "expectedResults": [
+            "GamePadState"
+          ],
+          "actualResults": [
+            "GamePadState"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "func",
+          "receiver": "",
+          "name": "NewGamePadStateByVector2AndVector2AndSingleAndSingleAndSliceOfButtons",
+          "expectedResults": [
+            "GamePadState"
+          ],
+          "actualResults": [
+            "GamePadState"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "IsButtonDown",
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "IsButtonUp",
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "Equals",
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "GetHashCode",
+          "expectedResults": [
+            "int32"
+          ],
+          "actualResults": [
+            "int32"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "ToString",
+          "expectedResults": [
+            "string"
+          ],
+          "actualResults": [
+            "string"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "func",
+          "receiver": "",
+          "name": "GamePadStateOperatorEqualityByGamePadStateAndGamePadState",
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "func",
+          "receiver": "",
+          "name": "GamePadStateOperatorInequalityByGamePadStateAndGamePadState",
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "Buttons",
+          "expectedResults": [
+            "GamePadButtons"
+          ],
+          "actualResults": [
+            "GamePadButtons"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "DPad",
+          "expectedResults": [
+            "GamePadDPad"
+          ],
+          "actualResults": [
+            "GamePadDPad"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "IsConnected",
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "PacketNumber",
+          "expectedResults": [
+            "int32"
+          ],
+          "actualResults": [
+            "int32"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "ThumbSticks",
+          "expectedResults": [
+            "GamePadThumbSticks"
+          ],
+          "actualResults": [
+            "GamePadThumbSticks"
+          ],
+          "status": "PASS"
+        },
+        {
+          "goKind": "method",
+          "receiver": "GamePadState",
+          "name": "Triggers",
+          "expectedResults": [
+            "GamePadTriggers"
+          ],
+          "actualResults": [
+            "GamePadTriggers"
           ],
           "status": "PASS"
         }

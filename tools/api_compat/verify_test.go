@@ -2567,11 +2567,11 @@ func firstResultBearingMember(owner *expectedType) symbolKey {
 // structural defect to every value struct in the cluster, asserting a clean
 // baseline first so no defect can pass by accident.
 func TestFoundation15ValueStructDefectsRejectedForEveryType(t *testing.T) {
-	if len(foundation15ValueStructs) != 7 {
-		t.Fatalf("value-struct cluster size = %d, want 7", len(foundation15ValueStructs))
+	if len(allValueStructs()) != 8 {
+		t.Fatalf("value-struct cluster size = %d, want 8", len(allValueStructs()))
 	}
 	cases := 0
-	for _, identity := range foundation15ValueStructs {
+	for _, identity := range allValueStructs() {
 		identity := identity
 		t.Run(identity, func(t *testing.T) {
 			baseExpected, baseActual, _ := valueStructSurfaces(t, identity)
@@ -2589,7 +2589,8 @@ func TestFoundation15ValueStructDefectsRejectedForEveryType(t *testing.T) {
 						t.Fatalf("defect %q on %s did not raise %s; summary=%v",
 							defect.Name, identity, defect.Category, result.Summary)
 					}
-					for _, closure := range result.Foundation15ValueStructs {
+					closures := append(append([]valueStructClosure(nil), result.Foundation15ValueStructs...), result.Foundation16ValueStructs...)
+					for _, closure := range closures {
 						if closure.XNA == identity && closure.Status != "FAIL" {
 							t.Fatalf("defect %q on %s left the closure measurement at %q",
 								defect.Name, identity, closure.Status)
@@ -2600,7 +2601,7 @@ func TestFoundation15ValueStructDefectsRejectedForEveryType(t *testing.T) {
 			}
 		})
 	}
-	if cases != len(foundation15ValueStructs)*len(valueStructDefects) {
+	if cases != len(allValueStructs())*len(valueStructDefects) {
 		t.Fatalf("value-struct negative fixture count = %d", cases)
 	}
 }
@@ -2614,7 +2615,7 @@ func TestFoundation15ValueStructsAreInfallibleManagedValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	identities := 0
-	for _, identity := range foundation15ValueStructs {
+	for _, identity := range allValueStructs() {
 		owner := surface.typeForXNA(identity)
 		if owner == nil || owner.Kind != "struct" || owner.BaseType != "System.ValueType" ||
 			len(owner.Members) != owner.SourceMembers {
@@ -2645,8 +2646,8 @@ func TestFoundation15ValueStructsAreInfallibleManagedValues(t *testing.T) {
 		}
 		identities += len(owner.Members)
 	}
-	if identities != 76 {
-		t.Fatalf("value-struct cluster identities = %d, want 76", identities)
+	if identities != 91 {
+		t.Fatalf("value-struct cluster identities = %d, want 91", identities)
 	}
 }
 

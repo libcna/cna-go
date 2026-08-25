@@ -253,6 +253,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation14EnumClosures = measureFoundation14EnumClosures(expected, actual, typeDiagnostics)
 	result.Foundation15EnumClosures = measureBatchEnumClosures(expected, actual, typeDiagnostics, foundation15Enums)
 	result.Foundation15ValueStructs = measureValueStructClosures(expected, actual, typeDiagnostics, foundation15ValueStructs)
+	result.Foundation16ValueStructs = measureValueStructClosures(expected, actual, typeDiagnostics, foundation16ValueStructs)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
@@ -1805,6 +1806,23 @@ var foundation15ValueStructs = []string{
 	"Microsoft.Xna.Framework.Input.MouseState",
 	"Microsoft.Xna.Framework.Input.Touch.GestureSample",
 	"Microsoft.Xna.Framework.Input.Touch.TouchLocation",
+}
+
+// foundation16ValueStructs is the Foundation-16 closure. GamePadState is the
+// value struct that cluster B unlocked: its constructors take exactly the
+// Foundation-15 game pad values, and its IsButtonDown reproduces the internal
+// XInput packing and dead-zone rules as pure managed arithmetic.
+var foundation16ValueStructs = []string{
+	"Microsoft.Xna.Framework.Input.GamePadState",
+}
+
+// allValueStructs is every pinned value struct measured by the shared
+// table-driven closure category, across milestones.
+func allValueStructs() []string {
+	all := make([]string, 0, len(foundation15ValueStructs)+len(foundation16ValueStructs))
+	all = append(all, foundation15ValueStructs...)
+	all = append(all, foundation16ValueStructs...)
+	return all
 }
 
 func measureValueStructClosures(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int, batch []string) []valueStructClosure {

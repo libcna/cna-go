@@ -744,6 +744,53 @@ func runCorpus() corpusReport {
 			framework.Vector2{X: 0, Y: float32(math.Copysign(0, -1))}).GetHashCode())
 	check("touch-location.string-omits-state", "TOUCH_LOCATION", "{Position:{X:1 Y:2}}", pressedTouch.ToString())
 
+	// Foundation 16: GamePadState, unlocked by the Foundation-15 game pad
+	// values. IsButtonDown reproduces the reference XInput packing and
+	// IndependentAxes dead-zone arithmetic as pure managed code. Completing it
+	// claims no game pad capability: CNA-Go exposes no GamePad type, polls
+	// nothing, and reads no device. IsConnected reports what the constructor
+	// stored.
+	padState := input.NewGamePadStateByVector2AndVector2AndSingleAndSingleAndSliceOfButtons(
+		framework.Vector2{X: 0.5}, framework.Vector2{Y: 0.5}, 0.5, 0.1,
+		[]input.Buttons{input.ButtonsA, input.ButtonsDPadUp},
+	)
+	check("game-pad-state.constructor-defaults", "GAME_PAD_STATE", "true,0",
+		fmt.Sprintf("%t,%d", padState.IsConnected(), padState.PacketNumber()))
+	check("game-pad-state.buttons-slice-combined", "GAME_PAD_STATE", "1,0,1,0",
+		fmt.Sprintf("%d,%d,%d,%d", padState.Buttons().A(), padState.Buttons().B(),
+			padState.DPad().Up(), padState.DPad().Down()))
+	check("game-pad-state.normal-button-query", "GAME_PAD_STATE", "true,false,true",
+		fmt.Sprintf("%t,%t,%t", padState.IsButtonDown(input.ButtonsA),
+			padState.IsButtonDown(input.ButtonsB), padState.IsButtonUp(input.ButtonsB)))
+	check("game-pad-state.all-requested-bits-required", "GAME_PAD_STATE", "true,false",
+		fmt.Sprintf("%t,%t", padState.IsButtonDown(input.ButtonsA|input.ButtonsDPadUp),
+			padState.IsButtonDown(input.ButtonsA|input.ButtonsB)))
+	// A half-deflected stick quantizes to 16383, clearing the 7849 left-stick
+	// dead zone; a tenth-deflected stick quantizes to 3276 and does not.
+	check("game-pad-state.thumbstick-outside-dead-zone", "GAME_PAD_STATE", "true,false",
+		fmt.Sprintf("%t,%t", padState.IsButtonDown(input.ButtonsLeftThumbstickRight),
+			padState.IsButtonDown(input.ButtonsLeftThumbstickLeft)))
+	nearState := input.NewGamePadStateByVector2AndVector2AndSingleAndSingleAndSliceOfButtons(
+		framework.Vector2{X: 0.1}, framework.Vector2{}, 0, 0, nil)
+	check("game-pad-state.thumbstick-inside-dead-zone", "GAME_PAD_STATE", false,
+		nearState.IsButtonDown(input.ButtonsLeftThumbstickRight))
+	// A half-pulled trigger quantizes to 127, clearing the dead zone of 30; a
+	// tenth-pulled trigger quantizes to 25 and does not.
+	check("game-pad-state.trigger-dead-zone", "GAME_PAD_STATE", "true,false",
+		fmt.Sprintf("%t,%t", padState.IsButtonDown(input.ButtonsLeftTrigger),
+			padState.IsButtonDown(input.ButtonsRightTrigger)))
+	// Asking about no button at all reports true: the empty mask is trivially
+	// contained. This is reference behavior, not a Go artifact.
+	check("game-pad-state.empty-mask-is-down", "GAME_PAD_STATE", true, padState.IsButtonDown(0))
+	var zeroPadState input.GamePadState
+	check("game-pad-state.hash-and-string", "GAME_PAD_STATE", "0,{IsConnected:False}",
+		fmt.Sprintf("%d,%s", zeroPadState.GetHashCode(), zeroPadState.ToString()))
+	defaultPadState := input.NewGamePadStateByVector2AndVector2AndSingleAndSingleAndSliceOfButtons(
+		framework.Vector2{}, framework.Vector2{}, 0, 0, nil)
+	check("game-pad-state.connected-hash-and-string", "GAME_PAD_STATE", "1,{IsConnected:True}",
+		fmt.Sprintf("%d,%s", defaultPadState.GetHashCode(), defaultPadState.ToString()))
+	checkGoProjection("game-pad-state.zero-value-is-disconnected", "GAME_PAD_STATE", false, zeroPadState.IsConnected())
+
 	check("math.clamp.low", "MathHelper", bits(0), bits(framework.MathHelperClamp(-2, 0, 1)))
 	check("math.clamp.inverted", "MathHelper", "0x40000000", bits(framework.MathHelperClamp(0, 2, 1)))
 	check("math.lerp", "MathHelper", bits(4), bits(framework.MathHelperLerp(2, 10, 0.25)))

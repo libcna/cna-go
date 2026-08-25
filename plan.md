@@ -772,6 +772,64 @@ FOUNDATION_MILESTONE_15_COMPLETE=true
 BATCH_NAME=PURE_MANAGED_BATCH_B
 ```
 
+## Foundation 16 GamePadState policy
+
+Foundation 16 completes exactly one type, `Microsoft.Xna.Framework.Input.GamePadState`,
+which became dependency-complete when the Foundation-15 game pad values landed.
+Its closure is 15 source identities and 15 mapped Go identities.
+
+Its private `XINPUT_STATE` snapshot is reproduced as an unexported Go struct
+because `IsButtonDown` reads the packed form rather than the public values. The
+reference `FillInternalState` is pure managed bit packing with no P/Invoke, no
+marshalling, and no device access, and the Go reproduction keeps that property:
+the snapshot is never exposed, marshalled, or handed to a native library.
+
+Every XInput bit the reference packs coincides with the pinned `Buttons`
+literal of the same name, and that coincidence is measured by a test rather
+than assumed.
+
+Only the `IndependentAxes` dead-zone mode is reachable from the completed
+public surface, because `IsButtonDown` hard-codes it. The Circular and None
+modes are reachable only through the unimplemented `GamePad.GetState` and are
+deliberately absent rather than written as unreachable code.
+
+Two reference behaviors are asserted rather than smoothed over:
+`IsButtonDown(0)` reports true because the empty mask is trivially contained,
+and a multi-bit query requires every requested bit to be present.
+
+ECMA-335 leaves float-to-integer conversion of NaN unspecified, and so does Go.
+The CIL `conv.i2` and `conv.u1` conversions the reference uses are therefore
+spelled out explicitly, deriving NaN to zero from the x86/x64 integer
+indefinite value rather than leaving it to the compiler.
+
+`IsConnected` reports what the constructor stored. Completing this type claims
+no game pad capability: CNA-Go still exposes no `GamePad` type and performs no
+polling, device enumeration, connection detection, or vibration.
+
+## Foundation 16 qualification evidence
+
+- [x] Read the full closure — constructors, FillInternalState, dead-zone utilities, IsButtonDown, hashing, formatting, equality — from the hash-verified retained assembly.
+- [x] Complete the type with compiler-measured local strict zero and `errorResults: 0`.
+- [x] Measure, rather than assume, that every packed XInput bit equals its pinned `Buttons` literal.
+- [x] Assert both dead-zone boundaries, the NaN conversion rule, the empty-mask rule, and the all-bits-required rule.
+- [x] Extend the value-struct defect matrix to 8 types, 91 identities, and 80 negative cases; grow the mutation inventory from 210 to 217.
+- [x] Grow the behavior corpus from 476 to 487 with zero failures.
+- [x] Reproduce both native reports against the exact Foundation-11 pinned library.
+- [x] Requalify Go, native stress, unchanged template, deterministic artifact, and isolated-consumer gates.
+
+Exact evidence is in `docs/foundation-16-game-pad-state-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_16_COMPLETE=true
+```
+
+## Safe pure-managed seam exhausted
+
+After Foundation 16 no dependency-complete missing type can be completed
+without either a public-API policy decision or a fabricated device capability.
+Search is no longer the bottleneck; the three blocked groups are recorded in
+the Foundation-16 evidence and in NEXT.md.
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
@@ -781,7 +839,7 @@ Web/Wasm are unqualified even if the Go compiler can target them.
 
 ## Next milestone selection rule
 
-After Foundation 15, regenerate the scoreboard and dependency graph before
+After Foundation 16, regenerate the scoreboard and dependency graph before
 selecting the next closure or batch. Do not automatically choose a consumer of
 any completed enum, continue GraphicsDeviceManager or GraphicsDevice, infer
 runtime support from a managed enum, or combine independent families.

@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 476,
-    "ASSERTIONS": 476,
+    "OBSERVATIONS": 487,
+    "ASSERTIONS": 487,
     "FAILURES": 0
   },
   "observations": [
@@ -1997,6 +1997,94 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "{Position:{X:1 Y:2}}",
       "actual": "{Position:{X:1 Y:2}}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.constructor-defaults",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0",
+      "actual": "true,0",
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.buttons-slice-combined",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,0,1,0",
+      "actual": "1,0,1,0",
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.normal-button-query",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,false,true",
+      "actual": "true,false,true",
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.all-requested-bits-required",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,false",
+      "actual": "true,false",
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.thumbstick-outside-dead-zone",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,false",
+      "actual": "true,false",
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.thumbstick-inside-dead-zone",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": false,
+      "actual": false,
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.trigger-dead-zone",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,false",
+      "actual": "true,false",
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.empty-mask-is-down",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.hash-and-string",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,{IsConnected:False}",
+      "actual": "0,{IsConnected:False}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.connected-hash-and-string",
+      "group": "GAME_PAD_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,{IsConnected:True}",
+      "actual": "1,{IsConnected:True}",
+      "passed": true
+    },
+    {
+      "id": "game-pad-state.zero-value-is-disconnected",
+      "group": "GAME_PAD_STATE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": false,
+      "actual": false,
       "passed": true
     },
     {

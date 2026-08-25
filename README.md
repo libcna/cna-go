@@ -25,8 +25,8 @@ nor native handles.
 
 The current structural scoreboard maps the authoritative XNA 4.0 Windows
 runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,243 expected Go members. The current target has 102 types and 1,604 members:
-97 types are complete, five native/runtime types are partial, and 155 are
+3,243 expected Go members. The current target has 103 types and 1,619 members:
+98 types are complete, five native/runtime types are partial, and 154 are
 missing. The strict verifier remains red because most XNA surface is
 intentionally absent. Every mismatch, leak, allowlist, and unmeasured-category
 gate is green.
@@ -256,6 +256,11 @@ their IL-derived clamping, hashing, and formatting rules, the deliberate
 `TouchLocation` equality asymmetry, the zero-synthetic-error measurement, and
 the re-verified native ABI provenance.
 
+See [Foundation 16 GamePadState evidence](docs/foundation-16-game-pad-state-evidence.md)
+for the managed XInput packing, the IndependentAxes dead-zone reproduction, the
+measured bit-for-bit agreement with the pinned `Buttons` literals, and why the
+safe pure-managed seam is now exhausted.
+
 The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
 and NULL audio. Native draw execution is proven, but visible rendering is not.
 Windows, macOS, Android, iOS, and Web/Wasm are not qualified. Content/XNB,
@@ -304,7 +309,7 @@ go run ./tools/native_stress
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its 332 missing-surface diagnostics are the work queue, not a
+surface exists; its 331 missing-surface diagnostics are the work queue, not a
 compatibility claim.
 The native ABI and stress commands require the qualified native environment.
 

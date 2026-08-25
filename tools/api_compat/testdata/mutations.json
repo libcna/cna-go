@@ -208,5 +208,12 @@
   {"id":"f15-touch-location-renamed-last-member","mutation":"f15vs_renamed_last_member__Microsoft.Xna.Framework.Input.Touch.TouchLocation","category":"MISSING_MEMBER"},
   {"id":"f15-touch-location-synthetic-error-result","mutation":"f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.Touch.TouchLocation","category":"RETURN_MAPPING_MISMATCH"},
   {"id":"f15-touch-location-wrong-constructor-parameters","mutation":"f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.Touch.TouchLocation","category":"PARAMETER_MAPPING_MISMATCH"},
-  {"id":"f15-touch-location-unexpected-mutator","mutation":"f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.Touch.TouchLocation","category":"UNEXPECTED_MEMBER"}
+  {"id":"f15-touch-location-unexpected-mutator","mutation":"f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.Touch.TouchLocation","category":"UNEXPECTED_MEMBER"},
+  {"id":"f16-game-pad-state-missing","mutation":"f15vs_missing_type__Microsoft.Xna.Framework.Input.GamePadState","category":"MISSING_TYPE"},
+  {"id":"f16-game-pad-state-projected-as-class","mutation":"f15vs_projected_as_class__Microsoft.Xna.Framework.Input.GamePadState","category":"TYPE_KIND_MISMATCH"},
+  {"id":"f16-game-pad-state-synthetic-error-result","mutation":"f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.GamePadState","category":"RETURN_MAPPING_MISMATCH"},
+  {"id":"f16-game-pad-state-wrong-constructor-parameters","mutation":"f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.GamePadState","category":"PARAMETER_MAPPING_MISMATCH"},
+  {"id":"f16-game-pad-state-missing-first-member","mutation":"f15vs_missing_first_member__Microsoft.Xna.Framework.Input.GamePadState","category":"MISSING_MEMBER"},
+  {"id":"f16-game-pad-state-renamed-last-member","mutation":"f15vs_renamed_last_member__Microsoft.Xna.Framework.Input.GamePadState","category":"MISSING_MEMBER"},
+  {"id":"f16-game-pad-state-unexpected-mutator","mutation":"f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.GamePadState","category":"UNEXPECTED_MEMBER"}
 ]
