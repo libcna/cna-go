@@ -143,6 +143,10 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["GAME_BASE_CALL_ADAPTERS"] = 0
 	result.Summary["GAME_BASE_CALL_DEFERRED_STEPS"] = 0
 	result.Summary["DECLARED_INTERFACE_CONFORMANCE"] = 0
+	result.Summary["XNA_BASE_RELATIONSHIPS"] = 0
+	result.Summary["XNA_BASE_DERIVED_TYPES"] = 0
+	result.Summary["XNA_DEFERRED_BASE_BLOCKERS"] = 0
+	result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED"] = 0
 	typeDiagnostics := make(map[string]int)
 	missingMembers := make(map[string][]string)
 	result.Summary["REFERENCE_TYPES"] = expected.ReferenceTypes
@@ -347,6 +351,8 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	sort.Strings(result.MissingTypes)
 	sort.Slice(result.PartialTypes, func(i, j int) bool { return result.PartialTypes[i].XNA < result.PartialTypes[j].XNA })
 
+	result.XNABaseRelationships = measureXNABaseRelationships(&result, expected, result.CompleteTypes)
+	result.Summary["XNA_BASE_RELATIONSHIPS"] = len(result.XNABaseRelationships)
 	result.DeclaredInterfaceConformance = measureDeclaredInterfaceConformance(&result, expected, actual, result.CompleteTypes)
 	result.Summary["DECLARED_INTERFACE_CONFORMANCE"] = len(result.DeclaredInterfaceConformance)
 
@@ -3631,4 +3637,123 @@ func missingInterfaceMethod(target types.Type, contract *types.Interface) string
 		return fmt.Sprintf("%s has the wrong signature", method.Name())
 	}
 	return fmt.Sprintf("%s is absent", method.Name())
+}
+
+// measureXNABaseRelationships records every CLR class in the pinned profile
+// that another class in the same profile inherits from, with a status and,
+// where the status is DEFERRED, what blocks it.
+//
+// The rule it enforces is the Foundation-29 discipline applied to a second
+// frontier:
+//
+//	every XNA-to-XNA base link the contract declares must be recorded, a
+//	deferred base must name what blocks it, and no derived type of a deferred
+//	base may be COMPLETE
+//
+// The last clause is the substantive one. A derived type of a deferred base is
+// missing its inherited public surface, so calling it complete would assert
+// something false: Texture2D inherits nine members from Texture and
+// GraphicsResource that CNA-Go does not project, and SpriteBatch inherits seven
+// from GraphicsResource. Both are legitimately PARTIAL today, and this makes
+// that a checked fact rather than a coincidence.
+func measureXNABaseRelationships(result *report, expected *expectedSurface, complete []string) []xnaBaseProjection {
+	completeSet := make(map[string]bool, len(complete))
+	for _, identity := range complete {
+		completeSet[identity] = true
+	}
+	derived := make(map[string][]string)
+	for _, owner := range sortedExpectedTypes(expected) {
+		if owner.BaseType == "" {
+			continue
+		}
+		base := expected.typeForXNA(owner.BaseType)
+		if base == nil {
+			// The base is not in the pinned profile, so it is a BCL base and
+			// belongs to the other frontier.
+			continue
+		}
+		derived[owner.BaseType] = append(derived[owner.BaseType], owner.XNA)
+	}
+
+	// The claim is made only about bases the expected surface actually models.
+	// An isolated per-type fixture carries one XNA type and no inheritance, so
+	// demanding the whole frontier of it would fail every fixture for what it
+	// does not model; a full surface carries all twelve and is measured in
+	// full, including the stale-entry check, because the base type IS present
+	// there.
+	bases := make([]string, 0, len(derived))
+	for base := range derived {
+		bases = append(bases, base)
+	}
+	for base := range xnaBaseRelationships {
+		if _, live := derived[base]; live {
+			continue
+		}
+		if expected.typeForXNA(base) == nil {
+			continue
+		}
+		bases = append(bases, base)
+	}
+	sort.Strings(bases)
+
+	projections := make([]xnaBaseProjection, 0, len(bases))
+	for _, base := range bases {
+		relationship, recorded := xnaBaseRelationships[base]
+		baseType := expected.typeForXNA(base)
+		projection := xnaBaseProjection{
+			CLRBase: base, Status: relationship.Status,
+			Derived: append([]string(nil), derived[base]...), Verdict: "PASS",
+		}
+		sort.Strings(projection.Derived)
+		if baseType != nil {
+			projection.InheritedPublicMembers = baseType.PublicCLRMembers
+		}
+		fail := func(message string) {
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: base, Message: message,
+			})
+			projection.Verdict = "FAIL"
+		}
+		if !recorded {
+			fail("an XNA class is inherited by another XNA class in the profile and the relationship is not recorded")
+			projections = append(projections, projection)
+			continue
+		}
+		if len(projection.Derived) == 0 {
+			fail("a recorded XNA base relationship has no derived type in the pinned profile")
+		}
+		switch relationship.Status {
+		case "COMPOSED":
+			// Reserved: no XNA base is composed yet. When one is, its derived
+			// types must re-expose its public surface, and the accounting rule
+			// that admits them belongs here.
+		case "DEFERRED":
+			if len(relationship.Blockers) == 0 {
+				fail("a DEFERRED XNA base records no blocker, so nothing says why it is deferred")
+			}
+			for _, blocker := range relationship.Blockers {
+				projection.Blockers = append(projection.Blockers,
+					xnaBaseBlockerRow{Class: blocker.Class, Detail: blocker.Detail})
+				result.Summary["XNA_DEFERRED_BASE_BLOCKERS"]++
+				if _, known := xnaBaseBlockerClasses[blocker.Class]; !known {
+					fail(fmt.Sprintf("XNA base blocker class %q is not one of the recorded classes", blocker.Class))
+				}
+				if strings.TrimSpace(blocker.Detail) == "" {
+					fail(fmt.Sprintf("XNA base blocker %q records no detail", blocker.Class))
+				}
+			}
+			for _, identity := range projection.Derived {
+				if completeSet[identity] {
+					fail(fmt.Sprintf("%s derives from a DEFERRED XNA base and is reported COMPLETE, but it cannot be: the %d public members it inherits are not projected",
+						identity, projection.InheritedPublicMembers))
+				}
+			}
+			result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED"] += projection.InheritedPublicMembers * len(projection.Derived)
+		default:
+			fail(fmt.Sprintf("XNA base status %q is neither COMPOSED nor DEFERRED", relationship.Status))
+		}
+		result.Summary["XNA_BASE_DERIVED_TYPES"] += len(projection.Derived)
+		projections = append(projections, projection)
+	}
+	return projections
 }

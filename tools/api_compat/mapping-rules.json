@@ -504,5 +504,23 @@
         "referenceBody": "ret  // code size 1, a true authoritative no-op"
       }
     }
+  },
+  "xnaBaseRelationships": {
+    "rule": "every CLR class in the pinned profile that another class in the SAME profile inherits from is recorded here with a status. This is a different frontier from bclBaseRelationships: a BCL base is a type outside the contract that CNA-Go decides how to model, while an XNA base is a type inside the contract whose public surface a derived type inherits WITHOUT the contract redeclaring it",
+    "whyItIsMeasured": "Texture2D's contract declares sixteen members and inherits nine more from Texture and GraphicsResource -- Name, Tag, GraphicsDevice, IsDisposed, Dispose, ToString, Disposing, LevelCount and Format. CNA-Go projects Texture2D with none of them, and until Foundation 33 nothing recorded that. The same silence covered SpriteBatch",
+    "statuses": {
+      "COMPOSED": "CNA-Go re-exposes the base's public surface on its derived types. No XNA base is composed yet",
+      "DEFERRED": "CNA-Go does not, and the relationship must name what blocks it"
+    },
+    "deferredMustNameItsBlockers": "a DEFERRED XNA base that records no blocker is a verifier failure, exactly as a DEFERRED BCL base is",
+    "blockerClasses": {
+      "ARCHITECTURE": "a cross-cutting projection decision no single member carries",
+      "SUBSYSTEM": "the base reaches a .NET or CNA subsystem CNA-Go does not map",
+      "TRANSITIVE": "the base is itself unprojected because its own base is deferred",
+      "NATIVE_OWNERSHIP": "the base is natively owned and its ownership is undecided"
+    },
+    "noCompleteDerivedType": "no derived type of a DEFERRED XNA base may be reported COMPLETE. Completeness asserts that a type's whole public surface is present, and the inherited half is not; a PARTIAL derived type is correct because its gap is already MISSING_MEMBER",
+    "theOpenArchitectureDecision": "projecting any derived XNA class needs three things CNA-Go does not have: a composition and forwarding rule for a base that is itself an XNA identity; a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice; and an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding of an XNA base is refused by BASE_MAPPING_MISMATCH and stays refused",
+    "closure": "the registry covers every XNA-to-XNA link the pinned contract declares -- 12 bases over 41 derived types -- so a new one cannot appear unnoticed"
   }
 }

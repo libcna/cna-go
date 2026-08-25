@@ -88,6 +88,12 @@ type expectedType struct {
 	GenericParameter []string
 	MappedInterfaces []mappedInterface
 	Members          []symbolKey
+	// PublicCLRMembers is how many PUBLIC CLR members this type declares:
+	// what a derived type inherits into its own public surface. Constructors
+	// are excluded because they are not inherited. It is carried so the XNA
+	// base frontier can state the size of a deferred base's contribution
+	// instead of only naming it.
+	PublicCLRMembers int
 	SourceMembers    int
 	// BCLInheritedCLRMembers is how many public CLR members this type's
 	// supported BCL base contributes, and BCLInheritedProjections is how many
@@ -250,6 +256,7 @@ type report struct {
 	BCLInterfaceRelationships    []bclInterfaceProjection         `json:"bclInterfaceRelationships"`
 	GameBaseCallAdapters         []gameBaseCallMeasurement        `json:"gameBaseCallAdapters"`
 	DeclaredInterfaceConformance []declaredInterfaceConformance   `json:"declaredInterfaceConformance"`
+	XNABaseRelationships         []xnaBaseProjection              `json:"xnaBaseRelationships"`
 	Metadata                     reportMetadata                   `json:"metadata"`
 }
 
@@ -285,6 +292,32 @@ type gameBaseCallMeasurement struct {
 	// is rejected rather than recorded.
 	Deferred []gameBaseCallDeferralRow `json:"deferredSteps"`
 	Verdict  string                    `json:"verdict"`
+}
+
+// xnaBaseProjection measures one CLR class in the pinned profile that another
+// class in the same profile inherits from.
+//
+// It is the second base frontier. bclBaseProjection covers a base OUTSIDE the
+// contract; this covers one INSIDE it, whose public surface a derived type
+// inherits without the contract redeclaring it. Recording every one with a
+// status is what keeps an unprojected inherited surface from being invisible.
+type xnaBaseProjection struct {
+	CLRBase string `json:"clrBase"`
+	// Status is COMPOSED or DEFERRED.
+	Status string `json:"status"`
+	// Derived is every type in the profile that inherits from it.
+	Derived []string `json:"derived"`
+	// InheritedPublicMembers is how many public CLR members the base declares,
+	// which is what each derived type inherits and, while DEFERRED, does not
+	// get.
+	InheritedPublicMembers int                 `json:"inheritedPublicMembers"`
+	Blockers               []xnaBaseBlockerRow `json:"blockers,omitempty"`
+	Verdict                string              `json:"verdict"`
+}
+
+type xnaBaseBlockerRow struct {
+	Class  string `json:"class"`
+	Detail string `json:"detail"`
 }
 
 // declaredInterfaceConformance records one compiler-checked claim: a complete

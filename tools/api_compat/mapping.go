@@ -762,6 +762,7 @@ func buildExpected(c contract) (*expectedSurface, error) {
 			Interfaces:       append([]string(nil), t.DirectInterfaces...),
 			AllInterfaces:    append([]string(nil), t.Interfaces...),
 			GenericParameter: genericNames,
+			PublicCLRMembers: publicCLRMemberCount(*t),
 			SourceMembers:    len(t.Members),
 		}
 	}
@@ -2135,4 +2136,153 @@ var gameBaseCallAdapters = map[string]gameBaseCallAdapter{
 		},
 		ReferenceBody: []string{"ret  // code size 1"},
 	},
+}
+
+// publicCLRMemberCount is how many PUBLIC CLR members one type declares, which
+// is what a derived class inherits into its own public surface.
+//
+// Constructors are excluded because they are not inherited. A property counts
+// once when either accessor is public, which is the member the contract
+// declares; the projection splits it into accessors separately. Events carry no
+// accessibility in the pinned contract and every XNA event is public, so they
+// count.
+func publicCLRMemberCount(t contractType) int {
+	total := 0
+	for _, m := range t.Members {
+		switch m.Kind {
+		case "constructor":
+			continue
+		case "property":
+			if valueOrEmpty(m.GetAccess) == "public" || valueOrEmpty(m.SetAccess) == "public" {
+				total++
+			}
+		case "event":
+			total++
+		default:
+			if m.Access == "public" {
+				total++
+			}
+		}
+	}
+	return total
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 33 — the XNA-to-XNA base frontier.
+// ---------------------------------------------------------------------------
+
+// xnaBaseRelationship records one CLR class in the pinned profile that another
+// class in the SAME profile inherits from.
+//
+// This is a different frontier from bclBaseRelationships and it had never been
+// measured. A BCL base is a type outside the contract that CNA-Go decides how
+// to model; an XNA base is a type INSIDE the contract that CNA-Go already
+// projects, or will, and whose public surface a derived type inherits without
+// the contract redeclaring it.
+//
+// The gap that makes this worth measuring: Texture2D's contract declares
+// sixteen members and inherits nine more from Texture and GraphicsResource --
+// Name, Tag, GraphicsDevice, IsDisposed, Dispose, ToString, Disposing,
+// LevelCount and Format. CNA-Go projects Texture2D with none of them, and until
+// now NOTHING recorded that. The same silence covered SpriteBatch. Recording
+// every relationship with a status is what turns a silent omission into a
+// measured deferral, exactly as Foundation 29 did for BCL bases.
+type xnaBaseRelationship struct {
+	// Status is COMPOSED when CNA-Go re-exposes the base's public surface on
+	// its derived types, and DEFERRED when it does not.
+	Status string
+	// Blockers is what stands in the way. A DEFERRED relationship that records
+	// nothing is a verifier failure.
+	Blockers []xnaBaseBlocker
+}
+
+type xnaBaseBlocker struct {
+	// Class is one of xnaBaseBlockerClasses.
+	Class string
+	// Detail is the exact evidence.
+	Detail string
+}
+
+// xnaBaseBlockerClasses are the only classes a blocker may carry.
+var xnaBaseBlockerClasses = map[string]string{
+	// A cross-cutting projection decision no single member carries.
+	"ARCHITECTURE": "a cross-cutting projection decision no single member carries",
+	// The base or a member of it belongs to a .NET or CNA subsystem CNA-Go
+	// does not map.
+	"SUBSYSTEM": "the base reaches a subsystem CNA-Go does not map",
+	// The base itself is a missing type, usually because ITS base is deferred.
+	"TRANSITIVE": "the base is itself unprojected because its own base is deferred",
+	// The base is owned by native code in a way CNA-Go has not decided.
+	"NATIVE_OWNERSHIP": "the base is natively owned and its ownership is undecided",
+}
+
+// xnaBaseComposition is the ARCHITECTURE blocker every deferred XNA base
+// carries, because it is a necessary condition for projecting any of them. It
+// is stated once and shared so twelve entries cannot drift apart.
+var xnaBaseComposition = xnaBaseBlocker{
+	Class:  "ARCHITECTURE",
+	Detail: "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused",
+}
+
+// xnaBaseRelationships is the closed registry. Every XNA-to-XNA base link the
+// pinned contract declares must appear here; one that does not is a diagnostic
+// rather than a silent omission.
+var xnaBaseRelationships = map[string]xnaBaseRelationship{
+	// Foundation 32's frontier. Its two derived types are the profile's only
+	// XNA classes inheriting from an XNA class CNA-Go has already completed,
+	// which is what makes the architecture blocker the LIVE one rather than a
+	// theoretical one.
+	"Microsoft.Xna.Framework.GameComponent": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "SUBSYSTEM", Detail: "DrawableGameComponent needs Graphics.GraphicsDevice, which is partial, and resolves IGraphicsDeviceService out of Services, which nothing in CNA-Go can publish; GamerServicesComponent needs Game.Window.Handle, a missing member of a missing type, and GamerServicesDispatcher, which lives in Microsoft.Xna.Framework.GamerServices.dll -- not one of the seven pinned assemblies -- and has no CNA runtime behind it"},
+	}},
+
+	// The one Foundation 25 measured from the other side: it alone blocks
+	// seven missing types, and eleven derive from it.
+	"Microsoft.Xna.Framework.Graphics.GraphicsResource": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "NATIVE_OWNERSHIP", Detail: "it is `public abstract` with an `assembly` constructor, carries `.field assembly uint64 _internalHandle`, and its Dispose(bool) dispatches to the C++/CLI ~GraphicsResource/!GraphicsResource pair. Who owns a graphics resource's lifetime across the C ABI is an open decision this milestone does not reopen"},
+	}},
+	"Microsoft.Xna.Framework.Graphics.Texture": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "TRANSITIVE", Detail: "Texture extends GraphicsResource, whose ownership is undecided, so Texture is itself a missing type and cannot be a base of anything"},
+	}},
+	"Microsoft.Xna.Framework.Graphics.Texture2D": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "TRANSITIVE", Detail: "Texture2D is a PARTIAL type whose own base chain -- Texture, GraphicsResource -- is deferred, so RenderTarget2D would inherit an already-incomplete surface"},
+	}},
+	"Microsoft.Xna.Framework.Graphics.TextureCube": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "TRANSITIVE", Detail: "TextureCube is a missing type for the same reason Texture is"},
+	}},
+	"Microsoft.Xna.Framework.Graphics.Effect": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "TRANSITIVE", Detail: "Effect extends GraphicsResource and is itself a missing type"},
+		{Class: "SUBSYSTEM", Detail: "the six derived effects reach EffectParameter, which calls unmanaged D3DX; CNA-Go maps no effect or shader subsystem"},
+	}},
+	"Microsoft.Xna.Framework.Graphics.IndexBuffer": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "TRANSITIVE", Detail: "IndexBuffer extends GraphicsResource and is itself a missing type"},
+	}},
+	"Microsoft.Xna.Framework.Graphics.VertexBuffer": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "TRANSITIVE", Detail: "VertexBuffer extends GraphicsResource and is itself a missing type"},
+	}},
+
+	"Microsoft.Xna.Framework.Audio.SoundEffectInstance": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "SUBSYSTEM", Detail: "SoundEffectInstance is a missing type and CNA-Go has no audio backend: the qualification artifact pins a NULL audio renderer, so nothing behind it would play"},
+	}},
+	"Microsoft.Xna.Framework.Content.ContentManager": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "SUBSYSTEM", Detail: "ContentManager is a missing type and CNA-Go maps no Content/XNB subsystem"},
+	}},
+	"Microsoft.Xna.Framework.Content.ContentTypeReader": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "SUBSYSTEM", Detail: "the same Content/XNB subsystem, and the derived type is the GENERIC ContentTypeReader`1, so the relationship would also need a rule for a generic class deriving from a non-generic one"},
+	}},
+	"Microsoft.Xna.Framework.Design.MathTypeConverter": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
+		xnaBaseComposition,
+		{Class: "SUBSYSTEM", Detail: "MathTypeConverter extends System.ComponentModel.ExpandableObjectConverter, which is already a DEFERRED BCL base with three recorded blockers, so the twelve Design converters are blocked by a BCL decision before the XNA one is reached"},
+	}},
 }

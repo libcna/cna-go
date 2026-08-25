@@ -52,7 +52,11 @@
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
     "UNEXPECTED_TYPE": 0,
-    "UNMEASURED_STRUCTURAL_CATEGORY": 0
+    "UNMEASURED_STRUCTURAL_CATEGORY": 0,
+    "XNA_BASE_DERIVED_TYPES": 41,
+    "XNA_BASE_RELATIONSHIPS": 12,
+    "XNA_DEFERRED_BASE_BLOCKERS": 25,
+    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 245
   },
   "diagnostics": [
     {
@@ -9126,9 +9130,272 @@
       "verdict": "PASS"
     }
   ],
+  "xnaBaseRelationships": [
+    {
+      "clrBase": "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance"
+      ],
+      "inheritedPublicMembers": 14,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "SUBSYSTEM",
+          "detail": "SoundEffectInstance is a missing type and CNA-Go has no audio backend: the qualification artifact pins a NULL audio renderer, so nothing behind it would play"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Content.ContentManager",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Content.ResourceContentManager"
+      ],
+      "inheritedPublicMembers": 5,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "SUBSYSTEM",
+          "detail": "ContentManager is a missing type and CNA-Go maps no Content/XNB subsystem"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Content.ContentTypeReader",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Content.ContentTypeReader`1"
+      ],
+      "inheritedPublicMembers": 3,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "SUBSYSTEM",
+          "detail": "the same Content/XNB subsystem, and the derived type is the GENERIC ContentTypeReader`1, so the relationship would also need a rule for a generic class deriving from a non-generic one"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Design.MathTypeConverter",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
+        "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
+        "Microsoft.Xna.Framework.Design.ColorConverter",
+        "Microsoft.Xna.Framework.Design.MatrixConverter",
+        "Microsoft.Xna.Framework.Design.PlaneConverter",
+        "Microsoft.Xna.Framework.Design.PointConverter",
+        "Microsoft.Xna.Framework.Design.QuaternionConverter",
+        "Microsoft.Xna.Framework.Design.RayConverter",
+        "Microsoft.Xna.Framework.Design.RectangleConverter",
+        "Microsoft.Xna.Framework.Design.Vector2Converter",
+        "Microsoft.Xna.Framework.Design.Vector3Converter",
+        "Microsoft.Xna.Framework.Design.Vector4Converter"
+      ],
+      "inheritedPublicMembers": 5,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "SUBSYSTEM",
+          "detail": "MathTypeConverter extends System.ComponentModel.ExpandableObjectConverter, which is already a DEFERRED BCL base with three recorded blockers, so the twelve Design converters are blocked by a BCL decision before the XNA one is reached"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.GameComponent",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.DrawableGameComponent",
+        "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
+      ],
+      "inheritedPublicMembers": 9,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "SUBSYSTEM",
+          "detail": "DrawableGameComponent needs Graphics.GraphicsDevice, which is partial, and resolves IGraphicsDeviceService out of Services, which nothing in CNA-Go can publish; GamerServicesComponent needs Game.Window.Handle, a missing member of a missing type, and GamerServicesDispatcher, which lives in Microsoft.Xna.Framework.GamerServices.dll -- not one of the seven pinned assemblies -- and has no CNA runtime behind it"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.Effect",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
+        "Microsoft.Xna.Framework.Graphics.BasicEffect",
+        "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
+        "Microsoft.Xna.Framework.Graphics.EffectMaterial",
+        "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+        "Microsoft.Xna.Framework.Graphics.SkinnedEffect"
+      ],
+      "inheritedPublicMembers": 4,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "TRANSITIVE",
+          "detail": "Effect extends GraphicsResource and is itself a missing type"
+        },
+        {
+          "class": "SUBSYSTEM",
+          "detail": "the six derived effects reach EffectParameter, which calls unmanaged D3DX; CNA-Go maps no effect or shader subsystem"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.GraphicsResource",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Graphics.BlendState",
+        "Microsoft.Xna.Framework.Graphics.DepthStencilState",
+        "Microsoft.Xna.Framework.Graphics.Effect",
+        "Microsoft.Xna.Framework.Graphics.IndexBuffer",
+        "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
+        "Microsoft.Xna.Framework.Graphics.RasterizerState",
+        "Microsoft.Xna.Framework.Graphics.SamplerState",
+        "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+        "Microsoft.Xna.Framework.Graphics.Texture",
+        "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+        "Microsoft.Xna.Framework.Graphics.VertexDeclaration"
+      ],
+      "inheritedPublicMembers": 7,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "NATIVE_OWNERSHIP",
+          "detail": "it is `public abstract` with an `assembly` constructor, carries `.field assembly uint64 _internalHandle`, and its Dispose(bool) dispatches to the C++/CLI ~GraphicsResource/!GraphicsResource pair. Who owns a graphics resource's lifetime across the C ABI is an open decision this milestone does not reopen"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer"
+      ],
+      "inheritedPublicMembers": 9,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "TRANSITIVE",
+          "detail": "IndexBuffer extends GraphicsResource and is itself a missing type"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.Texture",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Graphics.Texture2D",
+        "Microsoft.Xna.Framework.Graphics.Texture3D",
+        "Microsoft.Xna.Framework.Graphics.TextureCube"
+      ],
+      "inheritedPublicMembers": 2,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "TRANSITIVE",
+          "detail": "Texture extends GraphicsResource, whose ownership is undecided, so Texture is itself a missing type and cannot be a base of anything"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.Texture2D",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Graphics.RenderTarget2D"
+      ],
+      "inheritedPublicMembers": 13,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "TRANSITIVE",
+          "detail": "Texture2D is a PARTIAL type whose own base chain -- Texture, GraphicsResource -- is deferred, so RenderTarget2D would inherit an already-incomplete surface"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.TextureCube",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Graphics.RenderTargetCube"
+      ],
+      "inheritedPublicMembers": 7,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "TRANSITIVE",
+          "detail": "TextureCube is a missing type for the same reason Texture is"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+      "status": "DEFERRED",
+      "derived": [
+        "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer"
+      ],
+      "inheritedPublicMembers": 9,
+      "blockers": [
+        {
+          "class": "ARCHITECTURE",
+          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
+        },
+        {
+          "class": "TRANSITIVE",
+          "detail": "VertexBuffer extends GraphicsResource and is itself a missing type"
+        }
+      ],
+      "verdict": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "a56fd484a016786716f86ca1379144a56bbc4dd5d60c751639948082a3b57e0a",
+    "mappingSha256": "8bf7c73a2f5b228e531355534c35bcdfef4eb3db8e925cc6a16e27c8ac0a681a",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

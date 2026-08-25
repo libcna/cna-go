@@ -123,9 +123,9 @@ reason is recorded in the classification table rather than left implicit.
 
 ## Compiler-checked interface conformance — a new general rule
 
-The prompt requires compiler-level witnesses with no hand-written verifier
-exception. Until now the only conformance the verifier checked with compiler
-evidence was the PackedVector family's. Every other declaration was checked
+Interface conformance must be witnessed by the compiler, with no hand-written
+verifier exception. Until now the only conformance the verifier checked that way
+was the PackedVector family's. Every other declaration was checked
 structurally, member for member — necessary but not sufficient, since a
 receiver-kind or signature mistake can pass a member comparison and still leave
 the class unusable where the contract says it belongs.
@@ -185,7 +185,7 @@ projects, and CNA-Go has no architecture for XNA-to-XNA inheritance.
 ### `DrawableGameComponent` — five distinct blockers
 
 1. **XNA base composition.** It `extends GameComponent`, and the contract does
-   **not** redeclare `GameComponent`'s eight public members on it. A faithful
+   **not** redeclare `GameComponent`'s nine public members on it. A faithful
    projection would have to re-expose them, exactly as the BCL base composition
    does — but that registry is for BCL bases, and Go embedding of an XNA base is
    already refused by `BASE_MAPPING_MISMATCH`.

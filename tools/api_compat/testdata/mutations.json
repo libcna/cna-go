@@ -2463,5 +2463,40 @@
   "id": "f31-base-call-adapter-records-no-reference-body",
   "mutation": "f31base_adapter_records_no_reference_body",
   "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f33-xna-base-unrecorded-xna-base",
+  "mutation": "f33xna_unrecorded_xna_base",
+  "category": "BASE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f33-xna-base-deferred-base-records-no-blocker",
+  "mutation": "f33xna_deferred_base_records_no_blocker",
+  "category": "BASE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f33-xna-base-blocker-class-is-unrecorded",
+  "mutation": "f33xna_blocker_class_is_unrecorded",
+  "category": "BASE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f33-xna-base-blocker-records-no-detail",
+  "mutation": "f33xna_blocker_records_no_detail",
+  "category": "BASE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f33-xna-base-status-is-neither-composed-nor-deferred",
+  "mutation": "f33xna_status_is_neither_composed_nor_deferred",
+  "category": "BASE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f33-xna-base-stale-relationship-with-no-derived-type",
+  "mutation": "f33xna_stale_relationship_with_no_derived_type",
+  "category": "BASE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f33-xna-base-derived-type-of-a-deferred-base-reported-complete",
+  "mutation": "f33xna_derived_type_of_a_deferred_base_reported_complete",
+  "category": "BASE_MAPPING_MISMATCH"
  }
 ]

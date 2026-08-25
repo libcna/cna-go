@@ -1093,6 +1093,13 @@ func TestMutationFixtures(t *testing.T) {
 				}
 				return
 			}
+			if strings.HasPrefix(fixture.Mutation, "f33xna_") {
+				result := xnaBaseMutationCase(t, fixture.Mutation)
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
 			if strings.HasPrefix(fixture.Mutation, "f31base_") {
 				result := gameBaseCallMutationCase(t, fixture.Mutation)
 				if result.Summary[fixture.Category] == 0 {
@@ -6241,6 +6248,275 @@ func TestGameComponentSatisfiesBothDeclaredContracts(t *testing.T) {
 	for identity, measured := range wanted {
 		if !measured {
 			t.Fatalf("GameComponent's declared %s was never measured for conformance", identity)
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 33 — negative controls for the XNA base frontier.
+// ---------------------------------------------------------------------------
+
+// withXNABaseRelationships runs fn with the registry mutated and restores it.
+func withXNABaseRelationships(t *testing.T, mutate func(), fn func()) {
+	t.Helper()
+	saved := make(map[string]xnaBaseRelationship, len(xnaBaseRelationships))
+	for base, relationship := range xnaBaseRelationships {
+		saved[base] = relationship
+	}
+	defer func() { xnaBaseRelationships = saved }()
+	mutate()
+	fn()
+}
+
+const gameComponentBase = "Microsoft.Xna.Framework.GameComponent"
+
+// xnaBaseDefects is the shared table behind both the named test and the
+// mutation inventory. Each entry either mutates the registry or supplies a
+// wrong completeness claim, and must raise BASE_MAPPING_MISMATCH.
+//
+// The signature carries the complete-type list because one defect -- the
+// substantive one -- is expressed there rather than in the registry.
+var xnaBaseDefects = map[string]func(complete *[]string){
+	// The silence this whole frontier exists to end: a class inherited by
+	// another class in the profile, with nothing recorded about it.
+	"unrecorded_xna_base": func(*[]string) {
+		delete(xnaBaseRelationships, gameComponentBase)
+	},
+	// Foundation 29's rule, on the second frontier: a deferral that records
+	// nothing says nothing.
+	"deferred_base_records_no_blocker": func(*[]string) {
+		relationship := xnaBaseRelationships[gameComponentBase]
+		relationship.Blockers = nil
+		xnaBaseRelationships[gameComponentBase] = relationship
+	},
+	"blocker_class_is_unrecorded": func(*[]string) {
+		relationship := xnaBaseRelationships[gameComponentBase]
+		relationship.Blockers = []xnaBaseBlocker{{Class: "LATER", Detail: "not now"}}
+		xnaBaseRelationships[gameComponentBase] = relationship
+	},
+	"blocker_records_no_detail": func(*[]string) {
+		relationship := xnaBaseRelationships[gameComponentBase]
+		relationship.Blockers = []xnaBaseBlocker{{Class: "ARCHITECTURE"}}
+		xnaBaseRelationships[gameComponentBase] = relationship
+	},
+	"status_is_neither_composed_nor_deferred": func(*[]string) {
+		relationship := xnaBaseRelationships[gameComponentBase]
+		relationship.Status = "SOON"
+		xnaBaseRelationships[gameComponentBase] = relationship
+	},
+	// A registry entry for a base nothing actually derives from is a stale
+	// claim, and would let a real relationship hide behind a plausible one.
+	"stale_relationship_with_no_derived_type": func(*[]string) {
+		xnaBaseRelationships["Microsoft.Xna.Framework.Vector3"] = xnaBaseRelationship{
+			Status: "DEFERRED", Blockers: []xnaBaseBlocker{{Class: "ARCHITECTURE", Detail: "invented"}},
+		}
+	},
+	// The substantive rule. Texture2D inherits nine public members from
+	// Texture and GraphicsResource that CNA-Go does not project, so calling it
+	// COMPLETE asserts something false.
+	"derived_type_of_a_deferred_base_reported_complete": func(complete *[]string) {
+		*complete = append(*complete, "Microsoft.Xna.Framework.Graphics.Texture2D")
+	},
+}
+
+// TestXNABaseFrontierDefectsAreRejected attacks every rule the second base
+// frontier rests on.
+func TestXNABaseFrontierDefectsAreRejected(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseline := report{Summary: make(map[string]int)}
+	baselineProjections := measureXNABaseRelationships(&baseline, expected, nil)
+	if baseline.Summary["BASE_MAPPING_MISMATCH"] != 0 {
+		t.Fatalf("the unmutated XNA base frontier is not clean: %v", baseline.Diagnostics)
+	}
+	if len(baselineProjections) != len(xnaBaseRelationships) {
+		t.Fatalf("measured %d relationships, registry declares %d",
+			len(baselineProjections), len(xnaBaseRelationships))
+	}
+	for _, projection := range baselineProjections {
+		if projection.Verdict != "PASS" {
+			t.Fatalf("%s did not pass in the baseline", projection.CLRBase)
+		}
+		if len(projection.Derived) == 0 {
+			t.Fatalf("%s has no derived type", projection.CLRBase)
+		}
+	}
+
+	names := make([]string, 0, len(xnaBaseDefects))
+	for name := range xnaBaseDefects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		defect := xnaBaseDefects[name]
+		t.Run(name, func(t *testing.T) {
+			var complete []string
+			result := report{Summary: make(map[string]int)}
+			withXNABaseRelationships(t, func() { defect(&complete) }, func() {
+				measureXNABaseRelationships(&result, expected, complete)
+			})
+			if result.Summary["BASE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("XNA base defect %q raised no BASE_MAPPING_MISMATCH", name)
+			}
+		})
+	}
+}
+
+// TestEveryXNABaseLinkInTheContractIsRecorded is the closure claim stated
+// directly: the registry covers every XNA-to-XNA inheritance the pinned profile
+// declares, so a new one cannot appear unnoticed.
+func TestEveryXNABaseLinkInTheContractIsRecorded(t *testing.T) {
+	contract := loadPinnedContract(t)
+	byName := make(map[string]bool, len(contract.Types))
+	for _, t := range contract.Types {
+		byName[t.Name] = true
+	}
+	links := make(map[string][]string)
+	for _, entry := range contract.Types {
+		if entry.BaseType == nil || !byName[*entry.BaseType] {
+			continue
+		}
+		links[*entry.BaseType] = append(links[*entry.BaseType], entry.Name)
+	}
+	if len(links) != len(xnaBaseRelationships) {
+		t.Fatalf("the contract declares %d XNA base links, the registry records %d", len(links), len(xnaBaseRelationships))
+	}
+	derivedTotal := 0
+	for base, derived := range links {
+		derivedTotal += len(derived)
+		if _, recorded := xnaBaseRelationships[base]; !recorded {
+			t.Fatalf("XNA base %q is inherited by %v and is not recorded", base, derived)
+		}
+	}
+	if derivedTotal != 41 {
+		t.Fatalf("the contract declares %d XNA-derived types, expected 41", derivedTotal)
+	}
+}
+
+// TestNoCompleteTypeInheritsFromADeferredXNABase states the substantive
+// invariant against the LIVE binding rather than a fixture.
+func TestNoCompleteTypeInheritsFromADeferredXNABase(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	complete := make(map[string]bool, len(result.CompleteTypes))
+	for _, identity := range result.CompleteTypes {
+		complete[identity] = true
+	}
+	for _, projection := range result.XNABaseRelationships {
+		if projection.Status != "DEFERRED" {
+			continue
+		}
+		for _, identity := range projection.Derived {
+			if complete[identity] {
+				t.Fatalf("%s is COMPLETE but inherits %d unprojected public members from the deferred base %s",
+					identity, projection.InheritedPublicMembers, projection.CLRBase)
+			}
+		}
+	}
+	if result.Summary["XNA_BASE_RELATIONSHIPS"] != 12 {
+		t.Fatalf("XNA_BASE_RELATIONSHIPS=%d", result.Summary["XNA_BASE_RELATIONSHIPS"])
+	}
+	if result.Summary["XNA_BASE_DERIVED_TYPES"] != 41 {
+		t.Fatalf("XNA_BASE_DERIVED_TYPES=%d", result.Summary["XNA_BASE_DERIVED_TYPES"])
+	}
+}
+
+// xnaBaseMutationCase applies one named Foundation-33 XNA base defect from the
+// shared table. Mutation ids have the form f33xna_<defect>.
+func xnaBaseMutationCase(t *testing.T, mutation string) report {
+	t.Helper()
+	name := strings.TrimPrefix(mutation, "f33xna_")
+	defect, ok := xnaBaseDefects[name]
+	if !ok {
+		t.Fatalf("unknown XNA base defect %q", name)
+	}
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var complete []string
+	result := report{Summary: make(map[string]int)}
+	withXNABaseRelationships(t, func() { defect(&complete) }, func() {
+		measureXNABaseRelationships(&result, expected, complete)
+	})
+	return result
+}
+
+// TestEveryXNABaseDefectHasAMutationFixture keeps the shared defect table and
+// the mutation inventory from drifting.
+func TestEveryXNABaseDefectHasAMutationFixture(t *testing.T) {
+	data, err := os.ReadFile("testdata/mutations.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixtures []mutationFixture
+	if err := json.Unmarshal(data, &fixtures); err != nil {
+		t.Fatal(err)
+	}
+	inventoried := make(map[string]bool)
+	for _, fixture := range fixtures {
+		if strings.HasPrefix(fixture.Mutation, "f33xna_") {
+			inventoried[strings.TrimPrefix(fixture.Mutation, "f33xna_")] = true
+		}
+	}
+	for name := range xnaBaseDefects {
+		if !inventoried[name] {
+			t.Fatalf("XNA base defect %q has no mutation fixture", name)
+		}
+	}
+	for name := range inventoried {
+		if _, declared := xnaBaseDefects[name]; !declared {
+			t.Fatalf("mutation fixture f33xna_%s names no defect in the shared table", name)
+		}
+	}
+}
+
+// TestMappingRulesDeclareTheSameXNABasesAsTheRegistry keeps the documented
+// rules file and the executable registry from drifting, the same way the
+// base-call family's guard does.
+func TestMappingRulesDeclareTheSameXNABasesAsTheRegistry(t *testing.T) {
+	data, err := os.ReadFile("mapping-rules.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rules struct {
+		XNABaseRelationships struct {
+			BlockerClasses map[string]string `json:"blockerClasses"`
+			Statuses       map[string]string `json:"statuses"`
+		} `json:"xnaBaseRelationships"`
+	}
+	if err := json.Unmarshal(data, &rules); err != nil {
+		t.Fatal(err)
+	}
+	if len(rules.XNABaseRelationships.BlockerClasses) != len(xnaBaseBlockerClasses) {
+		t.Fatalf("mapping-rules.json documents %d blocker classes, the registry admits %d",
+			len(rules.XNABaseRelationships.BlockerClasses), len(xnaBaseBlockerClasses))
+	}
+	for class := range xnaBaseBlockerClasses {
+		if _, documented := rules.XNABaseRelationships.BlockerClasses[class]; !documented {
+			t.Fatalf("blocker class %q is admitted by the registry and not documented", class)
+		}
+	}
+	if len(rules.XNABaseRelationships.Statuses) != 2 {
+		t.Fatalf("expected two documented statuses, got %d", len(rules.XNABaseRelationships.Statuses))
+	}
+	// Every status the registry actually uses must be documented.
+	for base, relationship := range xnaBaseRelationships {
+		if _, documented := rules.XNABaseRelationships.Statuses[relationship.Status]; !documented {
+			t.Fatalf("%s carries undocumented status %q", base, relationship.Status)
 		}
 	}
 }
