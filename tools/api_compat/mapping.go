@@ -659,6 +659,27 @@ var managedStoredMembers = map[string]map[string]bool{
 	"Microsoft.Xna.Framework.GraphicsDeviceManager": {
 		"property|SupportedOrientations": true,
 	},
+	// Foundation 30. Game is a hybrid: the native CNA runtime owns the host,
+	// the frame loop and the device, so Game stays a native-backed facade and
+	// its members are fallible by default. These two are not. In
+	// Microsoft.Xna.Framework.Game.dll each getter is the whole method:
+	//
+	//	get_Components
+	//	  ldarg.0; ldfld GameComponentCollection Game::gameComponents; ret
+	//	get_Services
+	//	  ldarg.0; ldfld GameServiceContainer Game::gameServices; ret
+	//
+	// Both fields are assigned once during construction -- gameServices from a
+	// field initializer, gameComponents right after the base constructor -- and
+	// never reassigned anywhere in the class. The getters allocate nothing,
+	// validate nothing, reach no host, no window and no device, and have no
+	// throw site, so a synthetic error result would be an invented failure
+	// mode. Both are get-only in the reference, so there is no setter to
+	// classify.
+	"Microsoft.Xna.Framework.Game": {
+		"property-get|Components": true,
+		"property-get|Services":   true,
+	},
 }
 
 func buildExpected(c contract) (*expectedSurface, error) {
@@ -879,9 +900,16 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 			get.Parameters = mapIndexerParameters(s, byIdentity, owner, m.Parameters)
 			get.Results = mapResultType(s, byIdentity, owner, valueOrEmpty(m.Type))
 			get.Accessor = "get"
-			if isFallible(t, m, "get") {
+			// The accessor is classified from scratch, exactly as its results
+			// are rebuilt from scratch just above. Inheriting the clone's flag
+			// would make the accessor-level decision one-directional: a key
+			// could raise fallibility on a pure-managed owner but never lower
+			// it on a native-backed one, so a get-only stored property such as
+			// Game::Components would keep a synthetic error its IL cannot
+			// produce while its results no longer carried one.
+			get.ErrorAdded = isFallible(t, m, "get")
+			if get.ErrorAdded {
 				get.Results = append(get.Results, "error")
-				get.ErrorAdded = true
 			}
 			result = append(result, get)
 		}
@@ -896,9 +924,9 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 			set.Parameters = append(mapIndexerParameters(s, byIdentity, owner, m.Parameters), mappedType)
 			set.Results = nil
 			set.Accessor = "set"
-			if isFallible(t, m, "set") {
+			set.ErrorAdded = isFallible(t, m, "set")
+			if set.ErrorAdded {
 				set.Results = []string{"error"}
-				set.ErrorAdded = true
 			}
 			result = append(result, set)
 		}

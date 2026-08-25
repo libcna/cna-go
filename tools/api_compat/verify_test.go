@@ -3163,10 +3163,23 @@ func withClassification(t *testing.T, mutate func(), fn func()) {
 		}
 		savedFallible[owner] = copied
 	}
+	// managedStoredMembers is the mirror-image table: it LOWERS fallibility on
+	// a native-backed facade where managedFallibleMembers RAISES it on a
+	// pure-managed owner. A defect that mutates one must be restorable exactly
+	// like a defect that mutates the other.
+	savedStored := make(map[string]map[string]bool, len(managedStoredMembers))
+	for owner, keys := range managedStoredMembers {
+		copied := make(map[string]bool, len(keys))
+		for key, value := range keys {
+			copied[key] = value
+		}
+		savedStored[owner] = copied
+	}
 	defer func() {
 		pureManagedTypes = savedTypes
 		classifiedInterfaces = savedInterfaces
 		managedFallibleMembers = savedFallible
+		managedStoredMembers = savedStored
 	}()
 	mutate()
 	fn()
@@ -3194,7 +3207,43 @@ const (
 	audioListenerIdentity = "Microsoft.Xna.Framework.Audio.AudioListener"
 	audioEmitterIdentity  = "Microsoft.Xna.Framework.Audio.AudioEmitter"
 	texture2DIdentity     = "Microsoft.Xna.Framework.Graphics.Texture2D"
+	gameIdentity          = "Microsoft.Xna.Framework.Game"
 )
+
+// TestProjectedFallibilityFlagAlwaysMatchesTheProjectedResults is a structural
+// invariant over the WHOLE expected surface rather than a targeted mutation.
+//
+// Every expected member carries both a boolean saying whether the projection
+// added a Go error and a result list that either ends in "error" or does not.
+// Those two must never disagree: the flag is what the verifier compares against
+// the real Go signature, so a member whose flag says "fallible" while its
+// results say otherwise reports a mismatch against correct Go code, and a
+// member with the opposite skew lets a wrong signature through.
+//
+// The invariant is not hypothetical. The property branch rebuilds an accessor's
+// results from scratch but used to inherit the flag from the whole-member
+// classification, which made the accessor-level decision one-directional: it
+// could raise fallibility on a pure-managed owner but never lower it on a
+// native-backed one. Game::Components is the first get-only stored property on
+// a fallible-by-default owner, and it is what exposed the skew.
+func TestProjectedFallibilityFlagAlwaysMatchesTheProjectedResults(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	checked := 0
+	for key, member := range expected.Members {
+		endsWithError := len(member.Results) > 0 && member.Results[len(member.Results)-1] == "error"
+		if member.ErrorAdded != endsWithError {
+			t.Fatalf("%s (%s): ErrorAdded=%t but results %v", key.String(), member.XNA,
+				member.ErrorAdded, member.Results)
+		}
+		checked++
+	}
+	if checked < 3000 {
+		t.Fatalf("only %d expected members checked; the invariant must cover the whole surface", checked)
+	}
+}
 
 // TestClassClassificationDefectsAreRejected attacks the two general rules this
 // milestone introduced -- pure-managed class classification and per-operation
@@ -3229,6 +3278,17 @@ func TestClassClassificationDefectsAreRejected(t *testing.T) {
 		// Dropping the accessor-level entry loses the one genuine throw.
 		{"accessor_fallibility_dropped", audioEmitterIdentity,
 			"property setter expected infallible, projected fallible"},
+		// Foundation 30, the mirror image on a native-backed facade. Game keeps
+		// the runtime default because the native CNA host owns its loop, so
+		// losing the stored-member entry puts a synthetic error back on two
+		// getters that are one `ldfld` each.
+		{"stored_getter_on_native_facade_demoted", gameIdentity,
+			"property getter expected fallible, projected infallible"},
+		// The entry is per projected operation. Classifying only Components
+		// leaves Services fallible, which is the same defect as classifying a
+		// whole type instead of reading each member's IL.
+		{"stored_getter_classified_for_one_member_only", gameIdentity,
+			"property getter expected fallible, projected infallible"},
 	}
 	if len(cases) != len(classificationDefects) {
 		t.Fatalf("classification defect coverage = %d of %d", len(cases), len(classificationDefects))
@@ -3468,6 +3528,20 @@ var classificationDefects = map[string]func(){
 	},
 	"accessor_fallibility_dropped": func() {
 		delete(managedFallibleMembers, audioEmitterIdentity)
+	},
+	// Foundation 30. The mirror image on a native-backed facade: Game is
+	// fallible by default because the native CNA runtime owns its host, but
+	// get_Components and get_Services are one `ldfld` each. Dropping the
+	// managedStoredMembers entry re-adds the synthetic error their IL cannot
+	// produce.
+	"stored_getter_on_native_facade_demoted": func() {
+		delete(managedStoredMembers, gameIdentity)
+	},
+	// The entry is per projected operation, never per type: keeping only
+	// Components leaves Services fallible, which is exactly the defect of
+	// classifying a whole type instead of reading each member's IL.
+	"stored_getter_classified_for_one_member_only": func() {
+		managedStoredMembers[gameIdentity] = map[string]bool{"property-get|Components": true}
 	},
 }
 

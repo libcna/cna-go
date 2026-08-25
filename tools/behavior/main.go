@@ -2137,6 +2137,58 @@ func runCorpus() corpusReport {
 		"true,resetting,reset,disposing",
 		fmt.Sprintf("%t,%s", removalError == nil, strings.Join(deviceOrder, ",")))
 
+	// ------------------------------------------------------------------
+	// Foundation 30. Game's two managed CLR objects.
+	//
+	// Microsoft.Xna.Framework.Game::get_Components and ::get_Services are one
+	// `ldfld` each over fields the constructor assigns exactly once, so the
+	// observable claims are identity, stability and reference semantics. The
+	// component engine those two feed becomes observable in the next group,
+	// through the explicit base calls.
+	// ------------------------------------------------------------------
+	corpusGame, corpusGameError := framework.NewGame(corpusCallbacks{})
+
+	check("game-managed-state.constructor-allocates-both", "GAME_MANAGED_STATE", "true,true,true,0",
+		fmt.Sprintf("%t,%t,%t,%d", corpusGameError == nil,
+			corpusGame.Components() != nil, corpusGame.Services() != nil,
+			corpusGame.Components().Count()))
+
+	// One `ldfld` cannot allocate, so repeated reads are the same identity.
+	check("game-managed-state.getters-are-stable-identities", "GAME_MANAGED_STATE", "true,true",
+		fmt.Sprintf("%t,%t", corpusGame.Components() == corpusGame.Components(),
+			corpusGame.Services() == corpusGame.Services()))
+
+	// Two Games own two distinct sets of managed state.
+	otherGame, _ := framework.NewGame(corpusCallbacks{})
+	check("game-managed-state.each-game-owns-its-own", "GAME_MANAGED_STATE", "true,true",
+		fmt.Sprintf("%t,%t", corpusGame.Components() != otherGame.Components(),
+			corpusGame.Services() != otherGame.Services()))
+
+	// CLR reference semantics: a mutation through the returned object is the
+	// Game's own state, and every later read sees it.
+	sharedComponent := &corpusComponent{}
+	sharedAdd := corpusGame.Components().Add(sharedComponent)
+	sharedService := corpusGame.Services().AddService(reflect.TypeOf((*serviceCorpusProbe)(nil)).Elem(), &serviceCorpusProvider{})
+	resolved, resolveError := corpusGame.Services().GetService(reflect.TypeOf((*serviceCorpusProbe)(nil)).Elem())
+	check("game-managed-state.mutation-through-the-getter-is-visible", "GAME_MANAGED_STATE", "true,true,1,true,true,true",
+		fmt.Sprintf("%t,%t,%d,%t,%t,%t", sharedAdd == nil, sharedService == nil,
+			corpusGame.Components().Count(), corpusGame.Components().Contains(sharedComponent),
+			resolveError == nil, resolved != nil))
+
+	// The Game constructor subscribes its own two handlers FIRST, so a
+	// consumer's handler always runs after the engine has tracked the change.
+	// The proof from outside is the order alone: the consumer's handler is the
+	// only one it can see, and it must be the last to run.
+	var subscriptionOrder []string
+	_, _ = corpusGame.Components().AddComponentAddedHandler(func(sender any, args *framework.GameComponentCollectionEventArgs) error {
+		subscriptionOrder = append(subscriptionOrder, "consumer")
+		return nil
+	})
+	orderComponent := &corpusComponent{}
+	orderAdd := corpusGame.Components().Add(orderComponent)
+	check("game-managed-state.consumer-handler-runs-after-the-engine", "GAME_MANAGED_STATE", "true,consumer",
+		fmt.Sprintf("%t,%s", orderAdd == nil, strings.Join(subscriptionOrder, ",")))
+
 	return report
 }
 
@@ -2187,6 +2239,17 @@ func (s *corpusDeviceService) raiseAll() {
 // corpusComponent is a corpus-local conformer of both component contracts. It
 // is the shape an external package must be able to write: private EventSource
 // fields behind the projected accessors. It reproduces no XNA component.
+// corpusCallbacks is a do-nothing GameCallbacks so the corpus can construct a
+// Game. It runs no override body: every observation below reaches Game's
+// managed state directly or through an explicit base call.
+type corpusCallbacks struct{}
+
+func (corpusCallbacks) Initialize(*framework.Game) error                 { return nil }
+func (corpusCallbacks) LoadContent(*framework.Game) error                { return nil }
+func (corpusCallbacks) Update(*framework.Game, framework.GameTime) error { return nil }
+func (corpusCallbacks) Draw(*framework.Game, framework.GameTime) error   { return nil }
+func (corpusCallbacks) UnloadContent(*framework.Game) error              { return nil }
+
 type corpusComponent struct {
 	enabled bool
 	updates int

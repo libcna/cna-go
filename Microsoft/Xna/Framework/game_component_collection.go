@@ -65,10 +65,16 @@ const (
 // SetItemMethod and the indexer setter is SetItemProperty. Neither name is
 // invented for this type.
 //
-// Completing this type wires nothing up. CNA-Go has no GameComponent, no
-// DrawableGameComponent, and no component loop, and Game remains a partial
-// native-backed facade with no Components property, so nothing in the binding
-// constructs or drives a collection.
+// # What drives this collection
+//
+// As of Foundation 30 this is no longer an unused projection. Game allocates
+// exactly one of these in its constructor and immediately subscribes its own
+// two private handlers to both events, so every mutation announced here is what
+// keeps Game's derived update and draw lists correct. The asymmetries above are
+// therefore load-bearing rather than curiosities: because Insert mutates before
+// it announces, Game's handler already sees the component in the collection,
+// and because Clear announces everything before it mutates, Game untracks every
+// component while the collection is still full.
 type GameComponentCollection struct {
 	// base is the private Collection<IGameComponent> adapter. It is
 	// unexported, not embedded, and never handed out.

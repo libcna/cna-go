@@ -46,9 +46,12 @@ func serviceArgumentError(message string) error {
 // is GetService, which the class already declares publicly, so the contract
 // adds no projected surface.
 //
-// Completing this type wires nothing up. CNA-Go's Game remains a partial
-// native-backed facade and does not expose a Services property, so nothing in
-// the binding populates or consults a container.
+// As of Foundation 30, Game allocates exactly one of these in its constructor
+// and hands it out from Services(). Nothing in CNA-Go registers into it yet:
+// the reference's own registrar, GraphicsDeviceManager, registers itself under
+// IGraphicsDeviceManager and IGraphicsDeviceService, and CNA-Go's partial
+// GraphicsDeviceManager satisfies neither contract. A consumer may register
+// their own services and Game will hand the container back unchanged.
 type GameServiceContainer struct {
 	services map[reflect.Type]any
 	// order preserves registration order so the container's behavior does not

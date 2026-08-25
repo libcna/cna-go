@@ -2388,5 +2388,15 @@
   "id": "f27-bcl-signature-readonlycollection-sync-root-promoted",
   "mutation": "f27sig_sync_root_promoted",
   "category": "LANGUAGE_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f30-classification-stored-getter-on-native-facade-demoted",
+  "mutation": "f17cls_stored_getter_on_native_facade_demoted__Microsoft.Xna.Framework.Game",
+  "category": "ERROR_MAPPING_MISMATCH"
+ },
+ {
+  "id": "f30-classification-stored-getter-classified-for-one-member-only",
+  "mutation": "f17cls_stored_getter_classified_for_one_member_only__Microsoft.Xna.Framework.Game",
+  "category": "ERROR_MAPPING_MISMATCH"
  }
 ]

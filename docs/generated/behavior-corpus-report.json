@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 598,
-    "ASSERTIONS": 598,
+    "OBSERVATIONS": 603,
+    "ASSERTIONS": 603,
     "FAILURES": 0
   },
   "observations": [
@@ -4789,6 +4789,46 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,resetting,reset,disposing",
       "actual": "true,resetting,reset,disposing",
+      "passed": true
+    },
+    {
+      "id": "game-managed-state.constructor-allocates-both",
+      "group": "GAME_MANAGED_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,0",
+      "actual": "true,true,true,0",
+      "passed": true
+    },
+    {
+      "id": "game-managed-state.getters-are-stable-identities",
+      "group": "GAME_MANAGED_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "game-managed-state.each-game-owns-its-own",
+      "group": "GAME_MANAGED_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "game-managed-state.mutation-through-the-getter-is-visible",
+      "group": "GAME_MANAGED_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,1,true,true,true",
+      "actual": "true,true,1,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-managed-state.consumer-handler-runs-after-the-engine",
+      "group": "GAME_MANAGED_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,consumer",
+      "actual": "true,consumer",
       "passed": true
     }
   ]

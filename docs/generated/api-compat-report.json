@@ -26,7 +26,7 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 177,
+    "MISSING_MEMBER": 175,
     "MISSING_TYPE": 136,
     "MISSING_TYPES": 136,
     "OPERATOR_MAPPING_MISMATCH": 0,
@@ -42,9 +42,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1755,
+    "TARGET_MEMBERS": 1757,
     "TARGET_TYPES": 121,
-    "TOTAL_DIAGNOSTICS": 313,
+    "TOTAL_DIAGNOSTICS": 311,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -386,18 +386,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Game::LaunchParameters()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.LaunchParameters",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::Components()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Components",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::Services()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Services",
       "message": "mapped Go member is absent"
     },
     {
@@ -2057,7 +2045,6 @@
         "Microsoft.Xna.Framework.Game::Activated() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.RemoveActivatedHandler",
         "Microsoft.Xna.Framework.Game::BeginDraw() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.BeginDraw",
         "Microsoft.Xna.Framework.Game::BeginRun() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.BeginRun",
-        "Microsoft.Xna.Framework.Game::Components() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Components",
         "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:GameContent",
         "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:SetGameContent",
         "Microsoft.Xna.Framework.Game::Deactivated() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.AddDeactivatedHandler",
@@ -2085,7 +2072,6 @@
         "Microsoft.Xna.Framework.Game::OnExiting(System.Object,System.EventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.OnExiting",
         "Microsoft.Xna.Framework.Game::ResetElapsedTime() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.ResetElapsedTime",
         "Microsoft.Xna.Framework.Game::RunOneFrame() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.RunOneFrame",
-        "Microsoft.Xna.Framework.Game::Services() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Services",
         "Microsoft.Xna.Framework.Game::ShowMissingRequirementMessage(System.Exception) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.ShowMissingRequirementMessage",
         "Microsoft.Xna.Framework.Game::SuppressDraw() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.SuppressDraw",
         "Microsoft.Xna.Framework.Game::TargetElapsedTime() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.SetTargetElapsedTime",
@@ -2093,7 +2079,7 @@
         "Microsoft.Xna.Framework.Game::Tick() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Tick",
         "Microsoft.Xna.Framework.Game::Window() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Window"
       ],
-      "diagnostics": 39
+      "diagnostics": 37
     },
     {
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
