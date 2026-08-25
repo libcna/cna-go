@@ -1103,6 +1103,103 @@ FOUNDATION_MILESTONE_24_COMPLETE=true
 FOUNDATION_MILESTONE_25_COMPLETE=true
 ```
 
+## Foundation 26 the general BCL base-class composition projection
+
+- [x] A CLR class inheriting a supported BCL collection base projects as a
+      concrete Go reference type CONTAINING a private generic adapter, and
+      re-exposes the base's public surface through measured forwarding.
+- [x] A public member inherited from such a base is still public CLR surface
+      and must not disappear because the XNA metadata does not declare it.
+- [x] The adapter is never an XNA type, an exported field, a public base-class
+      object, an embedded public API, or a handle; exported embedding AND
+      embedding the unexported adapter are both rejected.
+- [x] The base's protected virtuals are an unexported Go interface, so only a
+      type declared in this module can supply or reach a hook, and every
+      mutating public operation routes through it.
+- [x] `Collection`1` behavior read from the pinned mscorlib 4.0.30319.1, the
+      binary every XNA assemblyref names, never from modern .NET or Go habit.
+- [x] `GameComponentCollection` completed: 7 declared members to 9 identities,
+      11 inherited CLR members to 12, 21 total.
+- [x] Three provenance classes kept distinct; `REFERENCE_MEMBERS` unchanged at
+      2964 and the pinned 3243 XNA-declared projection count unmoved.
+- [x] 22 negative controls; the collection proved from outside the repository.
+
+## Foundation 26 qualification evidence
+
+Exact evidence is in `docs/foundation-26-bcl-base-composition-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_26_COMPLETE=true
+```
+
+## Foundation 27 BCL types at signature positions
+
+- [x] A BCL type the contract carries at a public signature position needs a
+      public Go spelling, on the `System.TimeSpan` and `System.EventHandler<T>`
+      footing; `ReadOnlyCollection`1` maps to `*framework.ReadOnlyCollection[T]`.
+- [x] The signature-adapter role and the base-adapter role are independent, and
+      one CLR type may hold both; `ReadOnlyCollection`1` is SUPPORTED as the
+      first and DEFERRED as the second.
+- [x] A signature adapter's exported surface is pinned to the exact public CLR
+      member inventory, so an adapter type is not a hole in the
+      unexpected-member scan.
+- [x] Read-only needed no new decision: every mutator is a private explicit
+      implementation the settled BCL-interface rule already excludes.
+- [x] Enumeration semantics belong to the underlying list; an array-backed view
+      is deliberately not version-checked.
+- [x] `Media.VisualizationData` completed; `singleEquals` reproduces
+      `System.Single::Equals`, which treats NaN as equal.
+- [x] 9 negative controls, three of which attack read-only directly.
+
+## Foundation 27 qualification evidence
+
+Exact evidence is in `docs/foundation-27-read-only-collection-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_27_COMPLETE=true
+```
+
+## Foundation 28 the device-publication contract
+
+- [x] `Graphics.IGraphicsDeviceService` completed; every operation infallible
+      on the reference implementor's one-`ldfld` accessor.
+- [x] The per-contract boundary rule sharpened: the same
+      `GraphicsDeviceManager` implements an infallible contract and a fallible
+      one, so the boundary is read per contract and never per class.
+- [x] Frontier re-derived; three types the type-level graph calls reachable
+      shown from IL not to be, each blocker named to the exact member.
+- [x] `GameComponent` blocked on `Game::Components`, a protected-partial
+      member; `GraphicsResource` blocked on native ownership; `Microphone`
+      device-blocked despite its signature being unblocked.
+
+## Foundation 28 qualification evidence
+
+Exact evidence is in
+`docs/foundation-28-device-service-and-frontier-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_28_COMPLETE=true
+```
+
+## Foundation 29 the audited frontier
+
+- [x] A DEFERRED base must NAME what blocks it, to the exact inherited member
+      or the exact architecture decision; one that records nothing fails.
+- [x] 21 blockers across seven deferred bases, each SUBSYSTEM or ARCHITECTURE.
+- [x] `System.Exception` audited: all eight derived types declare only
+      constructors, three inherited members need three distinct unmapped
+      subsystems, and two architecture obstacles are the material ones.
+- [x] `System.Attribute` audited and found no easier.
+- [x] `addsProjectedSurface` corrected to be true exactly for COMPOSED.
+
+## Foundation 29 qualification evidence
+
+Exact evidence is in `docs/foundation-29-exception-frontier-evidence.md`.
+
+```text
+FOUNDATION_MILESTONE_29_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
