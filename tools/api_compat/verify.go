@@ -269,6 +269,8 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Foundation19ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation19ManagedClasses)
 	result.Foundation20ValueContracts = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation20ValueContracts)
 	result.Foundation21ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation21ManagedClasses)
+	result.Foundation23Interfaces = measureManagedInterfaceClosures(expected, actual, typeDiagnostics, foundation23Interfaces)
+	result.Foundation23ManagedClasses = measureManagedClassClosures(expected, actual, typeDiagnostics, foundation23ManagedClasses)
 	result.BCLBaseRelationships = measureBCLBaseRelationships(expected, actual)
 	for _, et := range sortedExpectedTypes(expected) {
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
@@ -2110,15 +2112,29 @@ var foundation21ManagedClasses = []string{
 	"Microsoft.Xna.Framework.GameServiceContainer",
 }
 
+// foundation23ManagedClasses is the Foundation-23 closure: the three
+// System.EventArgs carriers the base relationship unblocked. Each is one or two
+// managed fields behind get-only accessors, and each demonstrates the base rule
+// -- a CLR base survives as a measured relationship, never as Go embedding.
+//
+// GameComponentCollectionEventArgs projects its public constructor; the two
+// graphics carriers declare theirs `assembly`, so neither gets one.
+var foundation23ManagedClasses = []string{
+	"Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+	"Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+	"Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+}
+
 // allManagedClasses is every pinned pure-managed CLR class measured by the
 // shared table-driven closure category, across milestones.
 func allManagedClasses() []string {
 	all := make([]string, 0, len(foundation17ManagedClasses)+len(foundation19ManagedClasses)+
-		len(foundation20ValueContracts)+len(foundation21ManagedClasses))
+		len(foundation20ValueContracts)+len(foundation21ManagedClasses)+len(foundation23ManagedClasses))
 	all = append(all, foundation17ManagedClasses...)
 	all = append(all, foundation19ManagedClasses...)
 	all = append(all, foundation20ValueContracts...)
 	all = append(all, foundation21ManagedClasses...)
+	all = append(all, foundation23ManagedClasses...)
 	return all
 }
 
@@ -2227,6 +2243,22 @@ func measureManagedClassClosure(expected *expectedSurface, actual *actualSurface
 		wantedProjection = "*" + owner.GoName
 		wantedBase = "System.Object"
 	}
+	// A CLR class need not derive from System.Object directly. When it derives
+	// from a BCL base instead, that base must be a declared relationship whose
+	// status permits projection, and the relationship -- not Go structure -- is
+	// what carries it. Hardcoding System.Object here would silently drop the
+	// base, which is the defect the relationship table exists to prevent.
+	basePass := measurement.BaseType == wantedBase
+	measurement.BaseRelationship = "DIRECT"
+	if owner.Kind == "class" && !basePass {
+		relationship, declared := bclBaseRelationships[baseIdentityWithoutArguments(measurement.BaseType)]
+		if declared && relationship.Status == "MAPPED" {
+			basePass = true
+			measurement.BaseRelationship = relationship.Adapter
+		} else {
+			measurement.BaseRelationship = "UNDECIDED"
+		}
+	}
 	for _, key := range owner.Members {
 		em := expected.Members[key]
 		if em.SourceKind != "constructor" || len(em.Results) == 0 {
@@ -2243,7 +2275,7 @@ func measureManagedClassClosure(expected *expectedSurface, actual *actualSurface
 	}
 
 	if measurement.TargetTypes == 1 && measurement.ActualKind == "struct" &&
-		measurement.PureManaged && measurement.BaseType == wantedBase &&
+		measurement.PureManaged && basePass &&
 		measurement.LocalDiagnostics == 0 &&
 		measurement.TargetGoIdentities == measurement.ExpectedGoIdentities &&
 		projectionPass && membersPass {
@@ -2270,8 +2302,15 @@ type foundation18Interface struct {
 	Boundary   string
 	Classified bool
 	// FallibleOperations are the projected Go names that must carry an error
-	// result. Every other projected name must not.
+	// result because this contract's boundary makes them fallible. Every other
+	// projected name must not, apart from EventAccessors.
 	FallibleOperations []string
+	// EventAccessors are projected Go names that carry an error because of the
+	// settled event accessor projection rather than because of the contract's
+	// boundary. Keeping them in their own list is what stops an infallible
+	// contract's event accessors from reading as evidence of a runtime
+	// boundary that its implementor IL does not show.
+	EventAccessors []string
 }
 
 // foundation18Interfaces is the Foundation-18 interface cluster. The two
@@ -2305,11 +2344,44 @@ var foundation18Interfaces = []foundation18Interface{
 	},
 }
 
+// foundation23Interfaces is the Foundation-23 interface cluster: the two
+// event-bearing component contracts the event mapping unblocked.
+//
+// Both are PURE_MANAGED on their own implementor IL. Microsoft.Xna.Framework.Game.dll
+// declares both and ships one implementor of each, GameComponent and
+// DrawableGameComponent, whose selected operations are one ldfld per property
+// getter and a bare `ret` for Update and Draw. Their four event accessors each
+// carry an error from the settled event accessor projection, which is why they
+// are listed as EventAccessors rather than as FallibleOperations.
+var foundation23Interfaces = []foundation18Interface{
+	{
+		XNA:                "Microsoft.Xna.Framework.IUpdateable",
+		Boundary:           "PURE_MANAGED",
+		Classified:         true,
+		FallibleOperations: nil,
+		EventAccessors: []string{
+			"AddEnabledChangedHandler", "RemoveEnabledChangedHandler",
+			"AddUpdateOrderChangedHandler", "RemoveUpdateOrderChangedHandler",
+		},
+	},
+	{
+		XNA:                "Microsoft.Xna.Framework.IDrawable",
+		Boundary:           "PURE_MANAGED",
+		Classified:         true,
+		FallibleOperations: nil,
+		EventAccessors: []string{
+			"AddVisibleChangedHandler", "RemoveVisibleChangedHandler",
+			"AddDrawOrderChangedHandler", "RemoveDrawOrderChangedHandler",
+		},
+	},
+}
+
 // allManagedInterfaces is every pinned interface measured by the shared
 // table-driven closure category, across milestones.
 func allManagedInterfaces() []foundation18Interface {
-	all := make([]foundation18Interface, 0, len(foundation18Interfaces))
+	all := make([]foundation18Interface, 0, len(foundation18Interfaces)+len(foundation23Interfaces))
 	all = append(all, foundation18Interfaces...)
+	all = append(all, foundation23Interfaces...)
 	return all
 }
 
@@ -2345,9 +2417,14 @@ func measureManagedInterfaceClosure(expected *expectedSurface, actual *actualSur
 		measurement.ActualKind = target.Kind
 	}
 
-	fallible := make(map[string]bool, len(pinned.FallibleOperations))
+	fallible := make(map[string]bool, len(pinned.FallibleOperations)+len(pinned.EventAccessors))
 	for _, name := range pinned.FallibleOperations {
 		fallible[name] = true
+	}
+	eventAccessor := make(map[string]bool, len(pinned.EventAccessors))
+	for _, name := range pinned.EventAccessors {
+		fallible[name] = true
+		eventAccessor[name] = true
 	}
 	membersPass := true
 	getters := make(map[string]bool)
@@ -2383,9 +2460,12 @@ func measureManagedInterfaceClosure(expected *expectedSurface, actual *actualSur
 				measurement.FallibleSetters++
 			}
 		default:
-			if em.ErrorAdded {
+			if em.ErrorAdded && !eventAccessor[key.Name] {
 				measurement.FallibleOperations++
 			}
+		}
+		if eventAccessor[key.Name] {
+			measurement.EventAccessors++
 		}
 		if em.ErrorAdded {
 			measurement.ErrorResults++
@@ -2414,7 +2494,8 @@ func measureManagedInterfaceClosure(expected *expectedSurface, actual *actualSur
 		measurement.Classified == pinned.Classified &&
 		measurement.LocalDiagnostics == 0 &&
 		measurement.TargetGoIdentities == measurement.ExpectedGoIdentities &&
-		measurement.ErrorResults == len(pinned.FallibleOperations) && membersPass {
+		measurement.ErrorResults == len(pinned.FallibleOperations)+len(pinned.EventAccessors) &&
+		measurement.EventAccessors == len(pinned.EventAccessors) && membersPass {
 		measurement.Status = "PASS"
 	}
 	return measurement

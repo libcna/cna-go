@@ -1691,8 +1691,222 @@ func runCorpus() corpusReport {
 	check("game-service-container.reference-semantics", "GAME_SERVICE_CONTAINER", "true,true",
 		fmt.Sprintf("%t,%t", afterAliasRemoval == nil, separate == nil))
 
+	// --- Foundation 22/23: the event architecture and its first contracts ---
+	//
+	// Read from Microsoft.Xna.Framework.Game.dll IL
+	// (sha256 b5dffdd8125abef2a4507ba4e1d2f11062143f0a63d48fe4f298b95ad746a1f0).
+	// GameComponent and DrawableGameComponent are the shipped implementors of
+	// IUpdateable and IDrawable. Their event accessors are the standard
+	// compiler-generated Delegate.Combine/Delegate.Remove pair guarded by
+	// Interlocked.CompareExchange, and every raise site pushes the shared
+	// System.EventArgs::Empty static field.
+	//
+	// Completing the two contracts wires nothing up: CNA-Go has no
+	// GameComponent, no component collection, and no component loop.
+
+	// EventArgs.Empty is one shared identity, and it is not nil.
+	check("event-args.empty-is-one-shared-identity", "EVENT_ARCHITECTURE", "true,true",
+		fmt.Sprintf("%t,%t", framework.EventArgsEmpty() == framework.EventArgsEmpty(), framework.EventArgsEmpty() != nil))
+
+	var corpusEvent framework.EventSource[*framework.EventArgs]
+	var corpusOrder []string
+	corpusSender := &corpusComponent{}
+
+	// Zero handlers is not a failure.
+	check("event-source.raise-with-no-handlers", "EVENT_ARCHITECTURE", "true",
+		fmt.Sprintf("%t", corpusEvent.Raise(corpusSender, framework.EventArgsEmpty()) == nil))
+
+	corpusHandler := func(name string) framework.EventHandler[*framework.EventArgs] {
+		return func(sender any, args *framework.EventArgs) error {
+			corpusOrder = append(corpusOrder, name)
+			if sender != any(corpusSender) || args != framework.EventArgsEmpty() {
+				corpusOrder = append(corpusOrder, "identity-lost")
+			}
+			return nil
+		}
+	}
+	sharedHandler := corpusHandler("shared")
+	firstToken, _ := corpusEvent.Add(sharedHandler)
+	secondToken, _ := corpusEvent.Add(sharedHandler)
+	_, _ = corpusEvent.Add(corpusHandler("third"))
+	_ = corpusEvent.Raise(corpusSender, framework.EventArgsEmpty())
+	// Registration order is preserved, and one handler value added twice is two
+	// registrations, because a token names the registration rather than the
+	// handler. That last part is the Go language projection.
+	check("event-source.registration-order", "EVENT_ARCHITECTURE", "shared,shared,third",
+		strings.Join(corpusOrder, ","))
+	checkGoProjection("event-source.duplicate-registrations-are-independent", "EVENT_ARCHITECTURE", "true",
+		fmt.Sprintf("%t", firstToken != secondToken))
+
+	// Removing one duplicate leaves the other; removing again, removing the
+	// zero token, and removing a token owned by another event are all harmless,
+	// mirroring Delegate.Remove of an absent delegate.
+	var foreignEvent framework.EventSource[*framework.EventArgs]
+	foreignToken, _ := foreignEvent.Add(corpusHandler("foreign"))
+	corpusOrder = nil
+	removals := []error{
+		corpusEvent.Remove(firstToken),
+		corpusEvent.Remove(firstToken),
+		corpusEvent.Remove(framework.EventSubscription{}),
+		corpusEvent.Remove(foreignToken),
+	}
+	_ = corpusEvent.Raise(corpusSender, framework.EventArgsEmpty())
+	harmless := true
+	for _, err := range removals {
+		harmless = harmless && err == nil
+	}
+	check("event-source.absent-removal-is-harmless", "EVENT_ARCHITECTURE", "true,shared,third",
+		fmt.Sprintf("%t,%s", harmless, strings.Join(corpusOrder, ",")))
+	_ = secondToken
+
+	// A nil handler registers nothing, mirroring Delegate.Combine(existing, null).
+	nilToken, nilError := corpusEvent.Add(nil)
+	corpusOrder = nil
+	_ = corpusEvent.Raise(corpusSender, framework.EventArgsEmpty())
+	check("event-source.nil-handler-registers-nothing", "EVENT_ARCHITECTURE", "true,true,shared,third",
+		fmt.Sprintf("%t,%t,%s", nilError == nil, nilToken == framework.EventSubscription{}, strings.Join(corpusOrder, ",")))
+
+	// The first handler failure propagates, stops the dispatch, and leaves the
+	// registration list intact.
+	var failingEvent framework.EventSource[*framework.EventArgs]
+	corpusFailure := errors.New("corpus handler failure")
+	corpusOrder = nil
+	_, _ = failingEvent.Add(func(sender any, args *framework.EventArgs) error {
+		corpusOrder = append(corpusOrder, "first")
+		return nil
+	})
+	_, _ = failingEvent.Add(func(sender any, args *framework.EventArgs) error {
+		corpusOrder = append(corpusOrder, "failing")
+		return corpusFailure
+	})
+	_, _ = failingEvent.Add(func(sender any, args *framework.EventArgs) error {
+		corpusOrder = append(corpusOrder, "never")
+		return nil
+	})
+	raiseError := failingEvent.Raise(corpusSender, framework.EventArgsEmpty())
+	firstPass := strings.Join(corpusOrder, ",")
+	corpusOrder = nil
+	secondError := failingEvent.Raise(corpusSender, framework.EventArgsEmpty())
+	check("event-source.failure-stops-dispatch-and-keeps-the-list", "EVENT_ARCHITECTURE",
+		"true,first,failing,true,first,failing",
+		fmt.Sprintf("%t,%s,%t,%s", errors.Is(raiseError, corpusFailure), firstPass,
+			errors.Is(secondError, corpusFailure), strings.Join(corpusOrder, ",")))
+
+	// Mutation during a raise affects later raises, never the running snapshot.
+	var snapshotEvent framework.EventSource[*framework.EventArgs]
+	corpusOrder = nil
+	var lateToken framework.EventSubscription
+	_, _ = snapshotEvent.Add(func(sender any, args *framework.EventArgs) error {
+		corpusOrder = append(corpusOrder, "mutator")
+		lateToken, _ = snapshotEvent.Add(func(sender any, args *framework.EventArgs) error {
+			corpusOrder = append(corpusOrder, "late")
+			return nil
+		})
+		return nil
+	})
+	_ = snapshotEvent.Raise(corpusSender, framework.EventArgsEmpty())
+	duringRaise := strings.Join(corpusOrder, ",")
+	corpusOrder = nil
+	_ = snapshotEvent.Raise(corpusSender, framework.EventArgsEmpty())
+	check("event-source.dispatch-uses-a-snapshot", "EVENT_ARCHITECTURE", "mutator,mutator,late",
+		fmt.Sprintf("%s,%s", duringRaise, strings.Join(corpusOrder, ",")))
+	_ = lateToken
+
+	// The two component contracts are satisfiable, infallible, and raise
+	// through their projected accessors. set_Enabled raises only when the
+	// stored value actually changes, which is what the reference IL does.
+	var corpusUpdateable framework.IUpdateable = corpusSender
+	var corpusDrawable framework.IDrawable = corpusSender
+	corpusOrder = nil
+	componentToken, componentAddError := corpusUpdateable.AddEnabledChangedHandler(
+		func(sender any, args *framework.EventArgs) error {
+			corpusOrder = append(corpusOrder, fmt.Sprintf("enabled=%t", sender.(*corpusComponent).Enabled()))
+			return nil
+		})
+	changed := corpusSender.SetEnabled(true)
+	unchanged := corpusSender.SetEnabled(true)
+	corpusUpdateable.Update(framework.NewGameTimeByNone())
+	corpusDrawable.Draw(framework.NewGameTimeByNone())
+	check("component-contracts.raise-only-on-change", "EVENT_ARCHITECTURE", "true,true,true,enabled=true,1,1",
+		fmt.Sprintf("%t,%t,%t,%s,%d,%d", componentAddError == nil, changed == nil, unchanged == nil,
+			strings.Join(corpusOrder, ","), corpusSender.updates, corpusSender.draws))
+	check("component-contracts.removal-through-the-interface", "EVENT_ARCHITECTURE", "true",
+		fmt.Sprintf("%t", corpusUpdateable.RemoveEnabledChangedHandler(componentToken) == nil))
+
+	// The three System.EventArgs carriers store what they are given and
+	// validate nothing, and none of them is assignable to its CLR base.
+	corpusCarrier := framework.NewGameComponentCollectionEventArgs(corpusSender)
+	var carrierAsAny any = corpusCarrier
+	_, carrierIsBase := carrierAsAny.(*framework.EventArgs)
+	check("event-args-carriers.store-without-validating", "EVENT_ARCHITECTURE", "true,true,false",
+		fmt.Sprintf("%t,%t,%t",
+			corpusCarrier.GameComponent() == framework.IGameComponent(corpusSender),
+			framework.NewGameComponentCollectionEventArgs(nil).GameComponent() == nil,
+			carrierIsBase))
+
 	return report
 }
+
+// corpusComponent is a corpus-local conformer of both component contracts. It
+// is the shape an external package must be able to write: private EventSource
+// fields behind the projected accessors. It reproduces no XNA component.
+type corpusComponent struct {
+	enabled bool
+	updates int
+	draws   int
+
+	enabledChanged     framework.EventSource[*framework.EventArgs]
+	updateOrderChanged framework.EventSource[*framework.EventArgs]
+	visibleChanged     framework.EventSource[*framework.EventArgs]
+	drawOrderChanged   framework.EventSource[*framework.EventArgs]
+}
+
+func (c *corpusComponent) Initialize() error         { return nil }
+func (c *corpusComponent) Enabled() bool             { return c.enabled }
+func (c *corpusComponent) UpdateOrder() int32        { return 0 }
+func (c *corpusComponent) Visible() bool             { return false }
+func (c *corpusComponent) DrawOrder() int32          { return 0 }
+func (c *corpusComponent) Update(framework.GameTime) { c.updates++ }
+func (c *corpusComponent) Draw(framework.GameTime)   { c.draws++ }
+
+func (c *corpusComponent) SetEnabled(value bool) error {
+	if c.enabled == value {
+		return nil
+	}
+	c.enabled = value
+	return c.enabledChanged.Raise(c, framework.EventArgsEmpty())
+}
+
+func (c *corpusComponent) AddEnabledChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.enabledChanged.Add(h)
+}
+func (c *corpusComponent) RemoveEnabledChangedHandler(s framework.EventSubscription) error {
+	return c.enabledChanged.Remove(s)
+}
+func (c *corpusComponent) AddUpdateOrderChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.updateOrderChanged.Add(h)
+}
+func (c *corpusComponent) RemoveUpdateOrderChangedHandler(s framework.EventSubscription) error {
+	return c.updateOrderChanged.Remove(s)
+}
+func (c *corpusComponent) AddVisibleChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.visibleChanged.Add(h)
+}
+func (c *corpusComponent) RemoveVisibleChangedHandler(s framework.EventSubscription) error {
+	return c.visibleChanged.Remove(s)
+}
+func (c *corpusComponent) AddDrawOrderChangedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return c.drawOrderChanged.Add(h)
+}
+func (c *corpusComponent) RemoveDrawOrderChangedHandler(s framework.EventSubscription) error {
+	return c.drawOrderChanged.Remove(s)
+}
+
+var (
+	_ framework.IGameComponent = (*corpusComponent)(nil)
+	_ framework.IUpdateable    = (*corpusComponent)(nil)
+	_ framework.IDrawable      = (*corpusComponent)(nil)
+)
 
 // serviceCorpusProbe and serviceCorpusProvider are corpus-local doubles used to
 // exercise GameServiceContainer's assignability rule. They reproduce no XNA

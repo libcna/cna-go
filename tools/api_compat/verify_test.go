@@ -3013,8 +3013,8 @@ func constructorKey(t *testing.T, expected *expectedSurface, owner *expectedType
 // target-side defect to every pure-managed CLR class, asserting a clean
 // baseline first so no defect can pass by accident.
 func TestFoundation17ManagedClassDefectsRejectedForEveryType(t *testing.T) {
-	if len(allManagedClasses()) != 6 {
-		t.Fatalf("pure-managed type cluster size = %d, want 6", len(allManagedClasses()))
+	if len(allManagedClasses()) != 9 {
+		t.Fatalf("pure-managed type cluster size = %d, want 9", len(allManagedClasses()))
 	}
 	cases, skipped := 0, 0
 	for _, identity := range allManagedClasses() {
@@ -3070,10 +3070,19 @@ func TestFoundation17ManagedClassDefectsRejectedForEveryType(t *testing.T) {
 	//   TouchCollection+Enumerator  5  no constructor, no setter, and no
 	//                                  infallible getter
 	//   GameServiceContainer        3  no property accessors at all
+	//   Foundation 23, the three System.EventArgs carriers:
+	//   GameComponentCollectionEventArgs
+	//                               4  every accessor is an infallible getter:
+	//                                  no setter, and its one constructor and
+	//                                  its one getter cannot fail
+	//   ResourceCreatedEventArgs    5  one infallible getter, no setter and no
+	//                                  public constructor at all
+	//   ResourceDestroyedEventArgs  4  two infallible getters, no setter and no
+	//                                  public constructor
 	if cases+skipped != len(allManagedClasses())*len(managedClassDefects) {
 		t.Fatalf("pure-managed type fixture accounting = %d applied + %d skipped", cases, skipped)
 	}
-	if cases != 72 || skipped != 12 {
+	if cases != 101 || skipped != 25 {
 		t.Fatalf("pure-managed type negative fixtures = %d applied, %d skipped", cases, skipped)
 	}
 }
@@ -3594,8 +3603,8 @@ func interfaceHasFallibleValueOperation(expected *expectedSurface, owner *expect
 // target-side defect to every projected interface, asserting a clean baseline
 // first so no defect can pass by accident.
 func TestFoundation18InterfaceDefectsRejectedForEveryType(t *testing.T) {
-	if len(allManagedInterfaces()) != 4 {
-		t.Fatalf("interface cluster size = %d, want 4", len(allManagedInterfaces()))
+	if len(allManagedInterfaces()) != 6 {
+		t.Fatalf("interface cluster size = %d, want 6", len(allManagedInterfaces()))
 	}
 	cases, skipped := 0, 0
 	for _, pinned := range allManagedInterfaces() {
@@ -3647,10 +3656,14 @@ func TestFoundation18InterfaceDefectsRejectedForEveryType(t *testing.T) {
 	//   IGraphicsDeviceManager 2  takes no parameters and has no infallible
 	//                             operation; BeginDraw does produce a value,
 	//                             so error_replaces_source_result applies
+	//   IUpdateable            0  its event accessors take a parameter, carry
+	//   IDrawable              0  an error, and return a value alongside it,
+	//                             while its properties and its Update or Draw
+	//                             are infallible, so every defect applies
 	if cases+skipped != len(allManagedInterfaces())*len(managedInterfaceDefects) {
 		t.Fatalf("interface fixture accounting = %d applied + %d skipped", cases, skipped)
 	}
-	if cases != 37 || skipped != 7 {
+	if cases != 59 || skipped != 7 {
 		t.Fatalf("interface negative fixtures = %d applied, %d skipped", cases, skipped)
 	}
 }
@@ -3679,8 +3692,14 @@ func TestFoundation18InterfaceMappedContracts(t *testing.T) {
 				t.Fatalf("%s classification = %t, want %t",
 					pinned.XNA, classifiedInterfaces[pinned.XNA], pinned.Classified)
 			}
-			fallible := make(map[string]bool, len(pinned.FallibleOperations))
+			fallible := make(map[string]bool, len(pinned.FallibleOperations)+len(pinned.EventAccessors))
 			for _, name := range pinned.FallibleOperations {
+				fallible[name] = true
+			}
+			// An event accessor's error comes from the settled event accessor
+			// projection, not from the contract's boundary, so it is expected
+			// to be fallible without counting as a boundary operation.
+			for _, name := range pinned.EventAccessors {
 				fallible[name] = true
 			}
 			seen := 0
@@ -3697,9 +3716,9 @@ func TestFoundation18InterfaceMappedContracts(t *testing.T) {
 					seen++
 				}
 			}
-			if seen != len(pinned.FallibleOperations) {
-				t.Fatalf("%s matched %d of %d fallible operations",
-					pinned.XNA, seen, len(pinned.FallibleOperations))
+			if seen != len(pinned.FallibleOperations)+len(pinned.EventAccessors) {
+				t.Fatalf("%s matched %d of %d fallible operations and %d event accessors",
+					pinned.XNA, seen, len(pinned.FallibleOperations), len(pinned.EventAccessors))
 			}
 		})
 	}

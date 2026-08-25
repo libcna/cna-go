@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 564,
-    "ASSERTIONS": 564,
+    "OBSERVATIONS": 575,
+    "ASSERTIONS": 575,
     "FAILURES": 0
   },
   "observations": [
@@ -4517,6 +4517,94 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "event-args.empty-is-one-shared-identity",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "event-source.raise-with-no-handlers",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "event-source.registration-order",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "shared,shared,third",
+      "actual": "shared,shared,third",
+      "passed": true
+    },
+    {
+      "id": "event-source.duplicate-registrations-are-independent",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "event-source.absent-removal-is-harmless",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,shared,third",
+      "actual": "true,shared,third",
+      "passed": true
+    },
+    {
+      "id": "event-source.nil-handler-registers-nothing",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,shared,third",
+      "actual": "true,true,shared,third",
+      "passed": true
+    },
+    {
+      "id": "event-source.failure-stops-dispatch-and-keeps-the-list",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,first,failing,true,first,failing",
+      "actual": "true,first,failing,true,first,failing",
+      "passed": true
+    },
+    {
+      "id": "event-source.dispatch-uses-a-snapshot",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "mutator,mutator,late",
+      "actual": "mutator,mutator,late",
+      "passed": true
+    },
+    {
+      "id": "component-contracts.raise-only-on-change",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,enabled=true,1,1",
+      "actual": "true,true,true,enabled=true,1,1",
+      "passed": true
+    },
+    {
+      "id": "component-contracts.removal-through-the-interface",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "event-args-carriers.store-without-validating",
+      "group": "EVENT_ARCHITECTURE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,false",
+      "actual": "true,true,false",
       "passed": true
     }
   ]

@@ -118,6 +118,18 @@ var pureManagedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection":            true,
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": true,
 
+	// Foundation 23. The three dependency-complete System.EventArgs carriers.
+	// Microsoft.Xna.Framework.Game.dll shows GameComponentCollectionEventArgs
+	// as one private IGameComponent field: the public constructor is
+	// `call EventArgs::.ctor` plus one stfld with no validation, and the getter
+	// is one ldfld. Microsoft.Xna.Framework.Graphics.dll shows both resource
+	// carriers the same way over `assembly` fields, with `assembly`
+	// constructors that are not part of the public contract. None of the three
+	// reaches a device, an allocation, or any native code.
+	"Microsoft.Xna.Framework.GameComponentCollectionEventArgs":    true,
+	"Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs":   true,
+	"Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs": true,
+
 	// Foundation 21. Microsoft.Xna.Framework.Game.dll IL
 	// (sha256 b5dffdd8125abef2a4507ba4e1d2f11062143f0a63d48fe4f298b95ad746a1f0)
 	// shows GameServiceContainer as one private Dictionary<Type, object> with
@@ -249,6 +261,29 @@ var classifiedInterfaces = map[string]bool{
 	// operation is therefore fallible and the other six are not; see
 	// managedFallibleMembers.
 	"Microsoft.Xna.Framework.Graphics.IEffectFog": true,
+
+	// Foundation 23. Microsoft.Xna.Framework.Game.dll declares both contracts
+	// and ships exactly one implementor of each: GameComponent for IUpdateable
+	// and DrawableGameComponent for IDrawable. Every selected operation in that
+	// IL is managed field work --
+	//
+	//	get_Enabled / get_UpdateOrder / get_Visible / get_DrawOrder
+	//	                       one ldfld, `ret`
+	//	Update(GameTime) / Draw(GameTime)
+	//	                       a bare `ret`, code size 1
+	//
+	// -- so neither contract crosses a runtime boundary and neither gains a
+	// synthetic error. DrawableGameComponent does reach the graphics runtime,
+	// but through get_GraphicsDevice and Initialize, which belong to
+	// IGameComponent and to the class itself, not to these two contracts. That
+	// is why IGameComponent stays unclassified and fallible while these are
+	// classified and infallible: the boundary is read per contract from its own
+	// implementor IL.
+	//
+	// Their event accessors still carry an error, from the settled event
+	// accessor projection rather than from this classification.
+	"Microsoft.Xna.Framework.IUpdateable": true,
+	"Microsoft.Xna.Framework.IDrawable":   true,
 }
 
 // managedFallibleMembers records, per pure-managed owner, exactly which

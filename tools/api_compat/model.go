@@ -200,6 +200,8 @@ type report struct {
 	Foundation19ManagedClasses   []managedTypeClosure          `json:"foundation19ManagedClassClosures"`
 	Foundation20ValueContracts   []managedTypeClosure          `json:"foundation20ValueContractClosures"`
 	Foundation21ManagedClasses   []managedTypeClosure          `json:"foundation21ManagedClassClosures"`
+	Foundation23Interfaces       []managedInterfaceClosure     `json:"foundation23InterfaceClosures"`
+	Foundation23ManagedClasses   []managedTypeClosure          `json:"foundation23ManagedClassClosures"`
 	BCLBaseRelationships         []bclBaseProjection           `json:"bclBaseRelationships"`
 	Metadata                     reportMetadata                `json:"metadata"`
 }
@@ -304,6 +306,7 @@ type managedInterfaceClosure struct {
 	FallibleGetters      int                      `json:"fallibleGetters"`
 	FallibleSetters      int                      `json:"fallibleSetters"`
 	FallibleOperations   int                      `json:"fallibleOperations"`
+	EventAccessors       int                      `json:"eventAccessors"`
 	ErrorResults         int                      `json:"errorResults"`
 	Members              []managedInterfaceMember `json:"members"`
 	Status               string                   `json:"status"`
@@ -335,29 +338,33 @@ type managedInterfaceMember struct {
 //     operation, so one property's setter may carry an error while its own
 //     getter does not.
 type managedTypeClosure struct {
-	XNA                  string              `json:"xna"`
-	SourceKind           string              `json:"sourceKind"`
-	ValueSemantics       bool                `json:"valueSemantics"`
-	GoName               string              `json:"goName"`
-	PackagePath          string              `json:"packagePath"`
-	SourceTypes          int                 `json:"sourceTypes"`
-	SourceIdentities     int                 `json:"sourceIdentities"`
-	ExpectedGoIdentities int                 `json:"expectedGoIdentities"`
-	TargetTypes          int                 `json:"targetTypes"`
-	TargetGoIdentities   int                 `json:"targetGoIdentities"`
-	LocalDiagnostics     int                 `json:"localDiagnostics"`
-	ExpectedKind         string              `json:"expectedKind"`
-	ActualKind           string              `json:"actualKind"`
-	BaseType             string              `json:"baseType"`
-	PureManaged          bool                `json:"pureManaged"`
-	ReferenceProjection  string              `json:"referenceProjection"`
-	AccessorPairs        int                 `json:"accessorPairs"`
-	FallibleGetters      int                 `json:"fallibleGetters"`
-	FallibleSetters      int                 `json:"fallibleSetters"`
-	FallibleOperations   int                 `json:"fallibleOperations"`
-	ErrorResults         int                 `json:"errorResults"`
-	Members              []managedTypeMember `json:"members"`
-	Status               string              `json:"status"`
+	XNA                  string `json:"xna"`
+	SourceKind           string `json:"sourceKind"`
+	ValueSemantics       bool   `json:"valueSemantics"`
+	GoName               string `json:"goName"`
+	PackagePath          string `json:"packagePath"`
+	SourceTypes          int    `json:"sourceTypes"`
+	SourceIdentities     int    `json:"sourceIdentities"`
+	ExpectedGoIdentities int    `json:"expectedGoIdentities"`
+	TargetTypes          int    `json:"targetTypes"`
+	TargetGoIdentities   int    `json:"targetGoIdentities"`
+	LocalDiagnostics     int    `json:"localDiagnostics"`
+	ExpectedKind         string `json:"expectedKind"`
+	ActualKind           string `json:"actualKind"`
+	BaseType             string `json:"baseType"`
+	// BaseRelationship is DIRECT when the CLR base is the kind's own root, the
+	// adapter name when a declared MAPPED BCL base carries it, and UNDECIDED
+	// when the base is not a relationship that permits projection.
+	BaseRelationship    string              `json:"baseRelationship"`
+	PureManaged         bool                `json:"pureManaged"`
+	ReferenceProjection string              `json:"referenceProjection"`
+	AccessorPairs       int                 `json:"accessorPairs"`
+	FallibleGetters     int                 `json:"fallibleGetters"`
+	FallibleSetters     int                 `json:"fallibleSetters"`
+	FallibleOperations  int                 `json:"fallibleOperations"`
+	ErrorResults        int                 `json:"errorResults"`
+	Members             []managedTypeMember `json:"members"`
+	Status              string              `json:"status"`
 }
 
 // managedTypeMember is one projected operation of a pure-managed CLR class.

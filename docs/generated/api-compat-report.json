@@ -5,7 +5,7 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "COMPLETE_TYPES": 108,
+    "COMPLETE_TYPES": 113,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -20,8 +20,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 177,
-    "MISSING_TYPE": 144,
-    "MISSING_TYPES": 144,
+    "MISSING_TYPE": 139,
+    "MISSING_TYPES": 139,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -34,9 +34,9 @@
     "REFERENCE_TYPES": 257,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1703,
-    "TARGET_TYPES": 113,
-    "TOTAL_DIAGNOSTICS": 321,
+    "TARGET_MEMBERS": 1722,
+    "TARGET_TYPES": 118,
+    "TOTAL_DIAGNOSTICS": 316,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -528,12 +528,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.GameComponentCollection",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GameComponentCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GameComponentCollectionEventArgs",
       "message": "mapped Go type is absent"
     },
     {
@@ -1252,18 +1246,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ResourceCreatedEventArgs",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ResourceDestroyedEventArgs",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.SamplerState",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SamplerState",
       "message": "mapped Go type is absent"
@@ -1768,18 +1750,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.IDrawable",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:IDrawable",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.IUpdateable",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:IUpdateable",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.GamePad",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePad",
       "message": "mapped Go type is absent"
@@ -1990,6 +1960,7 @@
     "Microsoft.Xna.Framework.CurveLoopType",
     "Microsoft.Xna.Framework.CurveTangent",
     "Microsoft.Xna.Framework.DisplayOrientation",
+    "Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
     "Microsoft.Xna.Framework.GameServiceContainer",
     "Microsoft.Xna.Framework.GameTime",
     "Microsoft.Xna.Framework.Graphics.Blend",
@@ -2032,6 +2003,8 @@
     "Microsoft.Xna.Framework.Graphics.PresentationParameters",
     "Microsoft.Xna.Framework.Graphics.PrimitiveType",
     "Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
     "Microsoft.Xna.Framework.Graphics.SetDataOptions",
     "Microsoft.Xna.Framework.Graphics.SpriteEffects",
     "Microsoft.Xna.Framework.Graphics.SpriteSortMode",
@@ -2043,8 +2016,10 @@
     "Microsoft.Xna.Framework.Graphics.VertexElementFormat",
     "Microsoft.Xna.Framework.Graphics.VertexElementUsage",
     "Microsoft.Xna.Framework.Graphics.Viewport",
+    "Microsoft.Xna.Framework.IDrawable",
     "Microsoft.Xna.Framework.IGameComponent",
     "Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "Microsoft.Xna.Framework.IUpdateable",
     "Microsoft.Xna.Framework.Input.ButtonState",
     "Microsoft.Xna.Framework.Input.Buttons",
     "Microsoft.Xna.Framework.Input.GamePadButtons",
@@ -2333,7 +2308,6 @@
     "Microsoft.Xna.Framework.FrameworkDispatcher",
     "Microsoft.Xna.Framework.GameComponent",
     "Microsoft.Xna.Framework.GameComponentCollection",
-    "Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
     "Microsoft.Xna.Framework.GameWindow",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
     "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
@@ -2383,8 +2357,6 @@
     "Microsoft.Xna.Framework.Graphics.RenderTarget2D",
     "Microsoft.Xna.Framework.Graphics.RenderTargetBinding",
     "Microsoft.Xna.Framework.Graphics.RenderTargetCube",
-    "Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-    "Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
     "Microsoft.Xna.Framework.Graphics.SamplerState",
     "Microsoft.Xna.Framework.Graphics.SamplerStateCollection",
     "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
@@ -2401,8 +2373,6 @@
     "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
     "Microsoft.Xna.Framework.Graphics.VertexPositionTexture",
     "Microsoft.Xna.Framework.GraphicsDeviceInformation",
-    "Microsoft.Xna.Framework.IDrawable",
-    "Microsoft.Xna.Framework.IUpdateable",
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadCapabilities",
     "Microsoft.Xna.Framework.Input.Mouse",
@@ -6273,6 +6243,7 @@
       "expectedKind": "class",
       "actualKind": "struct",
       "baseType": "System.Object",
+      "baseRelationship": "DIRECT",
       "pureManaged": true,
       "referenceProjection": "*AudioListener",
       "accessorPairs": 4,
@@ -6434,6 +6405,7 @@
       "expectedKind": "class",
       "actualKind": "struct",
       "baseType": "System.Object",
+      "baseRelationship": "DIRECT",
       "pureManaged": true,
       "referenceProjection": "*AudioEmitter",
       "accessorPairs": 5,
@@ -6634,6 +6606,7 @@
       "fallibleGetters": 0,
       "fallibleSetters": 0,
       "fallibleOperations": 0,
+      "eventAccessors": 0,
       "errorResults": 0,
       "members": [
         {
@@ -6735,6 +6708,7 @@
       "fallibleGetters": 1,
       "fallibleSetters": 1,
       "fallibleOperations": 0,
+      "eventAccessors": 0,
       "errorResults": 2,
       "members": [
         {
@@ -6868,6 +6842,7 @@
       "fallibleGetters": 0,
       "fallibleSetters": 0,
       "fallibleOperations": 1,
+      "eventAccessors": 0,
       "errorResults": 1,
       "members": [
         {
@@ -6905,6 +6880,7 @@
       "fallibleGetters": 0,
       "fallibleSetters": 0,
       "fallibleOperations": 3,
+      "eventAccessors": 0,
       "errorResults": 3,
       "members": [
         {
@@ -6971,6 +6947,7 @@
       "expectedKind": "class",
       "actualKind": "struct",
       "baseType": "System.Object",
+      "baseRelationship": "DIRECT",
       "pureManaged": true,
       "referenceProjection": "*PresentationParameters",
       "accessorPairs": 10,
@@ -7347,6 +7324,7 @@
       "expectedKind": "struct",
       "actualKind": "struct",
       "baseType": "System.ValueType",
+      "baseRelationship": "DIRECT",
       "pureManaged": true,
       "referenceProjection": "TouchCollection",
       "accessorPairs": 1,
@@ -7641,6 +7619,7 @@
       "expectedKind": "struct",
       "actualKind": "struct",
       "baseType": "System.ValueType",
+      "baseRelationship": "DIRECT",
       "pureManaged": true,
       "referenceProjection": "",
       "accessorPairs": 0,
@@ -7716,6 +7695,7 @@
       "expectedKind": "class",
       "actualKind": "struct",
       "baseType": "System.Object",
+      "baseRelationship": "DIRECT",
       "pureManaged": true,
       "referenceProjection": "*GameServiceContainer",
       "accessorPairs": 0,
@@ -7793,6 +7773,422 @@
       "status": "PASS"
     }
   ],
+  "foundation23InterfaceClosures": [
+    {
+      "xna": "Microsoft.Xna.Framework.IUpdateable",
+      "goName": "IUpdateable",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework",
+      "sourceTypes": 1,
+      "sourceIdentities": 5,
+      "expectedGoIdentities": 7,
+      "targetTypes": 1,
+      "targetGoIdentities": 7,
+      "localDiagnostics": 0,
+      "expectedKind": "interface",
+      "actualKind": "interface",
+      "classified": true,
+      "boundary": "PURE_MANAGED",
+      "accessorPairs": 0,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 0,
+      "eventAccessors": 4,
+      "errorResults": 4,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.IUpdateable::Update(Microsoft.Xna.Framework.GameTime)",
+          "sourceKind": "method",
+          "name": "Update",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IUpdateable::Enabled()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "Enabled",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IUpdateable::UpdateOrder()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "UpdateOrder",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "int32"
+          ],
+          "actualResults": [
+            "int32"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IUpdateable::EnabledChanged()",
+          "sourceKind": "event",
+          "name": "AddEnabledChangedHandler",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "EventSubscription",
+            "error"
+          ],
+          "actualResults": [
+            "EventSubscription",
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IUpdateable::EnabledChanged()",
+          "sourceKind": "event",
+          "name": "RemoveEnabledChangedHandler",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IUpdateable::UpdateOrderChanged()",
+          "sourceKind": "event",
+          "name": "AddUpdateOrderChangedHandler",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "EventSubscription",
+            "error"
+          ],
+          "actualResults": [
+            "EventSubscription",
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IUpdateable::UpdateOrderChanged()",
+          "sourceKind": "event",
+          "name": "RemoveUpdateOrderChangedHandler",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.IDrawable",
+      "goName": "IDrawable",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework",
+      "sourceTypes": 1,
+      "sourceIdentities": 5,
+      "expectedGoIdentities": 7,
+      "targetTypes": 1,
+      "targetGoIdentities": 7,
+      "localDiagnostics": 0,
+      "expectedKind": "interface",
+      "actualKind": "interface",
+      "classified": true,
+      "boundary": "PURE_MANAGED",
+      "accessorPairs": 0,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 0,
+      "eventAccessors": 4,
+      "errorResults": 4,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.IDrawable::Draw(Microsoft.Xna.Framework.GameTime)",
+          "sourceKind": "method",
+          "name": "Draw",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": null,
+          "actualResults": null,
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IDrawable::Visible()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "Visible",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "bool"
+          ],
+          "actualResults": [
+            "bool"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IDrawable::DrawOrder()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "name": "DrawOrder",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "int32"
+          ],
+          "actualResults": [
+            "int32"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IDrawable::VisibleChanged()",
+          "sourceKind": "event",
+          "name": "AddVisibleChangedHandler",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "EventSubscription",
+            "error"
+          ],
+          "actualResults": [
+            "EventSubscription",
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IDrawable::VisibleChanged()",
+          "sourceKind": "event",
+          "name": "RemoveVisibleChangedHandler",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IDrawable::DrawOrderChanged()",
+          "sourceKind": "event",
+          "name": "AddDrawOrderChangedHandler",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "EventSubscription",
+            "error"
+          ],
+          "actualResults": [
+            "EventSubscription",
+            "error"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.IDrawable::DrawOrderChanged()",
+          "sourceKind": "event",
+          "name": "RemoveDrawOrderChangedHandler",
+          "expectedFallible": true,
+          "actualFallible": true,
+          "expectedResults": [
+            "error"
+          ],
+          "actualResults": [
+            "error"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
+  "foundation23ManagedClassClosures": [
+    {
+      "xna": "Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+      "sourceKind": "class",
+      "valueSemantics": false,
+      "goName": "GameComponentCollectionEventArgs",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework",
+      "sourceTypes": 1,
+      "sourceIdentities": 2,
+      "expectedGoIdentities": 2,
+      "targetTypes": 1,
+      "targetGoIdentities": 2,
+      "localDiagnostics": 0,
+      "expectedKind": "class",
+      "actualKind": "struct",
+      "baseType": "System.EventArgs",
+      "baseRelationship": "EventArgs",
+      "pureManaged": true,
+      "referenceProjection": "*GameComponentCollectionEventArgs",
+      "accessorPairs": 0,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 0,
+      "errorResults": 0,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.GameComponentCollectionEventArgs::.ctor(Microsoft.Xna.Framework.IGameComponent)",
+          "sourceKind": "constructor",
+          "goKind": "func",
+          "name": "NewGameComponentCollectionEventArgs",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "*GameComponentCollectionEventArgs"
+          ],
+          "actualResults": [
+            "*GameComponentCollectionEventArgs"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.GameComponentCollectionEventArgs::GameComponent()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "GameComponentCollectionEventArgs",
+          "name": "GameComponent",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "IGameComponent"
+          ],
+          "actualResults": [
+            "IGameComponent"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+      "sourceKind": "class",
+      "valueSemantics": false,
+      "goName": "ResourceCreatedEventArgs",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 1,
+      "expectedGoIdentities": 1,
+      "targetTypes": 1,
+      "targetGoIdentities": 1,
+      "localDiagnostics": 0,
+      "expectedKind": "class",
+      "actualKind": "struct",
+      "baseType": "System.EventArgs",
+      "baseRelationship": "EventArgs",
+      "pureManaged": true,
+      "referenceProjection": "",
+      "accessorPairs": 0,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 0,
+      "errorResults": 0,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs::Resource()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "ResourceCreatedEventArgs",
+          "name": "Resource",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "any"
+          ],
+          "actualResults": [
+            "any"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "xna": "Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+      "sourceKind": "class",
+      "valueSemantics": false,
+      "goName": "ResourceDestroyedEventArgs",
+      "packagePath": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics",
+      "sourceTypes": 1,
+      "sourceIdentities": 2,
+      "expectedGoIdentities": 2,
+      "targetTypes": 1,
+      "targetGoIdentities": 2,
+      "localDiagnostics": 0,
+      "expectedKind": "class",
+      "actualKind": "struct",
+      "baseType": "System.EventArgs",
+      "baseRelationship": "EventArgs",
+      "pureManaged": true,
+      "referenceProjection": "",
+      "accessorPairs": 0,
+      "fallibleGetters": 0,
+      "fallibleSetters": 0,
+      "fallibleOperations": 0,
+      "errorResults": 0,
+      "members": [
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs::Name()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "ResourceDestroyedEventArgs",
+          "name": "Name",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "string"
+          ],
+          "actualResults": [
+            "string"
+          ],
+          "status": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs::Tag()",
+          "sourceKind": "property",
+          "accessor": "get",
+          "goKind": "method",
+          "receiver": "ResourceDestroyedEventArgs",
+          "name": "Tag",
+          "expectedFallible": false,
+          "actualFallible": false,
+          "expectedResults": [
+            "any"
+          ],
+          "actualResults": [
+            "any"
+          ],
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
   "bclBaseRelationships": [
     {
       "clrBase": "System.Attribute",
@@ -7860,7 +8256,7 @@
       "status": "MAPPED",
       "addsProjectedSurface": false,
       "derivedTypes": 4,
-      "projectedTypes": 0,
+      "projectedTypes": 3,
       "exportedEmbeddings": 0,
       "rationale": "modelled by the framework EventArgs language adapter; a derived XNA class keeps CLR reference semantics and projects as its own pointer type with no exported embedding",
       "verdict": "PASS"
