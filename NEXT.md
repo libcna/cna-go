@@ -3,18 +3,41 @@
 ## Current state
 
 Foundation Milestones 1 through 33 are complete. Milestones 26 through 33 were
-produced across two sessions as **local commits that have not been pushed**;
-`develop` is ahead of `origin/develop` by those milestone commits plus the docs
-commits that record them.
+produced across two sessions, as the milestone commits listed below plus the
+docs commits that record them. Whether they have reached `origin/develop` is a
+live fact rather than a stored one — see the note under the block.
 
 ```text
-SESSION START   HEAD = origin/develop = cc8d18001935aacf7179341d14c034bc18c2b0a4
-SESSION END     HEAD = 0cfe535
-LAST SOURCE-BEARING COMMIT = 5653899
-                origin/develop unchanged at cc8d180
-                worktree clean, git diff --check clean
-                PUSHED = false
+SESSION START HEAD          = cc8d18001935aacf7179341d14c034bc18c2b0a4
+                              (== origin/develop at session start)
+LAST SOURCE-BEARING COMMIT  = 5653899
+SESSION END                 = the develop HEAD this file is committed in;
+                              resolve with `git rev-parse HEAD`
+PUSHED AT COMMIT TIME       = false; this handoff is published immediately
+                              afterwards, so resolve the live relationship
+                              with `git status --short --branch`
+                              worktree clean, git diff --check clean
 ```
+
+**This file deliberately does not record its own commit's object id.** A commit
+cannot contain the hash it will produce: writing the id in changes the content,
+which changes the id. The previous handoff carried
+`SESSION END HEAD = <literal>`, and amending the docs commit to add one more
+sentence orphaned that literal — it named a commit that had already ceased to be
+part of `develop`. Every hash below therefore names a commit that is **already
+an ancestor** when it is written; the session's own end state is resolved from
+the repository, not asserted in it.
+
+`PUSHED` follows the same rule and for the same reason. A commit cannot record
+whether it was pushed, because the push happens after it exists; recording
+`PUSHED=false` in a file that is published seconds later publishes a false
+claim. What is recorded instead is the state at commit time, which stays true,
+plus the command that resolves the live one.
+
+The same rule governs the other numbers a handoff carries. The deterministic
+artifact hash further down is pinned to the last source-bearing commit for the
+same reason: it is stable, whereas any value measured over this file would be
+invalidated by writing it here.
 
 | #  | commit    | milestone                                             | types | Go identities |
 | -- | --------- | ----------------------------------------------------- | ----- | ------------- |
@@ -329,9 +352,10 @@ git ls-files -z | sort -z | tar --null --files-from=- \
 
 At `5653899`, the last source-bearing commit, that yields sha256
 `45c09221be12d7578c5433b82bf39e3e89e27d05ed83c80a1e19355c9f293d71` over 274
-entries, reproduced twice in the same run. The docs commit that follows changes
-the artifact hash and nothing else — it edits three tracked files and adds none
-— so re-run the command above to get the current one. Extracted into
+entries, reproduced twice in the same run. The docs commits that follow it edit
+tracked files and add none, so the entry count is unchanged and the artifact
+hash is not; re-run the command above for the current value rather than trusting
+a literal measured over a file that is still being written. Extracted into
 `build-consumer/isolated`, it passes every gate with no development-checkout
 dependency and regenerates `api-compat-report.json`,
 `behavior-corpus-report.json`, `packed-vector-exhaustive-report.json` and
@@ -396,7 +420,8 @@ FOUNDATION_MILESTONE_30_COMPLETE=true
 FOUNDATION_MILESTONE_31_COMPLETE=true
 FOUNDATION_MILESTONE_32_COMPLETE=true
 FOUNDATION_MILESTONE_33_COMPLETE=true
-PUSHED=false
+PUSHED_AT_COMMIT_TIME=false
+PUSH_STATE=RESOLVE_WITH_GIT_STATUS_SHORT_BRANCH
 SAFE_MANAGED_COMPONENT_FRONTIER=EXHAUSTED
 NEXT_STEP=ARCHITECTURE_DECISION_XNA_TO_XNA_INHERITANCE
 NEXT_STEP_ALTERNATIVE=BIND_CNA_GAME_EVENT_SIGNALS_FOR_GAME_ACTIVATED_DEACTIVATED_EXITING_DISPOSED
