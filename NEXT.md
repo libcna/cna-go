@@ -2,294 +2,295 @@
 
 ## Current state
 
-Foundation Milestones 1 through 16 are complete. Milestone 15,
-`PURE_MANAGED_BATCH_B`, completed 12 public XNA types carrying 122 mapped Go
-identities in three clusters; Milestone 16 then completed
-`Microsoft.Xna.Framework.Input.GamePadState`, the type that cluster B unlocked.
-
-Foundation 14 was committed and pushed at
-`186f6b163e85587cd949f3c284ac58cde730711c` before this milestone began, so
-Foundation 15 started from a clean, synchronized `develop`. Preserve the
-established namespace, enum, value-struct, interop, and measured-absence rules.
-
-## Foundation 15 batch
+Foundation Milestones 1 through 21 are complete. Milestones 17 through 21 were
+produced in one session as **five local commits that have not been pushed**;
+`develop` is 5 ahead of `origin/develop`.
 
 ```text
-Cluster A — last safe leaf enums (46 identities)
-  Graphics.ColorWriteChannels   6   flags
-  Graphics.StencilOperation     8
-  Graphics.TextureFilter        9
-  Input.GamePadType            10
-  Graphics.Blend               13
-
-Cluster B — GamePad/Mouse value structs (57 identities)
-  Input.GamePadThumbSticks      8
-  Input.GamePadTriggers         8
-  Input.GamePadDPad            10
-  Input.GamePadButtons         17
-  Input.MouseState             14
-
-Cluster C — Touch value structs (19 identities)
-  Input.Touch.GestureSample     7
-  Input.Touch.TouchLocation    12
+START   HEAD = origin/develop = 766e2a0b1c7ed06a2eb67abf00e2ab108afc7551
+FINAL   HEAD = fc18d7b1bf9f41bb3a90d47d27a72222fe4bb4ef
+        origin/develop unchanged at 766e2a0
+        worktree clean, git diff --check clean
 ```
 
-Cluster A closes the safe pure-managed leaf-enum category: no
-dependency-complete missing enum remains anywhere in the graph.
+| # | commit    | milestone                                     | types | Go identities |
+| - | --------- | ---------------------------------------------- | ----- | ------------- |
+| 17 | `54b9989` | pure managed CLR class + per-operation fallibility | 2 | 20 |
+| 18 | `680b52c` | projected CLR interface contracts              | 4     | 18            |
+| 19 | `6dd2fb0` | `System.IntPtr` + `PresentationParameters`     | 1     | 23            |
+| 20 | `2418e9e` | read-only `TouchCollection`                    | 2     | 19            |
+| 21 | `fc18d7b` | `GameServiceContainer`                         | 1     | 4             |
 
-## Two authorities, kept distinct
+Ten types, 84 mapped Go identities.
 
-Public surface remains the pinned contract at SHA-256
-`7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc`.
+## Scoreboard
 
-Reference *behavior* for the value structs was read as IL from the retained
-original assemblies, re-verified by hash:
+```text                        start    final
+TARGET_TYPES                   103      113
+TARGET_MEMBERS                1619     1703
+TOTAL_DIAGNOSTICS              331      321
+MISSING_TYPE                   154      144
+MISSING_MEMBER                 177      177
+COMPLETE_TYPES                  98      108
+PARTIAL_TYPES                    5        5
+MISSING_TYPES                  154      144
+
+INTERFACE_WITNESS_PROJECTIONS   25       25
+PACKFROMVECTOR4_WITNESSES       17       17
+TOVECTOR4_WITNESSES              8        8
+
+mutation inventory             217      347
+behavior corpus                487      564
+```
+
+Every mismatch, leak, allowlist, and unmeasured counter is zero throughout. The
+five protected partial runtime types are untouched: Game 39,
+GraphicsDeviceManager 40, GraphicsDevice 70, SpriteBatch 16, Texture2D 12,
+combined 177.
+
+## Mapping rules this session settled
+
+These are general rules, not per-type exceptions. All are declared in
+`tools/api_compat/mapping-rules.json` and documented in
+`docs/xna-go-mapping.md`.
+
+1. **CLR `class` is not evidence of native backing.** A type is admitted to
+   `pureManagedTypes` only when authoritative XNA IL proves its selected public
+   behavior is entirely managed. Admission changes fallibility and nothing else:
+   a class still projects as `*T`, a struct still projects as `T`. The five
+   native-backed runtime types are deliberately excluded.
+
+2. **Fallibility belongs to one projected operation.** Keys are
+   `constructor|Name`, `method|Name`, `field|Name`, `property-get|Name`,
+   `property-set|Name`, and `property|Name`. The whole-property key still marks
+   both accessors and is correct only where the reference validates on read
+   *and* on write. `ERROR_MAPPING_MISMATCH` names the accessor and the direction
+   of every disagreement.
+
+3. **Interface fallibility comes from reference implementor IL**, in the
+   assembly that declares the interface — never from speculation about an
+   implementor that does not exist. One contract may mix boundaries;
+   `IEffectFog` is the first that does.
+
+4. **`System.IntPtr` projects to `uintptr`**, meaning only the opaque
+   pointer-sized bit value the contract carries at that position.
+   `RAW_HANDLE_LEAK` admits a public `uintptr` **only** where XNA metadata
+   declares `System.IntPtr` at that exact position; everything else still leaks.
+
+5. **A BCL interface whose members the XNA type already declares publicly** adds
+   no projected surface and needs no separate Go interface. Covers
+   `IList<T>` and `System.IServiceProvider`.
+
+6. **A collection that declares its own public enumerator type** projects that
+   type from `GetEnumerator`; the `Iterator<T>` adapter is for collections that
+   declare none.
+
+## Reference quirks now preserved — do not "correct" them
+
+- `AudioListener`/`AudioEmitter` constructors store `Vector3.Zero` **unflipped**
+  while the getters flip, so `Position` and `Velocity` read back with a
+  **negative-zero Z** (`0x80000000`). `Forward` and `Up` do not, because their
+  stored values were flipped once already.
+- `AudioEmitter.set_DopplerScale` guards with `bge.un.s`, so `+0`, `-0`,
+  `+Infinity`, **and every NaN** are accepted; only negative-ordered values
+  throw.
+- `PresentationParameters`'s constructor's only statement is
+  `IsFullScreen = true`, so a fresh descriptor is full-screen on a zero-sized
+  back buffer. XNA 4.0 has **no `Clear`** on this type.
+- `TouchCollection`'s `IList<T>` mutators throw `NotSupportedException`
+  unconditionally, validating nothing first, so `Insert(-99, x)` reports
+  not-supported rather than out-of-range. `CopyTo` checks capacity in **64-bit**
+  arithmetic. `IndexOf` uses the equality operator, so a location `Equals`
+  accepts is missed. `FindById`'s miss yields a **zero** location, not the
+  `Id` -1 sentinel `TryGetPreviousLocation` uses.
+- `GameServiceContainer.AddService` checks for a **duplicate before checking
+  assignability**. `RemoveService` on an unregistered type succeeds and
+  `GetService` on one returns nil with no error.
+
+## Reference authority
+
+Behavior comes from retained original Microsoft assemblies in `~/Downloads/win`,
+verified by hash and read with `ikdasm`. Exception message strings were read
+from each assembly's embedded `.resources` stream with `monodis --mresources`.
 
 ```text
 Microsoft.Xna.Framework.dll             38e7093f52d7474bbc6256906519781a1210d7da50a1c667b52716fcf49ca130
+Microsoft.Xna.Framework.Graphics.dll    560080fc39021c611ca9d076dcebed312faf6d7d1413c2dc523683ea635e9f55
+Microsoft.Xna.Framework.Game.dll        b5dffdd8125abef2a4507ba4e1d2f11062143f0a63d48fe4f298b95ad746a1f0
 Microsoft.Xna.Framework.Input.Touch.dll b0585224c18022c3661057ae79544644c10f33f1dc529678364f3d6b25151c25
+Microsoft.Xna.Framework.Xact.dll        a14d5364dca7cf49fb90639e87ba04d52b59a700dc9198efa5707ce8eae28f0a
+Microsoft.Xna.Framework.Video.dll       17538b1ca9d48a993e2cd88c96b436df08e7abb4aec5d4758eb21feb580d6e06
 ```
 
-They live in `~/Downloads/win/`. `ikdasm` and `monodis` are installed and were
-used to read the IL. Every clamping rule, hash algorithm, ToString layout, and
-equality rule comes from that IL — nothing from a reimplementation.
+Public *surface* remains the pinned contract at SHA-256
+`7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc`. FNA and
+MonoGame remain comparators only and were not consulted.
 
-## Semantics that must not be "corrected"
+## Native provenance — unchanged
 
-- `GamePadThumbSticks` clamps NaN to 1 (XNA `Vector2.Min` keeps its second
-  operand); `GamePadTriggers` propagates NaN (`System.Math.Min`/`Max` do), and
-  `Math.Max(-0, 0)` turns negative zero into positive zero.
-- `GamePadDPad`'s parameter order is `(up, down, left, right)` while its
-  fields are declared `up, right, down, left`.
-- `GamePadButtons` masks match the pinned `Buttons` literals exactly;
-  thumbstick-direction and trigger literals have no field.
-- Game pad values hash via `Helpers.SmartGetHashCode` (XOR of 32-bit words,
-  zero substituted with `Int32.MaxValue`); `MouseState` uses its own XOR with
-  **no** substitution, so a zero snapshot hashes to 0.
-- `TouchLocation.op_Equality` compares all seven fields including both state
-  fields; `Equals(TouchLocation)` ignores both. They disagree by design.
-- Pressed-name accumulators compare against `Pressed` exactly, so an arbitrary
-  raw `ButtonState` contributes no name.
-
-## Structural scoreboard
-
-```text
-TARGET_TYPES=103
-TARGET_MEMBERS=1619
-TOTAL_DIAGNOSTICS=331
-MISSING_TYPE=154
-MISSING_MEMBER=177
-COMPLETE_TYPES=98
-PARTIAL_TYPES=5
-MISSING_TYPES=154
-
-INTERFACE_WITNESS_PROJECTIONS=25
-PACKFROMVECTOR4_WITNESS_PROJECTIONS=17
-TOVECTOR4_WITNESS_PROJECTIONS=8
-```
-
-Every unexpected-symbol, mapping-mismatch, native-leak, allowlist, and
-unmeasured counter is zero. All 25 Foundation-14 enum closures, all 5
-Foundation-15 enum closures, and all 7 value-struct closures report `PASS`,
-the last with `errorResults: 0`.
-
-The five partial types are unchanged: Game 39, GraphicsDeviceManager 40,
-GraphicsDevice 70, SpriteBatch 16, Texture2D 12; combined 177.
-
-## Verifier and behavior evidence
-
-Behavior corpus: 487 observations, 487 assertions, zero failures.
-
-The enum machinery is now milestone-agnostic: `TestBatchEnumMappedContracts`
-and `TestBatchEnumDefectsRejectedForEveryType` cover all 30 pinned enums and
-167 enum identities across 366 negative cases.
-`TestFoundation15ValueStructDefectsRejectedForEveryType` adds 70 value-struct
-negative cases across 10 defects, including `projected_as_class` (value
-semantics), `synthetic_error_result` (infallibility), and `unexpected_mutator`
-(immutability). The declared mutation inventory is 217 cases. The value-struct defect matrix
-spans 8 types, 91 identities, and 80 negative cases across both milestones.
-
-A verifier defect was fixed: `System.TimeSpan` is now package-qualified as
-`framework.TimeSpan` outside the framework package, matching what
-`mapping-rules.json` always declared. Expected counts are unchanged at
-257 / 3,243.
-
-## Native ABI provenance — Foundation-14 caveat corrected
-
-The Foundation-14 handoff claimed the exact ABI-0.7 library admitted in
-Foundation 11 was no longer on this machine. **That was wrong.** A complete
-search of all 47 `libcna_c_api.so*` files on the machine found it, still
-hash-matching:
-
-```text
-sha256 e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f
-```
-
-It had survived only in a Foundation-11 era working directory under the system
-temporary directory. It has since been **preserved durably**, byte-identical,
-at:
+CNA was **not rebuilt**. The exact Foundation-11 pinned binary reproduces both
+committed native reports.
 
 ```text
 ~/deps/cna-c-abi-0.7.0-pinned-foundation11/libcna_c_api.so
+sha256 e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f
+
+EXACT_BINARY_PROVENANCE=VERIFIED
+ABI_COMPATIBILITY=VERIFIED          23/67/96/28/2/5, 0 missing, 0 mismatches
+BEHAVIORAL_EQUIVALENCE=VERIFIED     on the exercised 20-cycle stress surface
+REPRODUCED_BUILD_OUTPUT=NOT_ESTABLISHED
 ```
 
-That directory carries a `PROVENANCE.md` recording the three distinctions
-below. Verify the copy by hash rather than by trusting any path:
+Rediscover it by hash rather than by path:
 
 ```sh
-sha256sum ~/deps/cna-c-abi-0.7.0-pinned-foundation11/libcna_c_api.so
-# e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f
-
-# Or rediscover it anywhere on the machine by hash alone:
-find / -name 'libcna_c_api.so*' -type f 2>/dev/null \
-  -exec sha256sum {} + | grep ^e912cd1d
+find / -name 'libcna_c_api.so*' -type f 2>/dev/null -exec sha256sum {} + | grep ^e912cd1d
 ```
 
-The header root `~/deps/cna-c-abi-0.7.0/include` reproduces the committed
-report against it, so no part of the recipe depends on the temporary
-directory any more.
+`native_abi` reproduces the committed report key for key, differing only in
+`header_root`, which the committed evidence stores normalized. `native_stress`
+reproduces every counter identically with `GO_RACE_STATUS=PASS`.
 
-Re-running `native_abi` against that exact binary reproduces the committed
-report key for key, differing only in `header_root`, which the committed
-evidence stores normalized. The native stress suite reproduces every counter
-identically with `GO_RACE_STATUS=PASS`.
+## Toolchain
+
+The Go toolchain lived only under the system temporary directory. It is now
+preserved durably, byte-for-byte, at `~/deps/go1.24.4` (go1.24.4 linux/amd64),
+so a future session does not have to re-download it. `GOCACHE` was already
+durable at `~/.cache/go-build`.
+
+## The frontier is exhausted — the next milestone is a decision
+
+**Every dependency-complete missing type has been individually re-derived from
+IL this session.** All eleven that remain are deferred with evidence, not with
+an assumption:
+
+| type | why |
+| ---- | --- |
+| `Graphics.DisplayMode` | `assembly` constructor only; values come from display enumeration |
+| `Input.GamePadCapabilities` | `assembly`/`private` constructors only; device capability |
+| `Input.Touch.TouchPanelCapabilities` | **no constructor at all**; device capability |
+| `Audio.RendererDetail` | `assembly` constructor only; values come from XACT renderer enumeration |
+| `Audio.AudioCategory` | `assembly` constructor needing an `AudioEngine`; every method P/Invokes `UnsafeNativeMethods.Engine` |
+| `Audio.SoundEffectInstance` | `assembly` constructors; 18 throw sites through `Helpers.ThrowExceptionFromErrorCode` |
+| `Graphics.EffectAnnotation` | `assembly` constructor; unmanaged `calli` through `GraphicsHelpers.GetExceptionFromResult` |
+| `Media.Video` | `assembly` constructor needing a `GraphicsDevice` and a content file |
+| `Media.MediaSource` | `assembly` constructor; values come from the media backend |
+| `FrameworkDispatcher` | `Update()` drives the microphone, dynamic-audio, media, and storage pumps |
+| `Input.Mouse` | device state plus `MouseMessageHooker` |
+| `TitleContainer` | needs `TitleLocation.Path` and the file system |
+
+Everything else in the profile is blocked on an **unmapped BCL shape**, and each
+of those is a new public-API decision that this session deliberately did not
+take. Ranked by how many missing types each would unblock:
 
 ```text
-EXACT_BINARY_PROVENANCE=VERIFIED
-ABI_COMPATIBILITY=VERIFIED           23/67/96/28/2/5, 0 missing, 0 mismatches
-BEHAVIORAL_EQUIVALENCE=VERIFIED      on the exercised 20-cycle stress surface
-REPRODUCED_BUILD_OUTPUT=NOT_ESTABLISHED   CNA was not rebuilt from source
+  26  System.IDisposable                             disposal / ownership design
+  24  System.EventArgs        \ 
+  21  System.EventHandler`1   / the event handler type
+  13  System.ComponentModel.ITypeDescriptorContext   the Design namespace
+  12  System.Globalization.CultureInfo
+  12  System.Collections.IDictionary
+   9  System.Collections.ObjectModel.ReadOnlyCollection`1
+   8  System.Exception (+3 ExternalException)        CLR exception types as Go types
+   6  System.Attribute                               content serializer attributes
+   4  System.Collections.Generic.List`1+Enumerator
 ```
 
-`~/deps/cna-c-abi-0.7.0/libcna_c_api.so`
-(`c62949d23d3745964f5e557a06665875621ed4cb6e2930e3f282afd5911f2dcb`) is a
-**different, more recent build** of the same ABI. It passes every gate
-identically but is not the admitted binary and must never be described as
-byte-identical to it. The preservation step did not replace, modify, or rebuild
-it, and CNA was not rebuilt from source at any point.
+### The two highest-value decisions
+
+**1. The event handler type** (`System.EventArgs` + `System.EventHandler<T>`).
+Nine missing types are blocked on this *alone*, including
+`Graphics.GraphicsResource` (fan-out 10), `IDrawable`, `IUpdateable`, and
+`IGraphicsDeviceService`. The event *accessor* mapping is already settled
+(`AddXHandler` returning `EventSubscription`, `RemoveXHandler` taking one); what
+is unsettled is the handler parameter type, which currently degrades to `any`
+through an undeclared `mapType` fallthrough. Foundation 18 deferred three
+interfaces on exactly this rather than lock in `any`. Plausible options:
+
+- a named `EventHandler` func type plus an `EventArgs` adapter, added to
+  `languageAdapters` alongside `EventSubscription`;
+- a generic `EventHandlerOf[T]` func type mirroring the CLR generic;
+- keep `any` but *declare* it, accepting a lossy signature.
+
+**2. Disposal and ownership** (`System.IDisposable`). Twenty-six missing types
+declare it. It is also the second half of what `GraphicsResource` needs, and it
+touches the protected partial `GraphicsDevice`. The prompt-level guidance has
+consistently deferred this as a separate architecture milestone.
+
+Resolving both would unblock `GraphicsResource` and, through it, the whole
+graphics resource family.
 
 ## Re-running gates
 
 ```sh
+export PATH=~/deps/go1.24.4/bin:$PATH
+export CNA_NATIVE_LIBRARY=~/deps/cna-c-abi-0.7.0-pinned-foundation11/libcna_c_api.so
+
 gofmt -l .
 go vet ./...
 go test ./...
-go test -race ./...          # api_compat takes ~135s under -race
+go test -race ./...          # api_compat takes ~200s under -race
 go build ./...
 go build -trimpath ./...
-go run ./tools/api_compat --mode report
-go run ./tools/api_compat --mode strict   # expected 331 deferred diagnostics
+go run ./tools/api_compat --mode strict     # expected red: 321 deferred diagnostics
 go run ./tools/api_compat --mode leak-only
 go run ./tools/behavior
 go run ./tools/packed_vector_qualify
 go run ./tools/capabilities --check
-go run ./tools/native_abi -headers "$PINNED_HEADERS" -library "$PINNED_LIBRARY" -output "$SCRATCH/native-abi-verify.json"
+go run ./tools/native_abi -headers ~/deps/cna-c-abi-0.7.0/include \
+    -library "$CNA_NATIVE_LIBRARY" -output "$SCRATCH/native-abi-verify.json"
 go run -race ./tools/native_stress --race-status PASS --output "$SCRATCH/native-stress-verify.json"
+go run ./tools/api_compat --mode report     # run LAST so committed evidence keeps report mode
 git diff --check
 ```
 
-Rerun `--mode report` last so the committed evidence keeps its report mode.
-Always send native reports to an explicit `-output` under the scratchpad so a
-locally rebuilt library or an absolute header path never rewrites the
+Always send native reports to an explicit `-output` under a scratch directory so
+a locally rebuilt library or an absolute header path never rewrites the
 committed evidence.
 
-## Dependency graph
+### Deterministic artifact and isolated consumer
 
-The counting rule is unchanged: base type, declared direct interfaces, and
-every member signature type are public-signature dependencies; mapped BCL
-types are satisfied; the five partial runtime types count as present. The
-count moved 55 → 46 across Foundations 15 and 16.
-
-Cluster B unlocked `Microsoft.Xna.Framework.Input.GamePadState`, which
-Foundation 16 completed. That unlocked nothing further that is safe.
-
-## No safe candidate remains
-
-**After Foundation 16 the safe pure-managed seam is exhausted.** Every
-dependency-complete missing type that is still fully resolved is blocked on
-either a public-API policy decision or a fabricated device capability. Search
-is no longer the bottleneck — a decision is. The next session should not spend
-effort re-ranking; it should start from the list below.
-
-## Blocked on a policy decision, not on semantics
-
-Everything else that is dependency-complete and fully resolved is blocked on a
-decision that shapes public API policy. These are recorded so the next session
-does not re-derive them:
-
-1. **Pure managed CLR classes project as fallible.** `mapType` treats every
-   CLR `class` as a native-backed facade, so every member gains a Go `error`.
-   That is right for `Game`, `GraphicsDevice`, and `Texture2D` and wrong for
-   pure managed classes. The IL proves `Audio.AudioListener` is nine pure
-   field accesses: `Position`/`Velocity` default to `Vector3.Zero`,
-   `Forward`/`Up` to `Vector3.Forward`/`Vector3.Up`, and the internal
-   `FlipHandedness` (X, Y, −Z) is an involution applied on both read and
-   write, so public round-trips are identity. Projecting it honestly means
-   classifying it as a managed type. `managedTypes` already exists for exactly
-   this, but extending it changes projected public signatures.
-
-2. **Setter-only fallibility cannot be expressed.** `Audio.AudioEmitter` adds
-   `DopplerScale`, which defaults to 1 and whose **setter** throws
-   `ArgumentOutOfRangeException` when the value is `< 0` — the IL uses
-   `bge.un`, so **NaN does not throw**. The getter is pure field access. The
-   existing `managedFallibleMembers` table marks a property fallible on *both*
-   accessors, so an honest projection needs a new setter-only key.
-
-3. **Managed-interface projection policy.** `IEffectMatrices`, `IEffectFog`,
-   `IGameComponent`, and `IGraphicsDeviceManager` are dependency-complete but
-   projecting settable-property interfaces needs a general decision about
-   error results and witness policy, with no implementor in scope.
-
-4. **`PresentationParameters`** is dependency-complete but exposes
-   `DeviceWindowHandle` as `System.IntPtr`, which would surface a raw handle
-   in public Go API and interacts with the `RAW_HANDLE_LEAK` gate.
-
-Types whose only surface is read-only device capability with no public
-constructor — `TouchPanelCapabilities`, `GamePadCapabilities`,
-`RendererDetail`, `DisplayMode` — stay deferred permanently under the
-no-fabricated-capability rule, not pending a decision.
-
-## The next milestone is a decision, not a type
-
-Foundation 16 completed `GamePadState`: 15 source identities, 15 mapped Go
-identities, `errorResults: 0`. Its private XInput snapshot is reproduced as
-unexported managed bit packing, only the `IndependentAxes` dead-zone mode is
-reachable and therefore implemented, and every packed bit is measured to equal
-its pinned `Buttons` literal. See
-`docs/foundation-16-game-pad-state-evidence.md`.
-
-The productive frontier is now group 1 above. Recommended order once the policy
-is settled:
-
-1. Classify pure managed CLR classes so they stop projecting fallible members,
-   then complete `Audio.AudioListener` (9 identities, fan-out 3).
-2. Add setter-only fallibility, then complete `Audio.AudioEmitter`
-   (11 identities, fan-out 3).
-3. Decide managed-interface projection, then take `IEffectMatrices` and
-   `IEffectFog` (fan-out 5 each).
-4. Decide whether `System.IntPtr` may appear in public Go surface at all; that
-   gates `PresentationParameters` (13 identities, fan-out 2) and interacts with
-   the `RAW_HANDLE_LEAK` gate.
-
-`Graphics.GraphicsResource` (fan-out 11) remains the largest single unlock and
-the real architectural milestone, but it needs the disposal/ownership design
-plus the partial `GraphicsDevice`, so it is not a next step until the questions
-above are settled.
-
-```text
-SELECTED_ONLY=true
-STARTED=false
+```sh
+git ls-files -z | sort -z | tar --null --files-from=- \
+  --transform 's,^,cna-go/,' --owner=0 --group=0 --numeric-owner \
+  --mtime='@0' --mode='u+rw,go+r,go-w' --sort=name -cf - | gzip -n > OUT.tar.gz
 ```
 
-## Worktree provenance
+At `fc18d7b` that yields sha256
+`0244074eb42a0b163aa40b38230558aa9c07368270bc28b33cd08e4444dce8a4` over 237
+entries, reproduced independently in the same run. Extracted into
+`build-consumer/isolated`, it passes every gate with **no development-checkout
+dependency** and regenerates `api-compat-report.json` and
+`behavior-corpus-report.json` byte-identically to the committed evidence. The
+external consumer fixture in `build-consumer/consumer` builds against it and
+runs at exactly 60 and 600 native Draw callbacks.
 
-Foundation 15 started on clean `develop` with `HEAD` and `origin/develop` both
-at `186f6b163e85587cd949f3c284ac58cde730711c` and landed as exactly one commit.
-Foundation 16 started from that commit and landed as one more. Neither used
-per-type commits and history was not rewritten.
+### Maintained template
+
+`cna-go-template` is unchanged, on `develop` at `6525484`, worktree clean, and
+runs at exactly 60 and 600 native Draw callbacks against the pinned binary.
+
+## Qualification artifact caveats — unchanged
+
+CNA ABI 0.7.0, HEADLESS renderer, NULL audio. Native draw execution is proven;
+visible rendering is not. Windows, macOS, Android, iOS, and Web/Wasm are not
+qualified. Content/XNB, Effects/3D, Audio, Media, Storage, and most of XNA
+remain unimplemented.
+
+Nothing completed in Foundations 17–21 claims a runtime capability. The audio
+descriptors open no device and create no XACT state; the effect and device
+interfaces are declarations with no implementation; `PresentationParameters` is
+a descriptor that creates, resets, enumerates, and presents nothing;
+`TouchCollection` polls no panel; and `GameServiceContainer` is not reachable
+from `Game`, which still exposes no `Services` property.
 
 ```text
-FOUNDATION_MILESTONE_15_COMPLETE=true
-BATCH_NAME=PURE_MANAGED_BATCH_B
-FOUNDATION_MILESTONE_16_COMPLETE=true
+FOUNDATION_MILESTONE_17_COMPLETE=true
+FOUNDATION_MILESTONE_18_COMPLETE=true
+FOUNDATION_MILESTONE_19_COMPLETE=true
+FOUNDATION_MILESTONE_20_COMPLETE=true
+FOUNDATION_MILESTONE_21_COMPLETE=true
+PUSHED=false
+SAFE_MANAGED_FRONTIER=EXHAUSTED
+NEXT_STEP=PUBLIC_API_DECISION
 ```
