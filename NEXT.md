@@ -10,11 +10,7 @@ fact rather than a stored one — see the note under the block.
 ```text
 SESSION START HEAD          = 605b350a509af8399f742be989a580fb83db22cf
                               (== origin/develop at session start)
-LAST SOURCE-BEARING COMMIT  = the Foundation 37 commit this file is
-                              committed alongside; `16181b0` is the last one
-                              that was already an ancestor when this line was
-                              written, and is what the artifact hash below is
-                              pinned to
+LAST SOURCE-BEARING COMMIT  = c42abd4
 SESSION END                 = the develop HEAD this file is committed in;
                               resolve with `git rev-parse HEAD`
 PUSHED AT COMMIT TIME       = false; resolve the live relationship with
@@ -39,7 +35,7 @@ the last source-bearing commit for the same reason.
 | 34 | `9f661db` | the native Game event bridge, and Game's four events    | 0     | 11            |
 | 35 | `9872de1` | Game's four frame-boundary protected virtuals           | 0     | 4             |
 | 36 | `16181b0` | the signal and frame-hook registries, measured          | 0     | 0             |
-| 37 | *(this session's last source commit)* | the bridge lifetime, proved | 0 | 0 |
+| 37 | `c42abd4` | the bridge lifetime, proved rather than argued          | 0     | 0             |
 
 Fifteen members completed, all in `Game`, all inside the authorized native
 lifecycle slice. No type became complete and none was meant to. Two of the four
@@ -389,12 +385,12 @@ git ls-files -z | sort -z | tar --null --files-from=- \
   --mtime='@0' --mode='u+rw,go+r,go-w' --sort=name -cf - | gzip -n > OUT.tar.gz
 ```
 
-At `16181b0`, the last source-bearing commit, that yields sha256
-`d9361e2772b6b1b64659d800ed5a51b58f1ed494326b9cfbf468a31f75ffcb43` over 282
+At `c42abd4`, the last source-bearing commit, that yields sha256
+`4dacb8b2eed1e11fbe59dfa7969cd2563367d09ccd3f5029219477e1480108ee` over 284
 entries, reproduced twice in the same run. The docs commit that follows it edits
-tracked files and adds none, so the entry count is unchanged and the artifact
-hash is not; re-run the command above for the current value rather than trusting
-a literal measured over a file that is still being written.
+tracked files and adds none, so the entry count stays 284 while the hash does
+not; re-run the command above for the current value rather than trusting a
+literal measured over a file that is still being written.
 
 Extracted into `build-consumer/isolated`, it passes every gate with no
 development-checkout dependency and regenerates `api-compat-report.json`,
