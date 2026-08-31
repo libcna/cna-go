@@ -12,8 +12,8 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 118,
-    "DECLARED_INTERFACE_CONFORMANCE": 2,
+    "COMPLETE_TYPES": 119,
+    "DECLARED_INTERFACE_CONFORMANCE": 3,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -41,8 +41,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 145,
-    "MISSING_TYPE": 134,
-    "MISSING_TYPES": 134,
+    "MISSING_TYPE": 133,
+    "MISSING_TYPES": 133,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1831,
-    "TARGET_TYPES": 123,
-    "TOTAL_DIAGNOSTICS": 279,
+    "TARGET_MEMBERS": 1860,
+    "TARGET_TYPES": 124,
+    "TOTAL_DIAGNOSTICS": 278,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -72,7 +72,7 @@
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
     "XNA_COMPOSED_BASE_RELATIONSHIPS": 1,
     "XNA_COMPOSED_DERIVED_TYPES": 2,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 0,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 1,
     "XNA_DEFERRED_BASE_BLOCKERS": 23,
     "XNA_INHERITED_ATTRIBUTED_MEMBERS": 24,
     "XNA_INHERITED_MEMBER_PROJECTIONS": 24,
@@ -306,12 +306,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Design.Vector4Converter",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:Vector4Converter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.DrawableGameComponent",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:DrawableGameComponent",
       "message": "mapped Go type is absent"
     },
     {
@@ -1774,6 +1768,7 @@
     "Microsoft.Xna.Framework.CurveLoopType",
     "Microsoft.Xna.Framework.CurveTangent",
     "Microsoft.Xna.Framework.DisplayOrientation",
+    "Microsoft.Xna.Framework.DrawableGameComponent",
     "Microsoft.Xna.Framework.GameComponent",
     "Microsoft.Xna.Framework.GameComponentCollection",
     "Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
@@ -2091,7 +2086,6 @@
     "Microsoft.Xna.Framework.Design.Vector2Converter",
     "Microsoft.Xna.Framework.Design.Vector3Converter",
     "Microsoft.Xna.Framework.Design.Vector4Converter",
-    "Microsoft.Xna.Framework.DrawableGameComponent",
     "Microsoft.Xna.Framework.FrameworkDispatcher",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
     "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
@@ -8919,6 +8913,14 @@
   ],
   "declaredInterfaceConformance": [
     {
+      "owner": "Microsoft.Xna.Framework.DrawableGameComponent",
+      "goOwner": "*DrawableGameComponent",
+      "clrInterface": "Microsoft.Xna.Framework.IDrawable",
+      "goInterface": "IDrawable",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
       "owner": "Microsoft.Xna.Framework.GameComponent",
       "goOwner": "*GameComponent",
       "clrInterface": "Microsoft.Xna.Framework.IGameComponent",
@@ -9524,7 +9526,7 @@
     {
       "base": "Microsoft.Xna.Framework.GameComponent",
       "derivedTypes": 2,
-      "projectedDerivedTypes": 0,
+      "projectedDerivedTypes": 1,
       "positions": 0,
       "positionsOnProjectedCarriers": 0,
       "requirement": "NONE",
@@ -9960,9 +9962,10 @@
         {
           "derived": "Microsoft.Xna.Framework.DrawableGameComponent",
           "goDerived": "DrawableGameComponent",
+          "baseField": "component",
           "inheritedCLRMembers": 7,
           "inheritedProjections": 12,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",

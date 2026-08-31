@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 655,
-    "ASSERTIONS": 655,
+    "OBSERVATIONS": 661,
+    "ASSERTIONS": 661,
     "FAILURES": 0
   },
   "observations": [
@@ -5173,6 +5173,54 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "drawable-game-component.constructor-defaults",
+      "group": "DRAWABLE_GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0,true,0,true",
+      "actual": "true,0,true,0,true",
+      "passed": true
+    },
+    {
+      "id": "drawable-game-component.the-two-throw-sites-carry-different-messages",
+      "group": "DRAWABLE_GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "drawable-game-component.a-registered-service-is-resolved-across-packages",
+      "group": "DRAWABLE_GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "drawable-game-component.setters-announce-only-on-change",
+      "group": "DRAWABLE_GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,1,false,5",
+      "actual": "1,1,false,5",
+      "passed": true
+    },
+    {
+      "id": "drawable-game-component.satisfies-the-three-component-contracts",
+      "group": "DRAWABLE_GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "drawable-game-component.dispose-defers-the-flag-to-the-base",
+      "group": "DRAWABLE_GAME_COMPONENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,0,2",
+      "actual": "true,true,0,2",
       "passed": true
     },
     {

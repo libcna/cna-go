@@ -2504,3 +2504,104 @@ func TestGameWindowOrientationMembersAreTheReferenceConstants(t *testing.T) {
 		t.Fatal("SetSupportedOrientations changed CurrentOrientation; the reference stores nothing")
 	}
 }
+
+// TestDrawableGameComponentFromOutside proves the cross-package bridge from a
+// module that can see only exported names, which is the only place it can be
+// proved: this module imports BOTH packages, exactly as a real consumer must to
+// register an IGraphicsDeviceService at all.
+func TestDrawableGameComponentFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	component := framework.NewDrawableGameComponent(game)
+
+	// The constructor's own defaults.
+	if !component.Visible() || component.DrawOrder() != 0 || component.Game() != game {
+		t.Fatalf("constructor defaults: Visible=%t DrawOrder=%d GameMatches=%t",
+			component.Visible(), component.DrawOrder(), component.Game() == game)
+	}
+
+	// With no service registered, both throw sites report the reference's own
+	// messages, and they are DIFFERENT messages.
+	if err := component.Initialize(); err == nil {
+		t.Fatal("Initialize succeeded with no graphics device service")
+	} else if !strings.Contains(err.Error(), "Drawable components require a graphics device service in the game service container.") {
+		t.Fatalf("Initialize = %v, want the reference's message", err)
+	}
+	if _, err := graphics.DrawableGameComponentGraphicsDevice(component); err == nil {
+		t.Fatal("GraphicsDevice succeeded before Initialize")
+	} else if !strings.Contains(err.Error(), "The GraphicsDevice property cannot be used before Initialize has been called.") {
+		t.Fatalf("GraphicsDevice = %v, want the reference's message", err)
+	}
+
+	// A consumer's own service resolves across the package boundary.
+	published := &graphics.GraphicsDevice{}
+	service := &canaryDeviceService{device: published}
+	token := reflect.TypeOf((*graphics.IGraphicsDeviceService)(nil)).Elem()
+	if err := game.Services().AddService(token, service); err != nil {
+		t.Fatalf("AddService: %v", err)
+	}
+	if err := component.Initialize(); err != nil {
+		t.Fatalf("Initialize with a registered service: %v", err)
+	}
+	device, err := graphics.DrawableGameComponentGraphicsDevice(component)
+	if err != nil {
+		t.Fatalf("GraphicsDevice after Initialize: %v", err)
+	}
+	if device != published {
+		t.Fatal("GraphicsDevice returned a device other than the service's own")
+	}
+}
+
+// TestDrawableGameComponentIsTheProfilesShippedIDrawable records what the type
+// is for: before it existed the live IDrawable implementors were consumers'
+// own types, and Game's draw list had nothing of Microsoft's own in it.
+func TestDrawableGameComponentIsTheProfilesShippedIDrawable(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	component := framework.NewDrawableGameComponent(game)
+	var _ framework.IDrawable = component
+	var _ framework.IUpdateable = component
+	var _ framework.IGameComponent = component
+
+	if err := game.Components().Add(component); err != nil {
+		t.Fatalf("Components.Add: %v", err)
+	}
+	if got := game.Components().Count(); got != 1 {
+		t.Fatalf("Components.Count = %d after adding a DrawableGameComponent", got)
+	}
+	// Removing it through the collection is what Dispose does internally, and
+	// it works from outside for the same reason.
+	removed, err := game.Components().Remove(component)
+	if err != nil {
+		t.Fatalf("Components.Remove: %v", err)
+	}
+	if !removed || game.Components().Count() != 0 {
+		t.Fatalf("Remove reported %t leaving %d components", removed, game.Components().Count())
+	}
+}
+
+// TestDrawableGameComponentExposesNoBaseAccessor pins the composition rule from
+// outside: the base object is private state, and a consumer can reach every
+// inherited member without ever naming a GameComponent.
+func TestDrawableGameComponentExposesNoBaseAccessor(t *testing.T) {
+	componentType := reflect.TypeOf((*framework.DrawableGameComponent)(nil))
+	for _, forbidden := range []string{"Base", "Parent", "AsGameComponent", "GameComponent", "Component"} {
+		if _, ok := componentType.MethodByName(forbidden); ok {
+			t.Fatalf("DrawableGameComponent exposes %s; the base object is private state", forbidden)
+		}
+	}
+	// Every inherited member is reachable directly, which is what makes the
+	// absent accessor a non-loss rather than a restriction.
+	game, _ := newCanaryGame(t)
+	component := framework.NewDrawableGameComponent(game)
+	for name, call := range map[string]func() error{
+		"SetEnabled":     func() error { return component.SetEnabled(false) },
+		"SetUpdateOrder": func() error { return component.SetUpdateOrder(2) },
+	} {
+		if err := call(); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+	}
+	if component.Enabled() || component.UpdateOrder() != 2 {
+		t.Fatalf("inherited state after forwarding: Enabled=%t UpdateOrder=%d",
+			component.Enabled(), component.UpdateOrder())
+	}
+}

@@ -2818,6 +2818,104 @@ func runCorpus() corpusReport {
 		"true,true", fmt.Sprintf("%t,%t", nilDevice == nil, nilDeviceError == nil))
 
 	// ------------------------------------------------------------------
+	// Foundation 46. DrawableGameComponent, the profile's one shipped
+	// IDrawable, measured end to end through the real cross-package bridge:
+	// this corpus imports both packages, so the Graphics package's resolver is
+	// installed exactly as a consumer's program would have it.
+	// ------------------------------------------------------------------
+
+	drawableGame, _ := framework.NewGame(corpusCallbacks{})
+	drawable := framework.NewDrawableGameComponent(drawableGame)
+
+	// The constructor stores visible = true and does not assign drawOrder, and
+	// the base constructor stores the Game and enabled = true.
+	check("drawable-game-component.constructor-defaults", "DRAWABLE_GAME_COMPONENT",
+		"true,0,true,0,true",
+		fmt.Sprintf("%t,%d,%t,%d,%t",
+			drawable.Visible(), drawable.DrawOrder(),
+			drawable.Enabled(), drawable.UpdateOrder(),
+			drawable.Game() == drawableGame))
+
+	// With no registered IGraphicsDeviceService, Initialize throws the
+	// reference's InvalidOperationException and leaves initialized FALSE, and
+	// get_GraphicsDevice throws a DIFFERENT message under a key that does not
+	// describe it.
+	drawableInitError := drawable.Initialize()
+	_, drawableDeviceError := graphics.DrawableGameComponentGraphicsDevice(drawable)
+	check("drawable-game-component.the-two-throw-sites-carry-different-messages", "DRAWABLE_GAME_COMPONENT",
+		"true,true,true",
+		fmt.Sprintf("%t,%t,%t",
+			strings.Contains(fmt.Sprint(drawableInitError),
+				"Drawable components require a graphics device service in the game service container."),
+			strings.Contains(fmt.Sprint(drawableDeviceError),
+				"The GraphicsDevice property cannot be used before Initialize has been called."),
+			drawableInitError != nil && drawableDeviceError != nil))
+
+	// A consumer's own service, registered under the same token the
+	// reference's ldtoken resolves, is found by a method declared in a package
+	// that cannot name the contract.
+	drawableDevice := &graphics.GraphicsDevice{}
+	drawableService := &corpusPublishingDeviceService{device: drawableDevice}
+	_ = drawableGame.Services().AddService(
+		reflect.TypeOf((*graphics.IGraphicsDeviceService)(nil)).Elem(), drawableService)
+	drawableSecondInit := drawable.Initialize()
+	resolvedDrawableDevice, resolvedDrawableError := graphics.DrawableGameComponentGraphicsDevice(drawable)
+	check("drawable-game-component.a-registered-service-is-resolved-across-packages", "DRAWABLE_GAME_COMPONENT",
+		"true,true,true",
+		fmt.Sprintf("%t,%t,%t",
+			drawableSecondInit == nil,
+			resolvedDrawableError == nil,
+			resolvedDrawableDevice == drawableDevice))
+
+	// Both setters are compare-store-announce, so an unchanged assignment
+	// announces nothing. Visible starts true, DrawOrder starts zero.
+	drawableVisibleRaises, drawableOrderRaises := 0, 0
+	_, _ = drawable.AddVisibleChangedHandler(func(sender any, args *framework.EventArgs) error {
+		drawableVisibleRaises++
+		return nil
+	})
+	_, _ = drawable.AddDrawOrderChangedHandler(func(sender any, args *framework.EventArgs) error {
+		drawableOrderRaises++
+		return nil
+	})
+	_ = drawable.SetVisible(true)
+	_ = drawable.SetDrawOrder(0)
+	_ = drawable.SetVisible(false)
+	_ = drawable.SetDrawOrder(5)
+	check("drawable-game-component.setters-announce-only-on-change", "DRAWABLE_GAME_COMPONENT",
+		"1,1,false,5",
+		fmt.Sprintf("%d,%d,%t,%d",
+			drawableVisibleRaises, drawableOrderRaises, drawable.Visible(), drawable.DrawOrder()))
+
+	// The type is the profile's one shipped IDrawable, and Game's component
+	// engine reaches it through all three contracts.
+	var drawableAsDrawable framework.IDrawable = drawable
+	var drawableAsUpdateable framework.IUpdateable = drawable
+	var drawableAsComponent framework.IGameComponent = drawable
+	check("drawable-game-component.satisfies-the-three-component-contracts", "DRAWABLE_GAME_COMPONENT",
+		"true,true,true",
+		fmt.Sprintf("%t,%t,%t",
+			drawableAsDrawable != nil, drawableAsUpdateable != nil, drawableAsComponent != nil))
+
+	// Dispose(bool) guards only its own work and hands the flag to the base,
+	// whose own body is guarded too -- so Dispose(false) does nothing and
+	// Dispose(true) does everything, twice if called twice.
+	drawableDisposals := 0
+	_, _ = drawable.AddDisposedHandler(func(sender any, args *framework.EventArgs) error {
+		drawableDisposals++
+		return nil
+	})
+	drawableDisposeFalse := drawable.Dispose(false)
+	drawableDisposeAfterFalse := drawableDisposals
+	drawableDisposeTrue := drawable.Dispose(true)
+	_ = drawable.Dispose(true)
+	check("drawable-game-component.dispose-defers-the-flag-to-the-base", "DRAWABLE_GAME_COMPONENT",
+		"true,true,0,2",
+		fmt.Sprintf("%t,%t,%d,%d",
+			drawableDisposeFalse == nil, drawableDisposeTrue == nil,
+			drawableDisposeAfterFalse, drawableDisposals))
+
+	// ------------------------------------------------------------------
 	// Foundation 45. GameWindow, whose behaviour is XNA-derived throughout:
 	// every row below comes from Microsoft.Xna.Framework.Game.dll's IL, and
 	// none of it comes from what CNA does.

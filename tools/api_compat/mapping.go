@@ -171,6 +171,23 @@ var pureManagedTypes = map[string]bool{
 	// no allocation beyond those arrays, and no native code, and it starts no
 	// playback.
 	"Microsoft.Xna.Framework.Media.VisualizationData": true,
+
+	// Foundation 46. DrawableGameComponent is pure managed in the same sense
+	// GameComponent is, and the distinction is worth stating because the type
+	// is the profile's bridge to the graphics runtime and looks native-backed
+	// from the outside.
+	//
+	// It is not. Everything its IL does is managed: three bool/int32 fields,
+	// two delegate fields, a GetService lookup out of a managed dictionary,
+	// four Delegate.Combine subscriptions, and four method bodies that are a
+	// single `ret` each. The one member that reaches a device --
+	// get_GraphicsDevice -- does not touch one either: it null-checks a field
+	// and forwards to the SERVICE's property, and the service is a consumer's
+	// own object. The device it hands back is native; obtaining it is not.
+	//
+	// Its fallible members are named individually below, exactly as
+	// GameComponent's are.
+	"Microsoft.Xna.Framework.DrawableGameComponent": true,
 }
 
 // bclBaseRelationship is how one non-XNA CLR base type is projected.
@@ -671,6 +688,45 @@ var managedFallibleMembers = map[string]map[string]bool{
 	// property|Item marks both accessors, and both genuinely fail: the getter
 	// forwards to List<T>'s bounds check, and the setter validates the index
 	// and then reaches a SetItem that never succeeds.
+	// Foundation 46. DrawableGameComponent starts from "nothing is fallible"
+	// and each entry names its own evidence. Six of its members are
+	// deliberately absent: the constructor stores two fields and calls the
+	// base, Draw, LoadContent and UnloadContent are each a bare `ret`, and the
+	// two getters are one ldfld each.
+	//
+	// The last two entries are INHERITED members. Fallibility is classified
+	// against the owner a member is projected on, so a derived type must name
+	// the inherited members that fail as well as its own; leaving them out
+	// would silently make GameComponent::set_Enabled infallible on
+	// DrawableGameComponent and fallible on GameComponent, for the same body.
+	"Microsoft.Xna.Framework.DrawableGameComponent": {
+		// Resolves IGraphicsDeviceService out of Game.Services and throws
+		// InvalidOperationException(MissingGraphicsDeviceService) when it is
+		// absent; also calls the base Initialize, which carries
+		// IGameComponent's channel.
+		"method|Initialize": true,
+		// Dispose(bool) removes four consumer-supplied event registrations and
+		// then calls GameComponent::Dispose(bool), which removes the component
+		// from Game.Components and raises Disposed.
+		"method|Dispose": true,
+		// Both raise sites invoke consumer handlers.
+		"method|OnVisibleChanged":   true,
+		"method|OnDrawOrderChanged": true,
+		// get_GraphicsDevice throws InvalidOperationException when the service
+		// field is still null. Its message is NOT what the resource key
+		// suggests: the key is PropertyCannotBeCalledBeforeInitialize and the
+		// string reads "The GraphicsDevice property cannot be used before
+		// Initialize has been called." There is no setter to classify.
+		"property-get|GraphicsDevice": true,
+		// Only the SETTERS announce: each is compare, store, then a virtual
+		// call to its On... method, so it inherits exactly that method's
+		// fallibility. A suppressed assignment announces nothing.
+		"property-set|Visible":   true,
+		"property-set|DrawOrder": true,
+		// The two inherited setters, on GameComponent's own evidence.
+		"property-set|Enabled":     true,
+		"property-set|UpdateOrder": true,
+	},
 	"Microsoft.Xna.Framework.GameComponentCollection": {
 		"method|InsertItem": true,
 		"method|RemoveItem": true,
@@ -2333,7 +2389,7 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	// remaining blockers are recorded per derived type below and are entirely
 	// about device and GamerServices runtime, not about inheritance.
 	"Microsoft.Xna.Framework.GameComponent": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
-		{Class: "SUBSYSTEM", Detail: "the inheritance is projected; the two derived types are not complete for reasons that are not inheritance. DrawableGameComponent::Initialize resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Game.Services and throws Resources.MissingGraphicsDeviceService when it is absent, and the framework package cannot name that contract because the Graphics package imports it -- the settled cross-package cycle rule projects device-typed members into the descendant package, which a private field resolution inside Initialize cannot use. GamerServicesComponent needs Game.Window.Handle, a missing member of a missing type, and GamerServicesDispatcher from Microsoft.Xna.Framework.GamerServices.dll, which is not one of the seven pinned assemblies and has no CNA runtime behind it"},
+		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and ONE of the two derived types is now complete. Foundation 46 projected DrawableGameComponent: its Initialize resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Game.Services, which the framework package cannot name because the Graphics package imports it, and internal/servicebridge resolves that with two function values installed from package inits -- no public API, no retained object, and no import cycle. GamerServicesComponent remains blocked and its blockers are not inheritance either: GamerServicesDispatcher lives in Microsoft.Xna.Framework.GamerServices.dll, which is not one of the seven pinned assemblies and has no CNA runtime behind it. Game.Window.Handle stopped being one of its blockers in Foundation 45"},
 	}},
 
 	// The one Foundation 25 measured from the other side: it alone blocks
