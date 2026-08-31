@@ -14,7 +14,7 @@ Microsoft/Xna/Framework[/Graphics|Input|Content]
    ↓
 internal/interop (the only cgo/native boundary)
    ↓
-CNA C ABI 0.7.0
+CNA C ABI 0.21.0
 ```
 
 There is deliberately no invented public `CNA/Framework` layer. Pure XNA
@@ -275,8 +275,8 @@ NaN, and the 32 new negative fixtures. `AudioListener` and `AudioEmitter` are
 pure managed descriptors: completing them claims no audio runtime capability
 and creates no XACT state.
 
-The admitted qualification artifact uses CNA ABI 0.7.0, the HEADLESS renderer,
-and NULL audio. Native draw execution is proven, but visible rendering is not.
+The admitted qualification artifact uses CNA ABI 0.21.0, the HEADLESS renderer,
+and SDL3 audio. Native draw execution is proven, but visible rendering is not.
 Windows, macOS, Android, iOS, and Web/Wasm are not qualified. Content/XNB,
 Effects/3D, Audio, Media, Storage, Touch, and most of XNA remain unimplemented.
 See [Foundation 18 interface evidence](docs/foundation-18-interface-evidence.md)
@@ -461,7 +461,8 @@ for evidence and limitations by capability.
 ## Native runtime
 
 The Go build uses cgo but does not link a developer CNA build at compile time.
-Supply an exact CNA C ABI 0.7 shared library at runtime:
+Supply an admitted CNA C ABI shared library at runtime — major 0 with minor 21
+or newer, qualified at 0.21.0:
 
 ```sh
 export CNA_NATIVE_LIBRARY=/absolute/path/to/libcna_c_api.so

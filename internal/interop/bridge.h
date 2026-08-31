@@ -16,7 +16,29 @@ typedef uint64_t CnaGoHandle;
 enum {
     CNA_GO_RESULT_SUCCESS = 0,
     CNA_GO_RESULT_CALLBACK = 9,
-    CNA_GO_ABI_VERSION = 0x00000700u,
+
+    /* The CNA C ABI admission policy, stated as a RANGE rather than one exact
+       encoded number.
+
+       CNA's own live binary contract is the ELF symbol-version node in
+       modules/c-api/cmake/CnaCApiExports.map. That file says, in its own
+       words, that the node name "is NOT the ABI version and must not be bumped
+       with it", that it "changes only for a *major* ABI break", and that
+       renaming it "turns every additive release into a hard break". So CNA
+       states that a MAJOR bump is the break and a minor bump is additive, and
+       docs/releasing.md separately states that CNA_ABI_VERSION "moves when the
+       ABI changes, independently of a product release".
+
+       CNA-Go therefore admits: the qualified major, and any minor at or above
+       the qualified floor. Below the floor a route CNA-Go binds may simply not
+       exist yet; a different major is the break CNA itself names. Every
+       required symbol is still resolved by name after the version check, so a
+       version inside the range that nevertheless lacks a route is rejected on
+       the symbol rather than admitted. */
+    CNA_GO_ABI_MAJOR = 0,
+    CNA_GO_ABI_MINIMUM_MINOR = 21,
+    CNA_GO_ABI_QUALIFIED_PATCH = 0,
+    CNA_GO_ABI_QUALIFIED_VERSION = 0x00001500u,
     CNA_GO_CALLBACK_INITIALIZE = 1,
     CNA_GO_CALLBACK_LOAD_CONTENT = 2,
     CNA_GO_CALLBACK_UPDATE = 3,
@@ -53,9 +75,38 @@ enum {
     CNA_GO_GAME_EVENT_COUNT = 4
 };
 
+/* The encoded-version arithmetic, mirrored from CNA_ABI_VERSION_ENCODE in the
+   canonical CNA header. tools/native_abi compiles both spellings in one
+   translation unit and asserts they agree on sample values, so a mirror that
+   drifted is a compile error rather than a version silently decoded wrong. */
+#define CNA_GO_ABI_ENCODE(major, minor, patch) \
+    ((((uint32_t)(major) & UINT32_C(0xFFFF)) << 16) | \
+     (((uint32_t)(minor) & UINT32_C(0xFF)) << 8) | \
+     ((uint32_t)(patch) & UINT32_C(0xFF)))
+#define CNA_GO_ABI_MAJOR_OF(version) ((uint32_t)(version) >> 16)
+#define CNA_GO_ABI_MINOR_OF(version) (((uint32_t)(version) >> 8) & UINT32_C(0xFF))
+#define CNA_GO_ABI_PATCH_OF(version) ((uint32_t)(version) & UINT32_C(0xFF))
+
 int cna_go_open(const char* path, char* error_buffer, size_t error_capacity);
 void cna_go_close(void);
 uint32_t cna_go_abi_version(void);
+
+/* Non-zero when an encoded ABI version satisfies the admission policy above.
+   This is the ONE place the policy is evaluated; Go asks this function rather
+   than re-deriving the comparison, so the two cannot disagree. */
+int cna_go_abi_admits(uint32_t version);
+
+/* Function forms of the decoding macros. cgo cannot evaluate a function-like
+   macro from Go, so Go reads the parts through these. */
+uint32_t cna_go_abi_encode(uint32_t major, uint32_t minor, uint32_t patch);
+uint32_t cna_go_abi_major_of(uint32_t version);
+uint32_t cna_go_abi_minor_of(uint32_t version);
+uint32_t cna_go_abi_patch_of(uint32_t version);
+
+/* Non-zero when every resolved function pointer belongs to the symbol whose
+   name the manifest lists, proven with dladdr rather than assumed from the
+   resolution macro. Fills out_detail with the first disagreement. */
+int cna_go_verify_symbol_identity(char* out_detail, size_t detail_capacity);
 uint64_t cna_go_owner_thread_id(void);
 uint32_t cna_go_bound_function_count(void);
 const char* cna_go_bound_function_name(uint32_t index);

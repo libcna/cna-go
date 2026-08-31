@@ -1,0 +1,147 @@
+// SPDX-License-Identifier: MS-PL
+//
+// The one measurement list, printed by BOTH ABI probes: the canonical one,
+// which sees CNA's real headers, and the manifest one, which sees only
+// CNA-Go's private declarations. cgo compiles bridge.c against the manifest
+// and never against a CNA header, so the manifest's own struct definitions are
+// what the shipped binding actually uses -- and until both sides were measured
+// with the same list, nothing compared them numerically.
+//
+// CNA_GO_MEASURE(key, expression) is defined by the including translation unit.
+
+CNA_GO_MEASURE(sizeof_CNA_Bool, sizeof(CNA_Bool))
+CNA_GO_MEASURE(sizeof_CNA_Result, sizeof(CNA_Result))
+CNA_GO_MEASURE(sizeof_CNA_Handle, sizeof(CNA_Handle))
+
+CNA_GO_MEASURE(sizeof_CNA_StringView, sizeof(CNA_StringView))
+CNA_GO_MEASURE(alignof_CNA_StringView, _Alignof(CNA_StringView))
+CNA_GO_MEASURE(offsetof_CNA_StringView_data, offsetof(CNA_StringView, data))
+CNA_GO_MEASURE(offsetof_CNA_StringView_byte_length, offsetof(CNA_StringView, byte_length))
+
+CNA_GO_MEASURE(sizeof_CNA_Vector2, sizeof(CNA_Vector2))
+CNA_GO_MEASURE(offsetof_CNA_Vector2_y, offsetof(CNA_Vector2, y))
+CNA_GO_MEASURE(sizeof_CNA_Rectangle, sizeof(CNA_Rectangle))
+CNA_GO_MEASURE(offsetof_CNA_Rectangle_width, offsetof(CNA_Rectangle, width))
+CNA_GO_MEASURE(offsetof_CNA_Rectangle_height, offsetof(CNA_Rectangle, height))
+CNA_GO_MEASURE(sizeof_CNA_Color, sizeof(CNA_Color))
+CNA_GO_MEASURE(offsetof_CNA_Color_a, offsetof(CNA_Color, a))
+
+CNA_GO_MEASURE(sizeof_CNA_GameTime, sizeof(CNA_GameTime))
+CNA_GO_MEASURE(alignof_CNA_GameTime, _Alignof(CNA_GameTime))
+CNA_GO_MEASURE(offsetof_CNA_GameTime_total_game_time_ticks, offsetof(CNA_GameTime, total_game_time_ticks))
+CNA_GO_MEASURE(offsetof_CNA_GameTime_elapsed_game_time_ticks, offsetof(CNA_GameTime, elapsed_game_time_ticks))
+CNA_GO_MEASURE(offsetof_CNA_GameTime_is_running_slowly, offsetof(CNA_GameTime, is_running_slowly))
+
+CNA_GO_MEASURE(sizeof_CNA_CallbackError, sizeof(CNA_CallbackError))
+CNA_GO_MEASURE(alignof_CNA_CallbackError, _Alignof(CNA_CallbackError))
+CNA_GO_MEASURE(offsetof_CNA_CallbackError_message, offsetof(CNA_CallbackError, message))
+
+CNA_GO_MEASURE(sizeof_CNA_GameCallbacks, sizeof(CNA_GameCallbacks))
+CNA_GO_MEASURE(alignof_CNA_GameCallbacks, _Alignof(CNA_GameCallbacks))
+CNA_GO_MEASURE(offsetof_CNA_GameCallbacks_load_content, offsetof(CNA_GameCallbacks, load_content))
+CNA_GO_MEASURE(offsetof_CNA_GameCallbacks_update, offsetof(CNA_GameCallbacks, update))
+CNA_GO_MEASURE(offsetof_CNA_GameCallbacks_draw, offsetof(CNA_GameCallbacks, draw))
+CNA_GO_MEASURE(offsetof_CNA_GameCallbacks_unload_content, offsetof(CNA_GameCallbacks, unload_content))
+CNA_GO_MEASURE(offsetof_CNA_GameCallbacks_exiting, offsetof(CNA_GameCallbacks, exiting))
+CNA_GO_MEASURE(offsetof_CNA_GameCallbacks_context, offsetof(CNA_GameCallbacks, context))
+
+CNA_GO_MEASURE(sizeof_CNA_GameFrameHooks, sizeof(CNA_GameFrameHooks))
+CNA_GO_MEASURE(alignof_CNA_GameFrameHooks, _Alignof(CNA_GameFrameHooks))
+CNA_GO_MEASURE(offsetof_CNA_GameFrameHooks_initialize, offsetof(CNA_GameFrameHooks, initialize))
+CNA_GO_MEASURE(offsetof_CNA_GameFrameHooks_begin_run, offsetof(CNA_GameFrameHooks, begin_run))
+CNA_GO_MEASURE(offsetof_CNA_GameFrameHooks_end_run, offsetof(CNA_GameFrameHooks, end_run))
+CNA_GO_MEASURE(offsetof_CNA_GameFrameHooks_begin_draw, offsetof(CNA_GameFrameHooks, begin_draw))
+CNA_GO_MEASURE(offsetof_CNA_GameFrameHooks_end_draw, offsetof(CNA_GameFrameHooks, end_draw))
+CNA_GO_MEASURE(offsetof_CNA_GameFrameHooks_context, offsetof(CNA_GameFrameHooks, context))
+
+CNA_GO_MEASURE(sizeof_CNA_GameCreateInfo, sizeof(CNA_GameCreateInfo))
+CNA_GO_MEASURE(alignof_CNA_GameCreateInfo, _Alignof(CNA_GameCreateInfo))
+CNA_GO_MEASURE(offsetof_CNA_GameCreateInfo_is_fixed_time_step, offsetof(CNA_GameCreateInfo, is_fixed_time_step))
+CNA_GO_MEASURE(offsetof_CNA_GameCreateInfo_target_elapsed_time_ticks, offsetof(CNA_GameCreateInfo, target_elapsed_time_ticks))
+CNA_GO_MEASURE(offsetof_CNA_GameCreateInfo_window_title, offsetof(CNA_GameCreateInfo, window_title))
+CNA_GO_MEASURE(offsetof_CNA_GameCreateInfo_callbacks, offsetof(CNA_GameCreateInfo, callbacks))
+
+CNA_GO_MEASURE(sizeof_CNA_Viewport, sizeof(CNA_Viewport))
+CNA_GO_MEASURE(alignof_CNA_Viewport, _Alignof(CNA_Viewport))
+CNA_GO_MEASURE(offsetof_CNA_Viewport_width, offsetof(CNA_Viewport, width))
+CNA_GO_MEASURE(offsetof_CNA_Viewport_min_depth, offsetof(CNA_Viewport, min_depth))
+CNA_GO_MEASURE(offsetof_CNA_Viewport_max_depth, offsetof(CNA_Viewport, max_depth))
+
+CNA_GO_MEASURE(sizeof_CNA_Texture2DInfo, sizeof(CNA_Texture2DInfo))
+CNA_GO_MEASURE(alignof_CNA_Texture2DInfo, _Alignof(CNA_Texture2DInfo))
+CNA_GO_MEASURE(offsetof_CNA_Texture2DInfo_width, offsetof(CNA_Texture2DInfo, width))
+CNA_GO_MEASURE(offsetof_CNA_Texture2DInfo_height, offsetof(CNA_Texture2DInfo, height))
+CNA_GO_MEASURE(offsetof_CNA_Texture2DInfo_level_count, offsetof(CNA_Texture2DInfo, level_count))
+CNA_GO_MEASURE(offsetof_CNA_Texture2DInfo_format, offsetof(CNA_Texture2DInfo, format))
+
+CNA_GO_MEASURE(sizeof_CNA_SpriteBatchBeginInfo, sizeof(CNA_SpriteBatchBeginInfo))
+CNA_GO_MEASURE(offsetof_CNA_SpriteBatchBeginInfo_sort_mode, offsetof(CNA_SpriteBatchBeginInfo, sort_mode))
+
+CNA_GO_MEASURE(sizeof_CNA_SpriteScaledCommand, sizeof(CNA_SpriteScaledCommand))
+CNA_GO_MEASURE(alignof_CNA_SpriteScaledCommand, _Alignof(CNA_SpriteScaledCommand))
+CNA_GO_MEASURE(offsetof_CNA_SpriteScaledCommand_texture, offsetof(CNA_SpriteScaledCommand, texture))
+CNA_GO_MEASURE(offsetof_CNA_SpriteScaledCommand_position, offsetof(CNA_SpriteScaledCommand, position))
+CNA_GO_MEASURE(offsetof_CNA_SpriteScaledCommand_source, offsetof(CNA_SpriteScaledCommand, source))
+CNA_GO_MEASURE(offsetof_CNA_SpriteScaledCommand_color, offsetof(CNA_SpriteScaledCommand, color))
+CNA_GO_MEASURE(offsetof_CNA_SpriteScaledCommand_rotation, offsetof(CNA_SpriteScaledCommand, rotation))
+CNA_GO_MEASURE(offsetof_CNA_SpriteScaledCommand_origin, offsetof(CNA_SpriteScaledCommand, origin))
+CNA_GO_MEASURE(offsetof_CNA_SpriteScaledCommand_scale, offsetof(CNA_SpriteScaledCommand, scale))
+CNA_GO_MEASURE(offsetof_CNA_SpriteScaledCommand_effects, offsetof(CNA_SpriteScaledCommand, effects))
+CNA_GO_MEASURE(offsetof_CNA_SpriteScaledCommand_layer_depth, offsetof(CNA_SpriteScaledCommand, layer_depth))
+
+CNA_GO_MEASURE(sizeof_CNA_KeyboardState, sizeof(CNA_KeyboardState))
+CNA_GO_MEASURE(alignof_CNA_KeyboardState, _Alignof(CNA_KeyboardState))
+CNA_GO_MEASURE(offsetof_CNA_KeyboardState_pressed_key_words, offsetof(CNA_KeyboardState, pressed_key_words))
+
+CNA_GO_MEASURE(sizeof_CNA_GameEvent, sizeof(CNA_GameEvent))
+CNA_GO_MEASURE(sizeof_CNA_GameEventRegistrationHandle, sizeof(CNA_GameEventRegistrationHandle))
+CNA_GO_MEASURE(sizeof_CNA_GameEventCallback, sizeof(CNA_GameEventCallback))
+CNA_GO_MEASURE(sizeof_CNA_GameLifecycleCallback, sizeof(CNA_GameLifecycleCallback))
+CNA_GO_MEASURE(sizeof_CNA_GameBeginDrawCallback, sizeof(CNA_GameBeginDrawCallback))
+
+CNA_GO_MEASURE(constant_CNA_GAME_EVENT_ACTIVATED, CNA_GAME_EVENT_ACTIVATED)
+CNA_GO_MEASURE(constant_CNA_GAME_EVENT_DEACTIVATED, CNA_GAME_EVENT_DEACTIVATED)
+CNA_GO_MEASURE(constant_CNA_GAME_EVENT_DISPOSED, CNA_GAME_EVENT_DISPOSED)
+CNA_GO_MEASURE(constant_CNA_GAME_EVENT_EXITING, CNA_GAME_EVENT_EXITING)
+CNA_GO_MEASURE(constant_CNA_GAME_EVENT_MAXIMUM, CNA_GAME_EVENT_MAXIMUM)
+
+// FIELD WIDTHS. Offsets and total sizes are not enough on their own: a length
+// narrowed from 64 to 32 bits inside a struct whose padding absorbs the change
+// leaves every size and every offset identical while the callee reads four
+// bytes CNA-Go never wrote. sizeof on a null-pointer member expression is a
+// constant expression and dereferences nothing.
+#define CNA_GO_FIELD_WIDTH(type, field) sizeof(((type*)0)->field)
+
+CNA_GO_MEASURE(width_CNA_StringView_data, CNA_GO_FIELD_WIDTH(CNA_StringView, data))
+CNA_GO_MEASURE(width_CNA_StringView_byte_length, CNA_GO_FIELD_WIDTH(CNA_StringView, byte_length))
+CNA_GO_MEASURE(width_CNA_Rectangle_x, CNA_GO_FIELD_WIDTH(CNA_Rectangle, x))
+CNA_GO_MEASURE(width_CNA_Color_r, CNA_GO_FIELD_WIDTH(CNA_Color, r))
+CNA_GO_MEASURE(width_CNA_Vector2_x, CNA_GO_FIELD_WIDTH(CNA_Vector2, x))
+CNA_GO_MEASURE(width_CNA_GameTime_total_game_time_ticks, CNA_GO_FIELD_WIDTH(CNA_GameTime, total_game_time_ticks))
+CNA_GO_MEASURE(width_CNA_GameTime_elapsed_game_time_ticks, CNA_GO_FIELD_WIDTH(CNA_GameTime, elapsed_game_time_ticks))
+CNA_GO_MEASURE(width_CNA_GameTime_is_running_slowly, CNA_GO_FIELD_WIDTH(CNA_GameTime, is_running_slowly))
+CNA_GO_MEASURE(width_CNA_CallbackError_struct_size, CNA_GO_FIELD_WIDTH(CNA_CallbackError, struct_size))
+CNA_GO_MEASURE(width_CNA_CallbackError_message, CNA_GO_FIELD_WIDTH(CNA_CallbackError, message))
+CNA_GO_MEASURE(width_CNA_GameCallbacks_struct_size, CNA_GO_FIELD_WIDTH(CNA_GameCallbacks, struct_size))
+CNA_GO_MEASURE(width_CNA_GameCallbacks_context, CNA_GO_FIELD_WIDTH(CNA_GameCallbacks, context))
+CNA_GO_MEASURE(width_CNA_GameFrameHooks_begin_draw, CNA_GO_FIELD_WIDTH(CNA_GameFrameHooks, begin_draw))
+CNA_GO_MEASURE(width_CNA_GameCreateInfo_struct_size, CNA_GO_FIELD_WIDTH(CNA_GameCreateInfo, struct_size))
+CNA_GO_MEASURE(width_CNA_GameCreateInfo_is_fixed_time_step, CNA_GO_FIELD_WIDTH(CNA_GameCreateInfo, is_fixed_time_step))
+CNA_GO_MEASURE(width_CNA_GameCreateInfo_target_elapsed_time_ticks, CNA_GO_FIELD_WIDTH(CNA_GameCreateInfo, target_elapsed_time_ticks))
+CNA_GO_MEASURE(width_CNA_GameCreateInfo_window_title, CNA_GO_FIELD_WIDTH(CNA_GameCreateInfo, window_title))
+CNA_GO_MEASURE(width_CNA_GameCreateInfo_callbacks, CNA_GO_FIELD_WIDTH(CNA_GameCreateInfo, callbacks))
+CNA_GO_MEASURE(width_CNA_Viewport_x, CNA_GO_FIELD_WIDTH(CNA_Viewport, x))
+CNA_GO_MEASURE(width_CNA_Viewport_min_depth, CNA_GO_FIELD_WIDTH(CNA_Viewport, min_depth))
+CNA_GO_MEASURE(width_CNA_Texture2DInfo_struct_size, CNA_GO_FIELD_WIDTH(CNA_Texture2DInfo, struct_size))
+CNA_GO_MEASURE(width_CNA_Texture2DInfo_width, CNA_GO_FIELD_WIDTH(CNA_Texture2DInfo, width))
+CNA_GO_MEASURE(width_CNA_Texture2DInfo_format, CNA_GO_FIELD_WIDTH(CNA_Texture2DInfo, format))
+CNA_GO_MEASURE(width_CNA_SpriteBatchBeginInfo_sort_mode, CNA_GO_FIELD_WIDTH(CNA_SpriteBatchBeginInfo, sort_mode))
+CNA_GO_MEASURE(width_CNA_SpriteScaledCommand_texture, CNA_GO_FIELD_WIDTH(CNA_SpriteScaledCommand, texture))
+CNA_GO_MEASURE(width_CNA_SpriteScaledCommand_rotation, CNA_GO_FIELD_WIDTH(CNA_SpriteScaledCommand, rotation))
+CNA_GO_MEASURE(width_CNA_SpriteScaledCommand_effects, CNA_GO_FIELD_WIDTH(CNA_SpriteScaledCommand, effects))
+CNA_GO_MEASURE(width_CNA_SpriteScaledCommand_layer_depth, CNA_GO_FIELD_WIDTH(CNA_SpriteScaledCommand, layer_depth))
+CNA_GO_MEASURE(width_CNA_KeyboardState_struct_version, CNA_GO_FIELD_WIDTH(CNA_KeyboardState, struct_version))
+CNA_GO_MEASURE(width_CNA_KeyboardState_pressed_key_words, CNA_GO_FIELD_WIDTH(CNA_KeyboardState, pressed_key_words))
+CNA_GO_MEASURE(width_CNA_KeyboardState_pressed_key_word, CNA_GO_FIELD_WIDTH(CNA_KeyboardState, pressed_key_words[0]))
+
+#undef CNA_GO_FIELD_WIDTH

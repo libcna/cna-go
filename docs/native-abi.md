@@ -5,10 +5,31 @@ ABI and does not route through another language binding.
 
 ## Admission and loading
 
-Foundation 1 admits exactly encoded ABI version `0x00000700` (0.7.0). A
-different version, a missing required symbol, or a loader failure rejects the
-library before Game creation. There is no same-major, newer-minor, or generic
-0.x compatibility policy.
+CNA-Go admits **CNA C ABI major 0 with minor 21 or newer**, qualified at
+0.21.0 (encoded `0x00001500`). A different major, a lower minor, a missing
+required symbol, a resolved pointer that belongs to a different symbol, or a
+loader failure rejects the library before Game creation. A rejection names the
+library path, the version it reported, and the admitted range.
+
+The range is CNA's own, not CNA-Go's preference.
+`modules/c-api/cmake/CnaCApiExports.map` states that the ELF symbol-version
+node `CNA_C_API_0.1` "is NOT the ABI version and must not be bumped with it",
+that it "changes only for a *major* ABI break", and that renaming it "turns
+every additive release into a hard break". So CNA declares a major bump to be
+the break and minor bumps to be additive, and `docs/releasing.md` separately
+states that `CNA_ABI_VERSION` "moves when the ABI changes, independently of a
+product release". The floor is the qualified minor because a lower one may
+simply not declare a route CNA-Go binds; the upper end is open because CNA
+says an additive release keeps the contract. Nothing is taken on trust: after
+the version check every required symbol is still resolved by name, and every
+resolved address is still confirmed with `dladdr` to belong to the symbol the
+manifest lists.
+
+Foundation 1 originally admitted exactly `0x00000700` (0.7.0). That is history,
+not the current contract; the migration that replaced it is recorded in
+[Foundation 44](foundation-44-abi-migration-evidence.md), including the
+compiler-backed proof that every route CNA-Go binds is byte-identical across
+the fourteen minor bumps in between.
 
 On qualified Linux builds, `internal/interop/bridge.c` uses `dlopen` with
 `RTLD_NOW|RTLD_LOCAL` and resolves one reviewed manifest. An explicit runtime
@@ -26,32 +47,50 @@ Foundation 1 requires Linux, cgo, and a C compiler. Pure-Go/no-cgo use and cgo
 cross-compilation are not claimed. Apple `dlopen` and Windows
 `LoadLibrary/GetProcAddress` implementations remain platform work.
 
-## Qualified Foundation 1 artifact
+## Qualified artifact
 
-No retained sibling artifact had the required 0.7 ABI: inspected candidates
-reported either 0.1 or 0.8. The qualification library was therefore built in
-an isolated temporary tree from CNA revision
-`a09196a6477f69a7a57c8364f990658d31531a5b`, the independently selected source
-revision whose canonical header declares ABI 0.7. CNA's checkout was not
-modified. The build used the exact submodule revisions recorded by that tree,
-sharp-runtime revision `54578590b328aa9612fe38bfddca9fd8ca795144`, GCC
-14.2.0, Release mode, HEADLESS rendering, NULL audio, and networking enabled as
-required by that C API source. A warning suppression for a later
-sharp-runtime/CNA-0.7 overloaded-virtual incompatibility was compiler-only; no
-CNA source was patched.
+The qualification library is the CNA C API built from the live `cnanext`
+checkout, retained at `~/deps/cna-c-abi-0.21.0/libcna_c_api.so`. CNA's checkout
+was not modified and nothing was rebuilt for CNA-Go: the artifact is
+byte-identical to `cnanext/cmake-build-headless/modules/c-api/libcna_c_api.so`,
+and the header tree beside it is byte-identical to
+`cnanext/modules/c-api/include`.
 
-The admitted `libcna_c_api.so` is 16,799,760 bytes with SHA-256
-`e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f`.
-The loader reports ABI 0.7.0 and the compiler/loader verifier reports 23 bound
-functions, 67 prototype type positions, 96 aggregate C/Go measurements, 28
-layout measurements, two callback shapes, five constants, zero missing header
-symbols, zero missing library symbols, and zero ABI mismatches.
+```text
+cnanext HEAD              0a6158e4ff764907065cd7259e3d29e331a52088 (next)
+sharp-runtimenext HEAD    4a49afb0cfe6a41e6e0af0bb62dc5175976731bb (next)
+configuration             CNA_GRAPHICS_RENDERER=HEADLESS, CNA_PLATFORM=SDL3,
+                          CNA_AUDIO_PLATFORM=SDL3, CNA_ENABLE_NET=ON,
+                          CNA_ENABLE_VIDEO=AUTO, CMAKE_BUILD_TYPE=Debug
+artifact                  libcna_c_api.so, 166,420,656 bytes
+sha256                    c32bfbd307d695664f906ccf2834ec3f9ebc240fa388d544ac21ee3ebaeb731b
+reported ABI              0.21.0
+canonical declarations    4054
+exported cna_* routes     4054 (exact correspondence, both directions)
+symbol-version node       CNA_C_API_0.1
+```
+
+Header/library correspondence is measured rather than assumed: the canonical
+headers declare 4,054 `cna_*` routes and the library exports exactly those
+4,054 names, with no route declared and unexported and none exported and
+undeclared. The verifier compares both counts and reports a mismatch.
 
 This artifact is qualification input, not a distributed CNA-Go file. It is not
 sanitizer-instrumented, so `NATIVE_SANITIZER_STATUS=NOT_RUN`; stress results do
 not constitute native leak-freedom evidence. Its HEADLESS renderer proves
-native graphics execution but not visible output, and NULL audio cannot qualify
-audio behavior.
+native graphics execution but not visible output. Its audio backend is SDL3
+rather than the NULL backend Foundation 1 used, so audio is no longer blocked
+by the artifact — only by CNA-Go's own missing audio surface.
+
+### The retired Foundation 1 artifact
+
+Foundation 1 through 43 were qualified against a separate 16,799,760-byte
+`libcna_c_api.so` with SHA-256
+`e912cd1d239d2c76d67677af4df643703e4348f6a7d6b8983904d95c937b116f`, built from
+CNA revision `a09196a6477f69a7a57c8364f990658d31531a5b` with sharp-runtime
+`54578590b328aa9612fe38bfddca9fd8ca795144`, GCC 14.2.0, Release, HEADLESS
+rendering and **NULL** audio. That artifact declared ABI 0.7.0 and is retained
+for history only. No current gate loads it.
 
 ## Typed manifest
 
@@ -75,16 +114,40 @@ last-error text is copied into Go-owned memory.
 
 ## Independent verification
 
-`go run ./tools/native_abi -library /absolute/path/to/libcna_c_api.so` performs
-three independent checks:
+`go run ./tools/native_abi -headers /absolute/path/to/cna/modules/c-api/include -library /absolute/path/to/libcna_c_api.so`
+performs five independent checks:
 
 1. GCC compiles pointer assignments from every private manifest typedef to the
-   declaration in canonical CNA headers with incompatible-pointer warnings as
-   errors.
-2. A canonical-header probe measures sizes, alignments, offsets, callback
-   types, ABI/result constants, and fixed-width representations.
-3. The production loader admits the selected library and proves every manifest
-   export is present.
+   declaration of the **same name** in canonical CNA headers, with
+   incompatible-pointer warnings as errors. Each route is paired with its own
+   canonical declaration, not with a compatible neighbour.
+2. A canonical-header probe measures sizes, alignments, offsets, field widths,
+   callback types, ABI/result constants and the admission policy itself. It is
+   the only translation unit that sees the canonical header, CNA-Go's private
+   manifest and `bridge.h` at once, so it is where all three mirrors are
+   compared rather than trusted.
+3. A **manifest-only** probe measures the same list with no canonical header in
+   scope at all — the exact environment cgo gives `bridge.c`. The two
+   measurement sets are compared key by key. Without this, CNA-Go's own struct
+   declarations were never measured against anything: the canonical probe
+   measures canonical types, because `abi_manifest.h` suppresses its private
+   definitions whenever a CNA header is present. The manifest probe refuses to
+   compile if a canonical header reaches it.
+4. The production loader admits the selected library under the range policy,
+   proves every manifest export is present, and confirms with `dladdr` that
+   every resolved pointer belongs to the symbol the manifest names. That last
+   check is what separates routes which share a prototype: `cna_game_run`,
+   `cna_game_request_exit` and `cna_game_destroy` are all
+   `CNA_Result(CNA_Handle)`, so a mis-pairing among them would compile cleanly.
+5. The canonical declaration count and the library's exported `cna_*` count are
+   compared, and the header-declared ABI is compared with the ABI the loaded
+   library reports.
+
+The route table is no longer maintained beside the manifest: `tools/native_abi`
+parses `CNA_GO_REQUIRED_SYMBOLS` and each route's own `_fn` typedef out of
+`abi_manifest.h`, which is the file the cgo build compiles. A required symbol
+with no prototype of its own is an error rather than a route counted as taking
+zero arguments.
 
 The generated result is `docs/generated/native-abi-report.json`. The canonical
 headers verify the bridge; CNA-Go's private declarations do not verify

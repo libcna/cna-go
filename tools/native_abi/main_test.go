@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -160,6 +162,28 @@ var bridgeMutations = []sourceMutation{
 		old:  "    CNA_GO_FRAME_HOOK_BEGIN_DRAW = 1u << 2,",
 		new:  "    CNA_GO_FRAME_HOOK_BEGIN_DRAW = 1u << 1,",
 	},
+	// The admission policy itself. The qualified encoded constant is what the
+	// loader's rejection message reports, and the floor is what it enforces; a
+	// policy that reported one range and enforced another would admit or refuse
+	// libraries for reasons no diagnostic could explain.
+	{
+		name: "qualified-abi-constant-disagrees-with-the-floor",
+		file: "bridge.h",
+		old:  "    CNA_GO_ABI_QUALIFIED_VERSION = 0x00001500u,",
+		new:  "    CNA_GO_ABI_QUALIFIED_VERSION = 0x00001400u,",
+	},
+	{
+		name: "abi-floor-raised-without-re-encoding",
+		file: "bridge.h",
+		old:  "    CNA_GO_ABI_MINIMUM_MINOR = 21,",
+		new:  "    CNA_GO_ABI_MINIMUM_MINOR = 22,",
+	},
+	{
+		name: "abi-decoding-mirror-drift",
+		file: "bridge.h",
+		old:  "#define CNA_GO_ABI_MINOR_OF(version) (((uint32_t)(version) >> 8) & UINT32_C(0xFF))",
+		new:  "#define CNA_GO_ABI_MINOR_OF(version) (((uint32_t)(version) >> 4) & UINT32_C(0xFF))",
+	},
 }
 
 // A few pins cannot live in the bridge translation unit at all, and the reason
@@ -260,6 +284,71 @@ var probeMutations = []sourceMutation{
 		old:  "static CNA_Result cna_go_probe_lifecycle(\n    CNA_Handle game,\n    const CNA_GameTime* game_time,\n    void* context,",
 		new:  "static CNA_Result cna_go_probe_lifecycle(\n    CNA_Handle game,\n    void* context,",
 	},
+	// The ABI ADMISSION POLICY, from the side only this translation unit can
+	// check: the policy's own numbers against the canonical header's.
+	{
+		name: "admission-floor-above-the-canonical-minor",
+		file: "bridge.h",
+		old:  "    CNA_GO_ABI_MINIMUM_MINOR = 21,",
+		new:  "    CNA_GO_ABI_MINIMUM_MINOR = 99,",
+	},
+	{
+		name: "admission-major-outside-the-canonical-major",
+		file: "bridge.h",
+		old:  "    CNA_GO_ABI_MAJOR = 0,",
+		new:  "    CNA_GO_ABI_MAJOR = 1,",
+	},
+	{
+		name: "encoded-version-mirror-shifts-the-minor-wrongly",
+		file: "bridge.h",
+		old:  "     (((uint32_t)(minor) & UINT32_C(0xFF)) << 8) | \\",
+		new:  "     (((uint32_t)(minor) & UINT32_C(0xFF)) << 4) | \\",
+	},
+	{
+		name: "bridge-callback-result-mirror-drift",
+		file: "bridge.h",
+		old:  "    CNA_GO_RESULT_CALLBACK = 9,",
+		new:  "    CNA_GO_RESULT_CALLBACK = 10,",
+	},
+	{
+		name: "bridge-success-result-mirror-drift",
+		file: "bridge.h",
+		old:  "    CNA_GO_RESULT_SUCCESS = 0,",
+		new:  "    CNA_GO_RESULT_SUCCESS = 1,",
+	},
+	// A required symbol that CNA no longer declares. The bridge translation
+	// unit cannot see this: it resolves symbols by string at run time, so a
+	// stale entry compiles and fails only when a consumer loads a library.
+	{
+		name: "stale-required-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_keyboard_get_state)",
+		new:  "    X(cna_game_removed_route_ext) \\\n    X(cna_keyboard_get_state)",
+	},
+}
+
+// TestManifestProbeRefusesACanonicalHeader proves the guard that makes the
+// manifest probe worth running. abi_manifest.h suppresses its own definitions
+// whenever a CNA header is present, so a canonical header leaking into this
+// translation unit would turn it into a second canonical probe: it would report
+// perfect agreement while measuring the same types twice.
+func TestManifestProbeRefusesACanonicalHeader(t *testing.T) {
+	headers := canonicalHeaderRoot(t)
+	root := repositoryRoot(t)
+	directory := t.TempDir()
+	stageProbeSources(t, root, directory, nil)
+	command := exec.Command("gcc",
+		"-std=c11", "-Wall", "-Wextra", "-Werror",
+		"-I"+headers, "-I"+directory, "-include", "CNA/C/cna.h",
+		"-c", filepath.Join(directory, "manifest_probe.c"),
+		"-o", filepath.Join(directory, "leaked.o"))
+	output, err := command.CombinedOutput()
+	if err == nil {
+		t.Fatal("the manifest probe compiled with a canonical CNA header in scope")
+	}
+	if !strings.Contains(string(output), "must not see a canonical CNA header") {
+		t.Fatalf("the manifest probe failed for the wrong reason:\n%s", output)
+	}
 }
 
 // TestBridgeTranslationUnitCompilesUnmutated is the control. Every mutation
@@ -321,22 +410,197 @@ func TestProbeABIMutationsFailToCompile(t *testing.T) {
 	}
 }
 
-// TestBoundFunctionsCoverTheEventSurface keeps the measured prototype table and
-// the bridge's required-symbol list from drifting apart: a symbol the bridge
-// resolves but the table does not describe would silently leave
-// PROTOTYPE_TYPE_POSITIONS short.
-func TestBoundFunctionsCoverTheEventSurface(t *testing.T) {
-	for _, name := range []string{"cna_game_subscribe", "cna_game_unsubscribe"} {
-		if _, ok := parameterCounts[name]; !ok {
-			t.Fatalf("%s is bound by the bridge but has no measured prototype", name)
-		}
-	}
+// TestManifestRoutesAreSelfDescribing keeps the measured prototype table and
+// the bridge's required-symbol list from drifting apart. They cannot drift any
+// more: the table IS the manifest now, parsed from the same X-macro list the
+// cgo build resolves, so this proves the parser reads it rather than that two
+// hand-maintained copies still agree.
+func TestManifestRoutesAreSelfDescribing(t *testing.T) {
 	manifest := readSource(t, filepath.Join(repositoryRoot(t), "internal", "interop", "abi_manifest.h"))
-	for name := range parameterCounts {
-		if !strings.Contains(manifest, "X("+name+")") {
-			t.Fatalf("%s is measured but the bridge never resolves it", name)
+	routes, err := parseManifestRoutes(manifest)
+	if err != nil {
+		t.Fatalf("parse the manifest: %v", err)
+	}
+	if len(routes) == 0 {
+		t.Fatal("the manifest declares no bound routes")
+	}
+	seen := map[string]bool{}
+	for _, entry := range routes {
+		if seen[entry.name] {
+			t.Fatalf("%s appears twice in the required-symbol list", entry.name)
+		}
+		seen[entry.name] = true
+		if !strings.Contains(manifest, "X("+entry.name+")") {
+			t.Fatalf("%s is measured but the bridge never resolves it", entry.name)
 		}
 	}
+	for _, required := range []string{"cna_game_subscribe", "cna_game_unsubscribe", "cna_get_abi_version"} {
+		if !seen[required] {
+			t.Fatalf("%s is bound by the bridge but has no measured prototype", required)
+		}
+	}
+}
+
+// TestManifestRoutesRejectAStaleEntry proves the parser refuses a
+// required-symbol entry with no prototype of its own rather than counting it as
+// a route with zero parameters.
+func TestManifestRoutesRejectAStaleEntry(t *testing.T) {
+	manifest := readSource(t, filepath.Join(repositoryRoot(t), "internal", "interop", "abi_manifest.h"))
+	mutated := strings.Replace(manifest,
+		"    X(cna_keyboard_get_state)",
+		"    X(cna_game_removed_route_ext) \\\n    X(cna_keyboard_get_state)", 1)
+	if mutated == manifest {
+		t.Fatal("the required-symbol list no longer ends with cna_keyboard_get_state")
+	}
+	if _, err := parseManifestRoutes(mutated); err == nil {
+		t.Fatal("a required symbol with no typedef was accepted")
+	}
+}
+
+// TestManifestProbeCompilesUnmutated is the control for the manifest-only
+// translation unit: the one that measures CNA-Go's private declarations in the
+// same environment cgo gives bridge.c.
+func TestManifestProbeCompilesUnmutated(t *testing.T) {
+	root := repositoryRoot(t)
+	directory := t.TempDir()
+	stageProbeSources(t, root, directory, nil)
+	if output, err := compileManifestProbe(directory); err != nil {
+		t.Fatalf("unmutated manifest probe did not compile: %v\n%s", err, output)
+	}
+}
+
+// TestUnmutatedProbesAgreeOnEveryMeasurement is the control for the comparison
+// the layout mutations below falsify.
+func TestUnmutatedProbesAgreeOnEveryMeasurement(t *testing.T) {
+	headers := canonicalHeaderRoot(t)
+	root := repositoryRoot(t)
+	directory := t.TempDir()
+	stageProbeSources(t, root, directory, nil)
+	canonical, manifest := measureStagedProbes(t, directory, headers)
+	shared := 0
+	for key, value := range canonical {
+		other, ok := manifest[key]
+		if !ok {
+			continue
+		}
+		shared++
+		if other != value {
+			t.Fatalf("%s: canonical %d, manifest %d", key, value, other)
+		}
+	}
+	if shared == 0 {
+		t.Fatal("the two probes share no measurement, so comparing them proves nothing")
+	}
+}
+
+// layoutMutations change CNA-Go's private manifest in ways that COMPILE
+// cleanly everywhere -- in the bridge, in the canonical probe, and in the
+// manifest probe -- because C aggregates are written by field name. Each one
+// still changes the bytes the shipped binding would pass to CNA. They are the
+// class the ABI evidence could not see until the manifest's own declarations
+// were measured, and each must produce a divergence.
+var layoutMutations = []sourceMutation{
+	{
+		name: "sprite-command-source-and-colour-swapped",
+		file: "abi_manifest.h",
+		old:  "    CNA_Rectangle source;\n    CNA_Color color;",
+		new:  "    CNA_Color color;\n    CNA_Rectangle source;",
+	},
+	{
+		name: "keyboard-state-word-count-doubled",
+		file: "abi_manifest.h",
+		old:  "    uint64_t pressed_key_words[4];",
+		new:  "    uint64_t pressed_key_words[8];",
+	},
+	{
+		name: "viewport-depth-widened-to-double",
+		file: "abi_manifest.h",
+		old:  "    float min_depth;\n    float max_depth;",
+		new:  "    double min_depth;\n    double max_depth;",
+	},
+	{
+		name: "texture-info-struct-size-widened",
+		file: "abi_manifest.h",
+		old:  "typedef struct CNA_Texture2DInfo {\n    uint32_t struct_size;",
+		new:  "typedef struct CNA_Texture2DInfo {\n    uint64_t struct_size;",
+	},
+	{
+		name: "game-time-tick-count-narrowed",
+		file: "abi_manifest.h",
+		old:  "    int64_t total_game_time_ticks;\n    int64_t elapsed_game_time_ticks;",
+		new:  "    int32_t total_game_time_ticks;\n    int64_t elapsed_game_time_ticks;",
+	},
+	{
+		name: "string-view-length-narrowed",
+		file: "abi_manifest.h",
+		old:  "typedef struct CNA_StringView { const char* data; uint64_t byte_length; } CNA_StringView;",
+		new:  "typedef struct CNA_StringView { const char* data; uint32_t byte_length; } CNA_StringView;",
+	},
+}
+
+// TestLayoutMutationsDiverge is the falsifiability proof for the manifest-side
+// measurement. Every mutation compiles; the comparison is what catches it.
+func TestLayoutMutationsDiverge(t *testing.T) {
+	headers := canonicalHeaderRoot(t)
+	root := repositoryRoot(t)
+	for _, mutation := range layoutMutations {
+		t.Run(mutation.name, func(t *testing.T) {
+			directory := t.TempDir()
+			stageProbeSources(t, root, directory, &mutation)
+			canonical, manifest := measureStagedProbes(t, directory, headers)
+			for key, value := range canonical {
+				if other, ok := manifest[key]; ok && other != value {
+					return
+				}
+			}
+			t.Fatalf("mutation %q changed no measured value; the manifest layout is not pinned", mutation.name)
+		})
+	}
+}
+
+// measureStagedProbes compiles and runs both probes over one staged source
+// tree and returns their measurements.
+func measureStagedProbes(t *testing.T, directory, headers string) (map[string]int, map[string]int) {
+	t.Helper()
+	canonicalBinary := filepath.Join(directory, "canonical-probe")
+	arguments := []string{
+		"-std=c11", "-Wall", "-Wextra", "-Werror", "-Werror=incompatible-pointer-types",
+		"-I" + headers, "-I" + directory, "-DCNA_GO_LAYOUT_ONLY",
+		filepath.Join(directory, "probe.c"), "-o", canonicalBinary,
+	}
+	if output, err := exec.Command("gcc", arguments...).CombinedOutput(); err != nil {
+		t.Fatalf("canonical probe did not compile: %v\n%s", err, output)
+	}
+	manifestBinary := filepath.Join(directory, "manifest-probe")
+	arguments = []string{
+		"-std=c11", "-Wall", "-Wextra", "-Werror", "-Werror=incompatible-pointer-types",
+		"-I" + directory,
+		filepath.Join(directory, "manifest_probe.c"), "-o", manifestBinary,
+	}
+	if output, err := exec.Command("gcc", arguments...).CombinedOutput(); err != nil {
+		t.Fatalf("manifest probe did not compile: %v\n%s", err, output)
+	}
+	return runStagedProbe(t, canonicalBinary), runStagedProbe(t, manifestBinary)
+}
+
+func runStagedProbe(t *testing.T, binary string) map[string]int {
+	t.Helper()
+	output, err := exec.Command(binary).Output()
+	if err != nil {
+		t.Fatalf("run %s: %v", binary, err)
+	}
+	measurements := map[string]int{}
+	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+	for scanner.Scan() {
+		parts := strings.SplitN(scanner.Text(), "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		if value, parseErr := strconv.Atoi(parts[1]); parseErr == nil {
+			measurements[parts[0]] = value
+		}
+	}
+	return measurements
 }
 
 func compileBridge(directory string) (string, error) {
@@ -360,6 +624,19 @@ func compileProbe(directory, headers string) (string, error) {
 	return string(output), err
 }
 
+// compileManifestProbe deliberately passes NO canonical include root. That is
+// the whole point of the translation unit: it must measure CNA-Go's private
+// declarations, and it refuses to compile if a CNA header reaches it.
+func compileManifestProbe(directory string) (string, error) {
+	command := exec.Command("gcc",
+		"-std=c11", "-Wall", "-Wextra", "-Werror", "-Werror=incompatible-pointer-types",
+		"-c", filepath.Join(directory, "manifest_probe.c"),
+		"-o", filepath.Join(directory, "manifest_probe.o"),
+		"-I"+directory)
+	output, err := command.CombinedOutput()
+	return string(output), err
+}
+
 func stageInteropSources(t *testing.T, root, directory string, mutation *sourceMutation) {
 	t.Helper()
 	for _, name := range []string{"bridge.c", "bridge.h", "abi_manifest.h"} {
@@ -373,23 +650,29 @@ func stageInteropSources(t *testing.T, root, directory string, mutation *sourceM
 
 func stageProbeSources(t *testing.T, root, directory string, mutation *sourceMutation) {
 	t.Helper()
-	probe := readSource(t, filepath.Join(root, "tools", "native_abi", "testdata", "probe.c"))
-	// The staged copy is flat, so the probe's relative include of the private
-	// manifest becomes a sibling include. Nothing else about it changes.
-	probe = strings.Replace(probe, `#include "../../../internal/interop/abi_manifest.h"`, `#include "abi_manifest.h"`, 1)
-	manifest := readSource(t, filepath.Join(root, "internal", "interop", "abi_manifest.h"))
+	// The staged copy is flat, so both probes' relative includes of the private
+	// headers become sibling includes. Nothing else about them changes.
+	flatten := func(source string) string {
+		source = strings.Replace(source, `#include "../../../internal/interop/abi_manifest.h"`, `#include "abi_manifest.h"`, 1)
+		return strings.Replace(source, `#include "../../../internal/interop/bridge.h"`, `#include "bridge.h"`, 1)
+	}
+	staged := map[string]string{
+		"probe.c":          flatten(readSource(t, filepath.Join(root, "tools", "native_abi", "testdata", "probe.c"))),
+		"manifest_probe.c": flatten(readSource(t, filepath.Join(root, "tools", "native_abi", "testdata", "manifest_probe.c"))),
+		"measurements.inc": readSource(t, filepath.Join(root, "tools", "native_abi", "testdata", "measurements.inc")),
+		"abi_manifest.h":   readSource(t, filepath.Join(root, "internal", "interop", "abi_manifest.h")),
+		"bridge.h":         readSource(t, filepath.Join(root, "internal", "interop", "bridge.h")),
+	}
 	if mutation != nil {
-		switch mutation.file {
-		case "probe.c":
-			probe = applyMutation(t, probe, *mutation)
-		case "abi_manifest.h":
-			manifest = applyMutation(t, manifest, *mutation)
-		default:
+		content, ok := staged[mutation.file]
+		if !ok {
 			t.Fatalf("probe mutation %q names an unstaged file %q", mutation.name, mutation.file)
 		}
+		staged[mutation.file] = applyMutation(t, content, *mutation)
 	}
-	writeSource(t, filepath.Join(directory, "probe.c"), probe)
-	writeSource(t, filepath.Join(directory, "abi_manifest.h"), manifest)
+	for name, content := range staged {
+		writeSource(t, filepath.Join(directory, name), content)
+	}
 }
 
 func applyMutation(t *testing.T, content string, mutation sourceMutation) string {
@@ -445,8 +728,9 @@ func canonicalHeaderRoot(t *testing.T) string {
 	t.Helper()
 	candidates := []string{os.Getenv("CNA_C_API_INCLUDE")}
 	if home, err := os.UserHomeDir(); err == nil {
-		candidates = append(candidates, filepath.Join(home, "deps", "cna-c-abi-0.7.0", "include"))
+		candidates = append(candidates, filepath.Join(home, "deps", "cna-c-abi-0.21.0", "include"))
 	}
+	candidates = append(candidates, filepath.Join(repositoryRoot(t), "..", "..", "cnanext", "modules", "c-api", "include"))
 	for _, candidate := range candidates {
 		if candidate == "" {
 			continue

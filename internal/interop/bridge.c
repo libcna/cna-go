@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: MS-PL
 
+/* dladdr is a GNU extension of <dlfcn.h>. cna_go_verify_symbol_identity uses it
+   to prove that every resolved pointer belongs to the symbol the manifest
+   names, so the declaration has to be visible. */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+
 #include "bridge.h"
 #include "abi_manifest.h"
 
@@ -222,6 +229,76 @@ void cna_go_close(void) {
 
 uint32_t cna_go_abi_version(void) {
     return api.cna_get_abi_version == NULL ? 0 : api.cna_get_abi_version();
+}
+
+uint32_t cna_go_abi_encode(uint32_t major, uint32_t minor, uint32_t patch) {
+    return CNA_GO_ABI_ENCODE(major, minor, patch);
+}
+
+uint32_t cna_go_abi_major_of(uint32_t version) { return CNA_GO_ABI_MAJOR_OF(version); }
+uint32_t cna_go_abi_minor_of(uint32_t version) { return CNA_GO_ABI_MINOR_OF(version); }
+uint32_t cna_go_abi_patch_of(uint32_t version) { return CNA_GO_ABI_PATCH_OF(version); }
+
+/* The qualified encoded constant must be exactly what the policy's own parts
+   encode. A floor raised without re-encoding the qualified constant, or the
+   reverse, would make the loader report one range and enforce another. */
+_Static_assert(CNA_GO_ABI_QUALIFIED_VERSION ==
+                   CNA_GO_ABI_ENCODE(CNA_GO_ABI_MAJOR, CNA_GO_ABI_MINIMUM_MINOR, CNA_GO_ABI_QUALIFIED_PATCH),
+               "the qualified ABI constant must encode the admission policy's own parts");
+_Static_assert(CNA_GO_ABI_MAJOR_OF(CNA_GO_ABI_QUALIFIED_VERSION) == CNA_GO_ABI_MAJOR,
+               "encoded major must decode back to the policy major");
+_Static_assert(CNA_GO_ABI_MINOR_OF(CNA_GO_ABI_QUALIFIED_VERSION) == CNA_GO_ABI_MINIMUM_MINOR,
+               "encoded minor must decode back to the policy floor");
+
+int cna_go_abi_admits(uint32_t version) {
+    if (CNA_GO_ABI_MAJOR_OF(version) != (uint32_t)CNA_GO_ABI_MAJOR) {
+        return 0;
+    }
+    return CNA_GO_ABI_MINOR_OF(version) >= (uint32_t)CNA_GO_ABI_MINIMUM_MINOR;
+}
+
+/* The resolution macro pairs each api field with the string form of the SAME
+   macro argument, so a field cannot be filled from a differently named symbol
+   by editing one side alone. That is a textual argument, not a measurement, and
+   several bound routes share a prototype -- cna_game_run, cna_game_request_exit
+   and cna_game_destroy are all CNA_Result(CNA_Handle) -- so a mis-pairing among
+   them would compile cleanly. dladdr turns the argument into evidence: it
+   reports the symbol that actually owns each resolved address. */
+int cna_go_verify_symbol_identity(char* out_detail, size_t detail_capacity) {
+    if (library_handle == NULL) {
+        copy_error(out_detail, detail_capacity, "no CNA library is open");
+        return 0;
+    }
+    void* const resolved[] = {
+#define CNA_GO_ADDRESS(name) (void*)(uintptr_t)api.name,
+        CNA_GO_REQUIRED_SYMBOLS(CNA_GO_ADDRESS)
+#undef CNA_GO_ADDRESS
+    };
+    const uint32_t count = cna_go_bound_function_count();
+    for (uint32_t index = 0; index < count; ++index) {
+        Dl_info info;
+        memset(&info, 0, sizeof(info));
+        if (resolved[index] == NULL) {
+            char message[512];
+            snprintf(message, sizeof(message), "%s resolved to a null address", required_symbol_names[index]);
+            copy_error(out_detail, detail_capacity, message);
+            return 0;
+        }
+        if (dladdr(resolved[index], &info) == 0 || info.dli_sname == NULL) {
+            char message[512];
+            snprintf(message, sizeof(message), "%s has no dynamic-symbol identity", required_symbol_names[index]);
+            copy_error(out_detail, detail_capacity, message);
+            return 0;
+        }
+        if (strcmp(info.dli_sname, required_symbol_names[index]) != 0) {
+            char message[512];
+            snprintf(message, sizeof(message), "%s is bound to %s", required_symbol_names[index], info.dli_sname);
+            copy_error(out_detail, detail_capacity, message);
+            return 0;
+        }
+    }
+    copy_error(out_detail, detail_capacity, "");
+    return 1;
 }
 
 uint64_t cna_go_owner_thread_id(void) {

@@ -5,6 +5,7 @@
 
 #include <CNA/C/cna.h>
 #include "../../../internal/interop/abi_manifest.h"
+#include "../../../internal/interop/bridge.h"
 
 #ifndef CNA_GO_LAYOUT_ONLY
 #define CHECK_PROTOTYPE(name) static name##_fn checked_##name = &name;
@@ -12,11 +13,49 @@ CNA_GO_REQUIRED_SYMBOLS(CHECK_PROTOTYPE)
 #undef CHECK_PROTOTYPE
 #endif
 
-_Static_assert(CNA_ABI_VERSION == UINT32_C(0x00000700), "CNA C ABI must be exactly 0.7.0");
+// The ADMISSION POLICY, checked against the canonical headers the probe was
+// pointed at rather than against one frozen encoded number. CNA-Go admits the
+// qualified major and any minor at or above the qualified floor, which is what
+// CNA's own version-script comment describes: the symbol-version node changes
+// only for a major break, and minor releases are additive.
+_Static_assert(CNA_ABI_VERSION_MAJOR == CNA_GO_ABI_MAJOR,
+               "canonical CNA ABI major is outside CNA-Go's admission policy");
+_Static_assert(CNA_ABI_VERSION_MINOR >= CNA_GO_ABI_MINIMUM_MINOR,
+               "canonical CNA ABI minor is below CNA-Go's qualified floor");
+
+// CNA-Go mirrors CNA_ABI_VERSION_ENCODE so the loader can decode a version
+// without a CNA header. This is the only translation unit that can see both
+// spellings, so it is where the mirror is proven rather than trusted.
+_Static_assert(CNA_GO_ABI_ENCODE(0, 21, 0) == CNA_ABI_VERSION_ENCODE(0, 21, 0),
+               "encoded-version mirror drift at the qualified version");
+_Static_assert(CNA_GO_ABI_ENCODE(1, 2, 3) == CNA_ABI_VERSION_ENCODE(1, 2, 3),
+               "encoded-version mirror drift at a mixed sample");
+_Static_assert(CNA_GO_ABI_ENCODE(0, 255, 255) == CNA_ABI_VERSION_ENCODE(0, 255, 255),
+               "encoded-version mirror drift at the field maxima");
+_Static_assert(CNA_GO_ABI_QUALIFIED_VERSION == CNA_ABI_VERSION_ENCODE(0, 21, 0),
+               "the qualified encoded constant must be CNA's own encoding of 0.21.0");
+
 _Static_assert(CNA_RESULT_SUCCESS == 0, "CNA_RESULT_SUCCESS drift");
 _Static_assert(CNA_RESULT_CALLBACK == 9, "CNA_RESULT_CALLBACK drift");
 _Static_assert(CNA_FALSE == 0 && CNA_TRUE == 1, "CNA_Bool constants drift");
 _Static_assert(CNA_INVALID_HANDLE == 0, "invalid handle drift");
+
+// bridge.h's own private result mirrors, compared with the canonical values in
+// the one translation unit that sees both. bridge.c uses CNA_GO_RESULT_* and is
+// compiled by cgo without any CNA header, so before this the two were only ever
+// asserted against literals that happened to match.
+_Static_assert(CNA_GO_RESULT_SUCCESS == CNA_RESULT_SUCCESS, "bridge result-success mirror drift");
+_Static_assert(CNA_GO_RESULT_CALLBACK == CNA_RESULT_CALLBACK, "bridge result-callback mirror drift");
+
+// bridge.h's game-event mirror against the canonical identities. bridge.c
+// already compares it with the manifest; this closes the third side, so the
+// canonical header, the manifest and the bridge cannot pairwise agree while all
+// three drift together.
+_Static_assert(CNA_GO_GAME_EVENT_ACTIVATED == CNA_GAME_EVENT_ACTIVATED, "bridge activation mirror drift");
+_Static_assert(CNA_GO_GAME_EVENT_DEACTIVATED == CNA_GAME_EVENT_DEACTIVATED, "bridge deactivation mirror drift");
+_Static_assert(CNA_GO_GAME_EVENT_DISPOSED == CNA_GAME_EVENT_DISPOSED, "bridge disposal mirror drift");
+_Static_assert(CNA_GO_GAME_EVENT_EXITING == CNA_GAME_EVENT_EXITING, "bridge exit mirror drift");
+_Static_assert(CNA_GO_GAME_EVENT_COUNT == CNA_GAME_EVENT_MAXIMUM + 1, "bridge game-event count drift");
 
 // The four canonical game-event identities, compared against CNA-Go's own
 // private copy in abi_manifest.h. The manifest's copy is what the cgo build
@@ -104,45 +143,11 @@ int main(void) {
     (void)checked_CNA_GameBeginDrawCallback;
 #endif
     printf("abi_version=%u\n", (unsigned)CNA_ABI_VERSION);
-    printf("sizeof_CNA_Bool=%zu\n", sizeof(CNA_Bool));
-    printf("sizeof_CNA_Result=%zu\n", sizeof(CNA_Result));
-    printf("sizeof_CNA_Handle=%zu\n", sizeof(CNA_Handle));
-    printf("sizeof_CNA_GameTime=%zu\n", sizeof(CNA_GameTime));
-    printf("alignof_CNA_GameTime=%zu\n", _Alignof(CNA_GameTime));
-    printf("offsetof_CNA_GameTime_is_running_slowly=%zu\n", offsetof(CNA_GameTime, is_running_slowly));
-    printf("sizeof_CNA_GameCallbacks=%zu\n", sizeof(CNA_GameCallbacks));
-    printf("alignof_CNA_GameCallbacks=%zu\n", _Alignof(CNA_GameCallbacks));
-    printf("offsetof_CNA_GameCallbacks_context=%zu\n", offsetof(CNA_GameCallbacks, context));
-    printf("sizeof_CNA_GameFrameHooks=%zu\n", sizeof(CNA_GameFrameHooks));
-    printf("alignof_CNA_GameFrameHooks=%zu\n", _Alignof(CNA_GameFrameHooks));
-    printf("offsetof_CNA_GameFrameHooks_context=%zu\n", offsetof(CNA_GameFrameHooks, context));
-    // CNA-Go assigns four of the five hook members conditionally, so their
-    // POSITIONS are load-bearing: a member order that drifted between the
-    // canonical header and CNA-Go's private manifest would install begin_draw
-    // where end_run belongs and the mistake would be invisible at run time.
-    printf("offsetof_CNA_GameFrameHooks_initialize=%zu\n", offsetof(CNA_GameFrameHooks, initialize));
-    printf("offsetof_CNA_GameFrameHooks_begin_run=%zu\n", offsetof(CNA_GameFrameHooks, begin_run));
-    printf("offsetof_CNA_GameFrameHooks_end_run=%zu\n", offsetof(CNA_GameFrameHooks, end_run));
-    printf("offsetof_CNA_GameFrameHooks_begin_draw=%zu\n", offsetof(CNA_GameFrameHooks, begin_draw));
-    printf("offsetof_CNA_GameFrameHooks_end_draw=%zu\n", offsetof(CNA_GameFrameHooks, end_draw));
-    printf("sizeof_CNA_GameCreateInfo=%zu\n", sizeof(CNA_GameCreateInfo));
-    printf("alignof_CNA_GameCreateInfo=%zu\n", _Alignof(CNA_GameCreateInfo));
-    printf("offsetof_CNA_GameCreateInfo_callbacks=%zu\n", offsetof(CNA_GameCreateInfo, callbacks));
-    printf("sizeof_CNA_Viewport=%zu\n", sizeof(CNA_Viewport));
-    printf("alignof_CNA_Viewport=%zu\n", _Alignof(CNA_Viewport));
-    printf("offsetof_CNA_Viewport_min_depth=%zu\n", offsetof(CNA_Viewport, min_depth));
-    printf("sizeof_CNA_Texture2DInfo=%zu\n", sizeof(CNA_Texture2DInfo));
-    printf("alignof_CNA_Texture2DInfo=%zu\n", _Alignof(CNA_Texture2DInfo));
-    printf("offsetof_CNA_Texture2DInfo_width=%zu\n", offsetof(CNA_Texture2DInfo, width));
-    printf("sizeof_CNA_SpriteBatchBeginInfo=%zu\n", sizeof(CNA_SpriteBatchBeginInfo));
-    printf("sizeof_CNA_SpriteScaledCommand=%zu\n", sizeof(CNA_SpriteScaledCommand));
-    printf("alignof_CNA_SpriteScaledCommand=%zu\n", _Alignof(CNA_SpriteScaledCommand));
-    printf("offsetof_CNA_SpriteScaledCommand_scale=%zu\n", offsetof(CNA_SpriteScaledCommand, scale));
-    printf("sizeof_CNA_GameEvent=%zu\n", sizeof(CNA_GameEvent));
-    printf("sizeof_CNA_GameEventRegistrationHandle=%zu\n", sizeof(CNA_GameEventRegistrationHandle));
-    printf("sizeof_CNA_GameEventCallback=%zu\n", sizeof(CNA_GameEventCallback));
-    printf("sizeof_CNA_KeyboardState=%zu\n", sizeof(CNA_KeyboardState));
-    printf("alignof_CNA_KeyboardState=%zu\n", _Alignof(CNA_KeyboardState));
-    printf("offsetof_CNA_KeyboardState_pressed_key_words=%zu\n", offsetof(CNA_KeyboardState, pressed_key_words));
+    printf("abi_major=%u\n", (unsigned)CNA_ABI_VERSION_MAJOR);
+    printf("abi_minor=%u\n", (unsigned)CNA_ABI_VERSION_MINOR);
+    printf("abi_patch=%u\n", (unsigned)CNA_ABI_VERSION_PATCH);
+#define CNA_GO_MEASURE(key, expression) printf(#key "=%zu\n", (size_t)(expression));
+#include "measurements.inc"
+#undef CNA_GO_MEASURE
     return 0;
 }

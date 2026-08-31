@@ -2,7 +2,9 @@
 
 **Selected profile:** Microsoft XNA Framework 4.0 Windows runtime
 
-**Native contract:** canonical CNA C ABI, exact experimental version 0.7.0
+**Native contract:** canonical CNA C ABI, admitted range major 0 with minor 21
+or newer, qualified at 0.21.0 (Foundation 44 migrated this from Foundation 1's
+exact 0.7.0 admission)
 
 **Foundation 1 status:** qualified for the explicitly documented Linux amd64
 HEADLESS closure; strict structural verification remains intentionally red for
@@ -91,7 +93,9 @@ are evidence and must not replace the rules here.
 
 ## Foundation 1 qualification evidence
 
-- [x] Admit and hash an exact ABI 0.7 Linux amd64 CNA artifact.
+- [x] Admit and hash a Linux amd64 CNA artifact. Foundation 1 admitted an exact
+      ABI 0.7 artifact; Foundation 44 migrated the boundary to the live CNA C
+      ABI and now admits a stated range.
 - [x] Make the compiler-backed ABI report green with zero missing symbols and
       zero mismatches.
 - [x] Qualify native Game lifecycle, tick data, exit, recreation, PNG info,
@@ -135,10 +139,13 @@ types may remain explicitly partial where completion requires deferred systems.
 
 Linux loads `CNA_NATIVE_LIBRARY` when it names an absolute regular file, or lets
 the platform search `libcna_c_api.so`. Production contains no checkout-relative
-fallback. ABI versions other than exactly 0.7.0 are rejected. The compiler
-compares every manifest prototype and selected layout/constant/callback
-measurement against canonical CNA headers; the production loader separately
-checks the artifact exports.
+fallback. An ABI outside the admitted range -- major 0 with minor 21 or newer --
+is rejected, and the rejection names the library path, the reported version and
+the range. The compiler compares every manifest prototype against the canonical
+declaration of the same name, and compares CNA-Go's private layouts against the
+canonical ones by measuring both in separate translation units; the production
+loader separately checks the artifact exports and confirms with `dladdr` that
+each resolved address belongs to the symbol the manifest names.
 
 The Run goroutine locks its OS thread before native creation and unlocks only
 after callbacks are dead, children and Game have been destroyed, the generation

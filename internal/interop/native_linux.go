@@ -46,11 +46,52 @@ func nativeOpen(path string) error {
 		return fmt.Errorf("%w: %s", ErrNativeUnavailable, cStringFromBuffer(buffer))
 	}
 	version := uint32(C.cna_go_abi_version())
-	if version != uint32(C.CNA_GO_ABI_VERSION) {
+	if C.cna_go_abi_admits(C.uint32_t(version)) == 0 {
 		C.cna_go_close()
-		return fmt.Errorf("%w: CNA C ABI version 0x%08x is not admitted; require 0.7.0 (0x%08x)", ErrNativeUnavailable, version, uint32(C.CNA_GO_ABI_VERSION))
+		return fmt.Errorf(
+			"%w: %s reports CNA C ABI %s (0x%08x); CNA-Go admits %s",
+			ErrNativeUnavailable, path, FormatABIVersion(version), version, ABIAdmissionPolicy())
 	}
 	return nil
+}
+
+// ABIMajor, ABIMinimumMinor and ABIQualifiedVersion mirror bridge.h. The
+// mirror is checked at compile time by the arrays below, exactly as the
+// game-event and frame-hook mirrors are.
+const (
+	ABIMajor            = uint32(C.CNA_GO_ABI_MAJOR)
+	ABIMinimumMinor     = uint32(C.CNA_GO_ABI_MINIMUM_MINOR)
+	ABIQualifiedVersion = uint32(C.CNA_GO_ABI_QUALIFIED_VERSION)
+)
+
+// ABIAdmits reports whether an encoded CNA C ABI version satisfies CNA-Go's
+// admission policy. The decision is made by bridge.c so the loader and every
+// report answer from one implementation.
+func ABIAdmits(version uint32) bool {
+	return C.cna_go_abi_admits(C.uint32_t(version)) != 0
+}
+
+// FormatABIVersion decodes an encoded CNA ABI version into major.minor.patch.
+func FormatABIVersion(version uint32) string {
+	return fmt.Sprintf("%d.%d.%d",
+		uint32(C.cna_go_abi_major_of(C.uint32_t(version))),
+		uint32(C.cna_go_abi_minor_of(C.uint32_t(version))),
+		uint32(C.cna_go_abi_patch_of(C.uint32_t(version))))
+}
+
+// ABIAdmissionPolicy states the admitted range in the same words the loader's
+// rejection uses.
+func ABIAdmissionPolicy() string {
+	return fmt.Sprintf("major %d with minor %d or newer (qualified at %s)",
+		ABIMajor, ABIMinimumMinor, FormatABIVersion(ABIQualifiedVersion))
+}
+
+// nativeSymbolIdentity proves every resolved pointer belongs to the symbol the
+// manifest names. It returns the first disagreement, or the empty string.
+func nativeSymbolIdentity() (bool, string) {
+	buffer := make([]byte, 512)
+	ok := C.cna_go_verify_symbol_identity((*C.char)(unsafe.Pointer(&buffer[0])), C.size_t(len(buffer))) != 0
+	return ok, cStringFromBuffer(buffer)
 }
 
 func nativeClose() { C.cna_go_close() }

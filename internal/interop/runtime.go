@@ -648,9 +648,11 @@ func CurrentRuntime() (*Runtime, bool) {
 // NativeVerification is compiler/tooling evidence about an explicitly named
 // CNA library. It is internal so public XNA packages cannot become ABI probes.
 type NativeVerification struct {
-	ABIVersion     uint32
-	BoundSymbols   []string
-	MissingSymbols []string
+	ABIVersion             uint32
+	BoundSymbols           []string
+	MissingSymbols         []string
+	SymbolIdentityVerified bool
+	SymbolIdentityDetail   string
 }
 
 // VerifyNativeLibrary loads one explicit artifact using the same admission
@@ -671,6 +673,7 @@ func VerifyNativeLibrary(path string) (NativeVerification, error) {
 			result.MissingSymbols = append(result.MissingSymbols, symbol)
 		}
 	}
+	result.SymbolIdentityVerified, result.SymbolIdentityDetail = nativeSymbolIdentity()
 	return result, nil
 }
 

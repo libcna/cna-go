@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "profile": "CNA-Go Foundations 1-13 / XNA 4.0 Windows runtime mapping",
-  "qualified_platform": "linux/amd64 (HEADLESS renderer, NULL audio)",
+  "qualified_platform": "linux/amd64 (HEADLESS renderer, SDL3 audio, CNA C ABI 0.21.0)",
   "capabilities": [
     {"id":"xna-package-mapping","capability":"XNA namespace/package mapping","status":"VERIFIED_MANAGED","evidence":"tools/api_compat and docs/xna-go-mapping.md","notes":"Case-preserving import paths; consumer aliases are not API."},
     {"id":"pure-value-foundation","capability":"Managed Foundation closures","status":"VERIFIED_MANAGED","evidence":"API compatibility, behavior corpus, and family evidence reports","notes":"Geometry/transform, Color, Viewport, Curve, PackedVector, VertexElement, PlayerIndex, DisplayOrientation, BufferUsage, ClearOptions, SurfaceFormat, DepthFormat, GraphicsProfile, and ButtonState closures are locally strict-zero; five native/runtime types remain explicitly partial."},
@@ -30,7 +30,7 @@
     {"id":"visible-rendering","capability":"Visible window rendering","status":"BACKEND_BLOCKED","evidence":"qualified artifact reports HEADLESS renderer","notes":"Native draw calls are verified, but the retained artifact cannot provide visual evidence."},
     {"id":"content-xnb","capability":"ContentManager and XNB","status":"UNIMPLEMENTED_CNA_GO","evidence":"strict structural report","notes":"Deliberately deferred; no fake ContentManager exists."},
     {"id":"effects-3d","capability":"Effects, models, and 3D","status":"UNIMPLEMENTED_CNA_GO","evidence":"strict structural report","notes":"Deliberately deferred; no BasicEffect, cube, depth-state, or fake capability API exists."},
-    {"id":"audio","capability":"Audio/XACT","status":"BACKEND_BLOCKED","evidence":"qualified artifact uses NULL audio and strict report is missing Audio types","notes":"Both a non-null backend and a future dependency-complete CNA-Go surface are required."},
+    {"id":"audio","capability":"Audio/XACT","status":"UNIMPLEMENTED_CNA_GO","evidence":"the qualified artifact opens a real SDL3 playback device: a direct C probe against it reported is_playback_available=1, created a 22,050-sample PCM16 mono effect, measured its duration as exactly 5,000,000 ticks (0.5s at 44.1kHz), created an instance, played it and read back CNA_SOUND_STATE_PLAYING with volume 1.0","notes":"Foundation 1 recorded this as BACKEND_BLOCKED because its artifact was built with the NULL audio backend. That is no longer true and the classification was retired rather than restated: the current artifact is CNA_AUDIO_PLATFORM=SDL3 and playback measurably works in this environment. The only remaining blocker is CNA-Go's own surface -- SoundEffect, SoundEffectInstance and the rest of Microsoft.Xna.Framework.Audio are missing, and CNA-Go binds no cna_sound_effect_* route. AudioListener and AudioEmitter exist as pure managed descriptors and claim no runtime capability."},
     {"id":"media","capability":"Media and video","status":"UNIMPLEMENTED_CNA_GO","evidence":"strict structural report","notes":"Deferred."},
     {"id":"storage","capability":"Storage","status":"UNIMPLEMENTED_CNA_GO","evidence":"strict structural report","notes":"Deferred."},
     {"id":"touch","capability":"Touch input","status":"UNIMPLEMENTED_CNA_GO","evidence":"strict structural report","notes":"Deferred."},
@@ -38,13 +38,13 @@
     {"id":"packed-vector","capability":"PackedVector family","status":"VERIFIED_MANAGED","evidence":"docs/packed-vector-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus","notes":"Complete 19-type managed closure; no CNA ABI route or runtime/hardware claim."},
     {"id":"vertex-element-descriptor","capability":"VertexElement descriptor values","status":"VERIFIED_MANAGED","evidence":"docs/vertex-element-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus","notes":"Complete three-type managed descriptor closure; no VertexDeclaration, buffer, draw, GPU, CNA ABI, or hardware capability claim."},
     {"id":"game-inheritance","capability":"CLR Game subclassing syntax","status":"LANGUAGE_MAPPING_LIMITATION","evidence":"docs/xna-go-mapping.md","notes":"Go uses a concrete Game host plus an explicit GameCallbacks adapter."},
-    {"id":"linux-amd64","capability":"Linux amd64 runtime","status":"VERIFIED_NATIVE","evidence":"exact ABI 0.7 native gates, stress, and canary","notes":"Requires cgo, a C compiler at build time, and a separately supplied CNA shared library."},
+    {"id":"linux-amd64","capability":"Linux amd64 runtime","status":"VERIFIED_NATIVE","evidence":"admitted-range ABI native gates (major 0 with minor 21 or newer, qualified at 0.21.0), stress, and canary","notes":"Requires cgo, a C compiler at build time, and a separately supplied CNA shared library. The admitted range is CNA's own contract, not a relaxation: CNA states that its ELF symbol-version node changes only for a major ABI break and that minor releases are additive."},
     {"id":"windows","capability":"Windows runtime","status":"PLATFORM_PENDING","evidence":"no Windows loader or runtime qualification","notes":"Go target compilation is not CNA runtime evidence."},
     {"id":"macos","capability":"macOS runtime","status":"PLATFORM_PENDING","evidence":"no macOS runtime qualification","notes":"Not claimed."},
     {"id":"android","capability":"Android runtime","status":"PLATFORM_PENDING","evidence":"unsupported template entry point removed","notes":"Not claimed."},
     {"id":"ios","capability":"iOS runtime","status":"PLATFORM_PENDING","evidence":"no iOS runtime qualification","notes":"Not claimed."},
     {"id":"web-wasm","capability":"Web/Wasm runtime","status":"PLATFORM_PENDING","evidence":"unsupported template entry point removed","notes":"cgo/native CNA is not a Web/Wasm qualification."},
-    {"id":"hardware-renderer","capability":"Hardware renderer qualification","status":"HARDWARE_PENDING","evidence":"Foundation artifact is HEADLESS","notes":"Requires a separately admitted exact ABI artifact and visible-run evidence."},
+    {"id":"hardware-renderer","capability":"Hardware renderer qualification","status":"HARDWARE_PENDING","evidence":"the qualification artifact is built with CNA_GRAPHICS_RENDERER=HEADLESS","notes":"Requires a separately admitted artifact built with a real renderer and visible-run evidence. CNA publishes SDL_RENDERER, SOFTWARE, OPENGL33, OPENGLES3 and VULKAN builds of the same ABI, so this is an artifact-selection question rather than an upstream gap."},
     {"id":"native-sanitizers","capability":"Native sanitizer evidence","status":"UPSTREAM_CNA_BLOCKED","evidence":"qualified library is not instrumented","notes":"NATIVE_SANITIZER_STATUS=NOT_RUN; no leak-freedom claim."}
   ]
 }
