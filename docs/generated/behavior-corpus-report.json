@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 673,
-    "ASSERTIONS": 673,
+    "OBSERVATIONS": 677,
+    "ASSERTIONS": 677,
     "FAILURES": 0
   },
   "observations": [
@@ -5253,6 +5253,38 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "false",
       "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "graphics-device.clear-options-match-cna-identities",
+      "group": "GRAPHICS_DEVICE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,2,4",
+      "actual": "1,2,4",
+      "passed": true
+    },
+    {
+      "id": "graphics-device.status-values-match-cna-identities",
+      "group": "GRAPHICS_DEVICE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,1,2",
+      "actual": "0,1,2",
+      "passed": true
+    },
+    {
+      "id": "graphics-device.a-device-less-facade-reports-on-both-directions",
+      "group": "GRAPHICS_DEVICE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device.present-is-suffixed-because-it-is-an-overload-group",
+      "group": "GRAPHICS_DEVICE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false,true",
+      "actual": "false,true",
       "passed": true
     },
     {

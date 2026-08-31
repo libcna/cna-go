@@ -290,6 +290,88 @@ func nativeSpriteBatchDrawScaled(batch, texture uint64, command SpriteCommand) e
 		C.float(command.ScaleX), C.float(command.ScaleY), C.uint32_t(command.Effects), C.float(command.LayerDepth))))
 }
 
+func nativeGraphicsDeviceBlendFactor(device uint64) (uint8, uint8, uint8, uint8, error) {
+	var r, g, b, a C.uint8_t
+	code := uint32(C.cna_go_graphics_device_get_blend_factor(C.CnaGoHandle(device), &r, &g, &b, &a))
+	return uint8(r), uint8(g), uint8(b), uint8(a), resultError("cna_graphics_device_get_blend_factor", code)
+}
+
+func nativeGraphicsDeviceSetBlendFactor(device uint64, r, g, b, a uint8) error {
+	return resultError("cna_graphics_device_set_blend_factor", uint32(C.cna_go_graphics_device_set_blend_factor(
+		C.CnaGoHandle(device), C.uint8_t(r), C.uint8_t(g), C.uint8_t(b), C.uint8_t(a))))
+}
+
+func nativeGraphicsDeviceMultiSampleMask(device uint64) (int32, error) {
+	var mask C.int32_t
+	code := uint32(C.cna_go_graphics_device_get_multi_sample_mask(C.CnaGoHandle(device), &mask))
+	return int32(mask), resultError("cna_graphics_device_get_multi_sample_mask", code)
+}
+
+func nativeGraphicsDeviceSetMultiSampleMask(device uint64, mask int32) error {
+	return resultError("cna_graphics_device_set_multi_sample_mask",
+		uint32(C.cna_go_graphics_device_set_multi_sample_mask(C.CnaGoHandle(device), C.int32_t(mask))))
+}
+
+func nativeGraphicsDeviceReferenceStencil(device uint64) (int32, error) {
+	var stencil C.int32_t
+	code := uint32(C.cna_go_graphics_device_get_reference_stencil(C.CnaGoHandle(device), &stencil))
+	return int32(stencil), resultError("cna_graphics_device_get_reference_stencil", code)
+}
+
+func nativeGraphicsDeviceSetReferenceStencil(device uint64, stencil int32) error {
+	return resultError("cna_graphics_device_set_reference_stencil",
+		uint32(C.cna_go_graphics_device_set_reference_stencil(C.CnaGoHandle(device), C.int32_t(stencil))))
+}
+
+func nativeGraphicsDeviceScissorRectangle(device uint64) (ScissorRectangle, error) {
+	var x, y, width, height C.int32_t
+	code := uint32(C.cna_go_graphics_device_get_scissor_rectangle(C.CnaGoHandle(device), &x, &y, &width, &height))
+	return ScissorRectangle{X: int32(x), Y: int32(y), Width: int32(width), Height: int32(height)},
+		resultError("cna_graphics_device_get_scissor_rectangle", code)
+}
+
+func nativeGraphicsDeviceSetScissorRectangle(device uint64, rectangle ScissorRectangle) error {
+	return resultError("cna_graphics_device_set_scissor_rectangle", uint32(C.cna_go_graphics_device_set_scissor_rectangle(
+		C.CnaGoHandle(device), C.int32_t(rectangle.X), C.int32_t(rectangle.Y),
+		C.int32_t(rectangle.Width), C.int32_t(rectangle.Height))))
+}
+
+func nativeGraphicsDeviceSetViewport(device uint64, viewport Viewport) error {
+	return resultError("cna_graphics_device_set_viewport", uint32(C.cna_go_graphics_device_set_viewport(
+		C.CnaGoHandle(device), C.int32_t(viewport.X), C.int32_t(viewport.Y),
+		C.int32_t(viewport.Width), C.int32_t(viewport.Height),
+		C.float(viewport.MinDepth), C.float(viewport.MaxDepth))))
+}
+
+func nativeGraphicsDeviceGraphicsProfile(device uint64) (uint32, error) {
+	var profile C.uint32_t
+	code := uint32(C.cna_go_graphics_device_get_graphics_profile(C.CnaGoHandle(device), &profile))
+	return uint32(profile), resultError("cna_graphics_device_get_graphics_profile", code)
+}
+
+func nativeGraphicsDeviceStatus(device uint64) (uint32, error) {
+	var status C.uint32_t
+	code := uint32(C.cna_go_graphics_device_get_status(C.CnaGoHandle(device), &status))
+	return uint32(status), resultError("cna_graphics_device_get_status", code)
+}
+
+func nativeGraphicsDeviceIsDisposed(device uint64) (bool, error) {
+	var disposed C.uint8_t
+	code := uint32(C.cna_go_graphics_device_get_is_disposed(C.CnaGoHandle(device), &disposed))
+	return disposed != 0, resultError("cna_graphics_device_get_is_disposed", code)
+}
+
+func nativeGraphicsDeviceClearOptions(device uint64, options uint32, r, g, b, a uint8, depth float32, stencil int32) error {
+	return resultError("cna_graphics_device_clear_options", uint32(C.cna_go_graphics_device_clear_options(
+		C.CnaGoHandle(device), C.uint32_t(options),
+		C.uint8_t(r), C.uint8_t(g), C.uint8_t(b), C.uint8_t(a),
+		C.float(depth), C.int32_t(stencil))))
+}
+
+func nativeGraphicsDevicePresent(device uint64) error {
+	return resultError("cna_graphics_device_present", uint32(C.cna_go_graphics_device_present(C.CnaGoHandle(device))))
+}
+
 func nativeSpriteBatchDrawDestination(batch, texture uint64, command SpriteDestinationCommand) error {
 	return resultError("cna_sprite_batch_submit_many", uint32(C.cna_go_sprite_batch_draw_destination(
 		C.CnaGoHandle(batch), C.CnaGoHandle(texture),

@@ -326,6 +326,39 @@ var probeMutations = []sourceMutation{
 	// The route pairing is the other half: the two prototypes differ only in
 	// which command pointer they take, so binding submit_many where
 	// submit_scaled_many belongs is a two-token edit that also compiles.
+	// Foundation 51 binds GraphicsDevice's render state, and three of its four
+	// controls are about a C conversion that says nothing.
+	{
+		// clear_options is (handle, options, color, float depth, int32 stencil),
+		// and the last two are a float and an int of the same width. Swapping
+		// them in the manifest lets the bridge pass a depth where a stencil
+		// belongs, and C converts BOTH ways without a word: a depth of 1.0f
+		// arrives as the integer 1, and a stencil of 0 arrives as 0.0f, so a
+		// clear still happens and clears the wrong thing.
+		name: "clear-options-depth-and-stencil-swapped",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_clear_options_fn)(CNA_Handle, CNA_ClearOptions, CNA_Color, float, int32_t);",
+		new:  "typedef CNA_Result (*cna_graphics_device_clear_options_fn)(CNA_Handle, CNA_ClearOptions, CNA_Color, int32_t, float);",
+	},
+	{
+		// A colour passed by pointer where CNA takes it by value. Four bytes
+		// against eight, and the callee would read the pointer's own bits as a
+		// colour.
+		name: "blend-factor-passed-by-pointer",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_set_blend_factor_fn)(CNA_Handle, CNA_Color);",
+		new:  "typedef CNA_Result (*cna_graphics_device_set_blend_factor_fn)(CNA_Handle, const CNA_Color*);",
+	},
+	{
+		// The viewport is the largest by-value struct CNA-Go passes: 24 bytes,
+		// six members, and the calling convention splits it across registers.
+		// Passing it by pointer compiles in the bridge only because the bridge
+		// builds the struct itself.
+		name: "viewport-passed-by-pointer",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_set_viewport_fn)(CNA_Handle, CNA_Viewport);",
+		new:  "typedef CNA_Result (*cna_graphics_device_set_viewport_fn)(CNA_Handle, const CNA_Viewport*);",
+	},
 	{
 		name: "sprite-submit-many-takes-the-scaled-command",
 		file: "abi_manifest.h",
@@ -724,6 +757,22 @@ func TestUnmutatedProbesAgreeOnEveryMeasurement(t *testing.T) {
 // class the ABI evidence could not see until the manifest's own declarations
 // were measured, and each must produce a divergence.
 var layoutMutations = []sourceMutation{
+	{
+		// A narrowed clear mask. Target, DepthBuffer and Stencil are 1, 2 and 4,
+		// so every declared bit survives 16 bits and nothing observable changes
+		// until a caller passes a bit CNA adds later -- which is exactly the
+		// kind of defect that ships.
+		//
+		// It is a LAYOUT control rather than a probe control, and the reason is
+		// structural: the manifest declares CNA_ClearOptions inside
+		// `#ifndef CNA_C_GRAPHICS_DEVICE_H`, so in the probe -- which includes
+		// the canonical header -- the narrowed typedef is never compiled at
+		// all. Only the manifest-only probe sees it, and only sizeof reports it.
+		name: "clear-options-mask-narrowed",
+		file: "abi_manifest.h",
+		old:  "typedef uint32_t CNA_ClearOptions;",
+		new:  "typedef uint16_t CNA_ClearOptions;",
+	},
 	{
 		// A destination rectangle of int16 is the same four fields at the same
 		// offset, and every screen coordinate above 32767 -- or below -32768 --

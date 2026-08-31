@@ -2926,6 +2926,42 @@ func runCorpus() corpusReport {
 		"false", fmt.Sprintf("%t", activityGame.IsActive()))
 
 	// ------------------------------------------------------------------
+	// Foundation 51. GraphicsDevice's render state. Every one of the fifteen
+	// members reaches CNA, so the live evidence is the device-state stress
+	// scenario, which writes each value to a real device and reads it back
+	// from there. What belongs here is what happens before the boundary.
+	// ------------------------------------------------------------------
+
+	// The three enum identities the projection casts across. A cast is correct
+	// only while the two numbering schemes agree, and nothing in the type
+	// system says they do.
+	check("graphics-device.clear-options-match-cna-identities", "GRAPHICS_DEVICE",
+		"1,2,4", fmt.Sprintf("%d,%d,%d",
+			graphics.ClearOptionsTarget, graphics.ClearOptionsDepthBuffer, graphics.ClearOptionsStencil))
+	check("graphics-device.status-values-match-cna-identities", "GRAPHICS_DEVICE",
+		"0,1,2", fmt.Sprintf("%d,%d,%d",
+			graphics.GraphicsDeviceStatusNormal, graphics.GraphicsDeviceStatusLost,
+			graphics.GraphicsDeviceStatusNotReset))
+
+	// The Go-only guard. A facade with no device behind it reports rather than
+	// panicking, on a read and on a write.
+	statelessDevice := &graphics.GraphicsDevice{}
+	_, blendErr := statelessDevice.BlendFactor()
+	stencilErr := statelessDevice.SetReferenceStencil(1)
+	check("graphics-device.a-device-less-facade-reports-on-both-directions", "GRAPHICS_DEVICE",
+		"true,true", fmt.Sprintf("%t,%t", blendErr != nil, stencilErr != nil))
+
+	// Present() and Present(Rectangle?, Rectangle?, IntPtr) are an overload
+	// GROUP, so the no-argument one is PresentByNone under the settled naming
+	// rule. That is the spelling a consumer has to find, and the verifier
+	// reported the un-suffixed name as an UNEXPECTED_MEMBER when it was tried.
+	deviceType := reflect.TypeOf((*graphics.GraphicsDevice)(nil))
+	_, deviceHasBareName := deviceType.MethodByName("Present")
+	_, deviceHasSuffixed := deviceType.MethodByName("PresentByNone")
+	check("graphics-device.present-is-suffixed-because-it-is-an-overload-group", "GRAPHICS_DEVICE",
+		"false,true", fmt.Sprintf("%t,%t", deviceHasBareName, deviceHasSuffixed))
+
+	// ------------------------------------------------------------------
 	// Foundation 47. The two frame steps. Their real evidence is
 	// tools/native_stress, which drives a live native game a frame at a time
 	// in an isolated process; what belongs HERE is the part that reaches no

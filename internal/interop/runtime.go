@@ -233,6 +233,17 @@ type Device struct {
 	ownership  ownership
 }
 
+// ScissorRectangle is CNA_Rectangle as the graphics device's clip rectangle.
+//
+// It is a distinct interop type rather than a reuse of the sprite command's
+// four fields, for the reason every other interop struct here is its own: it
+// crosses the boundary on its own routes and nothing about it is tied to a
+// sprite.
+type ScissorRectangle struct {
+	X, Y          int32
+	Width, Height int32
+}
+
 type Viewport struct {
 	X, Y          int32
 	Width, Height int32
@@ -1377,6 +1388,134 @@ func (d *Device) Viewport() (Viewport, error) {
 		return Viewport{}, err
 	}
 	return nativeGraphicsDeviceViewport(handle)
+}
+
+// The graphics device's render-state accessors.
+//
+// Every one of them asks CNA rather than reading a managed cache, and that is a
+// measured decision rather than a shortcut. The reference caches these values
+// in fields its own constructor initialises when it creates the D3D device;
+// CNA-Go does not create the device, so a managed cache here would start at
+// Go's zero values and disagree with the live device until something wrote to
+// it. Asking CNA is one source of truth, and it is the same source the setters
+// push to.
+//
+// The consequence is recorded rather than hidden: five of the reference's
+// getters are single `ldfld`s and carry no error, and these carry one.
+
+func (d *Device) BlendFactor() (uint8, uint8, uint8, uint8, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return 0, 0, 0, 0, err
+	}
+	return nativeGraphicsDeviceBlendFactor(handle)
+}
+
+func (d *Device) SetBlendFactor(r, g, b, a uint8) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceSetBlendFactor(handle, r, g, b, a)
+}
+
+func (d *Device) MultiSampleMask() (int32, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeGraphicsDeviceMultiSampleMask(handle)
+}
+
+func (d *Device) SetMultiSampleMask(mask int32) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceSetMultiSampleMask(handle, mask)
+}
+
+func (d *Device) ReferenceStencil() (int32, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeGraphicsDeviceReferenceStencil(handle)
+}
+
+func (d *Device) SetReferenceStencil(stencil int32) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceSetReferenceStencil(handle, stencil)
+}
+
+func (d *Device) ScissorRectangle() (ScissorRectangle, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return ScissorRectangle{}, err
+	}
+	return nativeGraphicsDeviceScissorRectangle(handle)
+}
+
+func (d *Device) SetScissorRectangle(rectangle ScissorRectangle) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceSetScissorRectangle(handle, rectangle)
+}
+
+func (d *Device) SetViewport(viewport Viewport) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceSetViewport(handle, viewport)
+}
+
+func (d *Device) GraphicsProfile() (uint32, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeGraphicsDeviceGraphicsProfile(handle)
+}
+
+func (d *Device) Status() (uint32, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeGraphicsDeviceStatus(handle)
+}
+
+func (d *Device) IsDisposed() (bool, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return false, err
+	}
+	return nativeGraphicsDeviceIsDisposed(handle)
+}
+
+// ClearWithOptions is cna_graphics_device_clear_options, which is a different
+// route from Clear: it selects buffers with a mask and carries a depth and a
+// stencil, where Clear takes four floats and clears what CNA decides.
+func (d *Device) ClearWithOptions(options uint32, r, g, b, a uint8, depth float32, stencil int32) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceClearOptions(handle, options, r, g, b, a, depth, stencil)
+}
+
+func (d *Device) Present() error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDevicePresent(handle)
 }
 
 func (d *Device) Clear(red, green, blue, alpha float32) error {

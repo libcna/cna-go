@@ -226,6 +226,20 @@ CnaGoResult cna_go_graphics_device_get_viewport(
     int32_t* height,
     float* min_depth,
     float* max_depth);
+CnaGoResult cna_go_graphics_device_get_blend_factor(CnaGoHandle device, uint8_t* out_r, uint8_t* out_g, uint8_t* out_b, uint8_t* out_a);
+CnaGoResult cna_go_graphics_device_set_blend_factor(CnaGoHandle device, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+CnaGoResult cna_go_graphics_device_get_multi_sample_mask(CnaGoHandle device, int32_t* out_mask);
+CnaGoResult cna_go_graphics_device_set_multi_sample_mask(CnaGoHandle device, int32_t mask);
+CnaGoResult cna_go_graphics_device_get_reference_stencil(CnaGoHandle device, int32_t* out_stencil);
+CnaGoResult cna_go_graphics_device_set_reference_stencil(CnaGoHandle device, int32_t stencil);
+CnaGoResult cna_go_graphics_device_get_scissor_rectangle(CnaGoHandle device, int32_t* out_x, int32_t* out_y, int32_t* out_width, int32_t* out_height);
+CnaGoResult cna_go_graphics_device_set_scissor_rectangle(CnaGoHandle device, int32_t x, int32_t y, int32_t width, int32_t height);
+CnaGoResult cna_go_graphics_device_set_viewport(CnaGoHandle device, int32_t x, int32_t y, int32_t width, int32_t height, float min_depth, float max_depth);
+CnaGoResult cna_go_graphics_device_get_graphics_profile(CnaGoHandle device, uint32_t* out_profile);
+CnaGoResult cna_go_graphics_device_get_status(CnaGoHandle device, uint32_t* out_status);
+CnaGoResult cna_go_graphics_device_get_is_disposed(CnaGoHandle device, uint8_t* out_is_disposed);
+CnaGoResult cna_go_graphics_device_clear_options(CnaGoHandle device, uint32_t options, uint8_t r, uint8_t g, uint8_t b, uint8_t a, float depth, int32_t stencil);
+CnaGoResult cna_go_graphics_device_present(CnaGoHandle device);
 CnaGoResult cna_go_graphics_device_clear_rgba(
     CnaGoHandle device,
     float r,

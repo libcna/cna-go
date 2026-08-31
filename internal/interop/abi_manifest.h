@@ -120,6 +120,19 @@ typedef uint32_t CNA_GraphicsDeviceManagerEvent;
 #endif
 
 #ifndef CNA_C_GRAPHICS_DEVICE_H
+/* Three fixed-width identity aliases, each a uint32_t in the canonical header.
+   They are declared here rather than spelled uint32_t at every use so a
+   prototype names the same identity CNA names, and so the probe compares an
+   alias with an alias. */
+typedef uint32_t CNA_ClearOptions;
+typedef uint32_t CNA_GraphicsDeviceStatus;
+#endif
+
+#ifndef CNA_C_DISPLAY_H
+typedef uint32_t CNA_GraphicsProfile;
+#endif
+
+#ifndef CNA_C_GRAPHICS_DEVICE_H
 typedef struct CNA_Viewport {
     int32_t x;
     int32_t y;
@@ -237,6 +250,20 @@ typedef CNA_Result (*cna_sprite_batch_create_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_sprite_batch_begin_fn)(CNA_Handle, const CNA_SpriteBatchBeginInfo*);
 typedef CNA_Result (*cna_sprite_batch_submit_scaled_many_fn)(CNA_Handle, const CNA_SpriteScaledCommand*, uint64_t);
 typedef CNA_Result (*cna_sprite_batch_submit_many_fn)(CNA_Handle, const CNA_SpriteCommand*, uint64_t);
+typedef CNA_Result (*cna_graphics_device_get_blend_factor_fn)(CNA_Handle, CNA_Color*);
+typedef CNA_Result (*cna_graphics_device_set_blend_factor_fn)(CNA_Handle, CNA_Color);
+typedef CNA_Result (*cna_graphics_device_get_multi_sample_mask_fn)(CNA_Handle, int32_t*);
+typedef CNA_Result (*cna_graphics_device_set_multi_sample_mask_fn)(CNA_Handle, int32_t);
+typedef CNA_Result (*cna_graphics_device_get_reference_stencil_fn)(CNA_Handle, int32_t*);
+typedef CNA_Result (*cna_graphics_device_set_reference_stencil_fn)(CNA_Handle, int32_t);
+typedef CNA_Result (*cna_graphics_device_get_scissor_rectangle_fn)(CNA_Handle, CNA_Rectangle*);
+typedef CNA_Result (*cna_graphics_device_set_scissor_rectangle_fn)(CNA_Handle, CNA_Rectangle);
+typedef CNA_Result (*cna_graphics_device_set_viewport_fn)(CNA_Handle, CNA_Viewport);
+typedef CNA_Result (*cna_graphics_device_get_graphics_profile_fn)(CNA_Handle, CNA_GraphicsProfile*);
+typedef CNA_Result (*cna_graphics_device_get_status_fn)(CNA_Handle, CNA_GraphicsDeviceStatus*);
+typedef CNA_Result (*cna_graphics_device_get_is_disposed_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_graphics_device_clear_options_fn)(CNA_Handle, CNA_ClearOptions, CNA_Color, float, int32_t);
+typedef CNA_Result (*cna_graphics_device_present_fn)(CNA_Handle);
 typedef CNA_Result (*cna_sprite_batch_end_fn)(CNA_Handle);
 typedef CNA_Result (*cna_sprite_batch_destroy_fn)(CNA_Handle);
 typedef CNA_Result (*cna_keyboard_get_state_fn)(CNA_Handle, CNA_KeyboardState*);
@@ -313,6 +340,20 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_sprite_batch_begin) \
     X(cna_sprite_batch_submit_scaled_many) \
     X(cna_sprite_batch_submit_many) \
+    X(cna_graphics_device_get_blend_factor) \
+    X(cna_graphics_device_set_blend_factor) \
+    X(cna_graphics_device_get_multi_sample_mask) \
+    X(cna_graphics_device_set_multi_sample_mask) \
+    X(cna_graphics_device_get_reference_stencil) \
+    X(cna_graphics_device_set_reference_stencil) \
+    X(cna_graphics_device_get_scissor_rectangle) \
+    X(cna_graphics_device_set_scissor_rectangle) \
+    X(cna_graphics_device_set_viewport) \
+    X(cna_graphics_device_get_graphics_profile) \
+    X(cna_graphics_device_get_status) \
+    X(cna_graphics_device_get_is_disposed) \
+    X(cna_graphics_device_clear_options) \
+    X(cna_graphics_device_present) \
     X(cna_sprite_batch_end) \
     X(cna_sprite_batch_destroy) \
     X(cna_keyboard_get_state) \

@@ -602,6 +602,102 @@ CnaGoResult cna_go_sprite_batch_draw_scaled(CnaGoHandle batch, CnaGoHandle textu
     command.layer_depth = layer_depth;
     return api.cna_sprite_batch_submit_scaled_many(batch, &command, 1);
 }
+CnaGoResult cna_go_graphics_device_get_blend_factor(CnaGoHandle device, uint8_t* out_r, uint8_t* out_g, uint8_t* out_b, uint8_t* out_a) {
+    CNA_Color color;
+    memset(&color, 0, sizeof(color));
+    CNA_Result result = api.cna_graphics_device_get_blend_factor(device, &color);
+    *out_r = color.r;
+    *out_g = color.g;
+    *out_b = color.b;
+    *out_a = color.a;
+    return result;
+}
+
+CnaGoResult cna_go_graphics_device_set_blend_factor(CnaGoHandle device, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    CNA_Color color;
+    memset(&color, 0, sizeof(color));
+    color.r = r;
+    color.g = g;
+    color.b = b;
+    color.a = a;
+    return api.cna_graphics_device_set_blend_factor(device, color);
+}
+
+CnaGoResult cna_go_graphics_device_get_multi_sample_mask(CnaGoHandle device, int32_t* out_mask) {
+    return api.cna_graphics_device_get_multi_sample_mask(device, out_mask);
+}
+
+CnaGoResult cna_go_graphics_device_set_multi_sample_mask(CnaGoHandle device, int32_t mask) {
+    return api.cna_graphics_device_set_multi_sample_mask(device, mask);
+}
+
+CnaGoResult cna_go_graphics_device_get_reference_stencil(CnaGoHandle device, int32_t* out_stencil) {
+    return api.cna_graphics_device_get_reference_stencil(device, out_stencil);
+}
+
+CnaGoResult cna_go_graphics_device_set_reference_stencil(CnaGoHandle device, int32_t stencil) {
+    return api.cna_graphics_device_set_reference_stencil(device, stencil);
+}
+
+CnaGoResult cna_go_graphics_device_get_scissor_rectangle(CnaGoHandle device, int32_t* out_x, int32_t* out_y, int32_t* out_width, int32_t* out_height) {
+    CNA_Rectangle rectangle;
+    memset(&rectangle, 0, sizeof(rectangle));
+    CNA_Result result = api.cna_graphics_device_get_scissor_rectangle(device, &rectangle);
+    *out_x = rectangle.x;
+    *out_y = rectangle.y;
+    *out_width = rectangle.width;
+    *out_height = rectangle.height;
+    return result;
+}
+
+CnaGoResult cna_go_graphics_device_set_scissor_rectangle(CnaGoHandle device, int32_t x, int32_t y, int32_t width, int32_t height) {
+    CNA_Rectangle rectangle;
+    memset(&rectangle, 0, sizeof(rectangle));
+    rectangle.x = x;
+    rectangle.y = y;
+    rectangle.width = width;
+    rectangle.height = height;
+    return api.cna_graphics_device_set_scissor_rectangle(device, rectangle);
+}
+
+CnaGoResult cna_go_graphics_device_set_viewport(CnaGoHandle device, int32_t x, int32_t y, int32_t width, int32_t height, float min_depth, float max_depth) {
+    CNA_Viewport viewport;
+    memset(&viewport, 0, sizeof(viewport));
+    viewport.x = x;
+    viewport.y = y;
+    viewport.width = width;
+    viewport.height = height;
+    viewport.min_depth = min_depth;
+    viewport.max_depth = max_depth;
+    return api.cna_graphics_device_set_viewport(device, viewport);
+}
+
+CnaGoResult cna_go_graphics_device_get_graphics_profile(CnaGoHandle device, uint32_t* out_profile) {
+    return api.cna_graphics_device_get_graphics_profile(device, out_profile);
+}
+
+CnaGoResult cna_go_graphics_device_get_status(CnaGoHandle device, uint32_t* out_status) {
+    return api.cna_graphics_device_get_status(device, out_status);
+}
+
+CnaGoResult cna_go_graphics_device_get_is_disposed(CnaGoHandle device, uint8_t* out_is_disposed) {
+    return api.cna_graphics_device_get_is_disposed(device, out_is_disposed);
+}
+
+CnaGoResult cna_go_graphics_device_clear_options(CnaGoHandle device, uint32_t options, uint8_t r, uint8_t g, uint8_t b, uint8_t a, float depth, int32_t stencil) {
+    CNA_Color color;
+    memset(&color, 0, sizeof(color));
+    color.r = r;
+    color.g = g;
+    color.b = b;
+    color.a = a;
+    return api.cna_graphics_device_clear_options(device, options, color, depth, stencil);
+}
+
+CnaGoResult cna_go_graphics_device_present(CnaGoHandle device) {
+    return api.cna_graphics_device_present(device);
+}
+
 CnaGoResult cna_go_sprite_batch_draw_destination(CnaGoHandle batch, CnaGoHandle texture, int32_t destination_x, int32_t destination_y, int32_t destination_width, int32_t destination_height, int32_t source_x, int32_t source_y, int32_t source_width, int32_t source_height, uint8_t color_r, uint8_t color_g, uint8_t color_b, uint8_t color_a, float rotation, float origin_x, float origin_y, uint32_t effects, float layer_depth) {
     CNA_SpriteCommand command;
     memset(&command, 0, sizeof(command));

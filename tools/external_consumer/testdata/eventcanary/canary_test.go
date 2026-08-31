@@ -2806,3 +2806,41 @@ func TestTextureBoundsAndGameIsActiveAreReachableFromOutside(t *testing.T) {
 		t.Fatal("Bounds on an unbound texture returned a rectangle and no error")
 	}
 }
+
+// TestGraphicsDeviceStateSurfaceIsReachableFromOutside compiles every one of
+// the fifteen render-state members against its exact projected signature.
+//
+// The shapes are the point. Five of these carry an error where the reference's
+// getter is a single field read, because CNA-Go asks CNA rather than keeping a
+// managed cache it cannot initialise -- a consumer has to write `value, err :=`
+// where C# writes a property read, and this is where that is pinned.
+func TestGraphicsDeviceStateSurfaceIsReachableFromOutside(t *testing.T) {
+	device := &graphics.GraphicsDevice{}
+
+	var _ func() (framework.Color, error) = device.BlendFactor
+	var _ func(framework.Color) error = device.SetBlendFactor
+	var _ func() (int32, error) = device.MultiSampleMask
+	var _ func(int32) error = device.SetMultiSampleMask
+	var _ func() (int32, error) = device.ReferenceStencil
+	var _ func(int32) error = device.SetReferenceStencil
+	var _ func() (framework.Rectangle, error) = device.ScissorRectangle
+	var _ func(framework.Rectangle) error = device.SetScissorRectangle
+	var _ func(graphics.Viewport) error = device.SetViewport
+	var _ func() (graphics.Viewport, error) = device.Viewport
+	var _ func() (graphics.GraphicsProfile, error) = device.GraphicsProfile
+	var _ func() (graphics.GraphicsDeviceStatus, error) = device.GraphicsDeviceStatus
+	var _ func() (bool, error) = device.IsDisposed
+	var _ func(graphics.ClearOptions, framework.Color, float32, int32) error = device.ClearByClearOptionsAndColorAndSingleAndInt32
+	var _ func(graphics.ClearOptions, framework.Vector4, float32, int32) error = device.ClearByClearOptionsAndVector4AndSingleAndInt32
+	var _ func() error = device.PresentByNone
+
+	// A facade with no device reports on every one of them rather than
+	// panicking, which is the state a consumer reaches by holding one past a
+	// run.
+	if _, err := device.GraphicsProfile(); err == nil {
+		t.Fatal("GraphicsProfile on a device-less facade returned a profile and no error")
+	}
+	if err := device.PresentByNone(); err == nil {
+		t.Fatal("Present on a device-less facade returned no error")
+	}
+}

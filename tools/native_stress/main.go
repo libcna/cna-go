@@ -11,6 +11,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -69,6 +70,17 @@ type counters struct {
 	SpriteDrawOutsidePairChecks  int `json:"SPRITE_DRAW_OUTSIDE_PAIR_CHECKS"`
 	SpriteDrawPairGuardChecks    int `json:"SPRITE_DRAW_PAIR_GUARD_CHECKS"`
 	SpriteDrawBoundsChecks       int `json:"SPRITE_DRAW_TEXTURE_BOUNDS_CHECKS"`
+
+	// Foundation 51. GraphicsDevice's render state, round-tripped through the
+	// live device, plus the two masked Clear overloads and Present.
+	DeviceStateCycles          int `json:"DEVICE_STATE_CYCLES"`
+	DeviceStateRoundTrips      int `json:"DEVICE_STATE_ROUND_TRIPS"`
+	DeviceStateReadOnlyChecks  int `json:"DEVICE_STATE_READ_ONLY_CHECKS"`
+	DeviceStateClearCalls      int `json:"DEVICE_STATE_CLEAR_CALLS"`
+	DeviceStateClearRefusals   int `json:"DEVICE_STATE_CLEAR_REFUSALS"`
+	DeviceStatePresentCalls    int `json:"DEVICE_STATE_PRESENT_CALLS"`
+	DeviceStateStaleChecks     int `json:"DEVICE_STATE_STALE_CHECKS"`
+	DeviceStateWrongThreadHits int `json:"DEVICE_STATE_WRONG_THREAD_CHECKS"`
 
 	FrameHookOverrideCycles  int `json:"FRAME_HOOK_OVERRIDE_CYCLES"`
 	FrameHookBeginRunHits    int `json:"FRAME_HOOK_BEGIN_RUN_DELIVERIES"`
@@ -247,7 +259,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -285,6 +297,19 @@ func runParent() (counters, error) {
 	if total.SpriteDrawNullTextureChecks < 20 || total.SpriteDrawOutsidePairChecks < 40 ||
 		total.SpriteDrawPairGuardChecks < 40 || total.SpriteDrawBoundsChecks < 20 {
 		return total, errors.New("a sprite-draw guard or bounds proof did not run in every cycle")
+	}
+	// Five round trips per cycle -- blend factor, multisample mask, reference
+	// stencil, scissor rectangle and viewport -- each written to the live
+	// device and read back from it. A getter that answered from a managed cache
+	// would pass these and would be a second source of truth, so the read is
+	// required to come back from the device that was written.
+	if total.DeviceStateCycles < 20 || total.DeviceStateRoundTrips < 100 {
+		return total, errors.New("native device-state round-trip minimum was not met")
+	}
+	if total.DeviceStateReadOnlyChecks < 60 || total.DeviceStateClearCalls < 40 ||
+		total.DeviceStateClearRefusals < 20 || total.DeviceStatePresentCalls < 20 ||
+		total.DeviceStateStaleChecks < 20 || total.DeviceStateWrongThreadHits < 20 {
+		return total, errors.New("a device-state proof did not run in every cycle")
 	}
 	// Foundation 39. The native disposal signal never raises the public event,
 	// and the public event is raised only by a managed Dispose call.
@@ -548,6 +573,18 @@ func runChild(scenario string, index int) error {
 			game.result.ObservedUAF++
 			return fmt.Errorf("stale graphics device was not rejected by generation: %w", staleErr)
 		}
+	case "device-state":
+		game.result.DeviceStateCycles = 1
+		if err != nil {
+			return err
+		}
+		// Every facade from a finished run is stale, and the state members must
+		// report that rather than reaching a device that is gone.
+		if _, staleErr := game.device.BlendFactor(); !errors.Is(staleErr, interop.ErrStaleGeneration) {
+			game.result.ObservedUAF++
+			return fmt.Errorf("stale device BlendFactor was not rejected by generation: %w", staleErr)
+		}
+		game.result.DeviceStateStaleChecks++
 	case "sprite-draw":
 		game.result.SpriteDrawCycles = 1
 		if err != nil {
@@ -1085,7 +1122,166 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 			return err
 		}
 	}
+	if g.scenario == "device-state" {
+		if err := g.exerciseDeviceState(); err != nil {
+			return err
+		}
+	}
 	return host.Exit()
+}
+
+// exerciseDeviceState round-trips GraphicsDevice's render state through the
+// LIVE device, inside a draw callback, which is the only moment CNA lends a
+// device handle out.
+//
+// Every write is read back from the device rather than from anything CNA-Go
+// holds, which is the whole point: the reference answers these getters from a
+// managed cache its own constructor fills, CNA-Go cannot fill one because it
+// does not create the device, and a projection that cached anyway would pass a
+// test that only compared what it had just been given.
+func (g *stressGame) exerciseDeviceState() error {
+	device := g.device
+
+	factor := framework.NewColorByInt32AndInt32AndInt32AndInt32(12, 34, 56, 78)
+	if err := device.SetBlendFactor(factor); err != nil {
+		return fmt.Errorf("SetBlendFactor: %w", err)
+	}
+	readFactor, err := device.BlendFactor()
+	if err != nil {
+		return fmt.Errorf("BlendFactor: %w", err)
+	}
+	if readFactor != factor {
+		return fmt.Errorf("BlendFactor round trip = %+v, want %+v", readFactor, factor)
+	}
+	g.result.DeviceStateRoundTrips++
+
+	if err := device.SetMultiSampleMask(0x0f0f0f0f); err != nil {
+		return fmt.Errorf("SetMultiSampleMask: %w", err)
+	}
+	mask, err := device.MultiSampleMask()
+	if err != nil {
+		return fmt.Errorf("MultiSampleMask: %w", err)
+	}
+	if mask != 0x0f0f0f0f {
+		return fmt.Errorf("MultiSampleMask round trip = %#x, want 0x0f0f0f0f", mask)
+	}
+	g.result.DeviceStateRoundTrips++
+
+	if err := device.SetReferenceStencil(37); err != nil {
+		return fmt.Errorf("SetReferenceStencil: %w", err)
+	}
+	stencil, err := device.ReferenceStencil()
+	if err != nil {
+		return fmt.Errorf("ReferenceStencil: %w", err)
+	}
+	if stencil != 37 {
+		return fmt.Errorf("ReferenceStencil round trip = %d, want 37", stencil)
+	}
+	g.result.DeviceStateRoundTrips++
+
+	scissor := framework.NewRectangle(3, 5, 64, 48)
+	if err := device.SetScissorRectangle(scissor); err != nil {
+		return fmt.Errorf("SetScissorRectangle: %w", err)
+	}
+	readScissor, err := device.ScissorRectangle()
+	if err != nil {
+		return fmt.Errorf("ScissorRectangle: %w", err)
+	}
+	if readScissor != scissor {
+		return fmt.Errorf("ScissorRectangle round trip = %+v, want %+v", readScissor, scissor)
+	}
+	g.result.DeviceStateRoundTrips++
+
+	// The viewport's getter has been projected since Foundation 1 and its
+	// setter arrives now, so this round trip crosses two milestones' work.
+	viewport := graphics.NewViewportByInt32AndInt32AndInt32AndInt32(2, 4, 320, 200)
+	viewport.SetMinDepth(0.25)
+	viewport.SetMaxDepth(0.75)
+	if err := device.SetViewport(viewport); err != nil {
+		return fmt.Errorf("SetViewport: %w", err)
+	}
+	readViewport, err := device.Viewport()
+	if err != nil {
+		return fmt.Errorf("Viewport: %w", err)
+	}
+	if readViewport.X() != 2 || readViewport.Y() != 4 || readViewport.Width() != 320 || readViewport.Height() != 200 ||
+		readViewport.MinDepth() != 0.25 || readViewport.MaxDepth() != 0.75 {
+		return fmt.Errorf("Viewport round trip = %s", readViewport.ToString())
+	}
+	g.result.DeviceStateRoundTrips++
+
+	// Three read-only members. Their values come from the device rather than
+	// from a constant here, so what is asserted is that each is a value the
+	// enum actually declares -- not a number CNA-Go chose.
+	profile, err := device.GraphicsProfile()
+	if err != nil {
+		return fmt.Errorf("GraphicsProfile: %w", err)
+	}
+	if profile != graphics.GraphicsProfileReach && profile != graphics.GraphicsProfileHiDef {
+		return fmt.Errorf("GraphicsProfile = %d, which is not a declared value", profile)
+	}
+	g.result.DeviceStateReadOnlyChecks++
+
+	status, err := device.GraphicsDeviceStatus()
+	if err != nil {
+		return fmt.Errorf("GraphicsDeviceStatus: %w", err)
+	}
+	if status != graphics.GraphicsDeviceStatusNormal && status != graphics.GraphicsDeviceStatusLost &&
+		status != graphics.GraphicsDeviceStatusNotReset {
+		return fmt.Errorf("GraphicsDeviceStatus = %d, which is not a declared value", status)
+	}
+	g.result.DeviceStateReadOnlyChecks++
+
+	disposed, err := device.IsDisposed()
+	if err != nil {
+		return fmt.Errorf("IsDisposed: %w", err)
+	}
+	if disposed {
+		return errors.New("the live device reports itself disposed from inside a draw callback")
+	}
+	g.result.DeviceStateReadOnlyChecks++
+
+	// Both masked Clear overloads, through the same route, with the same mask.
+	options := graphics.ClearOptionsTarget | graphics.ClearOptionsDepthBuffer
+	if err := device.ClearByClearOptionsAndColorAndSingleAndInt32(options, factor, 1, 0); err != nil {
+		return fmt.Errorf("Clear(ClearOptions, Color, ...): %w", err)
+	}
+	g.result.DeviceStateClearCalls++
+	if err := device.ClearByClearOptionsAndVector4AndSingleAndInt32(
+		options, framework.NewVector4BySingleAndSingleAndSingleAndSingle(0.25, 0.5, 0.75, 1), 1, 0); err != nil {
+		return fmt.Errorf("Clear(ClearOptions, Vector4, ...): %w", err)
+	}
+	g.result.DeviceStateClearCalls++
+
+	// CNA refuses a non-finite depth with CNA_RESULT_INVALID_ARGUMENT, and the
+	// refusal must surface rather than be swallowed. A projection that ignored
+	// the result would look identical from Go.
+	nonFinite := float32(math.Inf(1))
+	if refusal := device.ClearByClearOptionsAndColorAndSingleAndInt32(options, factor, nonFinite, 0); refusal == nil {
+		return errors.New("a non-finite clear depth was accepted")
+	}
+	g.result.DeviceStateClearRefusals++
+
+	if err := device.PresentByNone(); err != nil {
+		return fmt.Errorf("Present: %w", err)
+	}
+	g.result.DeviceStatePresentCalls++
+
+	// The owner-thread policy reaches these members too. A second goroutine
+	// must be refused before it can touch the device.
+	wrongThread := make(chan error, 1)
+	go func() { _, callErr := wrongThread2Read(device); wrongThread <- callErr }()
+	if err := <-wrongThread; !errors.Is(err, interop.ErrWrongThread) {
+		return fmt.Errorf("device state from a second goroutine = %v, want ErrWrongThread", err)
+	}
+	g.result.DeviceStateWrongThreadHits++
+	return nil
+}
+
+// wrongThread2Read is the one device read the wrong-thread proof makes, kept
+// separate so the goroutine body stays a single call.
+func wrongThread2Read(device *graphics.GraphicsDevice) (framework.Color, error) {
+	return device.BlendFactor()
 }
 
 // drawEverySpriteOverload submits one command through each of the profile's

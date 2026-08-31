@@ -77,6 +77,9 @@ CNA_GO_MEASURE(offsetof_CNA_Texture2DInfo_format, offsetof(CNA_Texture2DInfo, fo
 CNA_GO_MEASURE(sizeof_CNA_SpriteBatchBeginInfo, sizeof(CNA_SpriteBatchBeginInfo))
 CNA_GO_MEASURE(offsetof_CNA_SpriteBatchBeginInfo_sort_mode, offsetof(CNA_SpriteBatchBeginInfo, sort_mode))
 
+CNA_GO_MEASURE(sizeof_CNA_ClearOptions, sizeof(CNA_ClearOptions))
+CNA_GO_MEASURE(sizeof_CNA_GraphicsDeviceStatus, sizeof(CNA_GraphicsDeviceStatus))
+CNA_GO_MEASURE(sizeof_CNA_GraphicsProfile, sizeof(CNA_GraphicsProfile))
 CNA_GO_MEASURE(sizeof_CNA_SpriteCommand, sizeof(CNA_SpriteCommand))
 CNA_GO_MEASURE(alignof_CNA_SpriteCommand, _Alignof(CNA_SpriteCommand))
 CNA_GO_MEASURE(offsetof_CNA_SpriteCommand_texture, offsetof(CNA_SpriteCommand, texture))
