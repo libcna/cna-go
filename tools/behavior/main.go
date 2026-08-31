@@ -2743,8 +2743,9 @@ func runCorpus() corpusReport {
 	// One IL instruction separates the two TimeSpan setters, and it is
 	// observable: set_InactiveSleepTime compares with op_LessThan so ZERO IS
 	// ACCEPTED, while set_TargetElapsedTime compares with op_LessThanOrEqual so
-	// zero is rejected. The InactiveSleepTime message even says the value
-	// cannot be zero, and the comparison it sits behind admits it anyway.
+	// zero is rejected. Only the resource KEY is called
+	// InactiveSleepTimeCannotBeZero; the string it names says "greater than or
+	// equal to zero", which is what the comparison admits.
 	inactiveZero := timingDefaults.SetInactiveSleepTime(framework.TimeSpanFromTicks(0))
 	inactiveNegative := timingDefaults.SetInactiveSleepTime(framework.TimeSpanFromTicks(-1))
 	targetZero := timingDefaults.SetTargetElapsedTime(framework.TimeSpanFromTicks(0))
@@ -2781,6 +2782,40 @@ func runCorpus() corpusReport {
 			unconstructedTiming.SuppressDraw() != nil,
 			unconstructedTiming.ResetElapsedTime() != nil,
 			unconstructedTiming.SetTargetElapsedTime(framework.TimeSpanFromTicks(0)) != nil))
+
+	// ------------------------------------------------------------------
+	// Foundation 43. Game.GraphicsDevice, projected into the Graphics
+	// package by the cross-package cycle rule.
+	// ------------------------------------------------------------------
+
+	// With no registered IGraphicsDeviceService the reference throws
+	// InvalidOperationException, and CNA-Go reports exactly that: it does not
+	// invent a device, because it publishes no service of its own.
+	deviceGame, _ := framework.NewGame(corpusCallbacks{})
+	absentDevice, absentError := graphics.GameGraphicsDevice(deviceGame)
+	check("game-graphics-device.no-service-reports-the-reference-failure", "GAME_GRAPHICS_DEVICE",
+		"true,true,true",
+		fmt.Sprintf("%t,%t,%t", absentDevice == nil, absentError != nil,
+			strings.Contains(fmt.Sprint(absentError),
+				"This property requires a graphics device service in the game service container.")))
+
+	// The fallback the reference body has, and the reason the member is
+	// reachable: a consumer's own service in Game.Services is resolved and its
+	// device forwarded unchanged.
+	publishedDevice := &graphics.GraphicsDevice{}
+	publishing := &corpusPublishingDeviceService{device: publishedDevice}
+	_ = deviceGame.Services().AddService(
+		reflect.TypeOf((*graphics.IGraphicsDeviceService)(nil)).Elem(), publishing)
+	resolvedDevice, resolvedError := graphics.GameGraphicsDevice(deviceGame)
+	check("game-graphics-device.a-registered-service-is-resolved", "GAME_GRAPHICS_DEVICE",
+		"true,true", fmt.Sprintf("%t,%t", resolvedDevice == publishedDevice, resolvedError == nil))
+
+	// A service publishing no device answers nil with no error: the reference's
+	// null check is on the SERVICE, not on the device it hands back.
+	publishing.device = nil
+	nilDevice, nilDeviceError := graphics.GameGraphicsDevice(deviceGame)
+	check("game-graphics-device.a-device-less-service-answers-nil", "GAME_GRAPHICS_DEVICE",
+		"true,true", fmt.Sprintf("%t,%t", nilDevice == nil, nilDeviceError == nil))
 
 	// The one Go-only failure, and the proof that a refused call does not also
 	// admit the frame.
@@ -2903,6 +2938,17 @@ func (c *corpusSimpleDisposableComponent) Dispose() error    { c.disposed++; ret
 type corpusUndisposableComponent struct{}
 
 func (c *corpusUndisposableComponent) Initialize() error { return nil }
+
+// corpusPublishingDeviceService is a corpus-local device service that actually
+// publishes a device, which is what Game.GraphicsDevice resolves and forwards.
+type corpusPublishingDeviceService struct {
+	corpusDeviceService
+	device *graphics.GraphicsDevice
+}
+
+func (s *corpusPublishingDeviceService) GraphicsDevice() *graphics.GraphicsDevice {
+	return s.device
+}
 
 // corpusDeviceService is a corpus-local conformer of the device-publication
 // contract. Only it can raise; a consumer holding the contract can only

@@ -46,12 +46,22 @@ set_InactiveSleepTime   op_LessThan          ->  ZERO IS ACCEPTED
 set_TargetElapsedTime   op_LessThanOrEqual   ->  zero is rejected
 ```
 
-One IL instruction is the whole difference, and it is observable. The message
-`set_InactiveSleepTime` loads even says the value "cannot be zero" — and the
-comparison it sits behind admits zero anyway. The message is reproduced verbatim
-because it is the reference's; the boundary is the IL's.
+One IL instruction is the whole difference, and it is observable.
 
-Both messages are the exact `Resources` strings the throw sites load.
+Only the resource **key** is called `InactiveSleepTimeCannotBeZero`. The string
+it names says something else entirely:
+
+```text
+InactiveSleepTimeCannotBeZero
+  "The inactive sleep time must be greater than or equal to zero.  Specify zero or a positive value."
+TargetElaspedCannotBeZero          (Microsoft's typo, not a transcription error)
+  "The target elapsed time must be greater than zero.  Specify a non-zero positive value."
+```
+
+The value agrees with the IL and the key does not, so the value is authority.
+Both are the exact strings from the `Microsoft.Xna.Framework.Resources.resources`
+stream of the retained `Microsoft.Xna.Framework.Game.dll` — the same source the
+service container's messages come from — double spaces included.
 
 ## The constructor's defaults are now load-bearing
 

@@ -2251,3 +2251,92 @@ func TestTimingIsConfigurableBeforeRunFromOutside(t *testing.T) {
 		t.Fatalf("flags = %t/%t, want false/true", game.IsFixedTimeStep(), game.IsMouseVisible())
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 43 — Game.GraphicsDevice, from outside the module.
+// ---------------------------------------------------------------------------
+
+// canaryDeviceService is a downstream consumer's own IGraphicsDeviceService.
+// Only a consumer can supply one: CNA-Go publishes none.
+type canaryDeviceService struct {
+	device    *graphics.GraphicsDevice
+	created   framework.EventSource[*framework.EventArgs]
+	disposing framework.EventSource[*framework.EventArgs]
+	reset     framework.EventSource[*framework.EventArgs]
+	resetting framework.EventSource[*framework.EventArgs]
+}
+
+func (s *canaryDeviceService) GraphicsDevice() *graphics.GraphicsDevice { return s.device }
+
+func (s *canaryDeviceService) AddDeviceCreatedHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.created.Add(h)
+}
+func (s *canaryDeviceService) RemoveDeviceCreatedHandler(t framework.EventSubscription) error {
+	return s.created.Remove(t)
+}
+func (s *canaryDeviceService) AddDeviceDisposingHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.disposing.Add(h)
+}
+func (s *canaryDeviceService) RemoveDeviceDisposingHandler(t framework.EventSubscription) error {
+	return s.disposing.Remove(t)
+}
+func (s *canaryDeviceService) AddDeviceResetHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.reset.Add(h)
+}
+func (s *canaryDeviceService) RemoveDeviceResetHandler(t framework.EventSubscription) error {
+	return s.reset.Remove(t)
+}
+func (s *canaryDeviceService) AddDeviceResettingHandler(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+	return s.resetting.Add(h)
+}
+func (s *canaryDeviceService) RemoveDeviceResettingHandler(t framework.EventSubscription) error {
+	return s.resetting.Remove(t)
+}
+
+// TestGameGraphicsDeviceFromOutside proves both branches of the reference body
+// from a module that can only see exported names: no registered service is the
+// reference's InvalidOperationException, and a registered one is resolved and
+// forwarded unchanged.
+func TestGameGraphicsDeviceFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	if _, err := graphics.GameGraphicsDevice(game); err == nil {
+		t.Fatal("GameGraphicsDevice reported no error with no registered service")
+	} else if !strings.Contains(err.Error(), "This property requires a graphics device service in the game service container.") {
+		t.Fatalf("GameGraphicsDevice = %v, want the reference's message", err)
+	}
+
+	published := &graphics.GraphicsDevice{}
+	service := &canaryDeviceService{device: published}
+	token := reflect.TypeOf((*graphics.IGraphicsDeviceService)(nil)).Elem()
+	if err := game.Services().AddService(token, service); err != nil {
+		t.Fatalf("AddService: %v", err)
+	}
+	device, err := graphics.GameGraphicsDevice(game)
+	if err != nil {
+		t.Fatalf("GameGraphicsDevice: %v", err)
+	}
+	if device != published {
+		t.Fatal("GameGraphicsDevice returned a device other than the service's own")
+	}
+
+	// The reference's null check is on the service, not on the device: a
+	// service publishing none answers nil with no error.
+	service.device = nil
+	device, err = graphics.GameGraphicsDevice(game)
+	if err != nil {
+		t.Fatalf("GameGraphicsDevice with a device-less service: %v", err)
+	}
+	if device != nil {
+		t.Fatal("GameGraphicsDevice invented a device")
+	}
+}
+
+// TestGraphicsDeviceIsNotAMethodOnGame records the cross-package projection a
+// consumer has to write against: the framework package cannot name
+// GraphicsDevice, so the member lives in the Graphics package.
+func TestGraphicsDeviceIsNotAMethodOnGame(t *testing.T) {
+	if _, ok := reflect.TypeOf((*framework.Game)(nil)).MethodByName("GraphicsDevice"); ok {
+		t.Fatal("Game declares a GraphicsDevice method")
+	}
+	var _ func(*framework.Game) (*graphics.GraphicsDevice, error) = graphics.GameGraphicsDevice
+}

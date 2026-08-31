@@ -40,7 +40,7 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 147,
+    "MISSING_MEMBER": 146,
     "MISSING_TYPE": 135,
     "MISSING_TYPES": 135,
     "OPERATOR_MAPPING_MISMATCH": 0,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1804,
+    "TARGET_MEMBERS": 1805,
     "TARGET_TYPES": 122,
-    "TOTAL_DIAGNOSTICS": 282,
+    "TOTAL_DIAGNOSTICS": 281,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -354,12 +354,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Game::IsActive()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.IsActive",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::GraphicsDevice()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GameGraphicsDevice",
       "message": "mapped Go member is absent"
     },
     {
@@ -1898,7 +1892,6 @@
       "missingMembers": [
         "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:GameContent",
         "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:SetGameContent",
-        "Microsoft.Xna.Framework.Game::GraphicsDevice() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GameGraphicsDevice",
         "Microsoft.Xna.Framework.Game::IsActive() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.IsActive",
         "Microsoft.Xna.Framework.Game::LaunchParameters() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.LaunchParameters",
         "Microsoft.Xna.Framework.Game::RunOneFrame() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.RunOneFrame",
@@ -1906,7 +1899,7 @@
         "Microsoft.Xna.Framework.Game::Tick() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Tick",
         "Microsoft.Xna.Framework.Game::Window() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Window"
       ],
-      "diagnostics": 9
+      "diagnostics": 8
     },
     {
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice",

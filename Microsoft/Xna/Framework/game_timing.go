@@ -78,10 +78,20 @@ const (
 // declares no error type here, the same way the service container's are.
 var errTimeSpanOutOfRange = errors.New("argument is out of range")
 
-// The exact Resources strings the two throw sites load.
+// The exact Resources strings the two throw sites load, read from the
+// Microsoft.Xna.Framework.Resources.resources stream of the retained
+// Microsoft.Xna.Framework.Game.dll -- the same source the service container's
+// messages come from. Both contain a DOUBLE space before their second
+// sentence, which is the reference's own and is preserved.
+//
+// The resource KEYS are Resources::get_InactiveSleepTimeCannotBeZero and
+// Resources::get_TargetElaspedCannotBeZero (Microsoft's typo, not a
+// transcription error), and neither key describes its value: the first message
+// says "greater than or equal to zero", which is what the IL's op_LessThan
+// actually admits. The value is authority, not the key.
 const (
-	inactiveSleepTimeCannotBeZero = "The inactive sleep time cannot be zero."
-	targetElapsedCannotBeZero     = "The target elapsed time cannot be zero or less than zero."
+	inactiveSleepTimeCannotBeZero = "The inactive sleep time must be greater than or equal to zero.  Specify zero or a positive value."
+	targetElapsedCannotBeZero     = "The target elapsed time must be greater than zero.  Specify a non-zero positive value."
 )
 
 func timeSpanOutOfRangeError(parameter, message string) error {
@@ -101,9 +111,11 @@ func (g *Game) InactiveSleepTime() TimeSpan {
 //	        Resources.InactiveSleepTimeCannotBeZero);
 //	this.inactiveSleepTime = value;
 //
-// Note the comparison: it is `op_LessThan`, so ZERO IS ACCEPTED even though the
-// message the reference loads says it cannot be. The message is the reference's
-// and is reproduced verbatim; the boundary is the IL's, and the IL admits zero.
+// Note the comparison: it is `op_LessThan`, so ZERO IS ACCEPTED. The resource
+// KEY is InactiveSleepTimeCannotBeZero and would suggest otherwise; the string
+// it names does not -- it says "greater than or equal to zero", which is exactly
+// what the IL admits. Its neighbour below rejects zero, and the difference
+// between the two is one IL instruction.
 func (g *Game) SetInactiveSleepTime(value TimeSpan) error {
 	if value.Ticks() < 0 {
 		return timeSpanOutOfRangeError("value", inactiveSleepTimeCannotBeZero)

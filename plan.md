@@ -1521,6 +1521,23 @@ the literals it used to pass.
 FOUNDATION_MILESTONE_42_COMPLETE=true
 ```
 
+## Foundation 43 qualification evidence
+
+Exact evidence is in `docs/foundation-43-game-graphics-device-evidence.md`.
+
+Game.GraphicsDevice is complete, projected into the Graphics package by the
+cross-package cycle rule. It is reachable because the reference body FALLS BACK
+to resolving IGraphicsDeviceService out of Services when its cached field is
+null -- which is the state CNA-Go is always in, and the state the reference
+itself is in before Initialize runs.
+
+The milestone also corrects two resource strings Foundation 42 derived from
+resource KEYS instead of reading from the resource VALUES.
+
+```text
+FOUNDATION_MILESTONE_43_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

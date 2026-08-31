@@ -48,9 +48,9 @@ func TestTimingDefaultsAreTheConstructorsOwn(t *testing.T) {
 //	set_InactiveSleepTime  op_LessThan          -> zero is ACCEPTED
 //	set_TargetElapsedTime  op_LessThanOrEqual   -> zero is REJECTED
 //
-// The two look symmetrical and are not. The InactiveSleepTime message the
-// reference loads even says the value "cannot be zero", and the comparison it
-// sits behind admits zero anyway; the IL is authority, not the message.
+// The two look symmetrical and are not. Only the resource KEY is called
+// InactiveSleepTimeCannotBeZero; the string it names says "greater than or
+// equal to zero", which is exactly what op_LessThan admits.
 func TestTheTwoTimeSpanSettersHaveDifferentBoundaries(t *testing.T) {
 	game := newTimingGame(t)
 	if err := game.SetInactiveSleepTime(TimeSpanFromTicks(0)); err != nil {
