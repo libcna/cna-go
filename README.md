@@ -412,6 +412,17 @@ are unexported structural interfaces you never name. The base is never run
 automatically: calling `game.BeginDraw()` runs it exactly where your source says,
 zero times or many, and cannot re-enter your override.
 
+See [Foundation 40 base substitutability evidence](docs/foundation-40-base-substitutability-evidence.md)
+for the measurement the XNA-to-XNA inheritance architecture turns on. Fifty-one
+public signature positions in the profile name a class another class derives
+from, and `GameComponent`, `GraphicsResource` and `MathTypeConverter` -- 25 of
+the 41 derived types between them -- are named in **none** of them. For those
+families private composition with explicit forwarding is not a compromise: there
+is no position in the contract for a derived value to flow through, so no public
+reference abstraction can be justified by it. No family is live yet;
+`Texture2D` is the closest and becomes live the day `RenderTarget2D` is
+projected.
+
 The `Media` package contains enum metadata only and carries no media runtime
 capability claim. The `Input/Touch` package adds `TouchLocation`,
 `GestureSample`, and the read-only `TouchCollection` alongside its enums, and

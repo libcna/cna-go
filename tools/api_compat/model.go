@@ -73,6 +73,18 @@ type expectedSurface struct {
 	// to. It differs from BCLInheritedCLRMembers because a CLR property with
 	// both accessors projects two Go members.
 	BCLInheritedProjections int
+
+	// XNABaseSubstitutability is the complete inventory of PUBLIC signature
+	// positions in the profile whose CLR type names a class another class in
+	// the same profile derives from. It is what decides whether private
+	// composition is sufficient for a base family or whether that family needs
+	// a public reference abstraction, and it is computed mechanically from the
+	// pinned contract so the answer cannot be argued.
+	XNABaseSubstitutability []xnaBaseSubstitutabilityRow
+	// XNABaseDerivedByBase is the same relationships the substitutability walk
+	// derived from the contract, kept so the measurement can be cross-checked
+	// against the registry rather than trusting either alone.
+	XNABaseDerivedByBase map[string][]string
 }
 
 type expectedType struct {
@@ -158,6 +170,42 @@ type expectedMember struct {
 	SourceAccess string
 }
 
+// xnaBaseSubstitutabilityRow is one public signature position naming an XNA
+// class that another XNA class derives from.
+type xnaBaseSubstitutabilityRow struct {
+	// Base is the CLR class named at this position, and Carrier is the type
+	// whose member names it.
+	Base    string `json:"base"`
+	Carrier string `json:"carrier"`
+	Member  string `json:"member"`
+	// MemberKind is the CLR member kind, and Position is "return",
+	// "property-type", "field-type", "event-type" or "parameter:<name>".
+	MemberKind string `json:"memberKind"`
+	Position   string `json:"position"`
+	// CLRType is the whole type expression, so an array, a by-reference marker
+	// or a generic argument is visible rather than flattened away.
+	CLRType string `json:"clrType"`
+}
+
+// xnaBaseSubstitutabilityMeasurement is one XNA base family's measured
+// substitutability requirement: how many public positions in the profile name
+// it, how many of those are on types CNA-Go projects, how many of its derived
+// types CNA-Go projects, and the verdict that follows.
+type xnaBaseSubstitutabilityMeasurement struct {
+	Base         string `json:"base"`
+	DerivedTypes int    `json:"derivedTypes"`
+	// ProjectedDerivedTypes and PositionsOnProjectedCarriers are what turn a
+	// theoretical requirement into a live one: a derived value can only be
+	// required to stand in for its base where both ends exist.
+	ProjectedDerivedTypes        int `json:"projectedDerivedTypes"`
+	Positions                    int `json:"positions"`
+	PositionsOnProjectedCarriers int `json:"positionsOnProjectedCarriers"`
+	// Requirement is NONE, LATENT or LIVE.
+	Requirement string                       `json:"requirement"`
+	Rows        []xnaBaseSubstitutabilityRow `json:"rows"`
+	Verdict     string                       `json:"verdict"`
+}
+
 type actualSurface struct {
 	Types       map[symbolKey]*actualType
 	Members     map[symbolKey]*actualMember
@@ -219,47 +267,48 @@ type diagnostic struct {
 }
 
 type report struct {
-	SchemaVersion                int                              `json:"schemaVersion"`
-	Profile                      string                           `json:"profile"`
-	Mode                         string                           `json:"mode"`
-	Summary                      map[string]int                   `json:"summary"`
-	Diagnostics                  []diagnostic                     `json:"diagnostics"`
-	CompleteTypes                []string                         `json:"completeTypes"`
-	PartialTypes                 []typeStatus                     `json:"partialTypes"`
-	MissingTypes                 []string                         `json:"missingTypes"`
-	InterfaceWitnessProjections  []interfaceWitnessProjection     `json:"interfaceWitnessProjections,omitempty"`
-	PackedInterfaceConformance   []packedInterfaceConformance     `json:"packedInterfaceConformance,omitempty"`
-	PackedVectorTypeMeasurements []packedVectorTypeMeasurement    `json:"packedVectorTypeMeasurements,omitempty"`
-	VertexElementClosure         vertexElementClosure             `json:"vertexElementClosure"`
-	PlayerIndexKeyboardClosure   playerIndexKeyboardClosure       `json:"playerIndexKeyboardClosure"`
-	DisplayOrientationClosure    displayOrientationClosure        `json:"displayOrientationGraphicsManagerClosure"`
-	BufferUsageClosure           bufferUsageClosure               `json:"bufferUsageClosure"`
-	ClearOptionsClosure          clearOptionsClosure              `json:"clearOptionsClosure"`
-	SurfaceFormatClosure         surfaceFormatClosure             `json:"surfaceFormatClosure"`
-	DepthFormatClosure           depthFormatClosure               `json:"depthFormatClosure"`
-	GraphicsProfileClosure       graphicsProfileClosure           `json:"graphicsProfileClosure"`
-	ButtonStateClosure           buttonStateClosure               `json:"buttonStateClosure"`
-	Foundation14EnumClosures     []enumClosure                    `json:"foundation14EnumClosures"`
-	Foundation15EnumClosures     []enumClosure                    `json:"foundation15EnumClosures"`
-	Foundation15ValueStructs     []valueStructClosure             `json:"foundation15ValueStructClosures"`
-	Foundation16ValueStructs     []valueStructClosure             `json:"foundation16ValueStructClosures"`
-	Foundation17ManagedClasses   []managedTypeClosure             `json:"foundation17ManagedClassClosures"`
-	Foundation18Interfaces       []managedInterfaceClosure        `json:"foundation18InterfaceClosures"`
-	Foundation19ManagedClasses   []managedTypeClosure             `json:"foundation19ManagedClassClosures"`
-	Foundation20ValueContracts   []managedTypeClosure             `json:"foundation20ValueContractClosures"`
-	Foundation21ManagedClasses   []managedTypeClosure             `json:"foundation21ManagedClassClosures"`
-	Foundation23Interfaces       []managedInterfaceClosure        `json:"foundation23InterfaceClosures"`
-	Foundation23ManagedClasses   []managedTypeClosure             `json:"foundation23ManagedClassClosures"`
-	BCLBaseRelationships         []bclBaseProjection              `json:"bclBaseRelationships"`
-	BCLBaseAdapters              []bclBaseAdapterMeasurement      `json:"bclBaseAdapters"`
-	BCLSignatureAdapters         []bclSignatureAdapterMeasurement `json:"bclSignatureAdapters"`
-	BCLInterfaceRelationships    []bclInterfaceProjection         `json:"bclInterfaceRelationships"`
-	GameBaseCallAdapters         []gameBaseCallMeasurement        `json:"gameBaseCallAdapters"`
-	DeclaredInterfaceConformance []declaredInterfaceConformance   `json:"declaredInterfaceConformance"`
-	XNABaseRelationships         []xnaBaseProjection              `json:"xnaBaseRelationships"`
-	GameNativeSignals            []gameNativeSignalMeasurement    `json:"gameNativeSignals"`
-	GameFrameHooks               []gameFrameHookMeasurement       `json:"gameFrameHooks"`
-	Metadata                     reportMetadata                   `json:"metadata"`
+	SchemaVersion                int                                  `json:"schemaVersion"`
+	Profile                      string                               `json:"profile"`
+	Mode                         string                               `json:"mode"`
+	Summary                      map[string]int                       `json:"summary"`
+	Diagnostics                  []diagnostic                         `json:"diagnostics"`
+	CompleteTypes                []string                             `json:"completeTypes"`
+	PartialTypes                 []typeStatus                         `json:"partialTypes"`
+	MissingTypes                 []string                             `json:"missingTypes"`
+	InterfaceWitnessProjections  []interfaceWitnessProjection         `json:"interfaceWitnessProjections,omitempty"`
+	PackedInterfaceConformance   []packedInterfaceConformance         `json:"packedInterfaceConformance,omitempty"`
+	PackedVectorTypeMeasurements []packedVectorTypeMeasurement        `json:"packedVectorTypeMeasurements,omitempty"`
+	VertexElementClosure         vertexElementClosure                 `json:"vertexElementClosure"`
+	PlayerIndexKeyboardClosure   playerIndexKeyboardClosure           `json:"playerIndexKeyboardClosure"`
+	DisplayOrientationClosure    displayOrientationClosure            `json:"displayOrientationGraphicsManagerClosure"`
+	BufferUsageClosure           bufferUsageClosure                   `json:"bufferUsageClosure"`
+	ClearOptionsClosure          clearOptionsClosure                  `json:"clearOptionsClosure"`
+	SurfaceFormatClosure         surfaceFormatClosure                 `json:"surfaceFormatClosure"`
+	DepthFormatClosure           depthFormatClosure                   `json:"depthFormatClosure"`
+	GraphicsProfileClosure       graphicsProfileClosure               `json:"graphicsProfileClosure"`
+	ButtonStateClosure           buttonStateClosure                   `json:"buttonStateClosure"`
+	Foundation14EnumClosures     []enumClosure                        `json:"foundation14EnumClosures"`
+	Foundation15EnumClosures     []enumClosure                        `json:"foundation15EnumClosures"`
+	Foundation15ValueStructs     []valueStructClosure                 `json:"foundation15ValueStructClosures"`
+	Foundation16ValueStructs     []valueStructClosure                 `json:"foundation16ValueStructClosures"`
+	Foundation17ManagedClasses   []managedTypeClosure                 `json:"foundation17ManagedClassClosures"`
+	Foundation18Interfaces       []managedInterfaceClosure            `json:"foundation18InterfaceClosures"`
+	Foundation19ManagedClasses   []managedTypeClosure                 `json:"foundation19ManagedClassClosures"`
+	Foundation20ValueContracts   []managedTypeClosure                 `json:"foundation20ValueContractClosures"`
+	Foundation21ManagedClasses   []managedTypeClosure                 `json:"foundation21ManagedClassClosures"`
+	Foundation23Interfaces       []managedInterfaceClosure            `json:"foundation23InterfaceClosures"`
+	Foundation23ManagedClasses   []managedTypeClosure                 `json:"foundation23ManagedClassClosures"`
+	BCLBaseRelationships         []bclBaseProjection                  `json:"bclBaseRelationships"`
+	BCLBaseAdapters              []bclBaseAdapterMeasurement          `json:"bclBaseAdapters"`
+	BCLSignatureAdapters         []bclSignatureAdapterMeasurement     `json:"bclSignatureAdapters"`
+	BCLInterfaceRelationships    []bclInterfaceProjection             `json:"bclInterfaceRelationships"`
+	GameBaseCallAdapters         []gameBaseCallMeasurement            `json:"gameBaseCallAdapters"`
+	DeclaredInterfaceConformance []declaredInterfaceConformance       `json:"declaredInterfaceConformance"`
+	XNABaseRelationships         []xnaBaseProjection                  `json:"xnaBaseRelationships"`
+	GameNativeSignals            []gameNativeSignalMeasurement        `json:"gameNativeSignals"`
+	GameFrameHooks               []gameFrameHookMeasurement           `json:"gameFrameHooks"`
+	XNABaseSubstitutability      []xnaBaseSubstitutabilityMeasurement `json:"xnaBaseSubstitutability"`
+	Metadata                     reportMetadata                       `json:"metadata"`
 }
 
 // gameNativeSignalMeasurement records one canonical CNA game signal bound to one

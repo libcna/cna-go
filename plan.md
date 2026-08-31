@@ -1464,6 +1464,25 @@ when the semantics align".
 FOUNDATION_MILESTONE_39_COMPLETE=true
 ```
 
+## Foundation 40 qualification evidence
+
+Exact evidence is in `docs/foundation-40-base-substitutability-evidence.md`.
+
+The XNA-to-XNA inheritance architecture's largest unknown is measured rather
+than argued. Fifty-one public signature positions in the profile name a class
+that another class derives from; three families -- GameComponent,
+GraphicsResource and MathTypeConverter, carrying 25 of the 41 derived types --
+are named in NONE of them, and no family is LIVE.
+
+For a family named in zero positions, private named composition with explicit
+forwarding is not a compromise: no public reference abstraction can be justified
+by anything in the contract, because there is no position for a derived value to
+flow through.
+
+```text
+FOUNDATION_MILESTONE_40_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

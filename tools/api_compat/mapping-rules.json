@@ -521,7 +521,19 @@
   },
   "noCompleteDerivedType": "no derived type of a DEFERRED XNA base may be reported COMPLETE. Completeness asserts that a type's whole public surface is present, and the inherited half is not; a PARTIAL derived type is correct because its gap is already MISSING_MEMBER",
   "theOpenArchitectureDecision": "projecting any derived XNA class needs three things CNA-Go does not have: a composition and forwarding rule for a base that is itself an XNA identity; a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice; and an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding of an XNA base is refused by BASE_MAPPING_MISMATCH and stays refused",
-  "closure": "the registry covers every XNA-to-XNA link the pinned contract declares -- 12 bases over 41 derived types -- so a new one cannot appear unnoticed"
+  "closure": "the registry covers every XNA-to-XNA link the pinned contract declares -- 12 bases over 41 derived types -- so a new one cannot appear unnoticed",
+  "substitutabilityInventory": {
+   "rule": "before any composition rule can be called sufficient, the ACTUAL CLR substitutability requirement is measured mechanically from the pinned contract: every PUBLIC signature position -- parameter, return, property type, field type, event type, or a type named inside an array, a by-reference marker or a generic argument -- whose CLR type names a class another class in the same profile derives from",
+   "whyMeasuredNotArgued": "the worry that private composition cannot express CLR substitutability is only real where the profile actually NAMES a base class in a public signature. If nothing takes or returns a GameComponent, no consumer can ever need a DrawableGameComponent to stand in for one. That is a counting question, and it is answered by counting",
+   "requirement": {
+    "NONE": "no public signature in the profile names this base, so no derived value can ever be required to stand in for one. Private named composition with explicit forwarding is not a compromise for such a family -- it is exactly sufficient, permanently, unless the pinned contract changes",
+    "LATENT": "public positions name this base, but no projected carrier meets a projected derived type, so nothing can flow through one yet",
+    "LIVE": "a projected carrier names this base AND a derived type is projected, so a derived value must be acceptable where the base is named. This is the only state that forces a public reference abstraction, and reaching it is a legitimate architecture stop"
+   },
+   "measured": "51 base-typed public signature positions across the twelve families. Three families -- GameComponent, GraphicsResource and MathTypeConverter -- are named in ZERO positions and carry 25 of the 41 derived types between them. Nine are LATENT. None is LIVE",
+   "closestToLive": "Texture2D: 17 positions, nine of them on SpriteBatch, which CNA-Go projects. It stays LATENT only because its one derived type, RenderTarget2D, is not projected. Projecting RenderTarget2D while SpriteBatch.Draw takes a Texture2D is exactly what would make it live",
+   "crossCheck": "the relationships the inventory walks are read from the contract's own baseType fields, never from this registry, and the two must agree exactly. A relationship in one and not the other is BASE_MAPPING_MISMATCH, so neither can go stale alone"
+  }
  },
  "gameNativeSignals": {
   "rule": "Every projected XNA event Game declares must have its AUTHORITATIVE XNA raise path, and a canonical CNA signal may IMPLEMENT that path only when the semantics align. Three of the four events are raised by GameHost, whose part the native runtime plays, so for those three the signal IS the reference's raise path. The fourth is raised by managed Dispose(bool), so its raise is in Go and the signal is bound for lifetime qualification only",

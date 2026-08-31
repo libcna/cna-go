@@ -66,6 +66,10 @@
     "UNMEASURED_STRUCTURAL_CATEGORY": 0,
     "XNA_BASE_DERIVED_TYPES": 41,
     "XNA_BASE_RELATIONSHIPS": 12,
+    "XNA_BASE_SUBSTITUTABILITY_LATENT": 9,
+    "XNA_BASE_SUBSTITUTABILITY_LIVE": 0,
+    "XNA_BASE_SUBSTITUTABILITY_NONE": 3,
+    "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
     "XNA_DEFERRED_BASE_BLOCKERS": 25,
     "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 245
   },
@@ -9503,9 +9507,548 @@
       "verdict": "PASS"
     }
   ],
+  "xnaBaseSubstitutability": [
+    {
+      "base": "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
+      "derivedTypes": 1,
+      "projectedDerivedTypes": 0,
+      "positions": 1,
+      "positionsOnProjectedCarriers": 0,
+      "requirement": "LATENT",
+      "rows": [
+        {
+          "base": "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
+          "carrier": "Microsoft.Xna.Framework.Audio.SoundEffect",
+          "member": "CreateInstance",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Audio.SoundEffectInstance"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Content.ContentManager",
+      "derivedTypes": 1,
+      "projectedDerivedTypes": 0,
+      "positions": 2,
+      "positionsOnProjectedCarriers": 1,
+      "requirement": "LATENT",
+      "rows": [
+        {
+          "base": "Microsoft.Xna.Framework.Content.ContentManager",
+          "carrier": "Microsoft.Xna.Framework.Content.ContentReader",
+          "member": "ContentManager",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Content.ContentManager"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Content.ContentManager",
+          "carrier": "Microsoft.Xna.Framework.Game",
+          "member": "Content",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Content.ContentManager"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Content.ContentTypeReader",
+      "derivedTypes": 1,
+      "projectedDerivedTypes": 0,
+      "positions": 5,
+      "positionsOnProjectedCarriers": 0,
+      "requirement": "LATENT",
+      "rows": [
+        {
+          "base": "Microsoft.Xna.Framework.Content.ContentTypeReader",
+          "carrier": "Microsoft.Xna.Framework.Content.ContentReader",
+          "member": "ReadObject",
+          "memberKind": "method",
+          "position": "parameter:typeReader",
+          "clrType": "Microsoft.Xna.Framework.Content.ContentTypeReader"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Content.ContentTypeReader",
+          "carrier": "Microsoft.Xna.Framework.Content.ContentReader",
+          "member": "ReadObject",
+          "memberKind": "method",
+          "position": "parameter:typeReader",
+          "clrType": "Microsoft.Xna.Framework.Content.ContentTypeReader"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Content.ContentTypeReader",
+          "carrier": "Microsoft.Xna.Framework.Content.ContentReader",
+          "member": "ReadRawObject",
+          "memberKind": "method",
+          "position": "parameter:typeReader",
+          "clrType": "Microsoft.Xna.Framework.Content.ContentTypeReader"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Content.ContentTypeReader",
+          "carrier": "Microsoft.Xna.Framework.Content.ContentReader",
+          "member": "ReadRawObject",
+          "memberKind": "method",
+          "position": "parameter:typeReader",
+          "clrType": "Microsoft.Xna.Framework.Content.ContentTypeReader"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Content.ContentTypeReader",
+          "carrier": "Microsoft.Xna.Framework.Content.ContentTypeReaderManager",
+          "member": "GetTypeReader",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Content.ContentTypeReader"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Design.MathTypeConverter",
+      "derivedTypes": 12,
+      "projectedDerivedTypes": 0,
+      "positions": 0,
+      "positionsOnProjectedCarriers": 0,
+      "requirement": "NONE",
+      "rows": [],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.GameComponent",
+      "derivedTypes": 2,
+      "projectedDerivedTypes": 0,
+      "positions": 0,
+      "positionsOnProjectedCarriers": 0,
+      "requirement": "NONE",
+      "rows": [],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Graphics.Effect",
+      "derivedTypes": 6,
+      "projectedDerivedTypes": 0,
+      "positions": 11,
+      "positionsOnProjectedCarriers": 2,
+      "requirement": "LATENT",
+      "rows": [
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
+          "member": "Clone",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.BasicEffect",
+          "member": "Clone",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
+          "member": "Clone",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.Effect",
+          "member": "Clone",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.EffectMaterial",
+          "member": ".ctor",
+          "memberKind": "constructor",
+          "position": "parameter:cloneSource",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+          "member": "Clone",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.ModelEffectCollection+Enumerator",
+          "member": "Current",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
+          "member": "Effect",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
+          "member": "Clone",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+          "member": "Begin",
+          "memberKind": "method",
+          "position": "parameter:effect",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Effect",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+          "member": "Begin",
+          "memberKind": "method",
+          "position": "parameter:effect",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Effect"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Graphics.GraphicsResource",
+      "derivedTypes": 11,
+      "projectedDerivedTypes": 1,
+      "positions": 0,
+      "positionsOnProjectedCarriers": 0,
+      "requirement": "NONE",
+      "rows": [],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
+      "derivedTypes": 1,
+      "projectedDerivedTypes": 0,
+      "positions": 2,
+      "positionsOnProjectedCarriers": 1,
+      "requirement": "LATENT",
+      "rows": [
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
+          "member": "Indices",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.IndexBuffer"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
+          "member": "IndexBuffer",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.IndexBuffer"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Graphics.Texture",
+      "derivedTypes": 3,
+      "projectedDerivedTypes": 1,
+      "positions": 3,
+      "positionsOnProjectedCarriers": 0,
+      "requirement": "LATENT",
+      "rows": [
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture",
+          "carrier": "Microsoft.Xna.Framework.Graphics.EffectParameter",
+          "member": "SetValue",
+          "memberKind": "method",
+          "position": "parameter:value",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture",
+          "carrier": "Microsoft.Xna.Framework.Graphics.RenderTargetBinding",
+          "member": "RenderTarget",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture",
+          "carrier": "Microsoft.Xna.Framework.Graphics.TextureCollection",
+          "member": "Item",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+      "derivedTypes": 1,
+      "projectedDerivedTypes": 0,
+      "positions": 17,
+      "positionsOnProjectedCarriers": 9,
+      "requirement": "LATENT",
+      "rows": [
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
+          "member": "Texture",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.BasicEffect",
+          "member": "Texture",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
+          "member": "Texture",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
+          "member": "Texture2",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.EffectParameter",
+          "member": "GetValueTexture2D",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+          "member": "Texture",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
+          "member": "Texture",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+          "member": "Draw",
+          "memberKind": "method",
+          "position": "parameter:texture",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+          "member": "Draw",
+          "memberKind": "method",
+          "position": "parameter:texture",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+          "member": "Draw",
+          "memberKind": "method",
+          "position": "parameter:texture",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+          "member": "Draw",
+          "memberKind": "method",
+          "position": "parameter:texture",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+          "member": "Draw",
+          "memberKind": "method",
+          "position": "parameter:texture",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+          "member": "Draw",
+          "memberKind": "method",
+          "position": "parameter:texture",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
+          "member": "Draw",
+          "memberKind": "method",
+          "position": "parameter:texture",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "member": "FromStream",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "member": "FromStream",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
+          "carrier": "Microsoft.Xna.Framework.Media.VideoPlayer",
+          "member": "GetTexture",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.Texture2D"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Graphics.TextureCube",
+      "derivedTypes": 1,
+      "projectedDerivedTypes": 0,
+      "positions": 2,
+      "positionsOnProjectedCarriers": 0,
+      "requirement": "LATENT",
+      "rows": [
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.TextureCube",
+          "carrier": "Microsoft.Xna.Framework.Graphics.EffectParameter",
+          "member": "GetValueTextureCube",
+          "memberKind": "method",
+          "position": "return",
+          "clrType": "Microsoft.Xna.Framework.Graphics.TextureCube"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.TextureCube",
+          "carrier": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+          "member": "EnvironmentMap",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.TextureCube"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+      "derivedTypes": 1,
+      "projectedDerivedTypes": 0,
+      "positions": 8,
+      "positionsOnProjectedCarriers": 2,
+      "requirement": "LATENT",
+      "rows": [
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
+          "member": "SetVertexBuffer",
+          "memberKind": "method",
+          "position": "parameter:vertexBuffer",
+          "clrType": "Microsoft.Xna.Framework.Graphics.VertexBuffer"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
+          "member": "SetVertexBuffer",
+          "memberKind": "method",
+          "position": "parameter:vertexBuffer",
+          "clrType": "Microsoft.Xna.Framework.Graphics.VertexBuffer"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
+          "member": "VertexBuffer",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.VertexBuffer"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
+          "member": ".ctor",
+          "memberKind": "constructor",
+          "position": "parameter:vertexBuffer",
+          "clrType": "Microsoft.Xna.Framework.Graphics.VertexBuffer"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
+          "member": ".ctor",
+          "memberKind": "constructor",
+          "position": "parameter:vertexBuffer",
+          "clrType": "Microsoft.Xna.Framework.Graphics.VertexBuffer"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
+          "member": ".ctor",
+          "memberKind": "constructor",
+          "position": "parameter:vertexBuffer",
+          "clrType": "Microsoft.Xna.Framework.Graphics.VertexBuffer"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
+          "member": "VertexBuffer",
+          "memberKind": "property",
+          "position": "property-type",
+          "clrType": "Microsoft.Xna.Framework.Graphics.VertexBuffer"
+        },
+        {
+          "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+          "carrier": "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
+          "member": "op_Implicit",
+          "memberKind": "method",
+          "position": "parameter:vertexBuffer",
+          "clrType": "Microsoft.Xna.Framework.Graphics.VertexBuffer"
+        }
+      ],
+      "verdict": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "6f414bfab1a090e8bf3a2a96b3b66316b9b3e8166d0be1a7fb0bd818bc5db52c",
+    "mappingSha256": "2144afba4a49f048073b5b612fbb6d78e1857e6f8a21bb382bb60a7eda585701",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

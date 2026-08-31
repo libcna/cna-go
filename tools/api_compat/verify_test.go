@@ -837,6 +837,30 @@ func TestVertexElementCurrentSurfaceAndLocalClosure(t *testing.T) {
 	}
 }
 
+// loadPinnedSurfaces builds both halves of a real verification run: the
+// expected surface from the pinned contract and the actual one from the live
+// checkout. It is what a measurement about the CURRENT state of the binding
+// has to be run against, as opposed to a synthetic fixture.
+func loadPinnedSurfaces(t *testing.T) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := extractActual(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(actual.TypeErrors) != 0 {
+		t.Fatalf("Go type-check admission produced %d errors; first: %s", len(actual.TypeErrors), actual.TypeErrors[0])
+	}
+	return expected, actual
+}
+
 func loadPinnedContract(t *testing.T) contract {
 	t.Helper()
 	data, err := os.ReadFile("reference/xna40-windows-runtime-contract.json")
@@ -7646,5 +7670,188 @@ func TestMappingRulesDeclareTheSameGameSignalsAsTheRegistry(t *testing.T) {
 		if entry.Signature != wanted {
 			t.Fatalf("frame hook %q: rules document signature %q, registry implies %q", name, entry.Signature, wanted)
 		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 40 — the base-typed public signature inventory.
+// ---------------------------------------------------------------------------
+
+// TestXNABaseSubstitutabilityIsDerivedFromTheContract proves the inventory is a
+// measurement and not a table: the relationships it walks come from the pinned
+// contract's own baseType fields, and they must agree exactly with the
+// hand-written registry.
+func TestXNABaseSubstitutabilityIsDerivedFromTheContract(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(expected.XNABaseDerivedByBase) != len(xnaBaseRelationships) {
+		t.Fatalf("the contract declares %d XNA base relationships, the registry records %d",
+			len(expected.XNABaseDerivedByBase), len(xnaBaseRelationships))
+	}
+	derivedTotal := 0
+	for base, derived := range expected.XNABaseDerivedByBase {
+		if _, declared := xnaBaseRelationships[base]; !declared {
+			t.Fatalf("the contract declares classes deriving from %s and the registry does not record it", base)
+		}
+		derivedTotal += len(derived)
+	}
+	if derivedTotal != 41 {
+		t.Fatalf("the contract declares %d XNA-derived types, the pinned count is 41", derivedTotal)
+	}
+	// Every recorded position must name a real base and a real carrier, and
+	// must carry the CLR type it was read from.
+	for _, row := range expected.XNABaseSubstitutability {
+		if _, isBase := expected.XNABaseDerivedByBase[row.Base]; !isBase {
+			t.Fatalf("position on %s.%s names %q, which no class derives from", row.Carrier, row.Member, row.Base)
+		}
+		if expected.typeForXNA(row.Carrier) == nil {
+			t.Fatalf("position names carrier %q, which the contract does not declare", row.Carrier)
+		}
+		if row.CLRType == "" || row.Position == "" {
+			t.Fatalf("position on %s.%s records no CLR type or no position", row.Carrier, row.Member)
+		}
+	}
+}
+
+// TestTheThreeFamiliesWithNoSubstitutabilityRequirement is the measurement the
+// XNA inheritance architecture turns on.
+//
+// GameComponent, GraphicsResource and MathTypeConverter carry 25 of the 41
+// derived types between them, and NOT ONE public signature in the whole profile
+// names any of the three. No consumer can ever be handed a signature that
+// requires a DrawableGameComponent to stand in for a GameComponent, because no
+// such signature exists. Private named composition with explicit forwarding is
+// therefore not a compromise for these families -- it is exactly sufficient,
+// and no public reference abstraction can be justified by anything in the
+// contract.
+func TestTheThreeFamiliesWithNoSubstitutabilityRequirement(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	positions := make(map[string]int)
+	for _, row := range expected.XNABaseSubstitutability {
+		positions[row.Base]++
+	}
+	free := map[string]int{
+		"Microsoft.Xna.Framework.GameComponent":             2,
+		"Microsoft.Xna.Framework.Graphics.GraphicsResource": 11,
+		"Microsoft.Xna.Framework.Design.MathTypeConverter":  12,
+	}
+	covered := 0
+	for base, wantDerived := range free {
+		if got := positions[base]; got != 0 {
+			t.Fatalf("%s is named in %d public positions; the architecture rests on it being named in none", base, got)
+		}
+		if got := len(expected.XNABaseDerivedByBase[base]); got != wantDerived {
+			t.Fatalf("%s has %d derived types, want %d", base, got, wantDerived)
+		}
+		covered += wantDerived
+	}
+	if covered != 25 {
+		t.Fatalf("the three requirement-free families cover %d derived types, want 25", covered)
+	}
+}
+
+// TestNoBaseFamilyHasALiveSubstitutabilityRequirementYet records the state the
+// whole profile is in, so the day it changes is the day this test says so.
+//
+// A LIVE requirement needs both ends: a projected carrier naming the base, and
+// a projected derived type. Texture2D is the closest -- 17 positions, nine of
+// them on SpriteBatch, which CNA-Go projects -- and it is still LATENT only
+// because its one derived type, RenderTarget2D, is not projected. Projecting
+// RenderTarget2D while SpriteBatch.Draw takes a Texture2D is exactly what would
+// make it live.
+func TestNoBaseFamilyHasALiveSubstitutabilityRequirementYet(t *testing.T) {
+	expected, actual := loadPinnedSurfaces(t)
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LIVE"]; got != 0 {
+		var live []string
+		for _, measurement := range result.XNABaseSubstitutability {
+			if measurement.Requirement == "LIVE" {
+				live = append(live, measurement.Base)
+			}
+		}
+		t.Fatalf("%d base families have a live substitutability requirement: %v. Private composition is no longer "+
+			"sufficient for them, and the public reference abstraction that has been deferred must now be decided", got, live)
+	}
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_NONE"]; got != 3 {
+		t.Fatalf("%d families have no substitutability requirement, want 3", got)
+	}
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 9 {
+		t.Fatalf("%d families have a latent requirement, want 9", got)
+	}
+	if got := result.Summary["XNA_BASE_TYPED_SIGNATURE_POSITIONS"]; got != 51 {
+		t.Fatalf("%d base-typed public signature positions, want 51", got)
+	}
+	// Every family carries exactly one classified requirement.
+	for _, measurement := range result.XNABaseSubstitutability {
+		if _, classified := xnaBaseSubstitutabilityRequirements[measurement.Requirement]; !classified {
+			t.Fatalf("%s carries unclassified requirement %q", measurement.Base, measurement.Requirement)
+		}
+		if measurement.Positions != len(measurement.Rows) {
+			t.Fatalf("%s reports %d positions and lists %d", measurement.Base, measurement.Positions, len(measurement.Rows))
+		}
+	}
+}
+
+// TestCLRTypeIdentitiesFindsEveryPositionAValueCouldFlowThrough pins the scanner
+// the inventory rests on. A base named behind an array, a by-reference marker or
+// a generic argument is still a position a derived value has to flow through,
+// and missing any of those would silently shrink the requirement.
+func TestCLRTypeIdentitiesFindsEveryPositionAValueCouldFlowThrough(t *testing.T) {
+	for raw, want := range map[string][]string{
+		"Microsoft.Xna.Framework.Graphics.Texture2D":   {"Microsoft.Xna.Framework.Graphics.Texture2D"},
+		"Microsoft.Xna.Framework.Graphics.Texture2D[]": {"Microsoft.Xna.Framework.Graphics.Texture2D"},
+		"Microsoft.Xna.Framework.Graphics.Texture2D&":  {"Microsoft.Xna.Framework.Graphics.Texture2D"},
+		"System.Collections.Generic.List`1[Microsoft.Xna.Framework.GameComponent]": {
+			"System.Collections.Generic.List`1", "Microsoft.Xna.Framework.GameComponent",
+		},
+		"System.Func`2[Microsoft.Xna.Framework.GameComponent,Microsoft.Xna.Framework.Graphics.Effect]": {
+			"System.Func`2", "Microsoft.Xna.Framework.GameComponent", "Microsoft.Xna.Framework.Graphics.Effect",
+		},
+		"": nil,
+	} {
+		got := clrTypeIdentities(raw)
+		if len(got) != len(want) {
+			t.Fatalf("%q yielded %v, want %v", raw, got, want)
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Fatalf("%q yielded %v, want %v", raw, got, want)
+			}
+		}
+	}
+}
+
+// TestXNABaseSubstitutabilityDefectsAreRejected attacks the cross-check between
+// the derived inventory and the hand-written registry, which is what stops
+// either from going stale alone.
+func TestXNABaseSubstitutabilityDefectsAreRejected(t *testing.T) {
+	for name, mutate := range map[string]func(){
+		"registry_forgets_a_relationship_the_contract_declares": func() {
+			delete(xnaBaseRelationships, "Microsoft.Xna.Framework.GameComponent")
+		},
+		"registry_invents_a_relationship_the_contract_does_not_declare": func() {
+			xnaBaseRelationships["Microsoft.Xna.Framework.GameTime"] = xnaBaseRelationship{
+				Status: "DEFERRED", Blockers: []xnaBaseBlocker{xnaBaseComposition},
+			}
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			expected, actual := loadPinnedSurfaces(t)
+			saved := make(map[string]xnaBaseRelationship, len(xnaBaseRelationships))
+			for key, value := range xnaBaseRelationships {
+				saved[key] = value
+			}
+			defer func() { xnaBaseRelationships = saved }()
+			mutate()
+			result := verify(expected, actual, 0, "report", "contract", "mapping")
+			if result.Summary["BASE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("defect %q raised no BASE_MAPPING_MISMATCH", name)
+			}
+		})
 	}
 }

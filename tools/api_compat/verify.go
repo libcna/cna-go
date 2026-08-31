@@ -154,6 +154,10 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED"] = 0
 	result.Summary["GAME_NATIVE_SIGNALS_LIFECYCLE_ONLY"] = 0
 	result.Summary["GAME_MANAGED_EVENT_RAISE_SITES"] = 0
+	result.Summary["XNA_BASE_TYPED_SIGNATURE_POSITIONS"] = 0
+	result.Summary["XNA_BASE_SUBSTITUTABILITY_NONE"] = 0
+	result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"] = 0
+	result.Summary["XNA_BASE_SUBSTITUTABILITY_LIVE"] = 0
 	result.Summary["GAME_FRAME_HOOKS"] = 0
 	result.Summary["GAME_FRAME_HOOKS_NEVER_INSTALLED"] = 0
 	result.Summary["GAME_FRAME_HOOKS_INSTALLED_ON_OVERRIDE"] = 0
@@ -186,6 +190,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.GameNativeSignals = measureGameNativeSignals(&result, expected, actual)
 	result.Summary["GAME_NATIVE_SIGNALS"] = len(result.GameNativeSignals)
 	result.GameFrameHooks = measureGameFrameHooks(&result, expected, actual)
+	result.XNABaseSubstitutability = measureXNABaseSubstitutability(&result, expected, actual)
 	result.Summary["GAME_FRAME_HOOKS"] = len(result.GameFrameHooks)
 	result.Summary["BCL_BASE_ADAPTERS"] = len(result.BCLBaseAdapters)
 	for _, adapter := range result.BCLBaseAdapters {
@@ -4441,4 +4446,125 @@ func exportedGoIdentifier(name string) bool {
 		return false
 	}
 	return strings.ToUpper(name[:1]) == name[:1]
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 40 — classifying the base-typed public signature inventory.
+// ---------------------------------------------------------------------------
+
+// xnaBaseSubstitutabilityRequirements are the only classes a base family's
+// substitutability requirement may carry.
+var xnaBaseSubstitutabilityRequirements = map[string]string{
+	// No public signature in the whole profile names this base. Private
+	// composition with explicit forwarding is not a compromise for such a
+	// family -- it is exactly sufficient, and no reference abstraction can be
+	// justified by anything in the contract.
+	"NONE": "no public signature in the profile names this base, so no derived value can ever be required to stand in for one",
+	// Positions exist, but nothing can flow through one today: either no
+	// carrier of a position is projected, or no derived type is.
+	"LATENT": "public positions name this base, but no projected carrier meets a projected derived type, so nothing can flow through one yet",
+	// A projected carrier names the base AND a derived type is projected, so a
+	// consumer can hold a derived value and a signature that must accept it.
+	// This is the only state that forces a public reference abstraction.
+	"LIVE": "a projected carrier names this base and a derived type is projected, so a derived value must be acceptable where the base is named",
+}
+
+// measureXNABaseSubstitutability turns the mechanical inventory into a per-family
+// verdict, and cross-checks the contract-derived relationships against the
+// registry so neither can drift alone.
+//
+// It is the measurement Foundation 40 exists for. The XNA-to-XNA inheritance
+// architecture has to answer one question before it can choose a composition
+// rule -- does any public XNA signature require a derived value to be accepted
+// where its base is named -- and the honest way to answer it is to count, from
+// the pinned contract, rather than to reason about what a framework "probably"
+// does.
+func measureXNABaseSubstitutability(result *report, expected *expectedSurface, actual *actualSurface) []xnaBaseSubstitutabilityMeasurement {
+	// "Projected" is read straight from the actual surface rather than from the
+	// missing-type list, so the measurement does not depend on where in verify
+	// it happens to run.
+	projected := make(map[string]bool, len(expected.Types))
+	for _, et := range expected.Types {
+		if _, present := actual.Types[et.Key]; present {
+			projected[et.XNA] = true
+		}
+	}
+
+	rows := make(map[string][]xnaBaseSubstitutabilityRow, len(expected.XNABaseDerivedByBase))
+	for _, row := range expected.XNABaseSubstitutability {
+		rows[row.Base] = append(rows[row.Base], row)
+		result.Summary["XNA_BASE_TYPED_SIGNATURE_POSITIONS"]++
+	}
+
+	bases := make([]string, 0, len(expected.XNABaseDerivedByBase))
+	for base := range expected.XNABaseDerivedByBase {
+		bases = append(bases, base)
+	}
+	sort.Strings(bases)
+
+	measurements := make([]xnaBaseSubstitutabilityMeasurement, 0, len(bases))
+	for _, base := range bases {
+		derived := expected.XNABaseDerivedByBase[base]
+		measurement := xnaBaseSubstitutabilityMeasurement{
+			Base: base, DerivedTypes: len(derived),
+			Positions: len(rows[base]), Rows: append([]xnaBaseSubstitutabilityRow(nil), rows[base]...),
+			Verdict: "PASS",
+		}
+		if measurement.Rows == nil {
+			measurement.Rows = []xnaBaseSubstitutabilityRow{}
+		}
+		for _, name := range derived {
+			if projected[name] {
+				measurement.ProjectedDerivedTypes++
+			}
+		}
+		for _, row := range rows[base] {
+			if projected[row.Carrier] {
+				measurement.PositionsOnProjectedCarriers++
+			}
+		}
+		switch {
+		case measurement.Positions == 0:
+			measurement.Requirement = "NONE"
+		case measurement.PositionsOnProjectedCarriers > 0 && measurement.ProjectedDerivedTypes > 0:
+			measurement.Requirement = "LIVE"
+		default:
+			measurement.Requirement = "LATENT"
+		}
+		result.Summary["XNA_BASE_SUBSTITUTABILITY_"+measurement.Requirement]++
+
+		// The registry and the contract must agree about which relationships
+		// exist. The registry is hand-written and the inventory is derived, so
+		// comparing them is what stops one from quietly going stale.
+		if _, declared := xnaBaseRelationships[base]; !declared {
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: base, Go: "",
+				Message: "the contract declares XNA classes deriving from this type and the XNA base registry does not record it",
+			})
+			measurement.Verdict = "FAIL"
+		}
+		measurements = append(measurements, measurement)
+	}
+	// The reverse direction, guarded on the base type actually being in the
+	// surface under measurement. A synthetic fixture that declares only a few
+	// types is not evidence that the registry invented a relationship; only a
+	// surface that HAS the base and no class deriving from it is.
+	registryBases := make([]string, 0, len(xnaBaseRelationships))
+	for base := range xnaBaseRelationships {
+		registryBases = append(registryBases, base)
+	}
+	sort.Strings(registryBases)
+	for _, base := range registryBases {
+		if _, present := expected.XNABaseDerivedByBase[base]; present {
+			continue
+		}
+		if expected.typeForXNA(base) == nil {
+			continue
+		}
+		addDiagnostic(result, diagnostic{
+			Category: "BASE_MAPPING_MISMATCH", XNA: base, Go: "",
+			Message: "the XNA base registry records a relationship the pinned contract does not declare",
+		})
+	}
+	return measurements
 }

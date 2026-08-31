@@ -794,6 +794,7 @@ func buildExpected(c contract) (*expectedSurface, error) {
 		owner.Members = append(owner.Members, em.Key)
 	}
 	buildMappedInterfacesAndWitnesses(s, byIdentity)
+	buildXNABaseSubstitutability(s, c)
 	s.ExpectedGoTypes = len(s.Types)
 	s.ExpectedGoMembers = len(s.Members)
 	return s, nil
@@ -2647,4 +2648,159 @@ var gameFrameHooks = map[string]gameFrameHook{
 				Reason: "Microsoft.Xna.Framework.Logger writes to a sink no projected member can read"},
 		},
 	},
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 40 — the base-typed public signature inventory.
+// ---------------------------------------------------------------------------
+
+// buildXNABaseSubstitutability measures the ACTUAL CLR substitutability
+// requirement of the profile, mechanically, from the pinned contract.
+//
+// # Why this has to be measured before any design is chosen
+//
+// Foundation 33 recorded twelve XNA-to-XNA base relationships and 41 derived
+// types and stopped. The obvious next move is to pick a composition rule, and
+// the obvious worry is that private composition cannot express CLR
+// substitutability: in CLR, a DrawableGameComponent may be passed anywhere a
+// GameComponent is named, and a Go struct holding a private *GameComponent
+// cannot.
+//
+// But that worry is only real where the profile actually NAMES a base class in
+// a public signature. If nothing in the whole contract takes or returns a
+// GameComponent, then no consumer can ever need a DrawableGameComponent to
+// stand in for one, and private composition with explicit forwarding is not a
+// compromise -- it is exactly sufficient.
+//
+// So the question is answered by counting, not by argument. This walks every
+// public member of every type in the profile and records every position -- a
+// parameter, a return, a property type, a field type, or a generic argument --
+// whose CLR type names a class that another class in the SAME profile derives
+// from. The result is the complete requirement, with no speculation in it.
+func buildXNABaseSubstitutability(s *expectedSurface, c contract) {
+	byName := make(map[string]*contractType, len(c.Types))
+	for i := range c.Types {
+		byName[c.Types[i].Name] = &c.Types[i]
+	}
+	// The XNA-to-XNA base relationships, derived from the contract rather than
+	// from the registry, so the inventory cannot inherit a registry mistake.
+	derived := make(map[string][]string)
+	for i := range c.Types {
+		t := &c.Types[i]
+		if t.BaseType == nil {
+			continue
+		}
+		base := baseIdentityWithoutArguments(*t.BaseType)
+		if base == t.Name {
+			continue
+		}
+		if _, inProfile := byName[base]; inProfile {
+			derived[base] = append(derived[base], t.Name)
+		}
+	}
+	for base := range derived {
+		sort.Strings(derived[base])
+	}
+
+	record := func(base, carrier, member, kind, position, clrType string) {
+		s.XNABaseSubstitutability = append(s.XNABaseSubstitutability, xnaBaseSubstitutabilityRow{
+			Base: base, Carrier: carrier, Member: member, MemberKind: kind,
+			Position: position, CLRType: clrType,
+		})
+	}
+	scan := func(carrier, member, kind, position, clrType string) {
+		for _, named := range clrTypeIdentities(clrType) {
+			if _, isBase := derived[named]; !isBase {
+				continue
+			}
+			// A member of the base class itself, or of one of its own derived
+			// types, naming the base is not a substitutability requirement on
+			// an unrelated caller -- it is the family talking about itself.
+			// Both are still recorded, with the position naming which it is,
+			// because a projection has to satisfy them too.
+			record(named, carrier, member, kind, position, clrType)
+		}
+	}
+
+	for i := range c.Types {
+		t := &c.Types[i]
+		for j := range t.Members {
+			m := &t.Members[j]
+			switch m.Kind {
+			case "property":
+				if valueOrEmpty(m.GetAccess) != "public" && valueOrEmpty(m.SetAccess) != "public" {
+					continue
+				}
+			case "event":
+			default:
+				if m.Access != "public" {
+					continue
+				}
+			}
+			// A method's type is in returnType; a property, field or event
+			// carries it in `type` instead, and missing either would silently
+			// shrink the inventory this whole measurement rests on.
+			memberType := valueOrEmpty(m.ReturnType)
+			position := "return"
+			if memberType == "" {
+				memberType = valueOrEmpty(m.Type)
+				position = m.Kind + "-type"
+			}
+			if memberType != "" {
+				scan(t.Name, m.Name, m.Kind, position, memberType)
+			}
+			for _, p := range m.Parameters {
+				scan(t.Name, m.Name, m.Kind, "parameter:"+p.Name, p.Type)
+			}
+		}
+	}
+	sort.SliceStable(s.XNABaseSubstitutability, func(i, j int) bool {
+		left, right := s.XNABaseSubstitutability[i], s.XNABaseSubstitutability[j]
+		if left.Base != right.Base {
+			return left.Base < right.Base
+		}
+		if left.Carrier != right.Carrier {
+			return left.Carrier < right.Carrier
+		}
+		if left.Member != right.Member {
+			return left.Member < right.Member
+		}
+		return left.Position < right.Position
+	})
+	s.XNABaseDerivedByBase = derived
+}
+
+// clrTypeIdentities returns every named type identity a CLR type expression
+// mentions, including the ones inside generic arguments and behind an array,
+// pointer or by-reference marker. `Texture2D[]`, `Texture2D&` and
+// `IEnumerable`1[Texture2D]` all mention Texture2D, and every one of them is a
+// position a derived value would have to flow through.
+func clrTypeIdentities(raw string) []string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return nil
+	}
+	var identities []string
+	var current strings.Builder
+	flush := func() {
+		token := strings.TrimSpace(current.String())
+		current.Reset()
+		token = strings.TrimRight(token, "&*")
+		for strings.HasSuffix(token, "[]") {
+			token = strings.TrimSuffix(token, "[]")
+		}
+		if token != "" {
+			identities = append(identities, token)
+		}
+	}
+	for _, character := range trimmed {
+		switch character {
+		case '[', ']', ',':
+			flush()
+		default:
+			current.WriteRune(character)
+		}
+	}
+	flush()
+	return identities
 }
