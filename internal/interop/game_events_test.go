@@ -25,6 +25,13 @@ type recordingCallbacks struct {
 	failure error
 	panics  bool
 
+	// The window family's own recording state. It is separate for the same
+	// reason the entry point is: a shared list could not distinguish a window
+	// signal that arrived as a game signal from one that arrived correctly.
+	windowEvents  []uint32
+	windowFailure error
+	windowPanics  bool
+
 	// frameHooks is what FrameHookOverrides reports, and hooks records every
 	// optional frame hook that was actually dispatched, in order.
 	frameHooks   FrameHookMask
@@ -76,6 +83,17 @@ func (c *recordingCallbacks) GameEvent(event uint32) error {
 		panic("game event handler panic")
 	}
 	return c.failure
+}
+
+// GameWindowEvent records into a SEPARATE list from GameEvent, which is the
+// point of the whole separation: both canonical families number from zero, so
+// one shared list could not tell a mis-routed signal from a valid one.
+func (c *recordingCallbacks) GameWindowEvent(event uint32) error {
+	c.windowEvents = append(c.windowEvents, event)
+	if c.windowPanics {
+		panic("window event handler panic")
+	}
+	return c.windowFailure
 }
 
 func liveRuntime(callbacks Callbacks) *Runtime {
@@ -238,6 +256,7 @@ func TestCallbacksCarriesTheBridgeWithoutDisturbingTheFive(t *testing.T) {
 		"Draw":                "func(interop.FrameTime) error",
 		"UnloadContent":       "func() error",
 		"GameEvent":           "func(uint32) error",
+		"GameWindowEvent":     "func(uint32) error",
 		"FrameHookOverrides":  "func() interop.FrameHookMask",
 		"TimingConfiguration": "func() interop.TimingConfiguration",
 		"BeginRun":            "func() error",
@@ -399,5 +418,89 @@ func TestTimingConfigurationIsReadOnceBeforeCreate(t *testing.T) {
 	callbacks := &recordingCallbacks{timing: value}
 	if got := callbacks.TimingConfiguration(); got != value {
 		t.Fatalf("TimingConfiguration round-trip = %+v, want %+v", got, value)
+	}
+}
+
+// TestInvokeGameWindowEventRoutesEveryIdentity proves the three canonical
+// window identities reach the framework unchanged, in order, and on their own
+// channel.
+func TestInvokeGameWindowEventRoutesEveryIdentity(t *testing.T) {
+	callbacks := &recordingCallbacks{}
+	runtime := liveRuntime(callbacks)
+	want := []uint32{
+		GameWindowEventClientSizeChanged,
+		GameWindowEventOrientationChanged,
+		GameWindowEventScreenDeviceNameChanged,
+	}
+	for _, event := range want {
+		runtime.invokeGameWindowEvent(event)
+	}
+	if len(callbacks.windowEvents) != len(want) {
+		t.Fatalf("delivered %v, want %v", callbacks.windowEvents, want)
+	}
+	for index, event := range want {
+		if callbacks.windowEvents[index] != event {
+			t.Fatalf("delivery %d = %d, want %d", index, callbacks.windowEvents[index], event)
+		}
+	}
+	// The game channel saw nothing. Both families number from zero, so a
+	// shared entry point would have produced perfectly plausible game events.
+	if len(callbacks.events) != 0 {
+		t.Fatalf("window signals arrived on the game channel: %v", callbacks.events)
+	}
+	deliveries := runtime.GameWindowEventDeliveries()
+	if deliveries != [gameWindowEventCount]int{1, 1, 1} {
+		t.Fatalf("window deliveries = %v, want one per identity", deliveries)
+	}
+	if runtime.GameEventDeliveries() != [gameEventCount]int{} {
+		t.Fatal("a window signal incremented a game-event counter")
+	}
+}
+
+// TestInvokeGameWindowEventOnADeadRuntimeDeliversNothing mirrors the game
+// family's rule: a signal after the generation is gone is recorded as a
+// failure and reaches no handler.
+func TestInvokeGameWindowEventOnADeadRuntimeDeliversNothing(t *testing.T) {
+	callbacks := &recordingCallbacks{}
+	runtime := NewRuntime(callbacks)
+	runtime.invokeGameWindowEvent(GameWindowEventClientSizeChanged)
+	if len(callbacks.windowEvents) != 0 {
+		t.Fatalf("a dead runtime delivered %v", callbacks.windowEvents)
+	}
+	runtime.mu.Lock()
+	failure := runtime.callbackFailure
+	runtime.mu.Unlock()
+	if !errors.Is(failure, ErrStaleGeneration) {
+		t.Fatalf("recorded failure = %v, want ErrStaleGeneration", failure)
+	}
+}
+
+// TestInvokeGameWindowEventContainsAPanic proves no Go panic crosses the C
+// frame. CNA_GameEventCallback returns void, so there is nothing to report
+// through and the failure has to be stored on the Runtime.
+func TestInvokeGameWindowEventContainsAPanic(t *testing.T) {
+	callbacks := &recordingCallbacks{windowPanics: true}
+	runtime := liveRuntime(callbacks)
+	runtime.invokeGameWindowEvent(GameWindowEventOrientationChanged)
+	runtime.mu.Lock()
+	failure := runtime.callbackFailure
+	runtime.mu.Unlock()
+	if failure == nil || !strings.Contains(failure.Error(), "panic in GameWindow event handler") {
+		t.Fatalf("recorded failure = %v, want a contained window-handler panic", failure)
+	}
+}
+
+// TestWindowEventNamesCoverEveryIdentity keeps the trace vocabulary honest: an
+// identity with no name would appear in a trace as a number and be
+// indistinguishable from a game event's.
+func TestWindowEventNamesCoverEveryIdentity(t *testing.T) {
+	for event := uint32(0); event < gameWindowEventCount; event++ {
+		name := gameWindowEventName(event)
+		if name == "" || strings.HasPrefix(name, "window-event-") {
+			t.Fatalf("identity %d has no name: %q", event, name)
+		}
+	}
+	if got := gameWindowEventName(gameWindowEventCount); !strings.HasPrefix(got, "window-event-") {
+		t.Fatalf("an out-of-range identity named %q, want the numeric fallback", got)
 	}
 }

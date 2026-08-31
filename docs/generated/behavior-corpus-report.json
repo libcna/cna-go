@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 647,
-    "ASSERTIONS": 647,
+    "OBSERVATIONS": 655,
+    "ASSERTIONS": 655,
     "FAILURES": 0
   },
   "observations": [
@@ -5173,6 +5173,70 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "game-window.identity-is-stable",
+      "group": "GAME_WINDOW",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "game-window.title-starts-empty",
+      "group": "GAME_WINDOW",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "",
+      "actual": "",
+      "passed": true
+    },
+    {
+      "id": "game-window.title-round-trips-and-suppresses-an-unchanged-value",
+      "group": "GAME_WINDOW",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "corpus,true,true",
+      "actual": "corpus,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-window.orientation-is-the-reference-constant",
+      "group": "GAME_WINDOW",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,0",
+      "actual": "0,0",
+      "passed": true
+    },
+    {
+      "id": "game-window.guarded-members-answer-the-reference-fallback",
+      "group": "GAME_WINDOW",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,true,false,true,,true,true,true",
+      "actual": "0,true,false,true,,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-window.unguarded-members-report-the-reference-failure",
+      "group": "GAME_WINDOW",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,true",
+      "actual": "true,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-window.screen-device-change-order-survives-failure",
+      "group": "GAME_WINDOW",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "game-window.each-raiser-reaches-its-own-event",
+      "group": "GAME_WINDOW",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,0,0,true",
+      "actual": "1,0,0,true",
       "passed": true
     },
     {

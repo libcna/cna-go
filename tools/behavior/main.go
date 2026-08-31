@@ -2817,6 +2817,96 @@ func runCorpus() corpusReport {
 	check("game-graphics-device.a-device-less-service-answers-nil", "GAME_GRAPHICS_DEVICE",
 		"true,true", fmt.Sprintf("%t,%t", nilDevice == nil, nilDeviceError == nil))
 
+	// ------------------------------------------------------------------
+	// Foundation 45. GameWindow, whose behaviour is XNA-derived throughout:
+	// every row below comes from Microsoft.Xna.Framework.Game.dll's IL, and
+	// none of it comes from what CNA does.
+	// ------------------------------------------------------------------
+
+	windowGame, _ := framework.NewGame(corpusCallbacks{})
+	corpusWindow := windowGame.Window()
+
+	// Game::get_Window is host.Window over a field EnsureHost() assigned in
+	// the constructor, so the identity never changes for the Game's life.
+	check("game-window.identity-is-stable", "GAME_WINDOW", "true,true",
+		fmt.Sprintf("%t,%t", corpusWindow != nil, windowGame.Window() == corpusWindow))
+
+	// GameWindow::.ctor stores String.Empty, and get_Title is one ldfld.
+	check("game-window.title-starts-empty", "GAME_WINDOW", "", corpusWindow.Title())
+
+	// set_Title stores the field and calls SetTitle only when the value
+	// CHANGED, so the getter tracks assignment while an unchanged assignment
+	// reaches nothing at all.
+	titleAssigned := corpusWindow.SetTitleProperty("corpus")
+	titleRepeated := corpusWindow.SetTitleProperty("corpus")
+	check("game-window.title-round-trips-and-suppresses-an-unchanged-value", "GAME_WINDOW",
+		"corpus,true,true",
+		fmt.Sprintf("%s,%t,%t", corpusWindow.Title(), titleAssigned == nil, titleRepeated == nil))
+
+	// WindowsGameWindow::get_CurrentOrientation is `ldc.i4.0; ret`, and
+	// ::SetSupportedOrientations is a single `ret`. Both are constants in the
+	// selected Windows runtime profile, and the second changes nothing.
+	orientationBefore := corpusWindow.CurrentOrientation()
+	corpusWindow.SetSupportedOrientations(framework.DisplayOrientationLandscapeRight)
+	check("game-window.orientation-is-the-reference-constant", "GAME_WINDOW",
+		"0,0", fmt.Sprintf("%d,%d", orientationBefore, corpusWindow.CurrentOrientation()))
+
+	// The measured null-guard split. Five members answer WindowsGameWindow's
+	// own documented fallback with no window; four dereference it unguarded
+	// and throw.
+	windowHandle, windowHandleError := corpusWindow.Handle()
+	windowResizing, windowResizingError := corpusWindow.AllowUserResizing()
+	windowScreen, windowScreenError := corpusWindow.ScreenDeviceName()
+	check("game-window.guarded-members-answer-the-reference-fallback", "GAME_WINDOW",
+		"0,true,false,true,,true,true,true",
+		fmt.Sprintf("%d,%t,%t,%t,%s,%t,%t,%t",
+			windowHandle, windowHandleError == nil,
+			windowResizing, windowResizingError == nil,
+			windowScreen, windowScreenError == nil,
+			corpusWindow.SetAllowUserResizing(true) == nil,
+			corpusWindow.SetTitleMethod("ignored") == nil))
+
+	_, windowBoundsError := corpusWindow.ClientBounds()
+	check("game-window.unguarded-members-report-the-reference-failure", "GAME_WINDOW",
+		"true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t",
+			windowBoundsError != nil,
+			corpusWindow.BeginScreenDeviceChange(true) != nil,
+			corpusWindow.EndScreenDeviceChangeByStringAndInt32AndInt32("screen", 1, 2) != nil,
+			corpusWindow.EndScreenDeviceChangeByString("screen") != nil))
+
+	// Begin sets its transition flag AFTER the platform call and End clears it
+	// in a finally, so a failing Begin leaves it clear and a failing End
+	// clears it anyway. Neither flag is public; what IS observable is that
+	// neither call reports success without doing its work.
+	check("game-window.screen-device-change-order-survives-failure", "GAME_WINDOW",
+		"true,true",
+		fmt.Sprintf("%t,%t",
+			corpusWindow.BeginScreenDeviceChange(false) != nil,
+			corpusWindow.EndScreenDeviceChangeByStringAndInt32AndInt32("screen", 3, 4) != nil))
+
+	// The six protected raisers each reach their own registration list. All
+	// six bodies are byte-identical in the reference, so a copy-paste that
+	// raised a neighbour would look right.
+	windowRaises := map[string]int{}
+	for name, add := range map[string]func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error){
+		"client":      corpusWindow.AddClientSizeChangedHandler,
+		"orientation": corpusWindow.AddOrientationChangedHandler,
+		"screen":      corpusWindow.AddScreenDeviceNameChangedHandler,
+	} {
+		key := name
+		_, _ = add(func(sender any, args *framework.EventArgs) error {
+			windowRaises[key]++
+			return nil
+		})
+	}
+	windowRaiseError := corpusWindow.OnClientSizeChanged()
+	check("game-window.each-raiser-reaches-its-own-event", "GAME_WINDOW",
+		"1,0,0,true",
+		fmt.Sprintf("%d,%d,%d,%t",
+			windowRaises["client"], windowRaises["orientation"], windowRaises["screen"],
+			windowRaiseError == nil))
+
 	// The one Go-only failure, and the proof that a refused call does not also
 	// admit the frame.
 	unconstructedHooks := &framework.Game{}

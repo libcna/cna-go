@@ -699,8 +699,20 @@ func fallibilityKeys(m contractMember, accessor string) []string {
 }
 
 // managedStoredMembers identifies members on otherwise native-backed class
-// facades whose reference implementation is only managed field access. These
+// facades whose reference implementation reaches no runtime boundary. These
 // members must not gain a synthetic runtime error result.
+//
+// Three body shapes qualify, and each entry below names which one it is:
+//
+//	a managed field read      ldarg.0; ldfld <field>; ret
+//	a compile-time constant   ldc.i4.<n>; ret
+//	an empty body             ret
+//
+// Foundation 45 added the last two. They are the same judgement as the first --
+// the reference reaches nothing, so there is no failure to report -- and the
+// evidence is the same kind: the whole method, in the implementor the selected
+// profile ships. A member is admitted here on its BODY, never on the intuition
+// that it "should not fail".
 var managedStoredMembers = map[string]map[string]bool{
 	"Microsoft.Xna.Framework.GraphicsDeviceManager": {
 		"property|SupportedOrientations": true,
@@ -740,6 +752,20 @@ var managedStoredMembers = map[string]map[string]bool{
 	// setter has to reach it, and that call can genuinely be refused -- from
 	// the wrong thread, or with an argument CNA rejects. Classifying a setter
 	// infallible would mean swallowing that.
+	//
+	// Foundation 45 adds Window on the same evidence. Its body is
+	//
+	//	get_Window
+	//	  ldarg.0; ldfld GameHost Game::host; brfalse RET_NULL
+	//	  ldarg.0; ldfld GameHost Game::host
+	//	  callvirt GameHost::get_Window; ret
+	//	  RET_NULL: ldnull; ret
+	//
+	// which is a null check plus one virtual call to WindowsGameHost::get_Window,
+	// and THAT is `ldarg.0; ldfld WindowsGameWindow; ret`. The host field is
+	// assigned once, by EnsureHost() from inside the constructor, so for a
+	// constructed Game the null branch is unreachable and the whole member is
+	// two field reads. It reaches no window, no device and no platform.
 	"Microsoft.Xna.Framework.Game": {
 		"property-get|Components":        true,
 		"property-get|Services":          true,
@@ -747,6 +773,39 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|TargetElapsedTime": true,
 		"property-get|IsFixedTimeStep":   true,
 		"property-get|IsMouseVisible":    true,
+		"property-get|Window":            true,
+	},
+	// Foundation 45. GameWindow is native-backed -- most of its members reach
+	// the platform window -- so it starts fallible and these three name their
+	// own evidence. Each is the WHOLE method:
+	//
+	//	GameWindow::get_Title
+	//	  ldarg.0; ldfld string GameWindow::title; ret
+	//
+	// a field read on the ABSTRACT BASE, which every implementor shares. Its
+	// setter is deliberately absent from this table: set_Title calls the
+	// abstract SetTitle, which reaches the platform window.
+	//
+	//	WindowsGameWindow::get_CurrentOrientation
+	//	  ldc.i4.0; ret
+	//
+	// a constant. In the selected Windows runtime profile the reference never
+	// asks the platform for an orientation; it answers
+	// DisplayOrientation.Default unconditionally. A projection that could fail
+	// here would be reporting a failure the reference cannot have, and one that
+	// queried CNA could disagree with the reference while being "right".
+	//
+	//	WindowsGameWindow::SetSupportedOrientations
+	//	  ret
+	//
+	// an empty body. This is the member that looked like GameWindow's one open
+	// question, and the answer is that the reference does nothing: it is not a
+	// CNA gap, and CNA's only orientation setter belongs to
+	// GraphicsDeviceManager rather than to the window.
+	"Microsoft.Xna.Framework.GameWindow": {
+		"property-get|Title":              true,
+		"property-get|CurrentOrientation": true,
+		"method|SetSupportedOrientations": true,
 	},
 }
 

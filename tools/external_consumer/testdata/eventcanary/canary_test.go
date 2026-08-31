@@ -2340,3 +2340,167 @@ func TestGraphicsDeviceIsNotAMethodOnGame(t *testing.T) {
 	}
 	var _ func(*framework.Game) (*graphics.GraphicsDevice, error) = graphics.GameGraphicsDevice
 }
+
+// TestGameWindowIsReachableOnlyThroughTheGame proves the assembly constructor
+// from outside: a consumer cannot construct a GameWindow, and the one it gets
+// from Game.Window is the same object every time.
+//
+// This is the property every subscription depends on. A projection that
+// allocated a wrapper per call would pass every in-package test that used one
+// local variable and would silently drop a consumer's handlers here.
+func TestGameWindowIsReachableOnlyThroughTheGame(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	window := game.Window()
+	if window == nil {
+		t.Fatal("Game.Window is nil after construction")
+	}
+	if game.Window() != window {
+		t.Fatal("Game.Window returned a different object on a second call")
+	}
+	// The window is not assignable either: the reference has no setter, so a
+	// consumer cannot substitute one.
+	if _, ok := reflect.TypeOf((*framework.Game)(nil)).MethodByName("SetWindow"); ok {
+		t.Fatal("Game declares a SetWindow method; GameWindow is get-only in the reference")
+	}
+	// A zero GameWindow a consumer declares itself is inert rather than
+	// dangerous, which is what makes the absent constructor safe: the type is
+	// nameable, and nothing about it invites construction.
+	var declared framework.GameWindow
+	if got := declared.Title(); got != "" {
+		t.Fatalf("a consumer-declared GameWindow reported Title %q", got)
+	}
+	// The absence of an exported constructor is enforced by the API-compat
+	// verifier's UNEXPECTED_MEMBER rule rather than reflectively here: Go
+	// cannot enumerate a package's functions at run time, and a test that
+	// pretended to would be measuring nothing.
+}
+
+// TestGameWindowSubscriptionSurvivesTheGetter is what a consumer actually
+// writes, and it goes through a fresh Game.Window() call at every step.
+func TestGameWindowSubscriptionSurvivesTheGetter(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	var order []string
+	add := func(name string, register func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error)) framework.EventSubscription {
+		t.Helper()
+		token, err := register(func(sender any, args *framework.EventArgs) error {
+			if sender != game.Window() {
+				t.Errorf("%s sender is not the window", name)
+			}
+			order = append(order, name)
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("register %s: %v", name, err)
+		}
+		return token
+	}
+	add("client", game.Window().AddClientSizeChangedHandler)
+	add("orientation", game.Window().AddOrientationChangedHandler)
+	removable := add("screen", game.Window().AddScreenDeviceNameChangedHandler)
+
+	if err := game.Window().OnClientSizeChanged(); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.Window().OnOrientationChanged(); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.Window().OnScreenDeviceNameChanged(); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(order, ",") != "client,orientation,screen" {
+		t.Fatalf("handlers ran as %v", order)
+	}
+	if err := game.Window().RemoveScreenDeviceNameChangedHandler(removable); err != nil {
+		t.Fatalf("remove: %v", err)
+	}
+	order = nil
+	if err := game.Window().OnScreenDeviceNameChanged(); err != nil {
+		t.Fatal(err)
+	}
+	if len(order) != 0 {
+		t.Fatalf("a removed handler still ran: %v", order)
+	}
+}
+
+// TestGameWindowTitleIsManagedState proves from outside that the getter reads
+// what the setter stored rather than asking the platform, and that an unchanged
+// assignment is suppressed.
+func TestGameWindowTitleIsManagedState(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	window := game.Window()
+	if got := window.Title(); got != "" {
+		t.Fatalf("Title = %q on a fresh Game, want String.Empty", got)
+	}
+	if err := window.SetTitleProperty("canary"); err != nil {
+		t.Fatalf("SetTitleProperty: %v", err)
+	}
+	if got := game.Window().Title(); got != "canary" {
+		t.Fatalf("Title = %q through a second getter call", got)
+	}
+	// Assigning the same value again is a no-op the consumer cannot tell apart
+	// from a successful write -- which is the point: it must not report a
+	// failure either.
+	if err := window.SetTitleProperty("canary"); err != nil {
+		t.Fatalf("an unchanged SetTitleProperty reported %v", err)
+	}
+}
+
+// TestGameWindowGuardSplitFromOutside is the measured behaviour a consumer sees
+// with no running Game: five members answer the reference's own fallbacks, and
+// four report the failure its unguarded dereference produces.
+func TestGameWindowGuardSplitFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	window := game.Window()
+
+	handle, err := window.Handle()
+	if err != nil || handle != 0 {
+		t.Fatalf("Handle = %#x, %v; want zero and no failure", handle, err)
+	}
+	allow, err := window.AllowUserResizing()
+	if err != nil || allow {
+		t.Fatalf("AllowUserResizing = %t, %v; want false and no failure", allow, err)
+	}
+	if err := window.SetAllowUserResizing(true); err != nil {
+		t.Fatalf("SetAllowUserResizing: %v", err)
+	}
+	name, err := window.ScreenDeviceName()
+	if err != nil || name != "" {
+		t.Fatalf("ScreenDeviceName = %q, %v; want empty and no failure", name, err)
+	}
+	if err := window.SetTitleMethod("ignored"); err != nil {
+		t.Fatalf("SetTitle: %v", err)
+	}
+
+	if _, err := window.ClientBounds(); err == nil {
+		t.Fatal("ClientBounds succeeded with no running Game")
+	}
+	if err := window.BeginScreenDeviceChange(true); err == nil {
+		t.Fatal("BeginScreenDeviceChange succeeded with no running Game")
+	}
+	if err := window.EndScreenDeviceChangeByStringAndInt32AndInt32("s", 1, 2); err == nil {
+		t.Fatal("the three-argument EndScreenDeviceChange succeeded with no running Game")
+	}
+	if err := window.EndScreenDeviceChangeByString("s"); err == nil {
+		t.Fatal("the one-argument EndScreenDeviceChange succeeded with no running Game")
+	}
+}
+
+// TestGameWindowOrientationMembersAreTheReferenceConstants records the two
+// members whose reference bodies reach nothing at all, from the outside where
+// their infallibility is part of the signature a consumer compiles against.
+func TestGameWindowOrientationMembersAreTheReferenceConstants(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	window := game.Window()
+
+	// Infallible by signature: these two lines would not compile if either
+	// member had gained an error result.
+	var orientation framework.DisplayOrientation = window.CurrentOrientation()
+	window.SetSupportedOrientations(framework.DisplayOrientationPortrait)
+
+	if orientation != framework.DisplayOrientationDefault {
+		t.Fatalf("CurrentOrientation = %v, want Default", orientation)
+	}
+	if window.CurrentOrientation() != framework.DisplayOrientationDefault {
+		t.Fatal("SetSupportedOrientations changed CurrentOrientation; the reference stores nothing")
+	}
+}

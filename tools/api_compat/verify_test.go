@@ -8144,3 +8144,55 @@ func TestComposedRelationshipDefectsAreRejected(t *testing.T) {
 		})
 	}
 }
+
+// TestMappingRulesDeclareTheSameManagedStoredMembersAsTheRegistry keeps the
+// documented rules file and the executable table from drifting.
+//
+// managedStoredMembers LOWERS fallibility: every entry removes an error result
+// the type's classification would otherwise add. mapping-rules.json is hashed
+// into every report and is therefore the record of which members the binding
+// claims reach no runtime boundary. Before Foundation 45 the documented list
+// named one identity while the table held seven, so a reader of the report
+// could not have discovered the other six -- and an entry added to the table
+// alone would silently make a fallible member infallible with nothing to say
+// so.
+func TestMappingRulesDeclareTheSameManagedStoredMembersAsTheRegistry(t *testing.T) {
+	data, err := os.ReadFile("mapping-rules.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rules struct {
+		Errors struct {
+			Identities []string `json:"managedStoredMemberIdentities"`
+		} `json:"errors"`
+	}
+	if err := json.Unmarshal(data, &rules); err != nil {
+		t.Fatal(err)
+	}
+	documented := make(map[string]bool, len(rules.Errors.Identities))
+	for _, identity := range rules.Errors.Identities {
+		if documented[identity] {
+			t.Fatalf("mapping-rules.json lists %q twice", identity)
+		}
+		documented[identity] = true
+	}
+	registry := make(map[string]bool)
+	for owner, keys := range managedStoredMembers {
+		for key := range keys {
+			registry[owner+"|"+key] = true
+		}
+	}
+	for identity := range registry {
+		if !documented[identity] {
+			t.Fatalf("%q is in the managedStoredMembers table but not in mapping-rules.json", identity)
+		}
+	}
+	for identity := range documented {
+		if !registry[identity] {
+			t.Fatalf("%q is documented in mapping-rules.json but not in the managedStoredMembers table", identity)
+		}
+	}
+	if len(documented) != len(registry) {
+		t.Fatalf("mapping-rules.json documents %d managed-stored members, the table holds %d", len(documented), len(registry))
+	}
+}

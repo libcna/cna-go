@@ -61,6 +61,21 @@ const (
 	gameEventCount = 4
 )
 
+// The three canonical GameWindow signal identities. They are a SECOND
+// numbering that also starts at zero, so a value from one family is a
+// valid-looking value in the other; they are kept in separate constant sets,
+// delivered through separate trampolines, and counted separately.
+const (
+	GameWindowEventClientSizeChanged       uint32 = 0
+	GameWindowEventOrientationChanged      uint32 = 1
+	GameWindowEventScreenDeviceNameChanged uint32 = 2
+
+	gameWindowEventCount = 3
+)
+
+// GameWindowEventCount is the canonical window-signal identity count.
+const GameWindowEventCount = gameWindowEventCount
+
 type ownership uint8
 
 const (
@@ -104,6 +119,12 @@ type Callbacks interface {
 	// untouched, which is what keeps every existing external implementation
 	// of that interface compiling.
 	GameEvent(event uint32) error
+
+	// GameWindowEvent delivers one canonical CNA window signal. It is a
+	// separate member from GameEvent rather than a wider identity space on
+	// one, because the two families both number from zero: sharing an entry
+	// point would make a mis-routed signal look like a valid one.
+	GameWindowEvent(event uint32) error
 
 	// TimingConfiguration reports the Game's configured timing and
 	// presentation state. It is read once, on the owner thread, immediately
@@ -166,6 +187,13 @@ type Runtime struct {
 	// the other order, because CNA raises the disposal signal from inside
 	// cna_game_destroy and a registration released first would miss it.
 	eventRegistrations [gameEventCount]uint64
+
+	// The window signals, kept in their own two slots for the same reasons
+	// and with the same lifetime: installed once the native game exists,
+	// released after it is destroyed. Three, not four -- the window family is
+	// its own numbering.
+	windowEventDeliveries    [gameWindowEventCount]int
+	windowEventRegistrations [gameWindowEventCount]uint64
 }
 
 // Resource is an internal generation-checked owned-handle control block.
@@ -301,6 +329,24 @@ func (r *Runtime) Run() error {
 	r.mu.Unlock()
 	tracef("Run: installed %d native game-event registrations", gameEventCount)
 
+	// The window signals, on the same rule and at the same moment. XNA's
+	// GameWindow exists from the host's construction and raises its three
+	// events for the whole life of the host, so the subscription window is
+	// the native game's lifetime and not some later point.
+	windowRegistrations, windowSubscribeErr := nativeGameWindowSubscribeEvents(game, uintptr(callbackHandle))
+	if windowSubscribeErr != nil {
+		tracef("Run: window-event subscription failed: %v", windowSubscribeErr)
+		releaseErr := r.releaseGameEvents()
+		destroyErr := nativeGameDestroy(game)
+		r.deactivate()
+		callbackHandle.Delete()
+		return errors.Join(windowSubscribeErr, releaseErr, destroyErr)
+	}
+	r.mu.Lock()
+	r.windowEventRegistrations = windowRegistrations
+	r.mu.Unlock()
+	tracef("Run: installed %d native window-event registrations", gameWindowEventCount)
+
 	tracef("Run: entering cna_game_run")
 	runErr := nativeGameRun(game)
 	tracef("Run: cna_game_run returned: %v", runErr)
@@ -313,6 +359,8 @@ func (r *Runtime) Run() error {
 	// across that call, so releasing first would silently drop the event.
 	unsubscribeErr := r.releaseGameEvents()
 	tracef("Run: released game-event registrations: %v", unsubscribeErr)
+	windowUnsubscribeErr := r.releaseGameWindowEvents()
+	tracef("Run: released window-event registrations: %v", windowUnsubscribeErr)
 	r.deactivate()
 	callbackHandle.Delete()
 
@@ -322,7 +370,7 @@ func (r *Runtime) Run() error {
 	if callbackErr != nil {
 		return callbackErr
 	}
-	return errors.Join(runErr, cleanupErr, destroyErr, unsubscribeErr)
+	return errors.Join(runErr, cleanupErr, destroyErr, unsubscribeErr, windowUnsubscribeErr)
 }
 
 // releaseGameEvents releases every installed registration exactly once. The
@@ -400,6 +448,83 @@ func (r *Runtime) invokeGameEvent(event uint32) {
 // raises no public event, and it is deliberately confined to this internal
 // package: a projected XNA member that exposed a native delivery count would be
 // surface Microsoft never declared.
+// releaseGameWindowEvents is releaseGameEvents for the window family, kept
+// separate because the two tables have different lengths and because a window
+// registration must never be released with a game slot's handle.
+func (r *Runtime) releaseGameWindowEvents() error {
+	r.mu.Lock()
+	registrations := r.windowEventRegistrations
+	r.windowEventRegistrations = [gameWindowEventCount]uint64{}
+	r.mu.Unlock()
+	installed := false
+	for _, handle := range registrations {
+		if handle != 0 {
+			installed = true
+			break
+		}
+	}
+	if !installed {
+		return nil
+	}
+	return nativeGameWindowUnsubscribeEvents(&registrations)
+}
+
+// invokeGameWindowEvent is invokeGameEvent for the window family. It is a
+// separate entry point on purpose: both numberings start at zero, so one
+// shared trampoline could route a window signal into a game event without any
+// value looking wrong.
+func (r *Runtime) invokeGameWindowEvent(event uint32) {
+	tracef("window event %s: enter", gameWindowEventName(event))
+	r.mu.Lock()
+	alive := r.alive
+	callbacks := r.callbacks
+	r.mu.Unlock()
+	if !alive || callbacks == nil {
+		r.recordCallbackFailure(ErrStaleGeneration)
+		tracef("window event %s: dropped, runtime is not live", gameWindowEventName(event))
+		return
+	}
+	if int(event) < gameWindowEventCount {
+		r.mu.Lock()
+		r.windowEventDeliveries[event]++
+		r.mu.Unlock()
+	}
+	var err error
+	func() {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				err = fmt.Errorf("panic in GameWindow event handler: %v\n%s", recovered, debug.Stack())
+			}
+		}()
+		err = callbacks.GameWindowEvent(event)
+	}()
+	if err != nil {
+		r.recordCallbackFailure(err)
+	}
+	tracef("window event %s: return %v", gameWindowEventName(event), err)
+}
+
+// GameWindowEventDeliveries reports how many times each canonical window
+// signal was delivered, for native qualification only.
+func (r *Runtime) GameWindowEventDeliveries() [gameWindowEventCount]int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.windowEventDeliveries
+}
+
+func gameWindowEventName(event uint32) string {
+	switch event {
+	case GameWindowEventClientSizeChanged:
+		return "ClientSizeChanged"
+	case GameWindowEventOrientationChanged:
+		return "OrientationChanged"
+	case GameWindowEventScreenDeviceNameChanged:
+		return "ScreenDeviceNameChanged"
+	default:
+		return fmt.Sprintf("window-event-%d", event)
+	}
+}
+
 func (r *Runtime) GameEventDeliveries() [gameEventCount]int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -795,6 +920,103 @@ func (d *Device) CreateSpriteBatch() (*Resource, error) {
 		return nil, err
 	}
 	return d.runtime.registerResource(batch, resourceSpriteBatch, d.manager), nil
+}
+
+// The GameWindow routes. Two shapes, and which one a member gets is read from
+// the reference implementor rather than chosen:
+//
+//   - windowValue reports (value, live, error). WindowsGameWindow guards
+//     get_Handle, get_AllowUserResizing, set_AllowUserResizing, SetTitle and
+//     get_ScreenDeviceName with `if (mainForm == null)`, so with no window the
+//     reference returns a documented fallback instead of failing. `live` is
+//     false there and the caller supplies the reference's own fallback.
+//   - windowRequired returns an error when there is no live native game.
+//     get_ClientBounds, BeginScreenDeviceChange and EndScreenDeviceChange have
+//     NO null guard in the reference: they dereference mainForm directly and
+//     throw NullReferenceException. Reporting a failure is that behaviour.
+func (r *Runtime) windowGame(required bool) (uint64, bool, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		if errors.Is(err, ErrStaleGeneration) && !required {
+			return 0, false, nil
+		}
+		return 0, false, err
+	}
+	return game, true, nil
+}
+
+// WindowHandle is GameWindow::get_Handle. With no window the reference answers
+// IntPtr.Zero, so `live` false means exactly that.
+func (r *Runtime) WindowHandle() (uintptr, bool, error) {
+	game, live, err := r.windowGame(false)
+	if err != nil || !live {
+		return 0, live, err
+	}
+	value, callErr := nativeGameWindowNativeHandle(game)
+	return uintptr(value), true, callErr
+}
+
+func (r *Runtime) WindowAllowUserResizing() (bool, bool, error) {
+	game, live, err := r.windowGame(false)
+	if err != nil || !live {
+		return false, live, err
+	}
+	value, callErr := nativeGameWindowAllowUserResizing(game)
+	return value, true, callErr
+}
+
+func (r *Runtime) SetWindowAllowUserResizing(value bool) (bool, error) {
+	game, live, err := r.windowGame(false)
+	if err != nil || !live {
+		return live, err
+	}
+	return true, nativeGameWindowSetAllowUserResizing(game, value)
+}
+
+func (r *Runtime) WindowScreenDeviceName() (string, bool, error) {
+	game, live, err := r.windowGame(false)
+	if err != nil || !live {
+		return "", live, err
+	}
+	value, callErr := nativeGameWindowScreenDeviceName(game)
+	return value, true, callErr
+}
+
+// SetWindowTitle is GameWindow::SetTitle, whose Windows implementor guards on
+// the form and otherwise does nothing.
+func (r *Runtime) SetWindowTitle(title string) (bool, error) {
+	game, live, err := r.windowGame(false)
+	if err != nil || !live {
+		return live, err
+	}
+	return true, nativeGameSetWindowTitle(game, title)
+}
+
+// WindowClientBounds is GameWindow::get_ClientBounds, which the reference
+// implements WITHOUT a null guard: with no window it throws
+// NullReferenceException, and here it reports a failure.
+func (r *Runtime) WindowClientBounds() (int32, int32, int32, int32, error) {
+	game, _, err := r.windowGame(true)
+	if err != nil {
+		return 0, 0, 0, 0, err
+	}
+	return nativeGameWindowClientBounds(game)
+}
+
+func (r *Runtime) BeginScreenDeviceChange(willBeFullScreen bool) error {
+	game, _, err := r.windowGame(true)
+	if err != nil {
+		return err
+	}
+	return nativeGameWindowBeginScreenDeviceChange(game, willBeFullScreen)
+}
+
+func (r *Runtime) EndScreenDeviceChange(screenDeviceName string, clientWidth, clientHeight int32) error {
+	game, _, err := r.windowGame(true)
+	if err != nil {
+		return err
+	}
+	return nativeGameWindowEndScreenDeviceChange(game, screenDeviceName, clientWidth, clientHeight)
 }
 
 func (r *Runtime) KeyboardState() ([4]uint64, error) {

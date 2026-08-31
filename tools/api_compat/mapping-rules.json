@@ -72,9 +72,19 @@
   "voidNativeFailure": "error-only-result",
   "valueNativeFailure": "value-then-error",
   "pureValueOperation": "no-added-error-unless-authoritative-managed-argument-failure-is-projected",
-  "managedStoredMember": "no-added-error-when-reference-IL-only-reads-or-writes-managed-state",
+  "managedStoredMember": "no-added-error-when-the-reference-body-reaches-no-runtime-boundary: a-managed-field-read-or-write, a-compile-time-constant, or-an-empty-body",
   "managedStoredMemberIdentities": [
-   "Microsoft.Xna.Framework.GraphicsDeviceManager.SupportedOrientations"
+   "Microsoft.Xna.Framework.Game|property-get|Components",
+   "Microsoft.Xna.Framework.Game|property-get|InactiveSleepTime",
+   "Microsoft.Xna.Framework.Game|property-get|IsFixedTimeStep",
+   "Microsoft.Xna.Framework.Game|property-get|IsMouseVisible",
+   "Microsoft.Xna.Framework.Game|property-get|Services",
+   "Microsoft.Xna.Framework.Game|property-get|TargetElapsedTime",
+   "Microsoft.Xna.Framework.Game|property-get|Window",
+   "Microsoft.Xna.Framework.GameWindow|method|SetSupportedOrientations",
+   "Microsoft.Xna.Framework.GameWindow|property-get|CurrentOrientation",
+   "Microsoft.Xna.Framework.GameWindow|property-get|Title",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property|SupportedOrientations"
   ],
   "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
   "panicPolicy": "programmer-invariant-only-never-native-runtime-failure",

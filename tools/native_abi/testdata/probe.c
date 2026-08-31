@@ -68,6 +68,28 @@ _Static_assert(CNA_GAME_EVENT_DISPOSED == CNA_GO_MANIFEST_GAME_EVENT_DISPOSED, "
 _Static_assert(CNA_GAME_EVENT_EXITING == CNA_GO_MANIFEST_GAME_EVENT_EXITING, "exit identity drift");
 _Static_assert(CNA_GAME_EVENT_MAXIMUM == CNA_GAME_EVENT_EXITING, "highest game-event identity drift");
 
+// The GAME WINDOW event identities, pinned from all three sides for the same
+// reason the game's four are. This family matters more, not less: it is a
+// SECOND numbering that also starts at zero, so a window signal routed into the
+// game table -- or the reverse -- would carry a perfectly valid-looking value
+// and raise the wrong projected event with nothing to catch it.
+_Static_assert(CNA_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED == CNA_GO_MANIFEST_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED, "client-size identity drift");
+_Static_assert(CNA_GAME_WINDOW_EVENT_ORIENTATION_CHANGED == CNA_GO_MANIFEST_GAME_WINDOW_EVENT_ORIENTATION_CHANGED, "orientation identity drift");
+_Static_assert(CNA_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED == CNA_GO_MANIFEST_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED, "screen-device-name identity drift");
+_Static_assert(CNA_GAME_WINDOW_EVENT_MAXIMUM == CNA_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED, "highest window-event identity drift");
+_Static_assert(CNA_GO_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED == CNA_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED, "bridge client-size mirror drift");
+_Static_assert(CNA_GO_GAME_WINDOW_EVENT_ORIENTATION_CHANGED == CNA_GAME_WINDOW_EVENT_ORIENTATION_CHANGED, "bridge orientation mirror drift");
+_Static_assert(CNA_GO_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED == CNA_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED, "bridge screen-device-name mirror drift");
+_Static_assert(CNA_GO_GAME_WINDOW_EVENT_COUNT == CNA_GAME_WINDOW_EVENT_MAXIMUM + 1, "bridge window-event count drift");
+
+// The two families have DIFFERENT lengths, and the difference is load-bearing:
+// bridge.c releases each table with its own loop, and releasing a three-slot
+// array with the four-slot loop would read past it.
+_Static_assert(CNA_GO_GAME_EVENT_COUNT != CNA_GO_GAME_WINDOW_EVENT_COUNT,
+               "the game and window event tables must not silently become the same length");
+_Static_assert(sizeof(CNA_GameWindowEvent) == sizeof(CNA_GameEvent),
+               "window and game event identities must share one fixed width");
+
 // The frame-hook table's MEMBER ORDER, pinned portably rather than by byte
 // offsets. CNA-Go assigns four of the five members conditionally, so a table
 // whose members drifted apart between the canonical header and CNA-Go's

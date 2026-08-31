@@ -29,6 +29,14 @@ typedef struct CNA_Color { uint8_t r; uint8_t g; uint8_t b; uint8_t a; } CNA_Col
 #define CNA_GO_MANIFEST_GAME_EVENT_DISPOSED UINT32_C(2)
 #define CNA_GO_MANIFEST_GAME_EVENT_EXITING UINT32_C(3)
 
+/* The three canonical GAME WINDOW event identities, kept the same way and for
+   the same reason: they are a second, independent numbering that indexes a
+   second trampoline table, and a signal routed to the wrong projected event
+   would be invisible. */
+#define CNA_GO_MANIFEST_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED UINT32_C(0)
+#define CNA_GO_MANIFEST_GAME_WINDOW_EVENT_ORIENTATION_CHANGED UINT32_C(1)
+#define CNA_GO_MANIFEST_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED UINT32_C(2)
+
 #ifndef CNA_C_RUNTIME_H
 typedef struct CNA_GameTime {
     int64_t total_game_time_ticks;
@@ -80,6 +88,14 @@ typedef uint32_t CNA_GameEvent;
 #define CNA_GAME_EVENT_EXITING CNA_GO_MANIFEST_GAME_EVENT_EXITING
 #define CNA_GAME_EVENT_MAXIMUM CNA_GAME_EVENT_EXITING
 typedef void (*CNA_GameEventCallback)(void*);
+#endif
+
+#ifndef CNA_C_RUNTIME_WINDOW_H
+typedef uint32_t CNA_GameWindowEvent;
+#define CNA_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED CNA_GO_MANIFEST_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED
+#define CNA_GAME_WINDOW_EVENT_ORIENTATION_CHANGED CNA_GO_MANIFEST_GAME_WINDOW_EVENT_ORIENTATION_CHANGED
+#define CNA_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED CNA_GO_MANIFEST_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED
+#define CNA_GAME_WINDOW_EVENT_MAXIMUM CNA_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED
 #endif
 
 #ifndef CNA_C_GRAPHICS_DEVICE_H
@@ -167,6 +183,32 @@ typedef CNA_Result (*cna_sprite_batch_end_fn)(CNA_Handle);
 typedef CNA_Result (*cna_sprite_batch_destroy_fn)(CNA_Handle);
 typedef CNA_Result (*cna_keyboard_get_state_fn)(CNA_Handle, CNA_KeyboardState*);
 
+/* GameWindow. Every route takes the GAME handle: CNA models the window as a
+   property of the game rather than as a separate object, so there is no window
+   handle to own and nothing here is a new lifetime.
+
+   Three canonical window routes are deliberately NOT bound, and each omission
+   is a measurement rather than an oversight:
+
+     cna_game_window_get_title_size / cna_game_window_copy_title
+         GameWindow::get_Title is one ldfld over the abstract base's own
+         managed field. Binding the native getter would create a second source
+         of truth that could disagree with the field the setter wrote.
+     cna_game_window_get_current_orientation
+         WindowsGameWindow::get_CurrentOrientation is `ldc.i4.0; ret`. The
+         reference never asks the platform in this profile, so neither does
+         CNA-Go. */
+typedef CNA_Result (*cna_game_window_get_allow_user_resizing_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_game_window_set_allow_user_resizing_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_game_window_get_client_bounds_fn)(CNA_Handle, CNA_Rectangle*);
+typedef CNA_Result (*cna_game_window_get_native_handle_ext_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_game_window_get_screen_device_name_size_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_game_window_copy_screen_device_name_fn)(CNA_Handle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_game_window_begin_screen_device_change_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_game_window_end_screen_device_change_fn)(CNA_Handle, CNA_StringView, int32_t, int32_t);
+typedef CNA_Result (*cna_game_set_window_title_fn)(CNA_Handle, CNA_StringView);
+typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEvent, CNA_GameEventCallback, void*, CNA_GameEventRegistrationHandle*);
+
 #define CNA_GO_REQUIRED_SYMBOLS(X) \
     X(cna_get_abi_version) \
     X(cna_error_get_last_message_size) \
@@ -198,6 +240,16 @@ typedef CNA_Result (*cna_keyboard_get_state_fn)(CNA_Handle, CNA_KeyboardState*);
     X(cna_sprite_batch_submit_scaled_many) \
     X(cna_sprite_batch_end) \
     X(cna_sprite_batch_destroy) \
-    X(cna_keyboard_get_state)
+    X(cna_keyboard_get_state) \
+    X(cna_game_window_get_allow_user_resizing) \
+    X(cna_game_window_set_allow_user_resizing) \
+    X(cna_game_window_get_client_bounds) \
+    X(cna_game_window_get_native_handle_ext) \
+    X(cna_game_window_get_screen_device_name_size) \
+    X(cna_game_window_copy_screen_device_name) \
+    X(cna_game_window_begin_screen_device_change) \
+    X(cna_game_window_end_screen_device_change) \
+    X(cna_game_set_window_title) \
+    X(cna_game_window_subscribe)
 
 #endif

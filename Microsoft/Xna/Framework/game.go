@@ -108,6 +108,15 @@ type Game struct {
 	// concurrency projection and its one deliberate divergence.
 	disposeLock sync.Mutex
 
+	// window is Game::host.Window. The reference's constructor calls
+	// EnsureHost() before its fifth statement and then reads host.Window, so
+	// the window exists from construction and Game::get_Window -- which is
+	// `host == null ? null : host.Window` over a field WindowsGameHost's
+	// constructor assigns -- returns the same object for the Game's whole
+	// life. CNA-Go allocates it here for exactly that reason: the identity a
+	// caller observes must never change.
+	window *GameWindow
+
 	// isActive is Game::isActive, the private bool HostActivated and
 	// HostDeactivated maintain. It is NOT Game::IsActive: that getter also
 	// consults GamerServices' Guide and stays a missing member. This field
@@ -181,9 +190,35 @@ func NewGame(callbacks GameCallbacks) (*Game, error) {
 	if _, err := game.gameComponents.AddComponentRemovedHandler(game.gameComponentRemoved); err != nil {
 		return nil, err
 	}
+	// EnsureHost()'s position in the reference constructor: after the service
+	// container and before LaunchParameters, the component collection and the
+	// ContentManager. Allocating the window here rather than lazily in the
+	// getter is what makes Game.Window's identity stable, which is the
+	// observable part of the reference's behaviour.
+	game.window = newGameWindow(game)
 	game.runtime = interop.NewRuntime(gameRuntimeCallbacks{game: game})
 	interop.RegisterOwner(game, game.runtime, nil)
 	return game, nil
+}
+
+// Window is Game::get_Window:
+//
+//	host == null ? null : host.Window
+//
+// In the reference `host` is never null after construction -- EnsureHost() runs
+// inside the constructor and the field is assigned there and nowhere else -- so
+// the null branch is unreachable for a constructed Game and the getter is
+// effectively one field read of a stable identity. That is what CNA-Go
+// projects: the same *GameWindow every call, never a fresh wrapper.
+//
+// It reaches no window and cannot fail. Whether the WINDOW's own members can
+// answer depends on whether a native game is live, and each of them says so on
+// its own terms; see game_window.go for the measured guarded/unguarded split.
+func (g *Game) Window() *GameWindow {
+	if g == nil {
+		return nil
+	}
+	return g.window
 }
 
 // Components is Game::get_Components, whose whole body is
@@ -208,7 +243,8 @@ func (g *Game) Services() *GameServiceContainer {
 	return g.gameServices
 }
 
-// Run creates and runs the admitted CNA ABI 0.7 Game on a locked OS thread.
+// Run creates and runs the Game on a locked OS thread, against a CNA library
+// the loader has admitted.
 //
 // The `inRun` reset reproduces RunGame's finally block, which clears the flag
 // once a blocking run has returned:
@@ -279,6 +315,14 @@ func (c gameRuntimeCallbacks) UnloadContent() error {
 // consumer implements nothing new to receive these signals.
 func (c gameRuntimeCallbacks) GameEvent(event uint32) error {
 	return c.game.raiseNativeGameEvent(event)
+}
+
+// GameWindowEvent is the private end of the native WINDOW bridge, and is
+// deliberately a second member rather than a wider identity space on the one
+// above: the two canonical families both number from zero, so one shared entry
+// point would make a mis-routed signal indistinguishable from a valid one.
+func (c gameRuntimeCallbacks) GameWindowEvent(event uint32) error {
+	return c.game.window.raiseNativeWindowEvent(event)
 }
 
 // FrameHookOverrides reports exactly the hooks the callback object supplied an

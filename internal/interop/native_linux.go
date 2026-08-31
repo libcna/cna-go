@@ -298,6 +298,124 @@ func nativeSpriteBatchDestroy(batch uint64) error {
 	return resultError("cna_sprite_batch_destroy", uint32(C.cna_go_sprite_batch_destroy(C.CnaGoHandle(batch))))
 }
 
+// The GameWindow routes. Every one takes the game handle; CNA models the
+// window as a property of the game, so nothing here owns a native lifetime.
+func nativeGameWindowAllowUserResizing(game uint64) (bool, error) {
+	var allowed C.uint8_t
+	code := uint32(C.cna_go_game_window_get_allow_user_resizing(C.CnaGoHandle(game), &allowed))
+	return allowed != 0, resultError("cna_game_window_get_allow_user_resizing", code)
+}
+
+func nativeGameWindowSetAllowUserResizing(game uint64, value bool) error {
+	code := uint32(C.cna_go_game_window_set_allow_user_resizing(C.CnaGoHandle(game), C.uint8_t(boolToByte(value))))
+	return resultError("cna_game_window_set_allow_user_resizing", code)
+}
+
+func nativeGameWindowClientBounds(game uint64) (int32, int32, int32, int32, error) {
+	var x, y, width, height C.int32_t
+	code := uint32(C.cna_go_game_window_get_client_bounds(C.CnaGoHandle(game), &x, &y, &width, &height))
+	return int32(x), int32(y), int32(width), int32(height), resultError("cna_game_window_get_client_bounds", code)
+}
+
+func nativeGameWindowNativeHandle(game uint64) (uint64, error) {
+	var handle C.uint64_t
+	code := uint32(C.cna_go_game_window_get_native_handle(C.CnaGoHandle(game), &handle))
+	return uint64(handle), resultError("cna_game_window_get_native_handle_ext", code)
+}
+
+// nativeGameWindowScreenDeviceName is the two-call string read. The size call
+// reports the byte count CNA would write, Go allocates that, and the copy call
+// fills it; no native string pointer is retained.
+func nativeGameWindowScreenDeviceName(game uint64) (string, error) {
+	var required C.uint64_t
+	code := uint32(C.cna_go_game_window_get_screen_device_name_size(C.CnaGoHandle(game), &required))
+	if err := resultError("cna_game_window_get_screen_device_name_size", code); err != nil {
+		return "", err
+	}
+	if required == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(required))
+	var written C.uint64_t
+	code = uint32(C.cna_go_game_window_copy_screen_device_name(
+		C.CnaGoHandle(game),
+		(*C.char)(unsafe.Pointer(&buffer[0])),
+		C.uint64_t(len(buffer)),
+		&written))
+	if err := resultError("cna_game_window_copy_screen_device_name", code); err != nil {
+		return "", err
+	}
+	if int(written) > len(buffer) {
+		return "", fmt.Errorf("%w: CNA reported %d screen-device-name bytes into a %d byte buffer", ErrNativeUnavailable, int(written), len(buffer))
+	}
+	return string(buffer[:int(written)]), nil
+}
+
+func nativeGameWindowBeginScreenDeviceChange(game uint64, willBeFullScreen bool) error {
+	code := uint32(C.cna_go_game_window_begin_screen_device_change(C.CnaGoHandle(game), C.uint8_t(boolToByte(willBeFullScreen))))
+	return resultError("cna_game_window_begin_screen_device_change", code)
+}
+
+func nativeGameWindowEndScreenDeviceChange(game uint64, name string, width, height int32) error {
+	nameBytes := []byte(name)
+	var namePointer *C.char
+	if len(nameBytes) > 0 {
+		namePointer = (*C.char)(unsafe.Pointer(&nameBytes[0]))
+	}
+	code := uint32(C.cna_go_game_window_end_screen_device_change(
+		C.CnaGoHandle(game), namePointer, C.uint64_t(len(nameBytes)), C.int32_t(width), C.int32_t(height)))
+	return resultError("cna_game_window_end_screen_device_change", code)
+}
+
+func nativeGameSetWindowTitle(game uint64, title string) error {
+	titleBytes := []byte(title)
+	var titlePointer *C.char
+	if len(titleBytes) > 0 {
+		titlePointer = (*C.char)(unsafe.Pointer(&titleBytes[0]))
+	}
+	code := uint32(C.cna_go_game_set_window_title(C.CnaGoHandle(game), titlePointer, C.uint64_t(len(titleBytes))))
+	return resultError("cna_game_set_window_title", code)
+}
+
+func nativeGameWindowSubscribeEvents(game uint64, context uintptr) ([gameWindowEventCount]uint64, error) {
+	var registrations [gameWindowEventCount]C.CnaGoHandle
+	code := uint32(C.cna_go_game_window_subscribe_events(C.CnaGoHandle(game), C.uintptr_t(context), &registrations[0]))
+	var result [gameWindowEventCount]uint64
+	for i := range result {
+		result[i] = uint64(registrations[i])
+	}
+	return result, resultError("cna_game_window_subscribe", code)
+}
+
+func nativeGameWindowUnsubscribeEvents(registrations *[gameWindowEventCount]uint64) error {
+	var native [gameWindowEventCount]C.CnaGoHandle
+	for i, handle := range registrations {
+		native[i] = C.CnaGoHandle(handle)
+	}
+	code := uint32(C.cna_go_game_window_unsubscribe_events(&native[0]))
+	for i := range registrations {
+		registrations[i] = uint64(native[i])
+	}
+	return resultError("cna_game_unsubscribe", code)
+}
+
+// cnaGoGameWindowEvent is the window family's own trampoline. Keeping it
+// separate from cnaGoGameEvent is what stops a window signal from arriving as
+// a game signal: both identity spaces start at zero.
+//
+//export cnaGoGameWindowEvent
+func cnaGoGameWindowEvent(event C.uint32_t, context C.uintptr_t) {
+	var state *Runtime
+	defer func() {
+		if recovered := recover(); recovered != nil && state != nil {
+			state.recordCallbackFailure(fmt.Errorf("panic in native window-event trampoline: %v", recovered))
+		}
+	}()
+	handle := cgo.Handle(context)
+	state = handle.Value().(*Runtime)
+	state.invokeGameWindowEvent(uint32(event))
+}
+
 func nativeKeyboardState(game uint64) ([4]uint64, error) {
 	var result [4]uint64
 	var words [4]C.uint64_t

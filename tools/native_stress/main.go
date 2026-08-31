@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"runtime"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
@@ -75,6 +76,26 @@ type counters struct {
 	TimingWrongThreadChecks int `json:"GAME_TIMING_WRONG_THREAD_CHECKS"`
 	TimingRangeChecks       int `json:"GAME_TIMING_RANGE_CHECKS"`
 	TimingCreatedWithConfig int `json:"GAME_TIMING_CREATED_WITH_CONFIGURED_STEP"`
+
+	WindowCycles              int `json:"GAME_WINDOW_CYCLES"`
+	WindowIdentityChecks      int `json:"GAME_WINDOW_IDENTITY_CHECKS"`
+	WindowGuardedFallbacks    int `json:"GAME_WINDOW_GUARDED_FALLBACK_CHECKS"`
+	WindowUnguardedFailures   int `json:"GAME_WINDOW_UNGUARDED_FAILURE_CHECKS"`
+	WindowLiveReads           int `json:"GAME_WINDOW_LIVE_READ_CHECKS"`
+	WindowTitleSuppressions   int `json:"GAME_WINDOW_TITLE_SUPPRESSION_CHECKS"`
+	WindowWrongThreadChecks   int `json:"GAME_WINDOW_WRONG_THREAD_CHECKS"`
+	WindowScreenDeviceChanges int `json:"GAME_WINDOW_SCREEN_DEVICE_CHANGE_CYCLES"`
+	WindowResizeRoundTrips    int `json:"GAME_WINDOW_RESIZE_ROUND_TRIPS"`
+	// Whether the live window reported a positive client size. HEADLESS does
+	// not, and that is a renderer fact rather than a binding one.
+	WindowPositiveClientBounds int `json:"GAME_WINDOW_POSITIVE_CLIENT_BOUNDS"`
+	// The three canonical window signals. HEADLESS never resizes, rotates or
+	// changes screen, so these are expected to stay zero in this environment
+	// and are recorded rather than asserted -- exactly as
+	// GAME_EVENT_DEACTIVATED_DELIVERIES is.
+	WindowEventClientSize   int `json:"GAME_WINDOW_EVENT_CLIENT_SIZE_DELIVERIES"`
+	WindowEventOrientation  int `json:"GAME_WINDOW_EVENT_ORIENTATION_DELIVERIES"`
+	WindowEventScreenDevice int `json:"GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_DELIVERIES"`
 }
 
 type stressReport struct {
@@ -168,7 +189,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -273,6 +294,36 @@ func runParent() (counters, error) {
 	if total.TimingWrongThreadChecks < 20 || total.TimingRangeChecks < 20 {
 		return total, errors.New("the timing thread or range proof did not run in every cycle")
 	}
+	// Foundation 45. Each window cycle measures the same members three times:
+	// before Run with no native window, during Run with one, and after Run
+	// with none again. The guarded and unguarded families must BOTH have been
+	// exercised in every cycle, because the split between them is the whole
+	// claim.
+	if total.WindowCycles < 20 {
+		return total, errors.New("native window minimum was not met")
+	}
+	if total.WindowIdentityChecks != 3*total.WindowCycles {
+		return total, fmt.Errorf("Game.Window identity was checked %d times across %d cycles, want three per cycle",
+			total.WindowIdentityChecks, total.WindowCycles)
+	}
+	if total.WindowGuardedFallbacks != 6*total.WindowCycles {
+		return total, fmt.Errorf("%d guarded-fallback checks across %d cycles, want six per cycle",
+			total.WindowGuardedFallbacks, total.WindowCycles)
+	}
+	if total.WindowUnguardedFailures != 4*total.WindowCycles {
+		return total, fmt.Errorf("%d unguarded-failure checks across %d cycles, want four per cycle",
+			total.WindowUnguardedFailures, total.WindowCycles)
+	}
+	if total.WindowLiveReads != 6*total.WindowCycles {
+		return total, fmt.Errorf("%d live window reads across %d cycles, want six per cycle",
+			total.WindowLiveReads, total.WindowCycles)
+	}
+	if total.WindowTitleSuppressions < 20 || total.WindowWrongThreadChecks < 20 {
+		return total, errors.New("the window title suppression or thread proof did not run in every cycle")
+	}
+	if total.WindowScreenDeviceChanges < 20 {
+		return total, errors.New("the screen-device-change pair did not run in every cycle")
+	}
 	return total, nil
 }
 
@@ -296,6 +347,9 @@ func runChild(scenario string, index int) error {
 	}
 	if scenario == "timing" {
 		return runTimingChild()
+	}
+	if scenario == "window" {
+		return runWindowChild()
 	}
 	game := &stressGame{scenario: scenario, index: index, data: encodedPNG()}
 	host, err := framework.NewGame(game)
@@ -1075,50 +1129,24 @@ func encodedPNG() []byte {
 	return output.Bytes()
 }
 
+// addCounters sums every counter mechanically.
+//
+// It used to be a hand-written list of one line per field, and that list was a
+// silent single point of failure: a counter added to the struct but not to the
+// list stayed at zero in the aggregate report while its scenario ran perfectly,
+// so the evidence would read "this was never measured" for something that was.
+// Foundation 45 hit exactly that. Reflection cannot drift, and the panic below
+// is a programmer invariant -- every counter is an int by construction.
 func addCounters(target *counters, value counters) {
-	target.GameCycles += value.GameCycles
-	target.GameRecreationCycles += value.GameRecreationCycles
-	target.TextureCycles += value.TextureCycles
-	target.SpriteBatchCycles += value.SpriteBatchCycles
-	target.CallbackErrorCycles += value.CallbackErrorCycles
-	target.CallbackPanicCycles += value.CallbackPanicCycles
-	target.WrongThreadChecks += value.WrongThreadChecks
-	target.OwnerThreadRetries += value.OwnerThreadRetries
-	target.GCStressPoints += value.GCStressPoints
-	target.NativeCrashes += value.NativeCrashes
-	target.ObservedUAF += value.ObservedUAF
-	target.ObservedDoubleFree += value.ObservedDoubleFree
-	target.GameEventActivated += value.GameEventActivated
-	target.GameEventDeactivated += value.GameEventDeactivated
-	target.GameEventExiting += value.GameEventExiting
-	target.GameNativeDisposalSignals += value.GameNativeDisposalSignals
-	target.GameDisposedDuringRun += value.GameDisposedDuringRun
-	target.GameDisposedByManagedCall += value.GameDisposedByManagedCall
-	target.GameDisposedRepeatChecks += value.GameDisposedRepeatChecks
-	target.GameDisposeAfterRunCycles += value.GameDisposeAfterRunCycles
-	target.GameEventOrderChecks += value.GameEventOrderChecks
-	target.GameEventRemovalChecks += value.GameEventRemovalChecks
-	target.GameEventOwnerThreadHits += value.GameEventOwnerThreadHits
-	target.GameEventRerunCycles += value.GameEventRerunCycles
-	target.GameEventPostRunChecks += value.GameEventPostRunChecks
-	target.FrameHookOverrideCycles += value.FrameHookOverrideCycles
-	target.FrameHookBeginRunHits += value.FrameHookBeginRunHits
-	target.FrameHookEndRunHits += value.FrameHookEndRunHits
-	target.FrameHookBeginDrawHits += value.FrameHookBeginDrawHits
-	target.FrameHookEndDrawHits += value.FrameHookEndDrawHits
-	target.FrameHookRefusedFrames += value.FrameHookRefusedFrames
-	target.FrameHookAdmittedFrames += value.FrameHookAdmittedFrames
-	target.FrameHookEndDrawExpected += value.FrameHookEndDrawExpected
-	target.FrameHookSkipChecks += value.FrameHookSkipChecks
-	target.FrameHookBaseCallChecks += value.FrameHookBaseCallChecks
-	target.FrameHookOrderChecks += value.FrameHookOrderChecks
-	target.FrameHookSubsetCycles += value.FrameHookSubsetCycles
-	target.FrameHookUninstalledHits += value.FrameHookUninstalledHits
-	target.TimingCycles += value.TimingCycles
-	target.TimingSettersApplied += value.TimingSettersApplied
-	target.TimingWrongThreadChecks += value.TimingWrongThreadChecks
-	target.TimingRangeChecks += value.TimingRangeChecks
-	target.TimingCreatedWithConfig += value.TimingCreatedWithConfig
+	destination := reflect.ValueOf(target).Elem()
+	source := reflect.ValueOf(value)
+	for index := 0; index < destination.NumField(); index++ {
+		field := destination.Field(index)
+		if field.Kind() != reflect.Int {
+			panic(fmt.Sprintf("counters.%s is %s; every counter must be an int", destination.Type().Field(index).Name, field.Kind()))
+		}
+		field.SetInt(field.Int() + source.Field(index).Int())
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -1243,6 +1271,241 @@ func runTimingChild() error {
 	if !host.IsFixedTimeStep() {
 		return errors.New("a post-run set did not reach the managed field")
 	}
+	runtime.GC()
+	game.result.GCStressPoints++
+	data, _ := json.Marshal(game.result)
+	fmt.Println(string(data))
+	return nil
+}
+
+// windowGame proves GameWindow against a LIVE native game, which is the half
+// the pure-Go tests structurally cannot reach: with no native game every
+// guarded member answers its fallback, so only a run can show that the same
+// member reads a real window when there is one.
+type windowGame struct {
+	result   counters
+	window   *framework.GameWindow
+	deviceOK bool
+}
+
+func (g *windowGame) Initialize(host *framework.Game) error {
+	window := host.Window()
+	// The identity a consumer captured BEFORE Run is the identity the callback
+	// sees. A projection that allocated per call would hand out a second
+	// object here and silently orphan every subscription made before Run.
+	if window != g.window {
+		return errors.New("Game.Window returned a different object inside a callback than before Run")
+	}
+	g.result.WindowIdentityChecks++
+
+	// The UNGUARDED member now succeeds. Before Run it reported the
+	// reference's NullReferenceException; the difference between the two is
+	// the whole point of the measured guard split.
+	bounds, err := window.ClientBounds()
+	if err != nil {
+		return fmt.Errorf("ClientBounds with a live window: %w", err)
+	}
+	g.result.WindowLiveReads++
+	// The measured SIZE is the renderer's, not the binding's. The HEADLESS
+	// artifact reports a 0x0 client rectangle while its graphics device
+	// reports an 800x480 viewport, so a positive size is COUNTED rather than
+	// required: requiring it would make this scenario a renderer test that
+	// fails for a reason CNA-Go cannot fix, and asserting 0x0 would bake a
+	// headless artifact's answer into the contract.
+	if bounds.Width > 0 && bounds.Height > 0 {
+		g.result.WindowPositiveClientBounds++
+	}
+
+	// The guarded members answer without failing. Their VALUES are the
+	// platform's and are not asserted -- a headless window legitimately has no
+	// screen device name and a zero handle -- but a failure would be a real
+	// defect and is.
+	if _, err := window.Handle(); err != nil {
+		return fmt.Errorf("Handle with a live window: %w", err)
+	}
+	if _, err := window.ScreenDeviceName(); err != nil {
+		return fmt.Errorf("ScreenDeviceName with a live window: %w", err)
+	}
+	g.result.WindowLiveReads += 2
+
+	// AllowUserResizing round-trips only if the platform honours it. Both
+	// calls must report success; whether the value came back is COUNTED rather
+	// than required, because a headless window has no resize grip to grant.
+	before, err := window.AllowUserResizing()
+	if err != nil {
+		return fmt.Errorf("AllowUserResizing with a live window: %w", err)
+	}
+	if err := window.SetAllowUserResizing(!before); err != nil {
+		return fmt.Errorf("SetAllowUserResizing with a live window: %w", err)
+	}
+	after, err := window.AllowUserResizing()
+	if err != nil {
+		return fmt.Errorf("AllowUserResizing after assignment: %w", err)
+	}
+	if after == !before {
+		g.result.WindowResizeRoundTrips++
+	}
+	g.result.WindowLiveReads++
+
+	// Title: the managed field is authoritative, and the assignment reaches
+	// the live loop.
+	if got := window.Title(); got != "" {
+		return fmt.Errorf("Title = %q at the start of a run, want the constructor's String.Empty", got)
+	}
+	if err := window.SetTitleProperty("cna-go window stress"); err != nil {
+		return fmt.Errorf("SetTitleProperty with a live window: %w", err)
+	}
+	if got := window.Title(); got != "cna-go window stress" {
+		return fmt.Errorf("Title = %q after assignment", got)
+	}
+	g.result.WindowLiveReads++
+
+	// The suppression proof, and it needs a live run to exist at all.
+	//
+	// set_Title's guard is `if (this.title != value)`, so an UNCHANGED
+	// assignment performs no platform call. From a non-owner goroutine that is
+	// observable and nothing else is: an unchanged assignment succeeds because
+	// it never reaches the boundary, while a changed one is refused for being
+	// off the owner thread. A projection that dropped the guard would fail the
+	// first of the two.
+	unchanged := make(chan error, 1)
+	go func() { unchanged <- window.SetTitleProperty("cna-go window stress") }()
+	if err := <-unchanged; err != nil {
+		return fmt.Errorf("an unchanged title from a non-owner goroutine reported %v; the guard should have stopped it before the boundary", err)
+	}
+	g.result.WindowTitleSuppressions++
+	changed := make(chan error, 1)
+	go func() { changed <- window.SetTitleProperty("a different title") }()
+	if err := <-changed; !errors.Is(err, interop.ErrWrongThread) {
+		return fmt.Errorf("a changed title from a non-owner goroutine reported %v, want ErrWrongThread", err)
+	}
+	g.result.WindowWrongThreadChecks++
+	// The refused assignment still stored the managed field before it reached
+	// the boundary, exactly as the reference's own order does: the store
+	// precedes the SetTitle call.
+	if got := window.Title(); got != "a different title" {
+		return fmt.Errorf("Title = %q after a refused native call; the reference stores before it calls", got)
+	}
+
+	// The screen-device-change pair, which is the other unguarded family.
+	name, err := window.ScreenDeviceName()
+	if err != nil {
+		return fmt.Errorf("ScreenDeviceName before a device change: %w", err)
+	}
+	if err := window.BeginScreenDeviceChange(false); err != nil {
+		return fmt.Errorf("BeginScreenDeviceChange with a live window: %w", err)
+	}
+	if err := window.EndScreenDeviceChangeByString(name); err != nil {
+		return fmt.Errorf("EndScreenDeviceChange with a live window: %w", err)
+	}
+	g.result.WindowScreenDeviceChanges++
+
+	// CurrentOrientation is the reference's constant and stays it even with a
+	// live window: the reference never asks the platform in this profile.
+	if got := window.CurrentOrientation(); got != framework.DisplayOrientationDefault {
+		return fmt.Errorf("CurrentOrientation = %v with a live window, want the reference's constant Default", got)
+	}
+	window.SetSupportedOrientations(framework.DisplayOrientationPortrait)
+	if got := window.CurrentOrientation(); got != framework.DisplayOrientationDefault {
+		return fmt.Errorf("CurrentOrientation = %v after SetSupportedOrientations; the reference's body is one `ret`", got)
+	}
+	g.result.WindowLiveReads++
+
+	if runtime, ok := interop.CurrentRuntime(); ok {
+		deliveries := runtime.GameWindowEventDeliveries()
+		g.result.WindowEventClientSize += deliveries[interop.GameWindowEventClientSizeChanged]
+		g.result.WindowEventOrientation += deliveries[interop.GameWindowEventOrientationChanged]
+		g.result.WindowEventScreenDevice += deliveries[interop.GameWindowEventScreenDeviceNameChanged]
+		g.deviceOK = true
+	}
+	return nil
+}
+
+func (g *windowGame) LoadContent(*framework.Game) error                       { return nil }
+func (g *windowGame) Update(host *framework.Game, _ framework.GameTime) error { return host.Exit() }
+func (g *windowGame) Draw(*framework.Game, framework.GameTime) error          { return nil }
+func (g *windowGame) UnloadContent(*framework.Game) error                     { return nil }
+
+// runWindowChild measures the window before, during and after one run. The
+// before and after halves are what prove the guard split is a split: the same
+// member answers a fallback with no native window and a real value with one.
+func runWindowChild() error {
+	game := &windowGame{}
+	host, err := framework.NewGame(game)
+	if err != nil {
+		return err
+	}
+	window := host.Window()
+	if window == nil {
+		return errors.New("Game.Window is nil after construction; the reference's EnsureHost runs in the constructor")
+	}
+	if host.Window() != window {
+		return errors.New("Game.Window is not a stable identity before Run")
+	}
+	game.window = window
+	game.result.WindowIdentityChecks++
+
+	// Before Run: the five guarded members answer the reference's own
+	// fallbacks and report nothing.
+	handle, err := window.Handle()
+	if err != nil || handle != 0 {
+		return fmt.Errorf("Handle before Run = %#x, %v; want IntPtr.Zero and no failure", handle, err)
+	}
+	allow, err := window.AllowUserResizing()
+	if err != nil || allow {
+		return fmt.Errorf("AllowUserResizing before Run = %t, %v; want false and no failure", allow, err)
+	}
+	if err := window.SetAllowUserResizing(true); err != nil {
+		return fmt.Errorf("SetAllowUserResizing before Run: %w", err)
+	}
+	name, err := window.ScreenDeviceName()
+	if err != nil || name != "" {
+		return fmt.Errorf("ScreenDeviceName before Run = %q, %v; want String.Empty and no failure", name, err)
+	}
+	if err := window.SetTitleMethod("before"); err != nil {
+		return fmt.Errorf("SetTitle before Run: %w", err)
+	}
+	game.result.WindowGuardedFallbacks += 5
+
+	// And the three unguarded ones report the reference's failure.
+	if _, err := window.ClientBounds(); err == nil {
+		return errors.New("ClientBounds succeeded before Run; the reference dereferences a null form")
+	}
+	if err := window.BeginScreenDeviceChange(true); err == nil {
+		return errors.New("BeginScreenDeviceChange succeeded before Run")
+	}
+	if err := window.EndScreenDeviceChangeByStringAndInt32AndInt32("screen", 320, 240); err == nil {
+		return errors.New("EndScreenDeviceChange succeeded before Run")
+	}
+	game.result.WindowUnguardedFailures += 3
+
+	if err := host.Run(); err != nil {
+		return err
+	}
+	if !game.deviceOK {
+		return errors.New("the window scenario never reached a live runtime")
+	}
+	game.result.WindowCycles++
+
+	// After the run the window is the same object, the managed title survives,
+	// and every member is back to its no-native-window behaviour.
+	if host.Window() != window {
+		return errors.New("Game.Window changed identity after the run")
+	}
+	game.result.WindowIdentityChecks++
+	if got := window.Title(); got != "a different title" {
+		return fmt.Errorf("Title after the run = %q; the managed field outlives the native window", got)
+	}
+	if _, err := window.ClientBounds(); err == nil {
+		return errors.New("ClientBounds succeeded after the run; the native window is gone")
+	}
+	game.result.WindowUnguardedFailures++
+	handle, err = window.Handle()
+	if err != nil || handle != 0 {
+		return fmt.Errorf("Handle after the run = %#x, %v; want IntPtr.Zero and no failure", handle, err)
+	}
+	game.result.WindowGuardedFallbacks++
+
 	runtime.GC()
 	game.result.GCStressPoints++
 	data, _ := json.Marshal(game.result)

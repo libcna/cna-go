@@ -72,7 +72,17 @@ enum {
     CNA_GO_GAME_EVENT_DEACTIVATED = 1,
     CNA_GO_GAME_EVENT_DISPOSED = 2,
     CNA_GO_GAME_EVENT_EXITING = 3,
-    CNA_GO_GAME_EVENT_COUNT = 4
+    CNA_GO_GAME_EVENT_COUNT = 4,
+
+    /* The three canonical GameWindow event identities, mirrored the same way.
+       They are a SECOND numbering that starts again at zero, so a value from
+       one set is a valid-looking value in the other: the two are kept in
+       separate enumerations, indexed by separate tables, and asserted against
+       both the manifest and the canonical header. */
+    CNA_GO_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED = 0,
+    CNA_GO_GAME_WINDOW_EVENT_ORIENTATION_CHANGED = 1,
+    CNA_GO_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED = 2,
+    CNA_GO_GAME_WINDOW_EVENT_COUNT = 3
 };
 
 /* The encoded-version arithmetic, mirrored from CNA_ABI_VERSION_ENCODE in the
@@ -216,6 +226,52 @@ CnaGoResult cna_go_sprite_batch_draw_scaled(
     float layer_depth);
 CnaGoResult cna_go_sprite_batch_end(CnaGoHandle batch);
 CnaGoResult cna_go_sprite_batch_destroy(CnaGoHandle batch);
+
+/* GameWindow. Every route takes the GAME handle because CNA models the window
+   as a property of the game; nothing here owns a new native lifetime. */
+CnaGoResult cna_go_game_window_get_allow_user_resizing(CnaGoHandle game, uint8_t* out_allowed);
+CnaGoResult cna_go_game_window_set_allow_user_resizing(CnaGoHandle game, uint8_t allowed);
+CnaGoResult cna_go_game_window_get_client_bounds(
+    CnaGoHandle game,
+    int32_t* x,
+    int32_t* y,
+    int32_t* width,
+    int32_t* height);
+CnaGoResult cna_go_game_window_get_native_handle(CnaGoHandle game, uint64_t* out_handle);
+
+/* Two-call string reads. The size route reports the byte count CNA would write
+   and the copy route fills caller-owned storage; Go owns the buffer in both
+   cases and no native string pointer is ever retained. */
+CnaGoResult cna_go_game_window_get_screen_device_name_size(CnaGoHandle game, uint64_t* out_bytes);
+CnaGoResult cna_go_game_window_copy_screen_device_name(
+    CnaGoHandle game,
+    char* destination,
+    uint64_t capacity,
+    uint64_t* out_bytes);
+
+CnaGoResult cna_go_game_window_begin_screen_device_change(CnaGoHandle game, uint8_t will_be_full_screen);
+CnaGoResult cna_go_game_window_end_screen_device_change(
+    CnaGoHandle game,
+    const char* screen_device_name,
+    uint64_t screen_device_name_length,
+    int32_t client_width,
+    int32_t client_height);
+CnaGoResult cna_go_game_set_window_title(
+    CnaGoHandle game,
+    const char* title,
+    uint64_t title_length);
+
+/* Installs exactly one native subscription per canonical window event, exactly
+   as cna_go_game_subscribe_events does for the game's own four. A window
+   registration IS a CNA_GameEventRegistrationHandle and is released through
+   cna_game_unsubscribe like any other, but the release helper is separate
+   because the two tables have different LENGTHS -- three against four -- and
+   releasing a three-slot array with the four-slot loop would read past it. */
+CnaGoResult cna_go_game_window_subscribe_events(
+    CnaGoHandle game,
+    uintptr_t context,
+    CnaGoHandle* out_registrations);
+CnaGoResult cna_go_game_window_unsubscribe_events(CnaGoHandle* registrations);
 
 CnaGoResult cna_go_keyboard_get_state(
     CnaGoHandle game,

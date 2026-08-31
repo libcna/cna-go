@@ -162,6 +162,39 @@ var bridgeMutations = []sourceMutation{
 		old:  "    CNA_GO_FRAME_HOOK_BEGIN_DRAW = 1u << 2,",
 		new:  "    CNA_GO_FRAME_HOOK_BEGIN_DRAW = 1u << 1,",
 	},
+	// Foundation 45. The window family is a SECOND identity space that also
+	// starts at zero, so every one of these mutations produces a value that
+	// looks entirely legitimate in the other family's table.
+	{
+		name: "window-event-identity-drift",
+		file: "abi_manifest.h",
+		old:  "#define CNA_GO_MANIFEST_GAME_WINDOW_EVENT_ORIENTATION_CHANGED UINT32_C(1)",
+		new:  "#define CNA_GO_MANIFEST_GAME_WINDOW_EVENT_ORIENTATION_CHANGED UINT32_C(2)",
+	},
+	{
+		name: "bridge-window-mirror-drift",
+		file: "bridge.h",
+		old:  "    CNA_GO_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED = 2,",
+		new:  "    CNA_GO_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED = 1,",
+	},
+	{
+		name: "window-event-count-drift",
+		file: "bridge.h",
+		old:  "    CNA_GO_GAME_WINDOW_EVENT_COUNT = 3",
+		new:  "    CNA_GO_GAME_WINDOW_EVENT_COUNT = 4",
+	},
+	{
+		name: "missing-window-subscribe-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_game_window_subscribe)",
+		new:  "",
+	},
+	{
+		name: "missing-window-title-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_game_set_window_title) \\\n",
+		new:  "",
+	},
 	// The admission policy itself. The qualified encoded constant is what the
 	// loader's rejection message reports, and the floor is what it enforces; a
 	// policy that reported one range and enforced another would admit or refuse
@@ -319,6 +352,47 @@ var probeMutations = []sourceMutation{
 	// A required symbol that CNA no longer declares. The bridge translation
 	// unit cannot see this: it resolves symbols by string at run time, so a
 	// stale entry compiles and fails only when a consumer loads a library.
+	// Foundation 45's window prototypes, from the side only the probe can
+	// check. C converts silently between integer widths and between a struct
+	// pointer and another struct pointer of the same size, so a manifest that
+	// narrowed a client dimension or wrote a Viewport where a Rectangle
+	// belongs would compile happily against itself.
+	{
+		name: "window-subscribe-swaps-the-callback-and-the-context",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEvent, CNA_GameEventCallback, void*, CNA_GameEventRegistrationHandle*);",
+		new:  "typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEvent, void*, CNA_GameEventCallback, CNA_GameEventRegistrationHandle*);",
+	},
+	{
+		name: "window-title-route-takes-a-bare-pointer",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_set_window_title_fn)(CNA_Handle, CNA_StringView);",
+		new:  "typedef CNA_Result (*cna_game_set_window_title_fn)(CNA_Handle, const char*);",
+	},
+	{
+		name: "end-screen-device-change-narrows-the-client-size",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_window_end_screen_device_change_fn)(CNA_Handle, CNA_StringView, int32_t, int32_t);",
+		new:  "typedef CNA_Result (*cna_game_window_end_screen_device_change_fn)(CNA_Handle, CNA_StringView, int16_t, int16_t);",
+	},
+	{
+		name: "client-bounds-writes-a-viewport",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_window_get_client_bounds_fn)(CNA_Handle, CNA_Rectangle*);",
+		new:  "typedef CNA_Result (*cna_game_window_get_client_bounds_fn)(CNA_Handle, CNA_Viewport*);",
+	},
+	{
+		name: "native-window-handle-narrowed-to-32-bits",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_window_get_native_handle_ext_fn)(CNA_Handle, uint64_t*);",
+		new:  "typedef CNA_Result (*cna_game_window_get_native_handle_ext_fn)(CNA_Handle, uint32_t*);",
+	},
+	{
+		name: "screen-device-name-copy-drops-its-capacity",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_window_copy_screen_device_name_fn)(CNA_Handle, char*, uint64_t, uint64_t*);",
+		new:  "typedef CNA_Result (*cna_game_window_copy_screen_device_name_fn)(CNA_Handle, char*, uint64_t*);",
+	},
 	{
 		name: "stale-required-symbol",
 		file: "abi_manifest.h",

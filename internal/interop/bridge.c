@@ -88,6 +88,44 @@ static const CNA_GameEvent event_identities[CNA_GO_GAME_EVENT_COUNT] = {
     CNA_GAME_EVENT_EXITING
 };
 
+extern void cnaGoGameWindowEvent(uint32_t event, uintptr_t context);
+
+/* One trampoline per canonical WINDOW event identity, for the same reason the
+   game's four have one each: CNA_GameEventCallback carries only the caller
+   context, so the identity has to come from the function that was registered.
+   The two families deliberately use different Go entry points -- a window
+   signal must never be able to arrive as a game signal, and both numberings
+   start at zero. */
+#define CNA_GO_WINDOW_EVENT_CALLBACK(name, event) \
+    static void name(void* context) { \
+        cnaGoGameWindowEvent((uint32_t)(event), (uintptr_t)context); \
+    }
+
+CNA_GO_WINDOW_EVENT_CALLBACK(window_event_client_size_changed, CNA_GO_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED)
+CNA_GO_WINDOW_EVENT_CALLBACK(window_event_orientation_changed, CNA_GO_GAME_WINDOW_EVENT_ORIENTATION_CHANGED)
+CNA_GO_WINDOW_EVENT_CALLBACK(window_event_screen_device_name_changed, CNA_GO_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED)
+
+static const CNA_GameEventCallback window_event_callbacks[CNA_GO_GAME_WINDOW_EVENT_COUNT] = {
+    window_event_client_size_changed,
+    window_event_orientation_changed,
+    window_event_screen_device_name_changed
+};
+
+static const CNA_GameWindowEvent window_event_identities[CNA_GO_GAME_WINDOW_EVENT_COUNT] = {
+    CNA_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED,
+    CNA_GAME_WINDOW_EVENT_ORIENTATION_CHANGED,
+    CNA_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED
+};
+
+/* bridge.h's window mirror against the manifest's, exactly as the game events
+   are compared. tools/native_abi separately compares the manifest's copy with
+   the canonical header's. */
+_Static_assert(CNA_GO_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED == CNA_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED, "client-size identity drift");
+_Static_assert(CNA_GO_GAME_WINDOW_EVENT_ORIENTATION_CHANGED == CNA_GAME_WINDOW_EVENT_ORIENTATION_CHANGED, "orientation identity drift");
+_Static_assert(CNA_GO_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED == CNA_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED, "screen-device-name identity drift");
+_Static_assert(CNA_GO_GAME_WINDOW_EVENT_COUNT == CNA_GAME_WINDOW_EVENT_MAXIMUM + 1, "window-event identity count drift");
+_Static_assert(sizeof(CNA_GameWindowEvent) == sizeof(CNA_GameEvent), "window-event identity width drift");
+
 /* bridge.h's mirror is what the Go side switches on, and the two arrays above
    are indexed by it. If the mirror and the manifest ever disagreed, a signal
    would be routed to the wrong projected event with nothing to catch it. */
@@ -566,6 +604,118 @@ CnaGoResult cna_go_sprite_batch_draw_scaled(CnaGoHandle batch, CnaGoHandle textu
 }
 CnaGoResult cna_go_sprite_batch_end(CnaGoHandle batch) { return api.cna_sprite_batch_end(batch); }
 CnaGoResult cna_go_sprite_batch_destroy(CnaGoHandle batch) { return api.cna_sprite_batch_destroy(batch); }
+
+CnaGoResult cna_go_game_window_get_allow_user_resizing(CnaGoHandle game, uint8_t* out_allowed) {
+    CNA_Bool allowed = 0;
+    const CNA_Result result = api.cna_game_window_get_allow_user_resizing(game, &allowed);
+    if (result == 0) {
+        *out_allowed = (uint8_t)(allowed != 0);
+    }
+    return result;
+}
+
+CnaGoResult cna_go_game_window_set_allow_user_resizing(CnaGoHandle game, uint8_t allowed) {
+    return api.cna_game_window_set_allow_user_resizing(game, (CNA_Bool)(allowed != 0));
+}
+
+CnaGoResult cna_go_game_window_get_client_bounds(
+    CnaGoHandle game,
+    int32_t* x,
+    int32_t* y,
+    int32_t* width,
+    int32_t* height) {
+    CNA_Rectangle bounds;
+    memset(&bounds, 0, sizeof(bounds));
+    const CNA_Result result = api.cna_game_window_get_client_bounds(game, &bounds);
+    if (result == 0) {
+        *x = bounds.x;
+        *y = bounds.y;
+        *width = bounds.width;
+        *height = bounds.height;
+    }
+    return result;
+}
+
+CnaGoResult cna_go_game_window_get_native_handle(CnaGoHandle game, uint64_t* out_handle) {
+    return api.cna_game_window_get_native_handle_ext(game, out_handle);
+}
+
+CnaGoResult cna_go_game_window_get_screen_device_name_size(CnaGoHandle game, uint64_t* out_bytes) {
+    return api.cna_game_window_get_screen_device_name_size(game, out_bytes);
+}
+
+CnaGoResult cna_go_game_window_copy_screen_device_name(
+    CnaGoHandle game,
+    char* destination,
+    uint64_t capacity,
+    uint64_t* out_bytes) {
+    return api.cna_game_window_copy_screen_device_name(game, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_game_window_begin_screen_device_change(CnaGoHandle game, uint8_t will_be_full_screen) {
+    return api.cna_game_window_begin_screen_device_change(game, (CNA_Bool)(will_be_full_screen != 0));
+}
+
+CnaGoResult cna_go_game_window_end_screen_device_change(
+    CnaGoHandle game,
+    const char* screen_device_name,
+    uint64_t screen_device_name_length,
+    int32_t client_width,
+    int32_t client_height) {
+    CNA_StringView name;
+    name.data = screen_device_name;
+    name.byte_length = screen_device_name_length;
+    return api.cna_game_window_end_screen_device_change(game, name, client_width, client_height);
+}
+
+CnaGoResult cna_go_game_set_window_title(CnaGoHandle game, const char* title, uint64_t title_length) {
+    CNA_StringView view;
+    view.data = title;
+    view.byte_length = title_length;
+    return api.cna_game_set_window_title(game, view);
+}
+
+CnaGoResult cna_go_game_window_unsubscribe_events(CnaGoHandle* registrations) {
+    if (registrations == NULL) {
+        return 1; /* CNA_RESULT_INVALID_ARGUMENT */
+    }
+    CNA_Result first = 0;
+    for (int i = 0; i < CNA_GO_GAME_WINDOW_EVENT_COUNT; i++) {
+        if (registrations[i] == 0) {
+            continue;
+        }
+        const CNA_Result result = api.cna_game_unsubscribe(registrations[i]);
+        registrations[i] = 0;
+        if (result != 0 && first == 0) {
+            first = result;
+        }
+    }
+    return first;
+}
+
+CnaGoResult cna_go_game_window_subscribe_events(CnaGoHandle game, uintptr_t context, CnaGoHandle* out_registrations) {
+    if (out_registrations == NULL) {
+        return 1; /* CNA_RESULT_INVALID_ARGUMENT */
+    }
+    for (int i = 0; i < CNA_GO_GAME_WINDOW_EVENT_COUNT; i++) {
+        out_registrations[i] = 0;
+    }
+    for (int i = 0; i < CNA_GO_GAME_WINDOW_EVENT_COUNT; i++) {
+        CNA_GameEventRegistrationHandle registration = 0;
+        const CNA_Result result = api.cna_game_window_subscribe(
+            game,
+            window_event_identities[i],
+            window_event_callbacks[i],
+            (void*)context,
+            &registration);
+        if (result != 0) {
+            (void)cna_go_game_window_unsubscribe_events(out_registrations);
+            return result;
+        }
+        out_registrations[i] = registration;
+    }
+    return 0;
+}
 
 CnaGoResult cna_go_keyboard_get_state(CnaGoHandle game, uint64_t* word0, uint64_t* word1, uint64_t* word2, uint64_t* word3) {
     CNA_KeyboardState state;
