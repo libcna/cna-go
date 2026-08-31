@@ -76,6 +76,16 @@ type Game struct {
 	exiting     EventSource[*EventArgs]
 	disposed    EventSource[*EventArgs]
 
+	// The four optional frame-boundary overrides, captured once from the
+	// callback object in NewGame. Each is nil unless that object declares the
+	// corresponding exported method; a nil one means the matching native hook
+	// is never installed, so the native frame position keeps its own
+	// behaviour. See game_frame_hook_overrides.go.
+	beginRunOverride  gameBeginRunOverride
+	endRunOverride    gameEndRunOverride
+	beginDrawOverride gameBeginDrawOverride
+	endDrawOverride   gameEndDrawOverride
+
 	// isActive is Game::isActive, the private bool HostActivated and
 	// HostDeactivated maintain. It is NOT Game::IsActive: that getter also
 	// consults GamerServices' Guide and stays a missing member. This field
@@ -119,6 +129,12 @@ func NewGame(callbacks GameCallbacks) (*Game, error) {
 		return nil, errors.New("Game callbacks must not be nil")
 	}
 	game := &Game{callbacks: callbacks}
+	// The optional frame-hook capabilities are discovered here, at the same
+	// boundary where the callback object becomes associated with the Game, and
+	// never again. A Go object's method set is fixed for its lifetime, so a
+	// later re-check could not produce a different answer, and there is no
+	// registration operation to change it.
+	game.captureFrameHookOverrides(callbacks)
 	game.gameServices = NewGameServiceContainer()
 	game.gameComponents = NewGameComponentCollection()
 	// Neither accessor can fail: EventSource.Add reports no failure of its own
@@ -230,6 +246,72 @@ func (c gameRuntimeCallbacks) UnloadContent() error {
 func (c gameRuntimeCallbacks) GameEvent(event uint32) error {
 	return c.game.raiseNativeGameEvent(event)
 }
+
+// FrameHookOverrides reports exactly the hooks the callback object supplied an
+// override for. A bit that is clear leaves that CNA_GameFrameHooks member NULL,
+// which the canonical header defines as simply not called.
+//
+// It is derived from the fields NewGame captured, so the mask and the four
+// dispatch methods below cannot disagree: the same nil-ness decides both.
+func (c gameRuntimeCallbacks) FrameHookOverrides() interop.FrameHookMask {
+	var mask interop.FrameHookMask
+	if c.game.beginRunOverride != nil {
+		mask |= interop.FrameHookBeginRun
+	}
+	if c.game.endRunOverride != nil {
+		mask |= interop.FrameHookEndRun
+	}
+	if c.game.beginDrawOverride != nil {
+		mask |= interop.FrameHookBeginDraw
+	}
+	if c.game.endDrawOverride != nil {
+		mask |= interop.FrameHookEndDraw
+	}
+	return mask
+}
+
+// The four optional frame-hook dispatchers. Each is reached only from the
+// native hook its own mask bit installed, so the nil branch is unreachable by
+// construction; it is reported rather than quietly running the base, because
+// running a base the consumer did not ask for is exactly what this whole
+// mechanism exists to avoid.
+func (c gameRuntimeCallbacks) BeginRun() error {
+	if c.game.beginRunOverride == nil {
+		return errFrameHookWithoutOverride
+	}
+	return c.game.beginRunOverride.BeginRun(c.game)
+}
+
+func (c gameRuntimeCallbacks) EndRun() error {
+	if c.game.endRunOverride == nil {
+		return errFrameHookWithoutOverride
+	}
+	return c.game.endRunOverride.EndRun(c.game)
+}
+
+// BeginDraw forwards the override's two channels unchanged. A refusal is
+// (false, nil) and is never promoted to an error, and an error never decides
+// the frame.
+func (c gameRuntimeCallbacks) BeginDraw() (bool, error) {
+	if c.game.beginDrawOverride == nil {
+		return false, errFrameHookWithoutOverride
+	}
+	return c.game.beginDrawOverride.BeginDraw(c.game)
+}
+
+func (c gameRuntimeCallbacks) EndDraw() error {
+	if c.game.endDrawOverride == nil {
+		return errFrameHookWithoutOverride
+	}
+	return c.game.endDrawOverride.EndDraw(c.game)
+}
+
+// errFrameHookWithoutOverride reports a native frame hook that arrived with no
+// override behind it. It has no CLR counterpart and is unreachable while the
+// mask and the captured fields are derived from each other; it exists so that
+// a future divergence between them fails loudly instead of silently running a
+// base body at a position CNA-Go picked.
+var errFrameHookWithoutOverride = errors.New("a native frame hook was delivered for a Game with no override for it")
 
 func gameTimeFromInterop(value interop.FrameTime) GameTime {
 	return NewGameTimeByTimeSpanAndTimeSpanAndBoolean(

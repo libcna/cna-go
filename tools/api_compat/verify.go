@@ -153,7 +153,10 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["GAME_NATIVE_SIGNAL_RAISE_SITES"] = 0
 	result.Summary["GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED"] = 0
 	result.Summary["GAME_FRAME_HOOKS"] = 0
-	result.Summary["GAME_FRAME_HOOKS_INSTALLED"] = 0
+	result.Summary["GAME_FRAME_HOOKS_NEVER_INSTALLED"] = 0
+	result.Summary["GAME_FRAME_HOOKS_INSTALLED_ON_OVERRIDE"] = 0
+	result.Summary["GAME_FRAME_HOOK_OVERRIDE_CAPABILITIES"] = 0
+	result.Summary["GAME_CALLBACKS_MEMBERS"] = 0
 	result.Summary["GAME_FRAME_HOOK_DEFERRED_STEPS"] = 0
 	typeDiagnostics := make(map[string]int)
 	missingMembers := make(map[string][]string)
@@ -3299,6 +3302,27 @@ func measureBCLSignatureAdapters(result *report, expected *expectedSurface, actu
 	return measurements
 }
 
+// sortedActualMemberKeys and sortedActualTypeKeys return the actual surface's
+// keys in a stable order, so a diagnostic driven by scanning the whole package
+// is reported deterministically.
+func sortedActualMemberKeys(members map[symbolKey]*actualMember) []symbolKey {
+	keys := make([]symbolKey, 0, len(members))
+	for key := range members {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
+	return keys
+}
+
+func sortedActualTypeKeys(values map[symbolKey]*actualType) []symbolKey {
+	keys := make([]symbolKey, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
+	return keys
+}
+
 // sortedMemberKeys returns every expected member key in a stable order.
 func sortedMemberKeys(expected *expectedSurface) []symbolKey {
 	keys := make([]symbolKey, 0, len(expected.Members))
@@ -3995,6 +4019,16 @@ func clrMemberName(identity string) string {
 //  4. An uninstalled native hook records why, and every unreproduced reference
 //     step is classified and unobservable -- the same rule the base-call
 //     adapters follow, because it is the same kind of claim.
+//  5. A hook installed ON_OVERRIDE names a real, UNEXPORTED, single-method Go
+//     interface whose one method has the measured shape, no two hooks share
+//     one, and the exported spelling of it does not exist. That is what makes
+//     "installed iff the consumer supplies an override" a measured fact rather
+//     than a sentence: the capability is the only way to opt in, and it
+//     publishes no new public contract.
+//  6. Nothing offers a public registration surface. No exported member of the
+//     framework package may end in "Override", so SetBeginDrawOverride,
+//     RegisterEndRunOverride and every other spelling of mutable per-Game
+//     callback state is refused by name.
 func measureGameFrameHooks(result *report, expected *expectedSurface, actual *actualSurface) []gameFrameHookMeasurement {
 	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
 	gameType := expected.typeForXNA("Microsoft.Xna.Framework.Game")
@@ -4021,6 +4055,12 @@ func measureGameFrameHooks(result *report, expected *expectedSurface, actual *ac
 	}
 	sort.Strings(names)
 
+	// The capability identities are measured against compiler evidence, so a
+	// declared interface that does not exist -- or exists with the wrong shape,
+	// or exported -- is a diagnostic rather than a comment.
+	frameworkTypes := actual.Packages[frameworkPackage]
+	capabilityOwners := make(map[string]string, len(gameFrameHooks))
+
 	measurements := make([]gameFrameHookMeasurement, 0, len(gameFrameHooks))
 	for _, name := range names {
 		hook := gameFrameHooks[name]
@@ -4029,14 +4069,18 @@ func measureGameFrameHooks(result *report, expected *expectedSurface, actual *ac
 			GoMember:  frameworkPackage + ":Game." + hook.GoName,
 			// A nil parameter list and an empty one are the same claim; the
 			// report spells both as an empty list so the JSON is stable.
-			Parameters:        append([]string{}, hook.Parameters...),
-			Results:           append([]string{}, hook.Results...),
-			NativeHook:        hook.NativeHook,
-			Installed:         hook.Installed,
-			ReasonUninstalled: hook.ReasonUninstalled,
-			NativeOrdering:    hook.NativeOrdering,
-			ReferenceBody:     append([]string(nil), hook.ReferenceBody...),
-			Verdict:           "PASS",
+			Parameters:           append([]string{}, hook.Parameters...),
+			Results:              append([]string{}, hook.Results...),
+			NativeHook:           hook.NativeHook,
+			Installation:         hook.Installation,
+			ReasonUninstalled:    hook.ReasonUninstalled,
+			Capability:           hook.Capability,
+			CapabilityMethod:     hook.CapabilityMethod,
+			CapabilityParameters: append([]string{}, hook.CapabilityParameters...),
+			CapabilityResults:    append([]string{}, hook.CapabilityResults...),
+			NativeOrdering:       hook.NativeOrdering,
+			ReferenceBody:        append([]string(nil), hook.ReferenceBody...),
+			Verdict:              "PASS",
 		}
 		fail := func(message string) {
 			addDiagnostic(result, diagnostic{
@@ -4094,13 +4138,61 @@ func measureGameFrameHooks(result *report, expected *expectedSurface, actual *ac
 		if strings.TrimSpace(hook.NativeOrdering) == "" {
 			fail("declared frame hook records no measured native ordering")
 		}
-		if hook.Installed {
-			result.Summary["GAME_FRAME_HOOKS_INSTALLED"]++
-			if strings.TrimSpace(hook.ReasonUninstalled) != "" {
-				fail("an installed frame hook records a reason for not installing it")
+		if _, classified := gameFrameHookInstallations[hook.Installation]; !classified {
+			fail(fmt.Sprintf("installation class %q is neither NEVER nor ON_OVERRIDE; there is no third class, because an unconditionally installed hook runs a base body at a frame position CNA-Go picked", hook.Installation))
+		}
+		if _, classified := gameFrameHookBaseInvocations[hook.BaseInvocation]; !classified {
+			fail(fmt.Sprintf("base invocation %q is not EXPLICIT_ONLY; CNA-Go never runs a base body on the consumer's behalf", hook.BaseInvocation))
+		}
+		if strings.TrimSpace(hook.BaseInvocationEvidence) == "" {
+			fail("a hook claiming the base runs only where the override calls it must record how that is known")
+		}
+		switch hook.Installation {
+		case "NEVER":
+			result.Summary["GAME_FRAME_HOOKS_NEVER_INSTALLED"]++
+			if strings.TrimSpace(hook.ReasonUninstalled) == "" {
+				fail("an uninstalled native hook must record why; an unexplained one is a silence rather than a decision")
 			}
-		} else if strings.TrimSpace(hook.ReasonUninstalled) == "" {
-			fail("an uninstalled native hook must record why; an unexplained one is a silence rather than a decision")
+		case "ON_OVERRIDE":
+			result.Summary["GAME_FRAME_HOOKS_INSTALLED_ON_OVERRIDE"]++
+			if strings.TrimSpace(hook.ReasonUninstalled) != "" {
+				fail("a hook installed behind an override records a reason for not installing it; it is installed whenever the consumer opts in")
+			}
+		}
+
+		// (5) the capability behind an ON_OVERRIDE hook.
+		switch {
+		case hook.Installation != "ON_OVERRIDE":
+			if hook.Capability != "" {
+				fail(fmt.Sprintf("a %s hook names capability %q; only ON_OVERRIDE is opted into", hook.Installation, hook.Capability))
+			}
+		case hook.Capability == "":
+			fail("a hook installed behind an override names no capability, so there is nothing a consumer can declare to opt in")
+		default:
+			result.Summary["GAME_FRAME_HOOK_OVERRIDE_CAPABILITIES"]++
+			if owner, duplicate := capabilityOwners[hook.Capability]; duplicate {
+				fail(fmt.Sprintf("capability %s is already the capability of %s; four independent overrides need four identities", hook.Capability, owner))
+			}
+			capabilityOwners[hook.Capability] = hook.GoName
+			if exportedGoIdentifier(hook.Capability) {
+				fail(fmt.Sprintf("capability %s is exported; the mechanism publishes no new public framework contract, and a structural interface needs no exported name", hook.Capability))
+			}
+			if hook.CapabilityMethod != hook.GoName {
+				fail(fmt.Sprintf("capability %s declares method %q; a consumer overrides %s by declaring a method of that name", hook.Capability, hook.CapabilityMethod, hook.GoName))
+			}
+			if !equalStrings(hook.CapabilityParameters, gameFrameHookCapabilityParameters) {
+				fail(fmt.Sprintf("capability %s takes %v; every optional override takes the owning Game, which is the `this` a CLR base call passes implicitly", hook.Capability, hook.CapabilityParameters))
+			}
+			if !equalStrings(hook.CapabilityResults, hook.Results) {
+				fail(fmt.Sprintf("capability %s returns %v but the base body it replaces returns %v; the override and the base must share their channels exactly", hook.Capability, hook.CapabilityResults, hook.Results))
+			}
+			measureFrameHookCapabilityShape(fail, frameworkTypes, hook)
+			// The exported spelling must not exist beside it. An exported twin
+			// would be the public capability contract this design refuses.
+			exported := strings.ToUpper(hook.Capability[:1]) + hook.Capability[1:]
+			if _, present := actual.Types[symbolKey{Package: frameworkPackage, Name: exported}]; present {
+				fail(fmt.Sprintf("%s exists beside the private capability %s; a capability interface must not be exported", exported, hook.Capability))
+			}
 		}
 		if len(hook.ReferenceBody) == 0 {
 			fail("declared frame hook records no reference body, so there is nothing to check the projection against")
@@ -4123,5 +4215,176 @@ func measureGameFrameHooks(result *report, expected *expectedSurface, actual *ac
 		}
 		measurements = append(measurements, measurement)
 	}
+
+	measureGameCallbacksShape(result, actual, frameworkPackage)
+
+	// (6) no public registration surface anywhere in the package. A consumer
+	// opts in by declaring a method and by nothing else, so there is no
+	// installation act to observe and no mutable per-Game callback state to
+	// hold. Refusing the whole name shape, rather than a list of spellings,
+	// is what makes that a closed claim.
+	for _, key := range sortedActualMemberKeys(actual.Members) {
+		if key.Package != frameworkPackage {
+			continue
+		}
+		if !strings.HasSuffix(key.Name, "Override") && !strings.HasSuffix(key.Name, "Overrides") {
+			continue
+		}
+		addDiagnostic(result, diagnostic{
+			Category: "LANGUAGE_MAPPING_MISMATCH", XNA: "Microsoft.Xna.Framework.Game",
+			Go:      key.String(),
+			Message: "the framework package exports a member naming an override; the optional frame-hook capabilities are discovered once at construction and have no registration, replacement or removal API",
+		})
+	}
+	for _, key := range sortedActualTypeKeys(actual.Types) {
+		if key.Package != frameworkPackage {
+			continue
+		}
+		if !strings.HasSuffix(key.Name, "Override") && !strings.HasSuffix(key.Name, "Overrides") {
+			continue
+		}
+		addDiagnostic(result, diagnostic{
+			Category: "LANGUAGE_MAPPING_MISMATCH", XNA: "Microsoft.Xna.Framework.Game",
+			Go:      key.String(),
+			Message: "the framework package exports a type naming an override; the four capabilities are unexported structural interfaces and publish no public contract",
+		})
+	}
 	return measurements
+}
+
+// gameCallbacksMembers is the mandatory override contract, spelled out. It is
+// closed and it is exactly five: the optional frame-hook overrides deliberately
+// did NOT join it, because a sixth member would break every external
+// implementation written against the five.
+var gameCallbacksMembers = []string{"Draw", "Initialize", "LoadContent", "UnloadContent", "Update"}
+
+// measureGameCallbacksShape holds the promise the override mechanism was shaped
+// around, from the actual surface rather than from the mapping: GameCallbacks
+// still declares exactly the five members, and Game still stores its callback
+// state privately rather than in an exported or embedded field where anything
+// could be substituted into it.
+func measureGameCallbacksShape(result *report, actual *actualSurface, frameworkPackage string) {
+	found := make([]string, 0, len(gameCallbacksMembers))
+	for _, key := range sortedActualMemberKeys(actual.Members) {
+		if key.Package == frameworkPackage && key.Receiver == "GameCallbacks" {
+			found = append(found, key.Name)
+		}
+	}
+	result.Summary["GAME_CALLBACKS_MEMBERS"] = len(found)
+	if !equalStrings(found, gameCallbacksMembers) {
+		addDiagnostic(result, diagnostic{
+			Category: "LANGUAGE_MAPPING_MISMATCH", XNA: "Microsoft.Xna.Framework.Game",
+			Go:      frameworkPackage + ":GameCallbacks",
+			Message: fmt.Sprintf("GameCallbacks declares %v; the mandatory override contract is exactly %v, and the optional frame-hook overrides are structural capabilities precisely so it stays that way", found, gameCallbacksMembers),
+		})
+	}
+	// GameCallbacks must embed nothing. An embedded `any`, or an embedded
+	// second contract, would let a capability arrive through the mandatory
+	// interface and would make its member count a fiction.
+	if contract := actual.Types[symbolKey{Package: frameworkPackage, Name: "GameCallbacks"}]; contract != nil && len(contract.ExportedEmbeddings) != 0 {
+		addDiagnostic(result, diagnostic{
+			Category: "LANGUAGE_MAPPING_MISMATCH", XNA: "Microsoft.Xna.Framework.Game",
+			Go:      frameworkPackage + ":GameCallbacks",
+			Message: fmt.Sprintf("GameCallbacks embeds %v; the mandatory override contract declares its members directly so its size is a measured fact", contract.ExportedEmbeddings),
+		})
+	}
+	// Game's captured capabilities are private fields. An exported or embedded
+	// one would be an arbitrary callback slot a consumer could write into after
+	// construction, which is the mutable registration state this design has
+	// none of.
+	game := actual.Types[symbolKey{Package: frameworkPackage, Name: "Game"}]
+	if game == nil {
+		return
+	}
+	for _, field := range game.Fields {
+		if !field.Exported && !field.Embedded {
+			continue
+		}
+		addDiagnostic(result, diagnostic{
+			Category: "LANGUAGE_MAPPING_MISMATCH", XNA: "Microsoft.Xna.Framework.Game",
+			Go:      frameworkPackage + ":Game." + field.Name,
+			Message: "Game carries an exported or embedded field; the callback object and the four captured frame-hook capabilities are private state, decided once at construction and writable by nothing afterwards",
+		})
+	}
+}
+
+// measureFrameHookCapabilityShape proves the declared capability really is a
+// one-method Go interface of the measured shape, using compiler evidence rather
+// than the registry's own word for it.
+//
+// One method is the whole point. A bundled contract carrying all four would
+// force a consumer who overrides one virtual to supply no-ops for the other
+// three, and a no-op override is not the same thing as no override at all: it
+// installs a native hook and takes the base's place at that frame position.
+func measureFrameHookCapabilityShape(fail func(string), pkg *types.Package, hook gameFrameHook) {
+	if pkg == nil {
+		fail(fmt.Sprintf("compiler evidence for the framework package is absent, so capability %s cannot be measured", hook.Capability))
+		return
+	}
+	named := lookupNamed(pkg, hook.Capability)
+	if named == nil {
+		fail(fmt.Sprintf("capability %s is declared by the registry and does not exist in the framework package", hook.Capability))
+		return
+	}
+	contract, ok := named.Underlying().(*types.Interface)
+	if !ok {
+		fail(fmt.Sprintf("capability %s is not a Go interface, so nothing can satisfy it structurally", hook.Capability))
+		return
+	}
+	contract.Complete()
+	if contract.NumMethods() != 1 {
+		fail(fmt.Sprintf("capability %s declares %d methods; each optional override is exactly one, so a consumer never supplies a no-op for a virtual they did not override", hook.Capability, contract.NumMethods()))
+		return
+	}
+	method := contract.Method(0)
+	if method.Name() != hook.CapabilityMethod {
+		fail(fmt.Sprintf("capability %s declares %q, want %q", hook.Capability, method.Name(), hook.CapabilityMethod))
+		return
+	}
+	if !method.Exported() {
+		fail(fmt.Sprintf("capability %s declares an unexported method; an external consumer in another package could never satisfy it", hook.Capability))
+		return
+	}
+	signature, ok := method.Type().(*types.Signature)
+	if !ok {
+		return
+	}
+	parameters := make([]string, 0, signature.Params().Len())
+	for i := 0; i < signature.Params().Len(); i++ {
+		parameters = append(parameters, frameHookCapabilityTypeName(signature.Params().At(i).Type()))
+	}
+	results := make([]string, 0, signature.Results().Len())
+	for i := 0; i < signature.Results().Len(); i++ {
+		results = append(results, frameHookCapabilityTypeName(signature.Results().At(i).Type()))
+	}
+	if !equalStrings(parameters, hook.CapabilityParameters) {
+		fail(fmt.Sprintf("capability %s.%s takes %v, the registry declares %v", hook.Capability, method.Name(), parameters, hook.CapabilityParameters))
+	}
+	if !equalStrings(results, hook.CapabilityResults) {
+		fail(fmt.Sprintf("capability %s.%s returns %v, the registry declares %v", hook.Capability, method.Name(), results, hook.CapabilityResults))
+	}
+}
+
+// frameHookCapabilityTypeName spells a capability method's parameter or result
+// the way the registry does: unqualified inside the declaring package, so
+// *Game rather than *framework.Game.
+func frameHookCapabilityTypeName(value types.Type) string {
+	switch typed := value.(type) {
+	case *types.Pointer:
+		return "*" + frameHookCapabilityTypeName(typed.Elem())
+	case *types.Named:
+		return typed.Obj().Name()
+	default:
+		return value.String()
+	}
+}
+
+// exportedGoIdentifier reports whether a Go identifier is exported, which for
+// the capability names is the difference between a private mechanism and a new
+// public framework contract.
+func exportedGoIdentifier(name string) bool {
+	if name == "" {
+		return false
+	}
+	return strings.ToUpper(name[:1]) == name[:1]
 }

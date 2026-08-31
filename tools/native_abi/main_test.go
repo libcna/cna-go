@@ -106,6 +106,33 @@ var bridgeMutations = []sourceMutation{
 		old:  "    CNA_GO_GAME_EVENT_COUNT = 4",
 		new:  "    CNA_GO_GAME_EVENT_COUNT = 5",
 	},
+	// The four optional frame-hook members. CNA-Go assigns each one behind a
+	// declared capability, so their order and their types are both load-bearing
+	// in a way they were not while only `initialize` was installed.
+	{
+		name: "frame-hook-member-order-drift",
+		file: "abi_manifest.h",
+		old:  "    CNA_GameLifecycleCallback begin_run;\n    CNA_GameLifecycleCallback end_run;\n    CNA_GameBeginDrawCallback begin_draw;",
+		new:  "    CNA_GameBeginDrawCallback begin_draw;\n    CNA_GameLifecycleCallback begin_run;\n    CNA_GameLifecycleCallback end_run;",
+	},
+	{
+		name: "begin-draw-member-narrowed-to-the-lifecycle-shape",
+		file: "abi_manifest.h",
+		old:  "    CNA_GameBeginDrawCallback begin_draw;",
+		new:  "    CNA_GameLifecycleCallback begin_draw;",
+	},
+	{
+		name: "begin-draw-callback-drops-the-out-parameter",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*CNA_GameBeginDrawCallback)(CNA_Handle, const CNA_GameTime*, void*, CNA_Bool*, CNA_CallbackError*);",
+		new:  "typedef CNA_Result (*CNA_GameBeginDrawCallback)(CNA_Handle, const CNA_GameTime*, void*, CNA_CallbackError*);",
+	},
+	{
+		name: "frame-hook-mask-bit-collision",
+		file: "bridge.h",
+		old:  "    CNA_GO_FRAME_HOOK_BEGIN_DRAW = 1u << 2,",
+		new:  "    CNA_GO_FRAME_HOOK_BEGIN_DRAW = 1u << 1,",
+	},
 }
 
 // A few pins cannot live in the bridge translation unit at all, and the reason
@@ -157,6 +184,34 @@ var probeMutations = []sourceMutation{
 		file: "probe.c",
 		old:  "static void cna_go_probe_game_event(void* context) { (void)context; }",
 		new:  "static void cna_go_probe_game_event(CNA_Handle game, void* context) { (void)game; (void)context; }",
+	},
+	// The begin_draw hook is the one CNA-Go installs that carries a value
+	// channel, so its out-parameter is pinned from three directions: dropping
+	// it, moving it past the error, and narrowing it to the result channel.
+	{
+		name: "probe-begin-draw-drops-the-out-parameter",
+		file: "probe.c",
+		old:  "    CNA_Bool* out_should_draw,\n    CNA_CallbackError* out_error) {\n    (void)game; (void)game_time; (void)context; (void)out_error;",
+		new:  "    CNA_CallbackError* out_error) {\n    (void)game; (void)game_time; (void)context; (void)out_error;\n    CNA_Bool* out_should_draw = NULL;",
+	},
+	{
+		name: "probe-begin-draw-swaps-the-out-parameter-and-the-error",
+		file: "probe.c",
+		old:  "    CNA_Bool* out_should_draw,\n    CNA_CallbackError* out_error) {",
+		new:  "    CNA_CallbackError* out_error,\n    CNA_Bool* out_should_draw) {",
+	},
+	{
+		name: "probe-begin-draw-returns-the-drawing-decision",
+		file: "probe.c",
+		old:  "static CNA_Result cna_go_probe_begin_draw(",
+		new:  "static CNA_Bool cna_go_probe_begin_draw(",
+	},
+	// And the lifecycle shape the other three hooks install.
+	{
+		name: "probe-lifecycle-drops-the-game-time",
+		file: "probe.c",
+		old:  "static CNA_Result cna_go_probe_lifecycle(\n    CNA_Handle game,\n    const CNA_GameTime* game_time,\n    void* context,",
+		new:  "static CNA_Result cna_go_probe_lifecycle(\n    CNA_Handle game,\n    void* context,",
 	},
 }
 

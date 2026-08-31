@@ -1114,6 +1114,13 @@ func TestMutationFixtures(t *testing.T) {
 				}
 				return
 			}
+			if strings.HasPrefix(fixture.Mutation, "f38hook_") {
+				result := gameFrameHookOverrideMutationCase(t, fixture.Mutation)
+				if result.Summary[fixture.Category] == 0 {
+					t.Fatalf("mutation %q did not trigger %s; summary=%v", fixture.Mutation, fixture.Category, result.Summary)
+				}
+				return
+			}
 			if strings.HasPrefix(fixture.Mutation, "f27sig_") {
 				expected, actual = bclSignatureAdapterMutationCase(t, fixture.Mutation)
 				result := report{Summary: make(map[string]int)}
@@ -5745,7 +5752,104 @@ func gameBaseCallFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 	seedSignatureAdapters(actual)
 	seedGameBaseCallAdapters(actual)
 	seedGameSignalMembers(t, expected, actual)
+	seedGameCallbacksMembers(actual)
+	actual.Packages[modulePath+"/Microsoft/Xna/Framework"] = frameHookCapabilityPackage()
 	return expected, actual
+}
+
+// seedGameCallbacksMembers puts the five mandatory override members on the
+// fixture's actual surface, so the contract's size is a measured five before
+// any mutation touches it.
+func seedGameCallbacksMembers(actual *actualSurface) {
+	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
+	shapes := map[string]struct {
+		parameters []string
+		results    []string
+	}{
+		"Initialize":    {[]string{"*Game"}, []string{"error"}},
+		"LoadContent":   {[]string{"*Game"}, []string{"error"}},
+		"Update":        {[]string{"*Game", "GameTime"}, []string{"error"}},
+		"Draw":          {[]string{"*Game", "GameTime"}, []string{"error"}},
+		"UnloadContent": {[]string{"*Game"}, []string{"error"}},
+	}
+	for name, shape := range shapes {
+		key := symbolKey{Package: frameworkPackage, Receiver: "GameCallbacks", Name: name}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Parameters: shape.parameters, Results: shape.results}
+	}
+	actual.Types[symbolKey{Package: frameworkPackage, Name: "GameCallbacks"}] = &actualType{
+		Key: symbolKey{Package: frameworkPackage, Name: "GameCallbacks"}, Kind: "interface",
+	}
+	actual.Types[symbolKey{Package: frameworkPackage, Name: "Game"}] = &actualType{
+		Key: symbolKey{Package: frameworkPackage, Name: "Game"}, Kind: "struct",
+		Fields: []actualField{
+			{Name: "callbacks", Type: "GameCallbacks"},
+			{Name: "beginDrawOverride", Type: "gameBeginDrawOverride"},
+		},
+	}
+}
+
+// frameHookCapabilityPackage builds the compiler evidence the capability
+// measurement reads: a framework package carrying Game and the four unexported
+// single-method override contracts, exactly as the real package declares them.
+//
+// It is constructed rather than parsed so a defect can rebuild it with one
+// capability deliberately wrong -- bundled, exported, unexported-method, or
+// absent -- and prove the measurement catches each.
+func frameHookCapabilityPackage() *types.Package {
+	return frameHookCapabilityPackageWith(nil)
+}
+
+// frameHookCapabilityPackageWith rebuilds the fixture package with one
+// capability replaced by a deliberately wrong shape.
+func frameHookCapabilityPackageWith(mutate func(pkg *types.Package, game *types.Named)) *types.Package {
+	path := modulePath + "/Microsoft/Xna/Framework"
+	pkg := types.NewPackage(path, "framework")
+	gameName := types.NewTypeName(token.NoPos, pkg, "Game", nil)
+	game := types.NewNamed(gameName, types.NewStruct(nil, nil), nil)
+	pkg.Scope().Insert(gameName)
+	// The mutation runs FIRST because a package scope keeps the first
+	// declaration of a name: whatever a defect declares here is what the four
+	// canonical declarations below then fail to replace, which is exactly the
+	// substitution the defect is trying to make.
+	if mutate != nil {
+		mutate(pkg, game)
+	}
+	declareFrameHookCapability(pkg, game, "gameBeginRunOverride", "BeginRun", errorInterfaceType())
+	declareFrameHookCapability(pkg, game, "gameEndRunOverride", "EndRun", errorInterfaceType())
+	declareFrameHookCapability(pkg, game, "gameBeginDrawOverride", "BeginDraw", types.Typ[types.Bool], errorInterfaceType())
+	declareFrameHookCapability(pkg, game, "gameEndDrawOverride", "EndDraw", errorInterfaceType())
+	pkg.MarkComplete()
+	return pkg
+}
+
+func errorInterfaceType() types.Type { return types.Universe.Lookup("error").Type() }
+
+// declareFrameHookCapability inserts one single-method interface taking *Game
+// and returning the given results, replacing any earlier declaration of the
+// same name so a defect can overwrite one.
+func declareFrameHookCapability(pkg *types.Package, game *types.Named, name, method string, results ...types.Type) {
+	signature := frameHookCapabilitySignature(pkg, game, results...)
+	function := types.NewFunc(token.NoPos, pkg, method, signature)
+	insertFrameHookInterface(pkg, name, function)
+}
+
+func frameHookCapabilitySignature(pkg *types.Package, game *types.Named, results ...types.Type) *types.Signature {
+	parameters := types.NewTuple(types.NewVar(token.NoPos, pkg, "game", types.NewPointer(game)))
+	resultVars := make([]*types.Var, 0, len(results))
+	for _, result := range results {
+		resultVars = append(resultVars, types.NewVar(token.NoPos, pkg, "", result))
+	}
+	return types.NewSignatureType(nil, nil, nil, parameters, types.NewTuple(resultVars...), false)
+}
+
+func insertFrameHookInterface(pkg *types.Package, name string, methods ...*types.Func) {
+	contract := types.NewInterfaceType(methods, nil)
+	contract.Complete()
+	typeName := types.NewTypeName(token.NoPos, pkg, name, nil)
+	types.NewNamed(typeName, contract, nil)
+	// Insert keeps the first declaration of a name, which is what lets a defect
+	// declare a wrong-shaped capability before the canonical one is offered.
+	pkg.Scope().Insert(typeName)
 }
 
 // seedGameBaseCallAdapters puts the exact declared adapters into an actual
@@ -6560,6 +6664,8 @@ func gameSignalFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 	seedSignatureAdapters(actual)
 	seedGameBaseCallAdapters(actual)
 	seedGameSignalMembers(t, expected, actual)
+	seedGameCallbacksMembers(actual)
+	actual.Packages[modulePath+"/Microsoft/Xna/Framework"] = frameHookCapabilityPackage()
 	return expected, actual
 }
 
@@ -6776,14 +6882,15 @@ var gameSignalDefects = map[string]func(expected *expectedSurface, actual *actua
 	// An uninstalled native hook with no reason is a silence, not a decision.
 	"frame_hook_uninstalled_without_a_reason": func(_ *expectedSurface, _ *actualSurface) {
 		hook := gameFrameHooks["EndRun"]
-		hook.ReasonUninstalled = ""
+		hook.Installation = "NEVER"
+		hook.ReasonUninstalled, hook.Capability = "", ""
 		gameFrameHooks["EndRun"] = hook
 	},
-	// And an installed one that still carries the excuse for not installing it
-	// means the record and the code disagree.
+	// And an installable one that still carries the excuse for not installing
+	// it means the record and the code disagree.
 	"frame_hook_installed_but_records_a_reason": func(_ *expectedSurface, _ *actualSurface) {
 		hook := gameFrameHooks["EndDraw"]
-		hook.Installed = true
+		hook.ReasonUninstalled = "left out"
 		gameFrameHooks["EndDraw"] = hook
 	},
 	// A hook that names no canonical CNA hook records no position at all.
@@ -6834,6 +6941,311 @@ var gameSignalDefects = map[string]func(expected *expectedSurface, actual *actua
 	},
 }
 
+// ---------------------------------------------------------------------------
+// Foundation 38 — negative controls for the optional per-hook structural
+// frame-hook override mechanism.
+// ---------------------------------------------------------------------------
+
+// gameFrameHookOverrideDefects is the shared table behind the named test and
+// the mutation inventory. Each entry breaks exactly one rule the override
+// mechanism rests on, and each must raise LANGUAGE_MAPPING_MISMATCH.
+//
+// The danger here is not a wrong XNA signature. It is a mechanism that LOOKS
+// like the decided one and is not: a hook installed whether or not the consumer
+// asked for it, a bundled contract that forces no-op overrides, an exported
+// capability that publishes a new public framework identity, a registration
+// call that reintroduces mutable per-Game callback state, or a sixth member on
+// GameCallbacks that breaks every existing external implementation.
+var gameFrameHookOverrideDefects = map[string]func(expected *expectedSurface, actual *actualSurface){
+	// ---- installation --------------------------------------------------
+	// There is no third installation class. An unconditionally installed hook
+	// runs a base body at a frame position CNA-Go picked, which is exactly the
+	// automatic base behaviour Foundation 31 refused.
+	"hook_installed_unconditionally": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginRun"]
+		hook.Installation = "ALWAYS"
+		gameFrameHooks["BeginRun"] = hook
+	},
+	"installation_class_unrecognised": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndRun"]
+		hook.Installation = "SOMETIMES"
+		gameFrameHooks["EndRun"] = hook
+	},
+	// A hook behind an override that names nothing to opt in with.
+	"override_hook_names_no_capability": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginDraw"]
+		hook.Capability = ""
+		gameFrameHooks["BeginDraw"] = hook
+	},
+	// And a hook that is never installed but still claims a capability, which
+	// would be an opt-in that opts into nothing.
+	"never_installed_hook_names_a_capability": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndDraw"]
+		hook.Installation = "NEVER"
+		hook.ReasonUninstalled = "not today"
+		gameFrameHooks["EndDraw"] = hook
+	},
+
+	// ---- base invocation -----------------------------------------------
+	// CNA-Go never runs a base body on the consumer's behalf, at any position.
+	"base_invoked_automatically": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginRun"]
+		hook.BaseInvocation = "AUTOMATIC"
+		gameFrameHooks["BeginRun"] = hook
+	},
+	"base_invocation_records_no_evidence": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndDraw"]
+		hook.BaseInvocationEvidence = ""
+		gameFrameHooks["EndDraw"] = hook
+	},
+
+	// ---- the capability identities -------------------------------------
+	// An exported capability publishes a new public framework contract, which
+	// is the whole thing a structural interface exists to avoid.
+	"capability_is_exported": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginDraw"]
+		hook.Capability = "GameBeginDrawOverride"
+		gameFrameHooks["BeginDraw"] = hook
+	},
+	// An exported twin beside the private one is the same publication by
+	// another route.
+	"exported_capability_type_exists_beside_it": func(_ *expectedSurface, actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameBeginDrawOverride"}
+		actual.Types[key] = &actualType{Key: key, Kind: "interface"}
+	},
+	// Two hooks sharing one identity cannot express two independent overrides.
+	"two_hooks_share_one_capability": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndRun"]
+		hook.Capability = gameFrameHooks["BeginRun"].Capability
+		gameFrameHooks["EndRun"] = hook
+	},
+	// A capability the package does not declare cannot be satisfied at all.
+	"capability_does_not_exist": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndRun"]
+		hook.Capability = "gameNoSuchOverride"
+		gameFrameHooks["EndRun"] = hook
+	},
+	// THE bundled-contract control. One interface carrying more than one hook
+	// forces a consumer who overrode one virtual to supply no-ops for the
+	// others, and a no-op override still installs a hook and takes the base's
+	// place at that frame position.
+	"capability_bundles_more_than_one_hook": func(_ *expectedSurface, actual *actualSurface) {
+		actual.Packages[modulePath+"/Microsoft/Xna/Framework"] = frameHookCapabilityPackageWith(
+			func(pkg *types.Package, game *types.Named) {
+				insertFrameHookInterface(pkg, "gameBeginRunOverride",
+					types.NewFunc(token.NoPos, pkg, "BeginRun", frameHookCapabilitySignature(pkg, game, errorInterfaceType())),
+					types.NewFunc(token.NoPos, pkg, "EndRun", frameHookCapabilitySignature(pkg, game, errorInterfaceType())),
+				)
+			})
+	},
+	// A capability whose one method is unexported can never be satisfied from
+	// another package, so no external consumer could opt in.
+	"capability_method_is_unexported": func(_ *expectedSurface, actual *actualSurface) {
+		actual.Packages[modulePath+"/Microsoft/Xna/Framework"] = frameHookCapabilityPackageWith(
+			func(pkg *types.Package, game *types.Named) {
+				insertFrameHookInterface(pkg, "gameEndDrawOverride",
+					types.NewFunc(token.NoPos, pkg, "endDraw", frameHookCapabilitySignature(pkg, game, errorInterfaceType())),
+				)
+			})
+	},
+	// A capability that is not an interface cannot be satisfied structurally.
+	"capability_is_not_an_interface": func(_ *expectedSurface, actual *actualSurface) {
+		actual.Packages[modulePath+"/Microsoft/Xna/Framework"] = frameHookCapabilityPackageWith(
+			func(pkg *types.Package, _ *types.Named) {
+				name := types.NewTypeName(token.NoPos, pkg, "gameEndRunOverride", nil)
+				types.NewNamed(name, types.NewStruct(nil, nil), nil)
+				pkg.Scope().Insert(name)
+			})
+	},
+	// The declared method name is what a consumer has to write; a mismatch
+	// means the registry documents an opt-in nobody can perform.
+	"capability_method_name_is_not_the_hook": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginDraw"]
+		hook.CapabilityMethod = "Begin"
+		gameFrameHooks["BeginDraw"] = hook
+	},
+	// The override must receive the owning Game; without it there is nothing
+	// to call the base on.
+	"capability_does_not_take_the_owning_game": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["EndDraw"]
+		hook.CapabilityParameters = nil
+		gameFrameHooks["EndDraw"] = hook
+	},
+	// THE value-channel control. An override whose results differ from the base
+	// body it replaces has lost or invented a channel; for BeginDraw that means
+	// collapsing the drawing decision into the error.
+	"capability_results_differ_from_the_base_body": func(_ *expectedSurface, _ *actualSurface) {
+		hook := gameFrameHooks["BeginDraw"]
+		hook.CapabilityResults = []string{"error"}
+		gameFrameHooks["BeginDraw"] = hook
+	},
+	// And the same disagreement seen from the compiler side rather than the
+	// registry side.
+	"capability_compiler_shape_disagrees_with_the_registry": func(_ *expectedSurface, actual *actualSurface) {
+		actual.Packages[modulePath+"/Microsoft/Xna/Framework"] = frameHookCapabilityPackageWith(
+			func(pkg *types.Package, game *types.Named) {
+				declareFrameHookCapability(pkg, game, "gameBeginDrawOverride", "BeginDraw", errorInterfaceType())
+			})
+	},
+
+	// ---- no registration surface, no sixth mandatory member --------------
+	// A registration function is mutable per-Game callback state by another
+	// name, and it makes the override set something that can change under a
+	// running frame loop.
+	"public_registration_function_exists": func(_ *expectedSurface, actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "SetGameBeginDrawOverride"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "func", Parameters: []string{"*Game", "any"}, Results: []string{"error"}}
+	},
+	"public_registration_method_exists": func(_ *expectedSurface, actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Receiver: "Game", Name: "RegisterBeginDrawOverride"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Parameters: []string{"any"}, Results: []string{"error"}}
+	},
+	// A sixth mandatory member breaks every external GameCallbacks
+	// implementation that already exists, which is the reason the overrides are
+	// optional structural capabilities in the first place.
+	"gamecallbacks_gains_a_sixth_member": func(_ *expectedSurface, actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Receiver: "GameCallbacks", Name: "BeginDraw"}
+		actual.Members[key] = &actualMember{Key: key, Kind: "method", Parameters: []string{"*Game"}, Results: []string{"bool", "error"}}
+	},
+	"gamecallbacks_loses_a_member": func(_ *expectedSurface, actual *actualSurface) {
+		delete(actual.Members, symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Receiver: "GameCallbacks", Name: "Update"})
+	},
+	// An embedded contract would make GameCallbacks' member count a fiction: a
+	// capability could arrive through the mandatory interface after all.
+	"gamecallbacks_embeds_another_contract": func(_ *expectedSurface, actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "GameCallbacks"}
+		actual.Types[key] = &actualType{Key: key, Kind: "interface", ExportedEmbeddings: []string{"GameFrameHookCallbacks"}}
+	},
+	// THE anonymous-callback-field control. An exported or embedded field on
+	// Game is a callback slot anything could be written into after
+	// construction, which is precisely the mutable state this design has none
+	// of.
+	"game_carries_an_exported_callback_field": func(_ *expectedSurface, actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "Game"}
+		actual.Types[key] = &actualType{Key: key, Kind: "struct", Fields: []actualField{
+			{Name: "Overrides", Type: "any", Exported: true},
+		}}
+	},
+	"game_embeds_a_callback_field": func(_ *expectedSurface, actual *actualSurface) {
+		key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "Game"}
+		actual.Types[key] = &actualType{Key: key, Kind: "struct", Fields: []actualField{
+			{Name: "gameBeginDrawOverride", Type: "gameBeginDrawOverride", Embedded: true},
+		}}
+	},
+}
+
+// TestGameFrameHookOverrideDefectsAreRejected attacks every rule the optional
+// per-hook override mechanism rests on.
+func TestGameFrameHookOverrideDefectsAreRejected(t *testing.T) {
+	baselineExpected, baselineActual := gameSignalFixture(t)
+	baseline := verify(baselineExpected, baselineActual, 0, "report", "contract", "mapping")
+	if baseline.Summary["LANGUAGE_MAPPING_MISMATCH"] != 0 {
+		t.Fatalf("the unmutated fixture is not clean: %d LANGUAGE_MAPPING_MISMATCH", baseline.Summary["LANGUAGE_MAPPING_MISMATCH"])
+	}
+	if baseline.Summary["GAME_FRAME_HOOKS_INSTALLED_ON_OVERRIDE"] != len(gameFrameHooks) {
+		t.Fatalf("fixture measured %d hooks installed behind an override, registry declares %d",
+			baseline.Summary["GAME_FRAME_HOOKS_INSTALLED_ON_OVERRIDE"], len(gameFrameHooks))
+	}
+	if baseline.Summary["GAME_FRAME_HOOK_OVERRIDE_CAPABILITIES"] != len(gameFrameHooks) {
+		t.Fatalf("fixture measured %d capabilities, want one per hook", baseline.Summary["GAME_FRAME_HOOK_OVERRIDE_CAPABILITIES"])
+	}
+	if baseline.Summary["GAME_FRAME_HOOKS_NEVER_INSTALLED"] != 0 {
+		t.Fatalf("fixture measured %d hooks that are never installed", baseline.Summary["GAME_FRAME_HOOKS_NEVER_INSTALLED"])
+	}
+	if baseline.Summary["GAME_CALLBACKS_MEMBERS"] != 5 {
+		t.Fatalf("fixture measured GameCallbacks with %d members, want exactly 5", baseline.Summary["GAME_CALLBACKS_MEMBERS"])
+	}
+
+	names := make([]string, 0, len(gameFrameHookOverrideDefects))
+	for name := range gameFrameHookOverrideDefects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		defect := gameFrameHookOverrideDefects[name]
+		t.Run(name, func(t *testing.T) {
+			result := gameFrameHookOverrideMutation(t, name, defect)
+			if result.Summary["LANGUAGE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("override defect %q raised no LANGUAGE_MAPPING_MISMATCH", name)
+			}
+		})
+	}
+}
+
+func gameFrameHookOverrideMutation(t *testing.T, name string, defect func(*expectedSurface, *actualSurface)) report {
+	t.Helper()
+	expected, actual := gameSignalFixture(t)
+	var result report
+	withGameFrameHooks(t, func() { defect(expected, actual) }, func() {
+		result = verify(expected, actual, 0, "report", "contract", "mapping")
+	})
+	return result
+}
+
+// gameFrameHookOverrideMutationCase applies one Foundation-38 defect to a fresh
+// fixture, so the shared table drives both the named test and the inventory.
+func gameFrameHookOverrideMutationCase(t *testing.T, mutation string) report {
+	t.Helper()
+	name := strings.TrimPrefix(mutation, "f38hook_")
+	defect, ok := gameFrameHookOverrideDefects[name]
+	if !ok {
+		t.Fatalf("unknown frame-hook override defect %q", name)
+	}
+	return gameFrameHookOverrideMutation(t, name, defect)
+}
+
+// TestEveryFrameHookOverrideDefectHasAMutationFixture keeps the shared table
+// and the mutation inventory from drifting.
+func TestEveryFrameHookOverrideDefectHasAMutationFixture(t *testing.T) {
+	data, err := os.ReadFile("testdata/mutations.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixtures []mutationFixture
+	if err := json.Unmarshal(data, &fixtures); err != nil {
+		t.Fatal(err)
+	}
+	inventoried := make(map[string]bool)
+	for _, fixture := range fixtures {
+		if strings.HasPrefix(fixture.Mutation, "f38hook_") {
+			inventoried[strings.TrimPrefix(fixture.Mutation, "f38hook_")] = true
+		}
+	}
+	for name := range gameFrameHookOverrideDefects {
+		if !inventoried[name] {
+			t.Fatalf("frame-hook override defect %q has no mutation fixture", name)
+		}
+	}
+	for name := range inventoried {
+		if _, declared := gameFrameHookOverrideDefects[name]; !declared {
+			t.Fatalf("mutation fixture f38hook_%s names no defect in the shared table", name)
+		}
+	}
+}
+
+// TestTheOverrideMechanismAddsNoXNAIdentity is the accounting claim. The four
+// capabilities are Go language support: they are unexported, they are not
+// members of any projected type, and they must move no identity counter.
+func TestTheOverrideMechanismAddsNoXNAIdentity(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, hook := range gameFrameHooks {
+		if hook.Capability == "" {
+			continue
+		}
+		for key, member := range expected.Members {
+			if member.GoName == hook.Capability || key.Receiver == hook.Capability {
+				t.Fatalf("capability %s for hook %s appears in the expected XNA surface as %s", hook.Capability, name, key.String())
+			}
+		}
+		if expected.typeForXNA("Microsoft.Xna.Framework."+hook.Capability) != nil {
+			t.Fatalf("capability %s is an XNA identity", hook.Capability)
+		}
+	}
+}
+
 // TestGameSignalDefectsAreRejected attacks every rule the native game-signal
 // bridge and the frame-hook frontier rest on.
 //
@@ -6855,9 +7267,9 @@ func TestGameSignalDefectsAreRejected(t *testing.T) {
 		t.Fatalf("fixture measured %d frame hooks, registry declares %d",
 			baseline.Summary["GAME_FRAME_HOOKS"], len(gameFrameHooks))
 	}
-	if baseline.Summary["GAME_FRAME_HOOKS_INSTALLED"] != 0 {
-		t.Fatalf("fixture measured %d installed frame hooks; CNA-Go installs none",
-			baseline.Summary["GAME_FRAME_HOOKS_INSTALLED"])
+	if baseline.Summary["GAME_FRAME_HOOKS_NEVER_INSTALLED"] != 0 {
+		t.Fatalf("fixture measured %d frame hooks that are never installed; all four are installed behind an override",
+			baseline.Summary["GAME_FRAME_HOOKS_NEVER_INSTALLED"])
 	}
 
 	names := make([]string, 0, len(gameSignalDefects))
@@ -6991,11 +7403,16 @@ func TestMappingRulesDeclareTheSameGameSignalsAsTheRegistry(t *testing.T) {
 			} `json:"signals"`
 		} `json:"gameNativeSignals"`
 		GameFrameHooks struct {
-			Hooks map[string]struct {
-				CLRMember  string `json:"clrMember"`
-				Signature  string `json:"signature"`
-				NativeHook string `json:"nativeHook"`
-				Installed  bool   `json:"installed"`
+			Installation   map[string]string `json:"installation"`
+			BaseInvocation map[string]string `json:"baseInvocation"`
+			Hooks          map[string]struct {
+				CLRMember           string `json:"clrMember"`
+				Signature           string `json:"signature"`
+				NativeHook          string `json:"nativeHook"`
+				Installation        string `json:"installation"`
+				BaseInvocation      string `json:"baseInvocation"`
+				Capability          string `json:"capability"`
+				CapabilitySignature string `json:"capabilitySignature"`
 			} `json:"hooks"`
 		} `json:"gameFrameHooks"`
 	}
@@ -7054,6 +7471,27 @@ func TestMappingRulesDeclareTheSameGameSignalsAsTheRegistry(t *testing.T) {
 			len(rules.GameNativeSignals.RuntimeEvidence), len(gameNativeSignalEvidence))
 	}
 
+	// The installation vocabulary is closed and must be documented exactly as
+	// the verifier admits it, so a class cannot be added in prose alone.
+	for class := range gameFrameHookInstallations {
+		if _, documented := rules.GameFrameHooks.Installation[class]; !documented {
+			t.Fatalf("installation class %q is admitted by the verifier but not documented", class)
+		}
+	}
+	if len(rules.GameFrameHooks.Installation) != len(gameFrameHookInstallations) {
+		t.Fatalf("mapping-rules.json documents %d installation classes, the verifier admits %d",
+			len(rules.GameFrameHooks.Installation), len(gameFrameHookInstallations))
+	}
+	for class := range gameFrameHookBaseInvocations {
+		if _, documented := rules.GameFrameHooks.BaseInvocation[class]; !documented {
+			t.Fatalf("base-invocation class %q is admitted by the verifier but not documented", class)
+		}
+	}
+	if len(rules.GameFrameHooks.BaseInvocation) != len(gameFrameHookBaseInvocations) {
+		t.Fatalf("mapping-rules.json documents %d base-invocation classes, the verifier admits %d",
+			len(rules.GameFrameHooks.BaseInvocation), len(gameFrameHookBaseInvocations))
+	}
+
 	documentedHooks := rules.GameFrameHooks.Hooks
 	if len(documentedHooks) != len(gameFrameHooks) {
 		t.Fatalf("mapping-rules.json documents %d frame hooks, the registry declares %d",
@@ -7070,8 +7508,32 @@ func TestMappingRulesDeclareTheSameGameSignalsAsTheRegistry(t *testing.T) {
 		if entry.NativeHook != hook.NativeHook {
 			t.Fatalf("frame hook %q: rules say native hook %q, registry says %q", name, entry.NativeHook, hook.NativeHook)
 		}
-		if entry.Installed != hook.Installed {
-			t.Fatalf("frame hook %q: rules say installed=%t, registry says %t", name, entry.Installed, hook.Installed)
+		if entry.Installation != hook.Installation {
+			t.Fatalf("frame hook %q: rules say installation=%q, registry says %q", name, entry.Installation, hook.Installation)
+		}
+		if entry.BaseInvocation != hook.BaseInvocation {
+			t.Fatalf("frame hook %q: rules say baseInvocation=%q, registry says %q", name, entry.BaseInvocation, hook.BaseInvocation)
+		}
+		if entry.Capability != hook.Capability {
+			t.Fatalf("frame hook %q: rules say capability %q, registry says %q", name, entry.Capability, hook.Capability)
+		}
+		// The documented capability signature must spell the registry's exact
+		// method, so an override contract cannot widen or lose a channel in
+		// prose. BeginDraw's Boolean is the one that matters most.
+		wantedCapability := ""
+		if hook.Capability != "" {
+			wantedCapability = hook.CapabilityMethod + "(" + strings.Join(hook.CapabilityParameters, ", ") + ")"
+			switch len(hook.CapabilityResults) {
+			case 0:
+			case 1:
+				wantedCapability += " " + hook.CapabilityResults[0]
+			default:
+				wantedCapability += " (" + strings.Join(hook.CapabilityResults, ", ") + ")"
+			}
+		}
+		if entry.CapabilitySignature != wantedCapability {
+			t.Fatalf("frame hook %q: rules document capability signature %q, registry implies %q",
+				name, entry.CapabilitySignature, wantedCapability)
 		}
 		// The documented signature must spell the registry's exact results, so
 		// a widened one cannot hide behind prose. In particular BeginDraw's

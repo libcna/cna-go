@@ -2406,14 +2406,23 @@ var gameNativeSignals = map[string]gameNativeSignal{
 // canonical CNA hook that sits at the same position, and whether CNA-Go
 // installs it.
 //
-// The registry's load-bearing claim is the negative one. CNA publishes four
+// The registry's load-bearing claim is the conditional one. CNA publishes four
 // hooks that correspond position for position to these four virtuals, and
-// CNA-Go installs none of them, because Foundation 31 settled that base
-// behavior is never automatic: forwarding a hook into a base body would run the
-// base at a position CNA-Go picked and make that base call mandatory, which
-// prejudges the override design that has not been made. Recording that as a
-// measured fact with a reason is what keeps it a decision rather than a
-// silence.
+// CNA-Go installs each ONE IF AND ONLY IF the callback object handed to NewGame
+// supplies the matching optional override.
+//
+// That is what keeps Foundation 31's rule intact while still making the four
+// virtuals overridable. An unconditionally installed hook would run a base body
+// at a position CNA-Go picked and make that base call mandatory; a hook
+// installed only behind an override runs nothing CNA-Go chose, because the
+// override IS the derived body and the base is reached only where the override
+// writes the call. With no override the member stays NULL, which the canonical
+// header defines as simply not called, so a consumer who never opts in observes
+// exactly the native behaviour they observed before the mechanism existed.
+//
+// The capability is discovered once, at construction, and is a private
+// structural interface rather than a public contract -- see the Capability
+// fields below for why four separate unexported identities and not one.
 type gameFrameHook struct {
 	// CLRMember is the protected virtual, spelled as the pinned contract does.
 	CLRMember string
@@ -2424,11 +2433,43 @@ type gameFrameHook struct {
 	Parameters []string
 	Results    []string
 	// NativeHook is the canonical CNA_GameFrameHooks member at the same
-	// position in the frame, and Installed records whether CNA-Go installs it.
-	// ReasonUninstalled is required whenever it does not.
+	// position in the frame, and Installation records WHEN CNA-Go installs it.
+	// There are exactly two admitted classes:
+	//
+	//	NEVER       -- not installed at all; ReasonUninstalled is required
+	//	ON_OVERRIDE -- installed exactly when the callback object supplies the
+	//	               optional override; Capability is required
+	//
+	// There is deliberately no third. An unconditionally installed hook would
+	// run a base body at a frame position CNA-Go picked and make that base call
+	// mandatory, which is exactly what Foundation 31 settled against, so
+	// "always" is not a class this registry can express -- declaring one is an
+	// unclassified installation and a diagnostic.
 	NativeHook        string
-	Installed         bool
+	Installation      string
 	ReasonUninstalled string
+	// BaseInvocation records whether CNA-Go ever runs the projected base body
+	// on the consumer's behalf. EXPLICIT_ONLY is the only admitted value and
+	// BaseInvocationEvidence must say how it is known.
+	BaseInvocation         string
+	BaseInvocationEvidence string
+	// Capability names the UNEXPORTED single-method Go interface an external
+	// callback object satisfies structurally to override this hook, and
+	// CapabilityMethod/CapabilityParameters/CapabilityResults are the exact
+	// method it has to declare. Required for ON_OVERRIDE and forbidden
+	// otherwise.
+	//
+	// Four separate one-method identities, never one bundled contract: a CLR
+	// subclass may override any SUBSET of these four virtuals, and a consumer
+	// forced to supply a no-op for a virtual they did not override would be
+	// installing a hook that takes the base's place. The identities are
+	// unexported because Go interfaces are structural -- a consumer declares
+	// the method and never names the type -- so the mechanism publishes no new
+	// exported framework contract at all.
+	Capability           string
+	CapabilityMethod     string
+	CapabilityParameters []string
+	CapabilityResults    []string
 	// NativeOrdering is the measured position of the native hook relative to
 	// the reference's call site, so the correspondence is recorded rather than
 	// asserted.
@@ -2440,6 +2481,26 @@ type gameFrameHook struct {
 	Deferred      []gameBaseCallDeferral
 }
 
+// gameFrameHookInstallations are the only installation classes. Every hook
+// declares exactly one, and there is no "always": an unconditional hook is the
+// automatic base behaviour Foundation 31 refused.
+var gameFrameHookInstallations = map[string]string{
+	"NEVER":       "the canonical native hook is not installed at all",
+	"ON_OVERRIDE": "the canonical native hook is installed if and only if the callback object supplies the optional override",
+}
+
+// gameFrameHookBaseInvocations are the only base-invocation classes. There is
+// one, which is the point: CNA-Go never runs a base body on the consumer's
+// behalf, at any frame position, under any installation class.
+var gameFrameHookBaseInvocations = map[string]string{
+	"EXPLICIT_ONLY": "the base body runs only where the override's own source calls the method on the Game, zero, one or many times",
+}
+
+// gameFrameHookCapabilityParameters is the parameter list every optional
+// override method takes: the owning Game, which is the `this` a CLR base call
+// passes implicitly and the receiver an explicit base call needs.
+var gameFrameHookCapabilityParameters = []string{"*Game"}
+
 // gameFrameHooks is the closed registry, keyed by Go method name. Its keys are
 // exactly the four protected virtuals of Game that sit on a frame boundary and
 // are NOT GameCallbacks members.
@@ -2447,25 +2508,31 @@ var gameFrameHooks = map[string]gameFrameHook{
 	"BeginRun": {
 		CLRMember: "Microsoft.Xna.Framework.Game::BeginRun",
 		GoName:    "BeginRun", Parameters: nil, Results: []string{"error"},
-		NativeHook: "CNA_GameFrameHooks::begin_run", Installed: false,
-		ReasonUninstalled: "base behavior is never automatic; with no override mechanism the forwarding would be provably inert and would prejudge where a derived class calls its base",
-		NativeOrdering:    "measured after initialize and load_content and before the first update, which is where RunGame calls BeginRun -- after Initialize returns and inRun is raised, before the priming Update",
-		ReferenceBody:     []string{"IL_0000: ret   // code size 1"},
+		NativeHook: "CNA_GameFrameHooks::begin_run", Installation: "ON_OVERRIDE",
+		Capability: "gameBeginRunOverride", CapabilityMethod: "BeginRun",
+		BaseInvocation: "EXPLICIT_ONLY", BaseInvocationEvidence: "gameRuntimeCallbacks.BeginRun forwards to the captured override and to nothing else; Game.BeginRun is reached only if the override's own source calls it",
+		CapabilityParameters: gameFrameHookCapabilityParameters, CapabilityResults: []string{"error"},
+		NativeOrdering: "measured after initialize and load_content and before the first update, which is where RunGame calls BeginRun -- after Initialize returns and inRun is raised, before the priming Update",
+		ReferenceBody:  []string{"IL_0000: ret   // code size 1"},
 	},
 	"EndRun": {
 		CLRMember: "Microsoft.Xna.Framework.Game::EndRun",
 		GoName:    "EndRun", Parameters: nil, Results: []string{"error"},
-		NativeHook: "CNA_GameFrameHooks::end_run", Installed: false,
-		ReasonUninstalled: "base behavior is never automatic; with no override mechanism the forwarding would be provably inert and would prejudge where a derived class calls its base",
-		NativeOrdering:    "measured after the last frame and before cna_game_run returns, which is where RunGame calls EndRun -- immediately after the blocking host.Run() returns",
-		ReferenceBody:     []string{"IL_0000: ret   // code size 1"},
+		NativeHook: "CNA_GameFrameHooks::end_run", Installation: "ON_OVERRIDE",
+		Capability: "gameEndRunOverride", CapabilityMethod: "EndRun",
+		BaseInvocation: "EXPLICIT_ONLY", BaseInvocationEvidence: "gameRuntimeCallbacks.EndRun forwards to the captured override and to nothing else; Game.EndRun is reached only if the override's own source calls it",
+		CapabilityParameters: gameFrameHookCapabilityParameters, CapabilityResults: []string{"error"},
+		NativeOrdering: "measured after the last frame and before cna_game_run returns, which is where RunGame calls EndRun -- immediately after the blocking host.Run() returns",
+		ReferenceBody:  []string{"IL_0000: ret   // code size 1"},
 	},
 	"BeginDraw": {
 		CLRMember: "Microsoft.Xna.Framework.Game::BeginDraw",
 		GoName:    "BeginDraw", Parameters: nil, Results: []string{"bool", "error"},
-		NativeHook: "CNA_GameFrameHooks::begin_draw", Installed: false,
-		ReasonUninstalled: "base behavior is never automatic; the hook also fires per frame and, with no reachable IGraphicsDeviceManager, the base body provably always admits the frame",
-		NativeOrdering:    "measured before each draw, and a frame whose out_should_draw is set to CNA_FALSE delivers neither draw nor end_draw -- the same shape as DrawFrame's `if (BeginDraw()) { Draw(); EndDraw(); }`",
+		NativeHook: "CNA_GameFrameHooks::begin_draw", Installation: "ON_OVERRIDE",
+		Capability: "gameBeginDrawOverride", CapabilityMethod: "BeginDraw",
+		BaseInvocation: "EXPLICIT_ONLY", BaseInvocationEvidence: "the base admits every frame with no manager registered, so an override that answers false and still sees the frame skipped is a positive proof that the override's answer -- not the base's -- is what reaches CNA; measured by the native frame-hook-override scenario",
+		CapabilityParameters: gameFrameHookCapabilityParameters, CapabilityResults: []string{"bool", "error"},
+		NativeOrdering: "measured before each draw, and a frame whose out_should_draw is set to CNA_FALSE delivers neither draw nor end_draw -- the same shape as DrawFrame's `if (BeginDraw()) { Draw(); EndDraw(); }`",
 		ReferenceBody: []string{
 			"if (graphicsDeviceManager != null && !graphicsDeviceManager.BeginDraw()) return false;",
 			"Logger.BeginLogEvent((LoggingEvent)4, \"\");",
@@ -2481,9 +2548,11 @@ var gameFrameHooks = map[string]gameFrameHook{
 	"EndDraw": {
 		CLRMember: "Microsoft.Xna.Framework.Game::EndDraw",
 		GoName:    "EndDraw", Parameters: nil, Results: []string{"error"},
-		NativeHook: "CNA_GameFrameHooks::end_draw", Installed: false,
-		ReasonUninstalled: "base behavior is never automatic; the hook also fires per frame and, with no reachable IGraphicsDeviceManager, the base body is observably empty",
-		NativeOrdering:    "measured after each draw and skipped entirely on a frame begin_draw refused, which is where DrawFrame calls EndDraw -- inside the branch BeginDraw admitted",
+		NativeHook: "CNA_GameFrameHooks::end_draw", Installation: "ON_OVERRIDE",
+		Capability: "gameEndDrawOverride", CapabilityMethod: "EndDraw",
+		BaseInvocation: "EXPLICIT_ONLY", BaseInvocationEvidence: "gameRuntimeCallbacks.EndDraw forwards to the captured override and to nothing else; Game.EndDraw is reached only if the override's own source calls it",
+		CapabilityParameters: gameFrameHookCapabilityParameters, CapabilityResults: []string{"error"},
+		NativeOrdering: "measured after each draw and skipped entirely on a frame begin_draw refused, which is where DrawFrame calls EndDraw -- inside the branch BeginDraw admitted",
 		ReferenceBody: []string{
 			"if (graphicsDeviceManager != null) graphicsDeviceManager.EndDraw();",
 			"Logger.EndLogEvent((LoggingEvent)4, \"\");",

@@ -18,11 +18,21 @@ import (
 // place a real signal exists.
 
 // recordingCallbacks is the minimum Callbacks implementation. Its five
-// lifecycle members are never reached here; only GameEvent is.
+// lifecycle members are never reached here; only GameEvent is, plus the frame
+// hooks the frame-hook tests drive.
 type recordingCallbacks struct {
 	events  []uint32
 	failure error
 	panics  bool
+
+	// frameHooks is what FrameHookOverrides reports, and hooks records every
+	// optional frame hook that was actually dispatched, in order.
+	frameHooks   FrameHookMask
+	hooks        []string
+	shouldDraw   bool
+	hookFailure  error
+	hookPanics   bool
+	beginDrawRan int
 }
 
 func (c *recordingCallbacks) Initialize() error      { return nil }
@@ -30,6 +40,32 @@ func (c *recordingCallbacks) LoadContent() error     { return nil }
 func (c *recordingCallbacks) Update(FrameTime) error { return nil }
 func (c *recordingCallbacks) Draw(FrameTime) error   { return nil }
 func (c *recordingCallbacks) UnloadContent() error   { return nil }
+
+func (c *recordingCallbacks) FrameHookOverrides() FrameHookMask { return c.frameHooks }
+
+func (c *recordingCallbacks) BeginRun() error {
+	c.hooks = append(c.hooks, "BeginRun")
+	return c.hookFailure
+}
+
+func (c *recordingCallbacks) EndRun() error {
+	c.hooks = append(c.hooks, "EndRun")
+	return c.hookFailure
+}
+
+func (c *recordingCallbacks) BeginDraw() (bool, error) {
+	c.hooks = append(c.hooks, "BeginDraw")
+	c.beginDrawRan++
+	if c.hookPanics {
+		panic("begin draw override panic")
+	}
+	return c.shouldDraw, c.hookFailure
+}
+
+func (c *recordingCallbacks) EndDraw() error {
+	c.hooks = append(c.hooks, "EndDraw")
+	return c.hookFailure
+}
 
 func (c *recordingCallbacks) GameEvent(event uint32) error {
 	c.events = append(c.events, event)
@@ -185,30 +221,123 @@ func TestTheIdentitiesAreContiguousFromZero(t *testing.T) {
 }
 
 // TestCallbacksCarriesTheBridgeWithoutDisturbingTheFive proves the internal
-// contract gained exactly one member. The five lifecycle names are what the
-// PUBLIC GameCallbacks projects, and they are unchanged; GameEvent is private
-// to this package's consumers and is why no consumer had to implement anything.
+// contract carries the private bridge and the private frame-hook dispatch
+// beside the five lifecycle members, and that the five themselves are
+// untouched. The five names are what the PUBLIC GameCallbacks projects; every
+// other member here is private to this package's consumers, which is why no
+// consumer ever had to implement anything to get either mechanism.
 func TestCallbacksCarriesTheBridgeWithoutDisturbingTheFive(t *testing.T) {
 	contract := reflect.TypeOf((*Callbacks)(nil)).Elem()
-	want := map[string]bool{
-		"Initialize": true, "LoadContent": true, "Update": true,
-		"Draw": true, "UnloadContent": true, "GameEvent": true,
+	want := map[string]string{
+		"Initialize":         "func() error",
+		"LoadContent":        "func() error",
+		"Update":             "func(interop.FrameTime) error",
+		"Draw":               "func(interop.FrameTime) error",
+		"UnloadContent":      "func() error",
+		"GameEvent":          "func(uint32) error",
+		"FrameHookOverrides": "func() interop.FrameHookMask",
+		"BeginRun":           "func() error",
+		"EndRun":             "func() error",
+		"BeginDraw":          "func() (bool, error)",
+		"EndDraw":            "func() error",
 	}
 	if contract.NumMethod() != len(want) {
 		t.Fatalf("Callbacks has %d methods, want %d", contract.NumMethod(), len(want))
 	}
 	for i := 0; i < contract.NumMethod(); i++ {
-		name := contract.Method(i).Name
-		if !want[name] {
-			t.Fatalf("Callbacks gained an unexpected member %q", name)
+		method := contract.Method(i)
+		signature, declared := want[method.Name]
+		if !declared {
+			t.Fatalf("Callbacks gained an unexpected member %q", method.Name)
 		}
-		delete(want, name)
+		if got := method.Type.String(); got != signature {
+			t.Fatalf("%s has signature %s, want %s", method.Name, got, signature)
+		}
+		delete(want, method.Name)
 	}
 	if len(want) != 0 {
 		t.Fatalf("Callbacks lost members %v", want)
 	}
-	method, _ := contract.MethodByName("GameEvent")
-	if got := method.Type.String(); got != "func(uint32) error" {
-		t.Fatalf("GameEvent has signature %s, want func(uint32) error", got)
+}
+
+// TestFrameHookMaskIsOneDistinctBitPerHook pins the Go end of the mask. The C
+// end is compiler-checked in native_linux.go, where each constant is compared
+// against bridge.h's mirror.
+func TestFrameHookMaskIsOneDistinctBitPerHook(t *testing.T) {
+	hooks := map[string]FrameHookMask{
+		"BeginRun": FrameHookBeginRun, "EndRun": FrameHookEndRun,
+		"BeginDraw": FrameHookBeginDraw, "EndDraw": FrameHookEndDraw,
+	}
+	var union FrameHookMask
+	for name, bit := range hooks {
+		if bit == 0 || bit&(bit-1) != 0 {
+			t.Fatalf("%s is %#x, which is not a single bit", name, bit)
+		}
+		if union&bit != 0 {
+			t.Fatalf("%s shares a bit with another hook", name)
+		}
+		union |= bit
+	}
+	if union != 0xF {
+		t.Fatalf("the four hooks cover %#x, want 0xF", union)
+	}
+}
+
+// TestFrameHooksDispatchOnlyWhatTheMaskDeclares proves the two halves of the
+// mechanism cannot disagree: a runtime dispatches a hook only through the kind
+// the mask installed, and the BeginDraw Boolean survives the dispatch as its
+// own channel.
+func TestFrameHooksDispatchOnlyWhatTheMaskDeclares(t *testing.T) {
+	for _, refuses := range []bool{true, false} {
+		callbacks := &recordingCallbacks{frameHooks: FrameHookBeginDraw, shouldDraw: !refuses}
+		runtime := liveRuntime(callbacks)
+		runtime.game = 7
+		runtime.ownerThread = nativeOwnerThreadID()
+		shouldDraw, err := runtime.invokeBeginDrawCallback(7, FrameTime{})
+		if err != nil {
+			t.Fatalf("begin_draw dispatch: %v", err)
+		}
+		if shouldDraw == refuses {
+			t.Fatalf("begin_draw answered %t for an override that answered %t", shouldDraw, !refuses)
+		}
+		if len(callbacks.hooks) != 1 || callbacks.hooks[0] != "BeginDraw" {
+			t.Fatalf("dispatched %v, want exactly BeginDraw", callbacks.hooks)
+		}
+		if runtime.callbackFailure != nil {
+			t.Fatalf("a refusal was recorded as a failure: %v", runtime.callbackFailure)
+		}
+	}
+}
+
+// TestABeginDrawFailureIsNotADrawingDecision keeps the two channels apart at
+// the boundary: the error is recorded, and the Boolean the caller receives is
+// the untouched default rather than a refusal invented from the failure.
+func TestABeginDrawFailureIsNotADrawingDecision(t *testing.T) {
+	sentinel := errors.New("begin draw override failure")
+	callbacks := &recordingCallbacks{frameHooks: FrameHookBeginDraw, shouldDraw: true, hookFailure: sentinel}
+	runtime := liveRuntime(callbacks)
+	runtime.game = 3
+	runtime.ownerThread = nativeOwnerThreadID()
+	if _, err := runtime.invokeBeginDrawCallback(3, FrameTime{}); !errors.Is(err, sentinel) {
+		t.Fatalf("begin_draw failure = %v, want the sentinel", err)
+	}
+	if !errors.Is(runtime.callbackFailure, sentinel) {
+		t.Fatalf("begin_draw failure was not recorded: %v", runtime.callbackFailure)
+	}
+}
+
+// TestAPanickingBeginDrawOverrideIsContained proves the value-channel hook uses
+// the same containment every other callback does. Nothing may cross the C frame.
+func TestAPanickingBeginDrawOverrideIsContained(t *testing.T) {
+	callbacks := &recordingCallbacks{frameHooks: FrameHookBeginDraw, hookPanics: true}
+	runtime := liveRuntime(callbacks)
+	runtime.game = 5
+	runtime.ownerThread = nativeOwnerThreadID()
+	_, err := runtime.invokeBeginDrawCallback(5, FrameTime{})
+	if err == nil || !strings.Contains(err.Error(), "panic in Game callback") {
+		t.Fatalf("panicking begin_draw override produced %v", err)
+	}
+	if runtime.callbackFailure == nil {
+		t.Fatal("a panicking begin_draw override recorded no callback failure")
 	}
 }

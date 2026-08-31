@@ -334,6 +334,154 @@ func (u *UserGame) UnloadContent(game *framework.Game) error {
 // A downstream type satisfies the override contract, from outside the module.
 var _ framework.GameCallbacks = (*UserGame)(nil)
 
+// ---------------------------------------------------------------------------
+// Foundation 38 — the optional per-hook frame-boundary overrides, from OUTSIDE.
+// ---------------------------------------------------------------------------
+//
+// The whole opt-in is declaring a method. Nothing below names a framework
+// interface for it, because there is none to name: the four capabilities are
+// unexported and are satisfied structurally. UserGame above declares none of
+// them, which is the compatibility claim -- a consumer written before this
+// mechanism existed opts into nothing and keeps compiling untouched.
+
+// HookLog is the interleaved record an override family writes, shared so the
+// ordering around an explicit base call is observable from one place.
+type HookLog struct{ Entries []string }
+
+func (l *HookLog) Record(entry string) { l.Entries = append(l.Entries, entry) }
+func (l *HookLog) Reset()              { l.Entries = nil }
+
+// BeginRunOnly declares exactly one optional override. Everything else about
+// it is the ordinary five-member contract.
+type BeginRunOnly struct {
+	UserGame
+	Log   *HookLog
+	Calls int
+}
+
+func NewBeginRunOnly(log *HookLog) *BeginRunOnly {
+	return &BeginRunOnly{UserGame: *NewUserGame(), Log: log}
+}
+
+func (b *BeginRunOnly) BeginRun(game *framework.Game) error {
+	b.Calls++
+	b.Log.Record("user:BeginRun")
+	// The projected method on Game IS the base body, so this is the Go
+	// spelling of base.BeginRun().
+	if err := game.BeginRun(); err != nil {
+		return err
+	}
+	b.Log.Record("base:BeginRun")
+	return nil
+}
+
+// BeginDrawOnly overrides the one hook with a value channel, and can refuse the
+// frame or call the base a chosen number of times.
+type BeginDrawOnly struct {
+	UserGame
+	Log            *HookLog
+	Calls          int
+	BaseCalls      int
+	BaseAnswer     bool
+	BaseFirstOrder bool
+	Refuse         bool
+	Repeat         int
+}
+
+func NewBeginDrawOnly(log *HookLog) *BeginDrawOnly {
+	return &BeginDrawOnly{UserGame: *NewUserGame(), Log: log, Repeat: 1}
+}
+
+func (b *BeginDrawOnly) BeginDraw(game *framework.Game) (bool, error) {
+	b.Calls++
+	callBase := func() (bool, error) {
+		answer := true
+		for i := 0; i < b.Repeat; i++ {
+			value, err := game.BeginDraw()
+			if err != nil {
+				return false, err
+			}
+			b.BaseCalls++
+			b.BaseAnswer, answer = value, value
+			b.Log.Record("base:BeginDraw")
+		}
+		return answer, nil
+	}
+	if b.BaseFirstOrder {
+		answer, err := callBase()
+		b.Log.Record("user:BeginDraw")
+		if b.Refuse {
+			return false, nil
+		}
+		return answer, err
+	}
+	b.Log.Record("user:BeginDraw")
+	answer, err := callBase()
+	if b.Refuse {
+		return false, nil
+	}
+	return answer, err
+}
+
+// DrawPair declares the two draw hooks and nothing else, which is a subset a
+// CLR subclass can legally override and which one bundled contract could not
+// express without forcing two no-ops.
+type DrawPair struct {
+	UserGame
+	Log *HookLog
+}
+
+func NewDrawPair(log *HookLog) *DrawPair { return &DrawPair{UserGame: *NewUserGame(), Log: log} }
+
+func (d *DrawPair) BeginDraw(game *framework.Game) (bool, error) {
+	d.Log.Record("user:BeginDraw")
+	return game.BeginDraw()
+}
+
+func (d *DrawPair) EndDraw(game *framework.Game) error {
+	d.Log.Record("user:EndDraw")
+	return game.EndDraw()
+}
+
+// EveryHook declares all four. It is the maximal override set, not the
+// mandatory one.
+type EveryHook struct {
+	UserGame
+	Log *HookLog
+}
+
+func NewEveryHook(log *HookLog) *EveryHook { return &EveryHook{UserGame: *NewUserGame(), Log: log} }
+
+func (e *EveryHook) BeginRun(game *framework.Game) error {
+	e.Log.Record("user:BeginRun")
+	return game.BeginRun()
+}
+
+func (e *EveryHook) EndRun(game *framework.Game) error {
+	e.Log.Record("user:EndRun")
+	return game.EndRun()
+}
+
+func (e *EveryHook) BeginDraw(game *framework.Game) (bool, error) {
+	e.Log.Record("user:BeginDraw")
+	return game.BeginDraw()
+}
+
+func (e *EveryHook) EndDraw(game *framework.Game) error {
+	e.Log.Record("user:EndDraw")
+	return game.EndDraw()
+}
+
+// Every override family is still an ordinary GameCallbacks implementation. The
+// optional methods are additions to a consumer's own type, never a replacement
+// contract.
+var (
+	_ framework.GameCallbacks = (*BeginRunOnly)(nil)
+	_ framework.GameCallbacks = (*BeginDrawOnly)(nil)
+	_ framework.GameCallbacks = (*DrawPair)(nil)
+	_ framework.GameCallbacks = (*EveryHook)(nil)
+)
+
 // UserComponent is a consumer's own component. It satisfies the three contracts
 // a component needs and records everything the engine does to it.
 type UserComponent struct {

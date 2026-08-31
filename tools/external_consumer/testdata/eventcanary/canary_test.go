@@ -1734,3 +1734,224 @@ func TestTheOverrideContractStillHasExactlyFiveMembers(t *testing.T) {
 	// still satisfies it.
 	var _ framework.GameCallbacks = (*UserGame)(nil)
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 38 — the optional per-hook overrides, from outside the module.
+// ---------------------------------------------------------------------------
+
+// canaryOverrideShapes are this consumer's OWN copies of the four capability
+// shapes. The binding's interfaces are unexported, so a consumer can never name
+// them -- and never has to. Declaring the method is the whole opt-in, and these
+// local interfaces are how the canary observes that from the outside.
+type (
+	canaryBeginRun  interface{ BeginRun(*framework.Game) error }
+	canaryEndRun    interface{ EndRun(*framework.Game) error }
+	canaryBeginDraw interface {
+		BeginDraw(*framework.Game) (bool, error)
+	}
+	canaryEndDraw interface{ EndDraw(*framework.Game) error }
+)
+
+func canaryDeclaredHooks(value any) []string {
+	observed := reflect.TypeOf(value)
+	names := make([]string, 0, 4)
+	if observed.Implements(reflect.TypeOf((*canaryBeginRun)(nil)).Elem()) {
+		names = append(names, "BeginRun")
+	}
+	if observed.Implements(reflect.TypeOf((*canaryEndRun)(nil)).Elem()) {
+		names = append(names, "EndRun")
+	}
+	if observed.Implements(reflect.TypeOf((*canaryBeginDraw)(nil)).Elem()) {
+		names = append(names, "BeginDraw")
+	}
+	if observed.Implements(reflect.TypeOf((*canaryEndDraw)(nil)).Elem()) {
+		names = append(names, "EndDraw")
+	}
+	return names
+}
+
+// TestAnyOverrideSubsetIsAcceptedFromOutside is the central claim of the
+// mechanism: a consumer may override ANY SUBSET of the four virtuals, exactly
+// as a CLR subclass may, and a consumer who overrides none is untouched.
+//
+// Every one of these types is built and handed to NewGame from a module that
+// cannot see anything unexported in the binding.
+func TestAnyOverrideSubsetIsAcceptedFromOutside(t *testing.T) {
+	log := &HookLog{}
+	for _, testCase := range []struct {
+		name      string
+		callbacks framework.GameCallbacks
+		want      []string
+	}{
+		{"no override at all", NewUserGame(), nil},
+		{"only BeginRun", NewBeginRunOnly(log), []string{"BeginRun"}},
+		{"only BeginDraw", NewBeginDrawOnly(log), []string{"BeginDraw"}},
+		{"BeginDraw and EndDraw", NewDrawPair(log), []string{"BeginDraw", "EndDraw"}},
+		{"all four", NewEveryHook(log), []string{"BeginRun", "EndRun", "BeginDraw", "EndDraw"}},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			game, err := framework.NewGame(testCase.callbacks)
+			if err != nil {
+				t.Fatalf("NewGame: %v", err)
+			}
+			if game == nil {
+				t.Fatal("NewGame returned no Game")
+			}
+			declared := canaryDeclaredHooks(testCase.callbacks)
+			if strings.Join(declared, ",") != strings.Join(testCase.want, ",") {
+				t.Fatalf("declared hooks %v, want %v", declared, testCase.want)
+			}
+		})
+	}
+}
+
+// TestAnOmittedCapabilityIsNotSatisfiedByAccident is the negative half. A
+// consumer who overrode only the draw pair has not, by any structural
+// accident, also opted into the run pair -- which is what four separate
+// one-method capabilities buy over one bundled contract.
+func TestAnOmittedCapabilityIsNotSatisfiedByAccident(t *testing.T) {
+	log := &HookLog{}
+	pair := NewDrawPair(log)
+	if _, ok := any(pair).(canaryBeginRun); ok {
+		t.Fatal("a draw-only override also satisfies the BeginRun capability")
+	}
+	if _, ok := any(pair).(canaryEndRun); ok {
+		t.Fatal("a draw-only override also satisfies the EndRun capability")
+	}
+	single := NewBeginRunOnly(log)
+	if _, ok := any(single).(canaryBeginDraw); ok {
+		t.Fatal("a BeginRun-only override also satisfies the BeginDraw capability")
+	}
+	// And the pre-existing five-member consumer satisfies none of the four,
+	// so nothing about it changed.
+	if declared := canaryDeclaredHooks(NewUserGame()); len(declared) != 0 {
+		t.Fatalf("a five-member consumer declared %v", declared)
+	}
+}
+
+// TestExplicitBaseCallInvokesTheBaseOnly proves, from outside, that calling
+// game.BeginDraw() inside an override reaches the base body and does not
+// redispatch into the override. A redispatch would run the consumer's method
+// again and the counter would exceed one.
+func TestExplicitBaseCallInvokesTheBaseOnly(t *testing.T) {
+	log := &HookLog{}
+	override := NewBeginDrawOnly(log)
+	game, err := framework.NewGame(override)
+	if err != nil {
+		t.Fatalf("NewGame: %v", err)
+	}
+	shouldDraw, err := override.BeginDraw(game)
+	if err != nil {
+		t.Fatalf("BeginDraw: %v", err)
+	}
+	if !shouldDraw {
+		t.Fatal("the base admitted the frame and the override reported false")
+	}
+	if override.Calls != 1 {
+		t.Fatalf("the override ran %d times for one delivery; the base call redispatched", override.Calls)
+	}
+	if override.BaseCalls != 1 || !override.BaseAnswer {
+		t.Fatalf("base: calls=%d answer=%t", override.BaseCalls, override.BaseAnswer)
+	}
+}
+
+// TestOrderingAroundTheBaseCallFollowsSourceOrder holds the call-site rule from
+// outside: the base runs where the source puts it, zero times if the source
+// never calls it and twice if it calls it twice, and nothing deduplicates a
+// repeated explicit call.
+func TestOrderingAroundTheBaseCallFollowsSourceOrder(t *testing.T) {
+	log := &HookLog{}
+	override := NewBeginDrawOnly(log)
+	game, err := framework.NewGame(override)
+	if err != nil {
+		t.Fatalf("NewGame: %v", err)
+	}
+
+	// Own work first, then the base.
+	log.Reset()
+	if _, err := override.BeginDraw(game); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(log.Entries, ","); got != "user:BeginDraw,base:BeginDraw" {
+		t.Fatalf("own-then-base order = %q", got)
+	}
+
+	// The base first, which in CLR is simply where the statement sits.
+	log.Reset()
+	override.BaseFirstOrder = true
+	if _, err := override.BeginDraw(game); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(log.Entries, ","); got != "base:BeginDraw,user:BeginDraw" {
+		t.Fatalf("base-then-own order = %q", got)
+	}
+
+	// Zero base calls: the base does not run at all.
+	log.Reset()
+	override.BaseFirstOrder = false
+	before := override.BaseCalls
+	override.Repeat = 0
+	if _, err := override.BeginDraw(game); err != nil {
+		t.Fatal(err)
+	}
+	if override.BaseCalls != before {
+		t.Fatalf("an override that never calls the base ran it %d times", override.BaseCalls-before)
+	}
+	if got := strings.Join(log.Entries, ","); got != "user:BeginDraw" {
+		t.Fatalf("no-base order = %q", got)
+	}
+
+	// Two base calls run the base twice; nothing suppresses the repeat.
+	log.Reset()
+	override.Repeat = 2
+	if _, err := override.BeginDraw(game); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(log.Entries, ","); got != "user:BeginDraw,base:BeginDraw,base:BeginDraw" {
+		t.Fatalf("repeated-base order = %q", got)
+	}
+}
+
+// TestARefusalIsNotAnErrorFromOutside keeps BeginDraw's two channels apart at
+// the consumer's own boundary: a refused frame is (false, nil), and it is the
+// override's answer rather than the base's that the consumer returns.
+func TestARefusalIsNotAnErrorFromOutside(t *testing.T) {
+	log := &HookLog{}
+	override := NewBeginDrawOnly(log)
+	override.Refuse = true
+	game, err := framework.NewGame(override)
+	if err != nil {
+		t.Fatalf("NewGame: %v", err)
+	}
+	shouldDraw, err := override.BeginDraw(game)
+	if err != nil {
+		t.Fatalf("a refusal was reported as a failure: %v", err)
+	}
+	if shouldDraw {
+		t.Fatal("the override refused the frame and still admitted it")
+	}
+	if !override.BaseAnswer {
+		t.Fatal("the base refused the frame, which it cannot do with no manager registered")
+	}
+}
+
+// TestNoRegistrationOrCapabilitySurfaceIsExported is the closure claim seen
+// from a module that can only see exported names: there is nothing to call to
+// install an override, and no capability contract to implement by name.
+func TestNoRegistrationOrCapabilitySurfaceIsExported(t *testing.T) {
+	game := reflect.TypeOf((*framework.Game)(nil))
+	for i := 0; i < game.NumMethod(); i++ {
+		name := game.Method(i).Name
+		if strings.Contains(name, "Override") || strings.HasSuffix(name, "Hook") {
+			t.Fatalf("Game exposes %q; the override set is fixed at construction", name)
+		}
+	}
+	// The four hooks are still plain methods on Game with their base bodies,
+	// reachable exactly as they were before the mechanism existed.
+	var (
+		_ func() error         = (&framework.Game{}).BeginRun
+		_ func() error         = (&framework.Game{}).EndRun
+		_ func() (bool, error) = (&framework.Game{}).BeginDraw
+		_ func() error         = (&framework.Game{}).EndDraw
+	)
+}

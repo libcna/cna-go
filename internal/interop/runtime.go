@@ -19,6 +19,34 @@ const (
 	callbackDraw          = 4
 	callbackUnloadContent = 5
 	callbackExiting       = 6
+
+	// The four optional frame-boundary hooks. They are separate kinds rather
+	// than lifecycle members because CNA_GameCallbacks does not carry them:
+	// they belong to CNA_GameFrameHooks, and each is installed only when the
+	// framework reports a matching override.
+	callbackBeginRun  = 7
+	callbackEndRun    = 8
+	callbackBeginDraw = 9
+	callbackEndDraw   = 10
+)
+
+// FrameHookMask selects which optional CNA_GameFrameHooks members
+// cna_go_game_create installs. native_linux.go carries compile-time assertions
+// that these equal the C mirror in bridge.h.
+//
+// The `initialize` hook is not in the mask: it is the position
+// Game::Initialize occupies, it is always installed, and it is not an optional
+// override. The other four are installed if and only if their bit is set, and
+// a member left NULL is one CNA simply does not call -- so an absent override
+// leaves the native frame position behaving exactly as it did before this
+// mechanism existed.
+type FrameHookMask uint32
+
+const (
+	FrameHookBeginRun FrameHookMask = 1 << iota
+	FrameHookEndRun
+	FrameHookBeginDraw
+	FrameHookEndDraw
 )
 
 // The four canonical CNA game-event identities. They mirror CNA_GAME_EVENT_*
@@ -76,6 +104,21 @@ type Callbacks interface {
 	// untouched, which is what keeps every existing external implementation
 	// of that interface compiling.
 	GameEvent(event uint32) error
+
+	// FrameHookOverrides reports which optional frame-boundary hooks this
+	// caller wants installed. It is read exactly once, on the owner thread,
+	// immediately before cna_game_create, because a Go callback object's
+	// method set is fixed for the object's whole lifetime and the answer
+	// therefore cannot change afterwards.
+	FrameHookOverrides() FrameHookMask
+
+	// The four optional frame-boundary overrides. Each is invoked only from
+	// the native hook its mask bit installed, so a caller that reported no
+	// bit for one of them is never asked for it.
+	BeginRun() error
+	EndRun() error
+	BeginDraw() (bool, error)
+	EndDraw() error
 }
 
 // Runtime owns one admitted native Game generation.
@@ -195,8 +238,13 @@ func (r *Runtime) Run() error {
 	r.mu.Unlock()
 	currentRuntime.Store(r)
 
+	// The optional frame-hook mask is read exactly once, here, on the owner
+	// thread and before the native game exists. A Go callback object's method
+	// set is fixed for the object's whole lifetime, so there is nothing to
+	// re-read later and no mutable per-Game registration state anywhere.
+	frameHooks := r.callbacks.FrameHookOverrides()
 	callbackHandle := cgo.NewHandle(r)
-	game, createErr := nativeGameCreate(uintptr(callbackHandle), r.title)
+	game, createErr := nativeGameCreate(uintptr(callbackHandle), r.title, frameHooks)
 	if createErr != nil {
 		callbackHandle.Delete()
 		r.deactivate()
@@ -341,14 +389,34 @@ func (r *Runtime) Generation() uint64 {
 	return r.generation
 }
 
-func (r *Runtime) invokeCallback(kind uint32, game uint64, frame FrameTime) (err error) {
+// invokeCallback runs one native callback that has no value channel of its
+// own. Every lifecycle member and three of the four optional frame hooks are
+// this shape.
+func (r *Runtime) invokeCallback(kind uint32, game uint64, frame FrameTime) error {
+	_, err := r.dispatchCallback(kind, game, frame)
+	return err
+}
+
+// invokeBeginDrawCallback runs the begin_draw frame hook, whose Boolean is a
+// value channel and stays strictly separate from its error. A refusal is
+// (false, nil) and is not an error; a failure answers through the established
+// callback-failure path and leaves the runtime's own drawing decision alone.
+func (r *Runtime) invokeBeginDrawCallback(game uint64, frame FrameTime) (bool, error) {
+	return r.dispatchCallback(callbackBeginDraw, game, frame)
+}
+
+func (r *Runtime) dispatchCallback(kind uint32, game uint64, frame FrameTime) (shouldDraw bool, err error) {
+	// The default mirrors the canonical header: out_should_draw arrives as
+	// CNA_TRUE and a null handler draws, so every path that never reaches a
+	// begin_draw override leaves the frame drawing.
+	shouldDraw = true
 	tracef("callback %s: enter (Game %d)", callbackName(kind), game)
 	r.mu.Lock()
 	if !r.alive || r.game != 0 && r.game != game {
 		r.mu.Unlock()
 		err = ErrStaleGeneration
 		r.recordCallbackFailure(err)
-		return err
+		return shouldDraw, err
 	}
 	if r.game == 0 {
 		r.game = game
@@ -370,19 +438,27 @@ func (r *Runtime) invokeCallback(kind uint32, game uint64, frame FrameTime) (err
 
 	switch kind {
 	case callbackInitialize:
-		return r.callbacks.Initialize()
+		return shouldDraw, r.callbacks.Initialize()
 	case callbackLoadContent:
-		return r.callbacks.LoadContent()
+		return shouldDraw, r.callbacks.LoadContent()
 	case callbackUpdate:
-		return r.callbacks.Update(frame)
+		return shouldDraw, r.callbacks.Update(frame)
 	case callbackDraw:
-		return r.callbacks.Draw(frame)
+		return shouldDraw, r.callbacks.Draw(frame)
 	case callbackUnloadContent:
-		return r.callbacks.UnloadContent()
+		return shouldDraw, r.callbacks.UnloadContent()
 	case callbackExiting:
-		return nil
+		return shouldDraw, nil
+	case callbackBeginRun:
+		return shouldDraw, r.callbacks.BeginRun()
+	case callbackEndRun:
+		return shouldDraw, r.callbacks.EndRun()
+	case callbackEndDraw:
+		return shouldDraw, r.callbacks.EndDraw()
+	case callbackBeginDraw:
+		return r.callbacks.BeginDraw()
 	default:
-		return fmt.Errorf("unknown CNA Game callback kind %d", kind)
+		return shouldDraw, fmt.Errorf("unknown CNA Game callback kind %d", kind)
 	}
 }
 
@@ -400,6 +476,14 @@ func callbackName(kind uint32) string {
 		return "UnloadContent"
 	case callbackExiting:
 		return "Exiting"
+	case callbackBeginRun:
+		return "BeginRun"
+	case callbackEndRun:
+		return "EndRun"
+	case callbackBeginDraw:
+		return "BeginDraw"
+	case callbackEndDraw:
+		return "EndDraw"
 	default:
 		return fmt.Sprintf("unknown(%d)", kind)
 	}

@@ -91,12 +91,89 @@ _Static_assert(CNA_GO_GAME_EVENT_EXITING == CNA_GAME_EVENT_EXITING, "exit identi
 _Static_assert(CNA_GO_GAME_EVENT_COUNT == CNA_GAME_EVENT_MAXIMUM + 1, "game-event identity count drift");
 _Static_assert(sizeof(CNA_GameEventRegistrationHandle) == sizeof(CNA_Handle), "registration handle width drift");
 
+/* The optional frame-hook mask. Each bit selects exactly one CNA_GameFrameHooks
+   member, so two bits that collided would install one hook and silently drop
+   the other -- a consumer's declared override would simply never be called.
+   native_linux.go separately compares these against the Go constants. */
+_Static_assert(CNA_GO_FRAME_HOOK_BEGIN_RUN != CNA_GO_FRAME_HOOK_END_RUN &&
+                   CNA_GO_FRAME_HOOK_BEGIN_RUN != CNA_GO_FRAME_HOOK_BEGIN_DRAW &&
+                   CNA_GO_FRAME_HOOK_BEGIN_RUN != CNA_GO_FRAME_HOOK_END_DRAW &&
+                   CNA_GO_FRAME_HOOK_END_RUN != CNA_GO_FRAME_HOOK_BEGIN_DRAW &&
+                   CNA_GO_FRAME_HOOK_END_RUN != CNA_GO_FRAME_HOOK_END_DRAW &&
+                   CNA_GO_FRAME_HOOK_BEGIN_DRAW != CNA_GO_FRAME_HOOK_END_DRAW,
+               "frame-hook mask bits must select distinct hooks");
+_Static_assert((CNA_GO_FRAME_HOOK_BEGIN_RUN | CNA_GO_FRAME_HOOK_END_RUN |
+                CNA_GO_FRAME_HOOK_BEGIN_DRAW | CNA_GO_FRAME_HOOK_END_DRAW) == CNA_GO_FRAME_HOOK_ALL,
+               "frame-hook mask must cover exactly the four optional hooks");
+
+// The frame-hook table's MEMBER ORDER, pinned portably rather than by byte
+// offsets. CNA-Go assigns four of the five members conditionally, so a table
+// whose members drifted apart between the canonical header and CNA-Go's
+// private manifest would install begin_draw where end_run belongs -- and a
+// function pointer written to the wrong slot is invisible until a frame runs.
+//
+// The same five assertions appear in bridge.c, which is compiled against the
+// manifest instead of the canonical header. Together they pin both sides: this
+// translation unit fails if the canonical table changes, and that one fails if
+// the manifest does.
+_Static_assert(offsetof(CNA_GameFrameHooks, begin_run) ==
+                   offsetof(CNA_GameFrameHooks, initialize) + sizeof(CNA_GameLifecycleCallback),
+               "CNA_GameFrameHooks::begin_run must follow initialize");
+_Static_assert(offsetof(CNA_GameFrameHooks, end_run) ==
+                   offsetof(CNA_GameFrameHooks, begin_run) + sizeof(CNA_GameLifecycleCallback),
+               "CNA_GameFrameHooks::end_run must follow begin_run");
+_Static_assert(offsetof(CNA_GameFrameHooks, begin_draw) ==
+                   offsetof(CNA_GameFrameHooks, end_run) + sizeof(CNA_GameLifecycleCallback),
+               "CNA_GameFrameHooks::begin_draw must follow end_run");
+_Static_assert(offsetof(CNA_GameFrameHooks, end_draw) ==
+                   offsetof(CNA_GameFrameHooks, begin_draw) + sizeof(CNA_GameBeginDrawCallback),
+               "CNA_GameFrameHooks::end_draw must follow begin_draw");
+_Static_assert(offsetof(CNA_GameFrameHooks, context) ==
+                   offsetof(CNA_GameFrameHooks, end_draw) + sizeof(CNA_GameLifecycleCallback),
+               "CNA_GameFrameHooks::context must follow end_draw");
+
 CNA_GO_CALLBACK(callback_initialize, CNA_GO_CALLBACK_INITIALIZE)
 CNA_GO_CALLBACK(callback_load_content, CNA_GO_CALLBACK_LOAD_CONTENT)
 CNA_GO_CALLBACK(callback_update, CNA_GO_CALLBACK_UPDATE)
 CNA_GO_CALLBACK(callback_draw, CNA_GO_CALLBACK_DRAW)
 CNA_GO_CALLBACK(callback_unload_content, CNA_GO_CALLBACK_UNLOAD_CONTENT)
 CNA_GO_CALLBACK(callback_exiting, CNA_GO_CALLBACK_EXITING)
+CNA_GO_CALLBACK(callback_begin_run, CNA_GO_CALLBACK_BEGIN_RUN)
+CNA_GO_CALLBACK(callback_end_run, CNA_GO_CALLBACK_END_RUN)
+CNA_GO_CALLBACK(callback_end_draw, CNA_GO_CALLBACK_END_DRAW)
+
+extern uint32_t cnaGoBeginDraw(
+    uint64_t game,
+    int64_t total_ticks,
+    int64_t elapsed_ticks,
+    uint8_t running_slowly,
+    uintptr_t context,
+    uint8_t* out_should_draw);
+
+/* begin_draw is the one frame hook with a value channel of its own, so it
+   cannot share the lifecycle trampoline. The canonical header initializes
+   out_should_draw to CNA_TRUE and documents that a null handler draws, so this
+   mirrors both: the local default is 1, and the caller's slot is written only
+   when the Go side answered successfully. A failing override therefore leaves
+   the runtime's own decision exactly as it found it and reports the failure
+   through the established callback-result channel instead. */
+static CNA_Result callback_begin_draw(
+    CNA_Handle game,
+    const CNA_GameTime* game_time,
+    void* context,
+    CNA_Bool* out_should_draw,
+    CNA_CallbackError* out_error) {
+    (void)out_error;
+    const int64_t total = game_time == NULL ? 0 : game_time->total_game_time_ticks;
+    const int64_t elapsed = game_time == NULL ? 0 : game_time->elapsed_game_time_ticks;
+    const uint8_t slow = game_time == NULL ? 0 : game_time->is_running_slowly;
+    uint8_t should_draw = 1;
+    const uint32_t result = cnaGoBeginDraw(game, total, elapsed, slow, (uintptr_t)context, &should_draw);
+    if (result == CNA_GO_RESULT_SUCCESS && out_should_draw != NULL) {
+        *out_should_draw = (CNA_Bool)(should_draw != 0);
+    }
+    return result;
+}
 
 static void copy_error(char* destination, size_t capacity, const char* message) {
     if (destination == NULL || capacity == 0) {
@@ -185,7 +262,7 @@ size_t cna_go_last_error_message(char* destination, size_t capacity) {
     return (size_t)required;
 }
 
-CnaGoResult cna_go_game_create(uintptr_t context, const char* title, uint64_t title_length, CnaGoHandle* out_game) {
+CnaGoResult cna_go_game_create(uintptr_t context, const char* title, uint64_t title_length, uint32_t frame_hook_overrides, CnaGoHandle* out_game) {
     CNA_GameCallbacks callbacks;
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.struct_size = (uint32_t)sizeof(callbacks);
@@ -216,6 +293,22 @@ CnaGoResult cna_go_game_create(uintptr_t context, const char* title, uint64_t ti
     hooks.struct_size = (uint32_t)sizeof(hooks);
     hooks.struct_version = 1;
     hooks.initialize = callback_initialize;
+    /* Each optional member is assigned if and only if the Go side reported a
+       matching override. An unset bit leaves the member NULL, which the
+       canonical header defines as "simply not called", so the native default
+       behaviour at that frame position is untouched. */
+    if ((frame_hook_overrides & CNA_GO_FRAME_HOOK_BEGIN_RUN) != 0) {
+        hooks.begin_run = callback_begin_run;
+    }
+    if ((frame_hook_overrides & CNA_GO_FRAME_HOOK_END_RUN) != 0) {
+        hooks.end_run = callback_end_run;
+    }
+    if ((frame_hook_overrides & CNA_GO_FRAME_HOOK_BEGIN_DRAW) != 0) {
+        hooks.begin_draw = callback_begin_draw;
+    }
+    if ((frame_hook_overrides & CNA_GO_FRAME_HOOK_END_DRAW) != 0) {
+        hooks.end_draw = callback_end_draw;
+    }
     hooks.context = (void*)context;
     result = api.cna_game_set_frame_hooks_ext(*out_game, &hooks);
     if (result != 0) {

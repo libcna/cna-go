@@ -375,15 +375,32 @@ See [Foundation 35 frame hook evidence](docs/foundation-35-game-frame-hook-evide
 for `Game.BeginRun`, `EndRun`, `BeginDraw` and `EndDraw`. `BeginDraw`'s Boolean
 stays a value channel separate from the error, because `DrawFrame` runs
 `if (BeginDraw()) { Draw(); EndDraw(); }` and a false answer skips both. CNA's
-four canonical frame hooks correspond position for position and are deliberately
-**not** installed: base behavior is never automatic, so forwarding them would
-prejudge an override design that has not been made. `GameCallbacks` still has
-exactly five members.
+four canonical frame hooks correspond position for position.
 
 See [Foundation 36 signal registry evidence](docs/foundation-36-signal-registry-evidence.md)
 for the two registries that turn those decisions into measured facts: four
 signals with three raise sites and one honest runtime deferral, and four frame
-hooks with a measured zero installed and four recorded reasons behind it.
+hooks each recording the canonical CNA hook at its position.
+
+See [Foundation 38 frame hook override evidence](docs/foundation-38-frame-hook-override-evidence.md)
+for how a consumer overrides those four. Declare the matching exported method on
+the object you hand to `NewGame` and nothing else:
+
+```go
+func (c *Callbacks) BeginDraw(game *framework.Game) (bool, error) {
+    // derived work before base
+    return game.BeginDraw()          // the Go projection of base.BeginDraw()
+}
+```
+
+Any **subset** of the four works, exactly as a CLR subclass may override any
+subset. Each canonical CNA hook is installed **if and only if** its override
+exists, so a callback object written before this mechanism existed opts into
+nothing and its native frame positions are untouched. `GameCallbacks` still has
+exactly five members, there is no registration API, and the four capabilities
+are unexported structural interfaces you never name. The base is never run
+automatically: calling `game.BeginDraw()` runs it exactly where your source says,
+zero times or many, and cannot re-enter your override.
 
 The `Media` package contains enum metadata only and carries no media runtime
 capability claim. The `Input/Touch` package adds `TouchLocation`,

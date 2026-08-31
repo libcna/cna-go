@@ -27,6 +27,17 @@ var (
 	_ [C.CNA_GO_GAME_EVENT_COUNT - gameEventCount]struct{}
 )
 
+// The optional frame-hook mask must equal bridge.h's mirror exactly. A drift
+// would install the wrong CNA_GameFrameHooks member for a declared override --
+// the same silent mis-routing the game-event assertions above exist to stop.
+var (
+	_ [C.CNA_GO_FRAME_HOOK_BEGIN_RUN - FrameHookBeginRun]struct{}
+	_ [C.CNA_GO_FRAME_HOOK_END_RUN - FrameHookEndRun]struct{}
+	_ [C.CNA_GO_FRAME_HOOK_BEGIN_DRAW - FrameHookBeginDraw]struct{}
+	_ [C.CNA_GO_FRAME_HOOK_END_DRAW - FrameHookEndDraw]struct{}
+	_ [C.CNA_GO_FRAME_HOOK_ALL - (FrameHookBeginRun | FrameHookEndRun | FrameHookBeginDraw | FrameHookEndDraw)]struct{}
+)
+
 func nativeOpen(path string) error {
 	cPath := C.CString(path)
 	defer C.free(unsafe.Pointer(cPath))
@@ -76,14 +87,14 @@ func nativeLastErrorMessage() string {
 	return string(buffer)
 }
 
-func nativeGameCreate(context uintptr, title string) (uint64, error) {
+func nativeGameCreate(context uintptr, title string, frameHooks FrameHookMask) (uint64, error) {
 	titleBytes := []byte(title)
 	var titlePointer *C.char
 	if len(titleBytes) > 0 {
 		titlePointer = (*C.char)(unsafe.Pointer(&titleBytes[0]))
 	}
 	var handle C.CnaGoHandle
-	code := uint32(C.cna_go_game_create(C.uintptr_t(context), titlePointer, C.uint64_t(len(titleBytes)), &handle))
+	code := uint32(C.cna_go_game_create(C.uintptr_t(context), titlePointer, C.uint64_t(len(titleBytes)), C.uint32_t(frameHooks), &handle))
 	return uint64(handle), resultError("cna_game_create/cna_game_set_frame_hooks_ext", code)
 }
 
@@ -242,6 +253,38 @@ func cnaGoGameEvent(event C.uint32_t, context C.uintptr_t) {
 	handle := cgo.Handle(context)
 	state = handle.Value().(*Runtime)
 	state.invokeGameEvent(uint32(event))
+}
+
+// cnaGoBeginDraw is the begin_draw trampoline. It is separate from
+// cnaGoLifecycle because CNA_GameBeginDrawCallback carries an out-parameter,
+// and that Boolean is a value channel rather than a second success flag: the
+// slot is written only on success, and a refused frame is (0, success).
+//
+//export cnaGoBeginDraw
+func cnaGoBeginDraw(game C.uint64_t, totalTicks C.int64_t, elapsedTicks C.int64_t, runningSlowly C.uint8_t, context C.uintptr_t, outShouldDraw *C.uint8_t) (result C.uint32_t) {
+	var state *Runtime
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			if state != nil {
+				state.recordCallbackFailure(fmt.Errorf("panic in native begin_draw trampoline: %v", recovered))
+			}
+			result = C.uint32_t(resultCallback)
+		}
+	}()
+	handle := cgo.Handle(context)
+	state = handle.Value().(*Runtime)
+	shouldDraw, err := state.invokeBeginDrawCallback(uint64(game), FrameTime{TotalTicks: int64(totalTicks), ElapsedTicks: int64(elapsedTicks), IsRunningSlowly: runningSlowly != 0})
+	if err != nil {
+		return C.uint32_t(resultCallback)
+	}
+	if outShouldDraw != nil {
+		if shouldDraw {
+			*outShouldDraw = 1
+		} else {
+			*outShouldDraw = 0
+		}
+	}
+	return C.uint32_t(resultSuccess)
 }
 
 //export cnaGoLifecycle

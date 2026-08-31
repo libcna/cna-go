@@ -24,6 +24,24 @@ enum {
     CNA_GO_CALLBACK_UNLOAD_CONTENT = 5,
     CNA_GO_CALLBACK_EXITING = 6,
 
+    /* The four optional frame-boundary hooks. They are separate callback
+       kinds rather than lifecycle members because CNA_GameCallbacks does not
+       carry them: they live in CNA_GameFrameHooks, and CNA-Go installs each
+       one only when the callback object supplies the matching override. */
+    CNA_GO_CALLBACK_BEGIN_RUN = 7,
+    CNA_GO_CALLBACK_END_RUN = 8,
+    CNA_GO_CALLBACK_BEGIN_DRAW = 9,
+    CNA_GO_CALLBACK_END_DRAW = 10,
+
+    /* Which optional frame hooks cna_go_game_create must install. A bit that
+       is clear leaves the corresponding CNA_GameFrameHooks member NULL, and a
+       null member is simply not called -- the canonical header says so. */
+    CNA_GO_FRAME_HOOK_BEGIN_RUN = 1u << 0,
+    CNA_GO_FRAME_HOOK_END_RUN = 1u << 1,
+    CNA_GO_FRAME_HOOK_BEGIN_DRAW = 1u << 2,
+    CNA_GO_FRAME_HOOK_END_DRAW = 1u << 3,
+    CNA_GO_FRAME_HOOK_ALL = 0xFu,
+
     /* The four canonical CNA game-event identities, mirrored so the Go side
        never spells a CNA_GAME_EVENT_* constant itself. abi_manifest.h holds
        the authoritative values and tools/native_abi static-asserts them
@@ -44,10 +62,15 @@ const char* cna_go_bound_function_name(uint32_t index);
 int cna_go_has_loaded_symbol(const char* name);
 size_t cna_go_last_error_message(char* destination, size_t capacity);
 
+/* frame_hook_overrides is a mask of CNA_GO_FRAME_HOOK_*. The `initialize`
+   hook is always installed -- it is the position Game::Initialize occupies and
+   is not an optional override -- and each of the other four members is
+   assigned if and only if its bit is set. */
 CnaGoResult cna_go_game_create(
     uintptr_t context,
     const char* title,
     uint64_t title_length,
+    uint32_t frame_hook_overrides,
     CnaGoHandle* out_game);
 CnaGoResult cna_go_game_run(CnaGoHandle game);
 CnaGoResult cna_go_game_request_exit(CnaGoHandle game);

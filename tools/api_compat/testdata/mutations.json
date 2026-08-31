@@ -1,2657 +1,2777 @@
 [
- {
-  "id": "missing-type",
-  "mutation": "missing_type",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "missing-method",
-  "mutation": "missing_method",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "wrong-package-path",
-  "mutation": "wrong_package",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "wrong-struct-class-interface",
-  "mutation": "wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "wrong-field",
-  "mutation": "wrong_field",
-  "category": "FIELD_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-property-accessor",
-  "mutation": "wrong_property",
-  "category": "PROPERTY_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-constructor-function",
-  "mutation": "wrong_constructor",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "wrong-overload-function",
-  "mutation": "wrong_overload",
-  "category": "OVERLOAD_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-parameter",
-  "mutation": "wrong_parameter",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-result",
-  "mutation": "wrong_result",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-error-mapping",
-  "mutation": "wrong_error",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-enum-value",
-  "mutation": "wrong_enum",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "wrong-flags",
-  "mutation": "wrong_flags",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-static-prefix",
-  "mutation": "wrong_static_prefix",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "wrong-operator",
-  "mutation": "wrong_operator",
-  "category": "OPERATOR_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-ref-out",
-  "mutation": "wrong_ref_out",
-  "category": "REF_OUT_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-nested-flattening",
-  "mutation": "wrong_nested",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "wrong-generic-collision",
-  "mutation": "wrong_generic",
-  "category": "GENERIC_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-collection-interface",
-  "mutation": "wrong_collection_interface",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-event-mapping",
-  "mutation": "wrong_event",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "unexpected-public-symbol",
-  "mutation": "unexpected",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "raw-pointer-leak",
-  "mutation": "pointer_leak",
-  "category": "PUBLIC_NATIVE_FFI_LEAK"
- },
- {
-  "id": "native-handle-leak",
-  "mutation": "handle_leak",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "interop-helper-leak",
-  "mutation": "internal_leak",
-  "category": "INTERNAL_TYPE_LEAK"
- },
- {
-  "id": "unmeasured-category",
-  "mutation": "unmeasured",
-  "category": "UNMEASURED_STRUCTURAL_CATEGORY"
- },
- {
-  "id": "missing-packed-interface-witness",
-  "mutation": "missing_packed_witness",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-packed-interface-witness-signature",
-  "mutation": "wrong_packed_witness",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-packed-to-vector4-result",
-  "mutation": "wrong_packed_tovector_result",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "bogus-packed-interface-witness",
-  "mutation": "bogus_packed_witness",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "wrong-packed-value-setter-type",
-  "mutation": "wrong_packed_setter",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "missing-generic-interface-inheritance",
-  "mutation": "missing_packed_inheritance",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "wrong-packed-generic-interface-name",
-  "mutation": "wrong_packed_generic_name",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "vertex-element-wrong-type-kind",
-  "mutation": "vertex_wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "vertex-element-offset-exposed-as-field",
-  "mutation": "vertex_offset_exposed_field",
-  "category": "PROPERTY_MAPPING_MISMATCH"
- },
- {
-  "id": "vertex-element-missing-offset-setter",
-  "mutation": "vertex_missing_offset_setter",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "vertex-element-wrong-offset-type",
-  "mutation": "vertex_wrong_offset_type",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "vertex-element-missing-format-setter",
-  "mutation": "vertex_missing_format_setter",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "vertex-element-wrong-format-property-type",
-  "mutation": "vertex_wrong_format_property_type",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "vertex-element-missing-usage-index-setter",
-  "mutation": "vertex_missing_usage_index_setter",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "vertex-element-constructor-parameter-order",
-  "mutation": "vertex_constructor_parameter_order",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "vertex-element-constructor-wrong-enum-type",
-  "mutation": "vertex_constructor_wrong_enum_type",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "vertex-element-unexpected-typed-equals",
-  "mutation": "vertex_unexpected_typed_equals",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "vertex-element-missing-equality-operator",
-  "mutation": "vertex_missing_equality_operator",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "vertex-element-missing-inequality-operator",
-  "mutation": "vertex_missing_inequality_operator",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "vertex-element-format-wrong-enum-value",
-  "mutation": "vertex_format_wrong_enum_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "vertex-element-usage-wrong-enum-value",
-  "mutation": "vertex_usage_wrong_enum_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "vertex-element-enum-accidentally-flags",
-  "mutation": "vertex_enum_accidentally_flags",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "player-index-wrong-type-kind",
-  "mutation": "player_index_wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "player-index-wrong-underlying-type",
-  "mutation": "player_index_wrong_underlying_type",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "player-index-accidentally-flags",
-  "mutation": "player_index_accidentally_flags",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "player-index-wrong-one-value",
-  "mutation": "player_index_wrong_one_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "player-index-wrong-four-value",
-  "mutation": "player_index_wrong_four_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "player-index-missing-four",
-  "mutation": "player_index_missing_four",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "keyboard-player-index-overload-missing",
-  "mutation": "keyboard_player_index_missing_overload",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "keyboard-player-index-parameter-int32",
-  "mutation": "keyboard_player_index_parameter_int32",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "keyboard-player-index-wrong-return",
-  "mutation": "keyboard_player_index_wrong_return",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "keyboard-player-index-missing-error",
-  "mutation": "keyboard_player_index_missing_error",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "keyboard-player-index-wrong-overload-name",
-  "mutation": "keyboard_player_index_wrong_overload_name",
-  "category": "OVERLOAD_MAPPING_MISMATCH"
- },
- {
-  "id": "display-orientation-wrong-type-kind",
-  "mutation": "display_orientation_wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "display-orientation-wrong-underlying-type",
-  "mutation": "display_orientation_wrong_underlying_type",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "display-orientation-missing-flags",
-  "mutation": "display_orientation_missing_flags",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "display-orientation-wrong-default-value",
-  "mutation": "display_orientation_wrong_default_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "display-orientation-wrong-portrait-value",
-  "mutation": "display_orientation_wrong_portrait_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "display-orientation-missing-landscape-right",
-  "mutation": "display_orientation_missing_landscape_right",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "graphics-manager-orientation-missing-getter",
-  "mutation": "graphics_manager_orientation_missing_getter",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "graphics-manager-orientation-missing-setter",
-  "mutation": "graphics_manager_orientation_missing_setter",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "graphics-manager-orientation-getter-wrong-type",
-  "mutation": "graphics_manager_orientation_getter_wrong_type",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "graphics-manager-orientation-setter-wrong-type",
-  "mutation": "graphics_manager_orientation_setter_wrong_type",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "graphics-manager-orientation-setter-returns-error",
-  "mutation": "graphics_manager_orientation_setter_returns_error",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "graphics-manager-orientation-mapped-static",
-  "mutation": "graphics_manager_orientation_static",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "graphics-manager-orientation-read-only",
-  "mutation": "graphics_manager_orientation_read_only",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "graphics-manager-orientation-moved-to-graphics-package",
-  "mutation": "graphics_manager_orientation_moved_to_graphics",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "graphics-manager-orientation-public-dirty-helper",
-  "mutation": "graphics_manager_orientation_public_dirty",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "buffer-usage-missing",
-  "mutation": "buffer_usage_missing",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "buffer-usage-wrong-package",
-  "mutation": "buffer_usage_wrong_package",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "buffer-usage-wrong-kind",
-  "mutation": "buffer_usage_wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "buffer-usage-wrong-underlying-type",
-  "mutation": "buffer_usage_wrong_underlying_type",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "buffer-usage-missing-flags-marker",
-  "mutation": "buffer_usage_missing_flags_marker",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "buffer-usage-flags-false",
-  "mutation": "buffer_usage_flags_false",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "buffer-usage-none-wrong-value",
-  "mutation": "buffer_usage_wrong_none_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "buffer-usage-write-only-wrong-value",
-  "mutation": "buffer_usage_wrong_write_only_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "buffer-usage-write-only-missing",
-  "mutation": "buffer_usage_missing_write_only",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "buffer-usage-value-storage-projected",
-  "mutation": "buffer_usage_value_storage_projected",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "buffer-usage-extra-public-constant",
-  "mutation": "buffer_usage_extra_constant",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "buffer-usage-exported-helper-method",
-  "mutation": "buffer_usage_exported_helper",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "clear-options-missing",
-  "mutation": "clear_options_missing",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "clear-options-wrong-package",
-  "mutation": "clear_options_wrong_package",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "clear-options-wrong-kind",
-  "mutation": "clear_options_wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "clear-options-wrong-underlying-type",
-  "mutation": "clear_options_wrong_underlying_type",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "clear-options-missing-flags-marker",
-  "mutation": "clear_options_missing_flags_marker",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "clear-options-flags-false",
-  "mutation": "clear_options_flags_false",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "clear-options-target-wrong-value",
-  "mutation": "clear_options_wrong_target_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "clear-options-depth-buffer-wrong-value",
-  "mutation": "clear_options_wrong_depth_buffer_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "clear-options-stencil-wrong-value",
-  "mutation": "clear_options_wrong_stencil_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "clear-options-stencil-missing",
-  "mutation": "clear_options_missing_stencil",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "clear-options-value-storage-projected",
-  "mutation": "clear_options_value_storage_projected",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "clear-options-invented-none",
-  "mutation": "clear_options_invented_none",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "clear-options-invented-all",
-  "mutation": "clear_options_invented_all",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "clear-options-exported-helper-method",
-  "mutation": "clear_options_exported_helper",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "surface-format-missing",
-  "mutation": "surface_format_missing",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "surface-format-wrong-package",
-  "mutation": "surface_format_wrong_package",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "surface-format-wrong-kind",
-  "mutation": "surface_format_wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "surface-format-wrong-underlying-type",
-  "mutation": "surface_format_wrong_underlying_type",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "surface-format-accidentally-flags",
-  "mutation": "surface_format_accidentally_flags",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "surface-format-color-wrong-value",
-  "mutation": "surface_format_wrong_color_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "surface-format-bgr565-wrong-value",
-  "mutation": "surface_format_wrong_bgr565_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "surface-format-dxt1-wrong-value",
-  "mutation": "surface_format_wrong_dxt1_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "surface-format-rgba1010102-wrong-value",
-  "mutation": "surface_format_wrong_rgba1010102_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "surface-format-alpha8-wrong-value",
-  "mutation": "surface_format_wrong_alpha8_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "surface-format-half-vector4-wrong-value",
-  "mutation": "surface_format_wrong_half_vector4_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "surface-format-hdr-blendable-wrong-value",
-  "mutation": "surface_format_wrong_hdr_blendable_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "surface-format-missing-dxt3",
-  "mutation": "surface_format_missing_dxt3",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "surface-format-missing-hdr-blendable",
-  "mutation": "surface_format_missing_hdr_blendable",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "surface-format-value-storage-projected",
-  "mutation": "surface_format_value_storage_projected",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "surface-format-extra-public-constant",
-  "mutation": "surface_format_extra_constant",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "surface-format-exported-helper-method",
-  "mutation": "surface_format_exported_helper",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "surface-format-renamed-bgr565",
-  "mutation": "surface_format_renamed_bgr565",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "depth-format-missing",
-  "mutation": "depth_format_missing",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "depth-format-wrong-package",
-  "mutation": "depth_format_wrong_package",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "depth-format-wrong-kind",
-  "mutation": "depth_format_wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "depth-format-wrong-underlying-type",
-  "mutation": "depth_format_wrong_underlying_type",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "depth-format-accidentally-flags",
-  "mutation": "depth_format_accidentally_flags",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "depth-format-none-wrong-value",
-  "mutation": "depth_format_wrong_none_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "depth-format-depth16-wrong-value",
-  "mutation": "depth_format_wrong_depth16_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "depth-format-depth24-wrong-value",
-  "mutation": "depth_format_wrong_depth24_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "depth-format-depth24-stencil8-wrong-value",
-  "mutation": "depth_format_wrong_depth24_stencil8_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "depth-format-missing-depth24",
-  "mutation": "depth_format_missing_depth24",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "depth-format-missing-depth24-stencil8",
-  "mutation": "depth_format_missing_depth24_stencil8",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "depth-format-value-storage-projected",
-  "mutation": "depth_format_value_storage_projected",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "depth-format-extra-public-constant",
-  "mutation": "depth_format_extra_constant",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "depth-format-exported-helper-method",
-  "mutation": "depth_format_exported_helper",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "depth-format-renamed-depth24-stencil8",
-  "mutation": "depth_format_renamed_depth24_stencil8",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "graphics-profile-missing",
-  "mutation": "graphics_profile_missing",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "graphics-profile-wrong-package",
-  "mutation": "graphics_profile_wrong_package",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "graphics-profile-wrong-kind",
-  "mutation": "graphics_profile_wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "graphics-profile-wrong-underlying-type",
-  "mutation": "graphics_profile_wrong_underlying_type",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "graphics-profile-accidentally-flags",
-  "mutation": "graphics_profile_accidentally_flags",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "graphics-profile-reach-wrong-value",
-  "mutation": "graphics_profile_wrong_reach_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "graphics-profile-hidef-wrong-value",
-  "mutation": "graphics_profile_wrong_hidef_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "graphics-profile-missing-hidef",
-  "mutation": "graphics_profile_missing_hidef",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "graphics-profile-value-storage-projected",
-  "mutation": "graphics_profile_value_storage_projected",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "graphics-profile-extra-public-constant",
-  "mutation": "graphics_profile_extra_constant",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "graphics-profile-renamed-hidef",
-  "mutation": "graphics_profile_renamed_hidef",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "graphics-profile-exported-helper-method",
-  "mutation": "graphics_profile_exported_helper",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "button-state-missing",
-  "mutation": "button_state_missing",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "button-state-wrong-package",
-  "mutation": "button_state_wrong_package",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "button-state-wrong-kind",
-  "mutation": "button_state_wrong_kind",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "button-state-wrong-underlying-type",
-  "mutation": "button_state_wrong_underlying_type",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "button-state-accidentally-flags",
-  "mutation": "button_state_accidentally_flags",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "button-state-released-wrong-value",
-  "mutation": "button_state_wrong_released_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "button-state-pressed-wrong-value",
-  "mutation": "button_state_wrong_pressed_value",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "button-state-missing-pressed",
-  "mutation": "button_state_missing_pressed",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "button-state-value-storage-projected",
-  "mutation": "button_state_value_storage_projected",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "button-state-extra-public-constant",
-  "mutation": "button_state_extra_constant",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "button-state-renamed-released",
-  "mutation": "button_state_renamed_released",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "button-state-renamed-pressed",
-  "mutation": "button_state_renamed_pressed",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "button-state-exported-helper-method",
-  "mutation": "button_state_exported_helper",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f14-render-target-usage-missing",
-  "mutation": "f14_missing_type__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f14-render-target-usage-wrong-package",
-  "mutation": "f14_wrong_package__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f14-render-target-usage-wrong-kind",
-  "mutation": "f14_wrong_kind__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f14-render-target-usage-wrong-underlying-type",
-  "mutation": "f14_wrong_underlying_type__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f14-render-target-usage-accidentally-flags",
-  "mutation": "f14_accidentally_flags__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "f14-render-target-usage-wrong-first-value",
-  "mutation": "f14_wrong_first_value__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f14-render-target-usage-wrong-last-value",
-  "mutation": "f14_wrong_last_value__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f14-render-target-usage-missing-last-literal",
-  "mutation": "f14_missing_last_literal__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f14-render-target-usage-renamed-literal",
-  "mutation": "f14_renamed_literal__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f14-render-target-usage-value-storage-projected",
-  "mutation": "f14_value_storage_projected__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f14-render-target-usage-invented-constant",
-  "mutation": "f14_invented_constant__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f14-render-target-usage-exported-helper",
-  "mutation": "f14_exported_helper__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f14-buttons-flags-directive-dropped",
-  "mutation": "f14_flags_directive_dropped__Microsoft.Xna.Framework.Input.Buttons",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "f14-buttons-iota-renumbering",
-  "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Input.Buttons",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f14-buttons-invented-constant",
-  "mutation": "f14_invented_constant__Microsoft.Xna.Framework.Input.Buttons",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f14-set-data-options-flags-directive-dropped",
-  "mutation": "f14_flags_directive_dropped__Microsoft.Xna.Framework.Graphics.SetDataOptions",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "f14-audio-channels-iota-renumbering",
-  "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Audio.AudioChannels",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f14-audio-channels-missing-last-literal",
-  "mutation": "f14_missing_last_literal__Microsoft.Xna.Framework.Audio.AudioChannels",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f14-media-source-type-iota-renumbering",
-  "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Media.MediaSourceType",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f14-media-source-type-wrong-last-value",
-  "mutation": "f14_wrong_last_value__Microsoft.Xna.Framework.Media.MediaSourceType",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f15-color-write-channels-flags-directive-dropped",
-  "mutation": "f14_flags_directive_dropped__Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-color-write-channels-iota-renumbering",
-  "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f15-color-write-channels-invented-constant",
-  "mutation": "f14_invented_constant__Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f15-color-write-channels-wrong-last-value",
-  "mutation": "f14_wrong_last_value__Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f15-blend-accidentally-flags",
-  "mutation": "f14_accidentally_flags__Microsoft.Xna.Framework.Graphics.Blend",
-  "category": "FLAGS_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-blend-missing-last-literal",
-  "mutation": "f14_missing_last_literal__Microsoft.Xna.Framework.Graphics.Blend",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f15-blend-renamed-literal",
-  "mutation": "f14_renamed_literal__Microsoft.Xna.Framework.Graphics.Blend",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f15-blend-value-storage-projected",
-  "mutation": "f14_value_storage_projected__Microsoft.Xna.Framework.Graphics.Blend",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f15-game-pad-type-iota-renumbering",
-  "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Input.GamePadType",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f15-game-pad-type-wrong-last-value",
-  "mutation": "f14_wrong_last_value__Microsoft.Xna.Framework.Input.GamePadType",
-  "category": "ENUM_VALUE_MISMATCH"
- },
- {
-  "id": "f15-game-pad-type-wrong-kind",
-  "mutation": "f14_wrong_kind__Microsoft.Xna.Framework.Input.GamePadType",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f15-game-pad-type-exported-helper",
-  "mutation": "f14_exported_helper__Microsoft.Xna.Framework.Input.GamePadType",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f15-thumbsticks-missing",
-  "mutation": "f15vs_missing_type__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f15-thumbsticks-projected-as-class",
-  "mutation": "f15vs_projected_as_class__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f15-thumbsticks-synthetic-error-result",
-  "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-thumbsticks-wrong-constructor-parameters",
-  "mutation": "f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-thumbsticks-unexpected-mutator",
-  "mutation": "f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f15-game-pad-buttons-missing-hash",
-  "mutation": "f15vs_missing_first_member__Microsoft.Xna.Framework.Input.GamePadButtons",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f15-game-pad-buttons-renamed-equality-operator",
-  "mutation": "f15vs_renamed_last_member__Microsoft.Xna.Framework.Input.GamePadButtons",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f15-game-pad-buttons-synthetic-error-result",
-  "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.GamePadButtons",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-mouse-state-wrong-hash-result-type",
-  "mutation": "f15vs_wrong_result_type__Microsoft.Xna.Framework.Input.MouseState",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-mouse-state-missing-last-member",
-  "mutation": "f15vs_missing_last_member__Microsoft.Xna.Framework.Input.MouseState",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f15-mouse-state-wrong-package",
-  "mutation": "f15vs_wrong_package__Microsoft.Xna.Framework.Input.MouseState",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f15-mouse-state-unexpected-mutator",
-  "mutation": "f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.MouseState",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f15-gesture-sample-missing",
-  "mutation": "f15vs_missing_type__Microsoft.Xna.Framework.Input.Touch.GestureSample",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f15-gesture-sample-synthetic-error-result",
-  "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.Touch.GestureSample",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-gesture-sample-wrong-constructor-parameters",
-  "mutation": "f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.Touch.GestureSample",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-gesture-sample-projected-as-class",
-  "mutation": "f15vs_projected_as_class__Microsoft.Xna.Framework.Input.Touch.GestureSample",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f15-touch-location-missing-first-member",
-  "mutation": "f15vs_missing_first_member__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f15-touch-location-renamed-last-member",
-  "mutation": "f15vs_renamed_last_member__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f15-touch-location-synthetic-error-result",
-  "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-touch-location-wrong-constructor-parameters",
-  "mutation": "f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f15-touch-location-unexpected-mutator",
-  "mutation": "f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f16-game-pad-state-missing",
-  "mutation": "f15vs_missing_type__Microsoft.Xna.Framework.Input.GamePadState",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f16-game-pad-state-projected-as-class",
-  "mutation": "f15vs_projected_as_class__Microsoft.Xna.Framework.Input.GamePadState",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f16-game-pad-state-synthetic-error-result",
-  "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.GamePadState",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f16-game-pad-state-wrong-constructor-parameters",
-  "mutation": "f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.GamePadState",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f16-game-pad-state-missing-first-member",
-  "mutation": "f15vs_missing_first_member__Microsoft.Xna.Framework.Input.GamePadState",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f16-game-pad-state-renamed-last-member",
-  "mutation": "f15vs_renamed_last_member__Microsoft.Xna.Framework.Input.GamePadState",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f16-game-pad-state-unexpected-mutator",
-  "mutation": "f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.GamePadState",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f17-managed-class-audiolistener-missing-type",
-  "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f17-managed-class-audiolistener-wrong-package",
-  "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f17-managed-class-audiolistener-projected-as-named-type",
-  "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audiolistener-wrong-constructor-semantics",
-  "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audiolistener-missing-first-member",
-  "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f17-managed-class-audiolistener-missing-last-member",
-  "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f17-managed-class-audiolistener-renamed-last-member",
-  "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f17-managed-class-audiolistener-unexpected-member",
-  "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f17-managed-class-audiolistener-wrong-setter-parameter",
-  "mutation": "f17mc_wrong_setter_parameter__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audiolistener-artificial-getter-error",
-  "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audiolistener-artificial-setter-error",
-  "mutation": "f17mc_artificial_setter_error__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audiolistener-artificial-constructor-error",
-  "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audiolistener-native-facade-projection",
-  "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audioemitter-missing-type",
-  "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f17-managed-class-audioemitter-wrong-package",
-  "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f17-managed-class-audioemitter-projected-as-named-type",
-  "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audioemitter-wrong-constructor-semantics",
-  "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audioemitter-missing-first-member",
-  "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f17-managed-class-audioemitter-missing-last-member",
-  "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f17-managed-class-audioemitter-renamed-last-member",
-  "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f17-managed-class-audioemitter-unexpected-member",
-  "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f17-managed-class-audioemitter-wrong-setter-parameter",
-  "mutation": "f17mc_wrong_setter_parameter__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audioemitter-artificial-getter-error",
-  "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audioemitter-artificial-setter-error",
-  "mutation": "f17mc_artificial_setter_error__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audioemitter-artificial-constructor-error",
-  "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audioemitter-native-facade-projection",
-  "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-classification-managed-class-demoted-to-native-facade",
-  "mutation": "f17cls_managed_class_demoted_to_native_facade__Microsoft.Xna.Framework.Audio.AudioListener",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-classification-managed-class-with-validating-setter-demoted",
-  "mutation": "f17cls_managed_class_with_validating_setter_demoted__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-classification-native-backed-class-admitted-as-pure-managed",
-  "mutation": "f17cls_native_backed_class_admitted_as_pure_managed__Microsoft.Xna.Framework.Graphics.Texture2D",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-classification-accessor-fallibility-widened-to-whole-property",
-  "mutation": "f17cls_accessor_fallibility_widened_to_whole_property__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-classification-accessor-fallibility-moved-to-the-getter",
-  "mutation": "f17cls_accessor_fallibility_moved_to_the_getter__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-classification-accessor-fallibility-dropped",
-  "mutation": "f17cls_accessor_fallibility_dropped__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-ieffectmatrices-missing-type",
-  "mutation": "f18if_missing_type__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f18-interface-ieffectmatrices-wrong-package",
-  "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f18-interface-ieffectmatrices-projected-as-struct",
-  "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f18-interface-ieffectmatrices-missing-first-member",
-  "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-ieffectmatrices-missing-last-member",
-  "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-ieffectmatrices-renamed-last-member",
-  "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-ieffectmatrices-unexpected-member",
-  "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f18-interface-ieffectmatrices-wrong-parameter",
-  "mutation": "f18if_wrong_parameter__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-ieffectmatrices-artificial-error",
-  "mutation": "f18if_artificial_error__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-ieffectfog-missing-type",
-  "mutation": "f18if_missing_type__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f18-interface-ieffectfog-wrong-package",
-  "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f18-interface-ieffectfog-projected-as-struct",
-  "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f18-interface-ieffectfog-missing-first-member",
-  "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-ieffectfog-missing-last-member",
-  "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-ieffectfog-renamed-last-member",
-  "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-ieffectfog-unexpected-member",
-  "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f18-interface-ieffectfog-wrong-parameter",
-  "mutation": "f18if_wrong_parameter__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-ieffectfog-artificial-error",
-  "mutation": "f18if_artificial_error__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-ieffectfog-dropped-error",
-  "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-ieffectfog-error-replaces-source-result",
-  "mutation": "f18if_error_replaces_source_result__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-igamecomponent-missing-type",
-  "mutation": "f18if_missing_type__Microsoft.Xna.Framework.IGameComponent",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f18-interface-igamecomponent-wrong-package",
-  "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.IGameComponent",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f18-interface-igamecomponent-projected-as-struct",
-  "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.IGameComponent",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f18-interface-igamecomponent-missing-first-member",
-  "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.IGameComponent",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-igamecomponent-missing-last-member",
-  "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.IGameComponent",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-igamecomponent-renamed-last-member",
-  "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.IGameComponent",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-igamecomponent-unexpected-member",
-  "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.IGameComponent",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f18-interface-igamecomponent-dropped-error",
-  "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.IGameComponent",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-igraphicsdevicemanager-missing-type",
-  "mutation": "f18if_missing_type__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f18-interface-igraphicsdevicemanager-wrong-package",
-  "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f18-interface-igraphicsdevicemanager-projected-as-struct",
-  "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f18-interface-igraphicsdevicemanager-missing-first-member",
-  "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-igraphicsdevicemanager-missing-last-member",
-  "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-igraphicsdevicemanager-renamed-last-member",
-  "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f18-interface-igraphicsdevicemanager-unexpected-member",
-  "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f18-interface-igraphicsdevicemanager-dropped-error",
-  "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-igraphicsdevicemanager-error-replaces-source-result",
-  "mutation": "f18if_error_replaces_source_result__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-classification-pure-managed-interface-demoted-to-runtime",
-  "mutation": "f18cls_pure_managed_interface_demoted_to_runtime__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-classification-runtime-interface-admitted-as-pure-managed",
-  "mutation": "f18cls_runtime_interface_admitted_as_pure_managed__Microsoft.Xna.Framework.IGraphicsDeviceManager",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-classification-interface-runtime-operation-dropped",
-  "mutation": "f18cls_interface_runtime_operation_dropped__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f18-interface-classification-interface-runtime-operation-widened",
-  "mutation": "f18cls_interface_runtime_operation_widened__Microsoft.Xna.Framework.Graphics.IEffectFog",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f19-managed-class-presentationparameters-missing-type",
-  "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f19-managed-class-presentationparameters-wrong-package",
-  "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f19-managed-class-presentationparameters-projected-as-named-type",
-  "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f19-managed-class-presentationparameters-wrong-constructor-semantics",
-  "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f19-managed-class-presentationparameters-missing-first-member",
-  "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f19-managed-class-presentationparameters-missing-last-member",
-  "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f19-managed-class-presentationparameters-renamed-last-member",
-  "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f19-managed-class-presentationparameters-unexpected-member",
-  "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f19-managed-class-presentationparameters-wrong-setter-parameter",
-  "mutation": "f17mc_wrong_setter_parameter__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f19-managed-class-presentationparameters-artificial-getter-error",
-  "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f19-managed-class-presentationparameters-artificial-setter-error",
-  "mutation": "f17mc_artificial_setter_error__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f19-managed-class-presentationparameters-artificial-constructor-error",
-  "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f19-managed-class-presentationparameters-native-facade-projection",
-  "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Graphics.PresentationParameters",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f19-raw-handle-uintptr-result-where-source-declares-int32",
-  "mutation": "f19rh_uintptr_result_where_source_declares_int32",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-uintptr-parameter-where-source-declares-int32",
-  "mutation": "f19rh_uintptr_parameter_where_source_declares_int32",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-uintptr-drifted-from-parameter-to-result",
-  "mutation": "f19rh_uintptr_drifted_from_parameter_to_result",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-uintptr-drifted-to-an-unadmitted-index",
-  "mutation": "f19rh_uintptr_drifted_to_an_unadmitted_index",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-uintptr-slice-result",
-  "mutation": "f19rh_uintptr_slice_result",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-uintptr-pointer-result",
-  "mutation": "f19rh_uintptr_pointer_result",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-uintptr-on-an-invented-member",
-  "mutation": "f19rh_uintptr_on_an_invented_member",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-exported-named-type-over-uintptr",
-  "mutation": "f19rh_exported_named_type_over_uintptr",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-cna-prefixed-member-name",
-  "mutation": "f19rh_cna_prefixed_member_name",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-native-handle-type-name",
-  "mutation": "f19rh_native_handle_type_name",
-  "category": "RAW_HANDLE_LEAK"
- },
- {
-  "id": "f19-raw-handle-unsafe-pointer-result",
-  "mutation": "f19rh_unsafe_pointer_result",
-  "category": "PUBLIC_NATIVE_FFI_LEAK"
- },
- {
-  "id": "f20-value-contract-touchcollection-missing-type",
-  "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f20-value-contract-touchcollection-wrong-package",
-  "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f20-value-contract-touchcollection-projected-as-named-type",
-  "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f20-value-contract-touchcollection-wrong-constructor-semantics",
-  "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f20-value-contract-touchcollection-missing-first-member",
-  "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f20-value-contract-touchcollection-missing-last-member",
-  "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f20-value-contract-touchcollection-renamed-last-member",
-  "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f20-value-contract-touchcollection-unexpected-member",
-  "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f20-value-contract-touchcollection-wrong-setter-parameter",
-  "mutation": "f17mc_wrong_setter_parameter__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f20-value-contract-touchcollection-artificial-getter-error",
-  "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f20-value-contract-touchcollection-native-facade-projection",
-  "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f20-value-contract-touchcollection-dropped-error",
-  "mutation": "f17mc_dropped_error__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f20-value-contract-touchcollectionenumerator-missing-type",
-  "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f20-value-contract-touchcollectionenumerator-wrong-package",
-  "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f20-value-contract-touchcollectionenumerator-projected-as-named-type",
-  "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f20-value-contract-touchcollectionenumerator-missing-first-member",
-  "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f20-value-contract-touchcollectionenumerator-missing-last-member",
-  "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f20-value-contract-touchcollectionenumerator-renamed-last-member",
-  "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f20-value-contract-touchcollectionenumerator-unexpected-member",
-  "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f20-value-contract-touchcollectionenumerator-native-facade-projection",
-  "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f20-value-contract-touchcollectionenumerator-dropped-error",
-  "mutation": "f17mc_dropped_error__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f17-managed-class-audioemitter-dropped-error",
-  "mutation": "f17mc_dropped_error__Microsoft.Xna.Framework.Audio.AudioEmitter",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-missing-type",
-  "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-wrong-package",
-  "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-projected-as-named-type",
-  "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-wrong-constructor-semantics",
-  "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-missing-first-member",
-  "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-missing-last-member",
-  "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-renamed-last-member",
-  "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-unexpected-member",
-  "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-artificial-constructor-error",
-  "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-native-facade-projection",
-  "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f21-managed-class-gameservicecontainer-dropped-error",
-  "mutation": "f17mc_dropped_error__Microsoft.Xna.Framework.GameServiceContainer",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-handler-degraded-to-any",
-  "mutation": "f22ev_handler-degraded-to-any__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-handler-erased-to-any",
-  "mutation": "f22ev_handler-erased-to-any__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-wrong-generic-argument",
-  "mutation": "f22ev_wrong-generic-argument__Microsoft.Xna.Framework.IUpdateable",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-event-args-projected-by-value",
-  "mutation": "f22ev_event-args-projected-by-value__Microsoft.Xna.Framework.IUpdateable",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-handler-is-a-raw-func",
-  "mutation": "f22ev_handler-is-a-raw-func__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-handler-is-a-channel",
-  "mutation": "f22ev_handler-is-a-channel__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-handler-is-a-raw-callback-word",
-  "mutation": "f22ev_handler-is-a-raw-callback-word__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-subscription-token-dropped",
-  "mutation": "f22ev_subscription-token-dropped__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-subscription-token-is-a-native-handle",
-  "mutation": "f22ev_subscription-token-is-a-native-handle__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-removal-takes-the-handler",
-  "mutation": "f22ev_removal-takes-the-handler__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-removal-takes-a-native-handle",
-  "mutation": "f22ev_removal-takes-a-native-handle__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-registration-error-channel-dropped",
-  "mutation": "f22ev_registration-error-channel-dropped__Microsoft.Xna.Framework.IUpdateable",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-removal-error-channel-dropped",
-  "mutation": "f22ev_removal-error-channel-dropped__Microsoft.Xna.Framework.IUpdateable",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-registration-accessor-missing",
-  "mutation": "f22ev_registration-accessor-missing__Microsoft.Xna.Framework.IUpdateable",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f22-event-iupdateable-removal-accessor-missing",
-  "mutation": "f22ev_removal-accessor-missing__Microsoft.Xna.Framework.IUpdateable",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f22-event-iupdateable-clr-accessor-name-leaked",
-  "mutation": "f22ev_clr-accessor-name-leaked__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-iupdateable-accessor-projected-as-a-field",
-  "mutation": "f22ev_accessor-projected-as-a-field__Microsoft.Xna.Framework.IUpdateable",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-handler-degraded-to-any",
-  "mutation": "f22ev_handler-degraded-to-any__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-handler-erased-to-any",
-  "mutation": "f22ev_handler-erased-to-any__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-wrong-generic-argument",
-  "mutation": "f22ev_wrong-generic-argument__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-event-args-projected-by-value",
-  "mutation": "f22ev_event-args-projected-by-value__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-handler-is-a-raw-func",
-  "mutation": "f22ev_handler-is-a-raw-func__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-handler-is-a-channel",
-  "mutation": "f22ev_handler-is-a-channel__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-handler-is-a-raw-callback-word",
-  "mutation": "f22ev_handler-is-a-raw-callback-word__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-subscription-token-dropped",
-  "mutation": "f22ev_subscription-token-dropped__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-subscription-token-is-a-native-handle",
-  "mutation": "f22ev_subscription-token-is-a-native-handle__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-removal-takes-the-handler",
-  "mutation": "f22ev_removal-takes-the-handler__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-removal-takes-a-native-handle",
-  "mutation": "f22ev_removal-takes-a-native-handle__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-registration-error-channel-dropped",
-  "mutation": "f22ev_registration-error-channel-dropped__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-removal-error-channel-dropped",
-  "mutation": "f22ev_removal-error-channel-dropped__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-registration-accessor-missing",
-  "mutation": "f22ev_registration-accessor-missing__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-removal-accessor-missing",
-  "mutation": "f22ev_removal-accessor-missing__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-clr-accessor-name-leaked",
-  "mutation": "f22ev_clr-accessor-name-leaked__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-event-dynamicvertexbuffer-accessor-projected-as-a-field",
-  "mutation": "f22ev_accessor-projected-as-a-field__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-  "category": "EVENT_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-base-gamecomponentcollectioneventargs-exported-embedding",
-  "mutation": "f22base_exported_embedding__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-base-resourcecreatedeventargs-qualified-embedding",
-  "mutation": "f22base_qualified_embedding__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-base-resourcedestroyedeventargs-projected-as-interface",
-  "mutation": "f22base_projected_as_interface__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-base-devicelostexception-deferred-base-projected",
-  "mutation": "f22base_deferred_base_projected__Microsoft.Xna.Framework.Graphics.DeviceLostException",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f22-base-preparingdevicesettingseventargs-undeclared-base",
-  "mutation": "f22base_undeclared_base__Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-interface-iupdateable-missing-type",
-  "mutation": "f18if_missing_type__Microsoft.Xna.Framework.IUpdateable",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-interface-iupdateable-wrong-package",
-  "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.IUpdateable",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-interface-iupdateable-projected-as-struct",
-  "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.IUpdateable",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f23-interface-iupdateable-missing-first-member",
-  "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.IUpdateable",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-interface-iupdateable-missing-last-member",
-  "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.IUpdateable",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-interface-iupdateable-renamed-last-member",
-  "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.IUpdateable",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-interface-iupdateable-unexpected-member",
-  "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.IUpdateable",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f23-interface-iupdateable-wrong-parameter",
-  "mutation": "f18if_wrong_parameter__Microsoft.Xna.Framework.IUpdateable",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-interface-iupdateable-artificial-error",
-  "mutation": "f18if_artificial_error__Microsoft.Xna.Framework.IUpdateable",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-interface-iupdateable-dropped-error",
-  "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.IUpdateable",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-interface-iupdateable-error-replaces-source-result",
-  "mutation": "f18if_error_replaces_source_result__Microsoft.Xna.Framework.IUpdateable",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-interface-idrawable-missing-type",
-  "mutation": "f18if_missing_type__Microsoft.Xna.Framework.IDrawable",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-interface-idrawable-wrong-package",
-  "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.IDrawable",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-interface-idrawable-projected-as-struct",
-  "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.IDrawable",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f23-interface-idrawable-missing-first-member",
-  "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.IDrawable",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-interface-idrawable-missing-last-member",
-  "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.IDrawable",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-interface-idrawable-renamed-last-member",
-  "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.IDrawable",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-interface-idrawable-unexpected-member",
-  "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.IDrawable",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f23-interface-idrawable-wrong-parameter",
-  "mutation": "f18if_wrong_parameter__Microsoft.Xna.Framework.IDrawable",
-  "category": "PARAMETER_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-interface-idrawable-artificial-error",
-  "mutation": "f18if_artificial_error__Microsoft.Xna.Framework.IDrawable",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-interface-idrawable-dropped-error",
-  "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.IDrawable",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-interface-idrawable-error-replaces-source-result",
-  "mutation": "f18if_error_replaces_source_result__Microsoft.Xna.Framework.IDrawable",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-missing-type",
-  "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-wrong-package",
-  "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-projected-as-named-type",
-  "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-wrong-constructor-semantics",
-  "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-missing-first-member",
-  "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-missing-last-member",
-  "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-renamed-last-member",
-  "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-unexpected-member",
-  "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-artificial-getter-error",
-  "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-artificial-constructor-error",
-  "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-managed-class-gamecomponentcollectioneventargs-native-facade-projection",
-  "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-managed-class-resourcecreatedeventargs-missing-type",
-  "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-managed-class-resourcecreatedeventargs-wrong-package",
-  "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-managed-class-resourcecreatedeventargs-projected-as-named-type",
-  "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f23-managed-class-resourcecreatedeventargs-missing-first-member",
-  "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-managed-class-resourcecreatedeventargs-missing-last-member",
-  "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-managed-class-resourcecreatedeventargs-renamed-last-member",
-  "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-managed-class-resourcecreatedeventargs-unexpected-member",
-  "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f23-managed-class-resourcecreatedeventargs-artificial-getter-error",
-  "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-managed-class-resourcecreatedeventargs-native-facade-projection",
-  "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-managed-class-resourcedestroyedeventargs-missing-type",
-  "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-managed-class-resourcedestroyedeventargs-wrong-package",
-  "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "MISSING_TYPE"
- },
- {
-  "id": "f23-managed-class-resourcedestroyedeventargs-projected-as-named-type",
-  "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "TYPE_KIND_MISMATCH"
- },
- {
-  "id": "f23-managed-class-resourcedestroyedeventargs-missing-first-member",
-  "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-managed-class-resourcedestroyedeventargs-missing-last-member",
-  "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-managed-class-resourcedestroyedeventargs-renamed-last-member",
-  "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f23-managed-class-resourcedestroyedeventargs-unexpected-member",
-  "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f23-managed-class-resourcedestroyedeventargs-artificial-getter-error",
-  "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f23-managed-class-resourcedestroyedeventargs-native-facade-projection",
-  "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f24-bcl-interface-soundeffect-invented-close-alias",
-  "mutation": "f24bcli_invented-close-alias__Microsoft.Xna.Framework.Audio.SoundEffect",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "f24-bcl-interface-soundeffect-invented-disposable-interface-embedding",
-  "mutation": "f24bcli_invented-disposable-interface-embedding__Microsoft.Xna.Framework.Audio.SoundEffect",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "f24-bcl-interface-soundeffect-invented-qualified-disposable-embedding",
-  "mutation": "f24bcli_invented-qualified-disposable-embedding__Microsoft.Xna.Framework.Audio.SoundEffect",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "f24-bcl-interface-soundeffect-invented-finalizer-surface",
-  "mutation": "f24bcli_invented-finalizer-surface__Microsoft.Xna.Framework.Audio.SoundEffect",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "f24-bcl-interface-soundeffect-invented-ownership-wrapper",
-  "mutation": "f24bcli_invented-ownership-wrapper__Microsoft.Xna.Framework.Audio.SoundEffect",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "f24-bcl-interface-soundeffect-undeclared-bcl-interface",
-  "mutation": "f24bcli_undeclared-bcl-interface__Microsoft.Xna.Framework.Audio.SoundEffect",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "f24-bcl-interface-soundeffect-declared-dispose-dropped",
-  "mutation": "f24bcli_declared-dispose-dropped__Microsoft.Xna.Framework.Audio.SoundEffect",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f24-bcl-interface-soundeffect-declared-dispose-fallibility-changed",
-  "mutation": "f24bcli_declared-dispose-fallibility-changed__Microsoft.Xna.Framework.Audio.SoundEffect",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f24-bcl-interface-curve-synthetic-dispose",
-  "mutation": "f24bcli_synthetic_dispose__Microsoft.Xna.Framework.Curve",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "f25-bcl-interface-soundeffect-undeclared-internal-xna-interface",
-  "mutation": "f24bcli_undeclared-internal-xna-interface__Microsoft.Xna.Framework.Audio.SoundEffect",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-base-silently-dropped",
-  "mutation": "f26bcl_base_silently_dropped__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-exported-embedding",
-  "mutation": "f26bcl_exported_embedding__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-unexported-embedding",
-  "mutation": "f26bcl_unexported_embedding__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-raw-slice-projection",
-  "mutation": "f26bcl_raw_slice_projection__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-exported-raw-slice-field",
-  "mutation": "f26bcl_exported_raw_slice_field__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-exported-raw-map-field",
-  "mutation": "f26bcl_exported_raw_map_field__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-missing-adapter-field",
-  "mutation": "f26bcl_missing_adapter_field__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-exported-adapter-field",
-  "mutation": "f26bcl_exported_adapter_field__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-wrong-adapter-generic",
-  "mutation": "f26bcl_wrong_adapter_generic__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-wrong-adapter-family",
-  "mutation": "f26bcl_wrong_adapter_family__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-excluded-member-projected",
-  "mutation": "f26bcl_excluded_member_projected__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-inherited-member-missing",
-  "mutation": "f26bcl_inherited_member_missing__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-inherited-indexer-setter-missing",
-  "mutation": "f26bcl_inherited_indexer_setter_missing__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-declared-override-missing",
-  "mutation": "f26bcl_declared_override_missing__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "MISSING_MEMBER"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-extra-inherited-member",
-  "mutation": "f26bcl_extra_inherited_member__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "UNEXPECTED_MEMBER"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-wrong-count-projection",
-  "mutation": "f26bcl_wrong_count_projection__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-wrong-indexer-projection",
-  "mutation": "f26bcl_wrong_indexer_projection__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-wrong-enumerator-type",
-  "mutation": "f26bcl_wrong_enumerator_type__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "RETURN_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-enumerator-adapter-absent",
-  "mutation": "f26bcl_enumerator_adapter_absent__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "INTERFACE_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-infallible-mutator",
-  "mutation": "f26bcl_infallible_mutator__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-infallible-indexer-setter",
-  "mutation": "f26bcl_infallible_indexer_setter__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f26-bcl-composition-gamecomponentcollection-fallible-reader",
-  "mutation": "f26bcl_fallible_reader__Microsoft.Xna.Framework.GameComponentCollection",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f27-bcl-signature-readonlycollection-adapter-type-absent",
-  "mutation": "f27sig_adapter_type_absent",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f27-bcl-signature-readonlycollection-public-member-missing",
-  "mutation": "f27sig_public_member_missing",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f27-bcl-signature-readonlycollection-enumerator-missing",
-  "mutation": "f27sig_enumerator_missing",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f27-bcl-signature-readonlycollection-extra-public-member",
-  "mutation": "f27sig_extra_public_member",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f27-bcl-signature-readonlycollection-read-only-made-mutable-add",
-  "mutation": "f27sig_read_only_made_mutable_add",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f27-bcl-signature-readonlycollection-read-only-made-mutable-setter",
-  "mutation": "f27sig_read_only_made_mutable_setter",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f27-bcl-signature-readonlycollection-read-only-made-mutable-clear",
-  "mutation": "f27sig_read_only_made_mutable_clear",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f27-bcl-signature-readonlycollection-excluded-member-promoted",
-  "mutation": "f27sig_excluded_member_promoted",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f27-bcl-signature-readonlycollection-sync-root-promoted",
-  "mutation": "f27sig_sync_root_promoted",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f30-classification-stored-getter-on-native-facade-demoted",
-  "mutation": "f17cls_stored_getter_on_native_facade_demoted__Microsoft.Xna.Framework.Game",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f30-classification-stored-getter-classified-for-one-member-only",
-  "mutation": "f17cls_stored_getter_classified_for_one_member_only__Microsoft.Xna.Framework.Game",
-  "category": "ERROR_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-adapter-absent-from-the-package",
-  "mutation": "f31base_adapter_absent_from_the_package",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-adapter-projected-as-a-method-on-game",
-  "mutation": "f31base_adapter_projected_as_a_method_on_game",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-adapter-signature-drops-the-game-parameter",
-  "mutation": "f31base_adapter_signature_drops_the_game_parameter",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-adapter-signature-gains-a-result",
-  "mutation": "f31base_adapter_signature_gains_a_result",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-arbitrary-extra-base-helper",
-  "mutation": "f31base_arbitrary_extra_base_helper",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-adapter-missing-for-a-supported-virtual",
-  "mutation": "f31base_adapter_missing_for_a_supported_virtual",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-adapter-declared-for-a-member-that-is-not-a-supported-virtual",
-  "mutation": "f31base_adapter_declared_for_a_member_that_is_not_a_supported_virtual",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-error-result-with-no-recorded-reason",
-  "mutation": "f31base_error_result_with_no_recorded_reason",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-recorded-reason-with-no-error-result",
-  "mutation": "f31base_recorded_reason_with_no_error_result",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-deferred-step-records-no-reason",
-  "mutation": "f31base_deferred_step_records_no_reason",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-deferred-step-unclassified",
-  "mutation": "f31base_deferred_step_unclassified",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-deferred-step-marked-observable",
-  "mutation": "f31base_deferred_step_marked_observable",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f31-base-call-adapter-records-no-reference-body",
-  "mutation": "f31base_adapter_records_no_reference_body",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f33-xna-base-unrecorded-xna-base",
-  "mutation": "f33xna_unrecorded_xna_base",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f33-xna-base-deferred-base-records-no-blocker",
-  "mutation": "f33xna_deferred_base_records_no_blocker",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f33-xna-base-blocker-class-is-unrecorded",
-  "mutation": "f33xna_blocker_class_is_unrecorded",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f33-xna-base-blocker-records-no-detail",
-  "mutation": "f33xna_blocker_records_no_detail",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f33-xna-base-status-is-neither-composed-nor-deferred",
-  "mutation": "f33xna_status_is_neither_composed_nor_deferred",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f33-xna-base-stale-relationship-with-no-derived-type",
-  "mutation": "f33xna_stale_relationship_with_no_derived_type",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f33-xna-base-derived-type-of-a-deferred-base-reported-complete",
-  "mutation": "f33xna_derived_type_of_a_deferred_base_reported_complete",
-  "category": "BASE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-signal-absent-for-a-declared-event",
-  "mutation": "f36signal_signal_absent_for_a_declared_event",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-signal-declared-for-an-event-game-does-not-declare",
-  "mutation": "f36signal_signal_declared_for_an_event_game_does_not_declare",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-duplicate-cna-identity",
-  "mutation": "f36signal_duplicate_cna_identity",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-signal-names-no-cna-constant",
-  "mutation": "f36signal_signal_names_no_cna_constant",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-raise-site-is-not-a-projected-method",
-  "mutation": "f36signal_raise_site_is_not_a_projected_method",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-raise-site-invented-for-an-event-that-has-none",
-  "mutation": "f36signal_raise_site_invented_for_an_event_that_has_none",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-raise-site-omitted-for-an-event-that-has-one",
-  "mutation": "f36signal_raise_site_omitted_for_an_event_that_has_one",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-raise-site-signature-is-not-the-clr-shape",
-  "mutation": "f36signal_raise_site_signature_is_not_the_clr_shape",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-raise-site-absent-from-the-package",
-  "mutation": "f36signal_raise_site_absent_from_the_package",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-accessor-absent-from-the-package",
-  "mutation": "f36signal_accessor_absent_from_the_package",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-sender-is-neither-game-nor-null",
-  "mutation": "f36signal_sender_is_neither_game_nor_null",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-signal-records-no-reference-path",
-  "mutation": "f36signal_signal_records_no_reference_path",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-runtime-evidence-unclassified",
-  "mutation": "f36signal_runtime_evidence_unclassified",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-unverified-signal-records-no-reason",
-  "mutation": "f36signal_unverified_signal_records_no_reason",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-verified-signal-records-an-excuse",
-  "mutation": "f36signal_verified_signal_records_an_excuse",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-raise-site-exists-that-no-signal-declares",
-  "mutation": "f36signal_raise_site_exists_that_no_signal_declares",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-absent-from-the-package",
-  "mutation": "f36signal_frame_hook_absent_from_the_package",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-declared-for-a-member-that-is-not-projected",
-  "mutation": "f36signal_frame_hook_declared_for_a_member_that_is_not_projected",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-signature-mismatch",
-  "mutation": "f36signal_frame_hook_signature_mismatch",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-gains-a-base-call-helper",
-  "mutation": "f36signal_frame_hook_gains_a_base_call_helper",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-declared-for-a-gamecallbacks-member",
-  "mutation": "f36signal_frame_hook_declared_for_a_gamecallbacks_member",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-uninstalled-without-a-reason",
-  "mutation": "f36signal_frame_hook_uninstalled_without_a_reason",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-installed-but-records-a-reason",
-  "mutation": "f36signal_frame_hook_installed_but_records_a_reason",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-names-no-native-hook",
-  "mutation": "f36signal_frame_hook_names_no_native_hook",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-records-no-native-ordering",
-  "mutation": "f36signal_frame_hook_records_no_native_ordering",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-records-no-reference-body",
-  "mutation": "f36signal_frame_hook_records_no_reference_body",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-deferral-unclassified",
-  "mutation": "f36signal_frame_hook_deferral_unclassified",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-deferral-records-no-reason",
-  "mutation": "f36signal_frame_hook_deferral_records_no_reason",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-deferral-marked-observable",
-  "mutation": "f36signal_frame_hook_deferral_marked_observable",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-projected-onto-another-receiver",
-  "mutation": "f36signal_frame_hook_projected_onto_another_receiver",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- },
- {
-  "id": "f36signal-frame-hook-names-a-public-member",
-  "mutation": "f36signal_frame_hook_names_a_public_member",
-  "category": "LANGUAGE_MAPPING_MISMATCH"
- }
+  {
+    "id": "missing-type",
+    "mutation": "missing_type",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "missing-method",
+    "mutation": "missing_method",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "wrong-package-path",
+    "mutation": "wrong_package",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "wrong-struct-class-interface",
+    "mutation": "wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "wrong-field",
+    "mutation": "wrong_field",
+    "category": "FIELD_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-property-accessor",
+    "mutation": "wrong_property",
+    "category": "PROPERTY_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-constructor-function",
+    "mutation": "wrong_constructor",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "wrong-overload-function",
+    "mutation": "wrong_overload",
+    "category": "OVERLOAD_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-parameter",
+    "mutation": "wrong_parameter",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-result",
+    "mutation": "wrong_result",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-error-mapping",
+    "mutation": "wrong_error",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-enum-value",
+    "mutation": "wrong_enum",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "wrong-flags",
+    "mutation": "wrong_flags",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-static-prefix",
+    "mutation": "wrong_static_prefix",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "wrong-operator",
+    "mutation": "wrong_operator",
+    "category": "OPERATOR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-ref-out",
+    "mutation": "wrong_ref_out",
+    "category": "REF_OUT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-nested-flattening",
+    "mutation": "wrong_nested",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "wrong-generic-collision",
+    "mutation": "wrong_generic",
+    "category": "GENERIC_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-collection-interface",
+    "mutation": "wrong_collection_interface",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-event-mapping",
+    "mutation": "wrong_event",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "unexpected-public-symbol",
+    "mutation": "unexpected",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "raw-pointer-leak",
+    "mutation": "pointer_leak",
+    "category": "PUBLIC_NATIVE_FFI_LEAK"
+  },
+  {
+    "id": "native-handle-leak",
+    "mutation": "handle_leak",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "interop-helper-leak",
+    "mutation": "internal_leak",
+    "category": "INTERNAL_TYPE_LEAK"
+  },
+  {
+    "id": "unmeasured-category",
+    "mutation": "unmeasured",
+    "category": "UNMEASURED_STRUCTURAL_CATEGORY"
+  },
+  {
+    "id": "missing-packed-interface-witness",
+    "mutation": "missing_packed_witness",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-packed-interface-witness-signature",
+    "mutation": "wrong_packed_witness",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-packed-to-vector4-result",
+    "mutation": "wrong_packed_tovector_result",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "bogus-packed-interface-witness",
+    "mutation": "bogus_packed_witness",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "wrong-packed-value-setter-type",
+    "mutation": "wrong_packed_setter",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "missing-generic-interface-inheritance",
+    "mutation": "missing_packed_inheritance",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "wrong-packed-generic-interface-name",
+    "mutation": "wrong_packed_generic_name",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "vertex-element-wrong-type-kind",
+    "mutation": "vertex_wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "vertex-element-offset-exposed-as-field",
+    "mutation": "vertex_offset_exposed_field",
+    "category": "PROPERTY_MAPPING_MISMATCH"
+  },
+  {
+    "id": "vertex-element-missing-offset-setter",
+    "mutation": "vertex_missing_offset_setter",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "vertex-element-wrong-offset-type",
+    "mutation": "vertex_wrong_offset_type",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "vertex-element-missing-format-setter",
+    "mutation": "vertex_missing_format_setter",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "vertex-element-wrong-format-property-type",
+    "mutation": "vertex_wrong_format_property_type",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "vertex-element-missing-usage-index-setter",
+    "mutation": "vertex_missing_usage_index_setter",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "vertex-element-constructor-parameter-order",
+    "mutation": "vertex_constructor_parameter_order",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "vertex-element-constructor-wrong-enum-type",
+    "mutation": "vertex_constructor_wrong_enum_type",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "vertex-element-unexpected-typed-equals",
+    "mutation": "vertex_unexpected_typed_equals",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "vertex-element-missing-equality-operator",
+    "mutation": "vertex_missing_equality_operator",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "vertex-element-missing-inequality-operator",
+    "mutation": "vertex_missing_inequality_operator",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "vertex-element-format-wrong-enum-value",
+    "mutation": "vertex_format_wrong_enum_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "vertex-element-usage-wrong-enum-value",
+    "mutation": "vertex_usage_wrong_enum_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "vertex-element-enum-accidentally-flags",
+    "mutation": "vertex_enum_accidentally_flags",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "player-index-wrong-type-kind",
+    "mutation": "player_index_wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "player-index-wrong-underlying-type",
+    "mutation": "player_index_wrong_underlying_type",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "player-index-accidentally-flags",
+    "mutation": "player_index_accidentally_flags",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "player-index-wrong-one-value",
+    "mutation": "player_index_wrong_one_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "player-index-wrong-four-value",
+    "mutation": "player_index_wrong_four_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "player-index-missing-four",
+    "mutation": "player_index_missing_four",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "keyboard-player-index-overload-missing",
+    "mutation": "keyboard_player_index_missing_overload",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "keyboard-player-index-parameter-int32",
+    "mutation": "keyboard_player_index_parameter_int32",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "keyboard-player-index-wrong-return",
+    "mutation": "keyboard_player_index_wrong_return",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "keyboard-player-index-missing-error",
+    "mutation": "keyboard_player_index_missing_error",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "keyboard-player-index-wrong-overload-name",
+    "mutation": "keyboard_player_index_wrong_overload_name",
+    "category": "OVERLOAD_MAPPING_MISMATCH"
+  },
+  {
+    "id": "display-orientation-wrong-type-kind",
+    "mutation": "display_orientation_wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "display-orientation-wrong-underlying-type",
+    "mutation": "display_orientation_wrong_underlying_type",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "display-orientation-missing-flags",
+    "mutation": "display_orientation_missing_flags",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "display-orientation-wrong-default-value",
+    "mutation": "display_orientation_wrong_default_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "display-orientation-wrong-portrait-value",
+    "mutation": "display_orientation_wrong_portrait_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "display-orientation-missing-landscape-right",
+    "mutation": "display_orientation_missing_landscape_right",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "graphics-manager-orientation-missing-getter",
+    "mutation": "graphics_manager_orientation_missing_getter",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "graphics-manager-orientation-missing-setter",
+    "mutation": "graphics_manager_orientation_missing_setter",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "graphics-manager-orientation-getter-wrong-type",
+    "mutation": "graphics_manager_orientation_getter_wrong_type",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "graphics-manager-orientation-setter-wrong-type",
+    "mutation": "graphics_manager_orientation_setter_wrong_type",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "graphics-manager-orientation-setter-returns-error",
+    "mutation": "graphics_manager_orientation_setter_returns_error",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "graphics-manager-orientation-mapped-static",
+    "mutation": "graphics_manager_orientation_static",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "graphics-manager-orientation-read-only",
+    "mutation": "graphics_manager_orientation_read_only",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "graphics-manager-orientation-moved-to-graphics-package",
+    "mutation": "graphics_manager_orientation_moved_to_graphics",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "graphics-manager-orientation-public-dirty-helper",
+    "mutation": "graphics_manager_orientation_public_dirty",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "buffer-usage-missing",
+    "mutation": "buffer_usage_missing",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "buffer-usage-wrong-package",
+    "mutation": "buffer_usage_wrong_package",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "buffer-usage-wrong-kind",
+    "mutation": "buffer_usage_wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "buffer-usage-wrong-underlying-type",
+    "mutation": "buffer_usage_wrong_underlying_type",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "buffer-usage-missing-flags-marker",
+    "mutation": "buffer_usage_missing_flags_marker",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "buffer-usage-flags-false",
+    "mutation": "buffer_usage_flags_false",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "buffer-usage-none-wrong-value",
+    "mutation": "buffer_usage_wrong_none_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "buffer-usage-write-only-wrong-value",
+    "mutation": "buffer_usage_wrong_write_only_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "buffer-usage-write-only-missing",
+    "mutation": "buffer_usage_missing_write_only",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "buffer-usage-value-storage-projected",
+    "mutation": "buffer_usage_value_storage_projected",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "buffer-usage-extra-public-constant",
+    "mutation": "buffer_usage_extra_constant",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "buffer-usage-exported-helper-method",
+    "mutation": "buffer_usage_exported_helper",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "clear-options-missing",
+    "mutation": "clear_options_missing",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "clear-options-wrong-package",
+    "mutation": "clear_options_wrong_package",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "clear-options-wrong-kind",
+    "mutation": "clear_options_wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "clear-options-wrong-underlying-type",
+    "mutation": "clear_options_wrong_underlying_type",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "clear-options-missing-flags-marker",
+    "mutation": "clear_options_missing_flags_marker",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "clear-options-flags-false",
+    "mutation": "clear_options_flags_false",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "clear-options-target-wrong-value",
+    "mutation": "clear_options_wrong_target_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "clear-options-depth-buffer-wrong-value",
+    "mutation": "clear_options_wrong_depth_buffer_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "clear-options-stencil-wrong-value",
+    "mutation": "clear_options_wrong_stencil_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "clear-options-stencil-missing",
+    "mutation": "clear_options_missing_stencil",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "clear-options-value-storage-projected",
+    "mutation": "clear_options_value_storage_projected",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "clear-options-invented-none",
+    "mutation": "clear_options_invented_none",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "clear-options-invented-all",
+    "mutation": "clear_options_invented_all",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "clear-options-exported-helper-method",
+    "mutation": "clear_options_exported_helper",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "surface-format-missing",
+    "mutation": "surface_format_missing",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "surface-format-wrong-package",
+    "mutation": "surface_format_wrong_package",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "surface-format-wrong-kind",
+    "mutation": "surface_format_wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "surface-format-wrong-underlying-type",
+    "mutation": "surface_format_wrong_underlying_type",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "surface-format-accidentally-flags",
+    "mutation": "surface_format_accidentally_flags",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "surface-format-color-wrong-value",
+    "mutation": "surface_format_wrong_color_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "surface-format-bgr565-wrong-value",
+    "mutation": "surface_format_wrong_bgr565_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "surface-format-dxt1-wrong-value",
+    "mutation": "surface_format_wrong_dxt1_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "surface-format-rgba1010102-wrong-value",
+    "mutation": "surface_format_wrong_rgba1010102_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "surface-format-alpha8-wrong-value",
+    "mutation": "surface_format_wrong_alpha8_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "surface-format-half-vector4-wrong-value",
+    "mutation": "surface_format_wrong_half_vector4_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "surface-format-hdr-blendable-wrong-value",
+    "mutation": "surface_format_wrong_hdr_blendable_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "surface-format-missing-dxt3",
+    "mutation": "surface_format_missing_dxt3",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "surface-format-missing-hdr-blendable",
+    "mutation": "surface_format_missing_hdr_blendable",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "surface-format-value-storage-projected",
+    "mutation": "surface_format_value_storage_projected",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "surface-format-extra-public-constant",
+    "mutation": "surface_format_extra_constant",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "surface-format-exported-helper-method",
+    "mutation": "surface_format_exported_helper",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "surface-format-renamed-bgr565",
+    "mutation": "surface_format_renamed_bgr565",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "depth-format-missing",
+    "mutation": "depth_format_missing",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "depth-format-wrong-package",
+    "mutation": "depth_format_wrong_package",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "depth-format-wrong-kind",
+    "mutation": "depth_format_wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "depth-format-wrong-underlying-type",
+    "mutation": "depth_format_wrong_underlying_type",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "depth-format-accidentally-flags",
+    "mutation": "depth_format_accidentally_flags",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "depth-format-none-wrong-value",
+    "mutation": "depth_format_wrong_none_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "depth-format-depth16-wrong-value",
+    "mutation": "depth_format_wrong_depth16_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "depth-format-depth24-wrong-value",
+    "mutation": "depth_format_wrong_depth24_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "depth-format-depth24-stencil8-wrong-value",
+    "mutation": "depth_format_wrong_depth24_stencil8_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "depth-format-missing-depth24",
+    "mutation": "depth_format_missing_depth24",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "depth-format-missing-depth24-stencil8",
+    "mutation": "depth_format_missing_depth24_stencil8",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "depth-format-value-storage-projected",
+    "mutation": "depth_format_value_storage_projected",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "depth-format-extra-public-constant",
+    "mutation": "depth_format_extra_constant",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "depth-format-exported-helper-method",
+    "mutation": "depth_format_exported_helper",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "depth-format-renamed-depth24-stencil8",
+    "mutation": "depth_format_renamed_depth24_stencil8",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "graphics-profile-missing",
+    "mutation": "graphics_profile_missing",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "graphics-profile-wrong-package",
+    "mutation": "graphics_profile_wrong_package",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "graphics-profile-wrong-kind",
+    "mutation": "graphics_profile_wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "graphics-profile-wrong-underlying-type",
+    "mutation": "graphics_profile_wrong_underlying_type",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "graphics-profile-accidentally-flags",
+    "mutation": "graphics_profile_accidentally_flags",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "graphics-profile-reach-wrong-value",
+    "mutation": "graphics_profile_wrong_reach_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "graphics-profile-hidef-wrong-value",
+    "mutation": "graphics_profile_wrong_hidef_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "graphics-profile-missing-hidef",
+    "mutation": "graphics_profile_missing_hidef",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "graphics-profile-value-storage-projected",
+    "mutation": "graphics_profile_value_storage_projected",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "graphics-profile-extra-public-constant",
+    "mutation": "graphics_profile_extra_constant",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "graphics-profile-renamed-hidef",
+    "mutation": "graphics_profile_renamed_hidef",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "graphics-profile-exported-helper-method",
+    "mutation": "graphics_profile_exported_helper",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "button-state-missing",
+    "mutation": "button_state_missing",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "button-state-wrong-package",
+    "mutation": "button_state_wrong_package",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "button-state-wrong-kind",
+    "mutation": "button_state_wrong_kind",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "button-state-wrong-underlying-type",
+    "mutation": "button_state_wrong_underlying_type",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "button-state-accidentally-flags",
+    "mutation": "button_state_accidentally_flags",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "button-state-released-wrong-value",
+    "mutation": "button_state_wrong_released_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "button-state-pressed-wrong-value",
+    "mutation": "button_state_wrong_pressed_value",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "button-state-missing-pressed",
+    "mutation": "button_state_missing_pressed",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "button-state-value-storage-projected",
+    "mutation": "button_state_value_storage_projected",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "button-state-extra-public-constant",
+    "mutation": "button_state_extra_constant",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "button-state-renamed-released",
+    "mutation": "button_state_renamed_released",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "button-state-renamed-pressed",
+    "mutation": "button_state_renamed_pressed",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "button-state-exported-helper-method",
+    "mutation": "button_state_exported_helper",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f14-render-target-usage-missing",
+    "mutation": "f14_missing_type__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f14-render-target-usage-wrong-package",
+    "mutation": "f14_wrong_package__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f14-render-target-usage-wrong-kind",
+    "mutation": "f14_wrong_kind__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f14-render-target-usage-wrong-underlying-type",
+    "mutation": "f14_wrong_underlying_type__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f14-render-target-usage-accidentally-flags",
+    "mutation": "f14_accidentally_flags__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f14-render-target-usage-wrong-first-value",
+    "mutation": "f14_wrong_first_value__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f14-render-target-usage-wrong-last-value",
+    "mutation": "f14_wrong_last_value__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f14-render-target-usage-missing-last-literal",
+    "mutation": "f14_missing_last_literal__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f14-render-target-usage-renamed-literal",
+    "mutation": "f14_renamed_literal__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f14-render-target-usage-value-storage-projected",
+    "mutation": "f14_value_storage_projected__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f14-render-target-usage-invented-constant",
+    "mutation": "f14_invented_constant__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f14-render-target-usage-exported-helper",
+    "mutation": "f14_exported_helper__Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f14-buttons-flags-directive-dropped",
+    "mutation": "f14_flags_directive_dropped__Microsoft.Xna.Framework.Input.Buttons",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f14-buttons-iota-renumbering",
+    "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Input.Buttons",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f14-buttons-invented-constant",
+    "mutation": "f14_invented_constant__Microsoft.Xna.Framework.Input.Buttons",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f14-set-data-options-flags-directive-dropped",
+    "mutation": "f14_flags_directive_dropped__Microsoft.Xna.Framework.Graphics.SetDataOptions",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f14-audio-channels-iota-renumbering",
+    "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Audio.AudioChannels",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f14-audio-channels-missing-last-literal",
+    "mutation": "f14_missing_last_literal__Microsoft.Xna.Framework.Audio.AudioChannels",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f14-media-source-type-iota-renumbering",
+    "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Media.MediaSourceType",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f14-media-source-type-wrong-last-value",
+    "mutation": "f14_wrong_last_value__Microsoft.Xna.Framework.Media.MediaSourceType",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f15-color-write-channels-flags-directive-dropped",
+    "mutation": "f14_flags_directive_dropped__Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-color-write-channels-iota-renumbering",
+    "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f15-color-write-channels-invented-constant",
+    "mutation": "f14_invented_constant__Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f15-color-write-channels-wrong-last-value",
+    "mutation": "f14_wrong_last_value__Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f15-blend-accidentally-flags",
+    "mutation": "f14_accidentally_flags__Microsoft.Xna.Framework.Graphics.Blend",
+    "category": "FLAGS_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-blend-missing-last-literal",
+    "mutation": "f14_missing_last_literal__Microsoft.Xna.Framework.Graphics.Blend",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f15-blend-renamed-literal",
+    "mutation": "f14_renamed_literal__Microsoft.Xna.Framework.Graphics.Blend",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f15-blend-value-storage-projected",
+    "mutation": "f14_value_storage_projected__Microsoft.Xna.Framework.Graphics.Blend",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f15-game-pad-type-iota-renumbering",
+    "mutation": "f14_iota_renumbering__Microsoft.Xna.Framework.Input.GamePadType",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f15-game-pad-type-wrong-last-value",
+    "mutation": "f14_wrong_last_value__Microsoft.Xna.Framework.Input.GamePadType",
+    "category": "ENUM_VALUE_MISMATCH"
+  },
+  {
+    "id": "f15-game-pad-type-wrong-kind",
+    "mutation": "f14_wrong_kind__Microsoft.Xna.Framework.Input.GamePadType",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f15-game-pad-type-exported-helper",
+    "mutation": "f14_exported_helper__Microsoft.Xna.Framework.Input.GamePadType",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f15-thumbsticks-missing",
+    "mutation": "f15vs_missing_type__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f15-thumbsticks-projected-as-class",
+    "mutation": "f15vs_projected_as_class__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f15-thumbsticks-synthetic-error-result",
+    "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-thumbsticks-wrong-constructor-parameters",
+    "mutation": "f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-thumbsticks-unexpected-mutator",
+    "mutation": "f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.GamePadThumbSticks",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f15-game-pad-buttons-missing-hash",
+    "mutation": "f15vs_missing_first_member__Microsoft.Xna.Framework.Input.GamePadButtons",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f15-game-pad-buttons-renamed-equality-operator",
+    "mutation": "f15vs_renamed_last_member__Microsoft.Xna.Framework.Input.GamePadButtons",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f15-game-pad-buttons-synthetic-error-result",
+    "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.GamePadButtons",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-mouse-state-wrong-hash-result-type",
+    "mutation": "f15vs_wrong_result_type__Microsoft.Xna.Framework.Input.MouseState",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-mouse-state-missing-last-member",
+    "mutation": "f15vs_missing_last_member__Microsoft.Xna.Framework.Input.MouseState",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f15-mouse-state-wrong-package",
+    "mutation": "f15vs_wrong_package__Microsoft.Xna.Framework.Input.MouseState",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f15-mouse-state-unexpected-mutator",
+    "mutation": "f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.MouseState",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f15-gesture-sample-missing",
+    "mutation": "f15vs_missing_type__Microsoft.Xna.Framework.Input.Touch.GestureSample",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f15-gesture-sample-synthetic-error-result",
+    "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.Touch.GestureSample",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-gesture-sample-wrong-constructor-parameters",
+    "mutation": "f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.Touch.GestureSample",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-gesture-sample-projected-as-class",
+    "mutation": "f15vs_projected_as_class__Microsoft.Xna.Framework.Input.Touch.GestureSample",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f15-touch-location-missing-first-member",
+    "mutation": "f15vs_missing_first_member__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f15-touch-location-renamed-last-member",
+    "mutation": "f15vs_renamed_last_member__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f15-touch-location-synthetic-error-result",
+    "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-touch-location-wrong-constructor-parameters",
+    "mutation": "f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f15-touch-location-unexpected-mutator",
+    "mutation": "f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.Touch.TouchLocation",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f16-game-pad-state-missing",
+    "mutation": "f15vs_missing_type__Microsoft.Xna.Framework.Input.GamePadState",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f16-game-pad-state-projected-as-class",
+    "mutation": "f15vs_projected_as_class__Microsoft.Xna.Framework.Input.GamePadState",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f16-game-pad-state-synthetic-error-result",
+    "mutation": "f15vs_synthetic_error_result__Microsoft.Xna.Framework.Input.GamePadState",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f16-game-pad-state-wrong-constructor-parameters",
+    "mutation": "f15vs_wrong_constructor_parameters__Microsoft.Xna.Framework.Input.GamePadState",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f16-game-pad-state-missing-first-member",
+    "mutation": "f15vs_missing_first_member__Microsoft.Xna.Framework.Input.GamePadState",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f16-game-pad-state-renamed-last-member",
+    "mutation": "f15vs_renamed_last_member__Microsoft.Xna.Framework.Input.GamePadState",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f16-game-pad-state-unexpected-mutator",
+    "mutation": "f15vs_unexpected_mutator__Microsoft.Xna.Framework.Input.GamePadState",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-missing-type",
+    "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-wrong-package",
+    "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-projected-as-named-type",
+    "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-wrong-constructor-semantics",
+    "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-missing-first-member",
+    "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-missing-last-member",
+    "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-renamed-last-member",
+    "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-unexpected-member",
+    "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-wrong-setter-parameter",
+    "mutation": "f17mc_wrong_setter_parameter__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-artificial-getter-error",
+    "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-artificial-setter-error",
+    "mutation": "f17mc_artificial_setter_error__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-artificial-constructor-error",
+    "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audiolistener-native-facade-projection",
+    "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-missing-type",
+    "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-wrong-package",
+    "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-projected-as-named-type",
+    "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-wrong-constructor-semantics",
+    "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-missing-first-member",
+    "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-missing-last-member",
+    "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-renamed-last-member",
+    "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-unexpected-member",
+    "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-wrong-setter-parameter",
+    "mutation": "f17mc_wrong_setter_parameter__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-artificial-getter-error",
+    "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-artificial-setter-error",
+    "mutation": "f17mc_artificial_setter_error__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-artificial-constructor-error",
+    "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-native-facade-projection",
+    "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-classification-managed-class-demoted-to-native-facade",
+    "mutation": "f17cls_managed_class_demoted_to_native_facade__Microsoft.Xna.Framework.Audio.AudioListener",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-classification-managed-class-with-validating-setter-demoted",
+    "mutation": "f17cls_managed_class_with_validating_setter_demoted__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-classification-native-backed-class-admitted-as-pure-managed",
+    "mutation": "f17cls_native_backed_class_admitted_as_pure_managed__Microsoft.Xna.Framework.Graphics.Texture2D",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-classification-accessor-fallibility-widened-to-whole-property",
+    "mutation": "f17cls_accessor_fallibility_widened_to_whole_property__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-classification-accessor-fallibility-moved-to-the-getter",
+    "mutation": "f17cls_accessor_fallibility_moved_to_the_getter__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-classification-accessor-fallibility-dropped",
+    "mutation": "f17cls_accessor_fallibility_dropped__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-ieffectmatrices-missing-type",
+    "mutation": "f18if_missing_type__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f18-interface-ieffectmatrices-wrong-package",
+    "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f18-interface-ieffectmatrices-projected-as-struct",
+    "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f18-interface-ieffectmatrices-missing-first-member",
+    "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-ieffectmatrices-missing-last-member",
+    "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-ieffectmatrices-renamed-last-member",
+    "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-ieffectmatrices-unexpected-member",
+    "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f18-interface-ieffectmatrices-wrong-parameter",
+    "mutation": "f18if_wrong_parameter__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-ieffectmatrices-artificial-error",
+    "mutation": "f18if_artificial_error__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-ieffectfog-missing-type",
+    "mutation": "f18if_missing_type__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f18-interface-ieffectfog-wrong-package",
+    "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f18-interface-ieffectfog-projected-as-struct",
+    "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f18-interface-ieffectfog-missing-first-member",
+    "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-ieffectfog-missing-last-member",
+    "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-ieffectfog-renamed-last-member",
+    "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-ieffectfog-unexpected-member",
+    "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f18-interface-ieffectfog-wrong-parameter",
+    "mutation": "f18if_wrong_parameter__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-ieffectfog-artificial-error",
+    "mutation": "f18if_artificial_error__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-ieffectfog-dropped-error",
+    "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-ieffectfog-error-replaces-source-result",
+    "mutation": "f18if_error_replaces_source_result__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-igamecomponent-missing-type",
+    "mutation": "f18if_missing_type__Microsoft.Xna.Framework.IGameComponent",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f18-interface-igamecomponent-wrong-package",
+    "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.IGameComponent",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f18-interface-igamecomponent-projected-as-struct",
+    "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.IGameComponent",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f18-interface-igamecomponent-missing-first-member",
+    "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.IGameComponent",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-igamecomponent-missing-last-member",
+    "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.IGameComponent",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-igamecomponent-renamed-last-member",
+    "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.IGameComponent",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-igamecomponent-unexpected-member",
+    "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.IGameComponent",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f18-interface-igamecomponent-dropped-error",
+    "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.IGameComponent",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-igraphicsdevicemanager-missing-type",
+    "mutation": "f18if_missing_type__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f18-interface-igraphicsdevicemanager-wrong-package",
+    "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f18-interface-igraphicsdevicemanager-projected-as-struct",
+    "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f18-interface-igraphicsdevicemanager-missing-first-member",
+    "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-igraphicsdevicemanager-missing-last-member",
+    "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-igraphicsdevicemanager-renamed-last-member",
+    "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f18-interface-igraphicsdevicemanager-unexpected-member",
+    "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f18-interface-igraphicsdevicemanager-dropped-error",
+    "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-igraphicsdevicemanager-error-replaces-source-result",
+    "mutation": "f18if_error_replaces_source_result__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-classification-pure-managed-interface-demoted-to-runtime",
+    "mutation": "f18cls_pure_managed_interface_demoted_to_runtime__Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-classification-runtime-interface-admitted-as-pure-managed",
+    "mutation": "f18cls_runtime_interface_admitted_as_pure_managed__Microsoft.Xna.Framework.IGraphicsDeviceManager",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-classification-interface-runtime-operation-dropped",
+    "mutation": "f18cls_interface_runtime_operation_dropped__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f18-interface-classification-interface-runtime-operation-widened",
+    "mutation": "f18cls_interface_runtime_operation_widened__Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-missing-type",
+    "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-wrong-package",
+    "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-projected-as-named-type",
+    "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-wrong-constructor-semantics",
+    "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-missing-first-member",
+    "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-missing-last-member",
+    "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-renamed-last-member",
+    "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-unexpected-member",
+    "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-wrong-setter-parameter",
+    "mutation": "f17mc_wrong_setter_parameter__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-artificial-getter-error",
+    "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-artificial-setter-error",
+    "mutation": "f17mc_artificial_setter_error__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-artificial-constructor-error",
+    "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f19-managed-class-presentationparameters-native-facade-projection",
+    "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Graphics.PresentationParameters",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f19-raw-handle-uintptr-result-where-source-declares-int32",
+    "mutation": "f19rh_uintptr_result_where_source_declares_int32",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-uintptr-parameter-where-source-declares-int32",
+    "mutation": "f19rh_uintptr_parameter_where_source_declares_int32",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-uintptr-drifted-from-parameter-to-result",
+    "mutation": "f19rh_uintptr_drifted_from_parameter_to_result",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-uintptr-drifted-to-an-unadmitted-index",
+    "mutation": "f19rh_uintptr_drifted_to_an_unadmitted_index",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-uintptr-slice-result",
+    "mutation": "f19rh_uintptr_slice_result",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-uintptr-pointer-result",
+    "mutation": "f19rh_uintptr_pointer_result",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-uintptr-on-an-invented-member",
+    "mutation": "f19rh_uintptr_on_an_invented_member",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-exported-named-type-over-uintptr",
+    "mutation": "f19rh_exported_named_type_over_uintptr",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-cna-prefixed-member-name",
+    "mutation": "f19rh_cna_prefixed_member_name",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-native-handle-type-name",
+    "mutation": "f19rh_native_handle_type_name",
+    "category": "RAW_HANDLE_LEAK"
+  },
+  {
+    "id": "f19-raw-handle-unsafe-pointer-result",
+    "mutation": "f19rh_unsafe_pointer_result",
+    "category": "PUBLIC_NATIVE_FFI_LEAK"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-missing-type",
+    "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-wrong-package",
+    "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-projected-as-named-type",
+    "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-wrong-constructor-semantics",
+    "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-missing-first-member",
+    "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-missing-last-member",
+    "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-renamed-last-member",
+    "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-unexpected-member",
+    "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-wrong-setter-parameter",
+    "mutation": "f17mc_wrong_setter_parameter__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-artificial-getter-error",
+    "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-native-facade-projection",
+    "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f20-value-contract-touchcollection-dropped-error",
+    "mutation": "f17mc_dropped_error__Microsoft.Xna.Framework.Input.Touch.TouchCollection",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f20-value-contract-touchcollectionenumerator-missing-type",
+    "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f20-value-contract-touchcollectionenumerator-wrong-package",
+    "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f20-value-contract-touchcollectionenumerator-projected-as-named-type",
+    "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f20-value-contract-touchcollectionenumerator-missing-first-member",
+    "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f20-value-contract-touchcollectionenumerator-missing-last-member",
+    "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f20-value-contract-touchcollectionenumerator-renamed-last-member",
+    "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f20-value-contract-touchcollectionenumerator-unexpected-member",
+    "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f20-value-contract-touchcollectionenumerator-native-facade-projection",
+    "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f20-value-contract-touchcollectionenumerator-dropped-error",
+    "mutation": "f17mc_dropped_error__Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f17-managed-class-audioemitter-dropped-error",
+    "mutation": "f17mc_dropped_error__Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-missing-type",
+    "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-wrong-package",
+    "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-projected-as-named-type",
+    "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-wrong-constructor-semantics",
+    "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-missing-first-member",
+    "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-missing-last-member",
+    "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-renamed-last-member",
+    "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-unexpected-member",
+    "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-artificial-constructor-error",
+    "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-native-facade-projection",
+    "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f21-managed-class-gameservicecontainer-dropped-error",
+    "mutation": "f17mc_dropped_error__Microsoft.Xna.Framework.GameServiceContainer",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-handler-degraded-to-any",
+    "mutation": "f22ev_handler-degraded-to-any__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-handler-erased-to-any",
+    "mutation": "f22ev_handler-erased-to-any__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-wrong-generic-argument",
+    "mutation": "f22ev_wrong-generic-argument__Microsoft.Xna.Framework.IUpdateable",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-event-args-projected-by-value",
+    "mutation": "f22ev_event-args-projected-by-value__Microsoft.Xna.Framework.IUpdateable",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-handler-is-a-raw-func",
+    "mutation": "f22ev_handler-is-a-raw-func__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-handler-is-a-channel",
+    "mutation": "f22ev_handler-is-a-channel__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-handler-is-a-raw-callback-word",
+    "mutation": "f22ev_handler-is-a-raw-callback-word__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-subscription-token-dropped",
+    "mutation": "f22ev_subscription-token-dropped__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-subscription-token-is-a-native-handle",
+    "mutation": "f22ev_subscription-token-is-a-native-handle__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-removal-takes-the-handler",
+    "mutation": "f22ev_removal-takes-the-handler__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-removal-takes-a-native-handle",
+    "mutation": "f22ev_removal-takes-a-native-handle__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-registration-error-channel-dropped",
+    "mutation": "f22ev_registration-error-channel-dropped__Microsoft.Xna.Framework.IUpdateable",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-removal-error-channel-dropped",
+    "mutation": "f22ev_removal-error-channel-dropped__Microsoft.Xna.Framework.IUpdateable",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-registration-accessor-missing",
+    "mutation": "f22ev_registration-accessor-missing__Microsoft.Xna.Framework.IUpdateable",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f22-event-iupdateable-removal-accessor-missing",
+    "mutation": "f22ev_removal-accessor-missing__Microsoft.Xna.Framework.IUpdateable",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f22-event-iupdateable-clr-accessor-name-leaked",
+    "mutation": "f22ev_clr-accessor-name-leaked__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-iupdateable-accessor-projected-as-a-field",
+    "mutation": "f22ev_accessor-projected-as-a-field__Microsoft.Xna.Framework.IUpdateable",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-handler-degraded-to-any",
+    "mutation": "f22ev_handler-degraded-to-any__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-handler-erased-to-any",
+    "mutation": "f22ev_handler-erased-to-any__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-wrong-generic-argument",
+    "mutation": "f22ev_wrong-generic-argument__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-event-args-projected-by-value",
+    "mutation": "f22ev_event-args-projected-by-value__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-handler-is-a-raw-func",
+    "mutation": "f22ev_handler-is-a-raw-func__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-handler-is-a-channel",
+    "mutation": "f22ev_handler-is-a-channel__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-handler-is-a-raw-callback-word",
+    "mutation": "f22ev_handler-is-a-raw-callback-word__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-subscription-token-dropped",
+    "mutation": "f22ev_subscription-token-dropped__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-subscription-token-is-a-native-handle",
+    "mutation": "f22ev_subscription-token-is-a-native-handle__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-removal-takes-the-handler",
+    "mutation": "f22ev_removal-takes-the-handler__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-removal-takes-a-native-handle",
+    "mutation": "f22ev_removal-takes-a-native-handle__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-registration-error-channel-dropped",
+    "mutation": "f22ev_registration-error-channel-dropped__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-removal-error-channel-dropped",
+    "mutation": "f22ev_removal-error-channel-dropped__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-registration-accessor-missing",
+    "mutation": "f22ev_registration-accessor-missing__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-removal-accessor-missing",
+    "mutation": "f22ev_removal-accessor-missing__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-clr-accessor-name-leaked",
+    "mutation": "f22ev_clr-accessor-name-leaked__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-event-dynamicvertexbuffer-accessor-projected-as-a-field",
+    "mutation": "f22ev_accessor-projected-as-a-field__Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+    "category": "EVENT_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-base-gamecomponentcollectioneventargs-exported-embedding",
+    "mutation": "f22base_exported_embedding__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-base-resourcecreatedeventargs-qualified-embedding",
+    "mutation": "f22base_qualified_embedding__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-base-resourcedestroyedeventargs-projected-as-interface",
+    "mutation": "f22base_projected_as_interface__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-base-devicelostexception-deferred-base-projected",
+    "mutation": "f22base_deferred_base_projected__Microsoft.Xna.Framework.Graphics.DeviceLostException",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f22-base-preparingdevicesettingseventargs-undeclared-base",
+    "mutation": "f22base_undeclared_base__Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-interface-iupdateable-missing-type",
+    "mutation": "f18if_missing_type__Microsoft.Xna.Framework.IUpdateable",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-interface-iupdateable-wrong-package",
+    "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.IUpdateable",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-interface-iupdateable-projected-as-struct",
+    "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.IUpdateable",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f23-interface-iupdateable-missing-first-member",
+    "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.IUpdateable",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-interface-iupdateable-missing-last-member",
+    "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.IUpdateable",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-interface-iupdateable-renamed-last-member",
+    "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.IUpdateable",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-interface-iupdateable-unexpected-member",
+    "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.IUpdateable",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f23-interface-iupdateable-wrong-parameter",
+    "mutation": "f18if_wrong_parameter__Microsoft.Xna.Framework.IUpdateable",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-interface-iupdateable-artificial-error",
+    "mutation": "f18if_artificial_error__Microsoft.Xna.Framework.IUpdateable",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-interface-iupdateable-dropped-error",
+    "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.IUpdateable",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-interface-iupdateable-error-replaces-source-result",
+    "mutation": "f18if_error_replaces_source_result__Microsoft.Xna.Framework.IUpdateable",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-interface-idrawable-missing-type",
+    "mutation": "f18if_missing_type__Microsoft.Xna.Framework.IDrawable",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-interface-idrawable-wrong-package",
+    "mutation": "f18if_wrong_package__Microsoft.Xna.Framework.IDrawable",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-interface-idrawable-projected-as-struct",
+    "mutation": "f18if_projected_as_struct__Microsoft.Xna.Framework.IDrawable",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f23-interface-idrawable-missing-first-member",
+    "mutation": "f18if_missing_first_member__Microsoft.Xna.Framework.IDrawable",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-interface-idrawable-missing-last-member",
+    "mutation": "f18if_missing_last_member__Microsoft.Xna.Framework.IDrawable",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-interface-idrawable-renamed-last-member",
+    "mutation": "f18if_renamed_last_member__Microsoft.Xna.Framework.IDrawable",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-interface-idrawable-unexpected-member",
+    "mutation": "f18if_unexpected_member__Microsoft.Xna.Framework.IDrawable",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f23-interface-idrawable-wrong-parameter",
+    "mutation": "f18if_wrong_parameter__Microsoft.Xna.Framework.IDrawable",
+    "category": "PARAMETER_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-interface-idrawable-artificial-error",
+    "mutation": "f18if_artificial_error__Microsoft.Xna.Framework.IDrawable",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-interface-idrawable-dropped-error",
+    "mutation": "f18if_dropped_error__Microsoft.Xna.Framework.IDrawable",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-interface-idrawable-error-replaces-source-result",
+    "mutation": "f18if_error_replaces_source_result__Microsoft.Xna.Framework.IDrawable",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-missing-type",
+    "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-wrong-package",
+    "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-projected-as-named-type",
+    "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-wrong-constructor-semantics",
+    "mutation": "f17mc_wrong_constructor_semantics__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-missing-first-member",
+    "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-missing-last-member",
+    "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-renamed-last-member",
+    "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-unexpected-member",
+    "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-artificial-getter-error",
+    "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-artificial-constructor-error",
+    "mutation": "f17mc_artificial_constructor_error__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-gamecomponentcollectioneventargs-native-facade-projection",
+    "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-resourcecreatedeventargs-missing-type",
+    "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-managed-class-resourcecreatedeventargs-wrong-package",
+    "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-managed-class-resourcecreatedeventargs-projected-as-named-type",
+    "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-resourcecreatedeventargs-missing-first-member",
+    "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-resourcecreatedeventargs-missing-last-member",
+    "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-resourcecreatedeventargs-renamed-last-member",
+    "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-resourcecreatedeventargs-unexpected-member",
+    "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-resourcecreatedeventargs-artificial-getter-error",
+    "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-resourcecreatedeventargs-native-facade-projection",
+    "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-resourcedestroyedeventargs-missing-type",
+    "mutation": "f17mc_missing_type__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-managed-class-resourcedestroyedeventargs-wrong-package",
+    "mutation": "f17mc_wrong_package__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "MISSING_TYPE"
+  },
+  {
+    "id": "f23-managed-class-resourcedestroyedeventargs-projected-as-named-type",
+    "mutation": "f17mc_projected_as_named_type__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "TYPE_KIND_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-resourcedestroyedeventargs-missing-first-member",
+    "mutation": "f17mc_missing_first_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-resourcedestroyedeventargs-missing-last-member",
+    "mutation": "f17mc_missing_last_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-resourcedestroyedeventargs-renamed-last-member",
+    "mutation": "f17mc_renamed_last_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-resourcedestroyedeventargs-unexpected-member",
+    "mutation": "f17mc_unexpected_member__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f23-managed-class-resourcedestroyedeventargs-artificial-getter-error",
+    "mutation": "f17mc_artificial_getter_error__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f23-managed-class-resourcedestroyedeventargs-native-facade-projection",
+    "mutation": "f17mc_native_facade_projection__Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f24-bcl-interface-soundeffect-invented-close-alias",
+    "mutation": "f24bcli_invented-close-alias__Microsoft.Xna.Framework.Audio.SoundEffect",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f24-bcl-interface-soundeffect-invented-disposable-interface-embedding",
+    "mutation": "f24bcli_invented-disposable-interface-embedding__Microsoft.Xna.Framework.Audio.SoundEffect",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f24-bcl-interface-soundeffect-invented-qualified-disposable-embedding",
+    "mutation": "f24bcli_invented-qualified-disposable-embedding__Microsoft.Xna.Framework.Audio.SoundEffect",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f24-bcl-interface-soundeffect-invented-finalizer-surface",
+    "mutation": "f24bcli_invented-finalizer-surface__Microsoft.Xna.Framework.Audio.SoundEffect",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f24-bcl-interface-soundeffect-invented-ownership-wrapper",
+    "mutation": "f24bcli_invented-ownership-wrapper__Microsoft.Xna.Framework.Audio.SoundEffect",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f24-bcl-interface-soundeffect-undeclared-bcl-interface",
+    "mutation": "f24bcli_undeclared-bcl-interface__Microsoft.Xna.Framework.Audio.SoundEffect",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f24-bcl-interface-soundeffect-declared-dispose-dropped",
+    "mutation": "f24bcli_declared-dispose-dropped__Microsoft.Xna.Framework.Audio.SoundEffect",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f24-bcl-interface-soundeffect-declared-dispose-fallibility-changed",
+    "mutation": "f24bcli_declared-dispose-fallibility-changed__Microsoft.Xna.Framework.Audio.SoundEffect",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f24-bcl-interface-curve-synthetic-dispose",
+    "mutation": "f24bcli_synthetic_dispose__Microsoft.Xna.Framework.Curve",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f25-bcl-interface-soundeffect-undeclared-internal-xna-interface",
+    "mutation": "f24bcli_undeclared-internal-xna-interface__Microsoft.Xna.Framework.Audio.SoundEffect",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-base-silently-dropped",
+    "mutation": "f26bcl_base_silently_dropped__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-exported-embedding",
+    "mutation": "f26bcl_exported_embedding__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-unexported-embedding",
+    "mutation": "f26bcl_unexported_embedding__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-raw-slice-projection",
+    "mutation": "f26bcl_raw_slice_projection__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-exported-raw-slice-field",
+    "mutation": "f26bcl_exported_raw_slice_field__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-exported-raw-map-field",
+    "mutation": "f26bcl_exported_raw_map_field__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-missing-adapter-field",
+    "mutation": "f26bcl_missing_adapter_field__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-exported-adapter-field",
+    "mutation": "f26bcl_exported_adapter_field__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-wrong-adapter-generic",
+    "mutation": "f26bcl_wrong_adapter_generic__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-wrong-adapter-family",
+    "mutation": "f26bcl_wrong_adapter_family__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-excluded-member-projected",
+    "mutation": "f26bcl_excluded_member_projected__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-inherited-member-missing",
+    "mutation": "f26bcl_inherited_member_missing__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-inherited-indexer-setter-missing",
+    "mutation": "f26bcl_inherited_indexer_setter_missing__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-declared-override-missing",
+    "mutation": "f26bcl_declared_override_missing__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "MISSING_MEMBER"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-extra-inherited-member",
+    "mutation": "f26bcl_extra_inherited_member__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "UNEXPECTED_MEMBER"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-wrong-count-projection",
+    "mutation": "f26bcl_wrong_count_projection__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-wrong-indexer-projection",
+    "mutation": "f26bcl_wrong_indexer_projection__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-wrong-enumerator-type",
+    "mutation": "f26bcl_wrong_enumerator_type__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "RETURN_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-enumerator-adapter-absent",
+    "mutation": "f26bcl_enumerator_adapter_absent__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "INTERFACE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-infallible-mutator",
+    "mutation": "f26bcl_infallible_mutator__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-infallible-indexer-setter",
+    "mutation": "f26bcl_infallible_indexer_setter__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f26-bcl-composition-gamecomponentcollection-fallible-reader",
+    "mutation": "f26bcl_fallible_reader__Microsoft.Xna.Framework.GameComponentCollection",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f27-bcl-signature-readonlycollection-adapter-type-absent",
+    "mutation": "f27sig_adapter_type_absent",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f27-bcl-signature-readonlycollection-public-member-missing",
+    "mutation": "f27sig_public_member_missing",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f27-bcl-signature-readonlycollection-enumerator-missing",
+    "mutation": "f27sig_enumerator_missing",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f27-bcl-signature-readonlycollection-extra-public-member",
+    "mutation": "f27sig_extra_public_member",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f27-bcl-signature-readonlycollection-read-only-made-mutable-add",
+    "mutation": "f27sig_read_only_made_mutable_add",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f27-bcl-signature-readonlycollection-read-only-made-mutable-setter",
+    "mutation": "f27sig_read_only_made_mutable_setter",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f27-bcl-signature-readonlycollection-read-only-made-mutable-clear",
+    "mutation": "f27sig_read_only_made_mutable_clear",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f27-bcl-signature-readonlycollection-excluded-member-promoted",
+    "mutation": "f27sig_excluded_member_promoted",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f27-bcl-signature-readonlycollection-sync-root-promoted",
+    "mutation": "f27sig_sync_root_promoted",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f30-classification-stored-getter-on-native-facade-demoted",
+    "mutation": "f17cls_stored_getter_on_native_facade_demoted__Microsoft.Xna.Framework.Game",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f30-classification-stored-getter-classified-for-one-member-only",
+    "mutation": "f17cls_stored_getter_classified_for_one_member_only__Microsoft.Xna.Framework.Game",
+    "category": "ERROR_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-adapter-absent-from-the-package",
+    "mutation": "f31base_adapter_absent_from_the_package",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-adapter-projected-as-a-method-on-game",
+    "mutation": "f31base_adapter_projected_as_a_method_on_game",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-adapter-signature-drops-the-game-parameter",
+    "mutation": "f31base_adapter_signature_drops_the_game_parameter",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-adapter-signature-gains-a-result",
+    "mutation": "f31base_adapter_signature_gains_a_result",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-arbitrary-extra-base-helper",
+    "mutation": "f31base_arbitrary_extra_base_helper",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-adapter-missing-for-a-supported-virtual",
+    "mutation": "f31base_adapter_missing_for_a_supported_virtual",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-adapter-declared-for-a-member-that-is-not-a-supported-virtual",
+    "mutation": "f31base_adapter_declared_for_a_member_that_is_not_a_supported_virtual",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-error-result-with-no-recorded-reason",
+    "mutation": "f31base_error_result_with_no_recorded_reason",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-recorded-reason-with-no-error-result",
+    "mutation": "f31base_recorded_reason_with_no_error_result",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-deferred-step-records-no-reason",
+    "mutation": "f31base_deferred_step_records_no_reason",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-deferred-step-unclassified",
+    "mutation": "f31base_deferred_step_unclassified",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-deferred-step-marked-observable",
+    "mutation": "f31base_deferred_step_marked_observable",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f31-base-call-adapter-records-no-reference-body",
+    "mutation": "f31base_adapter_records_no_reference_body",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f33-xna-base-unrecorded-xna-base",
+    "mutation": "f33xna_unrecorded_xna_base",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f33-xna-base-deferred-base-records-no-blocker",
+    "mutation": "f33xna_deferred_base_records_no_blocker",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f33-xna-base-blocker-class-is-unrecorded",
+    "mutation": "f33xna_blocker_class_is_unrecorded",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f33-xna-base-blocker-records-no-detail",
+    "mutation": "f33xna_blocker_records_no_detail",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f33-xna-base-status-is-neither-composed-nor-deferred",
+    "mutation": "f33xna_status_is_neither_composed_nor_deferred",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f33-xna-base-stale-relationship-with-no-derived-type",
+    "mutation": "f33xna_stale_relationship_with_no_derived_type",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f33-xna-base-derived-type-of-a-deferred-base-reported-complete",
+    "mutation": "f33xna_derived_type_of_a_deferred_base_reported_complete",
+    "category": "BASE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-signal-absent-for-a-declared-event",
+    "mutation": "f36signal_signal_absent_for_a_declared_event",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-signal-declared-for-an-event-game-does-not-declare",
+    "mutation": "f36signal_signal_declared_for_an_event_game_does_not_declare",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-duplicate-cna-identity",
+    "mutation": "f36signal_duplicate_cna_identity",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-signal-names-no-cna-constant",
+    "mutation": "f36signal_signal_names_no_cna_constant",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-raise-site-is-not-a-projected-method",
+    "mutation": "f36signal_raise_site_is_not_a_projected_method",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-raise-site-invented-for-an-event-that-has-none",
+    "mutation": "f36signal_raise_site_invented_for_an_event_that_has_none",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-raise-site-omitted-for-an-event-that-has-one",
+    "mutation": "f36signal_raise_site_omitted_for_an_event_that_has_one",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-raise-site-signature-is-not-the-clr-shape",
+    "mutation": "f36signal_raise_site_signature_is_not_the_clr_shape",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-raise-site-absent-from-the-package",
+    "mutation": "f36signal_raise_site_absent_from_the_package",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-accessor-absent-from-the-package",
+    "mutation": "f36signal_accessor_absent_from_the_package",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-sender-is-neither-game-nor-null",
+    "mutation": "f36signal_sender_is_neither_game_nor_null",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-signal-records-no-reference-path",
+    "mutation": "f36signal_signal_records_no_reference_path",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-runtime-evidence-unclassified",
+    "mutation": "f36signal_runtime_evidence_unclassified",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-unverified-signal-records-no-reason",
+    "mutation": "f36signal_unverified_signal_records_no_reason",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-verified-signal-records-an-excuse",
+    "mutation": "f36signal_verified_signal_records_an_excuse",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-raise-site-exists-that-no-signal-declares",
+    "mutation": "f36signal_raise_site_exists_that_no_signal_declares",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-absent-from-the-package",
+    "mutation": "f36signal_frame_hook_absent_from_the_package",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-declared-for-a-member-that-is-not-projected",
+    "mutation": "f36signal_frame_hook_declared_for_a_member_that_is_not_projected",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-signature-mismatch",
+    "mutation": "f36signal_frame_hook_signature_mismatch",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-gains-a-base-call-helper",
+    "mutation": "f36signal_frame_hook_gains_a_base_call_helper",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-declared-for-a-gamecallbacks-member",
+    "mutation": "f36signal_frame_hook_declared_for_a_gamecallbacks_member",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-uninstalled-without-a-reason",
+    "mutation": "f36signal_frame_hook_uninstalled_without_a_reason",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-installed-but-records-a-reason",
+    "mutation": "f36signal_frame_hook_installed_but_records_a_reason",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-names-no-native-hook",
+    "mutation": "f36signal_frame_hook_names_no_native_hook",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-records-no-native-ordering",
+    "mutation": "f36signal_frame_hook_records_no_native_ordering",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-records-no-reference-body",
+    "mutation": "f36signal_frame_hook_records_no_reference_body",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-deferral-unclassified",
+    "mutation": "f36signal_frame_hook_deferral_unclassified",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-deferral-records-no-reason",
+    "mutation": "f36signal_frame_hook_deferral_records_no_reason",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-deferral-marked-observable",
+    "mutation": "f36signal_frame_hook_deferral_marked_observable",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-projected-onto-another-receiver",
+    "mutation": "f36signal_frame_hook_projected_onto_another_receiver",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-frame-hook-names-a-public-member",
+    "mutation": "f36signal_frame_hook_names_a_public_member",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-hook-installed-unconditionally",
+    "mutation": "f38hook_hook_installed_unconditionally",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-installation-class-unrecognised",
+    "mutation": "f38hook_installation_class_unrecognised",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-override-hook-names-no-capability",
+    "mutation": "f38hook_override_hook_names_no_capability",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-never-installed-hook-names-a-capability",
+    "mutation": "f38hook_never_installed_hook_names_a_capability",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-base-invoked-automatically",
+    "mutation": "f38hook_base_invoked_automatically",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-base-invocation-records-no-evidence",
+    "mutation": "f38hook_base_invocation_records_no_evidence",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-capability-is-exported",
+    "mutation": "f38hook_capability_is_exported",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-exported-capability-type-exists-beside-it",
+    "mutation": "f38hook_exported_capability_type_exists_beside_it",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-two-hooks-share-one-capability",
+    "mutation": "f38hook_two_hooks_share_one_capability",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-capability-does-not-exist",
+    "mutation": "f38hook_capability_does_not_exist",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-capability-bundles-more-than-one-hook",
+    "mutation": "f38hook_capability_bundles_more_than_one_hook",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-capability-method-is-unexported",
+    "mutation": "f38hook_capability_method_is_unexported",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-capability-is-not-an-interface",
+    "mutation": "f38hook_capability_is_not_an_interface",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-capability-method-name-is-not-the-hook",
+    "mutation": "f38hook_capability_method_name_is_not_the_hook",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-capability-does-not-take-the-owning-game",
+    "mutation": "f38hook_capability_does_not_take_the_owning_game",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-capability-results-differ-from-the-base-body",
+    "mutation": "f38hook_capability_results_differ_from_the_base_body",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-capability-compiler-shape-disagrees-with-the-registry",
+    "mutation": "f38hook_capability_compiler_shape_disagrees_with_the_registry",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-public-registration-function-exists",
+    "mutation": "f38hook_public_registration_function_exists",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-public-registration-method-exists",
+    "mutation": "f38hook_public_registration_method_exists",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-gamecallbacks-gains-a-sixth-member",
+    "mutation": "f38hook_gamecallbacks_gains_a_sixth_member",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-gamecallbacks-loses-a-member",
+    "mutation": "f38hook_gamecallbacks_loses_a_member",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-gamecallbacks-embeds-another-contract",
+    "mutation": "f38hook_gamecallbacks_embeds_another_contract",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-game-carries-an-exported-callback-field",
+    "mutation": "f38hook_game_carries_an_exported_callback_field",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f38hook-game-embeds-a-callback-field",
+    "mutation": "f38hook_game_embeds_a_callback_field",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  }
 ]

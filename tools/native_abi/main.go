@@ -90,10 +90,16 @@ func verify(headerRoot, library string) (report, error) {
 	// CNA_GameEventCallback: every callback typedef the bridge installs is
 	// pinned by an incompatible-pointer-types assignment in probe.c.
 	result.Callbacks = 3
-	// The five original _Static_asserts plus the five that compare the four
-	// canonical game-event identities and CNA_GAME_EVENT_MAXIMUM against
-	// CNA-Go's private manifest copy.
-	result.Constants = 10
+	// The _Static_asserts in the compiled ABI probe: the five original ones,
+	// the five that compare the four canonical game-event identities and
+	// CNA_GAME_EVENT_MAXIMUM against CNA-Go's private manifest copy, and the
+	// five that pin the frame-hook table's member order.
+	//
+	// bridge.c carries its own asserts, including the same five member-order
+	// ones and the frame-hook mask, and is not counted here: it is compiled by
+	// cgo against the MANIFEST rather than the canonical header, which is what
+	// makes the pair of them pin the layout from both sides.
+	result.Constants = 15
 	root, err := filepath.Abs(headerRoot)
 	if err != nil {
 		return result, err

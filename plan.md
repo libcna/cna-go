@@ -1427,6 +1427,21 @@ Exact evidence is in `docs/foundation-37-bridge-lifetime-evidence.md`.
 FOUNDATION_MILESTONE_37_COMPLETE=true
 ```
 
+## Foundation 38 qualification evidence
+
+Exact evidence is in `docs/foundation-38-frame-hook-override-evidence.md`.
+
+The frame-hook override branch that Foundation 36 stopped and reported is
+closed. Of the three candidate shapes it recorded, the second -- per-hook
+capability interfaces -- was selected and then narrowed: the four contracts are
+UNEXPORTED and satisfied structurally, so the mechanism publishes no new public
+framework identity, adds no member to `GameCallbacks`, and introduces no mutable
+per-Game registration state.
+
+```text
+FOUNDATION_MILESTONE_38_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

@@ -304,15 +304,23 @@ type gameFrameHookMeasurement struct {
 	GoMember   string   `json:"goMember"`
 	Parameters []string `json:"parameters"`
 	Results    []string `json:"results"`
-	// NativeHook is the canonical hook at the same frame position, Installed
-	// records whether CNA-Go installs it, and ReasonUninstalled says why not.
-	NativeHook        string                    `json:"nativeHook"`
-	Installed         bool                      `json:"installed"`
-	ReasonUninstalled string                    `json:"reasonUninstalled,omitempty"`
-	NativeOrdering    string                    `json:"nativeOrdering"`
-	ReferenceBody     []string                  `json:"referenceBody"`
-	Deferred          []gameBaseCallDeferralRow `json:"deferredSteps"`
-	Verdict           string                    `json:"verdict"`
+	// NativeHook is the canonical hook at the same frame position, Installation
+	// records WHEN CNA-Go installs it -- NEVER, ON_OVERRIDE or ALWAYS -- and
+	// ReasonUninstalled is carried only by a hook that is never installed.
+	NativeHook        string `json:"nativeHook"`
+	Installation      string `json:"installation"`
+	ReasonUninstalled string `json:"reasonUninstalled,omitempty"`
+	// Capability is the unexported single-method Go interface an external
+	// callback object satisfies structurally to override this hook, and the
+	// three fields after it are the exact method it has to declare.
+	Capability           string                    `json:"capability,omitempty"`
+	CapabilityMethod     string                    `json:"capabilityMethod,omitempty"`
+	CapabilityParameters []string                  `json:"capabilityParameters,omitempty"`
+	CapabilityResults    []string                  `json:"capabilityResults,omitempty"`
+	NativeOrdering       string                    `json:"nativeOrdering"`
+	ReferenceBody        []string                  `json:"referenceBody"`
+	Deferred             []gameBaseCallDeferralRow `json:"deferredSteps"`
+	Verdict              string                    `json:"verdict"`
 }
 
 // gameBaseCallMeasurement records one Game base-call language adapter: the

@@ -23,9 +23,12 @@
     "FLAGS_MAPPING_MISMATCH": 0,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
+    "GAME_CALLBACKS_MEMBERS": 5,
     "GAME_FRAME_HOOKS": 4,
-    "GAME_FRAME_HOOKS_INSTALLED": 0,
+    "GAME_FRAME_HOOKS_INSTALLED_ON_OVERRIDE": 4,
+    "GAME_FRAME_HOOKS_NEVER_INSTALLED": 0,
     "GAME_FRAME_HOOK_DEFERRED_STEPS": 4,
+    "GAME_FRAME_HOOK_OVERRIDE_CAPABILITIES": 4,
     "GAME_NATIVE_SIGNALS": 4,
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
@@ -9382,8 +9385,16 @@
         "error"
       ],
       "nativeHook": "CNA_GameFrameHooks::begin_draw",
-      "installed": false,
-      "reasonUninstalled": "base behavior is never automatic; the hook also fires per frame and, with no reachable IGraphicsDeviceManager, the base body provably always admits the frame",
+      "installation": "ON_OVERRIDE",
+      "capability": "gameBeginDrawOverride",
+      "capabilityMethod": "BeginDraw",
+      "capabilityParameters": [
+        "*Game"
+      ],
+      "capabilityResults": [
+        "bool",
+        "error"
+      ],
       "nativeOrdering": "measured before each draw, and a frame whose out_should_draw is set to CNA_FALSE delivers neither draw nor end_draw -- the same shape as DrawFrame's `if (BeginDraw()) { Draw(); EndDraw(); }`",
       "referenceBody": [
         "if (graphicsDeviceManager != null \u0026\u0026 !graphicsDeviceManager.BeginDraw()) return false;",
@@ -9415,8 +9426,15 @@
         "error"
       ],
       "nativeHook": "CNA_GameFrameHooks::begin_run",
-      "installed": false,
-      "reasonUninstalled": "base behavior is never automatic; with no override mechanism the forwarding would be provably inert and would prejudge where a derived class calls its base",
+      "installation": "ON_OVERRIDE",
+      "capability": "gameBeginRunOverride",
+      "capabilityMethod": "BeginRun",
+      "capabilityParameters": [
+        "*Game"
+      ],
+      "capabilityResults": [
+        "error"
+      ],
       "nativeOrdering": "measured after initialize and load_content and before the first update, which is where RunGame calls BeginRun -- after Initialize returns and inRun is raised, before the priming Update",
       "referenceBody": [
         "IL_0000: ret   // code size 1"
@@ -9433,8 +9451,15 @@
         "error"
       ],
       "nativeHook": "CNA_GameFrameHooks::end_draw",
-      "installed": false,
-      "reasonUninstalled": "base behavior is never automatic; the hook also fires per frame and, with no reachable IGraphicsDeviceManager, the base body is observably empty",
+      "installation": "ON_OVERRIDE",
+      "capability": "gameEndDrawOverride",
+      "capabilityMethod": "EndDraw",
+      "capabilityParameters": [
+        "*Game"
+      ],
+      "capabilityResults": [
+        "error"
+      ],
       "nativeOrdering": "measured after each draw and skipped entirely on a frame begin_draw refused, which is where DrawFrame calls EndDraw -- inside the branch BeginDraw admitted",
       "referenceBody": [
         "if (graphicsDeviceManager != null) graphicsDeviceManager.EndDraw();",
@@ -9465,8 +9490,15 @@
         "error"
       ],
       "nativeHook": "CNA_GameFrameHooks::end_run",
-      "installed": false,
-      "reasonUninstalled": "base behavior is never automatic; with no override mechanism the forwarding would be provably inert and would prejudge where a derived class calls its base",
+      "installation": "ON_OVERRIDE",
+      "capability": "gameEndRunOverride",
+      "capabilityMethod": "EndRun",
+      "capabilityParameters": [
+        "*Game"
+      ],
+      "capabilityResults": [
+        "error"
+      ],
       "nativeOrdering": "measured after the last frame and before cna_game_run returns, which is where RunGame calls EndRun -- immediately after the blocking host.Run() returns",
       "referenceBody": [
         "IL_0000: ret   // code size 1"
@@ -9477,7 +9509,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "3daaf3278e0cdf95ed95354f176ffeb77e47309a7de6da77e89ea7f4dc7db792",
+    "mappingSha256": "2466096e6dfbc8174af81e4ab6adb19684e6c6513eae1da1330617edca7a79a2",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

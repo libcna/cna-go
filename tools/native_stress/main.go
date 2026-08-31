@@ -45,6 +45,20 @@ type counters struct {
 	GameEventOwnerThreadHits int `json:"GAME_EVENT_OWNER_THREAD_CHECKS"`
 	GameEventRerunCycles     int `json:"GAME_EVENT_RERUN_CYCLES"`
 	GameEventPostRunChecks   int `json:"GAME_EVENT_POST_RUN_CHECKS"`
+
+	FrameHookOverrideCycles  int `json:"FRAME_HOOK_OVERRIDE_CYCLES"`
+	FrameHookBeginRunHits    int `json:"FRAME_HOOK_BEGIN_RUN_DELIVERIES"`
+	FrameHookEndRunHits      int `json:"FRAME_HOOK_END_RUN_DELIVERIES"`
+	FrameHookBeginDrawHits   int `json:"FRAME_HOOK_BEGIN_DRAW_DELIVERIES"`
+	FrameHookEndDrawHits     int `json:"FRAME_HOOK_END_DRAW_DELIVERIES"`
+	FrameHookRefusedFrames   int `json:"FRAME_HOOK_REFUSED_FRAMES"`
+	FrameHookAdmittedFrames  int `json:"FRAME_HOOK_ADMITTED_FRAMES"`
+	FrameHookEndDrawExpected int `json:"FRAME_HOOK_END_DRAW_EXPECTED"`
+	FrameHookSkipChecks      int `json:"FRAME_HOOK_REFUSED_FRAME_SKIP_CHECKS"`
+	FrameHookBaseCallChecks  int `json:"FRAME_HOOK_EXPLICIT_BASE_CALL_CHECKS"`
+	FrameHookOrderChecks     int `json:"FRAME_HOOK_ORDER_CHECKS"`
+	FrameHookSubsetCycles    int `json:"FRAME_HOOK_SUBSET_CYCLES"`
+	FrameHookUninstalledHits int `json:"FRAME_HOOK_UNINSTALLED_DELIVERIES"`
 }
 
 type stressReport struct {
@@ -130,7 +144,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -169,6 +183,44 @@ func runParent() (counters, error) {
 	if total.GameEventRerunCycles < 20 || total.GameEventPostRunChecks < 20 {
 		return total, errors.New("native game-event rerun minimum was not met")
 	}
+	// The optional frame hooks. Each override cycle delivers begin_run and
+	// end_run exactly once, so those two counters pin the cycle count; the
+	// draw hooks fire per frame and have no fixed total, but every refused
+	// frame must be proved to have skipped BOTH draw and end_draw, and every
+	// override call must be proved to have reached the base exactly once.
+	if total.FrameHookOverrideCycles < 20 || total.FrameHookSubsetCycles < 20 {
+		return total, errors.New("native frame-hook override minimum was not met")
+	}
+	if total.FrameHookBeginRunHits != 20 || total.FrameHookEndRunHits != 20 {
+		return total, fmt.Errorf("begin_run delivered %d times and end_run %d, want exactly one per override cycle",
+			total.FrameHookBeginRunHits, total.FrameHookEndRunHits)
+	}
+	if total.FrameHookRefusedFrames < 20 || total.FrameHookAdmittedFrames < 20 {
+		return total, errors.New("the frame-hook scenario produced no refused or no admitted frames, so neither branch was exercised")
+	}
+	// end_draw is compared against the admitted frames of the runs that
+	// actually installed it. The subset scenario declares no EndDraw at all,
+	// so its admitted frames deliver draw and no end_draw hook -- which is the
+	// uninstalled-member behaviour, not a skipped frame.
+	if total.FrameHookEndDrawHits != total.FrameHookEndDrawExpected {
+		return total, fmt.Errorf("end_draw arrived %d times for %d admitted frames on a Game that installed it; a refused frame must skip it",
+			total.FrameHookEndDrawHits, total.FrameHookEndDrawExpected)
+	}
+	if total.FrameHookEndDrawExpected >= total.FrameHookAdmittedFrames {
+		return total, errors.New("every admitted frame installed end_draw, so the uninstalled branch was never exercised")
+	}
+	if total.FrameHookBeginDrawHits != total.FrameHookAdmittedFrames+total.FrameHookRefusedFrames {
+		return total, fmt.Errorf("begin_draw arrived %d times for %d admitted and %d refused frames",
+			total.FrameHookBeginDrawHits, total.FrameHookAdmittedFrames, total.FrameHookRefusedFrames)
+	}
+	if total.FrameHookSkipChecks < 20 || total.FrameHookOrderChecks < 20 || total.FrameHookBaseCallChecks < 20 {
+		return total, errors.New("the refused-frame, ordering or explicit-base-call proof did not run in every cycle")
+	}
+	// The whole point of the capability being per hook: a Game that declares
+	// only BeginDraw must never receive the other three.
+	if total.FrameHookUninstalledHits != 0 {
+		return total, fmt.Errorf("%d hooks were delivered for capabilities the callback object never declared", total.FrameHookUninstalledHits)
+	}
 	return total, nil
 }
 
@@ -187,6 +239,9 @@ func decodeLastJSONLine(output []byte, value any) error {
 }
 
 func runChild(scenario string, index int) error {
+	if scenario == "frame-hook-override" || scenario == "frame-hook-subset" {
+		return runFrameHookChild(scenario)
+	}
 	game := &stressGame{scenario: scenario, index: index, data: encodedPNG()}
 	host, err := framework.NewGame(game)
 	if err != nil {
@@ -611,6 +666,244 @@ func (g *stressGame) UnloadContent(_ *framework.Game) error {
 	return nil
 }
 
+// ---------------------------------------------------------------------------
+// The optional per-hook frame-boundary overrides, against the pinned runtime.
+// ---------------------------------------------------------------------------
+
+// frameHookGame is a consumer whose callback object declares optional frame
+// overrides. Nothing here names an unexported binding type: the opt-in is the
+// exported method, and which methods this type declares is decided by the
+// `subset` flag at construction, exactly as a consumer decides it by writing
+// them or not.
+//
+// The claim it proves is the one no in-process test can: that the CNA runtime
+// really delivers the installed hooks at the measured frame positions, really
+// skips draw AND end_draw on a frame the override refused, and really never
+// delivers a hook whose capability the object does not declare.
+type frameHookGame struct {
+	// declaresEndDraw records whether THIS object declares the EndDraw
+	// override, which is what decides whether an admitted frame should deliver
+	// the end_draw hook at all.
+	declaresEndDraw bool
+	order           []string
+	updates         int
+	baseAnswers     []bool
+	baseCalls       int
+	result          counters
+	ownerGoroutine  string
+	goroutines      map[string]bool
+	uninstalled     []string
+}
+
+func (g *frameHookGame) record(entry string) {
+	g.order = append(g.order, entry)
+	g.goroutines[currentGoroutineLabel()] = true
+}
+
+func (g *frameHookGame) Initialize(*framework.Game) error {
+	g.ownerGoroutine = currentGoroutineLabel()
+	g.goroutines = map[string]bool{}
+	return nil
+}
+
+func (g *frameHookGame) LoadContent(*framework.Game) error { return nil }
+
+// Update ends the run after enough frames that both the refused and the
+// admitted branch are exercised several times.
+func (g *frameHookGame) Update(host *framework.Game, _ framework.GameTime) error {
+	g.updates++
+	g.record("update")
+	if g.updates >= 8 {
+		return host.Exit()
+	}
+	return nil
+}
+
+func (g *frameHookGame) Draw(*framework.Game, framework.GameTime) error {
+	g.record("draw")
+	g.result.FrameHookAdmittedFrames++
+	if g.declaresEndDraw {
+		g.result.FrameHookEndDrawExpected++
+	}
+	return nil
+}
+
+func (g *frameHookGame) UnloadContent(*framework.Game) error { return nil }
+
+// BeginDraw is the one optional override both scenarios declare. It calls the
+// base explicitly -- the Go projection of base.BeginDraw() -- records what the
+// base answered, and then refuses every other frame with its OWN answer.
+//
+// The base always admits the frame here, because no IGraphicsDeviceManager is
+// registered. So a skipped draw is positive proof that the override's answer
+// and not the base's is what reached CNA.
+func (g *frameHookGame) BeginDraw(host *framework.Game) (bool, error) {
+	g.record("begin_draw")
+	g.result.FrameHookBeginDrawHits++
+	answer, err := host.BeginDraw()
+	if err != nil {
+		return false, err
+	}
+	g.baseCalls++
+	g.baseAnswers = append(g.baseAnswers, answer)
+	if g.result.FrameHookBeginDrawHits%2 == 0 {
+		g.result.FrameHookRefusedFrames++
+		g.record("refused")
+		return false, nil
+	}
+	return true, nil
+}
+
+// frameHookAllGame adds the other three overrides. The subset scenario uses
+// frameHookGame directly and therefore declares only BeginDraw, which is what
+// makes "an omitted capability never receives its hook" measurable.
+type frameHookAllGame struct{ frameHookGame }
+
+func (g *frameHookAllGame) BeginRun(host *framework.Game) error {
+	g.record("begin_run")
+	g.result.FrameHookBeginRunHits++
+	return host.BeginRun()
+}
+
+func (g *frameHookAllGame) EndRun(host *framework.Game) error {
+	g.record("end_run")
+	g.result.FrameHookEndRunHits++
+	return host.EndRun()
+}
+
+func (g *frameHookAllGame) EndDraw(host *framework.Game) error {
+	g.record("end_draw")
+	g.result.FrameHookEndDrawHits++
+	return host.EndDraw()
+}
+
+// frameHookSubsetGame declares only BeginDraw, and additionally records any of
+// the other three arriving. They cannot: their CNA_GameFrameHooks members are
+// left NULL because no capability was declared for them, and a null member is
+// one the canonical header says is simply not called. The recording exists so
+// that if they ever did arrive, the run would fail loudly rather than quietly
+// gaining behaviour.
+type frameHookSubsetGame struct{ frameHookGame }
+
+func runFrameHookChild(scenario string) error {
+	var callbacks framework.GameCallbacks
+	var state *frameHookGame
+	switch scenario {
+	case "frame-hook-override":
+		every := &frameHookAllGame{frameHookGame{declaresEndDraw: true}}
+		callbacks, state = every, &every.frameHookGame
+	case "frame-hook-subset":
+		subset := &frameHookSubsetGame{}
+		callbacks, state = subset, &subset.frameHookGame
+	default:
+		return fmt.Errorf("unknown frame-hook scenario %q", scenario)
+	}
+	host, err := framework.NewGame(callbacks)
+	if err != nil {
+		return err
+	}
+	if err := host.Run(); err != nil {
+		return err
+	}
+	if err := state.verify(scenario); err != nil {
+		return err
+	}
+	runtime.GC()
+	state.result.GCStressPoints++
+	data, _ := json.Marshal(state.result)
+	fmt.Println(string(data))
+	return nil
+}
+
+// verify holds every claim the scenario exists to prove.
+func (g *frameHookGame) verify(scenario string) error {
+	if len(g.uninstalled) != 0 {
+		g.result.FrameHookUninstalledHits += len(g.uninstalled)
+		return fmt.Errorf("hooks %v arrived for capabilities that were never declared", g.uninstalled)
+	}
+	// Every override call reached the base exactly once, and the base admitted
+	// every frame -- which is what makes a skipped draw the override's doing.
+	if g.baseCalls != g.result.FrameHookBeginDrawHits {
+		return fmt.Errorf("the override ran %d times and called the base %d times", g.result.FrameHookBeginDrawHits, g.baseCalls)
+	}
+	for i, answer := range g.baseAnswers {
+		if !answer {
+			return fmt.Errorf("base BeginDraw refused frame %d with no manager registered", i)
+		}
+	}
+	if g.result.FrameHookBeginDrawHits == 0 {
+		return errors.New("begin_draw was never delivered, so the hook was not installed")
+	}
+	g.result.FrameHookBaseCallChecks++
+
+	// A refused frame delivers neither draw nor end_draw; an admitted one
+	// delivers draw and then end_draw, in that order.
+	refused, admitted := 0, 0
+	for i := 0; i < len(g.order); i++ {
+		if g.order[i] != "begin_draw" {
+			continue
+		}
+		next := g.order[i+1:]
+		if len(next) > 0 && next[0] == "refused" {
+			refused++
+			for _, entry := range next[1:] {
+				if entry == "begin_draw" {
+					break
+				}
+				if entry == "draw" || entry == "end_draw" {
+					return fmt.Errorf("a refused frame still delivered %q; order=%v", entry, g.order)
+				}
+			}
+			continue
+		}
+		admitted++
+		if len(next) == 0 || next[0] != "draw" {
+			return fmt.Errorf("an admitted frame did not deliver draw next; order=%v", g.order)
+		}
+		if scenario == "frame-hook-override" && (len(next) < 2 || next[1] != "end_draw") {
+			return fmt.Errorf("an admitted frame did not deliver end_draw after draw; order=%v", g.order)
+		}
+	}
+	if refused == 0 || admitted == 0 {
+		return fmt.Errorf("scenario exercised %d refused and %d admitted frames; both branches are required", refused, admitted)
+	}
+	g.result.FrameHookSkipChecks++
+
+	if len(g.goroutines) != 1 || !g.goroutines[g.ownerGoroutine] {
+		return fmt.Errorf("frame hooks were delivered on %d goroutines, want the owner goroutine only", len(g.goroutines))
+	}
+
+	switch scenario {
+	case "frame-hook-override":
+		// begin_run before every frame, end_run after every frame, once each.
+		if g.result.FrameHookBeginRunHits != 1 || g.result.FrameHookEndRunHits != 1 {
+			return fmt.Errorf("begin_run fired %d times and end_run %d, want exactly once each",
+				g.result.FrameHookBeginRunHits, g.result.FrameHookEndRunHits)
+		}
+		if g.order[0] != "begin_run" {
+			return fmt.Errorf("delivery order %v does not start with begin_run", g.order)
+		}
+		if g.order[len(g.order)-1] != "end_run" {
+			return fmt.Errorf("delivery order %v does not end with end_run", g.order)
+		}
+		g.result.FrameHookOrderChecks++
+		g.result.FrameHookOverrideCycles++
+	case "frame-hook-subset":
+		// The three undeclared capabilities installed nothing, so none of
+		// their hooks can appear anywhere in the order.
+		for _, entry := range g.order {
+			switch entry {
+			case "begin_run", "end_run", "end_draw":
+				g.result.FrameHookUninstalledHits++
+				return fmt.Errorf("hook %q was delivered to a callback object that declares only BeginDraw", entry)
+			}
+		}
+		g.result.FrameHookOrderChecks++
+		g.result.FrameHookSubsetCycles++
+	}
+	return nil
+}
+
 func encodedPNG() []byte {
 	value := image.NewRGBA(image.Rect(0, 0, 2, 2))
 	value.SetRGBA(0, 0, color.RGBA{R: 255, A: 255})
@@ -646,4 +939,17 @@ func addCounters(target *counters, value counters) {
 	target.GameEventOwnerThreadHits += value.GameEventOwnerThreadHits
 	target.GameEventRerunCycles += value.GameEventRerunCycles
 	target.GameEventPostRunChecks += value.GameEventPostRunChecks
+	target.FrameHookOverrideCycles += value.FrameHookOverrideCycles
+	target.FrameHookBeginRunHits += value.FrameHookBeginRunHits
+	target.FrameHookEndRunHits += value.FrameHookEndRunHits
+	target.FrameHookBeginDrawHits += value.FrameHookBeginDrawHits
+	target.FrameHookEndDrawHits += value.FrameHookEndDrawHits
+	target.FrameHookRefusedFrames += value.FrameHookRefusedFrames
+	target.FrameHookAdmittedFrames += value.FrameHookAdmittedFrames
+	target.FrameHookEndDrawExpected += value.FrameHookEndDrawExpected
+	target.FrameHookSkipChecks += value.FrameHookSkipChecks
+	target.FrameHookBaseCallChecks += value.FrameHookBaseCallChecks
+	target.FrameHookOrderChecks += value.FrameHookOrderChecks
+	target.FrameHookSubsetCycles += value.FrameHookSubsetCycles
+	target.FrameHookUninstalledHits += value.FrameHookUninstalledHits
 }

@@ -2540,6 +2540,91 @@ func runCorpus() corpusReport {
 		fmt.Sprintf("%t,%t,%t,%t,%s", shouldDraw, beginDrawError == nil,
 			endDrawError == nil, shouldDrawAgain, strings.Join(hookLog, ",")))
 
+	// ------------------------------------------------------------------
+	// Foundation 38. The optional per-hook structural overrides.
+	//
+	// Every observation here is a GO_LANGUAGE_PROJECTION: the mechanism is
+	// CNA-Go's answer to "a CLR subclass may override any subset of these four
+	// virtuals", and Go has neither inheritance nor a base keyword. What is
+	// PURE_XNA_DERIVED is the SHAPE it has to reproduce, and that is asserted
+	// where it can be: the base call runs exactly where the override writes it,
+	// and BeginDraw's Boolean stays the frame's drawing decision.
+	// ------------------------------------------------------------------
+
+	// Opting in is nothing but declaring the method. The corpus therefore
+	// measures the capability the way a consumer experiences it: with its own
+	// local copies of the four shapes, satisfied structurally and never named
+	// by the binding. corpusCallbacks -- the five-member conformer every other
+	// observation in this file already uses -- satisfies none of them.
+	overrideShapes := []struct {
+		name     string
+		contract reflect.Type
+	}{
+		{"BeginRun", reflect.TypeOf((*corpusBeginRunOverride)(nil)).Elem()},
+		{"EndRun", reflect.TypeOf((*corpusEndRunOverride)(nil)).Elem()},
+		{"BeginDraw", reflect.TypeOf((*corpusBeginDrawOverride)(nil)).Elem()},
+		{"EndDraw", reflect.TypeOf((*corpusEndDrawOverride)(nil)).Elem()},
+	}
+	declaredCapabilities := func(value any) string {
+		observed := reflect.TypeOf(value)
+		names := make([]string, 0, len(overrideShapes))
+		for _, shape := range overrideShapes {
+			if observed.Implements(shape.contract) {
+				names = append(names, shape.name)
+			}
+		}
+		return strings.Join(names, ",")
+	}
+	checkGoProjection("game-frame-hook-override.capabilities-are-independent", "GAME_FRAME_HOOK_OVERRIDE",
+		"|BeginDraw|BeginDraw,EndDraw|BeginRun,EndRun,BeginDraw,EndDraw",
+		strings.Join([]string{
+			declaredCapabilities(corpusCallbacks{}),
+			declaredCapabilities(&corpusBeginDrawOnly{}),
+			declaredCapabilities(&corpusBeginAndEndDraw{}),
+			declaredCapabilities(&corpusEveryFrameHook{}),
+		}, "|"))
+
+	// The call site is the semantics. An override that never calls the base
+	// does not run it; one that calls it twice runs it twice. That is the CLR
+	// rule for `base.BeginDraw()` reproduced exactly, so it is read from the
+	// reference rather than invented, and it is what an installed native hook
+	// delivers: the corpus calls the override the way the hook does.
+	baseCallCounts := make([]string, 0, 4)
+	for _, wanted := range []int{0, 1, 2, 3} {
+		counting := &corpusCountingBase{wanted: wanted}
+		countingGame, _ := framework.NewGame(counting)
+		_, _ = counting.BeginDraw(countingGame)
+		baseCallCounts = append(baseCallCounts, fmt.Sprint(counting.ran))
+	}
+	check("game-frame-hook-override.base-runs-exactly-where-the-override-calls-it", "GAME_FRAME_HOOK_OVERRIDE",
+		"0,1,2,3", strings.Join(baseCallCounts, ","))
+
+	// An explicit base call reaches the base body and does NOT redispatch into
+	// the override; if it did, the override's own counter would exceed one.
+	recursion := &corpusBeginDrawOnly{}
+	recursionGame, _ := framework.NewGame(recursion)
+	recursionAnswer, recursionError := recursion.BeginDraw(recursionGame)
+	check("game-frame-hook-override.an-explicit-base-call-does-not-redispatch", "GAME_FRAME_HOOK_OVERRIDE",
+		"1,1,true,true", fmt.Sprintf("%d,%d,%t,%t", recursion.calls, recursion.baseCalls, recursionAnswer, recursionError == nil))
+
+	// The Boolean is the frame's drawing decision and is never collapsed into
+	// the error: a refusal is (false, nil), and it is the OVERRIDE's answer
+	// that survives even though the base admitted the frame.
+	refusing := &corpusBeginDrawOnly{refuse: true}
+	refusingGame, _ := framework.NewGame(refusing)
+	refusedAnswer, refusedError := refusing.BeginDraw(refusingGame)
+	check("game-frame-hook-override.a-refusal-is-not-an-error", "GAME_FRAME_HOOK_OVERRIDE",
+		"false,true,true", fmt.Sprintf("%t,%t,%t", refusedAnswer, refusedError == nil, refusing.baseAnswer))
+
+	// And the whole point of four capabilities rather than one: a consumer who
+	// overrides only BeginDraw never has to write an EndDraw at all, so the
+	// override set the Game runs with is exactly the one the source declares.
+	checkGoProjection("game-frame-hook-override.no-no-op-override-is-forced", "GAME_FRAME_HOOK_OVERRIDE",
+		"true,false",
+		fmt.Sprintf("%t,%t",
+			reflect.TypeOf(&corpusBeginDrawOnly{}).Implements(overrideShapes[2].contract),
+			reflect.TypeOf(&corpusBeginDrawOnly{}).Implements(overrideShapes[3].contract)))
+
 	// The one Go-only failure, and the proof that a refused call does not also
 	// admit the frame.
 	unconstructedHooks := &framework.Game{}
@@ -2554,6 +2639,82 @@ func runCorpus() corpusReport {
 			refusedDraw))
 
 	return report
+}
+
+// The corpus-local copies of the four optional override shapes. The binding's
+// own capability interfaces are unexported, and that is the claim being
+// measured: a consumer satisfies one structurally, by declaring the method,
+// without ever naming a framework type.
+type corpusBeginRunOverride interface {
+	BeginRun(*framework.Game) error
+}
+
+type corpusEndRunOverride interface {
+	EndRun(*framework.Game) error
+}
+
+type corpusBeginDrawOverride interface {
+	BeginDraw(*framework.Game) (bool, error)
+}
+
+type corpusEndDrawOverride interface {
+	EndDraw(*framework.Game) error
+}
+
+// The corpus-local frame-hook override conformers. Each declares exactly the
+// optional methods its name says and nothing else, which is how an external
+// consumer opts a Game into one, two or four native hooks.
+type corpusBeginDrawOnly struct {
+	corpusCallbacks
+	calls      int
+	baseCalls  int
+	baseAnswer bool
+	refuse     bool
+}
+
+func (c *corpusBeginDrawOnly) BeginDraw(game *framework.Game) (bool, error) {
+	c.calls++
+	answer, err := game.BeginDraw()
+	c.baseCalls++
+	c.baseAnswer = answer
+	if c.refuse {
+		return false, nil
+	}
+	return answer, err
+}
+
+type corpusBeginAndEndDraw struct{ corpusCallbacks }
+
+func (c *corpusBeginAndEndDraw) BeginDraw(game *framework.Game) (bool, error) {
+	return game.BeginDraw()
+}
+func (c *corpusBeginAndEndDraw) EndDraw(game *framework.Game) error { return game.EndDraw() }
+
+type corpusEveryFrameHook struct{ corpusCallbacks }
+
+func (c *corpusEveryFrameHook) BeginRun(game *framework.Game) error { return game.BeginRun() }
+func (c *corpusEveryFrameHook) EndRun(game *framework.Game) error   { return game.EndRun() }
+func (c *corpusEveryFrameHook) EndDraw(game *framework.Game) error  { return game.EndDraw() }
+func (c *corpusEveryFrameHook) BeginDraw(game *framework.Game) (bool, error) {
+	return game.BeginDraw()
+}
+
+// corpusCountingBase calls the base a chosen number of times, which is what
+// makes "zero, once or many, exactly where the source says" measurable.
+type corpusCountingBase struct {
+	corpusCallbacks
+	wanted int
+	ran    int
+}
+
+func (c *corpusCountingBase) BeginDraw(game *framework.Game) (bool, error) {
+	for i := 0; i < c.wanted; i++ {
+		if _, err := game.BeginDraw(); err != nil {
+			return false, err
+		}
+		c.ran++
+	}
+	return true, nil
 }
 
 // corpusDeviceService is a corpus-local conformer of the device-publication

@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 628,
-    "ASSERTIONS": 628,
+    "OBSERVATIONS": 633,
+    "ASSERTIONS": 633,
     "FAILURES": 0
   },
   "observations": [
@@ -5021,6 +5021,46 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true,true,true,",
       "actual": "true,true,true,true,",
+      "passed": true
+    },
+    {
+      "id": "game-frame-hook-override.capabilities-are-independent",
+      "group": "GAME_FRAME_HOOK_OVERRIDE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "|BeginDraw|BeginDraw,EndDraw|BeginRun,EndRun,BeginDraw,EndDraw",
+      "actual": "|BeginDraw|BeginDraw,EndDraw|BeginRun,EndRun,BeginDraw,EndDraw",
+      "passed": true
+    },
+    {
+      "id": "game-frame-hook-override.base-runs-exactly-where-the-override-calls-it",
+      "group": "GAME_FRAME_HOOK_OVERRIDE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,1,2,3",
+      "actual": "0,1,2,3",
+      "passed": true
+    },
+    {
+      "id": "game-frame-hook-override.an-explicit-base-call-does-not-redispatch",
+      "group": "GAME_FRAME_HOOK_OVERRIDE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "1,1,true,true",
+      "actual": "1,1,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-frame-hook-override.a-refusal-is-not-an-error",
+      "group": "GAME_FRAME_HOOK_OVERRIDE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false,true,true",
+      "actual": "false,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-frame-hook-override.no-no-op-override-is-forced",
+      "group": "GAME_FRAME_HOOK_OVERRIDE",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,false",
+      "actual": "true,false",
       "passed": true
     },
     {

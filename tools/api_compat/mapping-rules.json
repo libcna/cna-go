@@ -579,13 +579,14 @@
   }
  },
  "gameFrameHooks": {
-  "rule": "Game's four frame-boundary protected virtuals project as METHODS ON Game, because the mapper redirects exactly the five protected virtuals GameCallbacks declares and no others. Each records the canonical CNA hook that sits at the same frame position and whether CNA-Go installs it",
+  "rule": "Game's four frame-boundary protected virtuals project as METHODS ON Game, because the mapper redirects exactly the five protected virtuals GameCallbacks declares and no others. Each records the canonical CNA hook that sits at the same frame position, WHEN CNA-Go installs it, and -- for a hook installed behind an override -- the unexported single-method Go interface a consumer satisfies to opt in",
   "theseAreNot": [
    "GameCallbacks members: the mandatory override contract keeps exactly its five members, and adding to it would break every existing external implementation",
-   "base-call adapters: the GameBase... registry is keyed by the GameCallbacks members, so GameBaseBeginRun and friends are exactly the invented helpers its closure rule stops"
+   "base-call adapters: the GameBase... registry is keyed by the GameCallbacks members, so GameBaseBeginRun and friends are exactly the invented helpers its closure rule stops. The projected methods on Game ARE the base bodies, so an override reaches its base by calling game.BeginDraw() and needs no helper",
+   "exported capability contracts: the four optional overrides are discovered structurally through UNEXPORTED single-method interfaces, so the mechanism publishes no new public framework identity",
+   "registration APIs: there is no Set..., Register... or Add...Override anywhere. A consumer opts in by declaring the method, the capability is captured once in NewGame, and no exported member or type in the framework package may be named ...Override"
   ],
-  "hooksAreNotInstalled": "CNA_GameFrameHooks::begin_run, end_run, begin_draw and end_draw correspond position for position to these four virtuals, measured against the pinned artifact, and CNA-Go installs none of them. Base behavior is never automatic: forwarding a hook into a base body would run the base at a position CNA-Go picked, make that base call mandatory, and prejudge the override design. Every uninstalled hook records why",
-  "beginDrawBoolean": "the Boolean is a value channel, not a success flag. DrawFrame runs `if (BeginDraw()) { Draw(); EndDraw(); }`, so false skips both, and the measured native hook does the same: a frame whose out_should_draw is CNA_FALSE delivers neither draw nor end_draw. The Boolean is never collapsed into the error, and a refused call answers (false, err)",
+  "beginDrawBoolean": "the Boolean is a value channel, not a success flag. DrawFrame runs `if (BeginDraw()) { Draw(); EndDraw(); }`, so false skips both, and the measured native hook does the same: a frame whose out_should_draw is CNA_FALSE delivers neither draw nor end_draw. The Boolean is never collapsed into the error -- a refusal is (false, nil) and is never promoted to a failure, and a failing override leaves the runtime's own drawing decision untouched rather than turning the failure into a refusal",
   "graphicsDeviceManager": "Game::graphicsDeviceManager has one assignment in the whole class, at the head of RunGame, and the statement after it calls CreateDevice on what it found. The native CNA runtime owns and creates the device, and Foundation 30 audited that the projected GraphicsDeviceManager satisfies neither service contract, so the reference's only registrar cannot run. The field is permanently null, which is a state the reference itself has whenever no manager is registered; both draw bodies are reproduced as written and the null branch is the one always taken",
   "deferredSteps": "same classes and same rule as the base-call adapters: SUBSYSTEM, ARCHITECTURE or UNOBSERVABLE, each with a reason, and a deferral marked observable is REJECTED as a stop condition",
   "hooks": {
@@ -593,26 +594,49 @@
     "clrMember": "Microsoft.Xna.Framework.Game::BeginRun",
     "signature": "func (g *Game) BeginRun() error",
     "nativeHook": "CNA_GameFrameHooks::begin_run",
-    "installed": false
+    "installation": "ON_OVERRIDE",
+    "capability": "gameBeginRunOverride",
+    "capabilitySignature": "BeginRun(*Game) error",
+    "baseInvocation": "EXPLICIT_ONLY"
    },
    "EndRun": {
     "clrMember": "Microsoft.Xna.Framework.Game::EndRun",
     "signature": "func (g *Game) EndRun() error",
     "nativeHook": "CNA_GameFrameHooks::end_run",
-    "installed": false
+    "installation": "ON_OVERRIDE",
+    "capability": "gameEndRunOverride",
+    "capabilitySignature": "EndRun(*Game) error",
+    "baseInvocation": "EXPLICIT_ONLY"
    },
    "BeginDraw": {
     "clrMember": "Microsoft.Xna.Framework.Game::BeginDraw",
     "signature": "func (g *Game) BeginDraw() (bool, error)",
     "nativeHook": "CNA_GameFrameHooks::begin_draw",
-    "installed": false
+    "installation": "ON_OVERRIDE",
+    "capability": "gameBeginDrawOverride",
+    "capabilitySignature": "BeginDraw(*Game) (bool, error)",
+    "baseInvocation": "EXPLICIT_ONLY"
    },
    "EndDraw": {
     "clrMember": "Microsoft.Xna.Framework.Game::EndDraw",
     "signature": "func (g *Game) EndDraw() error",
     "nativeHook": "CNA_GameFrameHooks::end_draw",
-    "installed": false
+    "installation": "ON_OVERRIDE",
+    "capability": "gameEndDrawOverride",
+    "capabilitySignature": "EndDraw(*Game) error",
+    "baseInvocation": "EXPLICIT_ONLY"
    }
+  },
+  "installation": {
+   "NEVER": "the canonical native hook is not installed at all. A reason is REQUIRED",
+   "ON_OVERRIDE": "the canonical native hook is installed if and only if the callback object handed to NewGame supplies the matching optional override. With no override the CNA_GameFrameHooks member stays NULL, which the canonical header defines as simply not called, so the native frame position behaves exactly as it did before the mechanism existed"
+  },
+  "capabilities": "one unexported single-method Go interface per hook, never one bundled contract. A CLR subclass may override any SUBSET of the four virtuals, and a consumer forced to supply a no-op for a virtual they did not override would be installing a hook that takes the base's place. Every capability method takes the owning Game -- the `this` a CLR base call passes implicitly -- and returns exactly what the base body it replaces returns. The interfaces are unexported because Go interfaces are structural: a consumer declares the exported method and never names the type",
+  "baseCalls": "inside an override, calling the corresponding method on the Game is the Go projection of base.BeginRun(), base.EndRun(), base.BeginDraw() or base.EndDraw(). Zero calls means the base does not run, one call runs it once at that source position, and two calls run it twice; nothing deduplicates or suppresses a repeated explicit call. The call site is the semantics, exactly as it is in CLR. Those methods read only Game's own state and never consult the callback object, so an explicit base call cannot re-enter the override",
+  "discovery": "exactly once, in NewGame, at the same boundary where GameCallbacks itself becomes associated with the Game. A Go object's method set is fixed for its whole lifetime, so a later re-check could not produce a different answer and there is nothing to mutate; the captured capabilities are private fields and no frame pays for a type assertion",
+  "noThirdInstallationClass": "there is no ALWAYS. An unconditionally installed hook would run a base body at a frame position CNA-Go picked and make that base call mandatory, which is exactly what Foundation 31 settled against, so it is not a class this registry can express and declaring one is an unclassified installation",
+  "baseInvocation": {
+   "EXPLICIT_ONLY": "the base body runs only where the override's own source calls the method on the Game, zero, one or many times. It is the only admitted class, and every hook must record how it is known"
   }
  }
 }

@@ -29,6 +29,32 @@ _Static_assert(CNA_GAME_EVENT_DISPOSED == CNA_GO_MANIFEST_GAME_EVENT_DISPOSED, "
 _Static_assert(CNA_GAME_EVENT_EXITING == CNA_GO_MANIFEST_GAME_EVENT_EXITING, "exit identity drift");
 _Static_assert(CNA_GAME_EVENT_MAXIMUM == CNA_GAME_EVENT_EXITING, "highest game-event identity drift");
 
+// The frame-hook table's MEMBER ORDER, pinned portably rather than by byte
+// offsets. CNA-Go assigns four of the five members conditionally, so a table
+// whose members drifted apart between the canonical header and CNA-Go's
+// private manifest would install begin_draw where end_run belongs -- and a
+// function pointer written to the wrong slot is invisible until a frame runs.
+//
+// The same five assertions appear in bridge.c, which is compiled against the
+// manifest instead of the canonical header. Together they pin both sides: this
+// translation unit fails if the canonical table changes, and that one fails if
+// the manifest does.
+_Static_assert(offsetof(CNA_GameFrameHooks, begin_run) ==
+                   offsetof(CNA_GameFrameHooks, initialize) + sizeof(CNA_GameLifecycleCallback),
+               "CNA_GameFrameHooks::begin_run must follow initialize");
+_Static_assert(offsetof(CNA_GameFrameHooks, end_run) ==
+                   offsetof(CNA_GameFrameHooks, begin_run) + sizeof(CNA_GameLifecycleCallback),
+               "CNA_GameFrameHooks::end_run must follow begin_run");
+_Static_assert(offsetof(CNA_GameFrameHooks, begin_draw) ==
+                   offsetof(CNA_GameFrameHooks, end_run) + sizeof(CNA_GameLifecycleCallback),
+               "CNA_GameFrameHooks::begin_draw must follow end_run");
+_Static_assert(offsetof(CNA_GameFrameHooks, end_draw) ==
+                   offsetof(CNA_GameFrameHooks, begin_draw) + sizeof(CNA_GameBeginDrawCallback),
+               "CNA_GameFrameHooks::end_draw must follow begin_draw");
+_Static_assert(offsetof(CNA_GameFrameHooks, context) ==
+                   offsetof(CNA_GameFrameHooks, end_draw) + sizeof(CNA_GameLifecycleCallback),
+               "CNA_GameFrameHooks::context must follow end_draw");
+
 #ifndef CNA_GO_LAYOUT_ONLY
 // The event callback ABI, pinned the same way every bound function prototype
 // is: by assigning a function of the exact shape to the canonical typedef
@@ -36,6 +62,36 @@ _Static_assert(CNA_GAME_EVENT_MAXIMUM == CNA_GAME_EVENT_EXITING, "highest game-e
 // took a game handle, or dropped the context would not compile.
 static void cna_go_probe_game_event(void* context) { (void)context; }
 static CNA_GameEventCallback checked_CNA_GameEventCallback = &cna_go_probe_game_event;
+
+// The two frame-hook callback ABIs, pinned the same way. CNA-Go installs both:
+// the lifecycle shape backs initialize, begin_run, end_run and end_draw, and
+// the begin_draw shape is the only one carrying a value channel of its own.
+// The CNA_Bool out-parameter and its POSITION -- before the error, after the
+// context -- are what decides which frames draw, so a probe that wrote to the
+// wrong slot would silently make every refusal ineffective.
+static CNA_Result cna_go_probe_lifecycle(
+    CNA_Handle game,
+    const CNA_GameTime* game_time,
+    void* context,
+    CNA_CallbackError* out_error) {
+    (void)game; (void)game_time; (void)context; (void)out_error;
+    return CNA_RESULT_SUCCESS;
+}
+static CNA_GameLifecycleCallback checked_CNA_GameLifecycleCallback = &cna_go_probe_lifecycle;
+
+static CNA_Result cna_go_probe_begin_draw(
+    CNA_Handle game,
+    const CNA_GameTime* game_time,
+    void* context,
+    CNA_Bool* out_should_draw,
+    CNA_CallbackError* out_error) {
+    (void)game; (void)game_time; (void)context; (void)out_error;
+    if (out_should_draw != NULL) {
+        *out_should_draw = CNA_TRUE;
+    }
+    return CNA_RESULT_SUCCESS;
+}
+static CNA_GameBeginDrawCallback checked_CNA_GameBeginDrawCallback = &cna_go_probe_begin_draw;
 #endif
 
 int main(void) {
@@ -44,6 +100,8 @@ int main(void) {
     CNA_GO_REQUIRED_SYMBOLS(USE_PROTOTYPE)
 #undef USE_PROTOTYPE
     (void)checked_CNA_GameEventCallback;
+    (void)checked_CNA_GameLifecycleCallback;
+    (void)checked_CNA_GameBeginDrawCallback;
 #endif
     printf("abi_version=%u\n", (unsigned)CNA_ABI_VERSION);
     printf("sizeof_CNA_Bool=%zu\n", sizeof(CNA_Bool));
@@ -58,6 +116,15 @@ int main(void) {
     printf("sizeof_CNA_GameFrameHooks=%zu\n", sizeof(CNA_GameFrameHooks));
     printf("alignof_CNA_GameFrameHooks=%zu\n", _Alignof(CNA_GameFrameHooks));
     printf("offsetof_CNA_GameFrameHooks_context=%zu\n", offsetof(CNA_GameFrameHooks, context));
+    // CNA-Go assigns four of the five hook members conditionally, so their
+    // POSITIONS are load-bearing: a member order that drifted between the
+    // canonical header and CNA-Go's private manifest would install begin_draw
+    // where end_run belongs and the mistake would be invisible at run time.
+    printf("offsetof_CNA_GameFrameHooks_initialize=%zu\n", offsetof(CNA_GameFrameHooks, initialize));
+    printf("offsetof_CNA_GameFrameHooks_begin_run=%zu\n", offsetof(CNA_GameFrameHooks, begin_run));
+    printf("offsetof_CNA_GameFrameHooks_end_run=%zu\n", offsetof(CNA_GameFrameHooks, end_run));
+    printf("offsetof_CNA_GameFrameHooks_begin_draw=%zu\n", offsetof(CNA_GameFrameHooks, begin_draw));
+    printf("offsetof_CNA_GameFrameHooks_end_draw=%zu\n", offsetof(CNA_GameFrameHooks, end_draw));
     printf("sizeof_CNA_GameCreateInfo=%zu\n", sizeof(CNA_GameCreateInfo));
     printf("alignof_CNA_GameCreateInfo=%zu\n", _Alignof(CNA_GameCreateInfo));
     printf("offsetof_CNA_GameCreateInfo_callbacks=%zu\n", offsetof(CNA_GameCreateInfo, callbacks));
