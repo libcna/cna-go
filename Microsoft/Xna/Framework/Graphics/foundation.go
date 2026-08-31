@@ -202,6 +202,72 @@ func Texture2DFromStreamByGraphicsDeviceAndStream(device *GraphicsDevice, stream
 	return &Texture2D{resource: resource, info: info}, nil
 }
 
+// The two Texture2D constructors. Both are thirty bytes of IL over one private
+// CreateTexture:
+//
+//	.ctor(GraphicsDevice, int width, int height)
+//	  CreateTexture(device, width, height, mipMap: false, usage: 0, pool: 1,
+//	                format: SurfaceFormat.Color)   // ldc.i4.0 for both
+//
+//	.ctor(GraphicsDevice, int width, int height, bool mipMap, SurfaceFormat format)
+//	  CreateTexture(device, width, height, mipMap, usage: 0, pool: 1, format)
+//
+// so the three-argument overload is the five-argument one with `false` and
+// `SurfaceFormat.Color`, and those two defaults are read off the IL rather than
+// chosen. `usage` and `pool` are D3D concepts the reference passes as constants
+// and CNA has no parameter for.
+//
+// Both wrap the call in a `.try/fault` that calls `GraphicsResource::Dispose(true)`
+// if it throws, which is the CLR's way of not leaking a half-built object. Go
+// has no half-built object to leak: a refused creation returns `(nil, err)` and
+// the native texture, if one was made at all, is disposed by CreateTexture
+// before it returns.
+//
+// The one guard reproduced here is the reference's own first check:
+//
+//	if (graphicsDevice == null)
+//	    throw new ArgumentNullException("graphicsDevice",
+//	                                    FrameworkResources.DeviceCannotBeNullOnResourceCreate);
+//
+// Everything after it -- a dimension of zero, a format the renderer does not
+// have -- is validated by CNA, which refuses with its own result rather than
+// Microsoft's sentence. That difference is recorded rather than papered over:
+// reproducing those messages would mean reproducing D3D9's format-capability
+// tables, and CNA-Go would then be asserting a support decision it did not make.
+
+// NewTexture2DByGraphicsDeviceAndInt32AndInt32 is
+// Texture2D::.ctor(GraphicsDevice, Int32, Int32).
+func NewTexture2DByGraphicsDeviceAndInt32AndInt32(
+	graphicsDevice *GraphicsDevice, width, height int32,
+) (*Texture2D, error) {
+	return NewTexture2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormat(
+		graphicsDevice, width, height, false, SurfaceFormatColor)
+}
+
+// NewTexture2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormat is
+// Texture2D::.ctor(GraphicsDevice, Int32, Int32, Boolean, SurfaceFormat).
+func NewTexture2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormat(
+	graphicsDevice *GraphicsDevice, width, height int32, mipMap bool, format SurfaceFormat,
+) (*Texture2D, error) {
+	if graphicsDevice == nil || graphicsDevice.device == nil {
+		return nil, fmt.Errorf("%w: graphicsDevice: %s",
+			errGraphicsResourceArgumentNull, deviceCannotBeNullOnResourceCreate)
+	}
+	if width < 0 || height < 0 {
+		// CNA takes both as uint32, so a negative would arrive as an enormous
+		// positive. The reference refuses these too, and this refusal exists so
+		// the conversion cannot silently invent a dimension.
+		return nil, fmt.Errorf("%w: a texture dimension is negative: %dx%d",
+			errGraphicsResourceArgument, width, height)
+	}
+	resource, info, err := graphicsDevice.device.CreateTexture(
+		uint32(width), uint32(height), mipMap, uint32(format))
+	if err != nil {
+		return nil, err
+	}
+	return &Texture2D{resource: resource, info: info}, nil
+}
+
 func (t *Texture2D) Width() (int32, error) {
 	if t == nil || t.resource == nil {
 		return 0, interop.ErrDisposed

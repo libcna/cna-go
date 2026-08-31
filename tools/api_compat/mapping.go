@@ -98,6 +98,21 @@ var pureManagedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.Audio.AudioListener": true,
 	"Microsoft.Xna.Framework.Audio.AudioEmitter":  true,
 
+	// Foundation 52. Microsoft.Xna.Framework.Graphics.dll IL shows DisplayMode
+	// as three private fields and six members over them, with no constructor in
+	// the public contract at all. Width, Height and Format are one ldfld each;
+	// AspectRatio is 38 bytes of arithmetic over two of those fields;
+	// TitleSafeArea calls Viewport::GetTitleSafeArea, which is ten bytes
+	// building a Rectangle from its four arguments; ToString is a String.Format
+	// over the four. Nothing reaches a device, an adapter or a handle.
+	//
+	// The type is native-SOURCED and pure managed, and those are different
+	// facts. Every DisplayMode a consumer can hold was reported by a member
+	// that asked CNA -- GraphicsDevice.DisplayMode today -- and that member
+	// carries the error. Once the value exists it is three numbers, and a
+	// getter over them has no failure mode to report.
+	"Microsoft.Xna.Framework.Graphics.DisplayMode": true,
+
 	// Foundation 32. Microsoft.Xna.Framework.Game.dll IL
 	// (sha256 b5dffdd8125abef2a4507ba4e1d2f11062143f0a63d48fe4f298b95ad746a1f0)
 	// shows GameComponent as managed field work throughout. The constructor is

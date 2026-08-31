@@ -99,6 +99,12 @@ var registry = []claimedString{
 		Value: "Begin must be called successfully before End can be called."},
 	{Key: "EndMustBeCalledBeforeBegin", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "Begin cannot be called again until End has been successfully called."},
+	// Foundation 52. The one guard Texture2D's constructors reproduce before
+	// they reach CNA; everything after it is CNA's own refusal, because
+	// reproducing D3D9's format-capability messages would mean asserting a
+	// support decision CNA-Go did not make.
+	{Key: "DeviceCannotBeNullOnResourceCreate", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "The GraphicsDevice must not be null when creating new resources."},
 	// Foundation 50 corrected this KEY. The value was right and its key was
 	// invented from the sentence; the resource-set reader found no
 	// DopplerScaleMustBeGreaterThanOrEqualToZero anywhere, and the real key is

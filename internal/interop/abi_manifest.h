@@ -128,8 +128,20 @@ typedef uint32_t CNA_ClearOptions;
 typedef uint32_t CNA_GraphicsDeviceStatus;
 #endif
 
+#ifndef CNA_C_GRAPHICS_H
+typedef uint32_t CNA_SurfaceFormat;
+#endif
+
 #ifndef CNA_C_DISPLAY_H
 typedef uint32_t CNA_GraphicsProfile;
+typedef struct CNA_DisplayMode {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    int32_t width;
+    int32_t height;
+    float aspect_ratio;
+    CNA_SurfaceFormat format;
+} CNA_DisplayMode;
 #endif
 
 #ifndef CNA_C_GRAPHICS_DEVICE_H
@@ -144,6 +156,15 @@ typedef struct CNA_Viewport {
 #endif
 
 #ifndef CNA_C_GRAPHICS_H
+typedef struct CNA_Texture2DCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t width;
+    uint32_t height;
+    CNA_Bool mip_map;
+    uint8_t reserved[3];
+    CNA_SurfaceFormat format;
+} CNA_Texture2DCreateInfo;
 typedef struct CNA_Texture2DInfo {
     uint32_t struct_size;
     uint32_t struct_version;
@@ -264,6 +285,8 @@ typedef CNA_Result (*cna_graphics_device_get_status_fn)(CNA_Handle, CNA_Graphics
 typedef CNA_Result (*cna_graphics_device_get_is_disposed_fn)(CNA_Handle, CNA_Bool*);
 typedef CNA_Result (*cna_graphics_device_clear_options_fn)(CNA_Handle, CNA_ClearOptions, CNA_Color, float, int32_t);
 typedef CNA_Result (*cna_graphics_device_present_fn)(CNA_Handle);
+typedef CNA_Result (*cna_graphics_device_get_display_mode_fn)(CNA_Handle, CNA_DisplayMode*);
+typedef CNA_Result (*cna_texture2d_create_fn)(CNA_Handle, const CNA_Texture2DCreateInfo*, CNA_Handle*);
 typedef CNA_Result (*cna_sprite_batch_end_fn)(CNA_Handle);
 typedef CNA_Result (*cna_sprite_batch_destroy_fn)(CNA_Handle);
 typedef CNA_Result (*cna_keyboard_get_state_fn)(CNA_Handle, CNA_KeyboardState*);
@@ -354,6 +377,8 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_graphics_device_get_is_disposed) \
     X(cna_graphics_device_clear_options) \
     X(cna_graphics_device_present) \
+    X(cna_graphics_device_get_display_mode) \
+    X(cna_texture2d_create) \
     X(cna_sprite_batch_end) \
     X(cna_sprite_batch_destroy) \
     X(cna_keyboard_get_state) \

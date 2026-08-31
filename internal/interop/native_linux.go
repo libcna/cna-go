@@ -368,6 +368,27 @@ func nativeGraphicsDeviceClearOptions(device uint64, options uint32, r, g, b, a 
 		C.float(depth), C.int32_t(stencil))))
 }
 
+func nativeTextureCreate(device uint64, width, height uint32, mipMap bool, format uint32) (uint64, error) {
+	var handle C.CnaGoHandle
+	mip := C.uint8_t(0)
+	if mipMap {
+		mip = 1
+	}
+	code := uint32(C.cna_go_texture2d_create(C.CnaGoHandle(device), C.uint32_t(width), C.uint32_t(height), mip, C.uint32_t(format), &handle))
+	return uint64(handle), resultError("cna_texture2d_create", code)
+}
+
+func nativeGraphicsDeviceDisplayMode(device uint64) (DisplayMode, error) {
+	var width, height C.int32_t
+	var aspect C.float
+	var format C.uint32_t
+	code := uint32(C.cna_go_graphics_device_get_display_mode(C.CnaGoHandle(device), &width, &height, &aspect, &format))
+	return DisplayMode{
+		Width: int32(width), Height: int32(height),
+		AspectRatio: float32(aspect), Format: uint32(format),
+	}, resultError("cna_graphics_device_get_display_mode", code)
+}
+
 func nativeGraphicsDevicePresent(device uint64) error {
 	return resultError("cna_graphics_device_present", uint32(C.cna_go_graphics_device_present(C.CnaGoHandle(device))))
 }

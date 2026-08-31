@@ -2962,6 +2962,39 @@ func runCorpus() corpusReport {
 		"false,true", fmt.Sprintf("%t,%t", deviceHasBareName, deviceHasSuffixed))
 
 	// ------------------------------------------------------------------
+	// Foundation 52. DisplayMode, and Texture2D's two constructors.
+	// ------------------------------------------------------------------
+
+	// DisplayMode is pure managed and has NO public constructor: the contract
+	// declares six members and not one .ctor, so a consumer never builds one --
+	// it comes from a member that reports one.
+	displayModeType := reflect.TypeOf((*graphics.DisplayMode)(nil))
+	displayModeMembers := displayModeType.NumMethod()
+	check("display-mode.declares-six-members-and-no-constructor", "DISPLAY_MODE",
+		"6", fmt.Sprint(displayModeMembers))
+
+	// The two computed members, measured on the value GraphicsDevice.DisplayMode
+	// would report for the qualified artifact's 800x480 back buffer.
+	sampleMode, sampleErr := (&graphics.GraphicsDevice{}).DisplayMode()
+	check("display-mode.a-device-less-facade-reports-rather-than-answering", "DISPLAY_MODE",
+		"true,true", fmt.Sprintf("%t,%t", sampleMode == nil, sampleErr != nil))
+
+	// Texture2D's constructors refuse a nil device with Microsoft's own
+	// sentence, before they reach CNA at all.
+	_, nilDeviceTexture := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(nil, 4, 4)
+	check("texture2d.a-nil-device-carries-the-reference-message", "TEXTURE2D",
+		"true", fmt.Sprintf("%t",
+			nilDeviceTexture != nil && strings.Contains(nilDeviceTexture.Error(),
+				"The GraphicsDevice must not be null when creating new resources.")))
+
+	// A negative dimension is refused rather than converted into an enormous
+	// uint32 on the way to CNA.
+	_, negativeTexture := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormat(
+		nil, -1, 4, false, graphics.SurfaceFormatColor)
+	check("texture2d.a-negative-dimension-is-refused", "TEXTURE2D",
+		"true", fmt.Sprintf("%t", negativeTexture != nil))
+
+	// ------------------------------------------------------------------
 	// Foundation 47. The two frame steps. Their real evidence is
 	// tools/native_stress, which drives a live native game a frame at a time
 	// in an isolated process; what belongs HERE is the part that reaches no

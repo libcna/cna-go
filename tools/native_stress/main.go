@@ -82,6 +82,12 @@ type counters struct {
 	DeviceStateStaleChecks     int `json:"DEVICE_STATE_STALE_CHECKS"`
 	DeviceStateWrongThreadHits int `json:"DEVICE_STATE_WRONG_THREAD_CHECKS"`
 
+	// Foundation 52. The device's display mode, and an EMPTY texture created
+	// from its dimensions and format rather than decoded from bytes.
+	DeviceStateDisplayModeChecks int `json:"DEVICE_STATE_DISPLAY_MODE_CHECKS"`
+	DeviceStateTextureCreations  int `json:"DEVICE_STATE_TEXTURE_CREATIONS"`
+	DeviceStateTextureRefusals   int `json:"DEVICE_STATE_TEXTURE_REFUSALS"`
+
 	FrameHookOverrideCycles  int `json:"FRAME_HOOK_OVERRIDE_CYCLES"`
 	FrameHookBeginRunHits    int `json:"FRAME_HOOK_BEGIN_RUN_DELIVERIES"`
 	FrameHookEndRunHits      int `json:"FRAME_HOOK_END_RUN_DELIVERIES"`
@@ -305,6 +311,12 @@ func runParent() (counters, error) {
 	// required to come back from the device that was written.
 	if total.DeviceStateCycles < 20 || total.DeviceStateRoundTrips < 100 {
 		return total, errors.New("native device-state round-trip minimum was not met")
+	}
+	// Two display-mode checks and three texture creations per cycle, plus the
+	// two refusals the projection makes before it reaches CNA.
+	if total.DeviceStateDisplayModeChecks < 40 || total.DeviceStateTextureCreations < 60 ||
+		total.DeviceStateTextureRefusals < 40 {
+		return total, errors.New("a device-state display-mode or texture proof did not run in every cycle")
 	}
 	if total.DeviceStateReadOnlyChecks < 60 || total.DeviceStateClearCalls < 40 ||
 		total.DeviceStateClearRefusals < 20 || total.DeviceStatePresentCalls < 20 ||
@@ -1266,6 +1278,76 @@ func (g *stressGame) exerciseDeviceState() error {
 		return fmt.Errorf("Present: %w", err)
 	}
 	g.result.DeviceStatePresentCalls++
+
+	// The device's display mode. Its two computed members are reproduced from
+	// the dimensions rather than taken from CNA's own aspect ratio, so what is
+	// checked here is that they agree with the dimensions CNA reported.
+	mode, err := device.DisplayMode()
+	if err != nil {
+		return fmt.Errorf("DisplayMode: %w", err)
+	}
+	if mode.Width() <= 0 || mode.Height() <= 0 {
+		return fmt.Errorf("DisplayMode = %s, which has a non-positive dimension", mode.ToString())
+	}
+	g.result.DeviceStateDisplayModeChecks++
+	safe := mode.TitleSafeArea()
+	wantAspect := float32(mode.Width()) / float32(mode.Height())
+	if safe.X != 0 || safe.Y != 0 || safe.Width != mode.Width() || safe.Height != mode.Height() ||
+		mode.AspectRatio() != wantAspect {
+		return fmt.Errorf("DisplayMode computed members disagree with its dimensions: %s", mode.ToString())
+	}
+	g.result.DeviceStateDisplayModeChecks++
+
+	// An EMPTY texture, created from a stated size and format rather than
+	// decoded. Three per cycle: the three-argument constructor, the
+	// five-argument one with the same defaults, and one with a mip chain.
+	for index, create := range []func() (*graphics.Texture2D, error){
+		func() (*graphics.Texture2D, error) {
+			return graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(device, 32, 16)
+		},
+		func() (*graphics.Texture2D, error) {
+			return graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormat(
+				device, 32, 16, false, graphics.SurfaceFormatColor)
+		},
+		func() (*graphics.Texture2D, error) {
+			return graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormat(
+				device, 64, 64, true, graphics.SurfaceFormatColor)
+		},
+	} {
+		created, createErr := create()
+		if createErr != nil {
+			return fmt.Errorf("empty texture %d: %w", index, createErr)
+		}
+		width, widthErr := created.Width()
+		height, heightErr := created.Height()
+		if widthErr != nil || heightErr != nil {
+			return fmt.Errorf("empty texture %d dimensions: %v %v", index, widthErr, heightErr)
+		}
+		wantWidth, wantHeight := int32(32), int32(16)
+		if index == 2 {
+			wantWidth, wantHeight = 64, 64
+		}
+		if width != wantWidth || height != wantHeight {
+			return fmt.Errorf("empty texture %d = %dx%d, want %dx%d", index, width, height, wantWidth, wantHeight)
+		}
+		if err := created.Dispose(true); err != nil {
+			return fmt.Errorf("empty texture %d disposal: %w", index, err)
+		}
+		g.result.DeviceStateTextureCreations++
+	}
+
+	// The two refusals the projection makes itself, before CNA is reached: a
+	// nil device carries Microsoft's own sentence, and a negative dimension is
+	// refused rather than converted into an enormous uint32.
+	if _, refusal := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(nil, 4, 4); refusal == nil ||
+		!strings.Contains(refusal.Error(), "The GraphicsDevice must not be null when creating new resources.") {
+		return fmt.Errorf("nil-device texture creation = %v, want the reference's message", refusal)
+	}
+	g.result.DeviceStateTextureRefusals++
+	if _, refusal := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(device, -1, 4); refusal == nil {
+		return errors.New("a negative texture width was accepted")
+	}
+	g.result.DeviceStateTextureRefusals++
 
 	// The owner-thread policy reaches these members too. A second goroutine
 	// must be refused before it can touch the device.

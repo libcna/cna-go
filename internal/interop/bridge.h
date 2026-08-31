@@ -240,6 +240,8 @@ CnaGoResult cna_go_graphics_device_get_status(CnaGoHandle device, uint32_t* out_
 CnaGoResult cna_go_graphics_device_get_is_disposed(CnaGoHandle device, uint8_t* out_is_disposed);
 CnaGoResult cna_go_graphics_device_clear_options(CnaGoHandle device, uint32_t options, uint8_t r, uint8_t g, uint8_t b, uint8_t a, float depth, int32_t stencil);
 CnaGoResult cna_go_graphics_device_present(CnaGoHandle device);
+CnaGoResult cna_go_graphics_device_get_display_mode(CnaGoHandle device, int32_t* out_width, int32_t* out_height, float* out_aspect_ratio, uint32_t* out_format);
+CnaGoResult cna_go_texture2d_create(CnaGoHandle device, uint32_t width, uint32_t height, uint8_t mip_map, uint32_t format, CnaGoHandle* out_texture);
 CnaGoResult cna_go_graphics_device_clear_rgba(
     CnaGoHandle device,
     float r,

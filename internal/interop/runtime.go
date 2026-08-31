@@ -233,6 +233,21 @@ type Device struct {
 	ownership  ownership
 }
 
+// DisplayMode is CNA_DisplayMode.
+//
+// CNA reports an aspect ratio of its own alongside the two dimensions. The
+// projection does NOT use it: XNA's DisplayMode::get_AspectRatio is 38 bytes of
+// managed arithmetic over the two fields, and reproducing that is exact where
+// trusting a second computation would be a value that could disagree. The field
+// is carried here anyway, because a route's output is measured as it is
+// declared and dropping a member of the struct would leave the layout
+// unchecked.
+type DisplayMode struct {
+	Width, Height int32
+	AspectRatio   float32
+	Format        uint32
+}
+
 // ScissorRectangle is CNA_Rectangle as the graphics device's clip rectangle.
 //
 // It is a distinct interop type rather than a reuse of the sprite command's
@@ -1510,6 +1525,14 @@ func (d *Device) ClearWithOptions(options uint32, r, g, b, a uint8, depth float3
 	return nativeGraphicsDeviceClearOptions(handle, options, r, g, b, a, depth, stencil)
 }
 
+func (d *Device) DisplayMode() (DisplayMode, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return DisplayMode{}, err
+	}
+	return nativeGraphicsDeviceDisplayMode(handle)
+}
+
 func (d *Device) Present() error {
 	handle, err := d.nativeHandle()
 	if err != nil {
@@ -1535,6 +1558,28 @@ func (d *Device) CreateTextureFromEncoded(data []byte) (*Resource, TextureInfo, 
 		return nil, TextureInfo{}, err
 	}
 	texture, err := nativeTextureCreateEncoded(handle, data)
+	if err != nil {
+		return nil, TextureInfo{}, err
+	}
+	resource := d.runtime.registerResource(texture, resourceTexture2D, d.manager)
+	info, infoErr := nativeTextureInfo(texture)
+	if infoErr != nil {
+		_ = resource.Dispose()
+		return nil, TextureInfo{}, infoErr
+	}
+	return resource, info, nil
+}
+
+// CreateTexture is cna_texture2d_create: an EMPTY texture of a stated size,
+// mip configuration and surface format, as opposed to CreateTextureFromEncoded,
+// which decodes bytes. It registers and reads back exactly as that one does,
+// including disposing the native texture if the read-back fails.
+func (d *Device) CreateTexture(width, height uint32, mipMap bool, format uint32) (*Resource, TextureInfo, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, TextureInfo{}, err
+	}
+	texture, err := nativeTextureCreate(handle, width, height, mipMap, format)
 	if err != nil {
 		return nil, TextureInfo{}, err
 	}

@@ -2844,3 +2844,35 @@ func TestGraphicsDeviceStateSurfaceIsReachableFromOutside(t *testing.T) {
 		t.Fatal("Present on a device-less facade returned no error")
 	}
 }
+
+// TestDisplayModeAndTextureConstructorsAreReachableFromOutside pins the shapes
+// Foundation 52 added, from a module that can see only exported names.
+//
+// DisplayMode's six members are INFALLIBLE, which is the whole classification
+// argument in one line of Go: the type is native-SOURCED and pure managed, and
+// the member that reports one -- GraphicsDevice.DisplayMode -- is where the
+// error lives.
+func TestDisplayModeAndTextureConstructorsAreReachableFromOutside(t *testing.T) {
+	var mode *graphics.DisplayMode = &graphics.DisplayMode{}
+	var _ func() int32 = mode.Width
+	var _ func() int32 = mode.Height
+	var _ func() graphics.SurfaceFormat = mode.Format
+	var _ func() float32 = mode.AspectRatio
+	var _ func() framework.Rectangle = mode.TitleSafeArea
+	var _ func() string = mode.ToString
+	var _ func() (*graphics.DisplayMode, error) = (&graphics.GraphicsDevice{}).DisplayMode
+
+	// A consumer cannot construct a meaningful one, and the zero value answers
+	// the reference's own zero-dimension guard rather than dividing.
+	if mode.AspectRatio() != 0 {
+		t.Fatalf("a zero DisplayMode reported an aspect ratio of %v", mode.AspectRatio())
+	}
+
+	var _ func(*graphics.GraphicsDevice, int32, int32) (*graphics.Texture2D, error) = graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32
+	var _ func(*graphics.GraphicsDevice, int32, int32, bool, graphics.SurfaceFormat) (*graphics.Texture2D, error) = graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormat
+
+	if _, err := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(nil, 4, 4); err == nil ||
+		!strings.Contains(err.Error(), "The GraphicsDevice must not be null when creating new resources.") {
+		t.Fatalf("a nil device produced %v, want the reference's message", err)
+	}
+}

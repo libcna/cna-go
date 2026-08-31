@@ -326,6 +326,26 @@ var probeMutations = []sourceMutation{
 	// The route pairing is the other half: the two prototypes differ only in
 	// which command pointer they take, so binding submit_many where
 	// submit_scaled_many belongs is a two-token edit that also compiles.
+	// Foundation 52 binds two routes whose structures are versioned and whose
+	// members are same-width neighbours, which is the shape that hides a defect
+	// best.
+	{
+		// The create info is passed BY POINTER. Taking it by value compiles in
+		// the bridge -- the bridge builds the struct itself -- and passes the
+		// struct where the callee expects an address.
+		name: "texture-create-info-passed-by-value",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_texture2d_create_fn)(CNA_Handle, const CNA_Texture2DCreateInfo*, CNA_Handle*);",
+		new:  "typedef CNA_Result (*cna_texture2d_create_fn)(CNA_Handle, CNA_Texture2DCreateInfo, CNA_Handle*);",
+	},
+	{
+		// The display mode is filled BY the callee, so a by-value out parameter
+		// would silently discard every field it wrote.
+		name: "display-mode-out-parameter-passed-by-value",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_get_display_mode_fn)(CNA_Handle, CNA_DisplayMode*);",
+		new:  "typedef CNA_Result (*cna_graphics_device_get_display_mode_fn)(CNA_Handle, CNA_DisplayMode);",
+	},
 	// Foundation 51 binds GraphicsDevice's render state, and three of its four
 	// controls are about a C conversion that says nothing.
 	{
@@ -757,6 +777,35 @@ func TestUnmutatedProbesAgreeOnEveryMeasurement(t *testing.T) {
 // class the ABI evidence could not see until the manifest's own declarations
 // were measured, and each must produce a divergence.
 var layoutMutations = []sourceMutation{
+	{
+		// CNA_DisplayMode's aspect_ratio and format are neighbours of the same
+		// width and a different KIND: a float and a uint32. Swapping them moves
+		// no size and no later offset, and the bridge's assignments convert
+		// silently in both directions -- an aspect ratio of 1.666 would arrive
+		// as the format identity 1, which is Bgr565, and a format of 0 would
+		// arrive as an aspect ratio of 0.0. Only the two offsets move.
+		name: "display-mode-aspect-ratio-and-format-swapped",
+		file: "abi_manifest.h",
+		old:  "    float aspect_ratio;\n    CNA_SurfaceFormat format;\n} CNA_DisplayMode;",
+		new:  "    CNA_SurfaceFormat format;\n    float aspect_ratio;\n} CNA_DisplayMode;",
+	},
+	{
+		// The create info's reserved bytes are what CNA uses to state, rather
+		// than imply, where `format` sits after the one-byte mip flag. This
+		// mutation gives them a fourth byte, which pushes the format from 20 to
+		// 24 and grows the structure.
+		//
+		// The obvious mutation -- DROPPING reserved[3] entirely -- was written
+		// first and removed, because it is not observable: the compiler inserts
+		// exactly those three bytes of padding to align a uint32 after a
+		// uint8, so the declared and the implied layouts are identical. A
+		// control that cannot fail is not evidence, and that is recorded here
+		// rather than left as a passing test nobody re-derives.
+		name: "texture-create-info-reserved-bytes-widened",
+		file: "abi_manifest.h",
+		old:  "    CNA_Bool mip_map;\n    uint8_t reserved[3];\n    CNA_SurfaceFormat format;",
+		new:  "    CNA_Bool mip_map;\n    uint8_t reserved[4];\n    CNA_SurfaceFormat format;",
+	},
 	{
 		// A narrowed clear mask. Target, DepthBuffer and Stencil are 1, 2 and 4,
 		// so every declared bit survives 16 bits and nothing observable changes

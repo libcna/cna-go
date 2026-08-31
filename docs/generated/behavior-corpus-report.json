@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 677,
-    "ASSERTIONS": 677,
+    "OBSERVATIONS": 681,
+    "ASSERTIONS": 681,
     "FAILURES": 0
   },
   "observations": [
@@ -5285,6 +5285,38 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "false,true",
       "actual": "false,true",
+      "passed": true
+    },
+    {
+      "id": "display-mode.declares-six-members-and-no-constructor",
+      "group": "DISPLAY_MODE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "6",
+      "actual": "6",
+      "passed": true
+    },
+    {
+      "id": "display-mode.a-device-less-facade-reports-rather-than-answering",
+      "group": "DISPLAY_MODE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "texture2d.a-nil-device-carries-the-reference-message",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "texture2d.a-negative-dimension-is-refused",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
       "passed": true
     },
     {

@@ -698,6 +698,31 @@ CnaGoResult cna_go_graphics_device_present(CnaGoHandle device) {
     return api.cna_graphics_device_present(device);
 }
 
+CnaGoResult cna_go_graphics_device_get_display_mode(CnaGoHandle device, int32_t* out_width, int32_t* out_height, float* out_aspect_ratio, uint32_t* out_format) {
+    CNA_DisplayMode mode;
+    memset(&mode, 0, sizeof(mode));
+    mode.struct_size = (uint32_t)sizeof(mode);
+    mode.struct_version = 1;
+    CNA_Result result = api.cna_graphics_device_get_display_mode(device, &mode);
+    *out_width = mode.width;
+    *out_height = mode.height;
+    *out_aspect_ratio = mode.aspect_ratio;
+    *out_format = mode.format;
+    return result;
+}
+
+CnaGoResult cna_go_texture2d_create(CnaGoHandle device, uint32_t width, uint32_t height, uint8_t mip_map, uint32_t format, CnaGoHandle* out_texture) {
+    CNA_Texture2DCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.width = width;
+    info.height = height;
+    info.mip_map = mip_map;
+    info.format = format;
+    return api.cna_texture2d_create(device, &info, out_texture);
+}
+
 CnaGoResult cna_go_sprite_batch_draw_destination(CnaGoHandle batch, CnaGoHandle texture, int32_t destination_x, int32_t destination_y, int32_t destination_width, int32_t destination_height, int32_t source_x, int32_t source_y, int32_t source_width, int32_t source_height, uint8_t color_r, uint8_t color_g, uint8_t color_b, uint8_t color_a, float rotation, float origin_x, float origin_y, uint32_t effects, float layer_depth) {
     CNA_SpriteCommand command;
     memset(&command, 0, sizeof(command));

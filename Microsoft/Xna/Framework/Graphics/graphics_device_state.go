@@ -229,6 +229,32 @@ func (d *GraphicsDevice) ClearByClearOptionsAndVector4AndSingleAndInt32(
 		options, framework.NewColorByVector4(color), depth, stencil)
 }
 
+// DisplayMode is GraphicsDevice::get_DisplayMode.
+//
+// The reference reads its adapter's current mode; CNA-Go asks CNA for the
+// device's, through cna_graphics_device_get_display_mode, which is the same
+// question asked of the object that owns the answer.
+//
+// The DisplayMode it returns is built from CNA's width, height and format and
+// NOT from CNA's aspect ratio: the reference computes that from the two
+// dimensions with a defined answer for a zero width, and a second computed
+// value could disagree with it. See display_mode.go.
+func (d *GraphicsDevice) DisplayMode() (*DisplayMode, error) {
+	device, err := d.live()
+	if err != nil {
+		return nil, err
+	}
+	mode, err := device.DisplayMode()
+	if err != nil {
+		return nil, err
+	}
+	return &DisplayMode{
+		width:  mode.Width,
+		height: mode.Height,
+		format: SurfaceFormat(mode.Format),
+	}, nil
+}
+
 // PresentByNone is GraphicsDevice::Present(), which is ten bytes of IL forwarding to
 // the three-pointer overload with three nulls:
 //
@@ -244,3 +270,18 @@ func (d *GraphicsDevice) PresentByNone() error {
 	}
 	return device.Present()
 }
+
+// The two exceptions Texture2D's constructors throw before they reach CNA. They
+// live here rather than in foundation.go because they are error SHAPES, and this
+// file already holds the package's other one.
+var (
+	// errGraphicsResourceArgumentNull projects System.ArgumentNullException.
+	errGraphicsResourceArgumentNull = errors.New("graphics resource argument is nil")
+	// errGraphicsResourceArgument projects System.ArgumentException.
+	errGraphicsResourceArgument = errors.New("graphics resource argument is invalid")
+)
+
+// The exact FrameworkResources string the reference's resource constructors
+// load, read by tools/resource_strings out of the retained
+// Microsoft.Xna.Framework.dll under the key the IL names.
+const deviceCannotBeNullOnResourceCreate = "The GraphicsDevice must not be null when creating new resources."
