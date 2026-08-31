@@ -153,6 +153,12 @@ CnaGoResult cna_go_game_set_inactive_sleep_time_ticks(CnaGoHandle game, int64_t 
 CnaGoResult cna_go_game_reset_elapsed_time(CnaGoHandle game);
 CnaGoResult cna_go_game_suppress_draw(CnaGoHandle game);
 CnaGoResult cna_go_game_run(CnaGoHandle game);
+
+/* The two frame steps. cna_game_tick is the canonical step and does not
+   initialize; cna_game_run_one_frame initializes on first use and then wraps
+   it. Both are refused by CNA from inside a lifecycle callback. */
+CnaGoResult cna_go_game_tick(CnaGoHandle game);
+CnaGoResult cna_go_game_run_one_frame(CnaGoHandle game);
 CnaGoResult cna_go_game_request_exit(CnaGoHandle game);
 CnaGoResult cna_go_game_destroy(CnaGoHandle game);
 

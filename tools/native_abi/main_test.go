@@ -189,6 +189,28 @@ var bridgeMutations = []sourceMutation{
 		old:  "    X(cna_game_window_subscribe)",
 		new:  "",
 	},
+	// Foundation 47's two frame steps. Both are CNA_Result(CNA_Handle), which
+	// is the shape cna_game_run, cna_game_request_exit and cna_game_destroy
+	// also have -- so a manifest that bound one where another belongs compiles
+	// cleanly, and only the loader's dladdr identity check separates them.
+	{
+		name: "missing-tick-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_game_tick) \\\n",
+		new:  "",
+	},
+	{
+		name: "missing-run-one-frame-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_game_run_one_frame) \\\n",
+		new:  "",
+	},
+	{
+		name: "tick-takes-a-frame-count",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_tick_fn)(CNA_Handle);",
+		new:  "typedef CNA_Result (*cna_game_tick_fn)(CNA_Handle, uint32_t);",
+	},
 	{
 		name: "missing-window-title-symbol",
 		file: "abi_manifest.h",
@@ -270,6 +292,15 @@ var probeMutations = []sourceMutation{
 		file: "abi_manifest.h",
 		old:  "typedef CNA_Result (*cna_game_set_target_elapsed_time_ticks_fn)(CNA_Handle, int64_t);",
 		new:  "typedef CNA_Result (*cna_game_set_target_elapsed_time_ticks_fn)(CNA_Handle, int32_t);",
+	},
+	// Foundation 47. C narrows a CNA_Result to a CNA_Bool silently, so a
+	// manifest that turned a frame step's result code into a Boolean would
+	// compile against itself and report success for every failing frame.
+	{
+		name: "run-one-frame-returns-a-bool",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_run_one_frame_fn)(CNA_Handle);",
+		new:  "typedef CNA_Bool (*cna_game_run_one_frame_fn)(CNA_Handle);",
 	},
 	{
 		name: "mouse-visibility-returns-the-previous-value",

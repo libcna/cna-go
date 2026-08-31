@@ -227,7 +227,43 @@ func (g *Game) DisposeByBoolean(disposing bool) error {
 	// UnhookDeviceEvents();
 	// Its guard is graphicsDeviceService, which only HookDeviceEvents assigns
 	// and which is never reached, so there is nothing subscribed to remove.
-	return g.disposed.Raise(g, EventArgsEmpty())
+	raiseErr := g.disposed.Raise(g, EventArgsEmpty())
+
+	// The reference's body ends here, and for a Game that only ever used Run
+	// so does this one: Run destroys the native game it created, so by the
+	// time Dispose runs there is nothing native left and the step below does
+	// nothing at all.
+	//
+	// Foundation 47 added one state the reference cannot have. A Game whose
+	// frames were stepped with Tick or RunOneFrame has a live native game that
+	// no Run will ever return from and destroy, and CNA admits exactly ONE
+	// C-owned game per process -- so a standalone session nothing ended would
+	// make the next Game impossible to create.
+	//
+	// It runs AFTER the managed body on purpose. Every component's own Dispose
+	// and every Disposed handler therefore observes the same live device the
+	// reference's would, and the managed order the corpus and the canary
+	// measure is byte-for-byte unchanged.
+	//
+	// It is not a divergence from the reference's Dispose. The reference's host
+	// is created by the CONSTRUCTOR and outlives Dispose because the process
+	// owns it; CNA-Go's is created by a frame step, so ending it is the
+	// disposal of a resource whose creation moved, not the disposal of one the
+	// reference keeps.
+	sessionErr := endGameStandaloneSession(g)
+	if raiseErr != nil {
+		return raiseErr
+	}
+	return sessionErr
+}
+
+// endGameStandaloneSession destroys a native game a frame step created, and
+// does nothing when Run created it or when there is none.
+func endGameStandaloneSession(g *Game) error {
+	if g == nil || g.runtime == nil {
+		return nil
+	}
+	return g.runtime.EndStandaloneSession()
 }
 
 // disposeGameComponent is the reference's `isinst IDisposable` followed by the

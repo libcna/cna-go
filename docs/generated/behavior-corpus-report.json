@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 661,
-    "ASSERTIONS": 661,
+    "OBSERVATIONS": 663,
+    "ASSERTIONS": 663,
     "FAILURES": 0
   },
   "observations": [
@@ -5173,6 +5173,22 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "game-frame-step.an-unconstructed-game-is-refused",
+      "group": "GAME_FRAME_STEP",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "game-frame-step.three-distinct-members",
+      "group": "GAME_FRAME_STEP",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
       "passed": true
     },
     {

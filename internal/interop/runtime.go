@@ -194,6 +194,22 @@ type Runtime struct {
 	// its own numbering.
 	windowEventDeliveries    [gameWindowEventCount]int
 	windowEventRegistrations [gameWindowEventCount]uint64
+
+	// The native SESSION: one live cna_game_create/cna_game_destroy pair,
+	// its cgo.Handle, its process lock and its locked OS thread.
+	//
+	// Foundation 47 split the session out of Run because CNA supports one
+	// without a loop. cna_game_tick and cna_game_run_one_frame drive a created
+	// game directly, and the measured probe confirms it: a tick on a
+	// never-initialized game runs Update and Draw with no Initialize, and
+	// run_one_frame initializes first and then does the same.
+	//
+	// standalone records who started the session, because that decides who
+	// ends it: a session Run created is destroyed when Run returns, and one a
+	// frame step created outlives every call and is destroyed by Dispose.
+	callbackHandle cgo.Handle
+	sessionLive    bool
+	standalone     bool
 }
 
 // Resource is an internal generation-checked owned-handle control block.
@@ -243,9 +259,17 @@ type SpriteCommand struct {
 }
 
 var (
-	processRunMu      sync.Mutex
-	nextGeneration    atomic.Uint64
-	currentRuntime    atomic.Pointer[Runtime]
+	processRunMu   sync.Mutex
+	nextGeneration atomic.Uint64
+	currentRuntime atomic.Pointer[Runtime]
+
+	// standaloneHolder is the Runtime whose STANDALONE session currently holds
+	// processRunMu, or nil. It exists so a second Runtime fails fast instead of
+	// blocking forever: a standalone session has no bounded duration -- it
+	// lives until Dispose -- so waiting on the mutex would be a hang rather
+	// than a queue. A session Run owns is bounded by Run and is not recorded
+	// here, because waiting for it is exactly the right behaviour.
+	standaloneHolder  atomic.Pointer[Runtime]
 	ownerAssociations sync.Map
 )
 
@@ -258,31 +282,45 @@ func NewRuntime(callbacks Callbacks) *Runtime {
 	return &Runtime{callbacks: callbacks, title: "CNA-Go"}
 }
 
-func (r *Runtime) Run() error {
-	if r == nil || r.callbacks == nil {
-		return errors.New("native Game callbacks must not be nil")
+// startSession opens the library, creates the native game, installs both
+// signal families, and marks the Runtime live. It is the whole of what used to
+// be the first half of Run.
+//
+// standalone records who is starting it. The session's SHAPE is identical
+// either way -- same generation, same owner thread, same subscriptions, same
+// timing and frame-hook read -- and only its ENDING differs.
+func (r *Runtime) startSession(standalone bool) error {
+	if held := standaloneHolder.Load(); held != nil && held != r {
+		return errors.New("another Game holds the process's native session; dispose it first")
 	}
 	processRunMu.Lock()
-	defer processRunMu.Unlock()
 	goruntime.LockOSThread()
-	defer goruntime.UnlockOSThread()
-	tracef("Run: owner OS thread locked")
+	tracef("session: owner OS thread locked (standalone=%t)", standalone)
+
+	unwind := func(err error) error {
+		goruntime.UnlockOSThread()
+		processRunMu.Unlock()
+		return err
+	}
 
 	libraryPath, err := nativeLibraryPath()
 	if err != nil {
-		return err
+		return unwind(err)
 	}
 	if err := nativeOpen(libraryPath); err != nil {
-		return err
+		return unwind(err)
 	}
-	defer nativeClose()
-	tracef("Run: admitted native library %q", libraryPath)
+	tracef("session: admitted native library %q", libraryPath)
+	unwindOpen := func(err error) error {
+		nativeClose()
+		return unwind(err)
+	}
 
 	generation := nextGeneration.Add(1)
 	r.mu.Lock()
 	if r.alive {
 		r.mu.Unlock()
-		return errors.New("Game is already running")
+		return unwindOpen(errors.New("Game is already running"))
 	}
 	r.generation = generation
 	r.ownerThread = nativeOwnerThreadID()
@@ -303,9 +341,9 @@ func (r *Runtime) Run() error {
 	if createErr != nil {
 		callbackHandle.Delete()
 		r.deactivate()
-		return createErr
+		return unwindOpen(createErr)
 	}
-	tracef("Run: created Game handle %d", game)
+	tracef("session: created Game handle %d", game)
 	r.mu.Lock()
 	r.game = game
 	r.mu.Unlock()
@@ -318,16 +356,16 @@ func (r *Runtime) Run() error {
 	// the call is guaranteed legal is right here.
 	registrations, subscribeErr := nativeGameSubscribeEvents(game, uintptr(callbackHandle))
 	if subscribeErr != nil {
-		tracef("Run: game-event subscription failed: %v", subscribeErr)
+		tracef("session: game-event subscription failed: %v", subscribeErr)
 		destroyErr := nativeGameDestroy(game)
 		r.deactivate()
 		callbackHandle.Delete()
-		return errors.Join(subscribeErr, destroyErr)
+		return unwindOpen(errors.Join(subscribeErr, destroyErr))
 	}
 	r.mu.Lock()
 	r.eventRegistrations = registrations
 	r.mu.Unlock()
-	tracef("Run: installed %d native game-event registrations", gameEventCount)
+	tracef("session: installed %d native game-event registrations", gameEventCount)
 
 	// The window signals, on the same rule and at the same moment. XNA's
 	// GameWindow exists from the host's construction and raises its three
@@ -335,34 +373,99 @@ func (r *Runtime) Run() error {
 	// the native game's lifetime and not some later point.
 	windowRegistrations, windowSubscribeErr := nativeGameWindowSubscribeEvents(game, uintptr(callbackHandle))
 	if windowSubscribeErr != nil {
-		tracef("Run: window-event subscription failed: %v", windowSubscribeErr)
+		tracef("session: window-event subscription failed: %v", windowSubscribeErr)
 		releaseErr := r.releaseGameEvents()
 		destroyErr := nativeGameDestroy(game)
 		r.deactivate()
 		callbackHandle.Delete()
-		return errors.Join(windowSubscribeErr, releaseErr, destroyErr)
+		return unwindOpen(errors.Join(windowSubscribeErr, releaseErr, destroyErr))
 	}
 	r.mu.Lock()
 	r.windowEventRegistrations = windowRegistrations
+	r.callbackHandle = callbackHandle
+	r.sessionLive = true
+	r.standalone = standalone
 	r.mu.Unlock()
-	tracef("Run: installed %d native window-event registrations", gameWindowEventCount)
+	if standalone {
+		standaloneHolder.Store(r)
+	}
+	tracef("session: installed %d native window-event registrations", gameWindowEventCount)
+	return nil
+}
+
+// endSession is the second half of the old Run, unchanged in order.
+//
+// The registrations are released only AFTER the destroy. CNA raises the
+// disposal signal from inside cna_game_destroy, and a registration handle stays
+// valid across that call, so releasing first would silently drop the event.
+func (r *Runtime) endSession() error {
+	r.mu.Lock()
+	if !r.sessionLive {
+		r.mu.Unlock()
+		return nil
+	}
+	game := r.game
+	handle := r.callbackHandle
+	standalone := r.standalone
+	r.sessionLive = false
+	r.standalone = false
+	r.callbackHandle = 0
+	r.mu.Unlock()
+
+	cleanupErr := r.disposeAllResources()
+	tracef("session: resource cleanup returned: %v", cleanupErr)
+	destroyErr := nativeGameDestroy(game)
+	tracef("session: Game destroy returned: %v", destroyErr)
+	unsubscribeErr := r.releaseGameEvents()
+	windowUnsubscribeErr := r.releaseGameWindowEvents()
+	r.deactivate()
+	handle.Delete()
+	nativeClose()
+	if standalone {
+		standaloneHolder.CompareAndSwap(r, nil)
+	}
+	goruntime.UnlockOSThread()
+	processRunMu.Unlock()
+	tracef("session: ended (standalone=%t)", standalone)
+	return errors.Join(cleanupErr, destroyErr, unsubscribeErr, windowUnsubscribeErr)
+}
+
+// Run projects Game::Run. It starts a session unless one is already live for
+// this Runtime, runs the native loop, and ends the session only if it started
+// it -- because whoever created the native game destroys it.
+//
+// Adopting an existing standalone session is the reference's own behaviour:
+// XNA's Run calls host.Run() on a host the constructor already created, and
+// CNA's Game::Run skips its own initialization when hasInitialized_ is already
+// set. A frame-stepped Game that is then Run therefore keeps one native game
+// and one initialization, exactly as the reference does.
+func (r *Runtime) Run() error {
+	if r == nil || r.callbacks == nil {
+		return errors.New("native Game callbacks must not be nil")
+	}
+	r.mu.Lock()
+	adopted := r.sessionLive
+	r.mu.Unlock()
+	if !adopted {
+		if err := r.startSession(false); err != nil {
+			return err
+		}
+	} else if err := r.requireOwnerThread(); err != nil {
+		return err
+	}
+
+	r.mu.Lock()
+	game := r.game
+	r.mu.Unlock()
 
 	tracef("Run: entering cna_game_run")
 	runErr := nativeGameRun(game)
 	tracef("Run: cna_game_run returned: %v", runErr)
-	cleanupErr := r.disposeAllResources()
-	tracef("Run: resource cleanup returned: %v", cleanupErr)
-	destroyErr := nativeGameDestroy(game)
-	tracef("Run: Game destroy returned: %v", destroyErr)
-	// The registrations are released only now. CNA raises the disposal signal
-	// from inside cna_game_destroy, and a registration handle stays valid
-	// across that call, so releasing first would silently drop the event.
-	unsubscribeErr := r.releaseGameEvents()
-	tracef("Run: released game-event registrations: %v", unsubscribeErr)
-	windowUnsubscribeErr := r.releaseGameWindowEvents()
-	tracef("Run: released window-event registrations: %v", windowUnsubscribeErr)
-	r.deactivate()
-	callbackHandle.Delete()
+
+	var endErr error
+	if !adopted {
+		endErr = r.endSession()
+	}
 
 	r.mu.Lock()
 	callbackErr := r.callbackFailure
@@ -370,7 +473,117 @@ func (r *Runtime) Run() error {
 	if callbackErr != nil {
 		return callbackErr
 	}
-	return errors.Join(runErr, cleanupErr, destroyErr, unsubscribeErr, windowUnsubscribeErr)
+	return errors.Join(runErr, endErr)
+}
+
+// Tick projects Game::Tick and RunOneFrame projects Game::RunOneFrame. Both
+// start a standalone session on first use, because in the reference the host
+// exists from the Game's construction and a frame step has something to drive.
+//
+// The two are NOT the same call and the difference was measured rather than
+// assumed. Against the qualified artifact, on a game that has never run:
+//
+//	cna_game_tick            Update and Draw, and NO Initialize or LoadContent
+//	cna_game_run_one_frame   Initialize and LoadContent first, then the same
+//
+// and a second run_one_frame initializes nothing further. That mirrors the
+// reference's own split -- Tick is the clock step and does not initialize --
+// with one measured CNA difference recorded in the milestone evidence: XNA's
+// RunOneFrame does not initialize either, and CNA's does.
+func (r *Runtime) Tick() error {
+	return r.frameStep("cna_game_tick", nativeGameTick)
+}
+
+func (r *Runtime) RunOneFrame() error {
+	return r.frameStep("cna_game_run_one_frame", nativeGameRunOneFrame)
+}
+
+// frameStep is the shared body. It starts a standalone session when none is
+// live, and otherwise drives the live one -- which may be a standalone session
+// this Runtime already owns.
+//
+// A frame step from inside a lifecycle callback is refused by CNA itself with
+// CNA_RESULT_INVALID_STATE, because a frame step called from within a frame
+// would re-enter the loop it is part of. That refusal is measured, not
+// documented-and-trusted, and CNA-Go reports it rather than reproducing it.
+func (r *Runtime) frameStep(operation string, step func(uint64) error) error {
+	if r == nil || r.callbacks == nil {
+		return errors.New("native Game callbacks must not be nil")
+	}
+	r.mu.Lock()
+	live := r.sessionLive
+	r.mu.Unlock()
+	if !live {
+		if err := r.startSession(true); err != nil {
+			return err
+		}
+	} else if err := r.requireOwnerThread(); err != nil {
+		return err
+	}
+	r.mu.Lock()
+	game := r.game
+	r.mu.Unlock()
+	tracef("%s: entering", operation)
+	err := step(game)
+	tracef("%s: returned %v", operation, err)
+	if err != nil {
+		return err
+	}
+	r.mu.Lock()
+	callbackErr := r.callbackFailure
+	r.callbackFailure = nil
+	r.mu.Unlock()
+	return callbackErr
+}
+
+// EndStandaloneSession destroys a session a frame step started, and does
+// nothing at all when there is none.
+//
+// It is deliberately NOT called by Run: a session Run started is Run's to end,
+// and one it adopted belongs to whoever created it. Game::Dispose is the only
+// caller, because Dispose is the member a consumer already uses to release a
+// Game and because CNA admits exactly one C-owned game per process -- a
+// standalone session that nothing ended would make the next one impossible.
+func (r *Runtime) EndStandaloneSession() error {
+	if r == nil {
+		return nil
+	}
+	r.mu.Lock()
+	standalone := r.sessionLive && r.standalone
+	r.mu.Unlock()
+	if !standalone {
+		return nil
+	}
+	if err := r.requireOwnerThread(); err != nil {
+		return err
+	}
+	return r.endSession()
+}
+
+// HasStandaloneSession reports whether a frame step created a native game that
+// is still alive. It exists so the framework package can describe the state in
+// a diagnostic without reaching for the handle.
+func (r *Runtime) HasStandaloneSession() bool {
+	if r == nil {
+		return false
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.sessionLive && r.standalone
+}
+
+// requireOwnerThread refuses a call from any goroutine other than the one whose
+// OS thread the session locked. CNA does not thread-check cna_game_run or the
+// window routes, so this is CNA-Go's own rule rather than a reported one -- and
+// it is the same rule every other owner-thread operation already applies.
+func (r *Runtime) requireOwnerThread() error {
+	r.mu.Lock()
+	owner := r.ownerThread
+	r.mu.Unlock()
+	if owner != nativeOwnerThreadID() {
+		return ErrWrongThread
+	}
+	return nil
 }
 
 // releaseGameEvents releases every installed registration exactly once. The
@@ -550,8 +763,17 @@ func gameEventName(event uint32) string {
 	}
 }
 
+// Exit projects Game::Exit. It no longer requires an active lifecycle callback.
+//
+// The callback requirement was correct while the only way to reach a live
+// native game was from inside one: Run blocks the owner thread in
+// cna_game_run, so outside a callback there was nothing live to ask. Foundation
+// 47's standalone session makes "live, on the owner thread, outside a callback"
+// a reachable state, and it is exactly the state a frame-stepped consumer calls
+// Exit from. CNA agrees: cna_game_request_exit resolves the game with GetGame
+// rather than GetCallableGame, so it carries no callback restriction of its own.
 func (r *Runtime) Exit() error {
-	game, err := r.activeGame(true)
+	game, err := r.activeGame(false)
 	if err != nil {
 		return err
 	}

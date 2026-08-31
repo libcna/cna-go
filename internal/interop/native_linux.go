@@ -298,6 +298,14 @@ func nativeSpriteBatchDestroy(batch uint64) error {
 	return resultError("cna_sprite_batch_destroy", uint32(C.cna_go_sprite_batch_destroy(C.CnaGoHandle(batch))))
 }
 
+func nativeGameTick(game uint64) error {
+	return resultError("cna_game_tick", uint32(C.cna_go_game_tick(C.CnaGoHandle(game))))
+}
+
+func nativeGameRunOneFrame(game uint64) error {
+	return resultError("cna_game_run_one_frame", uint32(C.cna_go_game_run_one_frame(C.CnaGoHandle(game))))
+}
+
 // The GameWindow routes. Every one takes the game handle; CNA models the
 // window as a property of the game, so nothing here owns a native lifetime.
 func nativeGameWindowAllowUserResizing(game uint64) (bool, error) {

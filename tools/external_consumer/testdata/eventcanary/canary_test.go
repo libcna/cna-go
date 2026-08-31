@@ -2605,3 +2605,35 @@ func TestDrawableGameComponentExposesNoBaseAccessor(t *testing.T) {
 			component.Enabled(), component.UpdateOrder())
 	}
 }
+
+// TestFrameStepMembersExistAndRefuseAnUnconstructedGame pins the two frame
+// steps from outside.
+//
+// It deliberately does NOT take a frame. A frame step creates the process's one
+// C-owned native game and holds it until Dispose, so a canary that stepped one
+// would decide the outcome of every later test in the same process. The live
+// evidence is tools/native_stress, which runs each frame-step cycle in its own
+// subprocess for exactly that reason.
+func TestFrameStepMembersExistAndRefuseAnUnconstructedGame(t *testing.T) {
+	// Both are fallible, and these two lines would not compile otherwise.
+	var _ func() error = (&framework.Game{}).Tick
+	var _ func() error = (&framework.Game{}).RunOneFrame
+
+	unconstructed := &framework.Game{}
+	if err := unconstructed.Tick(); err == nil {
+		t.Fatal("Tick accepted a Game whose constructor never ran")
+	}
+	if err := unconstructed.RunOneFrame(); err == nil {
+		t.Fatal("RunOneFrame accepted a Game whose constructor never ran")
+	}
+
+	// Tick, RunOneFrame and Run are three distinct members. A binding that
+	// aliased any two of them would pass a naive test and behave very
+	// differently: Run blocks, RunOneFrame initializes, Tick does not.
+	gameType := reflect.TypeOf((*framework.Game)(nil))
+	for _, name := range []string{"Tick", "RunOneFrame", "Run"} {
+		if _, ok := gameType.MethodByName(name); !ok {
+			t.Fatalf("Game declares no %s", name)
+		}
+	}
+}

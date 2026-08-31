@@ -258,3 +258,88 @@ func (c gameRuntimeCallbacks) TimingConfiguration() interop.TimingConfiguration 
 		IsMouseVisible:     c.game.isMouseVisible,
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 47. The two frame steps.
+// ---------------------------------------------------------------------------
+
+// Tick is Game::Tick.
+//
+// # What the reference does
+//
+// In the reference Tick is 682 bytes of managed clock arithmetic: it advances
+// the GameClock, sleeps or spins toward TargetElapsedTime when IsFixedTimeStep
+// is set, clamps the accumulator at maximumElapsedTime, runs one or more
+// Updates, and calls DrawFrame unless suppressDraw asked it not to. It does NOT
+// touch the host, and it does NOT call Initialize or LoadContent.
+//
+// # Why it is native here
+//
+// CNA-Go's loop is the native one -- that is the settled split, and it is why
+// the timing setters push to CNA rather than being read by a managed loop. The
+// clock Tick advances is CNA's, so the projection is cna_game_tick, which
+// CNA's own Game::Tick implements with the same shape: advance, sleep or yield
+// under a fixed step, poll, clamp, update, draw.
+//
+// # Why it can be called at all
+//
+// Until Foundation 47 a native game existed only inside the blocking Run, so
+// there was no reachable moment for a frame step and projecting one would have
+// meant projecting a member that could only ever fail. CNA creates a game with
+// cna_game_create and destroys it with cna_game_destroy; the loop is a separate
+// call. So the first Tick creates the native game, which is what the
+// reference's constructor does through EnsureHost, and every later one drives
+// it. Game.Dispose destroys it.
+//
+// # What a first Tick does NOT do
+//
+// It does not initialize. Measured against the qualified artifact, a tick on a
+// never-run game delivered Update and Draw and neither Initialize nor
+// LoadContent -- which is the reference's behaviour, because Tick has no
+// initialization step. A consumer who wants Initialize should use RunOneFrame
+// or Run.
+//
+// # Threading
+//
+// The goroutine that takes the first frame step owns the session's OS thread
+// for its whole life, and every later step, Run, and Dispose must come from
+// that same goroutine. A step from anywhere else reports ErrWrongThread, and a
+// step from inside a lifecycle callback is refused by CNA itself, because a
+// frame step called from within a frame would re-enter the loop it is part of.
+func (g *Game) Tick() error {
+	if g == nil || g.runtime == nil {
+		return errors.New("Game is nil or uninitialized")
+	}
+	return g.runtime.Tick()
+}
+
+// RunOneFrame is Game::RunOneFrame:
+//
+//	if (this.host != null) this.host.RunOneFrame();
+//
+// In the reference the host is never null after construction, so the member is
+// effectively one virtual call into WindowsGameHost::RunOneFrame, which is
+// `this.gameWindow.Tick()` -- pump the platform's messages, then one Game.Tick.
+//
+// CNA's cna_game_run_one_frame is the same wrapper with ONE measured
+// difference, and it is a difference in CNA rather than in this projection:
+//
+//	CNA   if (!hasInitialized_) { DoInitialize(); hasInitialized_ = true; } Tick();
+//	XNA   window.Tick() -> game.Tick()
+//
+// So a first RunOneFrame delivers Initialize and LoadContent where the
+// reference's delivers neither. That was measured against the qualified
+// artifact rather than read from a comment, it is recorded as an upstream
+// difference in the Foundation 47 evidence, and it is not worked around: CNA
+// offers no route that runs a host frame without initializing, and cna_game_tick
+// -- which does not initialize -- polls events too, so it is not that route
+// either.
+//
+// Everything else is Tick's: the first call creates the native game, the
+// calling goroutine owns it, and Game.Dispose destroys it.
+func (g *Game) RunOneFrame() error {
+	if g == nil || g.runtime == nil {
+		return errors.New("Game is nil or uninitialized")
+	}
+	return g.runtime.RunOneFrame()
+}

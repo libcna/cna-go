@@ -96,6 +96,22 @@ type counters struct {
 	WindowEventClientSize   int `json:"GAME_WINDOW_EVENT_CLIENT_SIZE_DELIVERIES"`
 	WindowEventOrientation  int `json:"GAME_WINDOW_EVENT_ORIENTATION_DELIVERIES"`
 	WindowEventScreenDevice int `json:"GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_DELIVERIES"`
+
+	FrameStepCycles            int `json:"GAME_FRAME_STEP_CYCLES"`
+	FrameStepTicks             int `json:"GAME_FRAME_STEP_TICKS"`
+	FrameStepRunOneFrames      int `json:"GAME_FRAME_STEP_RUN_ONE_FRAMES"`
+	FrameStepInitializations   int `json:"GAME_FRAME_STEP_INITIALIZATIONS"`
+	FrameStepTickInitChecks    int `json:"GAME_FRAME_STEP_TICK_DOES_NOT_INITIALIZE_CHECKS"`
+	FrameStepUpdates           int `json:"GAME_FRAME_STEP_UPDATE_DELIVERIES"`
+	FrameStepDraws             int `json:"GAME_FRAME_STEP_DRAW_DELIVERIES"`
+	FrameStepSuppressChecks    int `json:"GAME_FRAME_STEP_SUPPRESS_DRAW_CHECKS"`
+	FrameStepWrongThreadChecks int `json:"GAME_FRAME_STEP_WRONG_THREAD_CHECKS"`
+	FrameStepCallbackRefusals  int `json:"GAME_FRAME_STEP_CALLBACK_REFUSAL_CHECKS"`
+	FrameStepExitChecks        int `json:"GAME_FRAME_STEP_EXIT_CHECKS"`
+	FrameStepSessionChecks     int `json:"GAME_FRAME_STEP_SESSION_LIFETIME_CHECKS"`
+	FrameStepDisposeChecks     int `json:"GAME_FRAME_STEP_DISPOSE_CHECKS"`
+	FrameStepRecreationChecks  int `json:"GAME_FRAME_STEP_RECREATION_CHECKS"`
+	FrameStepRunAfterStepCycle int `json:"GAME_FRAME_STEP_RUN_ADOPTS_SESSION_CYCLES"`
 }
 
 type stressReport struct {
@@ -189,7 +205,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -324,6 +340,47 @@ func runParent() (counters, error) {
 	if total.WindowScreenDeviceChanges < 20 {
 		return total, errors.New("the screen-device-change pair did not run in every cycle")
 	}
+	// Foundation 47. The frame-step lifecycle: a native game that exists
+	// without a loop, driven a frame at a time, and destroyed by Dispose.
+	if total.FrameStepCycles < 20 {
+		return total, errors.New("native frame-step minimum was not met")
+	}
+	// Six steps per cycle: two Ticks, two RunOneFrames, one suppressed Tick
+	// and one post-Exit Tick.
+	if total.FrameStepTicks != 4*total.FrameStepCycles || total.FrameStepRunOneFrames != 2*total.FrameStepCycles {
+		return total, fmt.Errorf("%d ticks and %d run-one-frames across %d cycles, want four and two per cycle",
+			total.FrameStepTicks, total.FrameStepRunOneFrames, total.FrameStepCycles)
+	}
+	// Initialization happens exactly ONCE per session however many frames are
+	// stepped, and the two Ticks that precede the first RunOneFrame deliver
+	// none of it.
+	if total.FrameStepInitializations != total.FrameStepCycles {
+		return total, fmt.Errorf("%d initializations across %d frame-step cycles, want exactly one per session",
+			total.FrameStepInitializations, total.FrameStepCycles)
+	}
+	if total.FrameStepTickInitChecks < 20 {
+		return total, errors.New("the proof that a tick does not initialize did not run in every cycle")
+	}
+	// Every step delivers exactly one Update; only the suppressed one and the
+	// post-Exit one skip Draw.
+	if total.FrameStepUpdates != 6*total.FrameStepCycles {
+		return total, fmt.Errorf("%d updates across %d cycles, want six per cycle", total.FrameStepUpdates, total.FrameStepCycles)
+	}
+	if total.FrameStepDraws >= total.FrameStepUpdates {
+		return total, fmt.Errorf("%d draws for %d updates; SuppressDraw skipped none", total.FrameStepDraws, total.FrameStepUpdates)
+	}
+	if total.FrameStepSuppressChecks < 20 || total.FrameStepExitChecks < 20 {
+		return total, errors.New("the suppress-draw or exit proof did not run in every cycle")
+	}
+	if total.FrameStepWrongThreadChecks < 20 || total.FrameStepCallbackRefusals < 20 {
+		return total, errors.New("the owner-thread or in-callback refusal proof did not run in every cycle")
+	}
+	if total.FrameStepSessionChecks < 60 || total.FrameStepDisposeChecks < 20 || total.FrameStepRecreationChecks < 20 {
+		return total, errors.New("the session lifetime, disposal or recreation proof did not run in every cycle")
+	}
+	if total.FrameStepRunAfterStepCycle < 20 {
+		return total, errors.New("Run did not adopt a standalone session in every cycle")
+	}
 	return total, nil
 }
 
@@ -350,6 +407,12 @@ func runChild(scenario string, index int) error {
 	}
 	if scenario == "window" {
 		return runWindowChild()
+	}
+	if scenario == "frame-step" {
+		return runFrameStepChild()
+	}
+	if scenario == "frame-step-run" {
+		return runFrameStepRunChild()
 	}
 	game := &stressGame{scenario: scenario, index: index, data: encodedPNG()}
 	host, err := framework.NewGame(game)
@@ -1509,6 +1572,286 @@ func runWindowChild() error {
 	runtime.GC()
 	game.result.GCStressPoints++
 	data, _ := json.Marshal(game.result)
+	fmt.Println(string(data))
+	return nil
+}
+
+// frameStepGame drives a native game a frame at a time, with no loop anywhere.
+//
+// It declares BeginDraw and EndDraw so the optional frame hooks are installed
+// too: a frame step has to reach the same hook positions a looped frame does,
+// and a projection that only worked inside cna_game_run would not.
+type frameStepGame struct {
+	result counters
+
+	initializes, loads, updates, draws, unloads int
+	beginDraws, endDraws                        int
+
+	// suppressNextDraw asks BeginDraw to refuse exactly one frame, which is
+	// how SuppressDraw's effect is observed without a loop.
+	host             *framework.Game
+	tickFromCallback error
+	callbackAsked    bool
+}
+
+func (g *frameStepGame) Initialize(host *framework.Game) error {
+	g.initializes++
+	// A frame step from INSIDE a lifecycle callback must be refused: CNA
+	// answers CNA_RESULT_INVALID_STATE because a frame step called from within
+	// a frame would re-enter the loop it is part of.
+	if !g.callbackAsked {
+		g.callbackAsked = true
+		g.tickFromCallback = host.Tick()
+	}
+	return nil
+}
+
+func (g *frameStepGame) LoadContent(*framework.Game) error { g.loads++; return nil }
+
+func (g *frameStepGame) Update(*framework.Game, framework.GameTime) error {
+	g.updates++
+	return nil
+}
+
+func (g *frameStepGame) Draw(*framework.Game, framework.GameTime) error {
+	g.draws++
+	return nil
+}
+
+func (g *frameStepGame) UnloadContent(*framework.Game) error {
+	g.unloads++
+	return nil
+}
+
+func (g *frameStepGame) BeginDraw(host *framework.Game) (bool, error) {
+	g.beginDraws++
+	return host.BeginDraw()
+}
+
+func (g *frameStepGame) EndDraw(host *framework.Game) error {
+	g.endDraws++
+	return host.EndDraw()
+}
+
+// runFrameStepChild is the whole lifecycle in one isolated process: create by
+// stepping, step, dispose, and step again.
+func runFrameStepChild() error {
+	game := &frameStepGame{}
+	host, err := framework.NewGame(game)
+	if err != nil {
+		return err
+	}
+	game.host = host
+
+	runtimeOf := func() (*interop.Runtime, bool) { return interop.CurrentRuntime() }
+
+	// Before the first step there is no native game at all.
+	if _, live := runtimeOf(); live {
+		return errors.New("a native runtime was current before the first frame step")
+	}
+	game.result.FrameStepSessionChecks++
+
+	// TICK ONE. It creates the session and delivers exactly one Update and one
+	// Draw -- and NO Initialize and no LoadContent, because Game::Tick has no
+	// initialization step and CNA's does not either.
+	if err := host.Tick(); err != nil {
+		return fmt.Errorf("first Tick: %w", err)
+	}
+	game.result.FrameStepTicks++
+	if game.initializes != 0 || game.loads != 0 {
+		return fmt.Errorf("a first Tick delivered %d initializes and %d loads; Tick does not initialize",
+			game.initializes, game.loads)
+	}
+	if game.updates != 1 {
+		return fmt.Errorf("a first Tick delivered %d updates, want one", game.updates)
+	}
+	game.result.FrameStepTickInitChecks++
+	current, live := runtimeOf()
+	if !live || !current.HasStandaloneSession() {
+		return errors.New("the first Tick did not create a standalone session")
+	}
+	game.result.FrameStepSessionChecks++
+
+	if err := host.Tick(); err != nil {
+		return fmt.Errorf("second Tick: %w", err)
+	}
+	game.result.FrameStepTicks++
+	if game.initializes != 0 {
+		return fmt.Errorf("a second Tick initialized %d times", game.initializes)
+	}
+
+	// RUN ONE FRAME. CNA initializes on first use, which the reference does
+	// NOT do -- recorded as a measured upstream difference rather than hidden.
+	if err := host.RunOneFrame(); err != nil {
+		return fmt.Errorf("first RunOneFrame: %w", err)
+	}
+	game.result.FrameStepRunOneFrames++
+	if game.initializes != 1 || game.loads != 1 {
+		return fmt.Errorf("a first RunOneFrame delivered %d initializes and %d loads, want one each",
+			game.initializes, game.loads)
+	}
+	// The in-callback refusal was taken during that Initialize.
+	if game.tickFromCallback == nil {
+		return errors.New("a Tick from inside a lifecycle callback succeeded; CNA refuses a re-entrant frame step")
+	}
+	game.result.FrameStepCallbackRefusals++
+
+	if err := host.RunOneFrame(); err != nil {
+		return fmt.Errorf("second RunOneFrame: %w", err)
+	}
+	game.result.FrameStepRunOneFrames++
+	if game.initializes != 1 {
+		return fmt.Errorf("initialization ran %d times across a session, want exactly one", game.initializes)
+	}
+	game.result.FrameStepInitializations = game.initializes
+
+	// A step from another goroutine is refused: the goroutine that took the
+	// first step owns the session's OS thread for its whole life.
+	wrongThread := make(chan error, 1)
+	go func() { wrongThread <- host.Tick() }()
+	if err := <-wrongThread; !errors.Is(err, interop.ErrWrongThread) {
+		return fmt.Errorf("a Tick from a non-owner goroutine reported %v, want ErrWrongThread", err)
+	}
+	game.result.FrameStepWrongThreadChecks++
+
+	// SUPPRESS DRAW. The next step updates and does not draw.
+	drawsBefore := game.draws
+	if err := host.SuppressDraw(); err != nil {
+		return fmt.Errorf("SuppressDraw: %w", err)
+	}
+	if err := host.Tick(); err != nil {
+		return fmt.Errorf("suppressed Tick: %w", err)
+	}
+	game.result.FrameStepTicks++
+	if game.draws != drawsBefore {
+		return fmt.Errorf("a suppressed Tick drew %d times", game.draws-drawsBefore)
+	}
+	game.result.FrameStepSuppressChecks++
+
+	// EXIT, from outside a lifecycle callback -- a state that could not exist
+	// before a session could outlive a call. CNA's request-exit also suppresses
+	// the next draw, so the step after it updates and does not draw.
+	if err := host.Exit(); err != nil {
+		return fmt.Errorf("Exit outside a callback: %w", err)
+	}
+	drawsBefore = game.draws
+	if err := host.Tick(); err != nil {
+		return fmt.Errorf("Tick after Exit: %w", err)
+	}
+	game.result.FrameStepTicks++
+	if game.draws != drawsBefore {
+		return fmt.Errorf("the step after Exit drew %d times; CNA's request-exit suppresses the next draw", game.draws-drawsBefore)
+	}
+	game.result.FrameStepExitChecks++
+
+	game.result.FrameStepUpdates = game.updates
+	game.result.FrameStepDraws = game.draws
+
+	// DISPOSE ends the session, and CNA delivers UnloadContent and the exiting
+	// signal from inside cna_game_destroy.
+	if err := host.DisposeByNone(); err != nil {
+		return fmt.Errorf("Dispose: %w", err)
+	}
+	if game.unloads != 1 {
+		return fmt.Errorf("Dispose delivered %d UnloadContent callbacks, want one", game.unloads)
+	}
+	if _, stillLive := runtimeOf(); stillLive {
+		return errors.New("a native runtime was still current after Dispose")
+	}
+	game.result.FrameStepDisposeChecks++
+	game.result.FrameStepSessionChecks++
+
+	// And a step AFTER Dispose starts a fresh session, because Game keeps no
+	// disposed flag -- the reference does not either, which is why Dispose is
+	// not idempotent anywhere in this profile.
+	if err := host.Tick(); err != nil {
+		return fmt.Errorf("Tick after Dispose: %w", err)
+	}
+	if _, revived := runtimeOf(); !revived {
+		return errors.New("a Tick after Dispose created no session")
+	}
+	game.result.FrameStepRecreationChecks++
+	if err := host.DisposeByNone(); err != nil {
+		return fmt.Errorf("second Dispose: %w", err)
+	}
+
+	game.result.FrameStepCycles++
+	runtime.GC()
+	game.result.GCStressPoints++
+	data, _ := json.Marshal(game.result)
+	fmt.Println(string(data))
+	return nil
+}
+
+// runFrameStepRunChild proves the ownership rule: Run ADOPTS a session a frame
+// step created and does not destroy it, because whoever created the native game
+// destroys it.
+//
+// This is the reference's own shape. XNA's Run calls host.Run() on a host the
+// constructor already made, and CNA's Game::Run skips DoInitialize when
+// hasInitialized_ is set -- so a stepped-then-run Game keeps one native game
+// and one initialization.
+type frameStepRunGame struct {
+	initializes, updates int
+	exitAfter            int
+}
+
+func (g *frameStepRunGame) Initialize(*framework.Game) error { g.initializes++; return nil }
+func (g *frameStepRunGame) LoadContent(*framework.Game) error {
+	return nil
+}
+func (g *frameStepRunGame) Update(host *framework.Game, _ framework.GameTime) error {
+	g.updates++
+	if g.updates >= g.exitAfter {
+		return host.Exit()
+	}
+	return nil
+}
+func (g *frameStepRunGame) Draw(*framework.Game, framework.GameTime) error { return nil }
+func (g *frameStepRunGame) UnloadContent(*framework.Game) error            { return nil }
+
+func runFrameStepRunChild() error {
+	game := &frameStepRunGame{exitAfter: 3}
+	host, err := framework.NewGame(game)
+	if err != nil {
+		return err
+	}
+	var result counters
+
+	if err := host.RunOneFrame(); err != nil {
+		return fmt.Errorf("RunOneFrame: %w", err)
+	}
+	if game.initializes != 1 {
+		return fmt.Errorf("RunOneFrame initialized %d times, want one", game.initializes)
+	}
+	current, live := interop.CurrentRuntime()
+	if !live || !current.HasStandaloneSession() {
+		return errors.New("RunOneFrame created no standalone session")
+	}
+
+	// Run adopts it. The session is NOT re-created, so initialization does not
+	// happen again, and Run does not destroy what it did not create.
+	if err := host.Run(); err != nil {
+		return fmt.Errorf("Run after a frame step: %w", err)
+	}
+	if game.initializes != 1 {
+		return fmt.Errorf("Run re-initialized the adopted session: %d initializations", game.initializes)
+	}
+	current, stillLive := interop.CurrentRuntime()
+	if !stillLive || !current.HasStandaloneSession() {
+		return errors.New("Run destroyed a session it did not create")
+	}
+	result.FrameStepRunAfterStepCycle++
+
+	if err := host.DisposeByNone(); err != nil {
+		return fmt.Errorf("Dispose: %w", err)
+	}
+	if _, after := interop.CurrentRuntime(); after {
+		return errors.New("Dispose left the adopted session alive")
+	}
+	runtime.GC()
+	result.GCStressPoints++
+	data, _ := json.Marshal(result)
 	fmt.Println(string(data))
 	return nil
 }

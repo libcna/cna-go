@@ -165,6 +165,8 @@ typedef CNA_Result (*cna_game_set_target_elapsed_time_ticks_fn)(CNA_Handle, int6
 typedef CNA_Result (*cna_game_set_inactive_sleep_time_ticks_fn)(CNA_Handle, int64_t);
 typedef CNA_Result (*cna_game_reset_elapsed_time_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_suppress_draw_fn)(CNA_Handle);
+typedef CNA_Result (*cna_game_tick_fn)(CNA_Handle);
+typedef CNA_Result (*cna_game_run_one_frame_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_subscribe_fn)(CNA_Handle, CNA_GameEvent, CNA_GameEventCallback, void*, CNA_GameEventRegistrationHandle*);
 typedef CNA_Result (*cna_game_unsubscribe_fn)(CNA_GameEventRegistrationHandle);
 typedef CNA_Result (*cna_graphics_device_manager_create_fn)(CNA_Handle, CNA_Handle*);
@@ -224,6 +226,8 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_set_inactive_sleep_time_ticks) \
     X(cna_game_reset_elapsed_time) \
     X(cna_game_suppress_draw) \
+    X(cna_game_tick) \
+    X(cna_game_run_one_frame) \
     X(cna_game_subscribe) \
     X(cna_game_unsubscribe) \
     X(cna_graphics_device_manager_create) \

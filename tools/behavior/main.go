@@ -2818,6 +2818,35 @@ func runCorpus() corpusReport {
 		"true,true", fmt.Sprintf("%t,%t", nilDevice == nil, nilDeviceError == nil))
 
 	// ------------------------------------------------------------------
+	// Foundation 47. The two frame steps. Their real evidence is
+	// tools/native_stress, which drives a live native game a frame at a time
+	// in an isolated process; what belongs HERE is the part that reaches no
+	// native code, because this corpus deliberately creates no native game.
+	// ------------------------------------------------------------------
+
+	// Both are fallible and both refuse a Game whose constructor never ran,
+	// before they reach the native boundary at all. That guard is the Go-only
+	// one every projected Game member carries.
+	unconstructedSteps := &framework.Game{}
+	check("game-frame-step.an-unconstructed-game-is-refused", "GAME_FRAME_STEP",
+		"true,true",
+		fmt.Sprintf("%t,%t",
+			unconstructedSteps.Tick() != nil,
+			unconstructedSteps.RunOneFrame() != nil))
+
+	// The two are separate members with separate CLR identities, and neither is
+	// a synonym for Run. A projection that made RunOneFrame call Run would
+	// block forever, and one that made Tick call RunOneFrame would initialize
+	// where the reference does not.
+	stepGame, _ := framework.NewGame(corpusCallbacks{})
+	stepType := reflect.TypeOf(stepGame)
+	_, hasTick := stepType.MethodByName("Tick")
+	_, hasRunOneFrame := stepType.MethodByName("RunOneFrame")
+	_, hasRun := stepType.MethodByName("Run")
+	check("game-frame-step.three-distinct-members", "GAME_FRAME_STEP",
+		"true,true,true", fmt.Sprintf("%t,%t,%t", hasTick, hasRunOneFrame, hasRun))
+
+	// ------------------------------------------------------------------
 	// Foundation 46. DrawableGameComponent, the profile's one shipped
 	// IDrawable, measured end to end through the real cross-package bridge:
 	// this corpus imports both packages, so the Graphics package's resolver is

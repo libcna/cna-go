@@ -605,6 +605,14 @@ CnaGoResult cna_go_sprite_batch_draw_scaled(CnaGoHandle batch, CnaGoHandle textu
 CnaGoResult cna_go_sprite_batch_end(CnaGoHandle batch) { return api.cna_sprite_batch_end(batch); }
 CnaGoResult cna_go_sprite_batch_destroy(CnaGoHandle batch) { return api.cna_sprite_batch_destroy(batch); }
 
+CnaGoResult cna_go_game_tick(CnaGoHandle game) {
+    return api.cna_game_tick(game);
+}
+
+CnaGoResult cna_go_game_run_one_frame(CnaGoHandle game) {
+    return api.cna_game_run_one_frame(game);
+}
+
 CnaGoResult cna_go_game_window_get_allow_user_resizing(CnaGoHandle game, uint8_t* out_allowed) {
     CNA_Bool allowed = 0;
     const CNA_Result result = api.cna_game_window_get_allow_user_resizing(game, &allowed);
