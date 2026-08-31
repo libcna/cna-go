@@ -67,12 +67,22 @@ func run(root, contractFile, mappingFile, reportFile, missingFile, mode string) 
 	// being absorbed. 3243 is the pinned projection of the 2,964 XNA-declared
 	// reference members and never moves; BCL-inherited projections are added
 	// on top and are separately pinned by the adapter registry.
-	declaredProjections := expected.ExpectedGoMembers - expected.BCLInheritedProjections
+	declaredProjections := expected.ExpectedGoMembers - expected.BCLInheritedProjections - expected.XNAInheritedProjections
 	if expected.ExpectedGoTypes != 257 || declaredProjections != 3243 {
 		return fmt.Errorf("mapping count admission failed: got %d types/%d XNA-declared member projections", expected.ExpectedGoTypes, declaredProjections)
 	}
 	if expected.BCLInheritedProjections != expectedBCLInheritedProjections(expected) {
 		return fmt.Errorf("BCL inherited projection admission failed: got %d, registry implies %d", expected.BCLInheritedProjections, expectedBCLInheritedProjections(expected))
+	}
+	// The third provenance class is admitted the same way: recomputed from the
+	// per-type counts the mapper produced, so the total is checked against an
+	// independent derivation rather than against itself.
+	xnaInherited := 0
+	for _, et := range expected.Types {
+		xnaInherited += et.XNAInheritedProjections
+	}
+	if expected.XNAInheritedProjections != xnaInherited {
+		return fmt.Errorf("XNA inherited projection admission failed: got %d, per-type counts imply %d", expected.XNAInheritedProjections, xnaInherited)
 	}
 	actual, err := extractActual(absoluteRoot)
 	if err != nil {
@@ -182,6 +192,7 @@ func printSummary(result report) {
 	order := []string{
 		"REFERENCE_TYPES", "REFERENCE_MEMBERS", "REFERENCE_XNA_MEMBERS",
 		"BCL_INHERITED_PUBLIC_MEMBERS", "BCL_INHERITED_MEMBER_PROJECTIONS",
+		"XNA_INHERITED_PUBLIC_MEMBERS", "XNA_INHERITED_MEMBER_PROJECTIONS",
 		"EXPECTED_GO_TYPES", "EXPECTED_GO_MEMBERS",
 		"TARGET_TYPES", "TARGET_MEMBERS", "TOTAL_DIAGNOSTICS", "MISSING_TYPE", "MISSING_MEMBER",
 		"COMPLETE_TYPES", "PARTIAL_TYPES", "MISSING_TYPES",
@@ -200,6 +211,8 @@ func printSummary(result report) {
 		"XNA_DEFERRED_BASE_BLOCKERS", "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED",
 		"XNA_BASE_TYPED_SIGNATURE_POSITIONS", "XNA_BASE_SUBSTITUTABILITY_NONE",
 		"XNA_BASE_SUBSTITUTABILITY_LATENT", "XNA_BASE_SUBSTITUTABILITY_LIVE",
+		"XNA_COMPOSED_BASE_RELATIONSHIPS", "XNA_COMPOSED_DERIVED_TYPES",
+		"XNA_COMPOSED_DERIVED_TYPES_PROJECTED", "XNA_INHERITED_ATTRIBUTED_MEMBERS",
 	}
 	order = append(order, diagnosticCategories[2:]...)
 	seen := make(map[string]bool)

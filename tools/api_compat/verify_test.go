@@ -39,37 +39,49 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	if surface.ReferenceTypes != 257 || surface.ReferenceMembers != 2964 {
 		t.Fatalf("reference counts = %d/%d", surface.ReferenceTypes, surface.ReferenceMembers)
 	}
-	// The expected Go surface is pinned by its two provenance classes rather
+	// The expected Go surface is pinned by its THREE provenance classes rather
 	// than by one total. 3243 is the projection of the 2,964 XNA-declared
-	// reference members and must never move; the BCL-inherited projections are
-	// the surface the composition projection makes representable, and are
-	// pinned separately so a change in either class is attributed.
-	declared := surface.ExpectedGoMembers - surface.BCLInheritedProjections
+	// reference members and must never move; the BCL-inherited and
+	// XNA-inherited projections are the surfaces the two composition
+	// projections make representable, and each is pinned separately so a
+	// change in any one class is attributed rather than absorbed.
+	declared := surface.ExpectedGoMembers - surface.BCLInheritedProjections - surface.XNAInheritedProjections
 	if surface.ExpectedGoTypes != 257 || declared != 3243 {
 		t.Fatalf("XNA-declared mapped counts = %d/%d", surface.ExpectedGoTypes, declared)
 	}
 	if surface.BCLInheritedCLRMembers != 11 || surface.BCLInheritedProjections != 12 {
 		t.Fatalf("BCL inherited counts = %d CLR members/%d projections", surface.BCLInheritedCLRMembers, surface.BCLInheritedProjections)
 	}
-	if surface.ExpectedGoMembers != 3255 {
+	if surface.XNAInheritedCLRMembers != 14 || surface.XNAInheritedProjections != 24 {
+		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
+	}
+	if surface.ExpectedGoMembers != 3279 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
-	// Every expected Go member has exactly one provenance class, so the two
+	// Every expected Go member has exactly one provenance class, so the three
 	// partitions are disjoint and exhaust the surface.
-	declaredMembers, inheritedMembers := 0, 0
+	declaredMembers, bclInherited, xnaInherited := 0, 0, 0
 	for _, member := range surface.Members {
-		if member.BCLBase == "" {
+		switch {
+		case member.BCLBase != "" && member.XNABase != "":
+			t.Fatalf("member %s carries two provenance classes", member.Key.String())
+		case member.BCLBase != "":
+			bclInherited++
+			if member.BCLMember == "" {
+				t.Fatalf("inherited member %s names no CLR base member", member.Key.String())
+			}
+		case member.XNABase != "":
+			xnaInherited++
+			if member.XNABaseMember == "" {
+				t.Fatalf("XNA-inherited member %s names no CLR base member", member.Key.String())
+			}
+		default:
 			declaredMembers++
-			continue
-		}
-		inheritedMembers++
-		if member.BCLMember == "" {
-			t.Fatalf("inherited member %s names no CLR base member", member.Key.String())
 		}
 	}
-	if declaredMembers != declared || inheritedMembers != surface.BCLInheritedProjections {
-		t.Fatalf("provenance partition = %d declared/%d inherited, want %d/%d",
-			declaredMembers, inheritedMembers, declared, surface.BCLInheritedProjections)
+	if declaredMembers != declared || bclInherited != surface.BCLInheritedProjections || xnaInherited != surface.XNAInheritedProjections {
+		t.Fatalf("provenance partition = %d declared/%d BCL-inherited/%d XNA-inherited, want %d/%d/%d",
+			declaredMembers, bclInherited, xnaInherited, declared, surface.BCLInheritedProjections, surface.XNAInheritedProjections)
 	}
 }
 
@@ -4435,8 +4447,46 @@ func TestEventProjectionIsMeasuredExactly(t *testing.T) {
 			}
 		}
 	}
-	if events != 49 || accessors != 98 {
-		t.Fatalf("profile events = %d producing %d accessors, want 49 and 98", events, accessors)
+	// 49 XNA-DECLARED events producing 98 accessors, plus the six an
+	// XNA-inherited projection adds: DrawableGameComponent and
+	// GamerServicesComponent each inherit GameComponent's three events, and
+	// each inherited event projects the same two accessors a declared one does.
+	// The declared count is what must never move; the inherited part is pinned
+	// beside it so a change in either is attributed.
+	declaredEvents, declaredAccessors := 0, 0
+	inheritedEvents, inheritedAccessors := 0, 0
+	for _, et := range surface.Types {
+		for _, key := range et.Members {
+			member := surface.Members[key]
+			if member.SourceKind != "event" {
+				continue
+			}
+			registration := strings.HasPrefix(key.Name, "Add")
+			if key.Receiver == "" {
+				registration = strings.HasPrefix(strings.TrimPrefix(key.Name, et.GoName), "Add")
+			}
+			if member.XNABase != "" {
+				inheritedAccessors++
+				if registration {
+					inheritedEvents++
+				}
+				continue
+			}
+			declaredAccessors++
+			if registration {
+				declaredEvents++
+			}
+		}
+	}
+	if declaredEvents != 49 || declaredAccessors != 98 {
+		t.Fatalf("XNA-declared events = %d producing %d accessors, want 49 and 98", declaredEvents, declaredAccessors)
+	}
+	if inheritedEvents != 6 || inheritedAccessors != 12 {
+		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 6 and 12", inheritedEvents, inheritedAccessors)
+	}
+	if events != declaredEvents+inheritedEvents || accessors != declaredAccessors+inheritedAccessors {
+		t.Fatalf("event partition = %d/%d, walk found %d/%d", events, accessors,
+			declaredEvents+inheritedEvents, declaredAccessors+inheritedAccessors)
 	}
 }
 
@@ -5000,9 +5050,19 @@ func TestIDisposableAddsNoProjectedSurface(t *testing.T) {
 		}
 	}
 
-	// Every projected Dispose identity traces to a declared XNA member.
+	// Every projected Dispose identity traces to a declared XNA member -- on
+	// the owner itself, or, for an XNA-inherited projection, on the base it is
+	// attributed to. The second case is not an exception to the rule: it is the
+	// same rule read through the provenance the member carries.
 	for key, member := range surface.Members {
 		if !strings.HasPrefix(key.Name, "Dispose") {
+			continue
+		}
+		if member.XNABase != "" {
+			if !declaresDispose[member.XNABase] {
+				t.Fatalf("%s projects %s as inherited from %s, which declares no Dispose member",
+					member.Owner, key.Name, member.XNABase)
+			}
 			continue
 		}
 		if !declaresDispose[member.Owner] {
@@ -6065,8 +6125,13 @@ func TestGameBaseCallAdaptersAreNotXNAIdentities(t *testing.T) {
 	if expected.ReferenceMembers != 2964 {
 		t.Fatalf("REFERENCE_MEMBERS moved to %d; the base-call family must not touch it", expected.ReferenceMembers)
 	}
-	if expected.ExpectedGoMembers != 3255 {
-		t.Fatalf("EXPECTED_GO_MEMBERS moved to %d; the base-call family must not touch it", expected.ExpectedGoMembers)
+	// The base-call family adds no identity. EXPECTED_GO_MEMBERS is admitted by
+	// its parts rather than by one total, so what is pinned here is the
+	// XNA-DECLARED part: 3243, which never moves. The two inherited provenance
+	// classes are pinned by their own registries.
+	declared := expected.ExpectedGoMembers - expected.BCLInheritedProjections - expected.XNAInheritedProjections
+	if declared != 3243 {
+		t.Fatalf("XNA-declared member projections moved to %d; the base-call family must not touch them", declared)
 	}
 }
 
@@ -6406,6 +6471,12 @@ func withXNABaseRelationships(t *testing.T, mutate func(), fn func()) {
 	fn()
 }
 
+// deferredBaseFixtureName is the base the DEFERRED-only defects below mutate.
+// It has to be a relationship that is still DEFERRED: GameComponent became the
+// first COMPOSED one in Foundation 41, and a COMPOSED relationship is not held
+// to the blocker rules, which is the whole point of the status.
+const deferredBaseFixtureName = "Microsoft.Xna.Framework.Graphics.GraphicsResource"
+
 const gameComponentBase = "Microsoft.Xna.Framework.GameComponent"
 
 // xnaBaseDefects is the shared table behind both the named test and the
@@ -6423,24 +6494,24 @@ var xnaBaseDefects = map[string]func(complete *[]string){
 	// Foundation 29's rule, on the second frontier: a deferral that records
 	// nothing says nothing.
 	"deferred_base_records_no_blocker": func(*[]string) {
-		relationship := xnaBaseRelationships[gameComponentBase]
+		relationship := xnaBaseRelationships[deferredBaseFixtureName]
 		relationship.Blockers = nil
-		xnaBaseRelationships[gameComponentBase] = relationship
+		xnaBaseRelationships[deferredBaseFixtureName] = relationship
 	},
 	"blocker_class_is_unrecorded": func(*[]string) {
-		relationship := xnaBaseRelationships[gameComponentBase]
+		relationship := xnaBaseRelationships[deferredBaseFixtureName]
 		relationship.Blockers = []xnaBaseBlocker{{Class: "LATER", Detail: "not now"}}
-		xnaBaseRelationships[gameComponentBase] = relationship
+		xnaBaseRelationships[deferredBaseFixtureName] = relationship
 	},
 	"blocker_records_no_detail": func(*[]string) {
-		relationship := xnaBaseRelationships[gameComponentBase]
+		relationship := xnaBaseRelationships[deferredBaseFixtureName]
 		relationship.Blockers = []xnaBaseBlocker{{Class: "ARCHITECTURE"}}
-		xnaBaseRelationships[gameComponentBase] = relationship
+		xnaBaseRelationships[deferredBaseFixtureName] = relationship
 	},
 	"status_is_neither_composed_nor_deferred": func(*[]string) {
-		relationship := xnaBaseRelationships[gameComponentBase]
+		relationship := xnaBaseRelationships[deferredBaseFixtureName]
 		relationship.Status = "SOON"
-		xnaBaseRelationships[gameComponentBase] = relationship
+		xnaBaseRelationships[deferredBaseFixtureName] = relationship
 	},
 	// A registry entry for a base nothing actually derives from is a stale
 	// claim, and would let a real relationship hide behind a plausible one.
@@ -7851,6 +7922,224 @@ func TestXNABaseSubstitutabilityDefectsAreRejected(t *testing.T) {
 			result := verify(expected, actual, 0, "report", "contract", "mapping")
 			if result.Summary["BASE_MAPPING_MISMATCH"] == 0 {
 				t.Fatalf("defect %q raised no BASE_MAPPING_MISMATCH", name)
+			}
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 41 — the XNA-to-XNA composition rule.
+// ---------------------------------------------------------------------------
+
+// xnaCompositionFixture projects DrawableGameComponent into the actual surface
+// exactly as the composition rule requires -- a private named *GameComponent
+// field and nothing else -- so every defect below is caused by its own
+// mutation.
+//
+// It is synthetic on purpose. CNA-Go does not project DrawableGameComponent
+// yet, and its remaining blockers are about device runtime rather than
+// inheritance, so the rule has to be proved against a type that satisfies it
+// rather than against one that does not exist.
+func xnaCompositionFixture(t *testing.T) (*expectedSurface, *actualSurface) {
+	t.Helper()
+	expected, actual := loadPinnedSurfaces(t)
+	derived := expected.typeForXNA("Microsoft.Xna.Framework.DrawableGameComponent")
+	if derived == nil {
+		t.Fatal("the pinned contract does not declare DrawableGameComponent")
+	}
+	actual.Types[derived.Key] = &actualType{
+		Key: derived.Key, Kind: "struct",
+		Fields: []actualField{
+			{Name: "base", Type: "*GameComponent"},
+			{Name: "visible", Type: "bool"},
+			{Name: "drawOrder", Type: "int32"},
+		},
+	}
+	return expected, actual
+}
+
+// TestGameComponentIsTheFirstComposedRelationship records the state the
+// architecture reached, and why this family and not another.
+func TestGameComponentIsTheFirstComposedRelationship(t *testing.T) {
+	expected, actual := loadPinnedSurfaces(t)
+	result := verify(expected, actual, 0, "report", "contract", "mapping")
+	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 1 {
+		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 1", got)
+	}
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 2 {
+		t.Fatalf("the composed relationship covers %d derived types, want 2", got)
+	}
+	// The family was chosen because Foundation 40 measured that nothing names
+	// it. That is the whole justification, so it is asserted here too.
+	for _, measurement := range result.XNABaseSubstitutability {
+		if measurement.Base != "Microsoft.Xna.Framework.GameComponent" {
+			continue
+		}
+		if measurement.Requirement != "NONE" {
+			t.Fatalf("GameComponent's substitutability requirement is %q; the composition rule was adopted for this family "+
+				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
+		}
+	}
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 14 {
+		t.Fatalf("%d inherited public CLR members, want 14", got)
+	}
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 24 {
+		t.Fatalf("%d inherited Go projections, want 24", got)
+	}
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 24 {
+		t.Fatalf("%d attributed inherited members, want every one of the 24", got)
+	}
+}
+
+// TestEveryMemberHasExactlyOneProvenanceClass is the accounting claim the third
+// provenance class exists to keep true: XNA_DECLARED, BCL_INHERITED and
+// XNA_INHERITED partition the expected surface, and REFERENCE_MEMBERS still
+// names exactly what Microsoft declares.
+func TestEveryMemberHasExactlyOneProvenanceClass(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	declared, bclInherited, xnaInherited := 0, 0, 0
+	for key, member := range expected.Members {
+		switch {
+		case member.BCLBase != "" && member.XNABase != "":
+			t.Fatalf("%s carries both a BCL base and an XNA base", key.String())
+		case member.BCLBase != "":
+			bclInherited++
+		case member.XNABase != "":
+			xnaInherited++
+		default:
+			declared++
+		}
+	}
+	if declared+bclInherited+xnaInherited != expected.ExpectedGoMembers {
+		t.Fatalf("the three provenance classes cover %d members, the surface has %d",
+			declared+bclInherited+xnaInherited, expected.ExpectedGoMembers)
+	}
+	if declared != 3243 {
+		t.Fatalf("%d XNA-declared member projections, the pinned count is 3243", declared)
+	}
+	if bclInherited != expected.BCLInheritedProjections || xnaInherited != expected.XNAInheritedProjections {
+		t.Fatalf("provenance walk found %d BCL-inherited and %d XNA-inherited, the surface reports %d and %d",
+			bclInherited, xnaInherited, expected.BCLInheritedProjections, expected.XNAInheritedProjections)
+	}
+	if expected.ReferenceMembers != 2964 {
+		t.Fatalf("REFERENCE_MEMBERS moved to %d; the third provenance class must not touch what Microsoft declares", expected.ReferenceMembers)
+	}
+}
+
+// TestAnOverriddenMemberIsNotAlsoInherited holds the exclusion rule. A derived
+// class that redeclares an inherited member is overriding it, so the projected
+// member is the DERIVED one and counting it twice would both inflate the
+// accounting and claim a forwarding that must not exist.
+func TestAnOverriddenMemberIsNotAlsoInherited(t *testing.T) {
+	expected, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	derived := expected.typeForXNA("Microsoft.Xna.Framework.DrawableGameComponent")
+	if derived == nil {
+		t.Fatal("the pinned contract does not declare DrawableGameComponent")
+	}
+	seen := make(map[string]string)
+	for _, key := range derived.Members {
+		member := expected.Members[key]
+		provenance := "XNA_DECLARED"
+		if member.XNABase != "" {
+			provenance = "XNA_INHERITED"
+		}
+		if previous, duplicate := seen[member.GoName]; duplicate {
+			t.Fatalf("DrawableGameComponent projects %s twice: %s and %s", member.GoName, previous, provenance)
+		}
+		seen[member.GoName] = provenance
+	}
+	// Initialize is declared by DrawableGameComponent itself -- it is the
+	// override that resolves IGraphicsDeviceService -- so it must be
+	// XNA_DECLARED and must NOT also arrive as inherited.
+	if got := seen["Initialize"]; got != "XNA_DECLARED" {
+		t.Fatalf("DrawableGameComponent::Initialize has provenance %q, want XNA_DECLARED: the derived class declares it", got)
+	}
+	// Update is not redeclared, so it is inherited and forwarded.
+	if got := seen["Update"]; got != "XNA_INHERITED" {
+		t.Fatalf("DrawableGameComponent::Update has provenance %q, want XNA_INHERITED", got)
+	}
+}
+
+// TestXNACompositionDefectsAreRejected attacks every rule the composition
+// projection rests on, against a derived type that otherwise satisfies it.
+func TestXNACompositionDefectsAreRejected(t *testing.T) {
+	derivedKey := func(expected *expectedSurface) symbolKey {
+		return expected.typeForXNA("Microsoft.Xna.Framework.DrawableGameComponent").Key
+	}
+	for name, defect := range map[string]func(*expectedSurface, *actualSurface){
+		// THE embedding control. Go embedding promotes the base's whole method
+		// set, so a member the derived class overrides would silently keep the
+		// base's body wherever the derived one was not redeclared exactly.
+		"derived_type_embeds_its_base": func(expected *expectedSurface, actual *actualSurface) {
+			actual.Types[derivedKey(expected)].Fields = []actualField{
+				{Name: "GameComponent", Type: "*GameComponent", Embedded: true, Exported: true},
+			}
+		},
+		"derived_type_embeds_its_base_unexported": func(expected *expectedSurface, actual *actualSurface) {
+			actual.Types[derivedKey(expected)].Fields = []actualField{
+				{Name: "gameComponent", Type: "*GameComponent", Embedded: true},
+			}
+		},
+		// An exported base field hands a consumer the base object and lets them
+		// mutate it behind the derived type's back.
+		"base_is_held_in_an_exported_field": func(expected *expectedSurface, actual *actualSurface) {
+			actual.Types[derivedKey(expected)].Fields = []actualField{
+				{Name: "Base", Type: "*GameComponent", Exported: true},
+			}
+		},
+		"derived_type_holds_no_base_at_all": func(expected *expectedSurface, actual *actualSurface) {
+			actual.Types[derivedKey(expected)].Fields = []actualField{{Name: "visible", Type: "bool"}}
+		},
+		// A public accessor for the base object. The contract declares none and
+		// Foundation 40 measured that no signature in the profile needs one.
+		"derived_type_exposes_a_base_accessor": func(expected *expectedSurface, actual *actualSurface) {
+			derived := expected.typeForXNA("Microsoft.Xna.Framework.DrawableGameComponent")
+			key := symbolKey{Package: derived.PackagePath, Receiver: derived.GoName, Name: "Base"}
+			actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"*GameComponent"}}
+		},
+		"derived_type_exposes_an_upcast": func(expected *expectedSurface, actual *actualSurface) {
+			derived := expected.typeForXNA("Microsoft.Xna.Framework.DrawableGameComponent")
+			key := symbolKey{Package: derived.PackagePath, Receiver: derived.GoName, Name: "AsGameComponent"}
+			actual.Members[key] = &actualMember{Key: key, Kind: "method", Results: []string{"*GameComponent"}}
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			expected, actual := xnaCompositionFixture(t)
+			before := verify(expected, actual, 0, "report", "contract", "mapping").Summary["BASE_MAPPING_MISMATCH"]
+			expected, actual = xnaCompositionFixture(t)
+			defect(expected, actual)
+			after := verify(expected, actual, 0, "report", "contract", "mapping").Summary["BASE_MAPPING_MISMATCH"]
+			if after <= before {
+				t.Fatalf("composition defect %q raised no new BASE_MAPPING_MISMATCH (%d -> %d)", name, before, after)
+			}
+		})
+	}
+}
+
+// TestComposedRelationshipDefectsAreRejected attacks the registry side of the
+// same rule.
+func TestComposedRelationshipDefectsAreRejected(t *testing.T) {
+	for name, mutate := range map[string]func(){
+		"composed_relationship_for_a_type_the_contract_does_not_declare": func() {
+			xnaBaseRelationships["Microsoft.Xna.Framework.NotAThing"] = xnaBaseRelationship{Status: "COMPOSED"}
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			expected, actual := loadPinnedSurfaces(t)
+			before := verify(expected, actual, 0, "report", "contract", "mapping").Summary["BASE_MAPPING_MISMATCH"]
+			var after int
+			withXNABaseRelationships(t, mutate, func() {
+				expected, actual := loadPinnedSurfaces(t)
+				after = verify(expected, actual, 0, "report", "contract", "mapping").Summary["BASE_MAPPING_MISMATCH"]
+			})
+			if after <= before {
+				t.Fatalf("defect %q raised no new BASE_MAPPING_MISMATCH (%d -> %d)", name, before, after)
 			}
 		})
 	}

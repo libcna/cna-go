@@ -423,6 +423,19 @@ reference abstraction can be justified by it. No family is live yet;
 `Texture2D` is the closest and becomes live the day `RenderTarget2D` is
 projected.
 
+See [Foundation 41 XNA inheritance evidence](docs/foundation-41-xna-inheritance-evidence.md)
+for the composition rule that measurement made safe. An XNA class inheriting
+another projects the base as **private named composition plus explicit measured
+forwarding** -- never Go embedding, which would promote the base's whole method
+set and let a promoted member silently win where the derived class overrides it,
+and never a public `Base`, `Parent` or `As...` accessor. `XNA_INHERITED` joins
+`XNA_DECLARED` and `BCL_INHERITED` as the third provenance class, and the three
+are asserted disjoint and exhaustive: 3243 declared projections that never move,
+12 BCL-inherited and 24 XNA-inherited. `COMPOSED` states that the inheritance is
+projected, not that any derived type is complete -- neither of `GameComponent`'s
+two is, for reasons that are about device and GamerServices runtime rather than
+about inheritance.
+
 The `Media` package contains enum metadata only and carries no media runtime
 capability claim. The `Input/Touch` package adds `TouchLocation`,
 `GestureSample`, and the read-only `TouchCollection` alongside its enums, and

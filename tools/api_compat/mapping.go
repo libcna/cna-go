@@ -783,6 +783,12 @@ func buildExpected(c contract) (*expectedSurface, error) {
 		s.BCLInheritedCLRMembers += owner.BCLInheritedCLRMembers
 		s.BCLInheritedProjections += owner.BCLInheritedProjections
 		allMembers = append(allMembers, inherited...)
+		xnaInherited := mapInheritedXNABaseMembers(s, byIdentity, owner, *t)
+		owner.XNAInheritedCLRMembers = xnaInheritedCLRMemberCount(byIdentity, *t)
+		owner.XNAInheritedProjections = len(xnaInherited)
+		s.XNAInheritedCLRMembers += owner.XNAInheritedCLRMembers
+		s.XNAInheritedProjections += owner.XNAInheritedProjections
+		allMembers = append(allMembers, xnaInherited...)
 	}
 	resolveMemberCollisions(allMembers)
 	for _, em := range allMembers {
@@ -2233,9 +2239,20 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	// XNA classes inheriting from an XNA class CNA-Go has already completed,
 	// which is what makes the architecture blocker the LIVE one rather than a
 	// theoretical one.
-	"Microsoft.Xna.Framework.GameComponent": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "SUBSYSTEM", Detail: "DrawableGameComponent needs Graphics.GraphicsDevice, which is partial, and resolves IGraphicsDeviceService out of Services, which nothing in CNA-Go can publish; GamerServicesComponent needs Game.Window.Handle, a missing member of a missing type, and GamerServicesDispatcher, which lives in Microsoft.Xna.Framework.GamerServices.dll -- not one of the seven pinned assemblies -- and has no CNA runtime behind it"},
+	// The first COMPOSED relationship, and the architecture proof.
+	//
+	// Foundation 40 measured why this family is the safe one to start with:
+	// NOTHING in the whole profile names GameComponent in a public signature,
+	// so no derived value can ever be required to stand in for one and private
+	// named composition is exactly sufficient rather than a compromise.
+	//
+	// COMPOSED states that the INHERITANCE is projected -- the inherited public
+	// surface is enumerated, attributed and required on the derived type. It
+	// does not state that any derived type is complete, and neither is. Their
+	// remaining blockers are recorded per derived type below and are entirely
+	// about device and GamerServices runtime, not about inheritance.
+	"Microsoft.Xna.Framework.GameComponent": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
+		{Class: "SUBSYSTEM", Detail: "the inheritance is projected; the two derived types are not complete for reasons that are not inheritance. DrawableGameComponent::Initialize resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Game.Services and throws Resources.MissingGraphicsDeviceService when it is absent, and the framework package cannot name that contract because the Graphics package imports it -- the settled cross-package cycle rule projects device-typed members into the descendant package, which a private field resolution inside Initialize cannot use. GamerServicesComponent needs Game.Window.Handle, a missing member of a missing type, and GamerServicesDispatcher from Microsoft.Xna.Framework.GamerServices.dll, which is not one of the seven pinned assemblies and has no CNA runtime behind it"},
 	}},
 
 	// The one Foundation 25 measured from the other side: it alone blocks
@@ -2803,4 +2820,182 @@ func clrTypeIdentities(raw string) []string {
 	}
 	flush()
 	return identities
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 41 — the XNA-to-XNA inheritance projection.
+// ---------------------------------------------------------------------------
+
+// The composition rule, stated once and measured everywhere.
+//
+// An XNA class that inherits another XNA class projects the base as PRIVATE
+// NAMED COMPOSITION plus EXPLICIT MEASURED FORWARDING:
+//
+//	type DrawableGameComponent struct {
+//	    base *GameComponent          // private, named, not embedded
+//	    ...                          // the derived type's own state
+//	}
+//
+// and never as Go embedding:
+//
+//	type DrawableGameComponent struct {
+//	    *GameComponent               // REFUSED: BASE_MAPPING_MISMATCH
+//	}
+//
+// Three reasons, in order of weight.
+//
+// Embedding is not inheritance. It promotes the base's method set wholesale,
+// including members the derived class OVERRIDES or HIDES, and the promoted
+// method would silently win wherever the derived one was not redeclared with
+// exactly the right shape. Explicit forwarding makes every inherited member a
+// declared, measured member of the derived type, so the override set is a fact
+// the verifier can check rather than a property of Go's promotion rules.
+//
+// Embedding also publishes the base. An exported embedded field is public
+// surface Microsoft never declared, and it hands a consumer a way to reach the
+// base object and mutate it behind the derived type's back. There is no public
+// Base, Parent or AsGameComponent member either, for the same reason: the
+// pinned contract declares none, and a signature-projection requirement is the
+// only thing that could justify one.
+//
+// And it is sufficient. Foundation 40 measured the actual CLR substitutability
+// requirement of the whole profile: GameComponent, GraphicsResource and
+// MathTypeConverter -- 25 of the 41 derived types between them -- are named in
+// ZERO public signature positions, and no family is live. Private composition
+// is not a compromise for such a family; there is no position in the contract
+// for a derived value to flow through.
+
+// mapInheritedXNABaseMembers synthesizes the XNA_INHERITED provenance class:
+// the public members a derived XNA class inherits from an XNA base whose
+// relationship is COMPOSED, transitively, minus the ones the derived class
+// declares itself.
+//
+// # Why "minus the ones it declares itself"
+//
+// A derived class that redeclares an inherited member is overriding or hiding
+// it, and the projected member is then the DERIVED one -- its own body, its own
+// provenance, its own fallibility. Counting it twice would inflate the member
+// accounting and would claim a forwarding that must not exist. The exclusion is
+// by CLR member name and kind, which is exactly what the CLR slot rules use for
+// the members in this profile: no derived type in the contract overloads an
+// inherited name.
+//
+// # Transitivity
+//
+// The walk follows the base chain as far as COMPOSED relationships go, so a
+// three-deep family projects the whole inherited surface rather than one level
+// of it. It stops at the first base that is not an XNA class in the profile,
+// which is where the BCL-inherited provenance class takes over.
+func mapInheritedXNABaseMembers(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, t contractType) []*expectedMember {
+	declared := make(map[string]bool, len(t.Members))
+	for _, m := range t.Members {
+		declared[m.Kind+"|"+m.Name] = true
+	}
+
+	var mapped []*expectedMember
+	current := t
+	seen := map[string]bool{t.Name: true}
+	for {
+		if current.BaseType == nil {
+			return mapped
+		}
+		identity := baseIdentityWithoutArguments(*current.BaseType)
+		relationship, isXNABase := xnaBaseRelationships[identity]
+		if !isXNABase || relationship.Status != "COMPOSED" {
+			return mapped
+		}
+		base, inProfile := byIdentity[identity]
+		if !inProfile || seen[identity] {
+			return mapped
+		}
+		seen[identity] = true
+
+		// The inherited members form the derived type's own overload namespace
+		// together with what it declares, so they are mapped through a
+		// synthetic type carrying both -- otherwise an inherited overload group
+		// would be renamed differently from the way the base named it.
+		synthetic := contractType{Name: t.Name, Kind: t.Kind, Sealed: t.Sealed, BaseType: current.BaseType}
+		var inheritedSource []contractMember
+		for _, m := range base.Members {
+			if m.Kind == "constructor" {
+				// Constructors are not inherited. CLR requires a derived class
+				// to declare its own, and every derived class in the profile
+				// does.
+				continue
+			}
+			if !inheritedMemberIsPublic(m) {
+				continue
+			}
+			if declared[m.Kind+"|"+m.Name] {
+				continue
+			}
+			declared[m.Kind+"|"+m.Name] = true
+			inheritedSource = append(inheritedSource, m)
+		}
+		synthetic.Members = append(synthetic.Members, inheritedSource...)
+		groups := overloadGroups(synthetic)
+		for _, instance := range inheritedSource {
+			for _, member := range mapMember(s, byIdentity, owner, synthetic, instance, groups) {
+				member.XNABase = identity
+				member.XNABaseMember = instance.Name
+				member.XNA = identity + "::" + strings.TrimPrefix(member.XNA, t.Name+"::")
+				mapped = append(mapped, member)
+			}
+		}
+		current = *base
+	}
+}
+
+// inheritedMemberIsPublic is the same accessibility test publicCLRMemberCount
+// applies: a property counts when either accessor is public, an event always
+// counts, and everything else needs public access. A protected member is
+// inherited in CLR but is not public surface, so it is not projected onto the
+// derived type.
+func inheritedMemberIsPublic(m contractMember) bool {
+	switch m.Kind {
+	case "property":
+		return valueOrEmpty(m.GetAccess) == "public" || valueOrEmpty(m.SetAccess) == "public"
+	case "event":
+		return true
+	default:
+		return m.Access == "public"
+	}
+}
+
+// xnaInheritedCLRMemberCount is how many public CLR members one derived type
+// inherits from its COMPOSED XNA base chain, before any of them is projected.
+// It is the third provenance class of the identity accounting, kept separate
+// from both the XNA-declared reference members and the BCL-inherited ones so no
+// member is ever counted twice.
+func xnaInheritedCLRMemberCount(byIdentity map[string]*contractType, t contractType) int {
+	declared := make(map[string]bool, len(t.Members))
+	for _, m := range t.Members {
+		declared[m.Kind+"|"+m.Name] = true
+	}
+	total := 0
+	current := t
+	seen := map[string]bool{t.Name: true}
+	for {
+		if current.BaseType == nil {
+			return total
+		}
+		identity := baseIdentityWithoutArguments(*current.BaseType)
+		relationship, isXNABase := xnaBaseRelationships[identity]
+		if !isXNABase || relationship.Status != "COMPOSED" {
+			return total
+		}
+		base, inProfile := byIdentity[identity]
+		if !inProfile || seen[identity] {
+			return total
+		}
+		seen[identity] = true
+		for _, m := range base.Members {
+			if m.Kind == "constructor" || !inheritedMemberIsPublic(m) || declared[m.Kind+"|"+m.Name] {
+				continue
+			}
+			declared[m.Kind+"|"+m.Name] = true
+			total++
+		}
+		current = *base
+	}
 }

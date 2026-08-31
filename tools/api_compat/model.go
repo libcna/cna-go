@@ -73,6 +73,12 @@ type expectedSurface struct {
 	// to. It differs from BCLInheritedCLRMembers because a CLR property with
 	// both accessors projects two Go members.
 	BCLInheritedProjections int
+	// XNAInheritedCLRMembers and XNAInheritedProjections are the same two
+	// numbers for the XNA_INHERITED provenance class: public members a derived
+	// XNA class inherits from a COMPOSED XNA base, and the Go identities they
+	// project to.
+	XNAInheritedCLRMembers  int
+	XNAInheritedProjections int
 
 	// XNABaseSubstitutability is the complete inventory of PUBLIC signature
 	// positions in the profile whose CLR type names a class another class in
@@ -113,6 +119,11 @@ type expectedType struct {
 	// base, which is every type in the profile but the collection consumers.
 	BCLInheritedCLRMembers  int
 	BCLInheritedProjections int
+	// XNAInheritedCLRMembers and XNAInheritedProjections are the same pair for
+	// this type's COMPOSED XNA base chain. Both are zero for a type whose base
+	// is not an XNA class or whose base relationship is still DEFERRED.
+	XNAInheritedCLRMembers  int
+	XNAInheritedProjections int
 }
 
 type mappedInterface struct {
@@ -162,6 +173,13 @@ type expectedMember struct {
 	// BCLBase and Key it is the full attribution the inherited projection
 	// promises: exact BCL base, exact CLR member, exact projected Go member.
 	BCLMember string
+	// XNABase is the CLR identity of the XNA base class this member is
+	// inherited from, and XNABaseMember is the exact CLR member on that base.
+	// They are the THIRD provenance class: every expected Go member is exactly
+	// one of XNA_DECLARED (both empty), BCL_INHERITED (BCLBase set) or
+	// XNA_INHERITED (XNABase set), so no member is ever counted twice.
+	XNABase       string
+	XNABaseMember string
 	// SourceAccess is the CLR accessibility the pinned contract declares for
 	// this member -- "public", "protected", and so on. It is carried so a
 	// claim about accessibility can be MEASURED against the contract rather
@@ -204,6 +222,28 @@ type xnaBaseSubstitutabilityMeasurement struct {
 	Requirement string                       `json:"requirement"`
 	Rows        []xnaBaseSubstitutabilityRow `json:"rows"`
 	Verdict     string                       `json:"verdict"`
+}
+
+// xnaCompositionMeasurement records one COMPOSED XNA base relationship and how
+// each of its derived types projects the base.
+type xnaCompositionMeasurement struct {
+	CLRBase string              `json:"clrBase"`
+	GoBase  string              `json:"goBase"`
+	Rows    []xnaCompositionRow `json:"rows"`
+	Verdict string              `json:"verdict"`
+}
+
+// xnaCompositionRow is one derived type's composition. Composition is
+// PRIVATE_NAMED when the base is held in a private named pointer field,
+// NOT_PROJECTED when CNA-Go does not project the derived type yet, and FAIL
+// when the rule is broken.
+type xnaCompositionRow struct {
+	Derived              string `json:"derived"`
+	GoDerived            string `json:"goDerived"`
+	BaseField            string `json:"baseField,omitempty"`
+	InheritedCLRMembers  int    `json:"inheritedCLRMembers"`
+	InheritedProjections int    `json:"inheritedProjections"`
+	Composition          string `json:"composition"`
 }
 
 type actualSurface struct {
@@ -308,6 +348,7 @@ type report struct {
 	GameNativeSignals            []gameNativeSignalMeasurement        `json:"gameNativeSignals"`
 	GameFrameHooks               []gameFrameHookMeasurement           `json:"gameFrameHooks"`
 	XNABaseSubstitutability      []xnaBaseSubstitutabilityMeasurement `json:"xnaBaseSubstitutability"`
+	XNAComposition               []xnaCompositionMeasurement          `json:"xnaComposition"`
 	Metadata                     reportMetadata                       `json:"metadata"`
 }
 

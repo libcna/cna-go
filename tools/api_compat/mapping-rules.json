@@ -509,7 +509,7 @@
   "rule": "every CLR class in the pinned profile that another class in the SAME profile inherits from is recorded here with a status. This is a different frontier from bclBaseRelationships: a BCL base is a type outside the contract that CNA-Go decides how to model, while an XNA base is a type inside the contract whose public surface a derived type inherits WITHOUT the contract redeclaring it",
   "whyItIsMeasured": "Texture2D's contract declares sixteen members and inherits nine more from Texture and GraphicsResource -- Name, Tag, GraphicsDevice, IsDisposed, Dispose, ToString, Disposing, LevelCount and Format. CNA-Go projects Texture2D with none of them, and until Foundation 33 nothing recorded that. The same silence covered SpriteBatch",
   "statuses": {
-   "COMPOSED": "CNA-Go re-exposes the base's public surface on its derived types. No XNA base is composed yet",
+   "COMPOSED": "the inheritance is projected: the base is private named state on the derived type and every inherited public member is enumerated, attributed and required. It does NOT state that any derived type is complete",
    "DEFERRED": "CNA-Go does not, and the relationship must name what blocks it"
   },
   "deferredMustNameItsBlockers": "a DEFERRED XNA base that records no blocker is a verifier failure, exactly as a DEFERRED BCL base is",
@@ -533,6 +533,24 @@
    "measured": "51 base-typed public signature positions across the twelve families. Three families -- GameComponent, GraphicsResource and MathTypeConverter -- are named in ZERO positions and carry 25 of the 41 derived types between them. Nine are LATENT. None is LIVE",
    "closestToLive": "Texture2D: 17 positions, nine of them on SpriteBatch, which CNA-Go projects. It stays LATENT only because its one derived type, RenderTarget2D, is not projected. Projecting RenderTarget2D while SpriteBatch.Draw takes a Texture2D is exactly what would make it live",
    "crossCheck": "the relationships the inventory walks are read from the contract's own baseType fields, never from this registry, and the two must agree exactly. A relationship in one and not the other is BASE_MAPPING_MISMATCH, so neither can go stale alone"
+  },
+  "compositionRule": {
+   "projection": "PRIVATE NAMED COMPOSITION plus EXPLICIT MEASURED FORWARDING. A derived XNA class holds its base in a private, named, pointer-typed field and declares every inherited public member itself",
+   "neverEmbedding": "Go embedding is refused. It promotes the base's WHOLE method set, so a member the derived class overrides would silently keep the base's body wherever the derived one was not redeclared with exactly the right shape. Explicit forwarding makes every inherited member a declared, measured member of the derived type, so the override set is a fact the verifier checks rather than a property of Go's promotion rules",
+   "noBaseAccessor": "no public Base, Parent, BaseObject, Inner, Super or As<Base> member. The pinned contract declares none, and Foundation 40 measured that no public signature in the profile needs one. An exported base field is refused for the same reason: it hands a consumer the base object and lets them mutate it behind the derived type's back",
+   "justification": "Foundation 40's substitutability inventory. For a family named in ZERO public signature positions -- GameComponent, GraphicsResource and MathTypeConverter, 25 of the 41 derived types between them -- private composition is not a compromise but exactly sufficient: there is no position in the contract for a derived value to flow through",
+   "baseConstruction": "a derived constructor creates its private base state at the exact CLR base-constructor point, preserving validation order, side effects, event subscription, reference identity and defaults. A field the derived class initializes BEFORE its base call in IL is initialized before it here too",
+   "overrides": "a CLR virtual override projects as the derived Go method. A non-virtual base call -- `call Base::Member` -- invokes the private base state directly and must NOT redispatch; no public API is invented for internal base dispatch",
+   "consumerSubclassing": "this rule projects Microsoft's OWN derived types. It does not attempt universal Go class inheritance for arbitrary consumer subclasses: Go cannot reproduce CLR subclassing, and the targeted language adapters that already exist -- GameCallbacks and the optional Game frame-hook capabilities -- remain the answer where consumer override behaviour is necessary"
+  },
+  "provenanceClasses": {
+   "rule": "every projected public member belongs to exactly ONE provenance class, so no member is ever counted twice and REFERENCE_MEMBERS keeps naming exactly what the Microsoft assemblies declare",
+   "XNA_DECLARED": "the derived CLR type declares the member itself. 3243 Go projections of the 2,964 XNA-declared reference members; this number never moves",
+   "BCL_INHERITED": "inherited directly or indirectly from a supported BCL base outside the contract, attributed to the exact base and the exact CLR member",
+   "XNA_INHERITED": "inherited from another XNA contract class whose base relationship is COMPOSED, attributed the same way and walked transitively up the COMPOSED chain",
+   "overrideExclusion": "a derived class that redeclares an inherited member is overriding or hiding it, so the projected member is the DERIVED one. Counting it in both classes would inflate the accounting and claim a forwarding that must not exist",
+   "constructorsAreNotInherited": "CLR requires a derived class to declare its own, and every derived class in the profile does",
+   "protectedIsNotPublicSurface": "a protected member is inherited in CLR but is not public surface, so it is not projected onto the derived type"
   }
  },
  "gameNativeSignals": {

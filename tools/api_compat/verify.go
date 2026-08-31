@@ -158,6 +158,10 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["XNA_BASE_SUBSTITUTABILITY_NONE"] = 0
 	result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"] = 0
 	result.Summary["XNA_BASE_SUBSTITUTABILITY_LIVE"] = 0
+	result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"] = 0
+	result.Summary["XNA_COMPOSED_DERIVED_TYPES"] = 0
+	result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"] = 0
+	result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"] = 0
 	result.Summary["GAME_FRAME_HOOKS"] = 0
 	result.Summary["GAME_FRAME_HOOKS_NEVER_INSTALLED"] = 0
 	result.Summary["GAME_FRAME_HOOKS_INSTALLED_ON_OVERRIDE"] = 0
@@ -176,6 +180,8 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["REFERENCE_XNA_MEMBERS"] = expected.ReferenceMembers
 	result.Summary["BCL_INHERITED_PUBLIC_MEMBERS"] = expected.BCLInheritedCLRMembers
 	result.Summary["BCL_INHERITED_MEMBER_PROJECTIONS"] = expected.BCLInheritedProjections
+	result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"] = expected.XNAInheritedCLRMembers
+	result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"] = expected.XNAInheritedProjections
 	result.Summary["EXPECTED_GO_TYPES"] = expected.ExpectedGoTypes
 	result.Summary["EXPECTED_GO_MEMBERS"] = expected.ExpectedGoMembers
 	result.Summary["INTERFACE_WITNESS_PROJECTIONS"] = len(expected.InterfaceWitnesses)
@@ -191,6 +197,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["GAME_NATIVE_SIGNALS"] = len(result.GameNativeSignals)
 	result.GameFrameHooks = measureGameFrameHooks(&result, expected, actual)
 	result.XNABaseSubstitutability = measureXNABaseSubstitutability(&result, expected, actual)
+	result.XNAComposition = measureXNAComposition(&result, expected, actual)
 	result.Summary["GAME_FRAME_HOOKS"] = len(result.GameFrameHooks)
 	result.Summary["BCL_BASE_ADAPTERS"] = len(result.BCLBaseAdapters)
 	for _, adapter := range result.BCLBaseAdapters {
@@ -4565,6 +4572,165 @@ func measureXNABaseSubstitutability(result *report, expected *expectedSurface, a
 			Category: "BASE_MAPPING_MISMATCH", XNA: base, Go: "",
 			Message: "the XNA base registry records a relationship the pinned contract does not declare",
 		})
+	}
+	return measurements
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 41 — measuring the XNA-to-XNA composition rule.
+// ---------------------------------------------------------------------------
+
+// xnaCompositionForbiddenAccessors are the public member names a derived type
+// must NOT gain just because it composes a base. The pinned contract declares
+// none of them on any derived class, so every one would be invented surface --
+// and each is a way to hand a consumer the base object and let them mutate it
+// behind the derived type's back.
+var xnaCompositionForbiddenAccessors = []string{"Base", "Parent", "BaseObject", "Inner", "Super"}
+
+// measureXNAComposition proves the composition rule on every COMPOSED XNA base
+// relationship: the base is private named state on the derived type, never Go
+// embedding, and the derived type publishes no accessor for it.
+//
+// Four claims:
+//
+//  1. A COMPOSED relationship names a base the contract really declares, and
+//     really has derived classes.
+//  2. Every derived type CNA-Go projects holds the base as a PRIVATE NAMED
+//     field of pointer type. Embedding is refused: it promotes the base's whole
+//     method set, so a member the derived class overrides would silently keep
+//     the base's body wherever the derived one was not redeclared with exactly
+//     the right shape.
+//  3. No derived type exposes Base, Parent or any other accessor for the base
+//     object. The contract declares none, and Foundation 40 measured that no
+//     public signature in the profile needs one.
+//  4. Every inherited public member is attributed: it carries the exact XNA
+//     base and the exact CLR member it came from, and it is never also counted
+//     as XNA-declared or BCL-inherited.
+func measureXNAComposition(result *report, expected *expectedSurface, actual *actualSurface) []xnaCompositionMeasurement {
+	// A surface with no XNA-to-XNA relationships at all is a synthetic fixture
+	// measuring something else, not a profile whose composed bases are missing.
+	// Guarding on that keeps this measurement out of every other fixture while
+	// still catching a COMPOSED entry that names nothing in the real contract.
+	if len(expected.XNABaseDerivedByBase) == 0 {
+		return nil
+	}
+	bases := make([]string, 0, len(xnaBaseRelationships))
+	for base := range xnaBaseRelationships {
+		bases = append(bases, base)
+	}
+	sort.Strings(bases)
+
+	measurements := make([]xnaCompositionMeasurement, 0)
+	for _, base := range bases {
+		relationship := xnaBaseRelationships[base]
+		if relationship.Status != "COMPOSED" {
+			continue
+		}
+		result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]++
+		baseType := expected.typeForXNA(base)
+		measurement := xnaCompositionMeasurement{CLRBase: base, Verdict: "PASS"}
+		if baseType == nil {
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: base,
+				Message: "a COMPOSED XNA base relationship names a type the pinned contract does not declare",
+			})
+			measurements = append(measurements, measurement)
+			continue
+		}
+		measurement.GoBase = baseType.GoName
+
+		for _, derivedName := range expected.XNABaseDerivedByBase[base] {
+			derived := expected.typeForXNA(derivedName)
+			if derived == nil {
+				continue
+			}
+			result.Summary["XNA_COMPOSED_DERIVED_TYPES"]++
+			row := xnaCompositionRow{
+				Derived: derivedName, GoDerived: derived.GoName,
+				InheritedCLRMembers:  derived.XNAInheritedCLRMembers,
+				InheritedProjections: derived.XNAInheritedProjections,
+				Composition:          "NOT_PROJECTED",
+			}
+			at, projected := actual.Types[derived.Key]
+			if !projected {
+				measurement.Rows = append(measurement.Rows, row)
+				continue
+			}
+			result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]++
+			fail := func(message string) {
+				addDiagnostic(result, diagnostic{
+					Category: "BASE_MAPPING_MISMATCH", XNA: derivedName,
+					Go: derived.Key.String(), Message: message,
+				})
+				measurement.Verdict = "FAIL"
+				row.Composition = "FAIL"
+			}
+
+			// (2) private named composition, never embedding.
+			wanted := "*" + baseType.GoName
+			held := false
+			for _, field := range at.Fields {
+				if field.Embedded {
+					fail(fmt.Sprintf("%s embeds %q; an XNA base is private named state, because embedding promotes the base's whole method set and a member the derived class overrides would silently keep the base's body", derived.GoName, field.Type))
+					continue
+				}
+				if field.Type != wanted {
+					continue
+				}
+				if field.Exported {
+					fail(fmt.Sprintf("%s holds its base in the EXPORTED field %s; the base object is private implementation state and the contract declares no accessor for it", derived.GoName, field.Name))
+					continue
+				}
+				held = true
+				row.BaseField = field.Name
+			}
+			if !held && row.Composition != "FAIL" {
+				fail(fmt.Sprintf("%s holds no private %s field; a COMPOSED XNA base is projected as private named composition", derived.GoName, wanted))
+			}
+
+			// (3) no accessor for the base object.
+			for _, forbidden := range xnaCompositionForbiddenAccessors {
+				key := symbolKey{Package: derived.PackagePath, Receiver: derived.GoName, Name: forbidden}
+				if _, present := actual.Members[key]; present {
+					fail(fmt.Sprintf("%s exposes %s; the pinned contract declares no accessor for the base object and no public signature in the profile needs one", derived.GoName, forbidden))
+				}
+			}
+			key := symbolKey{Package: derived.PackagePath, Receiver: derived.GoName, Name: "As" + baseType.GoName}
+			if _, present := actual.Members[key]; present {
+				fail(fmt.Sprintf("%s exposes As%s; the contract declares no such conversion", derived.GoName, baseType.GoName))
+			}
+			if row.Composition != "FAIL" {
+				row.Composition = "PRIVATE_NAMED"
+			}
+			measurement.Rows = append(measurement.Rows, row)
+		}
+		measurements = append(measurements, measurement)
+	}
+
+	// (4) every member carries exactly one provenance class.
+	for _, key := range sortedMemberKeys(expected) {
+		member := expected.Members[key]
+		if member.XNABase == "" {
+			continue
+		}
+		result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]++
+		switch {
+		case member.BCLBase != "":
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: member.XNA, Go: key.String(),
+				Message: "member carries both an XNA base and a BCL base; every projected member has exactly one provenance class",
+			})
+		case member.XNABaseMember == "":
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: member.XNA, Go: key.String(),
+				Message: "an XNA-inherited member names no CLR member on its base, so the attribution the provenance class promises is incomplete",
+			})
+		case expected.typeForXNA(member.XNABase) == nil:
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: member.XNA, Go: key.String(),
+				Message: "an XNA-inherited member names a base the pinned contract does not declare",
+			})
+		}
 	}
 	return measurements
 }

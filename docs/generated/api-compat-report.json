@@ -17,7 +17,7 @@
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3255,
+    "EXPECTED_GO_MEMBERS": 3279,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
@@ -70,8 +70,14 @@
     "XNA_BASE_SUBSTITUTABILITY_LIVE": 0,
     "XNA_BASE_SUBSTITUTABILITY_NONE": 3,
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
-    "XNA_DEFERRED_BASE_BLOCKERS": 25,
-    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 245
+    "XNA_COMPOSED_BASE_RELATIONSHIPS": 1,
+    "XNA_COMPOSED_DERIVED_TYPES": 2,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 0,
+    "XNA_DEFERRED_BASE_BLOCKERS": 23,
+    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 24,
+    "XNA_INHERITED_MEMBER_PROJECTIONS": 24,
+    "XNA_INHERITED_PUBLIC_MEMBERS": 14,
+    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 227
   },
   "diagnostics": [
     {
@@ -9109,22 +9115,12 @@
     },
     {
       "clrBase": "Microsoft.Xna.Framework.GameComponent",
-      "status": "DEFERRED",
+      "status": "COMPOSED",
       "derived": [
         "Microsoft.Xna.Framework.DrawableGameComponent",
         "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
       ],
       "inheritedPublicMembers": 9,
-      "blockers": [
-        {
-          "class": "ARCHITECTURE",
-          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
-        },
-        {
-          "class": "SUBSYSTEM",
-          "detail": "DrawableGameComponent needs Graphics.GraphicsDevice, which is partial, and resolves IGraphicsDeviceService out of Services, which nothing in CNA-Go can publish; GamerServicesComponent needs Game.Window.Handle, a missing member of a missing type, and GamerServicesDispatcher, which lives in Microsoft.Xna.Framework.GamerServices.dll -- not one of the seven pinned assemblies -- and has no CNA runtime behind it"
-        }
-      ],
       "verdict": "PASS"
     },
     {
@@ -10046,9 +10042,32 @@
       "verdict": "PASS"
     }
   ],
+  "xnaComposition": [
+    {
+      "clrBase": "Microsoft.Xna.Framework.GameComponent",
+      "goBase": "GameComponent",
+      "rows": [
+        {
+          "derived": "Microsoft.Xna.Framework.DrawableGameComponent",
+          "goDerived": "DrawableGameComponent",
+          "inheritedCLRMembers": 7,
+          "inheritedProjections": 12,
+          "composition": "NOT_PROJECTED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
+          "goDerived": "GamerServicesComponent",
+          "inheritedCLRMembers": 7,
+          "inheritedProjections": 12,
+          "composition": "NOT_PROJECTED"
+        }
+      ],
+      "verdict": "PASS"
+    }
+  ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "2144afba4a49f048073b5b612fbb6d78e1857e6f8a21bb382bb60a7eda585701",
+    "mappingSha256": "bb45c3fb97028644fa53f8058b4a722abcb96272c747c39f8a9028aa078ad493",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

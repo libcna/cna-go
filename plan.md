@@ -1483,6 +1483,27 @@ flow through.
 FOUNDATION_MILESTONE_40_COMPLETE=true
 ```
 
+## Foundation 41 qualification evidence
+
+Exact evidence is in `docs/foundation-41-xna-inheritance-evidence.md`.
+
+The architecture decision Foundation 33 named and eight milestones deferred is
+made: PRIVATE NAMED COMPOSITION plus EXPLICIT MEASURED FORWARDING, never Go
+embedding, with no public accessor for the base object. The third provenance
+class, XNA_INHERITED, joins XNA_DECLARED and BCL_INHERITED, and the three are
+asserted disjoint and exhaustive.
+
+GameComponent is the first COMPOSED relationship because Foundation 40 measured
+that nothing in the profile names it. COMPOSED is about inheritance, not
+completeness: neither derived type is projected, and DrawableGameComponent's
+remaining blocker -- resolving IGraphicsDeviceService from a framework-package
+method body, with two materially different designs available and neither
+selected by precedent -- is recorded as the open fork it is.
+
+```text
+FOUNDATION_MILESTONE_41_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
