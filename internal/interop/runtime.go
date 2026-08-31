@@ -134,6 +134,15 @@ type Runtime struct {
 	resources       []*Resource
 	title           string
 
+	// gameEventDeliveries counts every canonical signal actually delivered,
+	// per identity, for the life of the Runtime. It exists because the
+	// disposal signal no longer raises a public event: Game::Disposed is
+	// raised from managed Dispose(bool), so the native signal's only remaining
+	// job is native lifetime qualification, and something has to be able to
+	// see it. Nothing outside this module can: the framework package never
+	// reads it, and only tools that already import this internal package do.
+	gameEventDeliveries [gameEventCount]int
+
 	// eventRegistrations holds the four owned CNA registration handles, one
 	// per canonical game event. They are installed once, right after the
 	// native game is created, and released after it is destroyed -- never in
@@ -345,6 +354,11 @@ func (r *Runtime) invokeGameEvent(event uint32) {
 		tracef("game event %s: dropped, runtime is not live", gameEventName(event))
 		return
 	}
+	if int(event) < gameEventCount {
+		r.mu.Lock()
+		r.gameEventDeliveries[event]++
+		r.mu.Unlock()
+	}
 	var err error
 	func() {
 		defer func() {
@@ -359,6 +373,24 @@ func (r *Runtime) invokeGameEvent(event uint32) {
 	}
 	tracef("game event %s: return %v", gameEventName(event), err)
 }
+
+// GameEventDeliveries reports how many times each canonical signal was
+// delivered to this Runtime, indexed by the GameEvent* identities. It survives
+// deactivate() and a second Run adds to it, so a caller can compare two runs.
+//
+// It is the only way the disposal signal is observable at all now that it
+// raises no public event, and it is deliberately confined to this internal
+// package: a projected XNA member that exposed a native delivery count would be
+// surface Microsoft never declared.
+func (r *Runtime) GameEventDeliveries() [gameEventCount]int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.gameEventDeliveries
+}
+
+// GameEventCount is the number of canonical signal identities, so a caller can
+// size its own tables without spelling a CNA constant.
+const GameEventCount = gameEventCount
 
 func gameEventName(event uint32) string {
 	switch event {

@@ -377,6 +377,16 @@ stays a value channel separate from the error, because `DrawFrame` runs
 `if (BeginDraw()) { Draw(); EndDraw(); }` and a false answer skips both. CNA's
 four canonical frame hooks correspond position for position.
 
+See [Foundation 39 Game disposal evidence](docs/foundation-39-game-disposal-evidence.md)
+for `Game.Dispose()`, `Dispose(bool)` and `Finalize`, and for the raise-site
+correction that came with them. `Game.Disposed` has exactly one raise site in the
+reference -- the tail of `Dispose(bool)` -- so that is where CNA-Go raises it. It
+fires when a consumer disposes and at no other time: ending a `Run` does not
+raise it, and disposing twice raises it twice, because `Game` carries no disposed
+flag anywhere. CNA's own disposal signal fires from native game destruction,
+which is a different moment, so it is bound and counted for lifetime
+qualification and raises nothing public.
+
 See [Foundation 36 signal registry evidence](docs/foundation-36-signal-registry-evidence.md)
 for the two registries that turn those decisions into measured facts: four
 signals with three raise sites and one honest runtime deferral, and four frame

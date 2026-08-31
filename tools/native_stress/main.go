@@ -36,15 +36,25 @@ type counters struct {
 	ObservedUAF          int `json:"OBSERVED_UAF"`
 	ObservedDoubleFree   int `json:"OBSERVED_DOUBLE_FREE"`
 
-	GameEventActivated       int `json:"GAME_EVENT_ACTIVATED_DELIVERIES"`
-	GameEventDeactivated     int `json:"GAME_EVENT_DEACTIVATED_DELIVERIES"`
-	GameEventExiting         int `json:"GAME_EVENT_EXITING_DELIVERIES"`
-	GameEventDisposed        int `json:"GAME_EVENT_DISPOSED_DELIVERIES"`
-	GameEventOrderChecks     int `json:"GAME_EVENT_ORDER_CHECKS"`
-	GameEventRemovalChecks   int `json:"GAME_EVENT_REMOVAL_CHECKS"`
-	GameEventOwnerThreadHits int `json:"GAME_EVENT_OWNER_THREAD_CHECKS"`
-	GameEventRerunCycles     int `json:"GAME_EVENT_RERUN_CYCLES"`
-	GameEventPostRunChecks   int `json:"GAME_EVENT_POST_RUN_CHECKS"`
+	GameEventActivated   int `json:"GAME_EVENT_ACTIVATED_DELIVERIES"`
+	GameEventDeactivated int `json:"GAME_EVENT_DEACTIVATED_DELIVERIES"`
+	GameEventExiting     int `json:"GAME_EVENT_EXITING_DELIVERIES"`
+
+	// The disposal counters are two different facts and are deliberately two
+	// different counters. The native signal is CNA reporting native game
+	// destruction from inside cna_game_destroy; the managed raise is
+	// Game::Disposed, which the reference raises from Dispose(bool) and from
+	// nowhere else. Foundation 39 stopped the first from driving the second.
+	GameNativeDisposalSignals int `json:"GAME_NATIVE_DISPOSAL_SIGNALS"`
+	GameDisposedDuringRun     int `json:"GAME_DISPOSED_RAISED_DURING_RUN"`
+	GameDisposedByManagedCall int `json:"GAME_DISPOSED_RAISED_BY_MANAGED_DISPOSE"`
+	GameDisposedRepeatChecks  int `json:"GAME_DISPOSED_REPEAT_CHECKS"`
+	GameDisposeAfterRunCycles int `json:"GAME_DISPOSE_AFTER_RUN_CYCLES"`
+	GameEventOrderChecks      int `json:"GAME_EVENT_ORDER_CHECKS"`
+	GameEventRemovalChecks    int `json:"GAME_EVENT_REMOVAL_CHECKS"`
+	GameEventOwnerThreadHits  int `json:"GAME_EVENT_OWNER_THREAD_CHECKS"`
+	GameEventRerunCycles      int `json:"GAME_EVENT_RERUN_CYCLES"`
+	GameEventPostRunChecks    int `json:"GAME_EVENT_POST_RUN_CHECKS"`
 
 	FrameHookOverrideCycles  int `json:"FRAME_HOOK_OVERRIDE_CYCLES"`
 	FrameHookBeginRunHits    int `json:"FRAME_HOOK_BEGIN_RUN_DELIVERIES"`
@@ -83,6 +93,14 @@ type stressGame struct {
 	removedRan      bool
 	ownerGoroutine  string
 	eventGoroutines map[string]bool
+
+	// runtime is captured from inside the first callback, which is the only
+	// place it is reachable, and it survives the run. It is how the native
+	// disposal signal is observed at all now that it raises no public event.
+	runtime *interop.Runtime
+	// disposedRaises counts public Game.Disposed raises. It must stay zero for
+	// the whole run: the native signal no longer drives the event.
+	disposedRaises int
 }
 
 var callbackSentinel = errors.New("native stress callback sentinel")
@@ -168,8 +186,23 @@ func runParent() (counters, error) {
 	// goroutine. Deactivated has no minimum: HEADLESS cannot produce a focus
 	// transition away from the game, and the counter records that honestly by
 	// staying at zero.
-	if total.GameEventActivated < 20 || total.GameEventExiting < 20 || total.GameEventDisposed < 20 {
+	if total.GameEventActivated < 20 || total.GameEventExiting < 20 || total.GameNativeDisposalSignals < 20 {
 		return total, errors.New("native game-event delivery minimum was not met")
+	}
+	// Foundation 39. The native disposal signal never raises the public event,
+	// and the public event is raised only by a managed Dispose call.
+	if total.GameDisposedDuringRun != 0 {
+		return total, fmt.Errorf("Game.Disposed was raised %d times from a run; its only reference raise site is managed Dispose(bool)", total.GameDisposedDuringRun)
+	}
+	if total.GameDisposeAfterRunCycles < 20 || total.GameDisposedRepeatChecks < 20 {
+		return total, errors.New("managed disposal after the run was not proved in every cycle")
+	}
+	// Two raises per cycle: Dispose is not idempotent, so the second call
+	// raises again. A projection that had invented a disposed flag would
+	// report exactly half this.
+	if total.GameDisposedByManagedCall != 2*total.GameDisposeAfterRunCycles {
+		return total, fmt.Errorf("%d managed Dispose calls raised Disposed %d times, want two per cycle",
+			2*total.GameDisposeAfterRunCycles, total.GameDisposedByManagedCall)
 	}
 	if total.GameEventOrderChecks < 20 || total.GameEventOwnerThreadHits < 20 {
 		return total, errors.New("native game-event ordering or owner-goroutine minimum was not met")
@@ -271,6 +304,9 @@ func runChild(scenario string, index int) error {
 		if verifyErr := game.verifyGameEventDelivery(); verifyErr != nil {
 			return verifyErr
 		}
+		if disposeErr := game.verifyManagedDisposalAfterRun(host); disposeErr != nil {
+			return disposeErr
+		}
 		if _, staleErr := game.device.Viewport(); !errors.Is(staleErr, interop.ErrStaleGeneration) {
 			game.result.ObservedUAF++
 			return fmt.Errorf("stale graphics device was not rejected by generation: %w", staleErr)
@@ -334,7 +370,21 @@ func (g *stressGame) subscribeGameEvents(host *framework.Game) error {
 	if _, err := host.AddExitingHandler(record("Exiting")); err != nil {
 		return err
 	}
-	if _, err := host.AddDisposedHandler(record("Disposed")); err != nil {
+	// Disposed does NOT join the ordered log. Its reference raise site is
+	// managed Dispose(bool), so during a run it must never fire at all; this
+	// handler exists to prove exactly that, and to fire when the run is over
+	// and the consumer disposes on purpose.
+	if _, err := host.AddDisposedHandler(func(sender any, args *framework.EventArgs) error {
+		g.disposedRaises++
+		if args != framework.EventArgsEmpty() {
+			return fmt.Errorf("Disposed carried args that are not EventArgs.Empty")
+		}
+		if sender != any(host) {
+			return fmt.Errorf("Disposed sender = %v, want the Game", sender)
+		}
+		g.eventGoroutines[currentGoroutineLabel()] = true
+		return nil
+	}); err != nil {
 		return err
 	}
 	removed, err := host.AddExitingHandler(func(any, *framework.EventArgs) error {
@@ -364,10 +414,14 @@ func (g *stressGame) recordGameEventDeliveries() {
 			g.result.GameEventDeactivated++
 		case "Exiting":
 			g.result.GameEventExiting++
-		case "Disposed":
-			g.result.GameEventDisposed++
 		}
 	}
+	// The native disposal signal is read from the internal runtime, which is
+	// the only place it is observable now that it raises nothing public.
+	if g.runtime != nil {
+		g.result.GameNativeDisposalSignals = g.runtime.GameEventDeliveries()[interop.GameEventDisposed]
+	}
+	g.result.GameDisposedDuringRun = g.disposedRaises
 	if !g.removedRan {
 		g.result.GameEventRemovalChecks++
 	}
@@ -395,20 +449,23 @@ func (g *stressGame) verifyGameEventDelivery() error {
 	if g.result.GameEventExiting != 1 {
 		return fmt.Errorf("Exiting delivered %d times, want exactly 1", g.result.GameEventExiting)
 	}
-	if g.result.GameEventDisposed != 1 {
-		return fmt.Errorf("Disposed delivered %d times, want exactly 1", g.result.GameEventDisposed)
+	// The native disposal signal still arrives exactly once per run, from
+	// inside cna_game_destroy, and that is what proves the four registrations
+	// outlive native destruction. It raises nothing public.
+	if g.result.GameNativeDisposalSignals != 1 {
+		return fmt.Errorf("the native disposal signal arrived %d times, want exactly 1", g.result.GameNativeDisposalSignals)
 	}
-	exiting, disposed := -1, -1
+	if g.result.GameDisposedDuringRun != 0 {
+		return fmt.Errorf("Game.Disposed was raised %d times during a run; its only reference raise site is managed Dispose(bool)", g.result.GameDisposedDuringRun)
+	}
+	exiting := -1
 	for i, name := range g.eventOrder {
-		switch name {
-		case "Exiting":
+		if name == "Exiting" {
 			exiting = i
-		case "Disposed":
-			disposed = i
 		}
 	}
-	if exiting < 0 || disposed < 0 || exiting >= disposed {
-		return fmt.Errorf("delivery order %v does not place Exiting before Disposed", g.eventOrder)
+	if exiting < 0 {
+		return fmt.Errorf("delivery order %v contains no Exiting", g.eventOrder)
 	}
 	if g.eventOrder[0] != "Activated" {
 		return fmt.Errorf("delivery order %v does not start with Activated", g.eventOrder)
@@ -420,6 +477,63 @@ func (g *stressGame) verifyGameEventDelivery() error {
 	if g.result.GameEventOwnerThreadHits != 1 {
 		return fmt.Errorf("game events were delivered on %d distinct goroutines, want the owner goroutine only", len(g.eventGoroutines))
 	}
+	return nil
+}
+
+// verifyManagedDisposalAfterRun is the other half of the Foundation 39
+// correction, proved against a Game whose native generation is already gone.
+//
+// Three facts, none of which the old native-signal binding could have produced:
+//
+//  1. Disposing AFTER the run raises Game.Disposed. The reference's raise site
+//     is managed Dispose(bool), and managed state outlives the native host, so
+//     a consumer who disposes when the run is over still gets the event.
+//  2. It raises with the Game as sender and EventArgs.Empty as args, checked
+//     by the handler itself.
+//  3. Dispose is NOT idempotent. A second call raises again, because Game
+//     carries no disposed flag anywhere. A projection that invented one would
+//     report one raise here instead of two.
+//
+// Nothing here reaches native code. There is no live handle left and none is
+// fabricated: the whole body is managed component and event work.
+func (g *stressGame) verifyManagedDisposalAfterRun(host *framework.Game) error {
+	before := g.disposedRaises
+	if before != 0 {
+		return fmt.Errorf("Game.Disposed had already been raised %d times before any Dispose call", before)
+	}
+	if err := host.DisposeByNone(); err != nil {
+		return fmt.Errorf("Dispose after the run: %w", err)
+	}
+	if g.disposedRaises != 1 {
+		return fmt.Errorf("one managed Dispose raised Game.Disposed %d times, want 1", g.disposedRaises)
+	}
+	if err := host.DisposeByNone(); err != nil {
+		return fmt.Errorf("second Dispose after the run: %w", err)
+	}
+	if g.disposedRaises != 2 {
+		return fmt.Errorf("a second Dispose raised Game.Disposed %d times in total, want 2; Game has no disposed flag", g.disposedRaises)
+	}
+	// Dispose(false) is the finalizer path and does nothing at all.
+	if err := host.DisposeByBoolean(false); err != nil {
+		return fmt.Errorf("Dispose(false) after the run: %w", err)
+	}
+	if err := host.Finalize(); err != nil {
+		return fmt.Errorf("Finalize after the run: %w", err)
+	}
+	if g.disposedRaises != 2 {
+		return fmt.Errorf("Dispose(false) or Finalize raised Game.Disposed; total is %d, want 2", g.disposedRaises)
+	}
+	// The native disposal signal count did not move: managed disposal reaches
+	// no native code at all.
+	if g.runtime != nil {
+		if signals := g.runtime.GameEventDeliveries()[interop.GameEventDisposed]; signals != g.result.GameNativeDisposalSignals {
+			return fmt.Errorf("managed disposal changed the native disposal signal count from %d to %d",
+				g.result.GameNativeDisposalSignals, signals)
+		}
+	}
+	g.result.GameDisposedByManagedCall = g.disposedRaises
+	g.result.GameDisposedRepeatChecks++
+	g.result.GameDisposeAfterRunCycles++
 	return nil
 }
 
@@ -452,8 +566,11 @@ func runEventRerunChild(game *stressGame, host *framework.Game, firstErr error) 
 		return fmt.Errorf("first run: %w", firstErr)
 	}
 	first := game.result
-	if first.GameEventActivated != 1 || first.GameEventExiting != 1 || first.GameEventDisposed != 1 {
-		return fmt.Errorf("first run delivered %v", game.eventOrder)
+	if first.GameEventActivated != 1 || first.GameEventExiting != 1 || first.GameNativeDisposalSignals != 1 {
+		return fmt.Errorf("first run delivered %v and %d native disposal signals", game.eventOrder, first.GameNativeDisposalSignals)
+	}
+	if first.GameDisposedDuringRun != 0 {
+		return fmt.Errorf("the first run raised Game.Disposed %d times", first.GameDisposedDuringRun)
 	}
 
 	// Add and remove handlers with no native game alive at all. Both are pure
@@ -475,19 +592,29 @@ func runEventRerunChild(game *stressGame, host *framework.Game, firstErr error) 
 		return fmt.Errorf("second run: %w", err)
 	}
 	second := game.eventOrder
-	activated, exiting, disposed := 0, 0, 0
+	activated, exiting := 0, 0
 	for _, name := range second {
 		switch name {
 		case "Activated":
 			activated++
 		case "Exiting":
 			exiting++
-		case "Disposed":
-			disposed++
 		}
 	}
-	if exiting != 1 || disposed != 1 {
-		return fmt.Errorf("second run delivered %v; Exiting and Disposed must each arrive exactly once", second)
+	if exiting != 1 {
+		return fmt.Errorf("second run delivered %v; Exiting must arrive exactly once", second)
+	}
+	// Two runs, two native destructions, two disposal signals -- and still no
+	// public Disposed raise, because nobody disposed anything.
+	signals := 0
+	if game.runtime != nil {
+		signals = game.runtime.GameEventDeliveries()[interop.GameEventDisposed]
+	}
+	if signals != 2 {
+		return fmt.Errorf("two runs produced %d native disposal signals, want 2", signals)
+	}
+	if game.disposedRaises != 0 {
+		return fmt.Errorf("two runs raised Game.Disposed %d times with no Dispose call", game.disposedRaises)
 	}
 	// The edge-trigger guard is the whole point: the managed half never saw a
 	// deactivation, so the second run's activation signal raises nothing.
@@ -497,10 +624,16 @@ func runEventRerunChild(game *stressGame, host *framework.Game, firstErr error) 
 	if len(game.eventGoroutines) != 1 || !game.eventGoroutines[game.ownerGoroutine] {
 		return fmt.Errorf("second run delivered on %d goroutines", len(game.eventGoroutines))
 	}
+	// The counter is refreshed to the two-run total BEFORE managed disposal is
+	// proved, because that proof asserts managed disposal does not move it.
+	game.result.GameNativeDisposalSignals = signals
+	if disposeErr := game.verifyManagedDisposalAfterRun(host); disposeErr != nil {
+		return disposeErr
+	}
 	game.result.GameEventRerunCycles++
 	game.result.GameEventActivated = first.GameEventActivated + activated
 	game.result.GameEventExiting = first.GameEventExiting + exiting
-	game.result.GameEventDisposed = first.GameEventDisposed + disposed
+	game.result.GameDisposedDuringRun = 0
 	runtime.GC()
 	game.result.GCStressPoints++
 	data, _ := json.Marshal(game.result)
@@ -510,6 +643,9 @@ func runEventRerunChild(game *stressGame, host *framework.Game, firstErr error) 
 
 func (g *stressGame) Initialize(host *framework.Game) error {
 	g.ownerGoroutine = currentGoroutineLabel()
+	if current, ok := interop.CurrentRuntime(); ok {
+		g.runtime = current
+	}
 	manager, err := framework.NewGraphicsDeviceManager(host)
 	if err != nil {
 		return err
@@ -933,7 +1069,11 @@ func addCounters(target *counters, value counters) {
 	target.GameEventActivated += value.GameEventActivated
 	target.GameEventDeactivated += value.GameEventDeactivated
 	target.GameEventExiting += value.GameEventExiting
-	target.GameEventDisposed += value.GameEventDisposed
+	target.GameNativeDisposalSignals += value.GameNativeDisposalSignals
+	target.GameDisposedDuringRun += value.GameDisposedDuringRun
+	target.GameDisposedByManagedCall += value.GameDisposedByManagedCall
+	target.GameDisposedRepeatChecks += value.GameDisposedRepeatChecks
+	target.GameDisposeAfterRunCycles += value.GameDisposeAfterRunCycles
 	target.GameEventOrderChecks += value.GameEventOrderChecks
 	target.GameEventRemovalChecks += value.GameEventRemovalChecks
 	target.GameEventOwnerThreadHits += value.GameEventOwnerThreadHits

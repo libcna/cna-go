@@ -1955,3 +1955,196 @@ func TestNoRegistrationOrCapabilitySurfaceIsExported(t *testing.T) {
 		_ func() error         = (&framework.Game{}).EndDraw
 	)
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 39 — Game's disposal surface, from outside the module.
+// ---------------------------------------------------------------------------
+
+// TestDisposedFiresOnlyFromDispose is the correction seen by a consumer. In the
+// reference, Game::Disposed has exactly one raise site: the tail of
+// Dispose(bool). A consumer who never disposes never sees it.
+func TestDisposedFiresOnlyFromDispose(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	raised := 0
+	var sender any
+	var args *framework.EventArgs
+	if _, err := game.AddDisposedHandler(func(s any, a *framework.EventArgs) error {
+		raised++
+		sender, args = s, a
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// Everything a consumer can do to a Game short of disposing it.
+	if err := game.BeginRun(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := game.BeginDraw(); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.EndDraw(); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.EndRun(); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.Finalize(); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.DisposeByBoolean(false); err != nil {
+		t.Fatal(err)
+	}
+	if raised != 0 {
+		t.Fatalf("Disposed was raised %d times without a Dispose call", raised)
+	}
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
+	}
+	if raised != 1 {
+		t.Fatalf("Dispose raised Disposed %d times, want 1", raised)
+	}
+	if sender != any(game) {
+		t.Fatalf("Disposed sender = %v, want the Game", sender)
+	}
+	if args != framework.EventArgsEmpty() {
+		t.Fatal("Disposed args are not the shared EventArgs.Empty identity")
+	}
+}
+
+// TestGameDisposeIsNotIdempotentFromOutside holds the reference behaviour a
+// consumer is most likely to assume away. Game carries no disposed flag, so
+// every call re-runs the whole body.
+func TestGameDisposeIsNotIdempotentFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	component := NewSimpleDisposableRotator("repeat")
+	if err := game.Components().Add(component); err != nil {
+		t.Fatal(err)
+	}
+	raised := 0
+	if _, err := game.AddDisposedHandler(func(any, *framework.EventArgs) error {
+		raised++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 3; i++ {
+		if err := game.DisposeByNone(); err != nil {
+			t.Fatalf("Dispose %d: %v", i, err)
+		}
+	}
+	if raised != 3 || component.Disposed != 3 {
+		t.Fatalf("three Dispose calls raised %d events and disposed the component %d times, want 3 and 3",
+			raised, component.Disposed)
+	}
+}
+
+// TestBothDisposableSpellingsAreFoundFromOutside proves a consumer's own
+// component joins Game.Dispose's loop by declaring either projected spelling of
+// IDisposable::Dispose, and that one declaring neither is skipped.
+func TestBothDisposableSpellingsAreFoundFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	two := NewDisposableRotator("two-overload")
+	one := NewSimpleDisposableRotator("one-overload")
+	plain := NewRotator("not-disposable")
+	for _, component := range []framework.IGameComponent{two, one, plain} {
+		if err := game.Components().Add(component); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
+	}
+	if two.Disposed != 1 || one.Disposed != 1 {
+		t.Fatalf("disposed the two spellings %d and %d times, want 1 each", two.Disposed, one.Disposed)
+	}
+	// Nothing removed the components: Game.Dispose does not clear Components,
+	// and a consumer's own component does not remove itself unless it says so.
+	if got := game.Components().Count(); got != 3 {
+		t.Fatalf("Components holds %d items after Dispose, want 3", got)
+	}
+}
+
+// TestDisposeWalksASnapshotFromOutside is why the reference copies to an array
+// first: a component that removes itself while being disposed must not make the
+// loop skip its neighbour.
+func TestDisposeWalksASnapshotFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	var components []*DisposableRotator
+	for i := 0; i < 4; i++ {
+		component := NewDisposableRotator("snapshot")
+		component.OnDispose = func() { _, _ = game.Components().Remove(component) }
+		components = append(components, component)
+		if err := game.Components().Add(component); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
+	}
+	for i, component := range components {
+		if component.Disposed != 1 {
+			t.Fatalf("component %d disposed %d times; the loop did not walk a snapshot", i, component.Disposed)
+		}
+	}
+	if got := game.Components().Count(); got != 0 {
+		t.Fatalf("Components holds %d items", got)
+	}
+}
+
+// TestAFailingComponentPropagatesFromOutside holds the absence of a try/catch
+// in the reference: the failure surfaces, later components stay undisposed, and
+// the Disposed event is never reached.
+func TestAFailingComponentPropagatesFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	sentinel := errors.New("canary component disposal failure")
+	failing := NewDisposableRotator("failing")
+	failing.Failure = sentinel
+	later := NewDisposableRotator("later")
+	for _, component := range []framework.IGameComponent{failing, later} {
+		if err := game.Components().Add(component); err != nil {
+			t.Fatal(err)
+		}
+	}
+	raised := 0
+	if _, err := game.AddDisposedHandler(func(any, *framework.EventArgs) error {
+		raised++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.DisposeByNone(); !errors.Is(err, sentinel) {
+		t.Fatalf("Dispose = %v, want the component's own failure", err)
+	}
+	if later.Disposed != 0 {
+		t.Fatal("a component after the failure was still disposed")
+	}
+	if raised != 0 {
+		t.Fatal("Disposed was raised even though disposal never reached its raise site")
+	}
+}
+
+// TestDisposalSurfaceIsReachableFromOutside pins the three members' signatures
+// as a downstream consumer sees them, and records that Game declares no
+// OnDisposed -- the reference has none, and inventing one is a verifier
+// failure.
+func TestDisposalSurfaceIsReachableFromOutside(t *testing.T) {
+	game := &framework.Game{}
+	var (
+		_ func() error     = game.DisposeByNone
+		_ func(bool) error = game.DisposeByBoolean
+		_ func() error     = game.Finalize
+	)
+	if _, ok := reflect.TypeOf((*framework.Game)(nil)).MethodByName("OnDisposed"); ok {
+		t.Fatal("Game declares OnDisposed; the reference has no such member")
+	}
+	// Dispose(false) comes before the state guard, so it is safe even here.
+	if err := game.DisposeByBoolean(false); err != nil {
+		t.Fatalf("Dispose(false) on an unconstructed Game = %v, want nil", err)
+	}
+	if err := game.Finalize(); err != nil {
+		t.Fatalf("Finalize on an unconstructed Game = %v, want nil", err)
+	}
+	if err := game.DisposeByNone(); err == nil {
+		t.Fatal("Dispose() on an unconstructed Game reported no error")
+	}
+}

@@ -2625,6 +2625,108 @@ func runCorpus() corpusReport {
 			reflect.TypeOf(&corpusBeginDrawOnly{}).Implements(overrideShapes[2].contract),
 			reflect.TypeOf(&corpusBeginDrawOnly{}).Implements(overrideShapes[3].contract)))
 
+	// ------------------------------------------------------------------
+	// Foundation 39. Game's disposal surface, and the corrected raise site
+	// for Game.Disposed.
+	// ------------------------------------------------------------------
+
+	// Dispose(bool)'s tail raises Disposed with `this` and EventArgs.Empty,
+	// and that is the event's ONLY raise site in the whole class.
+	disposalGame, _ := framework.NewGame(corpusCallbacks{})
+	var disposalSender any
+	var disposalArgs *framework.EventArgs
+	disposalRaises := 0
+	_, _ = disposalGame.AddDisposedHandler(func(sender any, args *framework.EventArgs) error {
+		disposalRaises++
+		disposalSender, disposalArgs = sender, args
+		return nil
+	})
+	gameDisposeError := disposalGame.DisposeByNone()
+	check("game-disposal.dispose-raises-disposed-with-the-game", "GAME_DISPOSAL",
+		"true,1,true,true",
+		fmt.Sprintf("%t,%d,%t,%t", gameDisposeError == nil, disposalRaises,
+			disposalSender == any(disposalGame), disposalArgs == framework.EventArgsEmpty()))
+
+	// It is NOT idempotent. Game carries no disposed flag anywhere, so every
+	// call re-runs the body and raises again.
+	_ = disposalGame.DisposeByNone()
+	_ = disposalGame.DisposeByNone()
+	check("game-disposal.dispose-is-not-idempotent", "GAME_DISPOSAL",
+		"3", fmt.Sprint(disposalRaises))
+
+	// Dispose(false) is the finalizer path: IL_0000 returns before anything
+	// else, including any state check, so it is a no-op on any Game at all.
+	finalizeRaises := 0
+	finalizeGame, _ := framework.NewGame(corpusCallbacks{})
+	_, _ = finalizeGame.AddDisposedHandler(func(any, *framework.EventArgs) error {
+		finalizeRaises++
+		return nil
+	})
+	disposeFalseError := finalizeGame.DisposeByBoolean(false)
+	finalizeError := finalizeGame.Finalize()
+	unconstructedFinalize := (&framework.Game{}).Finalize()
+	check("game-disposal.dispose-false-and-finalize-do-nothing", "GAME_DISPOSAL",
+		"true,true,true,0",
+		fmt.Sprintf("%t,%t,%t,%d", disposeFalseError == nil, finalizeError == nil,
+			unconstructedFinalize == nil, finalizeRaises))
+
+	// The component loop: a snapshot is taken first, then every component that
+	// declares the IDisposable member is disposed, in order, and one that does
+	// not is skipped.
+	disposalComponentGame, _ := framework.NewGame(corpusCallbacks{})
+	twoOverload := &corpusDisposableComponent{}
+	oneOverload := &corpusSimpleDisposableComponent{}
+	notDisposable := &corpusUndisposableComponent{}
+	for _, component := range []framework.IGameComponent{twoOverload, oneOverload, notDisposable} {
+		_ = disposalComponentGame.Components().Add(component)
+	}
+	componentDisposeError := disposalComponentGame.DisposeByNone()
+	check("game-disposal.every-disposable-component-is-disposed-once", "GAME_DISPOSAL",
+		"true,1,1,3",
+		fmt.Sprintf("%t,%d,%d,%d", componentDisposeError == nil,
+			twoOverload.disposed, oneOverload.disposed, disposalComponentGame.Components().Count()))
+
+	// A failing component propagates and stops the rest: the reference has no
+	// exception handler, so later components are left undisposed and the
+	// Disposed event is never reached.
+	failingGame, _ := framework.NewGame(corpusCallbacks{})
+	componentFailure := errors.New("corpus component disposal failure")
+	failingComponent := &corpusDisposableComponent{failure: componentFailure}
+	laterComponent := &corpusDisposableComponent{}
+	_ = failingGame.Components().Add(failingComponent)
+	_ = failingGame.Components().Add(laterComponent)
+	failingRaises := 0
+	_, _ = failingGame.AddDisposedHandler(func(any, *framework.EventArgs) error {
+		failingRaises++
+		return nil
+	})
+	failingDisposeError := failingGame.DisposeByNone()
+	check("game-disposal.a-failing-component-stops-disposal", "GAME_DISPOSAL",
+		"true,1,0,0",
+		fmt.Sprintf("%t,%d,%d,%d", errors.Is(failingDisposeError, componentFailure),
+			failingComponent.disposed, laterComponent.disposed, failingRaises))
+
+	// A GameComponent removes itself from Components as it is disposed, which
+	// is exactly why the reference copies to an array first.
+	snapshotGame, _ := framework.NewGame(corpusCallbacks{})
+	snapshotComponents := make([]*framework.GameComponent, 0, 3)
+	for i := 0; i < 3; i++ {
+		component := framework.NewGameComponent(snapshotGame)
+		snapshotComponents = append(snapshotComponents, component)
+		_ = snapshotGame.Components().Add(component)
+	}
+	snapshotRaises := 0
+	for _, component := range snapshotComponents {
+		_, _ = component.AddDisposedHandler(func(any, *framework.EventArgs) error {
+			snapshotRaises++
+			return nil
+		})
+	}
+	snapshotError := snapshotGame.DisposeByNone()
+	check("game-disposal.the-component-loop-walks-a-snapshot", "GAME_DISPOSAL",
+		"true,3,0",
+		fmt.Sprintf("%t,%d,%d", snapshotError == nil, snapshotRaises, snapshotGame.Components().Count()))
+
 	// The one Go-only failure, and the proof that a refused call does not also
 	// admit the frame.
 	unconstructedHooks := &framework.Game{}
@@ -2716,6 +2818,36 @@ func (c *corpusCountingBase) BeginDraw(game *framework.Game) (bool, error) {
 	}
 	return true, nil
 }
+
+// The corpus-local disposal conformers. The two spellings are both legitimate
+// projections of IDisposable::Dispose: a type declaring only Dispose() gets
+// Dispose(), and one declaring Dispose() and Dispose(bool) -- which is what
+// Microsoft's own components declare -- gets DisposeByNone and DisposeByBoolean.
+type corpusDisposableComponent struct {
+	disposed int
+	failure  error
+}
+
+func (c *corpusDisposableComponent) Initialize() error    { return nil }
+func (c *corpusDisposableComponent) DisposeByNone() error { return c.DisposeByBoolean(true) }
+func (c *corpusDisposableComponent) DisposeByBoolean(disposing bool) error {
+	if !disposing {
+		return nil
+	}
+	c.disposed++
+	return c.failure
+}
+
+type corpusSimpleDisposableComponent struct{ disposed int }
+
+func (c *corpusSimpleDisposableComponent) Initialize() error { return nil }
+func (c *corpusSimpleDisposableComponent) Dispose() error    { c.disposed++; return nil }
+
+// corpusUndisposableComponent declares no disposal member, which is the
+// reference's `isinst` failing: it is skipped with no error.
+type corpusUndisposableComponent struct{}
+
+func (c *corpusUndisposableComponent) Initialize() error { return nil }
 
 // corpusDeviceService is a corpus-local conformer of the device-publication
 // contract. Only it can raise; a consumer holding the contract can only

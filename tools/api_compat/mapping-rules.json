@@ -524,7 +524,7 @@
   "closure": "the registry covers every XNA-to-XNA link the pinned contract declares -- 12 bases over 41 derived types -- so a new one cannot appear unnoticed"
  },
  "gameNativeSignals": {
-  "rule": "Every CLR event Microsoft.Xna.Framework.Game declares is bound to exactly one canonical CNA game signal, and every declared signal is bound to an event Game really declares. An event with no signal is an accessor pair nothing can fire; a signal for an event that does not exist is an invention",
+  "rule": "Every projected XNA event Game declares must have its AUTHORITATIVE XNA raise path, and a canonical CNA signal may IMPLEMENT that path only when the semantics align. Three of the four events are raised by GameHost, whose part the native runtime plays, so for those three the signal IS the reference's raise path. The fourth is raised by managed Dispose(bool), so its raise is in Go and the signal is bound for lifetime qualification only",
   "noCNAChange": "the four signals were already published by the pinned CNA C API and had never been reached from Go. Binding them added two bound functions to CNA-Go's manifest and changed no CNA C++, did not rebuild CNA, and did not alter the pinned artifact",
   "oneSubscriptionPerEvent": "exactly one native subscription per event per Game, never one per consumer handler. CNA invokes multiple native registrations on one event in REVERSE registration order, measured against the pinned binary, so per-handler registration would invert the dispatch order the event projection promises",
   "subscriptionLifetime": "installed on the owner thread immediately after cna_game_create, because CNA answers CNA_RESULT_THREAD for cna_game_subscribe from any other thread; released after cna_game_destroy, because the disposal signal is raised from inside that call and a registration handle stays valid across it; the cgo.Handle is deleted last, so a callback-after-free is unreachable",
@@ -547,7 +547,9 @@
     "raiseSite": "OnActivated",
     "sender": "GAME",
     "edgeTriggered": true,
-    "runtimeEvidence": "VERIFIED_NATIVE"
+    "runtimeEvidence": "VERIFIED_NATIVE",
+    "raisePath": "NATIVE_HOST_SIGNAL",
+    "nativeSignalRole": "PUBLIC_EVENT_RAISE"
    },
    "Deactivated": {
     "cnaConstant": "CNA_GAME_EVENT_DEACTIVATED",
@@ -556,7 +558,9 @@
     "raiseSite": "OnDeactivated",
     "sender": "GAME",
     "edgeTriggered": true,
-    "runtimeEvidence": "NOT_RUN_ENVIRONMENT"
+    "runtimeEvidence": "NOT_RUN_ENVIRONMENT",
+    "raisePath": "NATIVE_HOST_SIGNAL",
+    "nativeSignalRole": "PUBLIC_EVENT_RAISE"
    },
    "Disposed": {
     "cnaConstant": "CNA_GAME_EVENT_DISPOSED",
@@ -565,7 +569,10 @@
     "raiseSite": "",
     "sender": "GAME",
     "edgeTriggered": false,
-    "runtimeEvidence": "VERIFIED_NATIVE"
+    "runtimeEvidence": "VERIFIED_NATIVE",
+    "raisePath": "MANAGED",
+    "nativeSignalRole": "LIFECYCLE_ONLY",
+    "managedRaiseSite": "DisposeByBoolean"
    },
    "Exiting": {
     "cnaConstant": "CNA_GAME_EVENT_EXITING",
@@ -574,9 +581,22 @@
     "raiseSite": "OnExiting",
     "sender": "NULL",
     "edgeTriggered": false,
-    "runtimeEvidence": "VERIFIED_NATIVE"
+    "runtimeEvidence": "VERIFIED_NATIVE",
+    "raisePath": "NATIVE_HOST_SIGNAL",
+    "nativeSignalRole": "PUBLIC_EVENT_RAISE"
    }
-  }
+  },
+  "ruleSupersedes": "the Foundation 34 rule was 'every event is bound to exactly one canonical signal, through exactly the raise path the reference uses'. That is satisfied by binding a signal to an event whose reference raise site is not the host's at all, which is the divergence it shipped for Game::Disposed: the native signal fires from cna_game_destroy, so it fired for a consumer who never disposed anything and did not fire for one who disposed without ever running. Foundation 39 projects Dispose and corrects it",
+  "raisePath": {
+   "NATIVE_HOST_SIGNAL": "the canonical CNA signal drives the raise, because the reference's raise path is GameHost's and the native runtime plays GameHost's part",
+   "MANAGED": "the reference raises the event from managed code CNA-Go projects, so the raise is in Go and the native signal must not drive it. A managed raise path must name the projected protected member that raises it"
+  },
+  "nativeSignalRole": {
+   "PUBLIC_EVENT_RAISE": "the bound signal drives the projected event",
+   "LIFECYCLE_ONLY": "the bound signal is delivered and counted for native lifetime qualification and raises nothing public. It stays bound because it is what proves a registration outlives cna_game_destroy"
+  },
+  "raisePathAndRolePairing": "one decision seen from two ends: NATIVE_HOST_SIGNAL pairs with PUBLIC_EVENT_RAISE and MANAGED pairs with LIFECYCLE_ONLY. A signal cannot drive an event the reference raises somewhere else, and an event the host really raises cannot have a signal that raises nothing",
+  "nativeSignalMoment": "what the CNA signal actually means, recorded for every signal. For a LIFECYCLE_ONLY role it is the statement of WHY the semantics do not align, so the divergence is a measured fact rather than a comment"
  },
  "gameFrameHooks": {
   "rule": "Game's four frame-boundary protected virtuals project as METHODS ON Game, because the mapper redirects exactly the five protected virtuals GameCallbacks declares and no others. Each records the canonical CNA hook that sits at the same frame position, WHEN CNA-Go installs it, and -- for a hook installed behind an override -- the unexported single-method Go interface a consumer satisfies to opt in",

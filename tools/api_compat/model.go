@@ -282,14 +282,23 @@ type gameNativeSignalMeasurement struct {
 	// RaiseSite is the projected protected virtual the raise routes through,
 	// and is empty for the one event whose reference has none. RaiseSiteAccess
 	// is read from the pinned contract so a claim of "protected" is measured.
-	RaiseSite       string   `json:"raiseSite"`
-	RaiseSiteAccess string   `json:"raiseSiteAccess"`
-	Sender          string   `json:"sender"`
-	EdgeTriggered   bool     `json:"edgeTriggered"`
-	ReferencePath   []string `json:"referencePath"`
-	RuntimeEvidence string   `json:"runtimeEvidence"`
-	EvidenceReason  string   `json:"evidenceReason,omitempty"`
-	Verdict         string   `json:"verdict"`
+	RaiseSite       string `json:"raiseSite"`
+	RaiseSiteAccess string `json:"raiseSiteAccess"`
+	// RaisePath is NATIVE_HOST_SIGNAL or MANAGED, NativeSignalRole is
+	// PUBLIC_EVENT_RAISE or LIFECYCLE_ONLY, and ManagedRaiseSite names the
+	// projected member that raises a MANAGED event. NativeSignalMoment is what
+	// the CNA signal actually means, which is how a LIFECYCLE_ONLY role states
+	// why the semantics do not align.
+	RaisePath          string   `json:"raisePath"`
+	NativeSignalRole   string   `json:"nativeSignalRole"`
+	ManagedRaiseSite   string   `json:"managedRaiseSite,omitempty"`
+	NativeSignalMoment string   `json:"nativeSignalMoment"`
+	Sender             string   `json:"sender"`
+	EdgeTriggered      bool     `json:"edgeTriggered"`
+	ReferencePath      []string `json:"referencePath"`
+	RuntimeEvidence    string   `json:"runtimeEvidence"`
+	EvidenceReason     string   `json:"evidenceReason,omitempty"`
+	Verdict            string   `json:"verdict"`
 }
 
 // gameFrameHookMeasurement records one of Game's frame-boundary protected

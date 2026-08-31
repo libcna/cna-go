@@ -2291,8 +2291,28 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 // Foundation 36 — the native game-signal bridge and the frame-hook frontier.
 // ---------------------------------------------------------------------------
 
-// gameNativeSignal declares one canonical CNA game signal, the CLR event it
-// raises, and the reference raise path it goes through.
+// gameNativeSignal declares one canonical CNA game signal, the CLR event it is
+// bound to, and the reference raise path that event actually has.
+//
+// # The rule this registry enforces changed in Foundation 39
+//
+// It used to be "every CLR event Game declares is bound to exactly one
+// canonical CNA signal, through exactly the raise path the reference uses".
+// That is too weak, and it shipped a divergence: it is satisfied by binding a
+// native signal to an event whose reference raise site is not the host's at
+// all, which is what Foundation 34 did to Game::Disposed.
+//
+// The stronger rule, and the one measured now:
+//
+//	every projected XNA event must have its AUTHORITATIVE XNA raise path, and
+//	a native signal may IMPLEMENT that path only when the semantics align
+//
+// Three of Game's four events are raised by GameHost, and the native CNA
+// runtime plays GameHost's part, so for those three the native signal IS the
+// reference's raise path. The fourth is raised by managed Dispose(bool), which
+// CNA-Go now projects, so its raise path is in Go and the native signal -- which
+// fires from native game destruction, a different moment entirely -- is bound
+// for lifetime qualification and raises nothing public.
 //
 // The registry exists because binding a native signal to a projected event is a
 // claim with four separable parts, and prose cannot hold any of them:
@@ -2321,6 +2341,33 @@ type gameNativeSignal struct {
 	// raise through, or empty when the reference declares none. Disposed is the
 	// only one with none: Dispose(bool) invokes the delegate field directly.
 	RaiseSite string
+	// RaisePath says WHERE the projection actually raises the public event:
+	//
+	//	NATIVE_HOST_SIGNAL -- the canonical CNA signal drives the raise, because
+	//	                      the reference's raise path is GameHost's and the
+	//	                      native runtime plays GameHost's part
+	//	MANAGED            -- the reference raises it from managed code CNA-Go
+	//	                      projects, so the raise is in Go and the native
+	//	                      signal MUST NOT drive it
+	//
+	// NativeSignalRole is the other half of the same fact, stated about the
+	// signal instead of the event:
+	//
+	//	PUBLIC_EVENT_RAISE -- the signal drives the projected event
+	//	LIFECYCLE_ONLY     -- the signal is bound and delivered for native
+	//	                      lifetime qualification and raises nothing public
+	//
+	// The two are one decision seen from two ends and must agree.
+	RaisePath        string
+	NativeSignalRole string
+	// ManagedRaiseSite names the projected Go member that raises the event when
+	// RaisePath is MANAGED. Required then and forbidden otherwise, so a MANAGED
+	// event cannot claim a raise path it does not have.
+	ManagedRaiseSite string
+	// NativeSignalMoment is what the CNA signal actually means, recorded for
+	// every signal and load-bearing for a LIFECYCLE_ONLY one: it is the
+	// statement of WHY the semantics do not align.
+	NativeSignalMoment string
 	// Sender is what the raise pushes: GAME for `ldarg.0`, NULL for `ldnull`.
 	Sender string
 	// EdgeTriggered records whether the reference's host handler suppresses a
@@ -2341,6 +2388,26 @@ type gameNativeSignal struct {
 // third: every raise site in this family pushes either `this` or null.
 var gameNativeSignalSenders = map[string]bool{"GAME": true, "NULL": true}
 
+// gameEventRaisePaths and gameNativeSignalRoles are the two closed
+// vocabularies Foundation 39 added, and they are two views of one decision.
+var gameEventRaisePaths = map[string]string{
+	"NATIVE_HOST_SIGNAL": "the canonical CNA signal drives the raise, because the reference's raise path is GameHost's and the native runtime plays GameHost's part",
+	"MANAGED":            "the reference raises the event from managed code CNA-Go projects, so the raise is in Go and the native signal must not drive it",
+}
+
+var gameNativeSignalRoles = map[string]string{
+	"PUBLIC_EVENT_RAISE": "the bound signal drives the projected event",
+	"LIFECYCLE_ONLY":     "the bound signal is delivered and counted for native lifetime qualification and raises nothing public",
+}
+
+// gameEventRaisePathRoles pairs them. A signal cannot drive an event whose
+// raise path is managed, and an event whose raise path is the host cannot have
+// a signal that raises nothing.
+var gameEventRaisePathRoles = map[string]string{
+	"NATIVE_HOST_SIGNAL": "PUBLIC_EVENT_RAISE",
+	"MANAGED":            "LIFECYCLE_ONLY",
+}
+
 // gameNativeSignalEvidence are the only runtime-evidence classes. A signal the
 // environment cannot produce is NOT_RUN_ENVIRONMENT with a reason, never a
 // quietly verified one.
@@ -2357,6 +2424,8 @@ var gameNativeSignals = map[string]gameNativeSignal{
 		CNAConstant: "CNA_GAME_EVENT_ACTIVATED", CNAIdentity: 0,
 		CLREvent:  "Microsoft.Xna.Framework.Game::Activated",
 		RaiseSite: "OnActivated", Sender: "GAME", EdgeTriggered: true,
+		RaisePath: "NATIVE_HOST_SIGNAL", NativeSignalRole: "PUBLIC_EVENT_RAISE",
+		NativeSignalMoment: "CNA reports the game becoming the active application, which is the moment GameHost::Activated fires and the moment HostActivated consumes",
 		ReferencePath: []string{
 			"EnsureHost(): host.Activated += HostActivated",
 			"HostActivated: if (isActive) return; isActive = true;",
@@ -2369,6 +2438,8 @@ var gameNativeSignals = map[string]gameNativeSignal{
 		CNAConstant: "CNA_GAME_EVENT_DEACTIVATED", CNAIdentity: 1,
 		CLREvent:  "Microsoft.Xna.Framework.Game::Deactivated",
 		RaiseSite: "OnDeactivated", Sender: "GAME", EdgeTriggered: true,
+		RaisePath: "NATIVE_HOST_SIGNAL", NativeSignalRole: "PUBLIC_EVENT_RAISE",
+		NativeSignalMoment: "CNA reports the game losing the active application, which is the moment GameHost::Deactivated fires and the moment HostDeactivated consumes",
 		ReferencePath: []string{
 			"EnsureHost(): host.Deactivated += HostDeactivated",
 			"HostDeactivated: if (!isActive) return; isActive = false;",
@@ -2382,6 +2453,8 @@ var gameNativeSignals = map[string]gameNativeSignal{
 		CNAConstant: "CNA_GAME_EVENT_EXITING", CNAIdentity: 3,
 		CLREvent:  "Microsoft.Xna.Framework.Game::Exiting",
 		RaiseSite: "OnExiting", Sender: "NULL", EdgeTriggered: false,
+		RaisePath: "NATIVE_HOST_SIGNAL", NativeSignalRole: "PUBLIC_EVENT_RAISE",
+		NativeSignalMoment: "CNA reports the run loop stopping, delivered from inside cna_game_run before it returns, which is where GameHost::Exiting fires and where HostExiting consumes it",
 		ReferencePath: []string{
 			"EnsureHost(): host.Exiting += HostExiting",
 			"HostExiting: OnExiting(this, EventArgs.Empty)   // no guard",
@@ -2389,13 +2462,23 @@ var gameNativeSignals = map[string]gameNativeSignal{
 		},
 		RuntimeEvidence: "VERIFIED_NATIVE",
 	},
+	// The one event the host does not raise, and the one Foundation 39
+	// corrects. Foundation 34 pointed the public event at the native disposal
+	// signal because Dispose was not projected; it is now, so the event follows
+	// the reference's own raise site and the signal keeps only the job it can
+	// honestly do.
 	"Disposed": {
 		CNAConstant: "CNA_GAME_EVENT_DISPOSED", CNAIdentity: 2,
 		CLREvent:  "Microsoft.Xna.Framework.Game::Disposed",
 		RaiseSite: "", Sender: "GAME", EdgeTriggered: false,
+		RaisePath: "MANAGED", NativeSignalRole: "LIFECYCLE_ONLY",
+		ManagedRaiseSite:   "DisposeByBoolean",
+		NativeSignalMoment: "CNA reports native game destruction, delivered from inside cna_game_destroy after content unloads. That is NOT where Game::Disposed is raised: the reference raises it from managed Dispose(bool), so the native signal fires for a consumer who never disposed anything and does not fire for a consumer who disposes without ever running. The signal stays bound and counted because it is what proves a registration outlives cna_game_destroy, and it raises nothing public",
 		ReferencePath: []string{
 			"Dispose(bool disposing): if (!disposing) return;",
-			"Dispose(bool): dispose each IDisposable component, then the device manager, then UnhookDeviceEvents()",
+			"Dispose(bool): lock (this)",
+			"Dispose(bool): copy Components to an array, then Dispose() each element that is IDisposable",
+			"Dispose(bool): dispose graphicsDeviceManager if it is IDisposable, then UnhookDeviceEvents()",
 			"Dispose(bool): if (Disposed != null) Disposed(this, EventArgs.Empty)   // ldarg.0, no On... method",
 		},
 		RuntimeEvidence: "VERIFIED_NATIVE",

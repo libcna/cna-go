@@ -152,6 +152,8 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["GAME_NATIVE_SIGNALS"] = 0
 	result.Summary["GAME_NATIVE_SIGNAL_RAISE_SITES"] = 0
 	result.Summary["GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED"] = 0
+	result.Summary["GAME_NATIVE_SIGNALS_LIFECYCLE_ONLY"] = 0
+	result.Summary["GAME_MANAGED_EVENT_RAISE_SITES"] = 0
 	result.Summary["GAME_FRAME_HOOKS"] = 0
 	result.Summary["GAME_FRAME_HOOKS_NEVER_INSTALLED"] = 0
 	result.Summary["GAME_FRAME_HOOKS_INSTALLED_ON_OVERRIDE"] = 0
@@ -3819,6 +3821,13 @@ func measureXNABaseRelationships(result *report, expected *expectedSurface, comp
 //  5. The runtime evidence is honest: an event the qualification environment
 //     cannot deliver is NOT_RUN_ENVIRONMENT with a reason, and a verified one
 //     carries no excuse.
+//  6. Foundation 39: the event's AUTHORITATIVE raise path is recorded, and the
+//     bound signal's role agrees with it. A native signal may implement the
+//     raise path only when the semantics align; when the reference raises the
+//     event from managed code CNA-Go projects, the signal is LIFECYCLE_ONLY and
+//     the raise is a named projected member. Binding a signal to an event whose
+//     reference raise site is not the host's -- which is the divergence
+//     Foundation 34 shipped for Disposed -- is now a diagnostic.
 func measureGameNativeSignals(result *report, expected *expectedSurface, actual *actualSurface) []gameNativeSignalMeasurement {
 	frameworkPackage := modulePath + "/Microsoft/Xna/Framework"
 	gameType := expected.typeForXNA("Microsoft.Xna.Framework.Game")
@@ -3831,11 +3840,13 @@ func measureGameNativeSignals(result *report, expected *expectedSurface, actual 
 	// second hand-written list.
 	eventAccessors := make(map[string][]*expectedMember)
 	raiseSites := make(map[string]*expectedMember)
+	gameMembersByGoName := make(map[string]*expectedMember)
 	for _, key := range gameType.Members {
 		member := expected.Members[key]
 		if member == nil {
 			continue
 		}
+		gameMembersByGoName[member.GoName] = member
 		switch {
 		case member.SourceKind == "event":
 			name := clrMemberName(member.XNA)
@@ -3859,7 +3870,10 @@ func measureGameNativeSignals(result *report, expected *expectedSurface, actual 
 		measurement := gameNativeSignalMeasurement{
 			CNAConstant: signal.CNAConstant, CNAIdentity: signal.CNAIdentity,
 			CLREvent: signal.CLREvent, RaiseSite: signal.RaiseSite,
-			Sender: signal.Sender, EdgeTriggered: signal.EdgeTriggered,
+			RaisePath: signal.RaisePath, NativeSignalRole: signal.NativeSignalRole,
+			ManagedRaiseSite:   signal.ManagedRaiseSite,
+			NativeSignalMoment: signal.NativeSignalMoment,
+			Sender:             signal.Sender, EdgeTriggered: signal.EdgeTriggered,
 			ReferencePath:   append([]string(nil), signal.ReferencePath...),
 			RuntimeEvidence: signal.RuntimeEvidence, EvidenceReason: signal.EvidenceReason,
 			Verdict: "PASS",
@@ -3958,6 +3972,46 @@ func measureGameNativeSignals(result *report, expected *expectedSurface, actual 
 		}
 		if signal.RaiseSite != "" {
 			result.Summary["GAME_NATIVE_SIGNAL_RAISE_SITES"]++
+		}
+
+		// (6): the authoritative raise path, and the bound signal's role.
+		if _, classified := gameEventRaisePaths[signal.RaisePath]; !classified {
+			fail(fmt.Sprintf("raise path %q is neither NATIVE_HOST_SIGNAL nor MANAGED", signal.RaisePath))
+		}
+		if _, classified := gameNativeSignalRoles[signal.NativeSignalRole]; !classified {
+			fail(fmt.Sprintf("native signal role %q is neither PUBLIC_EVENT_RAISE nor LIFECYCLE_ONLY", signal.NativeSignalRole))
+		}
+		if wanted, paired := gameEventRaisePathRoles[signal.RaisePath]; paired && wanted != signal.NativeSignalRole {
+			fail(fmt.Sprintf("raise path %s pairs with signal role %s, not %s: a native signal may implement the raise path only when the semantics align, and it may not raise an event the reference raises somewhere else",
+				signal.RaisePath, wanted, signal.NativeSignalRole))
+		}
+		if strings.TrimSpace(signal.NativeSignalMoment) == "" {
+			fail("declared signal records no native moment, so there is nothing to compare the reference's raise site against")
+		}
+		switch signal.NativeSignalRole {
+		case "LIFECYCLE_ONLY":
+			result.Summary["GAME_NATIVE_SIGNALS_LIFECYCLE_ONLY"]++
+		}
+		if signal.RaisePath == "MANAGED" {
+			result.Summary["GAME_MANAGED_EVENT_RAISE_SITES"]++
+			switch {
+			case signal.ManagedRaiseSite == "":
+				fail("an event whose reference raise path is managed must name the projected member that raises it")
+			default:
+				member, projected := gameMembersByGoName[signal.ManagedRaiseSite]
+				switch {
+				case !projected:
+					fail(fmt.Sprintf("managed raise site %s is not a projected member of Game", signal.ManagedRaiseSite))
+				case member.SourceAccess != "protected":
+					fail(fmt.Sprintf("managed raise site %s is a %q member; the reference raises this event from a protected virtual", signal.ManagedRaiseSite, member.SourceAccess))
+				default:
+					if _, present := actual.Members[member.Key]; !present {
+						fail(fmt.Sprintf("declared managed raise site %s is absent from the framework package", signal.ManagedRaiseSite))
+					}
+				}
+			}
+		} else if signal.ManagedRaiseSite != "" {
+			fail(fmt.Sprintf("a %s event names managed raise site %s; only a MANAGED raise path has one", signal.RaisePath, signal.ManagedRaiseSite))
 		}
 		measurements = append(measurements, measurement)
 	}

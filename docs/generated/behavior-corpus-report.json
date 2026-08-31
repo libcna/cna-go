@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 633,
-    "ASSERTIONS": 633,
+    "OBSERVATIONS": 639,
+    "ASSERTIONS": 639,
     "FAILURES": 0
   },
   "observations": [
@@ -5061,6 +5061,54 @@
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": "true,false",
       "actual": "true,false",
+      "passed": true
+    },
+    {
+      "id": "game-disposal.dispose-raises-disposed-with-the-game",
+      "group": "GAME_DISPOSAL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,1,true,true",
+      "actual": "true,1,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-disposal.dispose-is-not-idempotent",
+      "group": "GAME_DISPOSAL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "3",
+      "actual": "3",
+      "passed": true
+    },
+    {
+      "id": "game-disposal.dispose-false-and-finalize-do-nothing",
+      "group": "GAME_DISPOSAL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,0",
+      "actual": "true,true,true,0",
+      "passed": true
+    },
+    {
+      "id": "game-disposal.every-disposable-component-is-disposed-once",
+      "group": "GAME_DISPOSAL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,1,1,3",
+      "actual": "true,1,1,3",
+      "passed": true
+    },
+    {
+      "id": "game-disposal.a-failing-component-stops-disposal",
+      "group": "GAME_DISPOSAL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,1,0,0",
+      "actual": "true,1,0,0",
+      "passed": true
+    },
+    {
+      "id": "game-disposal.the-component-loop-walks-a-snapshot",
+      "group": "GAME_DISPOSAL",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,3,0",
+      "actual": "true,3,0",
       "passed": true
     },
     {

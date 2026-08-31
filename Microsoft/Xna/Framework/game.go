@@ -2,6 +2,7 @@ package framework
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/openeggbert/cna-go/internal/interop"
 )
@@ -85,6 +86,11 @@ type Game struct {
 	endRunOverride    gameEndRunOverride
 	beginDrawOverride gameBeginDrawOverride
 	endDrawOverride   gameEndDrawOverride
+
+	// disposeLock projects the `lock (this)` that wraps the whole body of
+	// Dispose(bool). See DisposeByBoolean in game_disposal.go for the exact
+	// concurrency projection and its one deliberate divergence.
+	disposeLock sync.Mutex
 
 	// isActive is Game::isActive, the private bool HostActivated and
 	// HostDeactivated maintain. It is NOT Game::IsActive: that getter also

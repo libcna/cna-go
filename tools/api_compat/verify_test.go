@@ -6685,6 +6685,9 @@ func seedGameSignalMembers(t *testing.T, expected *expectedSurface, actual *actu
 		if signal.RaiseSite != "" {
 			wanted[signal.RaiseSite] = true
 		}
+		if signal.ManagedRaiseSite != "" {
+			wanted[signal.ManagedRaiseSite] = true
+		}
 	}
 	for name := range gameFrameHooks {
 		wanted[name] = true
@@ -6828,6 +6831,66 @@ var gameSignalDefects = map[string]func(expected *expectedSurface, actual *actua
 		signal.EvidenceReason = "not really"
 		gameNativeSignals["Activated"] = signal
 	},
+	// ---- Foundation 39: the authoritative raise path --------------------
+	// The rule Foundation 34 satisfied and Foundation 39 replaced. Binding a
+	// native signal to an event whose reference raise path is MANAGED puts the
+	// raise at a moment the reference has no raise at.
+	"native_signal_drives_a_managed_raise_path": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Disposed"]
+		signal.NativeSignalRole = "PUBLIC_EVENT_RAISE"
+		gameNativeSignals["Disposed"] = signal
+	},
+	// And the mirror: an event the host really does raise, demoted to a signal
+	// that raises nothing, would leave the projected accessors unfireable.
+	"host_raised_event_demoted_to_lifecycle_only": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Exiting"]
+		signal.NativeSignalRole = "LIFECYCLE_ONLY"
+		gameNativeSignals["Exiting"] = signal
+	},
+	"raise_path_unclassified": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Activated"]
+		signal.RaisePath = "SOMEWHERE"
+		gameNativeSignals["Activated"] = signal
+	},
+	"native_signal_role_unclassified": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Activated"]
+		signal.NativeSignalRole = "MAYBE"
+		gameNativeSignals["Activated"] = signal
+	},
+	// A managed raise path that names no member is a claim with nothing behind
+	// it: the event would have no reachable raise site at all.
+	"managed_raise_path_names_no_member": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Disposed"]
+		signal.ManagedRaiseSite = ""
+		gameNativeSignals["Disposed"] = signal
+	},
+	"managed_raise_site_is_not_projected": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Disposed"]
+		signal.ManagedRaiseSite = "DisposeSomehow"
+		gameNativeSignals["Disposed"] = signal
+	},
+	// The reference raises this event from a protected virtual. A managed raise
+	// site that is a public member would be a different contract.
+	"managed_raise_site_is_not_protected": func(expected *expectedSurface, _ *actualSurface) {
+		expected.Members[frameworkGameKey("DisposeByBoolean")].SourceAccess = "public"
+	},
+	"managed_raise_site_absent_from_the_package": func(_ *expectedSurface, actual *actualSurface) {
+		delete(actual.Members, frameworkGameKey("DisposeByBoolean"))
+	},
+	// A host-raised event that also claims a managed raise site claims two.
+	"host_raised_event_claims_a_managed_raise_site": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Activated"]
+		signal.ManagedRaiseSite = "DisposeByBoolean"
+		gameNativeSignals["Activated"] = signal
+	},
+	// Without the native moment there is nothing to compare the reference's
+	// raise site against, which is the comparison the whole rule rests on.
+	"signal_records_no_native_moment": func(_ *expectedSurface, _ *actualSurface) {
+		signal := gameNativeSignals["Disposed"]
+		signal.NativeSignalMoment = ""
+		gameNativeSignals["Disposed"] = signal
+	},
+
 	// A raise path that exists on Game but no signal declares is a raise
 	// nothing measures.
 	"raise_site_exists_that_no_signal_declares": func(expected *expectedSurface, _ *actualSurface) {
@@ -7390,16 +7453,21 @@ func TestMappingRulesDeclareTheSameGameSignalsAsTheRegistry(t *testing.T) {
 	}
 	var rules struct {
 		GameNativeSignals struct {
-			Senders         map[string]string `json:"senders"`
-			RuntimeEvidence map[string]string `json:"runtimeEvidence"`
-			Signals         map[string]struct {
-				CNAConstant     string `json:"cnaConstant"`
-				CNAIdentity     int    `json:"cnaIdentity"`
-				CLREvent        string `json:"clrEvent"`
-				RaiseSite       string `json:"raiseSite"`
-				Sender          string `json:"sender"`
-				EdgeTriggered   bool   `json:"edgeTriggered"`
-				RuntimeEvidence string `json:"runtimeEvidence"`
+			Senders          map[string]string `json:"senders"`
+			RuntimeEvidence  map[string]string `json:"runtimeEvidence"`
+			RaisePath        map[string]string `json:"raisePath"`
+			NativeSignalRole map[string]string `json:"nativeSignalRole"`
+			Signals          map[string]struct {
+				CNAConstant      string `json:"cnaConstant"`
+				CNAIdentity      int    `json:"cnaIdentity"`
+				CLREvent         string `json:"clrEvent"`
+				RaiseSite        string `json:"raiseSite"`
+				Sender           string `json:"sender"`
+				EdgeTriggered    bool   `json:"edgeTriggered"`
+				RuntimeEvidence  string `json:"runtimeEvidence"`
+				RaisePath        string `json:"raisePath"`
+				NativeSignalRole string `json:"nativeSignalRole"`
+				ManagedRaiseSite string `json:"managedRaiseSite"`
 			} `json:"signals"`
 		} `json:"gameNativeSignals"`
 		GameFrameHooks struct {
@@ -7449,6 +7517,35 @@ func TestMappingRulesDeclareTheSameGameSignalsAsTheRegistry(t *testing.T) {
 		if entry.RuntimeEvidence != signal.RuntimeEvidence {
 			t.Fatalf("native signal %q: rules say evidence %q, registry says %q", name, entry.RuntimeEvidence, signal.RuntimeEvidence)
 		}
+		if entry.RaisePath != signal.RaisePath {
+			t.Fatalf("native signal %q: rules say raise path %q, registry says %q", name, entry.RaisePath, signal.RaisePath)
+		}
+		if entry.NativeSignalRole != signal.NativeSignalRole {
+			t.Fatalf("native signal %q: rules say signal role %q, registry says %q", name, entry.NativeSignalRole, signal.NativeSignalRole)
+		}
+		if entry.ManagedRaiseSite != signal.ManagedRaiseSite {
+			t.Fatalf("native signal %q: rules say managed raise site %q, registry says %q", name, entry.ManagedRaiseSite, signal.ManagedRaiseSite)
+		}
+	}
+	// The two Foundation-39 vocabularies are closed and must be documented
+	// exactly as the verifier admits them.
+	for class := range gameEventRaisePaths {
+		if _, documented := rules.GameNativeSignals.RaisePath[class]; !documented {
+			t.Fatalf("raise path %q is admitted by the verifier but not documented", class)
+		}
+	}
+	if len(rules.GameNativeSignals.RaisePath) != len(gameEventRaisePaths) {
+		t.Fatalf("mapping-rules.json documents %d raise paths, the verifier admits %d",
+			len(rules.GameNativeSignals.RaisePath), len(gameEventRaisePaths))
+	}
+	for class := range gameNativeSignalRoles {
+		if _, documented := rules.GameNativeSignals.NativeSignalRole[class]; !documented {
+			t.Fatalf("native signal role %q is admitted by the verifier but not documented", class)
+		}
+	}
+	if len(rules.GameNativeSignals.NativeSignalRole) != len(gameNativeSignalRoles) {
+		t.Fatalf("mapping-rules.json documents %d signal roles, the verifier admits %d",
+			len(rules.GameNativeSignals.NativeSignalRole), len(gameNativeSignalRoles))
 	}
 	// The two closed vocabularies must be documented exactly as the verifier
 	// enforces them, so neither can gain a class in prose alone.

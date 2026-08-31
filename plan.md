@@ -1442,6 +1442,28 @@ per-Game registration state.
 FOUNDATION_MILESTONE_38_COMPLETE=true
 ```
 
+## Foundation 39 qualification evidence
+
+Exact evidence is in `docs/foundation-39-game-disposal-evidence.md`.
+
+The second branch Foundation 36 stopped and reported is closed, and it is closed
+by CORRECTING a shipped divergence rather than preserving it. Of the two options
+that milestone recorded, neither was taken as written: the native signal is
+neither dropped nor left driving the public event. It stays bound and measured
+as a CNA lifecycle signal -- which is what proves a registration outlives
+cna_game_destroy -- while the public event moves to the reference's own managed
+raise site.
+
+The registry rule moved with it. "Every event is bound to one canonical signal
+through the raise path the reference uses" is satisfied by a binding whose
+semantics do not align; the rule is now "every projected XNA event must have its
+AUTHORITATIVE XNA raise path, and a native signal may implement that path only
+when the semantics align".
+
+```text
+FOUNDATION_MILESTONE_39_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

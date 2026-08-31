@@ -36,13 +36,29 @@ import "github.com/openeggbert/cna-go/internal/interop"
 //	CNA_GAME_EVENT_ACTIVATED   -> OnActivated(game, EventArgs.Empty)
 //	CNA_GAME_EVENT_DEACTIVATED -> OnDeactivated(game, EventArgs.Empty)
 //	CNA_GAME_EVENT_EXITING     -> OnExiting(game, EventArgs.Empty)
-//	CNA_GAME_EVENT_DISPOSED    -> Disposed(game, EventArgs.Empty)
 //
-// The first three go through the projected protected virtual, because that is
-// what HostActivated, HostDeactivated and HostExiting do -- each is a `callvirt`
-// to the On... method, not a direct delegate invoke. The fourth does not,
-// because Game declares no OnDisposed: Dispose(bool) invokes the delegate
-// field directly.
+// All three go through the projected protected virtual, because that is what
+// HostActivated, HostDeactivated and HostExiting do -- each is a `callvirt` to
+// the On... method, not a direct delegate invoke.
+//
+// # The fourth signal is deliberately NOT an event raise
+//
+//	CNA_GAME_EVENT_DISPOSED    -> (nothing public)
+//
+// Game::Disposed is the one event of the four the host does not raise. Its only
+// raise site in the whole class is the tail of Dispose(bool), it has no On...
+// method, and a consumer who never disposes never sees it. CNA raises its own
+// disposal signal from native game destruction at the end of the runtime host's
+// lifetime, which is a different observable moment: it fires whether or not
+// anyone disposed the Game, and it does not fire when a consumer disposes
+// without ever running.
+//
+// Foundation 34 bound the two together because Dispose was not projected and
+// the native signal was the only disposal fact CNA-Go had. Foundation 39
+// projects Dispose and corrects the binding: the public event now follows the
+// reference's managed raise site, and the native signal stays bound and
+// measured as a CNA LIFECYCLE signal only -- it is what proves the subscription
+// outlives cna_game_destroy, and it raises nothing public.
 //
 // # Where CNA-Go subscribes, and why it is eager
 //
@@ -131,8 +147,13 @@ func (g *Game) RemoveExitingHandler(subscription EventSubscription) error {
 //
 // Disposed is the one event of the four with no protected raise method: the
 // reference invokes the delegate field directly from the end of Dispose(bool),
-// with `this` as the sender. CNA-Go raises it from the native disposal signal,
-// which CNA delivers from inside cna_game_destroy after content is unloaded.
+// with `this` as the sender, and CNA-Go raises it from exactly there.
+//
+// It therefore fires when a consumer disposes the Game and at no other time. A
+// consumer who never calls Dispose never sees it, a consumer who disposes twice
+// sees it twice, and ending a Run does not raise it -- all three are the
+// reference's behaviour, and none of them is what the native disposal signal
+// does. See game_disposal.go for the correction and its evidence.
 func (g *Game) AddDisposedHandler(handler EventHandler[*EventArgs]) (EventSubscription, error) {
 	return g.disposed.Add(handler)
 }
@@ -216,9 +237,14 @@ func (g *Game) raiseNativeGameEvent(event uint32) error {
 		// On... method drops the sender for a null one.
 		return g.OnExiting(g, EventArgsEmpty())
 	case interop.GameEventDisposed:
-		// Dispose(bool)'s tail: if (Disposed != null) Disposed(this, EventArgs.Empty).
-		// There is no OnDisposed to route through; the reference has none.
-		return g.disposed.Raise(g, EventArgsEmpty())
+		// Deliberately raises nothing. CNA delivers this from inside
+		// cna_game_destroy; Game::Disposed is raised from Dispose(bool) and
+		// from nowhere else, so driving the public event from here would put
+		// the raise at a moment the reference has no raise at. The signal is
+		// still bound, still delivered and still counted -- internal/interop
+		// records the delivery, which is what proves the registrations outlive
+		// native destruction -- and the public event is left to Dispose.
+		return nil
 	default:
 		return nil
 	}

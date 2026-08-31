@@ -68,11 +68,16 @@ func TestGameEventAccessorsAreIndependent(t *testing.T) {
 		interop.GameEventActivated,
 		interop.GameEventDeactivated,
 		interop.GameEventExiting,
-		interop.GameEventDisposed,
 	} {
 		if err := game.raiseNativeGameEvent(event); err != nil {
 			t.Fatalf("raiseNativeGameEvent(%d): %v", event, err)
 		}
+	}
+	// Disposed is the one event the host does not raise. Its reference raise
+	// site is the tail of Dispose(bool), so the managed member drives it here
+	// and the native disposal signal drives nothing.
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
 	}
 	want := []string{"Activated", "Deactivated", "Exiting", "Disposed"}
 	if len(seen) != len(want) {
@@ -254,24 +259,31 @@ func TestGameNativeExitingIsNotEdgeTriggered(t *testing.T) {
 // TestGameNativeEventArgsAreTheSharedEmpty proves every native-sourced raise
 // pushes the one System.EventArgs.Empty identity, exactly as the reference's
 // `ldsfld EventArgs::Empty` does at each of the four sites.
+//
+// Each event is driven through its OWN raise path: the three the host raises
+// through the native signal, and Disposed through managed Dispose, which is
+// the only place the reference raises it.
 func TestGameNativeEventArgsAreTheSharedEmpty(t *testing.T) {
 	for _, testCase := range []struct {
 		name  string
-		event uint32
+		raise func(*Game) error
 		add   func(*Game) func(EventHandler[*EventArgs]) (EventSubscription, error)
 	}{
-		{"Activated", interop.GameEventActivated, func(g *Game) func(EventHandler[*EventArgs]) (EventSubscription, error) { return g.AddActivatedHandler }},
-		{"Deactivated", interop.GameEventDeactivated, func(g *Game) func(EventHandler[*EventArgs]) (EventSubscription, error) {
+		{"Activated", func(g *Game) error { return g.raiseNativeGameEvent(interop.GameEventActivated) },
+			func(g *Game) func(EventHandler[*EventArgs]) (EventSubscription, error) { return g.AddActivatedHandler }},
+		{"Deactivated", func(g *Game) error {
+			g.isActive = true
+			return g.raiseNativeGameEvent(interop.GameEventDeactivated)
+		}, func(g *Game) func(EventHandler[*EventArgs]) (EventSubscription, error) {
 			return g.AddDeactivatedHandler
 		}},
-		{"Exiting", interop.GameEventExiting, func(g *Game) func(EventHandler[*EventArgs]) (EventSubscription, error) { return g.AddExitingHandler }},
-		{"Disposed", interop.GameEventDisposed, func(g *Game) func(EventHandler[*EventArgs]) (EventSubscription, error) { return g.AddDisposedHandler }},
+		{"Exiting", func(g *Game) error { return g.raiseNativeGameEvent(interop.GameEventExiting) },
+			func(g *Game) func(EventHandler[*EventArgs]) (EventSubscription, error) { return g.AddExitingHandler }},
+		{"Disposed", func(g *Game) error { return g.DisposeByNone() },
+			func(g *Game) func(EventHandler[*EventArgs]) (EventSubscription, error) { return g.AddDisposedHandler }},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			game := newEventGame(t)
-			if testCase.event == interop.GameEventDeactivated {
-				game.isActive = true
-			}
 			var got *EventArgs
 			if _, err := testCase.add(game)(func(_ any, args *EventArgs) error {
 				got = args
@@ -279,7 +291,7 @@ func TestGameNativeEventArgsAreTheSharedEmpty(t *testing.T) {
 			}); err != nil {
 				t.Fatalf("Add: %v", err)
 			}
-			if err := game.raiseNativeGameEvent(testCase.event); err != nil {
+			if err := testCase.raise(game); err != nil {
 				t.Fatalf("raise: %v", err)
 			}
 			if got != EventArgsEmpty() {
@@ -292,6 +304,10 @@ func TestGameNativeEventArgsAreTheSharedEmpty(t *testing.T) {
 // TestGameDisposedRaisesWithTheGame pins Dispose(bool)'s tail, which pushes
 // `ldarg.0` as the sender and invokes the delegate field directly -- there is
 // no OnDisposed on Game to route through.
+//
+// The raise is driven through managed Dispose because that is the reference's
+// ONLY raise site for this event; see TestTheNativeDisposalSignalRaisesNothing
+// for the other half of the same claim.
 func TestGameDisposedRaisesWithTheGame(t *testing.T) {
 	game := newEventGame(t)
 	var got recordedRaise
@@ -301,11 +317,48 @@ func TestGameDisposedRaisesWithTheGame(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("AddDisposedHandler: %v", err)
 	}
-	if err := game.raiseNativeGameEvent(interop.GameEventDisposed); err != nil {
-		t.Fatalf("raise: %v", err)
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
 	}
 	if got.sender != any(game) {
 		t.Fatalf("sender = %v, want the Game", got.sender)
+	}
+	if got.args != EventArgsEmpty() {
+		t.Fatalf("args = %v, want the shared EventArgs.Empty", got.args)
+	}
+}
+
+// TestTheNativeDisposalSignalRaisesNothing is the correction Foundation 39
+// makes, stated as a test rather than as prose.
+//
+// CNA delivers CNA_GAME_EVENT_DISPOSED from inside cna_game_destroy. Game's own
+// Disposed event is raised from Dispose(bool) and from nowhere else, so the
+// native signal must not drive it: doing so would raise the event at a moment
+// the reference has no raise at, and would raise it for a consumer who never
+// disposed anything.
+func TestTheNativeDisposalSignalRaisesNothing(t *testing.T) {
+	game := newEventGame(t)
+	raised := 0
+	if _, err := game.AddDisposedHandler(func(any, *EventArgs) error {
+		raised++
+		return nil
+	}); err != nil {
+		t.Fatalf("AddDisposedHandler: %v", err)
+	}
+	for i := 0; i < 3; i++ {
+		if err := game.raiseNativeGameEvent(interop.GameEventDisposed); err != nil {
+			t.Fatalf("native disposal signal reported %v", err)
+		}
+	}
+	if raised != 0 {
+		t.Fatalf("the native disposal signal raised Game.Disposed %d times", raised)
+	}
+	// And the managed path still works, on the same Game, afterwards.
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
+	}
+	if raised != 1 {
+		t.Fatalf("managed Dispose raised Game.Disposed %d times, want 1", raised)
 	}
 }
 
@@ -355,8 +408,8 @@ func TestGameEventDuplicateRegistrationsAreIndependent(t *testing.T) {
 	if _, err := game.AddDisposedHandler(handler); err != nil {
 		t.Fatalf("AddDisposedHandler: %v", err)
 	}
-	if err := game.raiseNativeGameEvent(interop.GameEventDisposed); err != nil {
-		t.Fatalf("raise: %v", err)
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
 	}
 	if calls != 2 {
 		t.Fatalf("one handler added twice ran %d times, want 2", calls)
@@ -365,8 +418,8 @@ func TestGameEventDuplicateRegistrationsAreIndependent(t *testing.T) {
 		t.Fatalf("RemoveDisposedHandler: %v", err)
 	}
 	calls = 0
-	if err := game.raiseNativeGameEvent(interop.GameEventDisposed); err != nil {
-		t.Fatalf("raise: %v", err)
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
 	}
 	if calls != 1 {
 		t.Fatalf("after removing one of two registrations the handler ran %d times, want 1", calls)
@@ -378,8 +431,8 @@ func TestGameEventDuplicateRegistrationsAreIndependent(t *testing.T) {
 		}
 	}
 	calls = 0
-	if err := game.raiseNativeGameEvent(interop.GameEventDisposed); err != nil {
-		t.Fatalf("raise: %v", err)
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose: %v", err)
 	}
 	if calls != 1 {
 		t.Fatalf("harmless removals changed the list: handler ran %d times, want 1", calls)

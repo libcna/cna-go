@@ -2773,5 +2773,55 @@
     "id": "f38hook-game-embeds-a-callback-field",
     "mutation": "f38hook_game_embeds_a_callback_field",
     "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-native-signal-drives-a-managed-raise-path",
+    "mutation": "f36signal_native_signal_drives_a_managed_raise_path",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-host-raised-event-demoted-to-lifecycle-only",
+    "mutation": "f36signal_host_raised_event_demoted_to_lifecycle_only",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-raise-path-unclassified",
+    "mutation": "f36signal_raise_path_unclassified",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-native-signal-role-unclassified",
+    "mutation": "f36signal_native_signal_role_unclassified",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-managed-raise-path-names-no-member",
+    "mutation": "f36signal_managed_raise_path_names_no_member",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-managed-raise-site-is-not-projected",
+    "mutation": "f36signal_managed_raise_site_is_not_projected",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-managed-raise-site-is-not-protected",
+    "mutation": "f36signal_managed_raise_site_is_not_protected",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-managed-raise-site-absent-from-the-package",
+    "mutation": "f36signal_managed_raise_site_absent_from_the_package",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-host-raised-event-claims-a-managed-raise-site",
+    "mutation": "f36signal_host_raised_event_claims_a_managed_raise_site",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
+  },
+  {
+    "id": "f36signal-signal-records-no-native-moment",
+    "mutation": "f36signal_signal_records_no_native_moment",
+    "category": "LANGUAGE_MAPPING_MISMATCH"
   }
 ]

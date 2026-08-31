@@ -590,3 +590,52 @@ var (
 	_ framework.IUpdateable    = (*UserComponent)(nil)
 	_ framework.IDrawable      = (*UserComponent)(nil)
 )
+
+// ---------------------------------------------------------------------------
+// Foundation 39 — a consumer's own disposable components, from OUTSIDE.
+// ---------------------------------------------------------------------------
+//
+// System.IDisposable contributes no projected Go interface, so there is no
+// framework.IDisposable to implement. A consumer opts a component into
+// Game.Dispose's loop the same way the reference's `isinst` finds one: by
+// declaring the projected IDisposable member. Which name that is follows the
+// settled overload rule, and BOTH spellings below are legitimate.
+
+// DisposableRotator declares Dispose() and Dispose(bool), which is what
+// Microsoft's own GameComponent declares, so the overload rule renames them.
+type DisposableRotator struct {
+	Rotator
+	Disposed  int
+	Failure   error
+	OnDispose func()
+}
+
+func NewDisposableRotator(name string) *DisposableRotator {
+	return &DisposableRotator{Rotator: *NewRotator(name)}
+}
+
+func (d *DisposableRotator) DisposeByNone() error { return d.DisposeByBoolean(true) }
+
+func (d *DisposableRotator) DisposeByBoolean(disposing bool) error {
+	if !disposing {
+		return nil
+	}
+	d.Disposed++
+	if d.OnDispose != nil {
+		d.OnDispose()
+	}
+	return d.Failure
+}
+
+// SimpleDisposableRotator declares only Dispose(), which is the projection a
+// type that does not also declare Dispose(bool) receives.
+type SimpleDisposableRotator struct {
+	Rotator
+	Disposed int
+}
+
+func NewSimpleDisposableRotator(name string) *SimpleDisposableRotator {
+	return &SimpleDisposableRotator{Rotator: *NewRotator(name)}
+}
+
+func (d *SimpleDisposableRotator) Dispose() error { d.Disposed++; return nil }

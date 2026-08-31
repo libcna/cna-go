@@ -29,7 +29,9 @@
     "GAME_FRAME_HOOKS_NEVER_INSTALLED": 0,
     "GAME_FRAME_HOOK_DEFERRED_STEPS": 4,
     "GAME_FRAME_HOOK_OVERRIDE_CAPABILITIES": 4,
+    "GAME_MANAGED_EVENT_RAISE_SITES": 1,
     "GAME_NATIVE_SIGNALS": 4,
+    "GAME_NATIVE_SIGNALS_LIFECYCLE_ONLY": 1,
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
@@ -38,7 +40,7 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 160,
+    "MISSING_MEMBER": 157,
     "MISSING_TYPE": 135,
     "MISSING_TYPES": 135,
     "OPERATOR_MAPPING_MISMATCH": 0,
@@ -54,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1791,
+    "TARGET_MEMBERS": 1794,
     "TARGET_TYPES": 122,
-    "TOTAL_DIAGNOSTICS": 295,
+    "TOTAL_DIAGNOSTICS": 292,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -330,24 +332,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Game::ResetElapsedTime()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.ResetElapsedTime",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::Dispose()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.DisposeByNone",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::Finalize()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Finalize",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::Dispose(System.Boolean)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.DisposeByBoolean",
       "message": "mapped Go member is absent"
     },
     {
@@ -1964,9 +1948,6 @@
       "missingMembers": [
         "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:GameContent",
         "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:SetGameContent",
-        "Microsoft.Xna.Framework.Game::Dispose() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.DisposeByNone",
-        "Microsoft.Xna.Framework.Game::Dispose(System.Boolean) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.DisposeByBoolean",
-        "Microsoft.Xna.Framework.Game::Finalize() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Finalize",
         "Microsoft.Xna.Framework.Game::GraphicsDevice() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GameGraphicsDevice",
         "Microsoft.Xna.Framework.Game::InactiveSleepTime() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.InactiveSleepTime",
         "Microsoft.Xna.Framework.Game::InactiveSleepTime() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.SetInactiveSleepTime",
@@ -1985,7 +1966,7 @@
         "Microsoft.Xna.Framework.Game::Tick() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Tick",
         "Microsoft.Xna.Framework.Game::Window() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.Window"
       ],
-      "diagnostics": 22
+      "diagnostics": 19
     },
     {
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
@@ -9306,6 +9287,9 @@
       "removeAccessor": "RemoveActivatedHandler",
       "raiseSite": "OnActivated",
       "raiseSiteAccess": "protected",
+      "raisePath": "NATIVE_HOST_SIGNAL",
+      "nativeSignalRole": "PUBLIC_EVENT_RAISE",
+      "nativeSignalMoment": "CNA reports the game becoming the active application, which is the moment GameHost::Activated fires and the moment HostActivated consumes",
       "sender": "GAME",
       "edgeTriggered": true,
       "referencePath": [
@@ -9325,6 +9309,9 @@
       "removeAccessor": "RemoveDeactivatedHandler",
       "raiseSite": "OnDeactivated",
       "raiseSiteAccess": "protected",
+      "raisePath": "NATIVE_HOST_SIGNAL",
+      "nativeSignalRole": "PUBLIC_EVENT_RAISE",
+      "nativeSignalMoment": "CNA reports the game losing the active application, which is the moment GameHost::Deactivated fires and the moment HostDeactivated consumes",
       "sender": "GAME",
       "edgeTriggered": true,
       "referencePath": [
@@ -9345,11 +9332,17 @@
       "removeAccessor": "RemoveDisposedHandler",
       "raiseSite": "",
       "raiseSiteAccess": "",
+      "raisePath": "MANAGED",
+      "nativeSignalRole": "LIFECYCLE_ONLY",
+      "managedRaiseSite": "DisposeByBoolean",
+      "nativeSignalMoment": "CNA reports native game destruction, delivered from inside cna_game_destroy after content unloads. That is NOT where Game::Disposed is raised: the reference raises it from managed Dispose(bool), so the native signal fires for a consumer who never disposed anything and does not fire for a consumer who disposes without ever running. The signal stays bound and counted because it is what proves a registration outlives cna_game_destroy, and it raises nothing public",
       "sender": "GAME",
       "edgeTriggered": false,
       "referencePath": [
         "Dispose(bool disposing): if (!disposing) return;",
-        "Dispose(bool): dispose each IDisposable component, then the device manager, then UnhookDeviceEvents()",
+        "Dispose(bool): lock (this)",
+        "Dispose(bool): copy Components to an array, then Dispose() each element that is IDisposable",
+        "Dispose(bool): dispose graphicsDeviceManager if it is IDisposable, then UnhookDeviceEvents()",
         "Dispose(bool): if (Disposed != null) Disposed(this, EventArgs.Empty)   // ldarg.0, no On... method"
       ],
       "runtimeEvidence": "VERIFIED_NATIVE",
@@ -9363,6 +9356,9 @@
       "removeAccessor": "RemoveExitingHandler",
       "raiseSite": "OnExiting",
       "raiseSiteAccess": "protected",
+      "raisePath": "NATIVE_HOST_SIGNAL",
+      "nativeSignalRole": "PUBLIC_EVENT_RAISE",
+      "nativeSignalMoment": "CNA reports the run loop stopping, delivered from inside cna_game_run before it returns, which is where GameHost::Exiting fires and where HostExiting consumes it",
       "sender": "NULL",
       "edgeTriggered": false,
       "referencePath": [
@@ -9509,7 +9505,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "2466096e6dfbc8174af81e4ab6adb19684e6c6513eae1da1330617edca7a79a2",
+    "mappingSha256": "6f414bfab1a090e8bf3a2a96b3b66316b9b3e8166d0be1a7fb0bd818bc5db52c",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }
