@@ -723,6 +723,25 @@ CnaGoResult cna_go_texture2d_create(CnaGoHandle device, uint32_t width, uint32_t
     return api.cna_texture2d_create(device, &info, out_texture);
 }
 
+CnaGoResult cna_go_texture2d_create_from_encoded_memory_sized(CnaGoHandle device, const uint8_t* data, uint64_t byte_count, uint32_t width, uint32_t height, uint8_t zoom, CnaGoHandle* out_texture) {
+    CNA_Texture2DDecodeInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.width = width;
+    info.height = height;
+    info.zoom = zoom;
+    return api.cna_texture2d_create_from_encoded_memory(device, data, byte_count, &info, out_texture);
+}
+
+CnaGoResult cna_go_texture2d_get_encoded_byte_count(CnaGoHandle texture, uint32_t image_format, uint32_t width, uint32_t height, uint64_t* out_byte_count) {
+    return api.cna_texture2d_get_encoded_byte_count(texture, image_format, width, height, out_byte_count);
+}
+
+CnaGoResult cna_go_texture2d_copy_encoded(CnaGoHandle texture, uint32_t image_format, uint32_t width, uint32_t height, uint8_t* destination, uint64_t capacity, uint64_t* out_byte_count) {
+    return api.cna_texture2d_copy_encoded(texture, image_format, width, height, destination, capacity, out_byte_count);
+}
+
 CnaGoResult cna_go_sprite_batch_draw_destination(CnaGoHandle batch, CnaGoHandle texture, int32_t destination_x, int32_t destination_y, int32_t destination_width, int32_t destination_height, int32_t source_x, int32_t source_y, int32_t source_width, int32_t source_height, uint8_t color_r, uint8_t color_g, uint8_t color_b, uint8_t color_a, float rotation, float origin_x, float origin_y, uint32_t effects, float layer_depth) {
     CNA_SpriteCommand command;
     memset(&command, 0, sizeof(command));

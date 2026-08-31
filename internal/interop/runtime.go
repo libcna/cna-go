@@ -1592,6 +1592,75 @@ func (d *Device) CreateTexture(width, height uint32, mipMap bool, format uint32)
 	return resource, info, nil
 }
 
+// TextureImageFormat is CNA_TextureImageFormat: PNG is 0 and JPEG is 1.
+//
+// XNA numbers its own SharedConstants.XnaImageFormat differently -- SaveAsJpeg
+// passes 0 and SaveAsPng passes 2 -- so this is one of the few identities that
+// does NOT cross unchanged, and the mapping is made once, in the Graphics
+// package, where both names are visible.
+const (
+	TextureImageFormatPNG  uint32 = 0
+	TextureImageFormatJPEG uint32 = 1
+)
+
+// CreateTextureFromEncodedSized decodes bytes into a texture of a REQUESTED
+// size, which is cna_texture2d_create_from_encoded_memory with a decode info
+// where CreateTextureFromEncoded passes null.
+//
+// `zoom` is CNA's own flag and means what XNA's means: cover-and-crop when
+// true, fit while preserving the aspect ratio when false.
+func (d *Device) CreateTextureFromEncodedSized(data []byte, width, height uint32, zoom bool) (*Resource, TextureInfo, error) {
+	if len(data) == 0 {
+		return nil, TextureInfo{}, errors.New("encoded texture data is empty")
+	}
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, TextureInfo{}, err
+	}
+	texture, err := nativeTextureCreateEncodedSized(handle, data, width, height, zoom)
+	if err != nil {
+		return nil, TextureInfo{}, err
+	}
+	resource := d.runtime.registerResource(texture, resourceTexture2D, d.manager)
+	info, infoErr := nativeTextureInfo(texture)
+	if infoErr != nil {
+		_ = resource.Dispose()
+		return nil, TextureInfo{}, infoErr
+	}
+	return resource, info, nil
+}
+
+// EncodeTexture asks CNA for the encoded byte count and then for the bytes, in
+// that order, because CNA reports the size of an encode it has not performed
+// yet and a caller cannot size the buffer any other way.
+//
+// The two calls are a measurement and then a copy, and the copy's own reported
+// count is what bounds the returned slice: a second encode could in principle
+// produce fewer bytes than the first measured, and trusting the first count
+// would return trailing zeros as image data.
+func (resource *Resource) EncodeTexture(imageFormat, width, height uint32) ([]byte, error) {
+	handle, err := resource.liveHandle(resourceTexture2D)
+	if err != nil {
+		return nil, err
+	}
+	count, err := nativeTextureEncodedByteCount(handle, imageFormat, width, height)
+	if err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return nil, nil
+	}
+	buffer := make([]byte, count)
+	written, err := nativeTextureCopyEncoded(handle, imageFormat, width, height, buffer)
+	if err != nil {
+		return nil, err
+	}
+	if written > count {
+		return nil, fmt.Errorf("cna_texture2d_copy_encoded wrote %d bytes into a %d byte buffer", written, count)
+	}
+	return buffer[:written], nil
+}
+
 func (d *Device) CreateSpriteBatch() (*Resource, error) {
 	handle, err := d.nativeHandle()
 	if err != nil {

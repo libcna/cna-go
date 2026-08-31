@@ -1076,7 +1076,7 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 	xna := memberIdentity(t.Name, m)
 	base := &expectedMember{XNA: xna, Owner: t.Name, SourceKind: m.Kind, SourceAccess: m.Access, PackagePath: owner.PackagePath, Receiver: owner.GoName}
 	parameters, outResults, hasDirection := mapParameters(s, byIdentity, owner, m.Parameters)
-	base.Parameters = parameters
+	base.Parameters = applyStreamDirection(xna, parameters)
 	base.Results = mapReturn(s, byIdentity, owner, m.ReturnType)
 	base.Results = append(base.Results, outResults...)
 	if isFallible(t, m, "") {
@@ -1300,6 +1300,48 @@ func mapParameters(s *expectedSurface, byIdentity map[string]*contractType, owne
 		inputs = append(inputs, mapped)
 	}
 	return inputs, outputs, hasDirection
+}
+
+// writtenStreamParameters names every CLR member whose System.IO.Stream
+// parameter is WRITTEN rather than read.
+//
+// # Why a registry and not a rule
+//
+// The CLR has one Stream and Go has two interfaces, so `System.IO.Stream ->
+// io.Reader` in bclTypes is a mapping that is right for most positions and
+// wrong for some. It was wrong for exactly these two until Foundation 53:
+// SaveAsPng and SaveAsJpeg hand the stream their encoded bytes, and projecting
+// them with io.Reader would have declared a parameter a consumer cannot use for
+// the only thing the member does with it.
+//
+// Direction cannot be derived from the signature -- both directions are spelled
+// `Stream` -- so it is measured from the member's body and recorded here, one
+// entry per position. The key is the full CLR member identity, so an overload
+// that reads and one that writes stay distinguishable.
+var writtenStreamParameters = map[string][]int{
+	"Microsoft.Xna.Framework.Graphics.Texture2D::SaveAsPng(System.IO.Stream,System.Int32,System.Int32)":  {0},
+	"Microsoft.Xna.Framework.Graphics.Texture2D::SaveAsJpeg(System.IO.Stream,System.Int32,System.Int32)": {0},
+}
+
+// applyStreamDirection rewrites the io.Reader default at the positions
+// writtenStreamParameters names. It fails loudly rather than silently on a
+// registry entry that does not describe the member it names: an index out of
+// range, or a position that is not a stream at all, is a registry defect and
+// would otherwise become an expected signature nobody wrote.
+func applyStreamDirection(xna string, parameters []string) []string {
+	positions, present := writtenStreamParameters[xna]
+	if !present {
+		return parameters
+	}
+	rewritten := append([]string(nil), parameters...)
+	for _, position := range positions {
+		if position < 0 || position >= len(rewritten) || rewritten[position] != "io.Reader" {
+			panic(fmt.Sprintf("writtenStreamParameters names position %d of %s, which is %v",
+				position, xna, parameters))
+		}
+		rewritten[position] = "io.Writer"
+	}
+	return rewritten
 }
 
 func mapIndexerParameters(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, params []contractParameter) []string {

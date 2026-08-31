@@ -1,7 +1,9 @@
 package eventcanary
 
 import (
+	"bytes"
 	"errors"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -2874,5 +2876,30 @@ func TestDisplayModeAndTextureConstructorsAreReachableFromOutside(t *testing.T) 
 	if _, err := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(nil, 4, 4); err == nil ||
 		!strings.Contains(err.Error(), "The GraphicsDevice must not be null when creating new resources.") {
 		t.Fatalf("a nil device produced %v, want the reference's message", err)
+	}
+}
+
+// TestTextureStreamSurfaceIsReachableFromOutside pins the three signatures
+// Foundation 53 added, and the one that matters most is SaveAsPng's first
+// parameter: it is an io.WRITER.
+//
+// The CLR has one Stream and Go has two interfaces, so the profile's default
+// mapping -- System.IO.Stream to io.Reader -- is right for most positions and
+// was wrong for these two. A consumer handed an io.Reader here could not pass
+// the destination the member exists to fill.
+func TestTextureStreamSurfaceIsReachableFromOutside(t *testing.T) {
+	texture := &graphics.Texture2D{}
+	var _ func(io.Writer, int32, int32) error = texture.SaveAsPng
+	var _ func(io.Writer, int32, int32) error = texture.SaveAsJpeg
+	var _ func(*graphics.GraphicsDevice, io.Reader, int32, int32, bool) (*graphics.Texture2D, error) = graphics.Texture2DFromStreamByGraphicsDeviceAndStreamAndInt32AndInt32AndBoolean
+
+	// A real io.Writer compiles and is accepted as far as the disposal check,
+	// which is where an unbound texture stops.
+	if err := texture.SaveAsPng(&bytes.Buffer{}, 8, 8); err == nil {
+		t.Fatal("an unbound texture encoded successfully")
+	}
+	if err := texture.SaveAsPng(nil, 8, 8); err == nil ||
+		!strings.Contains(err.Error(), "This method does not accept null for this parameter.") {
+		t.Fatalf("a nil destination produced %v, want the reference's message", err)
 	}
 }

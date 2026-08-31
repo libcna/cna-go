@@ -326,6 +326,24 @@ var probeMutations = []sourceMutation{
 	// The route pairing is the other half: the two prototypes differ only in
 	// which command pointer they take, so binding submit_many where
 	// submit_scaled_many belongs is a two-token edit that also compiles.
+	// Foundation 53. The encode route's last two parameters are a capacity and
+	// an out count -- a uint64 and a pointer to one -- and the bridge passes
+	// both through, so nothing in C objects to their order until a prototype is
+	// compared with the canonical one.
+	{
+		name: "copy-encoded-capacity-and-out-count-swapped",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_texture2d_copy_encoded_fn)(CNA_Handle, CNA_TextureImageFormat, uint32_t, uint32_t, uint8_t*, uint64_t, uint64_t*);",
+		new:  "typedef CNA_Result (*cna_texture2d_copy_encoded_fn)(CNA_Handle, CNA_TextureImageFormat, uint32_t, uint32_t, uint8_t*, uint64_t*, uint64_t);",
+	},
+	{
+		// The destination is WRITTEN by the callee. Declaring it const compiles
+		// on the bridge side, which only passes the pointer along.
+		name: "copy-encoded-destination-declared-const",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_texture2d_copy_encoded_fn)(CNA_Handle, CNA_TextureImageFormat, uint32_t, uint32_t, uint8_t*, uint64_t, uint64_t*);",
+		new:  "typedef CNA_Result (*cna_texture2d_copy_encoded_fn)(CNA_Handle, CNA_TextureImageFormat, uint32_t, uint32_t, const uint8_t*, uint64_t, uint64_t*);",
+	},
 	// Foundation 52 binds two routes whose structures are versioned and whose
 	// members are same-width neighbours, which is the shape that hides a defect
 	// best.
@@ -805,6 +823,26 @@ var layoutMutations = []sourceMutation{
 		file: "abi_manifest.h",
 		old:  "    CNA_Bool mip_map;\n    uint8_t reserved[3];\n    CNA_SurfaceFormat format;",
 		new:  "    CNA_Bool mip_map;\n    uint8_t reserved[4];\n    CNA_SurfaceFormat format;",
+	},
+	{
+		// The decode info's seven reserved bytes hold the structure at 24
+		// bytes after a one-byte zoom flag. An eighth grows it to 32, which is
+		// what CNA would read past.
+		name: "decode-info-reserved-bytes-widened",
+		file: "abi_manifest.h",
+		old:  "    CNA_Bool zoom;\n    uint8_t reserved[7];",
+		new:  "    CNA_Bool zoom;\n    uint8_t reserved[8];",
+	},
+	{
+		// A narrowed image-format identity. PNG is 0 and JPEG is 1, so every
+		// declared value survives sixteen bits and nothing changes until CNA
+		// adds a format above 65535 -- and, like the clear mask, the probe
+		// cannot see it, because the manifest declares the alias inside a guard
+		// the canonical header satisfies.
+		name: "texture-image-format-narrowed",
+		file: "abi_manifest.h",
+		old:  "typedef uint32_t CNA_TextureImageFormat;",
+		new:  "typedef uint16_t CNA_TextureImageFormat;",
 	},
 	{
 		// A narrowed clear mask. Target, DepthBuffer and Stencil are 1, 2 and 4,

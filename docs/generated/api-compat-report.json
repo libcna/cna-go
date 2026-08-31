@@ -40,7 +40,7 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 83,
+    "MISSING_MEMBER": 80,
     "MISSING_TYPE": 132,
     "MISSING_TYPES": 132,
     "OPERATOR_MAPPING_MISMATCH": 0,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1928,
+    "TARGET_MEMBERS": 1931,
     "TARGET_TYPES": 125,
-    "TOTAL_DIAGNOSTICS": 215,
+    "TOTAL_DIAGNOSTICS": 212,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1030,24 +1030,6 @@
     },
     {
       "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::FromStream(Microsoft.Xna.Framework.Graphics.GraphicsDevice,System.IO.Stream,System.Int32,System.Int32,System.Boolean)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2DFromStreamByGraphicsDeviceAndStreamAndInt32AndInt32AndBoolean",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::SaveAsJpeg(System.IO.Stream,System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SaveAsJpeg",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::SaveAsPng(System.IO.Stream,System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SaveAsPng",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(!!0[])",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataBySliceOf0",
       "message": "mapped Go member is absent"
@@ -1583,17 +1565,14 @@
     {
       "xna": "Microsoft.Xna.Framework.Graphics.Texture2D",
       "missingMembers": [
-        "Microsoft.Xna.Framework.Graphics.Texture2D::FromStream(Microsoft.Xna.Framework.Graphics.GraphicsDevice,System.IO.Stream,System.Int32,System.Int32,System.Boolean) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2DFromStreamByGraphicsDeviceAndStreamAndInt32AndInt32AndBoolean",
         "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(!!0[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataBySliceOf0",
         "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataBySliceOf0AndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(System.Int32,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataByInt32AndNullableOfRectangleAndSliceOf0AndInt32AndInt32",
-        "Microsoft.Xna.Framework.Graphics.Texture2D::SaveAsJpeg(System.IO.Stream,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SaveAsJpeg",
-        "Microsoft.Xna.Framework.Graphics.Texture2D::SaveAsPng(System.IO.Stream,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SaveAsPng",
         "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(!!0[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataBySliceOf0",
         "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataBySliceOf0AndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(System.Int32,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataByInt32AndNullableOfRectangleAndSliceOf0AndInt32AndInt32"
       ],
-      "diagnostics": 9
+      "diagnostics": 6
     },
     {
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager",

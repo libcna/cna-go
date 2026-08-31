@@ -8284,3 +8284,64 @@ func TestTheDeviceServiceContractIsDeliberatelyUnwitnessed(t *testing.T) {
 		t.Fatal("mapping-rules.json records no reason for leaving IGraphicsDeviceService unwitnessed")
 	}
 }
+
+// TestWrittenStreamParametersRewritesOnlyWhatItNames is the control for the
+// direction-aware Stream mapping Foundation 53 added. Without it the registry
+// could name a position that is not a stream, or the wrong index, and the
+// expected signature would quietly become something no member has.
+func TestWrittenStreamParametersRewritesOnlyWhatItNames(t *testing.T) {
+	const png = "Microsoft.Xna.Framework.Graphics.Texture2D::SaveAsPng(System.IO.Stream,System.Int32,System.Int32)"
+	got := applyStreamDirection(png, []string{"io.Reader", "int32", "int32"})
+	want := []string{"io.Writer", "int32", "int32"}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Fatalf("applyStreamDirection = %v, want %v", got, want)
+		}
+	}
+
+	// A member with no entry is untouched, which is what keeps every other
+	// Stream position an io.Reader.
+	unlisted := applyStreamDirection(
+		"Microsoft.Xna.Framework.Graphics.Texture2D::FromStream(Microsoft.Xna.Framework.Graphics.GraphicsDevice,System.IO.Stream)",
+		[]string{"*GraphicsDevice", "io.Reader"})
+	if unlisted[1] != "io.Reader" {
+		t.Fatalf("an unlisted member's stream became %q", unlisted[1])
+	}
+}
+
+// TestWrittenStreamParametersRefusesAPositionThatIsNotAStream proves the
+// registry cannot silently describe the wrong member. It plants the defect the
+// panic exists for: an index that points at an int32.
+func TestWrittenStreamParametersRefusesAPositionThatIsNotAStream(t *testing.T) {
+	saved := writtenStreamParameters
+	t.Cleanup(func() { writtenStreamParameters = saved })
+	writtenStreamParameters = map[string][]int{"X::Y(System.Int32)": {0}}
+
+	defer func() {
+		if recover() == nil {
+			t.Fatal("a registry entry pointing at an int32 was accepted")
+		}
+	}()
+	applyStreamDirection("X::Y(System.Int32)", []string{"int32"})
+}
+
+// TestEveryWrittenStreamEntryNamesARealMember keeps the registry honest against
+// the pinned contract: an entry whose member does not exist would be a rule
+// nothing applies, and would survive every other test.
+func TestEveryWrittenStreamEntryNamesARealMember(t *testing.T) {
+	contract := loadPinnedContract(t)
+	known := map[string]bool{}
+	for _, typed := range contract.Types {
+		for _, member := range typed.Members {
+			known[memberIdentity(typed.Name, member)] = true
+		}
+	}
+	if len(writtenStreamParameters) == 0 {
+		t.Fatal("the registry is empty, so this test measures nothing")
+	}
+	for identity := range writtenStreamParameters {
+		if !known[identity] {
+			t.Errorf("writtenStreamParameters names %s, which the pinned contract does not declare", identity)
+		}
+	}
+}

@@ -242,6 +242,9 @@ CnaGoResult cna_go_graphics_device_clear_options(CnaGoHandle device, uint32_t op
 CnaGoResult cna_go_graphics_device_present(CnaGoHandle device);
 CnaGoResult cna_go_graphics_device_get_display_mode(CnaGoHandle device, int32_t* out_width, int32_t* out_height, float* out_aspect_ratio, uint32_t* out_format);
 CnaGoResult cna_go_texture2d_create(CnaGoHandle device, uint32_t width, uint32_t height, uint8_t mip_map, uint32_t format, CnaGoHandle* out_texture);
+CnaGoResult cna_go_texture2d_create_from_encoded_memory_sized(CnaGoHandle device, const uint8_t* data, uint64_t byte_count, uint32_t width, uint32_t height, uint8_t zoom, CnaGoHandle* out_texture);
+CnaGoResult cna_go_texture2d_get_encoded_byte_count(CnaGoHandle texture, uint32_t image_format, uint32_t width, uint32_t height, uint64_t* out_byte_count);
+CnaGoResult cna_go_texture2d_copy_encoded(CnaGoHandle texture, uint32_t image_format, uint32_t width, uint32_t height, uint8_t* destination, uint64_t capacity, uint64_t* out_byte_count);
 CnaGoResult cna_go_graphics_device_clear_rgba(
     CnaGoHandle device,
     float r,

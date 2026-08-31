@@ -260,6 +260,41 @@ func nativeTextureCreateEncoded(device uint64, data []byte) (uint64, error) {
 	return uint64(handle), resultError("cna_texture2d_create_from_encoded_memory", code)
 }
 
+func nativeTextureCreateEncodedSized(device uint64, data []byte, width, height uint32, zoom bool) (uint64, error) {
+	var pointer *C.uint8_t
+	if len(data) > 0 {
+		pointer = (*C.uint8_t)(unsafe.Pointer(&data[0]))
+	}
+	crop := C.uint8_t(0)
+	if zoom {
+		crop = 1
+	}
+	var handle C.CnaGoHandle
+	code := uint32(C.cna_go_texture2d_create_from_encoded_memory_sized(
+		C.CnaGoHandle(device), pointer, C.uint64_t(len(data)),
+		C.uint32_t(width), C.uint32_t(height), crop, &handle))
+	return uint64(handle), resultError("cna_texture2d_create_from_encoded_memory", code)
+}
+
+func nativeTextureEncodedByteCount(texture uint64, imageFormat, width, height uint32) (uint64, error) {
+	var count C.uint64_t
+	code := uint32(C.cna_go_texture2d_get_encoded_byte_count(
+		C.CnaGoHandle(texture), C.uint32_t(imageFormat), C.uint32_t(width), C.uint32_t(height), &count))
+	return uint64(count), resultError("cna_texture2d_get_encoded_byte_count", code)
+}
+
+func nativeTextureCopyEncoded(texture uint64, imageFormat, width, height uint32, destination []byte) (uint64, error) {
+	var pointer *C.uint8_t
+	if len(destination) > 0 {
+		pointer = (*C.uint8_t)(unsafe.Pointer(&destination[0]))
+	}
+	var written C.uint64_t
+	code := uint32(C.cna_go_texture2d_copy_encoded(
+		C.CnaGoHandle(texture), C.uint32_t(imageFormat), C.uint32_t(width), C.uint32_t(height),
+		pointer, C.uint64_t(len(destination)), &written))
+	return uint64(written), resultError("cna_texture2d_copy_encoded", code)
+}
+
 func nativeTextureInfo(texture uint64) (TextureInfo, error) {
 	var width, height, levels, format C.uint32_t
 	code := uint32(C.cna_go_texture2d_get_info(C.CnaGoHandle(texture), &width, &height, &levels, &format))

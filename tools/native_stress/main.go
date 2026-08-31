@@ -88,6 +88,12 @@ type counters struct {
 	DeviceStateTextureCreations  int `json:"DEVICE_STATE_TEXTURE_CREATIONS"`
 	DeviceStateTextureRefusals   int `json:"DEVICE_STATE_TEXTURE_REFUSALS"`
 
+	// Foundation 53. A texture encoded to PNG and to JPEG, and decoded back at
+	// a requested size through both zoom modes.
+	DeviceStateEncodeChecks     int `json:"DEVICE_STATE_TEXTURE_ENCODE_CHECKS"`
+	DeviceStateDecodeSizeChecks int `json:"DEVICE_STATE_TEXTURE_DECODE_SIZE_CHECKS"`
+	DeviceStateEncodeRefusals   int `json:"DEVICE_STATE_TEXTURE_ENCODE_REFUSALS"`
+
 	FrameHookOverrideCycles  int `json:"FRAME_HOOK_OVERRIDE_CYCLES"`
 	FrameHookBeginRunHits    int `json:"FRAME_HOOK_BEGIN_RUN_DELIVERIES"`
 	FrameHookEndRunHits      int `json:"FRAME_HOOK_END_RUN_DELIVERIES"`
@@ -317,6 +323,12 @@ func runParent() (counters, error) {
 	if total.DeviceStateDisplayModeChecks < 40 || total.DeviceStateTextureCreations < 60 ||
 		total.DeviceStateTextureRefusals < 40 {
 		return total, errors.New("a device-state display-mode or texture proof did not run in every cycle")
+	}
+	// Two encodes and two sized decodes per cycle, plus the one refusal the
+	// projection makes before it reaches CNA.
+	if total.DeviceStateEncodeChecks < 40 || total.DeviceStateDecodeSizeChecks < 40 ||
+		total.DeviceStateEncodeRefusals < 20 {
+		return total, errors.New("a texture encode or sized-decode proof did not run in every cycle")
 	}
 	if total.DeviceStateReadOnlyChecks < 60 || total.DeviceStateClearCalls < 40 ||
 		total.DeviceStateClearRefusals < 20 || total.DeviceStatePresentCalls < 20 ||
@@ -1334,6 +1346,66 @@ func (g *stressGame) exerciseDeviceState() error {
 			return fmt.Errorf("empty texture %d disposal: %w", index, err)
 		}
 		g.result.DeviceStateTextureCreations++
+	}
+
+	// A texture encoded to PNG and to JPEG, then decoded back at a REQUESTED
+	// size through both of the reference's zoom modes.
+	//
+	// The encoded bytes are checked for their format signature rather than for
+	// a length, because a length proves only that something was written: PNG
+	// begins with the eight-byte magic and JPEG with SOI. A projection that sent
+	// XNA's own format identity through -- SaveAsPng passes 2, and CNA's PNG is
+	// 0 while its JPEG is 1 -- would encode a JPEG under the PNG member and this
+	// is what catches it.
+	source, err := graphics.Texture2DFromStreamByGraphicsDeviceAndStream(device, bytes.NewReader(g.data))
+	if err != nil {
+		return fmt.Errorf("source texture: %w", err)
+	}
+	var png, jpeg bytes.Buffer
+	if err := source.SaveAsPng(&png, 32, 32); err != nil {
+		return fmt.Errorf("SaveAsPng: %w", err)
+	}
+	if got := png.Bytes(); len(got) < 8 || string(got[1:4]) != "PNG" {
+		return fmt.Errorf("SaveAsPng wrote %d bytes that do not begin with the PNG signature", len(got))
+	}
+	g.result.DeviceStateEncodeChecks++
+	if err := source.SaveAsJpeg(&jpeg, 32, 32); err != nil {
+		return fmt.Errorf("SaveAsJpeg: %w", err)
+	}
+	if got := jpeg.Bytes(); len(got) < 3 || got[0] != 0xff || got[1] != 0xd8 {
+		return fmt.Errorf("SaveAsJpeg wrote %d bytes that do not begin with the JPEG SOI marker", len(got))
+	}
+	g.result.DeviceStateEncodeChecks++
+
+	for _, zoom := range []bool{false, true} {
+		decoded, decodeErr := graphics.Texture2DFromStreamByGraphicsDeviceAndStreamAndInt32AndInt32AndBoolean(
+			device, bytes.NewReader(png.Bytes()), 24, 24, zoom)
+		if decodeErr != nil {
+			return fmt.Errorf("sized decode (zoom=%t): %w", zoom, decodeErr)
+		}
+		width, widthErr := decoded.Width()
+		height, heightErr := decoded.Height()
+		if widthErr != nil || heightErr != nil {
+			return fmt.Errorf("sized decode dimensions: %v %v", widthErr, heightErr)
+		}
+		if width != 24 || height != 24 {
+			return fmt.Errorf("sized decode (zoom=%t) = %dx%d, want 24x24", zoom, width, height)
+		}
+		if err := decoded.Dispose(true); err != nil {
+			return fmt.Errorf("sized decode disposal: %w", err)
+		}
+		g.result.DeviceStateDecodeSizeChecks++
+	}
+
+	// The one guard SaveAsImage's prologue has that Go can express: a nil
+	// destination carries Microsoft's own sentence.
+	if refusal := source.SaveAsPng(nil, 8, 8); refusal == nil ||
+		!strings.Contains(refusal.Error(), "This method does not accept null for this parameter.") {
+		return fmt.Errorf("SaveAsPng to a nil writer = %v, want the reference's message", refusal)
+	}
+	g.result.DeviceStateEncodeRefusals++
+	if err := source.Dispose(true); err != nil {
+		return fmt.Errorf("source texture disposal: %w", err)
 	}
 
 	// The two refusals the projection makes itself, before CNA is reached: a

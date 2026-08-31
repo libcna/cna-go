@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -18,6 +19,7 @@ import (
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
 	touch "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch"
 	media "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media"
+	"github.com/openeggbert/cna-go/internal/interop"
 )
 
 type observation struct {
@@ -2993,6 +2995,36 @@ func runCorpus() corpusReport {
 		nil, -1, 4, false, graphics.SurfaceFormatColor)
 	check("texture2d.a-negative-dimension-is-refused", "TEXTURE2D",
 		"true", fmt.Sprintf("%t", negativeTexture != nil))
+
+	// ------------------------------------------------------------------
+	// Foundation 53. Texture2D's stream surface.
+	// ------------------------------------------------------------------
+
+	// The one identity in the profile that does NOT cross unchanged. XNA
+	// numbers Jpeg 0 and Png 2; CNA numbers PNG 0 and JPEG 1. Forwarding XNA's
+	// constant would encode a JPEG under SaveAsPng and nothing about the call
+	// would report it.
+	check("texture2d.cna-image-formats-are-not-xnas", "TEXTURE2D",
+		"0,1", fmt.Sprintf("%d,%d", interop.TextureImageFormatPNG, interop.TextureImageFormatJPEG))
+
+	// Both SaveAs members refuse a nil destination with Microsoft's own
+	// sentence, before anything about the texture is read.
+	saveTarget := &graphics.Texture2D{}
+	pngErr := saveTarget.SaveAsPng(nil, 8, 8)
+	jpegErr := saveTarget.SaveAsJpeg(nil, 8, 8)
+	check("texture2d.a-nil-save-destination-carries-the-reference-message", "TEXTURE2D",
+		"true,true",
+		fmt.Sprintf("%t,%t",
+			pngErr != nil && strings.Contains(pngErr.Error(), "This method does not accept null for this parameter."),
+			jpegErr != nil && strings.Contains(jpegErr.Error(), "This method does not accept null for this parameter.")))
+
+	// The sized FromStream checks the device before it reads a byte, which is
+	// the reference's order and is observable: the reader is untouched.
+	unreadStream := bytes.NewReader([]byte{1, 2, 3})
+	_, sizedErr := graphics.Texture2DFromStreamByGraphicsDeviceAndStreamAndInt32AndInt32AndBoolean(
+		nil, unreadStream, 4, 4, false)
+	check("texture2d.the-sized-from-stream-checks-the-device-before-reading", "TEXTURE2D",
+		"true,3", fmt.Sprintf("%t,%d", sizedErr != nil, unreadStream.Len()))
 
 	// ------------------------------------------------------------------
 	// Foundation 47. The two frame steps. Their real evidence is

@@ -77,6 +77,12 @@ CNA_GO_MEASURE(offsetof_CNA_Texture2DInfo_format, offsetof(CNA_Texture2DInfo, fo
 CNA_GO_MEASURE(sizeof_CNA_SpriteBatchBeginInfo, sizeof(CNA_SpriteBatchBeginInfo))
 CNA_GO_MEASURE(offsetof_CNA_SpriteBatchBeginInfo_sort_mode, offsetof(CNA_SpriteBatchBeginInfo, sort_mode))
 
+CNA_GO_MEASURE(sizeof_CNA_Texture2DDecodeInfo, sizeof(CNA_Texture2DDecodeInfo))
+CNA_GO_MEASURE(alignof_CNA_Texture2DDecodeInfo, _Alignof(CNA_Texture2DDecodeInfo))
+CNA_GO_MEASURE(offsetof_CNA_Texture2DDecodeInfo_width, offsetof(CNA_Texture2DDecodeInfo, width))
+CNA_GO_MEASURE(offsetof_CNA_Texture2DDecodeInfo_height, offsetof(CNA_Texture2DDecodeInfo, height))
+CNA_GO_MEASURE(offsetof_CNA_Texture2DDecodeInfo_zoom, offsetof(CNA_Texture2DDecodeInfo, zoom))
+CNA_GO_MEASURE(sizeof_CNA_TextureImageFormat, sizeof(CNA_TextureImageFormat))
 CNA_GO_MEASURE(sizeof_CNA_DisplayMode, sizeof(CNA_DisplayMode))
 CNA_GO_MEASURE(alignof_CNA_DisplayMode, _Alignof(CNA_DisplayMode))
 CNA_GO_MEASURE(offsetof_CNA_DisplayMode_width, offsetof(CNA_DisplayMode, width))

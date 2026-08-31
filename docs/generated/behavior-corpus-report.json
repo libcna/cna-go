@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 681,
-    "ASSERTIONS": 681,
+    "OBSERVATIONS": 684,
+    "ASSERTIONS": 684,
     "FAILURES": 0
   },
   "observations": [
@@ -5317,6 +5317,30 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true",
       "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "texture2d.cna-image-formats-are-not-xnas",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,1",
+      "actual": "0,1",
+      "passed": true
+    },
+    {
+      "id": "texture2d.a-nil-save-destination-carries-the-reference-message",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "texture2d.the-sized-from-stream-checks-the-device-before-reading",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,3",
+      "actual": "true,3",
       "passed": true
     },
     {

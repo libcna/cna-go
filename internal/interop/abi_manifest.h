@@ -207,7 +207,15 @@ typedef struct CNA_SpriteScaledCommand {
 #endif
 
 #ifndef CNA_C_TEXTURE_H
-typedef struct CNA_Texture2DDecodeInfo CNA_Texture2DDecodeInfo;
+typedef uint32_t CNA_TextureImageFormat;
+typedef struct CNA_Texture2DDecodeInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t width;
+    uint32_t height;
+    CNA_Bool zoom;
+    uint8_t reserved[7];
+} CNA_Texture2DDecodeInfo;
 #endif
 
 #ifndef CNA_C_INPUT_H
@@ -287,6 +295,8 @@ typedef CNA_Result (*cna_graphics_device_clear_options_fn)(CNA_Handle, CNA_Clear
 typedef CNA_Result (*cna_graphics_device_present_fn)(CNA_Handle);
 typedef CNA_Result (*cna_graphics_device_get_display_mode_fn)(CNA_Handle, CNA_DisplayMode*);
 typedef CNA_Result (*cna_texture2d_create_fn)(CNA_Handle, const CNA_Texture2DCreateInfo*, CNA_Handle*);
+typedef CNA_Result (*cna_texture2d_get_encoded_byte_count_fn)(CNA_Handle, CNA_TextureImageFormat, uint32_t, uint32_t, uint64_t*);
+typedef CNA_Result (*cna_texture2d_copy_encoded_fn)(CNA_Handle, CNA_TextureImageFormat, uint32_t, uint32_t, uint8_t*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_sprite_batch_end_fn)(CNA_Handle);
 typedef CNA_Result (*cna_sprite_batch_destroy_fn)(CNA_Handle);
 typedef CNA_Result (*cna_keyboard_get_state_fn)(CNA_Handle, CNA_KeyboardState*);
@@ -379,6 +389,8 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_graphics_device_present) \
     X(cna_graphics_device_get_display_mode) \
     X(cna_texture2d_create) \
+    X(cna_texture2d_get_encoded_byte_count) \
+    X(cna_texture2d_copy_encoded) \
     X(cna_sprite_batch_end) \
     X(cna_sprite_batch_destroy) \
     X(cna_keyboard_get_state) \
