@@ -1291,9 +1291,10 @@ func measureBufferUsageClosure(expected *expectedSurface, actual *actualSurface,
 //
 // It was 40 from Foundation 13 until Foundation 48 projected the type's nine
 // configuration properties, its two static defaults, ApplyChanges and
-// ToggleFullScreen. The six that remain need GraphicsDeviceInformation, which
-// needs GraphicsAdapter.
-const graphicsManagerRemainingMissing = 20
+// ToggleFullScreen, and Foundation 49 added its five events and four protected
+// raisers. The six that remain need GraphicsDeviceInformation, which needs
+// GraphicsAdapter.
+const graphicsManagerRemainingMissing = 6
 
 func measureDisplayOrientationClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) displayOrientationClosure {
 	measurement := displayOrientationClosure{SourceTypes: 2, Status: "FAIL"}
@@ -3583,8 +3584,10 @@ func measureGameBaseCallAdapters(result *report, expected *expectedSurface, actu
 // a conformance failure. The claim is meaningful exactly when the type's whole
 // surface is present, which is what completeness means. GraphicsDeviceManager
 // is the live example: it declares IGraphicsDeviceService and
-// IGraphicsDeviceManager and satisfies neither, because 20 of its members are
-// still missing, and that is already fully reported.
+// IGraphicsDeviceManager, and while Foundation 49 projected the three
+// IGraphicsDeviceManager operations as interface witnesses, six of its members
+// are still missing, so it stays partial and unmeasured here -- and that gap is
+// already fully reported as MISSING_MEMBER.
 //
 // # Why the pointer method set
 //

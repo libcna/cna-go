@@ -149,10 +149,17 @@ The property whose getter and field disagree is preserved as it is:
 — a resized back buffer is forgotten the moment a consumer states a preference —
 and a test asserts that `SetIsFullScreen` leaves it alone.
 
-The exact `Resources` string both dimension setters throw was read from the
-retained assembly rather than guessed: `"The back buffer dimension must be
-positive."` The comparison is `bgt` on zero, so **zero is rejected and one is
-accepted**, and both boundaries are asserted.
+The comparison is `bgt` on zero, so **zero is rejected and one is accepted**,
+and both boundaries are asserted.
+
+The exact `Resources` string both setters throw was **inferred from its key in
+this milestone and corrected in the next one**. The key is
+`BackBufferDimMustBePositive`; the string is `"BackBufferWidth and
+BackBufferHeight must be greater than zero."` — it names the two properties
+rather than "the dimension", and says "greater than zero" rather than
+"positive". Foundation 49 read it out of the retained assembly and added
+`tools/resource_strings` so a claimed message that is not in one is a test
+failure rather than a plausible-looking sentence.
 
 ## Evidence
 

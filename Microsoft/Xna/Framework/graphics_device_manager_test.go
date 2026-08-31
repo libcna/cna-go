@@ -68,7 +68,7 @@ func TestManagerDimensionSettersRejectNonPositive(t *testing.T) {
 		if err := m.SetPreferredBackBufferWidth(value); err == nil {
 			t.Fatalf("SetPreferredBackBufferWidth(%d) succeeded", value)
 		} else if !errors.Is(err, errBackBufferDimension) ||
-			!strings.Contains(err.Error(), "The back buffer dimension must be positive.") {
+			!strings.Contains(err.Error(), "BackBufferWidth and BackBufferHeight must be greater than zero.") {
 			t.Fatalf("SetPreferredBackBufferWidth(%d) = %v, want the reference's message", value, err)
 		}
 		if err := m.SetPreferredBackBufferHeight(value); err == nil {
@@ -181,5 +181,122 @@ func TestManagerConfigurationSlotsRoundTripThroughTheBridge(t *testing.T) {
 	}
 	if m.graphicsProfile != 1 || !m.isDeviceDirty {
 		t.Fatalf("graphicsProfile = %d dirty = %t after a bridge write", m.graphicsProfile, m.isDeviceDirty)
+	}
+}
+
+// TestManagerRaisersReachTheirOwnEvents pins the four protected raisers. All
+// four have the identical 22-byte body in the reference, so a copy-paste that
+// raised a neighbour would look right and behave wrong.
+func TestManagerRaisersReachTheirOwnEvents(t *testing.T) {
+	m := newManagedManager()
+	counts := map[string]int{}
+	add := func(name string, register func(EventHandler[*EventArgs]) (EventSubscription, error)) {
+		t.Helper()
+		if _, err := register(func(sender any, args *EventArgs) error {
+			if sender != m {
+				t.Errorf("%s sender is not the manager", name)
+			}
+			counts[name]++
+			return nil
+		}); err != nil {
+			t.Fatalf("register %s: %v", name, err)
+		}
+	}
+	add("created", m.AddDeviceCreatedHandler)
+	add("resetting", m.AddDeviceResettingHandler)
+	add("reset", m.AddDeviceResetHandler)
+	add("disposing", m.AddDeviceDisposingHandler)
+	add("disposed", m.AddDisposedHandler)
+
+	for name, raise := range map[string]func(any, *EventArgs) error{
+		"created":   m.OnDeviceCreated,
+		"resetting": m.OnDeviceResetting,
+		"reset":     m.OnDeviceReset,
+		"disposing": m.OnDeviceDisposing,
+	} {
+		before := counts[name]
+		if err := raise(m, EventArgsEmpty()); err != nil {
+			t.Fatalf("On%s: %v", name, err)
+		}
+		if counts[name] != before+1 {
+			t.Fatalf("On%s raised %d times", name, counts[name]-before)
+		}
+	}
+	total := 0
+	for _, count := range counts {
+		total += count
+	}
+	if total != 4 {
+		t.Fatalf("four raisers produced %d raises in total: %v", total, counts)
+	}
+	if counts["disposed"] != 0 {
+		t.Fatal("a device raiser reached Disposed, which has no protected raiser at all")
+	}
+}
+
+// TestManagerNativeSignalsRouteToTheirOwnRaisePath pins the private bridge.
+// This is the profile's THIRD signal family and the only one whose device
+// events do not start at zero: Disposed is 0 and DeviceCreated is 1, so a table
+// indexed as if the three families agreed would be off by one.
+func TestManagerNativeSignalsRouteToTheirOwnRaisePath(t *testing.T) {
+	m := newManagedManager()
+	var order []string
+	record := func(name string) EventHandler[*EventArgs] {
+		return func(sender any, args *EventArgs) error {
+			order = append(order, name)
+			return nil
+		}
+	}
+	if _, err := m.AddDisposedHandler(record("disposed")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.AddDeviceCreatedHandler(record("created")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.AddDeviceDisposingHandler(record("disposing")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.AddDeviceResetHandler(record("reset")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.AddDeviceResettingHandler(record("resetting")); err != nil {
+		t.Fatal(err)
+	}
+	for identity := uint32(0); identity < 5; identity++ {
+		if err := m.raiseNativeManagerEvent(identity); err != nil {
+			t.Fatalf("signal %d: %v", identity, err)
+		}
+	}
+	want := "disposed,created,disposing,reset,resetting"
+	if strings.Join(order, ",") != want {
+		t.Fatalf("signals routed as %v, want %s -- Disposed is identity ZERO in this family", order, want)
+	}
+	before := len(order)
+	if err := m.raiseNativeManagerEvent(9); err != nil {
+		t.Fatalf("unknown signal: %v", err)
+	}
+	if len(order) != before {
+		t.Fatal("an unknown manager signal raised a projected event")
+	}
+}
+
+// TestManagerHandlerFailureReachesTheCaller pins the settled dispatch contract
+// on this family too: the first non-nil handler error propagates and no later
+// handler runs.
+func TestManagerHandlerFailureReachesTheCaller(t *testing.T) {
+	m := newManagedManager()
+	failure := errors.New("handler refused")
+	later := 0
+	if _, err := m.AddDeviceResetHandler(func(sender any, args *EventArgs) error { return failure }); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.AddDeviceResetHandler(func(sender any, args *EventArgs) error { later++; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.raiseNativeManagerEvent(3); !errors.Is(err, failure) {
+		t.Fatalf("a native reset signal reported %v, want the handler's own error", err)
+	}
+	if later != 0 {
+		t.Fatal("a later handler ran after an earlier one failed")
 	}
 }

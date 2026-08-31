@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 665,
-    "ASSERTIONS": 665,
+    "OBSERVATIONS": 667,
+    "ASSERTIONS": 667,
     "FAILURES": 0
   },
   "observations": [
@@ -5189,6 +5189,22 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-manager.implements-the-lifecycle-contract-and-not-the-service",
+      "group": "GRAPHICS_DEVICE_MANAGER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,false",
+      "actual": "true,false",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-manager.four-raisers-and-no-disposed-raiser",
+      "group": "GRAPHICS_DEVICE_MANAGER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "4,false",
+      "actual": "4,false",
       "passed": true
     },
     {

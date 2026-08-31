@@ -605,6 +605,109 @@ CnaGoResult cna_go_sprite_batch_draw_scaled(CnaGoHandle batch, CnaGoHandle textu
 CnaGoResult cna_go_sprite_batch_end(CnaGoHandle batch) { return api.cna_sprite_batch_end(batch); }
 CnaGoResult cna_go_sprite_batch_destroy(CnaGoHandle batch) { return api.cna_sprite_batch_destroy(batch); }
 
+extern void cnaGoGraphicsDeviceManagerEvent(uint32_t event, uintptr_t context);
+
+/* One trampoline per canonical manager event identity, for the third time and
+   the same reason: CNA_GameEventCallback carries only the caller context, so
+   the identity has to come from the function that was registered. */
+#define CNA_GO_GDM_EVENT_CALLBACK(name, event) \
+    static void name(void* context) { \
+        cnaGoGraphicsDeviceManagerEvent((uint32_t)(event), (uintptr_t)context); \
+    }
+
+CNA_GO_GDM_EVENT_CALLBACK(gdm_event_disposed, CNA_GO_GDM_EVENT_DISPOSED)
+CNA_GO_GDM_EVENT_CALLBACK(gdm_event_device_created, CNA_GO_GDM_EVENT_DEVICE_CREATED)
+CNA_GO_GDM_EVENT_CALLBACK(gdm_event_device_disposing, CNA_GO_GDM_EVENT_DEVICE_DISPOSING)
+CNA_GO_GDM_EVENT_CALLBACK(gdm_event_device_reset, CNA_GO_GDM_EVENT_DEVICE_RESET)
+CNA_GO_GDM_EVENT_CALLBACK(gdm_event_device_resetting, CNA_GO_GDM_EVENT_DEVICE_RESETTING)
+
+static const CNA_GameEventCallback gdm_event_callbacks[CNA_GO_GDM_EVENT_COUNT] = {
+    gdm_event_disposed,
+    gdm_event_device_created,
+    gdm_event_device_disposing,
+    gdm_event_device_reset,
+    gdm_event_device_resetting
+};
+
+static const CNA_GraphicsDeviceManagerEvent gdm_event_identities[CNA_GO_GDM_EVENT_COUNT] = {
+    CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DISPOSED,
+    CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_CREATED,
+    CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_DISPOSING,
+    CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_RESET,
+    CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_RESETTING
+};
+
+_Static_assert(CNA_GO_GDM_EVENT_DISPOSED == CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DISPOSED, "manager disposal identity drift");
+_Static_assert(CNA_GO_GDM_EVENT_DEVICE_CREATED == CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_CREATED, "manager device-created identity drift");
+_Static_assert(CNA_GO_GDM_EVENT_DEVICE_DISPOSING == CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_DISPOSING, "manager device-disposing identity drift");
+_Static_assert(CNA_GO_GDM_EVENT_DEVICE_RESET == CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_RESET, "manager device-reset identity drift");
+_Static_assert(CNA_GO_GDM_EVENT_DEVICE_RESETTING == CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_RESETTING, "manager device-resetting identity drift");
+_Static_assert(CNA_GO_GDM_EVENT_COUNT == CNA_GRAPHICS_DEVICE_MANAGER_EVENT_MAXIMUM + 1, "manager event count drift");
+
+/* The three families' first device event sits at a DIFFERENT index in each, so
+   a table shared between them would be silently wrong. */
+_Static_assert(CNA_GO_GDM_EVENT_DEVICE_CREATED != CNA_GO_GAME_EVENT_ACTIVATED,
+               "the manager and game families must not be indexed as one");
+
+CnaGoResult cna_go_graphics_device_manager_create_device(CnaGoHandle manager) {
+    return api.cna_graphics_device_manager_create_device(manager);
+}
+
+CnaGoResult cna_go_graphics_device_manager_begin_draw(CnaGoHandle manager, uint8_t* out_should_draw) {
+    CNA_Bool should = 0;
+    const CNA_Result result = api.cna_graphics_device_manager_begin_draw(manager, &should);
+    if (result == 0) {
+        *out_should_draw = (uint8_t)(should != 0);
+    }
+    return result;
+}
+
+CnaGoResult cna_go_graphics_device_manager_end_draw(CnaGoHandle manager) {
+    return api.cna_graphics_device_manager_end_draw(manager);
+}
+
+CnaGoResult cna_go_graphics_device_manager_unsubscribe_events(CnaGoHandle* registrations) {
+    if (registrations == NULL) {
+        return 1; /* CNA_RESULT_INVALID_ARGUMENT */
+    }
+    CNA_Result first = 0;
+    for (int i = 0; i < CNA_GO_GDM_EVENT_COUNT; i++) {
+        if (registrations[i] == 0) {
+            continue;
+        }
+        const CNA_Result result = api.cna_game_unsubscribe(registrations[i]);
+        registrations[i] = 0;
+        if (result != 0 && first == 0) {
+            first = result;
+        }
+    }
+    return first;
+}
+
+CnaGoResult cna_go_graphics_device_manager_subscribe_events(CnaGoHandle manager, uintptr_t context, CnaGoHandle* out_registrations) {
+    if (out_registrations == NULL) {
+        return 1; /* CNA_RESULT_INVALID_ARGUMENT */
+    }
+    for (int i = 0; i < CNA_GO_GDM_EVENT_COUNT; i++) {
+        out_registrations[i] = 0;
+    }
+    for (int i = 0; i < CNA_GO_GDM_EVENT_COUNT; i++) {
+        CNA_GameEventRegistrationHandle registration = 0;
+        const CNA_Result result = api.cna_graphics_device_manager_subscribe(
+            manager,
+            gdm_event_identities[i],
+            gdm_event_callbacks[i],
+            (void*)context,
+            &registration);
+        if (result != 0) {
+            (void)cna_go_graphics_device_manager_unsubscribe_events(out_registrations);
+            return result;
+        }
+        out_registrations[i] = registration;
+    }
+    return 0;
+}
+
 CnaGoResult cna_go_graphics_device_manager_set_graphics_profile(CnaGoHandle manager, uint32_t profile) {
     return api.cna_graphics_device_manager_set_graphics_profile(manager, profile);
 }

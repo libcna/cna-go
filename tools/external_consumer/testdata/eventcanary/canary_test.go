@@ -2699,3 +2699,54 @@ func TestGraphicsDeviceManagerSurfaceFromOutside(t *testing.T) {
 		t.Fatal("NewGraphicsDeviceManager accepted a nil Game")
 	}
 }
+
+// TestGraphicsDeviceManagerContractsFromOutside pins which contracts the
+// manager satisfies, from a module that can see only exported names.
+//
+// It is the shape a consumer compiles against and the one thing they cannot
+// discover from the documentation: the manager IS an IGraphicsDeviceManager and
+// is NOT an IGraphicsDeviceService, even though the reference's type declares
+// both, because no framework-package type can declare the second contract's
+// device accessor.
+func TestGraphicsDeviceManagerContractsFromOutside(t *testing.T) {
+	var manager any = &framework.GraphicsDeviceManager{}
+	if _, ok := manager.(framework.IGraphicsDeviceManager); !ok {
+		t.Fatal("GraphicsDeviceManager does not implement IGraphicsDeviceManager")
+	}
+	if _, ok := manager.(graphics.IGraphicsDeviceService); ok {
+		t.Fatal("GraphicsDeviceManager implements IGraphicsDeviceService; the Graphics package registers an adapter instead")
+	}
+
+	// The five event accessor pairs a consumer subscribes through, and the
+	// four protected raisers. Disposed deliberately has no raiser: the
+	// reference invokes that delegate field directly from Dispose(bool).
+	typed := &framework.GraphicsDeviceManager{}
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = typed.AddDeviceCreatedHandler
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = typed.AddDeviceResettingHandler
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = typed.AddDeviceResetHandler
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = typed.AddDeviceDisposingHandler
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = typed.AddDisposedHandler
+	var _ func(any, *framework.EventArgs) error = typed.OnDeviceCreated
+	var _ func(any, *framework.EventArgs) error = typed.OnDeviceResetting
+	var _ func(any, *framework.EventArgs) error = typed.OnDeviceReset
+	var _ func(any, *framework.EventArgs) error = typed.OnDeviceDisposing
+	if _, ok := reflect.TypeOf(typed).MethodByName("OnDisposed"); ok {
+		t.Fatal("GraphicsDeviceManager declares OnDisposed; the reference has no protected raiser for that event")
+	}
+
+	// A consumer's own handlers reach the raisers, on a manager that never
+	// touched native code.
+	raised := 0
+	if _, err := typed.AddDeviceResetHandler(func(sender any, args *framework.EventArgs) error {
+		raised++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := typed.OnDeviceReset(typed, framework.EventArgsEmpty()); err != nil {
+		t.Fatal(err)
+	}
+	if raised != 1 {
+		t.Fatalf("OnDeviceReset reached %d handlers, want one", raised)
+	}
+}

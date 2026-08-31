@@ -7,6 +7,7 @@ import (
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	"github.com/openeggbert/cna-go/internal/interop"
+	"github.com/openeggbert/cna-go/internal/servicebridge"
 )
 
 // SpriteEffects is the XNA sprite mirroring flags type.
@@ -118,16 +119,40 @@ type GraphicsDevice struct {
 
 // GraphicsDeviceManagerGraphicsDevice is the documented cross-package cycle
 // cut for GraphicsDeviceManager.GraphicsDevice.
+//
+// # It returns ONE object per manager, per generation
+//
+// GraphicsDeviceManager::get_GraphicsDevice is a single `ldfld` over the
+// `device` field, so in the reference every read of the property returns the
+// same object until ChangeDevice replaces it. Foundation 49 made that true
+// here too: a fresh facade per call passed every test written with one local
+// variable, and failed the moment two callers compared what they got -- which
+// is exactly what a consumer does when Game.GraphicsDevice and a
+// DrawableGameComponent's device are supposed to be the same device.
+//
+// The facade is cached on the manager through internal/servicebridge, because
+// the object is a Graphics-package type and the field belongs to a
+// framework-package one. The native GENERATION is cached with it: each Run
+// gets a new one, and the reference replaces its field at the equivalent
+// boundary rather than handing out an object bound to a dead device.
 func GraphicsDeviceManagerGraphicsDevice(manager *framework.GraphicsDeviceManager) (*GraphicsDevice, error) {
-	_, resource, ok := interop.BindingForOwner(manager)
-	if !ok || resource == nil {
+	runtime, resource, ok := interop.BindingForOwner(manager)
+	if !ok || resource == nil || runtime == nil {
 		return nil, errors.New("GraphicsDeviceManager is not bound to an active Game")
+	}
+	generation := runtime.Generation()
+	if cached, cachedGeneration, present := servicebridge.ReadManagerDeviceFacade(manager); present && cachedGeneration == generation {
+		if facade, typed := cached.(*GraphicsDevice); typed {
+			return facade, nil
+		}
 	}
 	device, err := interop.DeviceForManager(resource)
 	if err != nil {
 		return nil, err
 	}
-	return &GraphicsDevice{device: device}, nil
+	facade := &GraphicsDevice{device: device}
+	servicebridge.WriteManagerDeviceFacade(manager, facade, generation)
+	return facade, nil
 }
 
 func (d *GraphicsDevice) Viewport() (Viewport, error) {

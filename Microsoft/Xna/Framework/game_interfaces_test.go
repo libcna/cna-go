@@ -129,12 +129,36 @@ func TestGraphicsDeviceManagerContractKeepsChannelsSeparate(t *testing.T) {
 	}
 }
 
-// TestGraphicsDeviceManagerIsNotBoundToTheFacade records the deliberate
-// boundary: declaring the contract does not make CNA-Go's partial
-// native-backed GraphicsDeviceManager implement it.
-func TestGraphicsDeviceManagerIsNotBoundToTheFacade(t *testing.T) {
+// TestGraphicsDeviceManagerImplementsTheDeviceLifecycleContract records the
+// boundary this test used to record the other way round.
+//
+// Until Foundation 49 the projected manager implemented nothing, and the test
+// said so. It now implements IGraphicsDeviceManager, because the reference does
+// -- privately, with three `.override`s -- and the three methods are interface
+// WITNESSES rather than declared members: a CLR type implements them
+// explicitly, so the contract's public member set has none of them, and Go has
+// no explicit implementation.
+//
+// Which is exactly why the second half matters. The manager does NOT implement
+// Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService, and cannot: that
+// contract's device accessor returns a Graphics-package type, and this package
+// is the one the Graphics package imports. The registration a consumer resolves
+// is an adapter the Graphics package builds.
+func TestGraphicsDeviceManagerImplementsTheDeviceLifecycleContract(t *testing.T) {
 	var candidate any = &GraphicsDeviceManager{}
-	if _, ok := candidate.(IGraphicsDeviceManager); ok {
-		t.Fatal("GraphicsDeviceManager unexpectedly implements IGraphicsDeviceManager")
+	if _, ok := candidate.(IGraphicsDeviceManager); !ok {
+		t.Fatal("GraphicsDeviceManager does not implement IGraphicsDeviceManager")
+	}
+	// All three are refused on a manager whose constructor never ran, which is
+	// the Go-only guard every projected member of this type carries.
+	manager := &GraphicsDeviceManager{}
+	if err := manager.CreateDevice(); err == nil {
+		t.Fatal("CreateDevice accepted an unconstructed manager")
+	}
+	if _, err := manager.BeginDraw(); err == nil {
+		t.Fatal("BeginDraw accepted an unconstructed manager")
+	}
+	if err := manager.EndDraw(); err == nil {
+		t.Fatal("EndDraw accepted an unconstructed manager")
 	}
 }

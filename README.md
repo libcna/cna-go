@@ -286,9 +286,14 @@ separate Boolean and error channels of `BeginDraw`, and the exact event-mapping
 gap that keeps `IUpdateable`, `IDrawable`, and `IGraphicsDeviceService`
 deferred. `IUpdateable`, `IDrawable` and `IGameComponent` became live in
 Foundations 30-32: `Game` keeps ordered lists of every `IUpdateable` and
-`IDrawable` in `Components`, and `GameComponent` is a shipped implementor. The
-other contracts remain declarations only: CNA-Go has no effect runtime and no
-device manager bound to `IGraphicsDeviceManager`.
+`IDrawable` in `Components`, and `GameComponent` is a shipped implementor.
+`IGraphicsDeviceService` and `IGraphicsDeviceManager` became live in
+Foundation 49: `GraphicsDeviceManager`'s constructor registers itself under the
+second and an adapter over itself under the first, exactly as the reference's
+constructor registers `this` under both, so `Game.GraphicsDevice` and
+`DrawableGameComponent.Initialize` resolve a device from a `Game` that
+registered nothing of its own. The remaining contracts are declarations only:
+CNA-Go has no effect runtime.
 
 See [Foundation 19 IntPtr and PresentationParameters evidence](docs/foundation-19-intptr-presentation-parameters-evidence.md)
 for the `System.IntPtr` to `uintptr` projection and exactly what it does not

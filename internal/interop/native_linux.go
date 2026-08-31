@@ -298,6 +298,61 @@ func nativeSpriteBatchDestroy(batch uint64) error {
 	return resultError("cna_sprite_batch_destroy", uint32(C.cna_go_sprite_batch_destroy(C.CnaGoHandle(batch))))
 }
 
+func nativeManagerCreateDevice(manager uint64) error {
+	return resultError("cna_graphics_device_manager_create_device",
+		uint32(C.cna_go_graphics_device_manager_create_device(C.CnaGoHandle(manager))))
+}
+
+func nativeManagerBeginDraw(manager uint64) (bool, error) {
+	var shouldDraw C.uint8_t
+	code := uint32(C.cna_go_graphics_device_manager_begin_draw(C.CnaGoHandle(manager), &shouldDraw))
+	return shouldDraw != 0, resultError("cna_graphics_device_manager_begin_draw", code)
+}
+
+func nativeManagerEndDraw(manager uint64) error {
+	return resultError("cna_graphics_device_manager_end_draw",
+		uint32(C.cna_go_graphics_device_manager_end_draw(C.CnaGoHandle(manager))))
+}
+
+func nativeManagerSubscribeEvents(manager uint64, context uintptr) ([managerEventCount]uint64, error) {
+	var registrations [managerEventCount]C.CnaGoHandle
+	code := uint32(C.cna_go_graphics_device_manager_subscribe_events(C.CnaGoHandle(manager), C.uintptr_t(context), &registrations[0]))
+	var result [managerEventCount]uint64
+	for i := range result {
+		result[i] = uint64(registrations[i])
+	}
+	return result, resultError("cna_graphics_device_manager_subscribe", code)
+}
+
+func nativeManagerUnsubscribeEvents(registrations *[managerEventCount]uint64) error {
+	var native [managerEventCount]C.CnaGoHandle
+	for i, handle := range registrations {
+		native[i] = C.CnaGoHandle(handle)
+	}
+	code := uint32(C.cna_go_graphics_device_manager_unsubscribe_events(&native[0]))
+	for i := range registrations {
+		registrations[i] = uint64(native[i])
+	}
+	return resultError("cna_game_unsubscribe", code)
+}
+
+// cnaGoGraphicsDeviceManagerEvent is the manager family's own trampoline. Its
+// context is a per-MANAGER cgo.Handle rather than the runtime's, because the
+// signal belongs to one manager object.
+//
+//export cnaGoGraphicsDeviceManagerEvent
+func cnaGoGraphicsDeviceManagerEvent(event C.uint32_t, context C.uintptr_t) {
+	var signals *ManagerSignals
+	defer func() {
+		if recovered := recover(); recovered != nil && signals != nil && signals.runtime != nil {
+			signals.runtime.recordCallbackFailure(fmt.Errorf("panic in native manager-event trampoline: %v", recovered))
+		}
+	}()
+	handle := cgo.Handle(context)
+	signals = handle.Value().(*ManagerSignals)
+	signals.deliver(uint32(event))
+}
+
 // The GraphicsDeviceManager configuration setters. Each is a store CNA's own
 // manager applies at ChangeDevice time, so a value that never reached it would
 // be a setting that appears to work and does not.

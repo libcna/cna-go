@@ -3,6 +3,7 @@ package framework
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/openeggbert/cna-go/internal/interop"
 	"github.com/openeggbert/cna-go/internal/servicebridge"
@@ -62,6 +63,36 @@ type GraphicsDeviceManager struct {
 	// and it is kept because both setters genuinely assign it.
 	isDeviceDirty        bool
 	useResizedBackBuffer bool
+
+	// game is GraphicsDeviceManager::game, which the constructor stores and
+	// Dispose reads to unregister the two services again.
+	game *Game
+
+	// The five events the type declares, each a private multicast delegate
+	// field in the reference. Four of them are also the canonical
+	// IGraphicsDeviceService events, which is why a consumer of that service
+	// observes exactly these.
+	deviceCreated   EventSource[*EventArgs]
+	deviceResetting EventSource[*EventArgs]
+	deviceReset     EventSource[*EventArgs]
+	deviceDisposing EventSource[*EventArgs]
+	disposed        EventSource[*EventArgs]
+
+	// signals owns the five native subscriptions and the per-manager cgo
+	// handle they carry.
+	signals *interop.ManagerSignals
+
+	// deviceFacade is GraphicsDeviceManager::device, the ONE GraphicsDevice
+	// object the reference's field holds and its getter returns unchanged. It
+	// is held as any because its Go type lives in the Graphics package;
+	// internal/servicebridge is what reads and writes it from there.
+	//
+	// deviceFacadeGeneration is the native generation it was built for. The
+	// reference replaces its field when ChangeDevice makes a new device, and
+	// this is the equivalent boundary: a facade from an earlier Run belongs to
+	// a dead generation and is replaced rather than handed out again.
+	deviceFacade           any
+	deviceFacadeGeneration uint64
 }
 
 // The two public static read-only fields, read from the type's own .cctor:
@@ -98,13 +129,41 @@ func GraphicsDeviceManagerDefaultBackBufferHeight() int32 {
 const graphicsDeviceManagerDefaultDepthFormat int32 = 2
 
 // errBackBufferDimension projects System.ArgumentOutOfRangeException, which the
-// two dimension setters throw.
-var errBackBufferDimension = errors.New("argument is out of range")
+// two dimension setters throw. errManagerArgument projects
+// System.ArgumentNullException and System.ArgumentException, which the
+// constructor throws.
+var (
+	errBackBufferDimension = errors.New("argument is out of range")
+	errManagerArgument     = errors.New("argument is not valid")
+)
+
+// The two exact Resources strings the constructor's throw sites load, read from
+// the retained Microsoft.Xna.Framework.Game.dll and checked by
+// tools/resource_strings. The second contains a DOUBLE space before its second
+// sentence, which is the reference's own.
+const (
+	gameCannotBeNull                    = "Game cannot be null."
+	graphicsDeviceManagerAlreadyPresent = "A graphics device manager is already registered.  The graphics device manager cannot be changed once it is set."
+)
+
+// graphicsDeviceManagerServiceType is the CLR type token the reference's
+// `ldtoken IGraphicsDeviceManager` pair resolves with. Unlike
+// IGraphicsDeviceService it is a FRAMEWORK-package contract, so this package
+// can build it and register the manager itself under it.
+var graphicsDeviceManagerServiceType = reflect.TypeOf((*IGraphicsDeviceManager)(nil)).Elem()
 
 // backBufferDimMustBePositive is the exact Resources string those two throw
 // sites load, read from the Microsoft.Xna.Framework.Resources.resources stream
 // of the retained Microsoft.Xna.Framework.Game.dll.
-const backBufferDimMustBePositive = "The back buffer dimension must be positive."
+//
+// The resource KEY is BackBufferDimMustBePositive and it describes the value
+// badly, which is the third measured case of that in this profile: the string
+// names the two PROPERTIES rather than "the dimension", and says "greater than
+// zero" rather than "positive". Foundation 48 inferred it from the key and got
+// it wrong; Foundation 49 read it and added tools/resource_strings so a
+// claimed message that is not in a retained assembly is a test failure rather
+// than a plausible-looking sentence.
+const backBufferDimMustBePositive = "BackBufferWidth and BackBufferHeight must be greater than zero."
 
 func backBufferDimensionError() error {
 	return fmt.Errorf("%w: value: %s", errBackBufferDimension, backBufferDimMustBePositive)
@@ -113,6 +172,31 @@ func backBufferDimensionError() error {
 // init installs the accessors the Graphics package uses to reach the three
 // configuration slots whose Go enum types this package cannot name.
 func init() {
+	// The signal-delivery counter goes through the bridge rather than onto the
+	// type. An exported accessor for it would be public API the XNA contract
+	// does not declare, and the verifier says so: it was tried and reported as
+	// an UNEXPECTED_MEMBER.
+	servicebridge.SetManagerSignalReader(func(manager any) ([]int, bool) {
+		typed, ok := manager.(*GraphicsDeviceManager)
+		if !ok || typed == nil || typed.signals == nil {
+			return nil, false
+		}
+		deliveries := typed.signals.Deliveries()
+		return deliveries[:], true
+	})
+	servicebridge.SetManagerDeviceFacadeAccessors(
+		func(manager any) (any, uint64, bool) {
+			typed, ok := manager.(*GraphicsDeviceManager)
+			if !ok || typed == nil || typed.deviceFacade == nil {
+				return nil, 0, false
+			}
+			return typed.deviceFacade, typed.deviceFacadeGeneration, true
+		},
+		func(manager any, facade any, generation uint64) {
+			if typed, ok := manager.(*GraphicsDeviceManager); ok && typed != nil {
+				typed.deviceFacade, typed.deviceFacadeGeneration = facade, generation
+			}
+		})
 	servicebridge.SetManagerConfigurationAccessors(
 		func(manager any, slot servicebridge.ManagerConfigurationSlot) (int32, bool) {
 			typed, ok := manager.(*GraphicsDeviceManager)
@@ -180,6 +264,22 @@ func NewGraphicsDeviceManager(game *Game) (*GraphicsDeviceManager, error) {
 	if game == nil || game.runtime == nil {
 		return nil, errors.New("Game is nil or uninitialized")
 	}
+	// The reference's duplicate check comes BEFORE anything else is created:
+	//
+	//	if (game.Services.GetService(typeof(IGraphicsDeviceManager)) != null)
+	//	    throw new ArgumentException(Resources.GraphicsDeviceManagerAlreadyPresent);
+	//
+	// It is an ArgumentException with no parameter name, unlike the null check
+	// above it, and that difference is the reference's own.
+	//
+	// The order is load-bearing rather than tidy. CNA refuses a second native
+	// manager itself, with its own message -- "A GraphicsDeviceManager is
+	// already registered with this Game." -- so creating first and checking
+	// afterwards reports CNA's sentence where the reference reports
+	// Microsoft's, and leaves an orphaned native manager to unwind.
+	if existing, _ := game.Services().GetService(graphicsDeviceManagerServiceType); existing != nil {
+		return nil, fmt.Errorf("%w: %s", errManagerArgument, graphicsDeviceManagerAlreadyPresent)
+	}
 	resource, err := game.runtime.CreateGraphicsDeviceManager()
 	if err != nil {
 		return nil, err
@@ -187,8 +287,207 @@ func NewGraphicsDeviceManager(game *Game) (*GraphicsDeviceManager, error) {
 	manager := newGraphicsDeviceManagerState()
 	manager.runtime = game.runtime
 	manager.resource = resource
+	manager.game = game
 	interop.RegisterOwner(manager, manager.runtime, manager.resource)
+
+	if err := game.Services().AddService(graphicsDeviceManagerServiceType, manager); err != nil {
+		_ = manager.releaseNative()
+		return nil, err
+	}
+	// The SECOND registration, which is what makes Game.GraphicsDevice and
+	// DrawableGameComponent.Initialize work without a consumer supplying a
+	// service of their own. It goes through internal/servicebridge because
+	// this package can neither name IGraphicsDeviceService nor implement it:
+	// the contract's device accessor returns a Graphics-package type.
+	if err := servicebridge.PublishDeviceService(game.Services(), manager); err != nil {
+		_ = game.Services().RemoveService(graphicsDeviceManagerServiceType)
+		_ = manager.releaseNative()
+		return nil, err
+	}
+
+	// One native subscription per canonical manager event, installed on the
+	// owner thread the moment the native manager exists -- the same rule the
+	// game and window families follow, and for the same reason.
+	signals, subscribeErr := interop.SubscribeManagerEvents(resource, manager.raiseNativeManagerEvent)
+	if subscribeErr != nil {
+		_ = servicebridge.UnpublishDeviceService(game.Services(), manager)
+		_ = game.Services().RemoveService(graphicsDeviceManagerServiceType)
+		_ = manager.releaseNative()
+		return nil, subscribeErr
+	}
+	manager.signals = signals
+
+	// The reference also subscribes three GameWindow handlers here --
+	// ClientSizeChanged, ScreenDeviceNameChanged and OrientationChanged -- and
+	// CNA-Go deliberately does not. All three run PRIVATE handlers whose work
+	// is resizing and re-orienting the back buffer, which is exactly what
+	// CNA's own manager already does from its own subscriptions. Adding Go
+	// subscriptions would run that work twice.
 	return manager, nil
+}
+
+// releaseNative undoes the native half of construction when a later step of the
+// constructor fails, so a refused registration leaves no orphaned manager.
+func (m *GraphicsDeviceManager) releaseNative() error {
+	if m.resource == nil {
+		return nil
+	}
+	err := m.resource.Dispose()
+	interop.UnregisterOwner(m)
+	return err
+}
+
+// raiseNativeManagerEvent is the private end of the native manager bridge. It
+// is not a projected member and is not reachable from outside this package.
+//
+// Each identity goes to the reference's own raise path. The four device events
+// reach the protected On... methods, which is where the reference's private
+// HandleDeviceLost, HandleDeviceReset, HandleDeviceResetting and
+// HandleDisposing send them; the disposal signal raises the Disposed event
+// directly, because the reference has no protected raiser for it.
+func (m *GraphicsDeviceManager) raiseNativeManagerEvent(event uint32) error {
+	if m == nil {
+		return nil
+	}
+	switch event {
+	case interop.ManagerEventDeviceCreated:
+		return m.OnDeviceCreated(m, EventArgsEmpty())
+	case interop.ManagerEventDeviceDisposing:
+		return m.OnDeviceDisposing(m, EventArgsEmpty())
+	case interop.ManagerEventDeviceReset:
+		return m.OnDeviceReset(m, EventArgsEmpty())
+	case interop.ManagerEventDeviceResetting:
+		return m.OnDeviceResetting(m, EventArgsEmpty())
+	case interop.ManagerEventDisposed:
+		return m.disposed.Raise(m, EventArgsEmpty())
+	default:
+		return nil
+	}
+}
+
+// The four protected raisers. Every one is the same 22-byte body:
+//
+//	if (this.<event> != null) this.<event>(sender, args);
+//
+// They pass the caller's sender and args through, and the native bridge above
+// calls them with the manager and EventArgs.Empty -- which is what the
+// reference's own private handlers pass.
+
+// OnDeviceCreated is GraphicsDeviceManager::OnDeviceCreated.
+func (m *GraphicsDeviceManager) OnDeviceCreated(sender any, args *EventArgs) error {
+	return m.deviceCreated.Raise(sender, args)
+}
+
+// OnDeviceDisposing is GraphicsDeviceManager::OnDeviceDisposing.
+func (m *GraphicsDeviceManager) OnDeviceDisposing(sender any, args *EventArgs) error {
+	return m.deviceDisposing.Raise(sender, args)
+}
+
+// OnDeviceReset is GraphicsDeviceManager::OnDeviceReset.
+func (m *GraphicsDeviceManager) OnDeviceReset(sender any, args *EventArgs) error {
+	return m.deviceReset.Raise(sender, args)
+}
+
+// OnDeviceResetting is GraphicsDeviceManager::OnDeviceResetting.
+func (m *GraphicsDeviceManager) OnDeviceResetting(sender any, args *EventArgs) error {
+	return m.deviceResetting.Raise(sender, args)
+}
+
+// The five event accessor pairs. The first four are also the canonical
+// IGraphicsDeviceService events, which is why the adapter the Graphics package
+// registers forwards straight to them.
+
+// AddDeviceCreatedHandler registers a handler for
+// GraphicsDeviceManager::DeviceCreated.
+func (m *GraphicsDeviceManager) AddDeviceCreatedHandler(handler EventHandler[*EventArgs]) (EventSubscription, error) {
+	return m.deviceCreated.Add(handler)
+}
+
+// RemoveDeviceCreatedHandler removes the registration the token names.
+func (m *GraphicsDeviceManager) RemoveDeviceCreatedHandler(subscription EventSubscription) error {
+	return m.deviceCreated.Remove(subscription)
+}
+
+// AddDeviceResettingHandler registers a handler for DeviceResetting.
+func (m *GraphicsDeviceManager) AddDeviceResettingHandler(handler EventHandler[*EventArgs]) (EventSubscription, error) {
+	return m.deviceResetting.Add(handler)
+}
+
+// RemoveDeviceResettingHandler removes the registration the token names.
+func (m *GraphicsDeviceManager) RemoveDeviceResettingHandler(subscription EventSubscription) error {
+	return m.deviceResetting.Remove(subscription)
+}
+
+// AddDeviceResetHandler registers a handler for DeviceReset.
+func (m *GraphicsDeviceManager) AddDeviceResetHandler(handler EventHandler[*EventArgs]) (EventSubscription, error) {
+	return m.deviceReset.Add(handler)
+}
+
+// RemoveDeviceResetHandler removes the registration the token names.
+func (m *GraphicsDeviceManager) RemoveDeviceResetHandler(subscription EventSubscription) error {
+	return m.deviceReset.Remove(subscription)
+}
+
+// AddDeviceDisposingHandler registers a handler for DeviceDisposing.
+func (m *GraphicsDeviceManager) AddDeviceDisposingHandler(handler EventHandler[*EventArgs]) (EventSubscription, error) {
+	return m.deviceDisposing.Add(handler)
+}
+
+// RemoveDeviceDisposingHandler removes the registration the token names.
+func (m *GraphicsDeviceManager) RemoveDeviceDisposingHandler(subscription EventSubscription) error {
+	return m.deviceDisposing.Remove(subscription)
+}
+
+// AddDisposedHandler registers a handler for GraphicsDeviceManager::Disposed,
+// which has no protected raiser: the reference invokes the delegate field
+// directly from the end of Dispose(bool).
+func (m *GraphicsDeviceManager) AddDisposedHandler(handler EventHandler[*EventArgs]) (EventSubscription, error) {
+	return m.disposed.Add(handler)
+}
+
+// RemoveDisposedHandler removes the registration the token names.
+func (m *GraphicsDeviceManager) RemoveDisposedHandler(subscription EventSubscription) error {
+	return m.disposed.Remove(subscription)
+}
+
+// The three IGraphicsDeviceManager operations. In the reference all three are
+// PRIVATE explicit interface implementations, so they are interface WITNESSES
+// rather than declared public members of this type -- exported here only
+// because Go has no explicit implementation and an interface a type satisfies
+// needs exported method names.
+
+// CreateDevice is IGraphicsDeviceManager::CreateDevice, which the reference
+// implements as `ChangeDevice(true)`. Game::Initialize calls it, so a consumer
+// normally never does.
+func (m *GraphicsDeviceManager) CreateDevice() error {
+	if m == nil || m.resource == nil {
+		return errors.New("GraphicsDeviceManager is nil or uninitialized")
+	}
+	return interop.ManagerCreateDevice(m.resource)
+}
+
+// BeginDraw is IGraphicsDeviceManager::BeginDraw:
+//
+//	if (!EnsureDevice()) return false;
+//	beginDrawOk = true;
+//	return true;
+//
+// The Boolean is the source result -- whether drawing may proceed -- and stays
+// a channel separate from the error, exactly as the contract declares it.
+func (m *GraphicsDeviceManager) BeginDraw() (bool, error) {
+	if m == nil || m.resource == nil {
+		return false, errors.New("GraphicsDeviceManager is nil or uninitialized")
+	}
+	return interop.ManagerBeginDraw(m.resource)
+}
+
+// EndDraw is IGraphicsDeviceManager::EndDraw, which presents the frame and
+// swallows DeviceLostException and DeviceNotResetException.
+func (m *GraphicsDeviceManager) EndDraw() error {
+	if m == nil || m.resource == nil {
+		return errors.New("GraphicsDeviceManager is nil or uninitialized")
+	}
+	return interop.ManagerEndDraw(m.resource)
 }
 
 // newGraphicsDeviceManagerState is the reference constructor's FIELD
@@ -377,16 +676,73 @@ func (m *GraphicsDeviceManager) ToggleFullScreen() error {
 	return interop.ManagerApplyChanges(m.resource)
 }
 
-// Dispose releases the owned manager. The native handle is retained if CNA
-// refuses destruction, allowing an owner-thread retry.
+// Dispose is GraphicsDeviceManager::Dispose(bool), whose whole body is behind
+// `if (disposing)` and whose first act is to unregister the two services it
+// registered -- and only when the registration is still its own:
+//
+//	if (game != null) {
+//	    if (game.Services.GetService(typeof(IGraphicsDeviceService)) == this)
+//	        game.Services.RemoveService(typeof(IGraphicsDeviceService));
+//	    ... the same for IGraphicsDeviceManager ...
+//	}
+//	... dispose the device, raise Disposed ...
+//
+// The native handle is retained if CNA refuses destruction, allowing an
+// owner-thread retry.
 func (m *GraphicsDeviceManager) Dispose(disposing bool) error {
-	_ = disposing
 	if m == nil || m.resource == nil {
 		return nil
 	}
+	if !disposing {
+		return nil
+	}
+	if m.game != nil {
+		_ = servicebridge.UnpublishDeviceService(m.game.Services(), m)
+		if registered, _ := m.game.Services().GetService(graphicsDeviceManagerServiceType); registered == any(m) {
+			_ = m.game.Services().RemoveService(graphicsDeviceManagerServiceType)
+		}
+	}
+	// The registrations are released BEFORE the handle is destroyed, and the
+	// Disposed event is raised from HERE rather than from a native signal.
+	// Both halves of that are the reference's own shape and one of them is
+	// also an upstream crash avoided.
+	//
+	// The reference raises Disposed from the end of Dispose(bool) and from
+	// nowhere else -- the field is private and the type declares no protected
+	// raiser for it -- which is exactly the situation Foundation 39 settled for
+	// Game.Disposed. So the native disposal signal is bound, delivered and
+	// counted, and raises nothing public: it is a LIFECYCLE_ONLY signal.
+	//
+	// Releasing first is what makes that unambiguous. CNA may raise its own
+	// disposal signal from destruction, and a registration still installed
+	// would turn one managed raise into two.
+	//
+	// cna_graphics_device_manager_dispose is deliberately NOT called, and the
+	// first reason is sufficient on its own: the event that call exists to
+	// raise is raised HERE, from the reference's own raise site, so calling it
+	// would produce a second Disposed nobody asked for.
+	//
+	// It was also observed to SEGFAULT once, when a stress game disposed its
+	// manager from UnloadContent during the run teardown. That is recorded as
+	// an observation rather than as an upstream defect: a standalone C
+	// reproduction was attempted in four shapes -- from unload_content, from
+	// exiting, after run returned, and with the manager still alive across
+	// cna_game_destroy -- and none of them crashed, so the trigger is not
+	// understood and CNA is not accused of it.
+	//
+	// The route is therefore not bound either. It was, briefly, and the
+	// binding outlived its only call site; the reachability check in
+	// tools/native_abi named it, because a bound route nothing calls reports a
+	// boundary wider than the one that is measured.
+	releaseErr := m.signals.Release()
+	m.signals = nil
 	if err := m.resource.Dispose(); err != nil {
 		return err
 	}
 	interop.UnregisterOwner(m)
-	return nil
+	raiseErr := m.disposed.Raise(m, EventArgsEmpty())
+	if releaseErr != nil {
+		return releaseErr
+	}
+	return raiseErr
 }

@@ -103,13 +103,60 @@ type ManagerConfigurationReader func(manager any, slot ManagerConfigurationSlot)
 // dirty-flag raise and native push the framework-package setters do.
 type ManagerConfigurationWriter func(manager any, slot ManagerConfigurationSlot, value int32) error
 
+// DeviceServicePublisher registers a GraphicsDeviceManager into a Game's
+// service container under Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService.
+//
+// The framework package cannot do it itself for two reasons, and only the
+// second is obvious: it cannot build the reflect.Type token, and the manager
+// cannot IMPLEMENT the contract at all, because the contract's GraphicsDevice
+// accessor returns a Graphics-package type. So the Graphics package registers
+// a small adapter over the manager rather than the manager itself, which is the
+// one observable difference from the reference and is recorded as such.
+//
+// unregister removes it again, and only when the registration is still the one
+// this manager published -- the reference's Dispose checks the same thing with
+// `GetService(...) == this`.
+type DeviceServicePublisher func(services any, manager any) error
+type DeviceServiceUnpublisher func(services any, manager any) error
+
 var (
 	mu            sync.RWMutex
 	resolver      DeviceServiceResolver
 	reader        ComponentServiceReader
 	managerReader ManagerConfigurationReader
 	managerWriter ManagerConfigurationWriter
+	publisher     DeviceServicePublisher
+	unpublisher   DeviceServiceUnpublisher
+	facadeReader  ManagerDeviceFacadeReader
+	facadeWriter  ManagerDeviceFacadeWriter
+	signalReader  ManagerSignalReader
 )
+
+// ManagerSignalReader reports how many times each canonical GraphicsDeviceManager
+// signal has been delivered to one manager.
+//
+// It exists because a signal that raises a consumer event leaves no other
+// trace to count, and it lives HERE rather than on the manager because a
+// counter is not part of the XNA contract: an exported accessor for it would
+// be an UNEXPECTED_MEMBER, which is exactly what the verifier said when it was
+// tried. Only tools inside the module can reach this package.
+type ManagerSignalReader func(manager any) ([]int, bool)
+
+// ManagerDeviceFacadeReader and ManagerDeviceFacadeWriter carry the ONE
+// GraphicsDevice facade a manager hands out.
+//
+// GraphicsDeviceManager::device is a field in the reference, so repeated reads
+// of GraphicsDevice return the same object -- the same identity property
+// Game.Window has, and for the same reason: a consumer compares it, stores it
+// and passes it around. The facade type lives in the Graphics package and the
+// field on a framework-package object, so neither side can hold it alone.
+//
+// The generation travels with it because a facade outlives nothing: each Run
+// gets a new one, and a facade cached across that boundary would answer a
+// stale generation forever instead of being replaced as the reference replaces
+// its field.
+type ManagerDeviceFacadeReader func(manager any) (facade any, generation uint64, ok bool)
+type ManagerDeviceFacadeWriter func(manager any, facade any, generation uint64)
 
 // SetDeviceServiceResolver installs the Graphics package's resolver. It is
 // called once, from that package's init, and installing a second one is a
@@ -184,4 +231,91 @@ func WriteManagerConfiguration(manager any, slot ManagerConfigurationSlot, value
 		return errors.New("no GraphicsDeviceManager configuration writer is installed")
 	}
 	return current(manager, slot, value)
+}
+
+// SetDeviceServicePublisher installs the Graphics package's publisher pair,
+// from that package's init.
+func SetDeviceServicePublisher(publish DeviceServicePublisher, unpublish DeviceServiceUnpublisher) {
+	mu.Lock()
+	defer mu.Unlock()
+	publisher, unpublisher = publish, unpublish
+}
+
+// PublishDeviceService registers the manager's adapter, or does nothing when no
+// publisher is installed.
+//
+// Doing nothing is the correct answer rather than a failure, and it is the same
+// argument the resolver makes: a program that never imported the Graphics
+// package can neither name IGraphicsDeviceService nor resolve one, so a
+// registration nobody could look up would be invisible either way.
+func PublishDeviceService(services any, manager any) error {
+	mu.RLock()
+	current := publisher
+	mu.RUnlock()
+	if current == nil {
+		return nil
+	}
+	return current(services, manager)
+}
+
+// UnpublishDeviceService removes the registration this manager published.
+func UnpublishDeviceService(services any, manager any) error {
+	mu.RLock()
+	current := unpublisher
+	mu.RUnlock()
+	if current == nil {
+		return nil
+	}
+	return current(services, manager)
+}
+
+// SetManagerDeviceFacadeAccessors installs the framework package's pair, from
+// that package's init.
+func SetManagerDeviceFacadeAccessors(read ManagerDeviceFacadeReader, write ManagerDeviceFacadeWriter) {
+	mu.Lock()
+	defer mu.Unlock()
+	facadeReader, facadeWriter = read, write
+}
+
+// ReadManagerDeviceFacade returns the cached facade and the generation it was
+// built for.
+func ReadManagerDeviceFacade(manager any) (any, uint64, bool) {
+	mu.RLock()
+	current := facadeReader
+	mu.RUnlock()
+	if current == nil {
+		return nil, 0, false
+	}
+	return current(manager)
+}
+
+// WriteManagerDeviceFacade stores the facade for a generation.
+func WriteManagerDeviceFacade(manager any, facade any, generation uint64) {
+	mu.RLock()
+	current := facadeWriter
+	mu.RUnlock()
+	if current == nil {
+		return
+	}
+	current(manager, facade, generation)
+}
+
+// SetManagerSignalReader installs the framework package's reader, from that
+// package's init.
+func SetManagerSignalReader(read ManagerSignalReader) {
+	mu.Lock()
+	defer mu.Unlock()
+	signalReader = read
+}
+
+// ReadManagerSignalDeliveries reports the per-identity delivery counts, or that
+// there is nothing to report.
+func ReadManagerSignalDeliveries(manager any) ([]int, bool) {
+	mu.RLock()
+	current := signalReader
+	mu.RUnlock()
+	if current == nil {
+		return nil, false
+	}
+	return current(manager)
 }

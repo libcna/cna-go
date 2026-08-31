@@ -214,7 +214,11 @@ func TestPackedVectorMappedContract(t *testing.T) {
 		sourceTotal += expected.source
 		mappedTotal += expected.mapped
 	}
-	if sourceTotal != 171 || mappedTotal != 189 || len(surface.InterfaceWitnesses) != 25 {
+	// The witness total is 28 rather than 25 from Foundation 49: the
+	// PackedVector family contributes the same 25, and GraphicsDeviceManager
+	// contributes the three IGraphicsDeviceManager operations the reference
+	// implements explicitly.
+	if sourceTotal != 171 || mappedTotal != 189 || len(surface.InterfaceWitnesses) != 28 {
 		t.Fatalf("PackedVector totals = source %d mapped %d witnesses %d", sourceTotal, mappedTotal, len(surface.InterfaceWitnesses))
 	}
 
@@ -784,7 +788,7 @@ func TestDisplayOrientationGraphicsManagerCurrentSurfaceAndSelectedClosure(t *te
 	closure := result.DisplayOrientationClosure
 	if closure.Status != "PASS" || closure.SourceTypes != 2 || closure.SourceIdentities != 6 || closure.MappedGoIdentities != 6 ||
 		closure.TargetTypes != 2 || closure.TargetGoIdentities != 6 || closure.DisplayOrientationLocalDiagnostics != 0 ||
-		closure.SupportedPropertyLocalDiagnostics != 0 || closure.GraphicsManagerRemainingMissing != 20 || len(closure.SliceMeasurements) != 2 {
+		closure.SupportedPropertyLocalDiagnostics != 0 || closure.GraphicsManagerRemainingMissing != graphicsManagerRemainingMissing || len(closure.SliceMeasurements) != 2 {
 		t.Fatalf("DisplayOrientation/GDM closure = %+v", closure)
 	}
 	for _, row := range closure.SliceMeasurements {
@@ -910,7 +914,7 @@ func TestPackedVectorCurrentSurfaceAndConformance(t *testing.T) {
 		t.Fatalf("type errors: %v", actual.TypeErrors)
 	}
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	if result.Summary["INTERFACE_WITNESS_PROJECTIONS"] != 25 || result.Summary["PACKFROMVECTOR4_WITNESS_PROJECTIONS"] != 17 || result.Summary["TOVECTOR4_WITNESS_PROJECTIONS"] != 8 {
+	if result.Summary["INTERFACE_WITNESS_PROJECTIONS"] != 28 || result.Summary["PACKFROMVECTOR4_WITNESS_PROJECTIONS"] != 17 || result.Summary["TOVECTOR4_WITNESS_PROJECTIONS"] != 8 {
 		t.Fatalf("witness counters = %v", result.Summary)
 	}
 	if len(result.PackedInterfaceConformance) != 17 || len(result.PackedVectorTypeMeasurements) != 19 {
@@ -8205,5 +8209,78 @@ func TestMappingRulesDeclareTheSameManagedStoredMembersAsTheRegistry(t *testing.
 	}
 	if len(documented) != len(registry) {
 		t.Fatalf("mapping-rules.json documents %d managed-stored members, the table holds %d", len(documented), len(registry))
+	}
+}
+
+// TestWitnessOwnerRegistryMatchesTheRulesFile keeps the documented witness
+// owners and the executable gate from drifting.
+//
+// The gate decides which types get interface witnesses at all, and a witness is
+// the one thing that turns an exported method the contract does not declare
+// from an UNEXPECTED_MEMBER into an admitted one. A registry entry that existed
+// only in code would quietly admit a member the report never mentions.
+func TestWitnessOwnerRegistryMatchesTheRulesFile(t *testing.T) {
+	data, err := os.ReadFile("mapping-rules.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rules struct {
+		Witnesses struct {
+			RegisteredOwners map[string][]string `json:"registeredOwners"`
+		} `json:"interfaceWitnessProjections"`
+	}
+	if err := json.Unmarshal(data, &rules); err != nil {
+		t.Fatal(err)
+	}
+	documented := map[string]bool{}
+	for owner, interfaces := range rules.Witnesses.RegisteredOwners {
+		for _, identity := range interfaces {
+			documented[owner+"|"+identity] = true
+		}
+	}
+	registry := map[string]bool{}
+	for owner, interfaces := range explicitInterfaceWitnessOwners {
+		for identity := range interfaces {
+			registry[owner+"|"+identity] = true
+		}
+	}
+	for entry := range registry {
+		if !documented[entry] {
+			t.Fatalf("%q gets interface witnesses but mapping-rules.json does not say so", entry)
+		}
+	}
+	for entry := range documented {
+		if !registry[entry] {
+			t.Fatalf("mapping-rules.json documents witnesses for %q that the gate does not admit", entry)
+		}
+	}
+	if len(registry) == 0 {
+		t.Fatal("the witness owner registry is empty, so this test measures nothing")
+	}
+}
+
+// TestTheDeviceServiceContractIsDeliberatelyUnwitnessed pins the decision the
+// registry's absence encodes, so it cannot be "fixed" by adding an entry
+// without someone reading why it is not there.
+func TestTheDeviceServiceContractIsDeliberatelyUnwitnessed(t *testing.T) {
+	const manager = "Microsoft.Xna.Framework.GraphicsDeviceManager"
+	const service = "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService"
+	if explicitInterfaceWitnessOwners[manager][service] {
+		t.Fatal("IGraphicsDeviceService is registered for witnesses; no framework-package type can declare its device accessor")
+	}
+	data, err := os.ReadFile("mapping-rules.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rules struct {
+		Witnesses struct {
+			Unregistered map[string]string `json:"deliberatelyUnregistered"`
+		} `json:"interfaceWitnessProjections"`
+	}
+	if err := json.Unmarshal(data, &rules); err != nil {
+		t.Fatal(err)
+	}
+	if reason := rules.Witnesses.Unregistered[manager+"|"+service]; reason == "" {
+		t.Fatal("mapping-rules.json records no reason for leaving IGraphicsDeviceService unwitnessed")
 	}
 }

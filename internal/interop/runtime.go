@@ -1057,6 +1057,147 @@ func (r *Runtime) GameDevice() (*Device, error) {
 	return &Device{runtime: r, generation: r.Generation(), ownership: borrowed}, nil
 }
 
+// The five canonical GraphicsDeviceManager signal identities. This family is
+// the profile's THIRD independent numbering, and unlike the other two its
+// device events do not start at zero: Disposed is 0.
+const (
+	ManagerEventDisposed        uint32 = 0
+	ManagerEventDeviceCreated   uint32 = 1
+	ManagerEventDeviceDisposing uint32 = 2
+	ManagerEventDeviceReset     uint32 = 3
+	ManagerEventDeviceResetting uint32 = 4
+
+	managerEventCount = 5
+)
+
+// ManagerEventCount is the canonical manager-signal identity count.
+const ManagerEventCount = managerEventCount
+
+// ManagerSignals owns one manager's five native subscriptions and the
+// cgo.Handle they carry as context.
+//
+// The context is per MANAGER rather than per Runtime, unlike the game and
+// window families: those two belong to the game itself and there is one, while
+// a manager is an object a consumer creates and a signal has to reach the one
+// that was subscribed.
+type ManagerSignals struct {
+	mu            sync.Mutex
+	runtime       *Runtime
+	handle        cgo.Handle
+	registrations [managerEventCount]uint64
+	sink          func(event uint32) error
+	deliveries    [managerEventCount]int
+	released      bool
+}
+
+// SubscribeManagerEvents installs one native subscription per canonical manager
+// event, on the owner thread, the moment the native manager exists.
+func SubscribeManagerEvents(manager *Resource, sink func(event uint32) error) (*ManagerSignals, error) {
+	if sink == nil {
+		return nil, errors.New("manager signal sink must not be nil")
+	}
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return nil, err
+	}
+	signals := &ManagerSignals{runtime: manager.runtime, sink: sink}
+	signals.handle = cgo.NewHandle(signals)
+	registrations, subscribeErr := nativeManagerSubscribeEvents(handle, uintptr(signals.handle))
+	if subscribeErr != nil {
+		signals.handle.Delete()
+		return nil, subscribeErr
+	}
+	signals.registrations = registrations
+	return signals, nil
+}
+
+// Release releases every installed registration exactly once and deletes the
+// context handle. It is idempotent, because a second release would hand CNA a
+// stale registration and CNA answers that with CNA_RESULT_INVALID_HANDLE.
+func (s *ManagerSignals) Release() error {
+	if s == nil {
+		return nil
+	}
+	s.mu.Lock()
+	if s.released {
+		s.mu.Unlock()
+		return nil
+	}
+	s.released = true
+	registrations := s.registrations
+	s.registrations = [managerEventCount]uint64{}
+	handle := s.handle
+	s.handle = 0
+	s.mu.Unlock()
+	err := nativeManagerUnsubscribeEvents(&registrations)
+	handle.Delete()
+	return err
+}
+
+// Deliveries reports how many times each canonical manager signal arrived, for
+// native qualification only.
+func (s *ManagerSignals) Deliveries() [managerEventCount]int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.deliveries
+}
+
+// deliver routes one signal to the sink with the containment every trampoline
+// applies: a Go panic never crosses the C frame, and a handler failure is
+// recorded on the runtime rather than dropped.
+func (s *ManagerSignals) deliver(event uint32) {
+	s.mu.Lock()
+	sink := s.sink
+	released := s.released
+	if int(event) < managerEventCount {
+		s.deliveries[event]++
+	}
+	s.mu.Unlock()
+	if released || sink == nil {
+		return
+	}
+	var err error
+	func() {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				err = fmt.Errorf("panic in GraphicsDeviceManager event handler: %v\n%s", recovered, debug.Stack())
+			}
+		}()
+		err = sink(event)
+	}()
+	if err != nil && s.runtime != nil {
+		s.runtime.recordCallbackFailure(err)
+	}
+}
+
+// ManagerCreateDevice, ManagerBeginDraw and ManagerEndDraw are the three
+// IGraphicsDeviceManager operations. In the reference all three are PRIVATE
+// explicit interface implementations, so they are not part of the type's
+// declared public member set -- they are interface witnesses.
+func ManagerCreateDevice(manager *Resource) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerCreateDevice(handle)
+}
+
+func ManagerBeginDraw(manager *Resource) (bool, error) {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return false, err
+	}
+	return nativeManagerBeginDraw(handle)
+}
+
+func ManagerEndDraw(manager *Resource) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerEndDraw(handle)
+}
+
 // managerHandle resolves a live GraphicsDeviceManager handle on the owner
 // thread. Unlike DeviceForManager it does NOT require an active lifecycle
 // callback: the reference's setters are managed field stores a consumer makes

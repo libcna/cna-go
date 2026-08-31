@@ -82,7 +82,19 @@ enum {
     CNA_GO_GAME_WINDOW_EVENT_CLIENT_SIZE_CHANGED = 0,
     CNA_GO_GAME_WINDOW_EVENT_ORIENTATION_CHANGED = 1,
     CNA_GO_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED = 2,
-    CNA_GO_GAME_WINDOW_EVENT_COUNT = 3
+    CNA_GO_GAME_WINDOW_EVENT_COUNT = 3,
+
+    /* The five canonical GraphicsDeviceManager event identities. This family
+       does NOT start its device events at zero: DISPOSED is 0 and
+       DEVICE_CREATED is 1, unlike the game and window families whose first
+       identity is a device-independent one. A table indexed as if the three
+       agreed would be off by one. */
+    CNA_GO_GDM_EVENT_DISPOSED = 0,
+    CNA_GO_GDM_EVENT_DEVICE_CREATED = 1,
+    CNA_GO_GDM_EVENT_DEVICE_DISPOSING = 2,
+    CNA_GO_GDM_EVENT_DEVICE_RESET = 3,
+    CNA_GO_GDM_EVENT_DEVICE_RESETTING = 4,
+    CNA_GO_GDM_EVENT_COUNT = 5
 };
 
 /* The encoded-version arithmetic, mirrored from CNA_ABI_VERSION_ENCODE in the
@@ -192,6 +204,19 @@ CnaGoResult cna_go_graphics_device_manager_set_preferred_depth_stencil_format(Cn
 CnaGoResult cna_go_graphics_device_manager_set_synchronize_with_vertical_retrace(CnaGoHandle manager, uint8_t synchronize);
 CnaGoResult cna_go_graphics_device_manager_set_supported_orientations(CnaGoHandle manager, uint32_t orientations);
 CnaGoResult cna_go_graphics_device_manager_apply_changes(CnaGoHandle manager);
+CnaGoResult cna_go_graphics_device_manager_create_device(CnaGoHandle manager);
+CnaGoResult cna_go_graphics_device_manager_begin_draw(CnaGoHandle manager, uint8_t* out_should_draw);
+CnaGoResult cna_go_graphics_device_manager_end_draw(CnaGoHandle manager);
+
+/* Installs exactly one native subscription per canonical manager event. The
+   context is a per-MANAGER handle rather than the runtime's, because a game may
+   in principle hold more than one manager object and a signal has to reach the
+   one that was subscribed. */
+CnaGoResult cna_go_graphics_device_manager_subscribe_events(
+    CnaGoHandle manager,
+    uintptr_t context,
+    CnaGoHandle* out_registrations);
+CnaGoResult cna_go_graphics_device_manager_unsubscribe_events(CnaGoHandle* registrations);
 CnaGoResult cna_go_game_get_graphics_device(CnaGoHandle game, CnaGoHandle* out_device);
 CnaGoResult cna_go_graphics_device_get_viewport(
     CnaGoHandle device,

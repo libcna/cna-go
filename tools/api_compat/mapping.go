@@ -1490,11 +1490,53 @@ func buildMappedInterfacesAndWitnesses(surface *expectedSurface, byIdentity map[
 				mapped.TypeArguments = append(mapped.TypeArguments, mapType(surface, byIdentity, owner, argument))
 			}
 			owner.MappedInterfaces = append(owner.MappedInterfaces, mapped)
-			if contractOwner.Kind == "struct" && strings.HasPrefix(owner.XNA, packedVectorNamespace) {
+			if witnessedInterface(contractOwner, owner, identity) {
 				collectInterfaceWitnesses(surface, byIdentity, owner, interfaceType, mapped.TypeArguments, map[string]bool{})
 			}
 		}
 	}
+}
+
+// explicitInterfaceWitnessOwners names the non-PackedVector types whose
+// EXPLICIT CLR interface implementations are projected as Go witnesses.
+//
+// A CLR type may implement an interface member privately, and the contract's
+// public member set then does not carry it. Go has no explicit implementation,
+// so the method has to exist and be exported for the type to satisfy the
+// interface at all -- which is what a witness is, and why a witness is not an
+// unexpected member.
+//
+// It is a registry rather than "every mapped direct interface" because the
+// second is not the same rule. Two things must both be true before a witness is
+// required, and only the first is visible in the contract: the member must be
+// absent from the public set, AND the Go type must be ABLE to declare it. The
+// registry is where the second is recorded.
+//
+// GraphicsDeviceManager's OTHER direct interface,
+// Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService, is deliberately
+// absent for exactly that reason. The manager is a framework-package type and
+// that contract's GraphicsDevice accessor returns a Graphics-package type, so
+// the manager cannot implement it in Go at all; the Graphics package registers
+// a small adapter over it instead, and requiring witnesses here would demand
+// methods no Go type in that package could ever declare.
+var explicitInterfaceWitnessOwners = map[string]map[string]bool{
+	// The three IGraphicsDeviceManager operations are `private hidebysig
+	// newslot virtual final` with an `.override`, so the contract's public
+	// member set has none of them -- yet Game resolves the interface out of
+	// Services and calls all three once per frame.
+	"Microsoft.Xna.Framework.GraphicsDeviceManager": {
+		"Microsoft.Xna.Framework.IGraphicsDeviceManager": true,
+	},
+}
+
+// witnessedInterface reports whether one owner/interface pair produces
+// witnesses. The PackedVector structs are admitted as a family because all
+// nineteen implement IPackedVector<T> the same way; everything else is named.
+func witnessedInterface(contractOwner *contractType, owner *expectedType, interfaceIdentity string) bool {
+	if contractOwner.Kind == "struct" && strings.HasPrefix(owner.XNA, packedVectorNamespace) {
+		return true
+	}
+	return explicitInterfaceWitnessOwners[owner.XNA][interfaceIdentity]
 }
 
 func collectInterfaceWitnesses(surface *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, interfaceType *contractType, arguments []string, visited map[string]bool) {
@@ -2240,7 +2282,7 @@ var gameBaseCallAdapters = map[string]gameBaseCallAdapter{
 		},
 		Deferred: []gameBaseCallDeferral{
 			{Step: "HookDeviceEvents()", Class: "ARCHITECTURE",
-				Reason: "it resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Services and subscribes four device handlers to it. The contract lives in the GRAPHICS package, which imports the framework package, so the settled cross-package cycle rule already projects Game's device-typed members into the descendant package and the framework package cannot name the type. Independently, nothing in CNA-Go can publish that service: the reference's registrar is GraphicsDeviceManager, whose CNA-Go projection is a partial native-backed facade satisfying neither IGraphicsDeviceService nor IGraphicsDeviceManager, so GetService would find nothing to store"},
+				Reason: "it resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Services and subscribes four device handlers to it. The contract lives in the GRAPHICS package, which imports the framework package, so the settled cross-package cycle rule already projects Game's device-typed members into the descendant package and the framework package cannot name the type. This deferral rested on a SECOND ground until Foundation 49 -- that nothing in CNA-Go could publish the service at all -- and that ground is retired: GraphicsDeviceManager's constructor now registers an adapter under IGraphicsDeviceService, and GetService finds it. What remains is the naming ground alone"},
 			{Step: "if (graphicsDeviceService != null && ...) LoadContent()", Class: "ARCHITECTURE",
 				Reason: "its condition is the field HookDeviceEvents assigns, so with no device service the reference does not call LoadContent from Initialize either. CNA-Go's LoadContent arrives from the native CNA load_content callback, whose documented order is initialize, then the runtime's own component and device setup, then load_content"},
 		},

@@ -16,11 +16,13 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
 	"github.com/openeggbert/cna-go/internal/interop"
+	"github.com/openeggbert/cna-go/internal/servicebridge"
 )
 
 type counters struct {
@@ -121,6 +123,21 @@ type counters struct {
 	ManagerApplyChanges     int `json:"GRAPHICS_MANAGER_APPLY_CHANGES"`
 	ManagerToggleChecks     int `json:"GRAPHICS_MANAGER_TOGGLE_FULL_SCREEN_CHECKS"`
 	ManagerWrongThreadCheck int `json:"GRAPHICS_MANAGER_WRONG_THREAD_CHECKS"`
+
+	ManagerServiceChecks       int `json:"GRAPHICS_MANAGER_SERVICE_REGISTRATION_CHECKS"`
+	ManagerDuplicateChecks     int `json:"GRAPHICS_MANAGER_DUPLICATE_REGISTRATION_CHECKS"`
+	ManagerGameDeviceChecks    int `json:"GRAPHICS_MANAGER_GAME_GRAPHICS_DEVICE_CHECKS"`
+	ManagerDrawableChecks      int `json:"GRAPHICS_MANAGER_DRAWABLE_COMPONENT_CHECKS"`
+	ManagerEventRaiseChecks    int `json:"GRAPHICS_MANAGER_EVENT_RAISE_CHECKS"`
+	ManagerServiceRemovalCheck int `json:"GRAPHICS_MANAGER_SERVICE_REMOVAL_CHECKS"`
+	// The five canonical manager signals. HEADLESS creates its device once and
+	// never loses or resets it, so the reset and disposing counters are
+	// expected to stay at zero and are recorded rather than asserted.
+	ManagerSignalDeviceCreated   int `json:"GRAPHICS_MANAGER_SIGNAL_DEVICE_CREATED_DELIVERIES"`
+	ManagerSignalDeviceReset     int `json:"GRAPHICS_MANAGER_SIGNAL_DEVICE_RESET_DELIVERIES"`
+	ManagerSignalDeviceResetting int `json:"GRAPHICS_MANAGER_SIGNAL_DEVICE_RESETTING_DELIVERIES"`
+	ManagerSignalDeviceDisposing int `json:"GRAPHICS_MANAGER_SIGNAL_DEVICE_DISPOSING_DELIVERIES"`
+	ManagerSignalDisposed        int `json:"GRAPHICS_MANAGER_SIGNAL_DISPOSED_DELIVERIES"`
 }
 
 type stressReport struct {
@@ -406,6 +423,30 @@ func runParent() (counters, error) {
 	if total.ManagerRangeChecks < 20 || total.ManagerApplyChanges < 20 ||
 		total.ManagerToggleChecks < 20 || total.ManagerWrongThreadCheck < 20 {
 		return total, errors.New("a graphics-manager range, apply, toggle or thread proof did not run in every cycle")
+	}
+	// Foundation 49. The manager registers itself under both service contracts,
+	// which is what finally makes Game.GraphicsDevice and
+	// DrawableGameComponent.Initialize work with no consumer-supplied service.
+	if total.ManagerServiceChecks != 2*total.ManagerCycles {
+		return total, fmt.Errorf("%d service-registration checks across %d cycles, want two per cycle",
+			total.ManagerServiceChecks, total.ManagerCycles)
+	}
+	if total.ManagerDuplicateChecks < 20 || total.ManagerServiceRemovalCheck < 20 {
+		return total, errors.New("the duplicate-registration or service-removal proof did not run in every cycle")
+	}
+	if total.ManagerGameDeviceChecks < 20 || total.ManagerDrawableChecks < 20 {
+		return total, errors.New("Game.GraphicsDevice or DrawableGameComponent did not resolve the published service in every cycle")
+	}
+	if total.ManagerEventRaiseChecks != 4*total.ManagerCycles {
+		return total, fmt.Errorf("%d manager raiser checks across %d cycles, want four per cycle",
+			total.ManagerEventRaiseChecks, total.ManagerCycles)
+	}
+	// The device-created signal is the one HEADLESS actually produces, and it
+	// must arrive at least once per cycle: it is what proves the native
+	// subscription is installed and routed rather than merely accepted.
+	if total.ManagerSignalDeviceCreated < total.ManagerCycles {
+		return total, fmt.Errorf("%d device-created signals across %d cycles, want at least one per cycle",
+			total.ManagerSignalDeviceCreated, total.ManagerCycles)
 	}
 	return total, nil
 }
@@ -2010,9 +2051,157 @@ func (g *graphicsManagerGame) Initialize(host *framework.Game) error {
 	}
 	g.result.ManagerToggleChecks++
 
+	// ------------------------------------------------------------------
+	// Foundation 49. The two service registrations the constructor makes, and
+	// what they unlock.
+	// ------------------------------------------------------------------
+
+	// Registration one: the manager itself, under the framework-package
+	// IGraphicsDeviceManager contract. It is the manager object, not an
+	// adapter, because that contract is nameable from the framework package.
+	registeredManager, err := host.Services().GetService(
+		reflect.TypeOf((*framework.IGraphicsDeviceManager)(nil)).Elem())
+	if err != nil || registeredManager == nil {
+		return fmt.Errorf("IGraphicsDeviceManager is not registered: %v %v", registeredManager, err)
+	}
+	if registeredManager != any(manager) {
+		return errors.New("IGraphicsDeviceManager resolves to something other than the manager itself")
+	}
+	g.result.ManagerServiceChecks++
+
+	// Registration two: an adapter over the manager, under the
+	// Graphics-package IGraphicsDeviceService contract. It is an adapter
+	// because no framework-package type can declare that contract's device
+	// accessor, and its identity is stable across resolutions.
+	registeredService, err := host.Services().GetService(
+		reflect.TypeOf((*graphics.IGraphicsDeviceService)(nil)).Elem())
+	if err != nil || registeredService == nil {
+		return fmt.Errorf("IGraphicsDeviceService is not registered: %v %v", registeredService, err)
+	}
+	service, ok := registeredService.(graphics.IGraphicsDeviceService)
+	if !ok {
+		return errors.New("the registered device service does not satisfy the contract")
+	}
+	again, _ := host.Services().GetService(reflect.TypeOf((*graphics.IGraphicsDeviceService)(nil)).Elem())
+	if again != registeredService {
+		return errors.New("the device service adapter is not a stable identity")
+	}
+	g.result.ManagerServiceChecks++
+
+	// A second manager is refused with the reference's own ArgumentException.
+	if _, duplicateErr := framework.NewGraphicsDeviceManager(host); duplicateErr == nil {
+		return errors.New("a second GraphicsDeviceManager was accepted")
+	} else if !strings.Contains(duplicateErr.Error(), "A graphics device manager is already registered.") {
+		return fmt.Errorf("a second manager reported %v, want the reference's message", duplicateErr)
+	}
+	g.result.ManagerDuplicateChecks++
+
+	// THE PAYOFF. Game.GraphicsDevice has reported the reference's
+	// InvalidOperationException since Foundation 43, because CNA-Go published
+	// no service of its own and only a consumer could register one. It now
+	// resolves the manager's.
+	gameDevice, gameDeviceErr := graphics.GameGraphicsDevice(host)
+	if gameDeviceErr != nil {
+		return fmt.Errorf("Game.GraphicsDevice with a published service: %w", gameDeviceErr)
+	}
+	if gameDevice != service.GraphicsDevice() {
+		return errors.New("Game.GraphicsDevice answered a device other than the published service's")
+	}
+	g.result.ManagerGameDeviceChecks++
+
+	// And DrawableGameComponent.Initialize, which threw
+	// MissingGraphicsDeviceService for the same reason, now resolves and
+	// subscribes.
+	component := framework.NewDrawableGameComponent(host)
+	if err := component.Initialize(); err != nil {
+		return fmt.Errorf("DrawableGameComponent.Initialize with a published service: %w", err)
+	}
+	componentDevice, componentErr := graphics.DrawableGameComponentGraphicsDevice(component)
+	if componentErr != nil {
+		return fmt.Errorf("DrawableGameComponent.GraphicsDevice: %w", componentErr)
+	}
+	if componentDevice != service.GraphicsDevice() {
+		return errors.New("the component resolved a different device from the published service's")
+	}
+	if err := component.Dispose(true); err != nil {
+		return fmt.Errorf("component Dispose: %w", err)
+	}
+	g.result.ManagerDrawableChecks++
+
+	// The four protected raisers reach a consumer's handlers on the live
+	// manager, which is the surface the device service publishes.
+	raises := map[string]int{}
+	for name, add := range map[string]func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error){
+		"created":   manager.AddDeviceCreatedHandler,
+		"resetting": manager.AddDeviceResettingHandler,
+		"reset":     manager.AddDeviceResetHandler,
+		"disposing": manager.AddDeviceDisposingHandler,
+	} {
+		key := name
+		if _, err := add(func(sender any, args *framework.EventArgs) error {
+			raises[key]++
+			return nil
+		}); err != nil {
+			return fmt.Errorf("subscribe %s: %w", name, err)
+		}
+	}
+	for name, raise := range map[string]func(any, *framework.EventArgs) error{
+		"created":   manager.OnDeviceCreated,
+		"resetting": manager.OnDeviceResetting,
+		"reset":     manager.OnDeviceReset,
+		"disposing": manager.OnDeviceDisposing,
+	} {
+		if err := raise(manager, framework.EventArgsEmpty()); err != nil {
+			return fmt.Errorf("On%s: %w", name, err)
+		}
+		if raises[name] != 1 {
+			return fmt.Errorf("On%s reached its handler %d times", name, raises[name])
+		}
+		g.result.ManagerEventRaiseChecks++
+	}
+
+	// CreateDevice is the operation that would raise DeviceCreated. It is one
+	// of the three IGraphicsDeviceManager witnesses and is called here for two
+	// reasons: it is the only way to exercise that witness against a live
+	// manager, and it is the raise site the signal counters below measure.
+	if err := manager.CreateDevice(); err != nil {
+		return fmt.Errorf("CreateDevice: %w", err)
+	}
+	shouldDraw, beginErr := manager.BeginDraw()
+	if beginErr != nil {
+		return fmt.Errorf("BeginDraw: %w", beginErr)
+	}
+	if shouldDraw {
+		if err := manager.EndDraw(); err != nil {
+			return fmt.Errorf("EndDraw: %w", err)
+		}
+	}
+
+	// The native signals CNA actually delivered. The counter is read through
+	// internal/servicebridge rather than from the manager, because an exported
+	// accessor for it would be public API the XNA contract does not declare.
+	deliveries, haveDeliveries := servicebridge.ReadManagerSignalDeliveries(manager)
+	if !haveDeliveries || len(deliveries) != interop.ManagerEventCount {
+		return fmt.Errorf("manager signal deliveries unavailable: %v %d", haveDeliveries, len(deliveries))
+	}
+	g.result.ManagerSignalDisposed += deliveries[interop.ManagerEventDisposed]
+	g.result.ManagerSignalDeviceCreated += deliveries[interop.ManagerEventDeviceCreated]
+	g.result.ManagerSignalDeviceDisposing += deliveries[interop.ManagerEventDeviceDisposing]
+	g.result.ManagerSignalDeviceReset += deliveries[interop.ManagerEventDeviceReset]
+	g.result.ManagerSignalDeviceResetting += deliveries[interop.ManagerEventDeviceResetting]
+
 	if err := manager.Dispose(true); err != nil {
 		return fmt.Errorf("Dispose: %w", err)
 	}
+	// Dispose unregisters both services, and only its own: the reference's own
+	// `if (GetService(...) == this)` guard.
+	afterManager, _ := host.Services().GetService(reflect.TypeOf((*framework.IGraphicsDeviceManager)(nil)).Elem())
+	afterService, _ := host.Services().GetService(reflect.TypeOf((*graphics.IGraphicsDeviceService)(nil)).Elem())
+	if afterManager != nil || afterService != nil {
+		return fmt.Errorf("Dispose left registrations behind: manager=%v service=%v", afterManager != nil, afterService != nil)
+	}
+	g.result.ManagerServiceRemovalCheck++
+
 	g.result.ManagerCycles++
 	return nil
 }

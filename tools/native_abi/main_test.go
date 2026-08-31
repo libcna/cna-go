@@ -217,6 +217,40 @@ var bridgeMutations = []sourceMutation{
 	// is why the width and height routes, both CNA_Result(CNA_Handle, int32_t),
 	// are separated by the loader's dladdr identity check rather than by the
 	// compiler.
+	// Foundation 49's manager signal family. It is the profile's THIRD
+	// numbering and the only one whose device events do not start at zero, so
+	// a table indexed as if the three agreed is off by one -- and every value
+	// involved is a plausible member of the other two families.
+	{
+		name: "manager-event-identity-drift",
+		file: "abi_manifest.h",
+		old:  "#define CNA_GO_MANIFEST_GDM_EVENT_DEVICE_RESET UINT32_C(3)",
+		new:  "#define CNA_GO_MANIFEST_GDM_EVENT_DEVICE_RESET UINT32_C(4)",
+	},
+	{
+		name: "bridge-manager-mirror-drift",
+		file: "bridge.h",
+		old:  "    CNA_GO_GDM_EVENT_DEVICE_CREATED = 1,",
+		new:  "    CNA_GO_GDM_EVENT_DEVICE_CREATED = 0,",
+	},
+	{
+		name: "manager-event-count-drift",
+		file: "bridge.h",
+		old:  "    CNA_GO_GDM_EVENT_COUNT = 5",
+		new:  "    CNA_GO_GDM_EVENT_COUNT = 4",
+	},
+	{
+		name: "missing-manager-subscribe-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_graphics_device_manager_subscribe) \\\n",
+		new:  "",
+	},
+	{
+		name: "missing-manager-begin-draw-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_graphics_device_manager_begin_draw) \\\n",
+		new:  "",
+	},
 	{
 		name: "missing-manager-apply-changes-symbol",
 		file: "abi_manifest.h",
@@ -319,6 +353,18 @@ var probeMutations = []sourceMutation{
 		file: "abi_manifest.h",
 		old:  "typedef CNA_Result (*cna_graphics_device_manager_set_preferred_back_buffer_width_fn)(CNA_Handle, int32_t);",
 		new:  "typedef CNA_Result (*cna_graphics_device_manager_set_preferred_back_buffer_width_fn)(CNA_Handle, int16_t);",
+	},
+	{
+		name: "manager-subscribe-swaps-the-callback-and-the-context",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_manager_subscribe_fn)(CNA_Handle, CNA_GraphicsDeviceManagerEvent, CNA_GameEventCallback, void*, CNA_GameEventRegistrationHandle*);",
+		new:  "typedef CNA_Result (*cna_graphics_device_manager_subscribe_fn)(CNA_Handle, CNA_GraphicsDeviceManagerEvent, void*, CNA_GameEventCallback, CNA_GameEventRegistrationHandle*);",
+	},
+	{
+		name: "manager-begin-draw-drops-the-out-parameter",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_manager_begin_draw_fn)(CNA_Handle, CNA_Bool*);",
+		new:  "typedef CNA_Result (*cna_graphics_device_manager_begin_draw_fn)(CNA_Handle);",
 	},
 	{
 		name: "manager-full-screen-takes-an-int",

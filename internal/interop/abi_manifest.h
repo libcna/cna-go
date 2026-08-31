@@ -37,6 +37,16 @@ typedef struct CNA_Color { uint8_t r; uint8_t g; uint8_t b; uint8_t a; } CNA_Col
 #define CNA_GO_MANIFEST_GAME_WINDOW_EVENT_ORIENTATION_CHANGED UINT32_C(1)
 #define CNA_GO_MANIFEST_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED UINT32_C(2)
 
+/* The five canonical GRAPHICS DEVICE MANAGER event identities. A third
+   numbering, and this one does NOT start its device events at zero: DISPOSED
+   is 0 and DEVICE_CREATED is 1, so a table indexed as if it matched either of
+   the other two families would be off by one. */
+#define CNA_GO_MANIFEST_GDM_EVENT_DISPOSED UINT32_C(0)
+#define CNA_GO_MANIFEST_GDM_EVENT_DEVICE_CREATED UINT32_C(1)
+#define CNA_GO_MANIFEST_GDM_EVENT_DEVICE_DISPOSING UINT32_C(2)
+#define CNA_GO_MANIFEST_GDM_EVENT_DEVICE_RESET UINT32_C(3)
+#define CNA_GO_MANIFEST_GDM_EVENT_DEVICE_RESETTING UINT32_C(4)
+
 #ifndef CNA_C_RUNTIME_H
 typedef struct CNA_GameTime {
     int64_t total_game_time_ticks;
@@ -96,6 +106,17 @@ typedef uint32_t CNA_GameWindowEvent;
 #define CNA_GAME_WINDOW_EVENT_ORIENTATION_CHANGED CNA_GO_MANIFEST_GAME_WINDOW_EVENT_ORIENTATION_CHANGED
 #define CNA_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED CNA_GO_MANIFEST_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED
 #define CNA_GAME_WINDOW_EVENT_MAXIMUM CNA_GAME_WINDOW_EVENT_SCREEN_DEVICE_NAME_CHANGED
+#endif
+
+#ifndef CNA_C_RUNTIME_GRAPHICS_MANAGER_H
+typedef CNA_Handle CNA_GraphicsDeviceManagerHandle;
+typedef uint32_t CNA_GraphicsDeviceManagerEvent;
+#define CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DISPOSED CNA_GO_MANIFEST_GDM_EVENT_DISPOSED
+#define CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_CREATED CNA_GO_MANIFEST_GDM_EVENT_DEVICE_CREATED
+#define CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_DISPOSING CNA_GO_MANIFEST_GDM_EVENT_DEVICE_DISPOSING
+#define CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_RESET CNA_GO_MANIFEST_GDM_EVENT_DEVICE_RESET
+#define CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_RESETTING CNA_GO_MANIFEST_GDM_EVENT_DEVICE_RESETTING
+#define CNA_GRAPHICS_DEVICE_MANAGER_EVENT_MAXIMUM CNA_GRAPHICS_DEVICE_MANAGER_EVENT_DEVICE_RESETTING
 #endif
 
 #ifndef CNA_C_GRAPHICS_DEVICE_H
@@ -190,6 +211,10 @@ typedef CNA_Result (*cna_graphics_device_manager_set_preferred_depth_stencil_for
 typedef CNA_Result (*cna_graphics_device_manager_set_synchronize_with_vertical_retrace_fn)(CNA_Handle, CNA_Bool);
 typedef CNA_Result (*cna_graphics_device_manager_set_supported_orientations_fn)(CNA_Handle, uint32_t);
 typedef CNA_Result (*cna_graphics_device_manager_apply_changes_fn)(CNA_Handle);
+typedef CNA_Result (*cna_graphics_device_manager_subscribe_fn)(CNA_Handle, CNA_GraphicsDeviceManagerEvent, CNA_GameEventCallback, void*, CNA_GameEventRegistrationHandle*);
+typedef CNA_Result (*cna_graphics_device_manager_create_device_fn)(CNA_Handle);
+typedef CNA_Result (*cna_graphics_device_manager_begin_draw_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_graphics_device_manager_end_draw_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_get_viewport_fn)(CNA_Handle, CNA_Viewport*);
 typedef CNA_Result (*cna_graphics_device_clear_rgba_fn)(CNA_Handle, float, float, float, float);
@@ -261,6 +286,10 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_graphics_device_manager_set_synchronize_with_vertical_retrace) \
     X(cna_graphics_device_manager_set_supported_orientations) \
     X(cna_graphics_device_manager_apply_changes) \
+    X(cna_graphics_device_manager_subscribe) \
+    X(cna_graphics_device_manager_create_device) \
+    X(cna_graphics_device_manager_begin_draw) \
+    X(cna_graphics_device_manager_end_draw) \
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \

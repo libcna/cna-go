@@ -36,11 +36,11 @@
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
     "INTERFACE_MAPPING_MISMATCH": 0,
-    "INTERFACE_WITNESS_PROJECTIONS": 25,
+    "INTERFACE_WITNESS_PROJECTIONS": 28,
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 123,
+    "MISSING_MEMBER": 109,
     "MISSING_TYPE": 133,
     "MISSING_TYPES": 133,
     "OPERATOR_MAPPING_MISMATCH": 0,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1882,
+    "TARGET_MEMBERS": 1896,
     "TARGET_TYPES": 124,
-    "TOTAL_DIAGNOSTICS": 256,
+    "TOTAL_DIAGNOSTICS": 242,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1330,80 +1330,8 @@
     },
     {
       "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceCreated(System.Object,System.EventArgs)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceCreated",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceDisposing(System.Object,System.EventArgs)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceDisposing",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceReset(System.Object,System.EventArgs)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceReset",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceResetting(System.Object,System.EventArgs)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceResetting",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::OnPreparingDeviceSettings(System.Object,Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs)",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnPreparingDeviceSettings",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceCreated()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceCreatedHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceCreated()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDeviceCreatedHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceResetting()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceResettingHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceResetting()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDeviceResettingHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceReset()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceResetHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceReset()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDeviceResetHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceDisposing()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceDisposingHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceDisposing()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDeviceDisposingHandler",
       "message": "mapped Go member is absent"
     },
     {
@@ -1416,18 +1344,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreparingDeviceSettings()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemovePreparingDeviceSettingsHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::Disposed()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDisposedHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::Disposed()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDisposedHandler",
       "message": "mapped Go member is absent"
     },
     {
@@ -1870,27 +1786,13 @@
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager",
       "missingMembers": [
         "Microsoft.Xna.Framework.GraphicsDeviceManager::CanResetDevice(Microsoft.Xna.Framework.GraphicsDeviceInformation) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.CanResetDevice",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceCreated() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceCreatedHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceCreated() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDeviceCreatedHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceDisposing() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceDisposingHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceDisposing() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDeviceDisposingHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceReset() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceResetHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceReset() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDeviceResetHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceResetting() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceResettingHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceResetting() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDeviceResettingHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::Disposed() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDisposedHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::Disposed() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDisposedHandler",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::FindBestDevice(System.Boolean) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.FindBestDevice",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceCreated(System.Object,System.EventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceCreated",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceDisposing(System.Object,System.EventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceDisposing",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceReset(System.Object,System.EventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceReset",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceResetting(System.Object,System.EventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceResetting",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::OnPreparingDeviceSettings(System.Object,Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnPreparingDeviceSettings",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::PreparingDeviceSettings() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddPreparingDeviceSettingsHandler",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::PreparingDeviceSettings() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemovePreparingDeviceSettingsHandler",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::RankDevices(System.Collections.Generic.List`1[Microsoft.Xna.Framework.GraphicsDeviceInformation]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RankDevices"
       ],
-      "diagnostics": 20
+      "diagnostics": 6
     }
   ],
   "missingTypes": [
@@ -2252,6 +2154,33 @@
       "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
       "reason": "exported Go method required to witness an explicit CLR interface implementation",
       "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.GraphicsDeviceManager",
+      "member": "BeginDraw",
+      "sourceInterface": "Microsoft.Xna.Framework.IGraphicsDeviceManager",
+      "interfaceMember": "Microsoft.Xna.Framework.IGraphicsDeviceManager::BeginDraw()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "BeginDraw() (bool,error)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.GraphicsDeviceManager",
+      "member": "CreateDevice",
+      "sourceInterface": "Microsoft.Xna.Framework.IGraphicsDeviceManager",
+      "interfaceMember": "Microsoft.Xna.Framework.IGraphicsDeviceManager::CreateDevice()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "CreateDevice() error",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.GraphicsDeviceManager",
+      "member": "EndDraw",
+      "sourceInterface": "Microsoft.Xna.Framework.IGraphicsDeviceManager",
+      "interfaceMember": "Microsoft.Xna.Framework.IGraphicsDeviceManager::EndDraw()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "EndDraw() error",
       "status": "PASS"
     }
   ],
@@ -2704,7 +2633,7 @@
     "targetGoIdentities": 6,
     "displayOrientationLocalDiagnostics": 0,
     "supportedOrientationsLocalDiagnostics": 0,
-    "graphicsDeviceManagerRemainingMissingMembers": 20,
+    "graphicsDeviceManagerRemainingMissingMembers": 6,
     "status": "PASS",
     "sliceMeasurements": [
       {
@@ -8655,7 +8584,7 @@
         {
           "step": "HookDeviceEvents()",
           "class": "ARCHITECTURE",
-          "reason": "it resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Services and subscribes four device handlers to it. The contract lives in the GRAPHICS package, which imports the framework package, so the settled cross-package cycle rule already projects Game's device-typed members into the descendant package and the framework package cannot name the type. Independently, nothing in CNA-Go can publish that service: the reference's registrar is GraphicsDeviceManager, whose CNA-Go projection is a partial native-backed facade satisfying neither IGraphicsDeviceService nor IGraphicsDeviceManager, so GetService would find nothing to store",
+          "reason": "it resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Services and subscribes four device handlers to it. The contract lives in the GRAPHICS package, which imports the framework package, so the settled cross-package cycle rule already projects Game's device-typed members into the descendant package and the framework package cannot name the type. This deferral rested on a SECOND ground until Foundation 49 -- that nothing in CNA-Go could publish the service at all -- and that ground is retired: GraphicsDeviceManager's constructor now registers an adapter under IGraphicsDeviceService, and GetService finds it. What remains is the naming ground alone",
           "observable": false
         },
         {
@@ -9826,7 +9755,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "4f39f86dcaa1458addadd6b1ba8b18bb02b8a1c921bd94080e18003e77b07332",
+    "mappingSha256": "7f123b385b501c8ca693e6baeda522987188837f68acaf85b42cc40bc52fac9e",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

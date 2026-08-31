@@ -240,6 +240,15 @@
  },
  "interfaceWitnessProjections": {
   "admission": "exported-method-required-by-an-actual-mapped-direct-interface-and-absent-from-the-public-declared-source-member-set",
+  "owners": "the PackedVector structs as a family, plus an explicit registry; a witness is required only where the Go type CAN declare the method, which the contract cannot say on its own",
+  "registeredOwners": {
+   "Microsoft.Xna.Framework.GraphicsDeviceManager": [
+    "Microsoft.Xna.Framework.IGraphicsDeviceManager"
+   ]
+  },
+  "deliberatelyUnregistered": {
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService": "the manager is a framework-package type and the contract's GraphicsDevice accessor returns a Graphics-package type, so no Go type in the framework package can declare it; the Graphics package registers an adapter over the manager instead, and only reference equality with the manager differs from the reference"
+  },
   "counting": "measured-separately-from-reference-and-expected-go-member-identities",
   "validation": "compiler-extracted-exact-signature-and-go-types-interface-satisfaction",
   "unexpectedPolicy": "any-unrequired-or-misconfigured-public-method-remains-an-ordinary-diagnostic",

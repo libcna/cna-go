@@ -2833,11 +2833,36 @@ func runCorpus() corpusReport {
 			framework.GraphicsDeviceManagerDefaultBackBufferWidth(),
 			framework.GraphicsDeviceManagerDefaultBackBufferHeight()))
 
-	// The two dimension setters are the type's ONLY validation, and the
-	// comparison is `bgt` on zero: zero is rejected, one is accepted.
+	// The constructor's first check, which comes before anything is created.
 	dimensionManager, dimensionErr := framework.NewGraphicsDeviceManager(nil)
 	check("graphics-device-manager.a-nil-game-is-refused", "GRAPHICS_DEVICE_MANAGER",
 		"true,true", fmt.Sprintf("%t,%t", dimensionManager == nil, dimensionErr != nil))
+
+	// The type implements IGraphicsDeviceManager -- privately in the
+	// reference, as three `.override`s, so the three methods are interface
+	// WITNESSES rather than declared members. It does NOT implement
+	// IGraphicsDeviceService and cannot: that contract's device accessor
+	// returns a Graphics-package type, so the Graphics package registers an
+	// adapter over the manager instead.
+	var managerAsLifecycle any = &framework.GraphicsDeviceManager{}
+	_, managerImplementsLifecycle := managerAsLifecycle.(framework.IGraphicsDeviceManager)
+	_, managerImplementsService := managerAsLifecycle.(graphics.IGraphicsDeviceService)
+	check("graphics-device-manager.implements-the-lifecycle-contract-and-not-the-service", "GRAPHICS_DEVICE_MANAGER",
+		"true,false", fmt.Sprintf("%t,%t", managerImplementsLifecycle, managerImplementsService))
+
+	// The five events, and the one difference between them: four have a
+	// protected raiser and Disposed does not, because the reference invokes
+	// that delegate field directly from the end of Dispose(bool).
+	managerType := reflect.TypeOf((*framework.GraphicsDeviceManager)(nil))
+	managerRaisers := 0
+	for _, name := range []string{"OnDeviceCreated", "OnDeviceResetting", "OnDeviceReset", "OnDeviceDisposing"} {
+		if _, ok := managerType.MethodByName(name); ok {
+			managerRaisers++
+		}
+	}
+	_, managerHasDisposedRaiser := managerType.MethodByName("OnDisposed")
+	check("graphics-device-manager.four-raisers-and-no-disposed-raiser", "GRAPHICS_DEVICE_MANAGER",
+		"4,false", fmt.Sprintf("%d,%t", managerRaisers, managerHasDisposedRaiser))
 
 	// ------------------------------------------------------------------
 	// Foundation 47. The two frame steps. Their real evidence is
