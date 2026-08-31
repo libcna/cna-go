@@ -40,7 +40,7 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 80,
+    "MISSING_MEMBER": 76,
     "MISSING_TYPE": 132,
     "MISSING_TYPES": 132,
     "OPERATOR_MAPPING_MISMATCH": 0,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1931,
+    "TARGET_MEMBERS": 1937,
     "TARGET_TYPES": 125,
-    "TOTAL_DIAGNOSTICS": 212,
+    "TOTAL_DIAGNOSTICS": 208,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -533,37 +533,37 @@
     {
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int32[],System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndSliceOfInt32AndInt32AndInt32",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32",
       "message": "mapped Go member is absent"
     },
     {
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int16[],System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndSliceOfInt16AndInt32AndInt32",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32",
       "message": "mapped Go member is absent"
     },
     {
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int32[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndSliceOfInt32AndInt32AndInt32AndVertexDeclaration",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32AndVertexDeclaration",
       "message": "mapped Go member is absent"
     },
     {
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int16[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndSliceOfInt16AndInt32AndInt32AndVertexDeclaration",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32AndVertexDeclaration",
       "message": "mapped Go member is absent"
     },
     {
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32",
       "message": "mapped Go member is absent"
     },
     {
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndVertexDeclaration",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndVertexDeclaration",
       "message": "mapped Go member is absent"
     },
     {
@@ -593,19 +593,19 @@
     {
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetBackBufferDataByNullableOfRectangleAndSliceOf0AndInt32AndInt32",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataByNullableOfRectangleAndSliceOfTAndInt32AndInt32",
       "message": "mapped Go member is absent"
     },
     {
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[],System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetBackBufferDataBySliceOf0AndInt32AndInt32",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataBySliceOfTAndInt32AndInt32",
       "message": "mapped Go member is absent"
     },
     {
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[])",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetBackBufferDataBySliceOf0",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataBySliceOfT",
       "message": "mapped Go member is absent"
     },
     {
@@ -1029,42 +1029,6 @@
       "message": "mapped Go type is absent"
     },
     {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(!!0[])",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataBySliceOf0",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(!!0[],System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataBySliceOf0AndInt32AndInt32",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(System.Int32,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataByInt32AndNullableOfRectangleAndSliceOf0AndInt32AndInt32",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(!!0[])",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataBySliceOf0",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(!!0[],System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataBySliceOf0AndInt32AndInt32",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(System.Int32,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataByInt32AndNullableOfRectangleAndSliceOf0AndInt32AndInt32",
-      "message": "mapped Go member is absent"
-    },
-    {
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.Texture3D",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture3D",
@@ -1351,6 +1315,18 @@
       "xna": "Microsoft.Xna.Framework.TitleContainer",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:TitleContainer",
       "message": "mapped Go type is absent"
+    },
+    {
+      "category": "MISSING_MEMBER",
+      "xna": "Microsoft.Xna.Framework.Graphics.Texture::Format()",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D",
+      "message": "a public member inherited from a DEFERRED XNA base is not projected, so the type cannot be complete"
+    },
+    {
+      "category": "MISSING_MEMBER",
+      "xna": "Microsoft.Xna.Framework.Graphics.Texture::LevelCount()",
+      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D",
+      "message": "a public member inherited from a DEFERRED XNA base is not projected, so the type cannot be complete"
     }
   ],
   "completeTypes": [
@@ -1508,16 +1484,16 @@
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawIndexedPrimitives",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawInstancedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawInstancedPrimitives",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawPrimitives",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int16[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndSliceOfInt16AndInt32AndInt32",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int16[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndSliceOfInt16AndInt32AndInt32AndVertexDeclaration",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int32[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndSliceOfInt32AndInt32AndInt32",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int32[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndSliceOfInt32AndInt32AndInt32AndVertexDeclaration",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawUserPrimitivesByPrimitiveTypeAndSliceOf0AndInt32AndInt32AndVertexDeclaration",
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int16[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32",
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int16[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32AndVertexDeclaration",
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int32[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32",
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int32[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32AndVertexDeclaration",
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32",
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndVertexDeclaration",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Finalize() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.Finalize",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetBackBufferDataBySliceOf0",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetBackBufferDataBySliceOf0AndInt32AndInt32",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetBackBufferDataByNullableOfRectangleAndSliceOf0AndInt32AndInt32",
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataBySliceOfT",
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataBySliceOfTAndInt32AndInt32",
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataByNullableOfRectangleAndSliceOfTAndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetRenderTargets() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetRenderTargets",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetVertexBuffers() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetVertexBuffers",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Indices() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.Indices",
@@ -1565,14 +1541,10 @@
     {
       "xna": "Microsoft.Xna.Framework.Graphics.Texture2D",
       "missingMembers": [
-        "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(!!0[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataBySliceOf0",
-        "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataBySliceOf0AndInt32AndInt32",
-        "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(System.Int32,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataByInt32AndNullableOfRectangleAndSliceOf0AndInt32AndInt32",
-        "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(!!0[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataBySliceOf0",
-        "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataBySliceOf0AndInt32AndInt32",
-        "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(System.Int32,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataByInt32AndNullableOfRectangleAndSliceOf0AndInt32AndInt32"
+        "Microsoft.Xna.Framework.Graphics.Texture::Format()",
+        "Microsoft.Xna.Framework.Graphics.Texture::LevelCount()"
       ],
-      "diagnostics": 6
+      "diagnostics": 2
     },
     {
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager",

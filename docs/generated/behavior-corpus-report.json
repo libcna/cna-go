@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 684,
-    "ASSERTIONS": 684,
+    "OBSERVATIONS": 687,
+    "ASSERTIONS": 687,
     "FAILURES": 0
   },
   "observations": [
@@ -5341,6 +5341,30 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,3",
       "actual": "true,3",
+      "passed": true
+    },
+    {
+      "id": "texture2d.set-data-is-not-a-method-because-go-forbids-it",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false",
+      "actual": "false",
+      "passed": true
+    },
+    {
+      "id": "texture2d.element-widths-match-cna",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "4,2",
+      "actual": "4,2",
+      "passed": true
+    },
+    {
+      "id": "texture2d.disposal-is-reported-before-the-element-type",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
       "passed": true
     },
     {

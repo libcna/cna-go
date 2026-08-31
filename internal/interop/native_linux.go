@@ -295,6 +295,30 @@ func nativeTextureCopyEncoded(texture uint64, imageFormat, width, height uint32,
 	return uint64(written), resultError("cna_texture2d_copy_encoded", code)
 }
 
+func nativeTextureSetData(texture uint64, dataType uint32, transfer TextureTransfer, data unsafe.Pointer, capacity uint64) error {
+	rectangle := C.uint8_t(0)
+	if transfer.HasRectangle {
+		rectangle = 1
+	}
+	return resultError("cna_texture2d_set_data", uint32(C.cna_go_texture2d_set_data(
+		C.CnaGoHandle(texture), C.uint32_t(dataType), C.int32_t(transfer.Level), rectangle,
+		C.int32_t(transfer.X), C.int32_t(transfer.Y), C.int32_t(transfer.Width), C.int32_t(transfer.Height),
+		C.uint64_t(transfer.StartIndex), C.uint64_t(transfer.ElementCount), data, C.uint64_t(capacity))))
+}
+
+func nativeTextureGetData(texture uint64, dataType uint32, transfer TextureTransfer, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	rectangle := C.uint8_t(0)
+	if transfer.HasRectangle {
+		rectangle = 1
+	}
+	var required C.uint64_t
+	code := uint32(C.cna_go_texture2d_get_data(
+		C.CnaGoHandle(texture), C.uint32_t(dataType), C.int32_t(transfer.Level), rectangle,
+		C.int32_t(transfer.X), C.int32_t(transfer.Y), C.int32_t(transfer.Width), C.int32_t(transfer.Height),
+		C.uint64_t(transfer.StartIndex), C.uint64_t(transfer.ElementCount), destination, C.uint64_t(capacity), &required))
+	return uint64(required), resultError("cna_texture2d_get_data", code)
+}
+
 func nativeTextureInfo(texture uint64) (TextureInfo, error) {
 	var width, height, levels, format C.uint32_t
 	code := uint32(C.cna_go_texture2d_get_info(C.CnaGoHandle(texture), &width, &height, &levels, &format))

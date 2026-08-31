@@ -8345,3 +8345,112 @@ func TestEveryWrittenStreamEntryNamesARealMember(t *testing.T) {
 		}
 	}
 }
+
+// TestAGenericInstanceMethodProjectsAsAPackageLevelFunction is the control for
+// the Foundation 54 rule. Go methods cannot declare type parameters, so a CLR
+// generic instance method has no method-shaped projection at all: it becomes a
+// package-level function whose first parameter is the receiver.
+func TestAGenericInstanceMethodProjectsAsAPackageLevelFunction(t *testing.T) {
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := symbolKey{
+		Package:  modulePath + "/Microsoft/Xna/Framework/Graphics",
+		Receiver: "",
+		Name:     "Texture2DSetDataBySliceOfT",
+	}
+	member := surface.Members[key]
+	if member == nil {
+		t.Fatalf("the generic method has no package-level projection; keys near it: %v", nearbyMemberNames(surface, "Texture2DSetData"))
+	}
+	if member.GoKind != "func" || member.Receiver != "" {
+		t.Fatalf("kind %q receiver %q, want a package-level func", member.GoKind, member.Receiver)
+	}
+	if len(member.Parameters) == 0 || member.Parameters[0] != "*Texture2D" {
+		t.Fatalf("parameters %v, want the receiver first", member.Parameters)
+	}
+	if member.Parameters[1] != "[]T" {
+		t.Fatalf("parameters %v, want the array typed by the method's own type parameter", member.Parameters)
+	}
+	if !member.GenericMethod {
+		t.Fatal("the member is not recorded as a generic method")
+	}
+}
+
+// TestAMethodTypeParameterTokenResolvesToItsDeclaredName plants the defect the
+// rule was written for: `!!0` is an IL token naming a POSITION, and before
+// Foundation 54 the suffix builder produced SliceOf0 from it.
+func TestAMethodTypeParameterTokenResolvesToItsDeclaredName(t *testing.T) {
+	generics := []genericParameter{{Name: "T", Position: 0}}
+	if got := typeShapeWithGenerics(generics, "!!0[]"); got != "SliceOfT" {
+		t.Fatalf("typeShapeWithGenerics(!!0[]) = %q, want SliceOfT", got)
+	}
+	if got := typeShapeWithGenerics(generics, "!!0"); got != "T" {
+		t.Fatalf("typeShapeWithGenerics(!!0) = %q, want T", got)
+	}
+	// With no generic parameters in scope the token is NOT silently renamed:
+	// the old behaviour is what a non-generic member would still produce, and
+	// leaving it visible is what makes a missing declaration reportable rather
+	// than disguised.
+	if got := typeShapeWithGenerics(nil, "!!0[]"); got == "SliceOfT" {
+		t.Fatal("a token with no declaration was resolved to a name")
+	}
+}
+
+// TestATypeWithUnprojectedInheritedMembersIsNotComplete is the control for the
+// second Foundation 54 rule, and it is the one the milestone tripped over:
+// Texture2D's declared surface closed, and it must still not be COMPLETE while
+// the two public members it inherits from the DEFERRED Texture are absent.
+func TestATypeWithUnprojectedInheritedMembersIsNotComplete(t *testing.T) {
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	texture2D := surface.typeForXNA("Microsoft.Xna.Framework.Graphics.Texture2D")
+	if texture2D == nil {
+		t.Fatal("Texture2D is not in the expected surface")
+	}
+	inherited := unprojectedInheritedPublicMembers(surface, texture2D)
+	if len(inherited) == 0 {
+		t.Fatal("Texture2D inherits nothing from Texture, so this test measures nothing")
+	}
+	for _, want := range []string{
+		"Microsoft.Xna.Framework.Graphics.Texture::Format()",
+		"Microsoft.Xna.Framework.Graphics.Texture::LevelCount()",
+	} {
+		found := false
+		for _, got := range inherited {
+			if got == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("%s is not reported as inherited and unprojected: %v", want, inherited)
+		}
+	}
+
+	// A type whose base is not DEFERRED contributes nothing, which is what
+	// keeps the rule from firing on every derived type in the profile.
+	component := surface.typeForXNA("Microsoft.Xna.Framework.DrawableGameComponent")
+	if component != nil && component.BaseType != "" {
+		if relationship, recorded := xnaBaseRelationships[component.BaseType]; recorded && relationship.Status != "DEFERRED" {
+			if got := unprojectedInheritedPublicMembers(surface, component); len(got) != 0 {
+				t.Fatalf("a non-deferred base contributed %v", got)
+			}
+		}
+	}
+}
+
+// nearbyMemberNames helps the first test report something usable when the key
+// it looks for is absent.
+func nearbyMemberNames(surface *expectedSurface, prefix string) []string {
+	var names []string
+	for key := range surface.Members {
+		if strings.HasPrefix(key.Name, prefix) {
+			names = append(names, key.Name)
+		}
+	}
+	sort.Strings(names)
+	return names
+}

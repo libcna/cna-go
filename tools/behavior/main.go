@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"unsafe"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	audio "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio"
@@ -3025,6 +3026,40 @@ func runCorpus() corpusReport {
 		nil, unreadStream, 4, 4, false)
 	check("texture2d.the-sized-from-stream-checks-the-device-before-reading", "TEXTURE2D",
 		"true,3", fmt.Sprintf("%t,%d", sizedErr != nil, unreadStream.Len()))
+
+	// ------------------------------------------------------------------
+	// Foundation 54. The generic-method projection rule, and the typed
+	// transfers that are its first users.
+	// ------------------------------------------------------------------
+
+	// Go methods cannot declare type parameters, so a CLR generic instance
+	// method becomes a package-level FUNCTION taking the receiver first. That
+	// is the shape a consumer has to find, and it is the whole rule in one
+	// observation: the method-shaped name does not exist.
+	texture2DType := reflect.TypeOf((*graphics.Texture2D)(nil))
+	_, hasMethodShapedSetData := texture2DType.MethodByName("SetData")
+	check("texture2d.set-data-is-not-a-method-because-go-forbids-it", "TEXTURE2D",
+		"false", fmt.Sprintf("%t", hasMethodShapedSetData))
+
+	// The element mapping is closed over CNA's eighteen identities, and its
+	// widths are what let a Go slice cross the boundary untouched. Two are
+	// asserted here by value; the full closure is an in-package test.
+	check("texture2d.element-widths-match-cna", "TEXTURE2D",
+		"4,2", fmt.Sprintf("%d,%d",
+			unsafe.Sizeof(framework.Color{}), unsafe.Sizeof(packedvector.Bgr565{})))
+
+	// The disposal check runs BEFORE the element-type check, which is the
+	// reference's order: CopyData opens with Helpers::CheckDisposed. An
+	// unbound texture handed an unmapped element type therefore reports the
+	// disposal, not the type -- and the message is asserted so this cannot
+	// pass merely because something failed.
+	//
+	// The element-type refusal itself needs a live texture to reach, so it is
+	// measured in tools/native_stress and in an in-package test.
+	unsupported := graphics.Texture2DSetDataBySliceOfT(&graphics.Texture2D{}, []int64{1})
+	check("texture2d.disposal-is-reported-before-the-element-type", "TEXTURE2D",
+		"true", fmt.Sprintf("%t",
+			unsupported != nil && errors.Is(unsupported, interop.ErrDisposed)))
 
 	// ------------------------------------------------------------------
 	// Foundation 47. The two frame steps. Their real evidence is

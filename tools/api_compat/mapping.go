@@ -1075,7 +1075,7 @@ func overloadGroups(t contractType) map[string]int {
 func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, t contractType, m contractMember, groups map[string]int) []*expectedMember {
 	xna := memberIdentity(t.Name, m)
 	base := &expectedMember{XNA: xna, Owner: t.Name, SourceKind: m.Kind, SourceAccess: m.Access, PackagePath: owner.PackagePath, Receiver: owner.GoName}
-	parameters, outResults, hasDirection := mapParameters(s, byIdentity, owner, m.Parameters)
+	parameters, outResults, hasDirection := mapParametersWithGenerics(s, byIdentity, owner, m.GenericParameters, m.Parameters)
 	base.Parameters = applyStreamDirection(xna, parameters)
 	base.Results = mapReturn(s, byIdentity, owner, m.ReturnType)
 	base.Results = append(base.Results, outResults...)
@@ -1083,7 +1083,7 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 		base.Results = append(base.Results, "error")
 		base.ErrorAdded = true
 	}
-	shape := parameterShape(m.Parameters)
+	shape := parameterShapeWithGenerics(m.GenericParameters, m.Parameters)
 
 	switch m.Kind {
 	case "constructor":
@@ -1195,13 +1195,42 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 		}
 		return result
 	case "method":
+		// # The generic-method projection rule
+		//
+		// Go METHODS CANNOT DECLARE TYPE PARAMETERS. That is a language rule,
+		// not a limitation of this binding: `func (t *Texture2D) SetData[T any]`
+		// does not compile and no arrangement of receivers makes it. A CLR
+		// generic instance method therefore has no method-shaped projection at
+		// all, and the settled response to "this member cannot be a method
+		// here" is already in the profile -- the cross-package cycle rule turns
+		// such a member into a package-level function whose FIRST parameter is
+		// the receiver.
+		//
+		// So a generic method projects as a package-level generic FUNCTION,
+		// named <Owner><Member> with the usual overload suffix, taking the
+		// receiver first. A generic STATIC method already had that shape and
+		// keeps it.
+		//
+		// The type parameter itself is named by the member: `!!0` is an IL
+		// token meaning "this method's first type parameter", and its name is
+		// in genericParameters. Before Foundation 54 nothing resolved it and
+		// the suffix builder produced `SliceOf0`, a name for a position rather
+		// than a type.
+		if len(m.GenericParameters) > 0 && !m.Static {
+			base.Receiver = ""
+			base.GoKind = "func"
+			base.Parameters = append([]string{"*" + owner.GoName}, base.Parameters...)
+			base.GenericMethod = true
+		}
 		if op, ok := operatorNames[m.Name]; ok {
 			base.GoName = owner.GoName + "Operator" + op + "By" + shape
 			base.GoKind, base.Receiver, base.OverloadMapped = "func", "", true
 		} else {
 			base.GoName = m.Name
-			base.GoKind = chooseMemberKind(m.Static)
-			if m.Static {
+			if !base.GenericMethod {
+				base.GoKind = chooseMemberKind(m.Static)
+			}
+			if m.Static || base.GenericMethod {
 				base.GoName = owner.GoName + m.Name
 				base.Receiver = ""
 			}
@@ -1284,10 +1313,14 @@ func chooseMemberKind(static bool) string {
 }
 
 func mapParameters(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, params []contractParameter) ([]string, []string, bool) {
+	return mapParametersWithGenerics(s, byIdentity, owner, nil, params)
+}
+
+func mapParametersWithGenerics(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, generics []genericParameter, params []contractParameter) ([]string, []string, bool) {
 	var inputs, outputs []string
 	hasDirection := false
 	for _, p := range params {
-		mapped := mapType(s, byIdentity, owner, p.Type)
+		mapped := mapTypeWithGenerics(s, byIdentity, owner, generics, p.Type)
 		if p.Out {
 			outputs = append(outputs, mapResultType(s, byIdentity, owner, p.Type)...)
 			hasDirection = true
@@ -1361,6 +1394,18 @@ func mapResultType(s *expectedSurface, byIdentity map[string]*contractType, owne
 		return []string{strings.TrimPrefix(mapType(s, byIdentity, owner, inner), "*"), "bool"}
 	}
 	return []string{mapType(s, byIdentity, owner, raw)}
+}
+
+// mapTypeWithGenerics is mapType plus the method's own type parameters, which
+// only a generic method has. Everything else calls mapType, which passes none.
+func mapTypeWithGenerics(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, generics []genericParameter, raw string) string {
+	if name, ok := methodTypeParameterName(generics, strings.TrimSuffix(raw, "[]")); ok {
+		if strings.HasSuffix(raw, "[]") {
+			return "[]" + name
+		}
+		return name
+	}
+	return mapType(s, byIdentity, owner, raw)
 }
 
 func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, raw string) string {
@@ -1715,6 +1760,10 @@ func splitConstructedType(raw string) (string, []string) {
 }
 
 func parameterShape(params []contractParameter) string {
+	return parameterShapeWithGenerics(nil, params)
+}
+
+func parameterShapeWithGenerics(generics []genericParameter, params []contractParameter) string {
 	if len(params) == 0 {
 		return "None"
 	}
@@ -1728,18 +1777,52 @@ func parameterShape(params []contractParameter) string {
 		} else if p.In {
 			prefix = "In"
 		}
-		parts = append(parts, prefix+typeShape(p.Type))
+		parts = append(parts, prefix+typeShapeWithGenerics(generics, p.Type))
 	}
 	return strings.Join(parts, "And")
 }
 
 var nonIdentifier = regexp.MustCompile(`[^A-Za-z0-9]+`)
 
-func typeShape(raw string) string {
+// methodTypeParameterName resolves a CLR method type-parameter token to the
+// name the method DECLARES for it.
+//
+// `!!0` is an IL token, not a type name: it means "this method's first type
+// parameter", whose name lives in the member's genericParameters. Before
+// Foundation 54 nothing resolved it, so the shape builder stripped the
+// punctuation and produced `SliceOf0` -- an overload suffix naming a position
+// rather than a type, and one no consumer could have guessed.
+func methodTypeParameterName(generics []genericParameter, raw string) (string, bool) {
+	if !strings.HasPrefix(raw, "!!") {
+		return "", false
+	}
+	position, err := strconv.Atoi(strings.TrimPrefix(raw, "!!"))
+	if err != nil {
+		return "", false
+	}
+	for _, parameter := range generics {
+		if parameter.Position == position {
+			return parameter.Name, true
+		}
+	}
+	// A token whose position the member does not declare is a contract defect,
+	// and reporting it as a name would hide it.
+	return "", false
+}
+
+func typeShape(raw string) string { return typeShapeWithGenerics(nil, raw) }
+
+func typeShapeWithGenerics(generics []genericParameter, raw string) string {
 	raw = strings.TrimSuffix(raw, "&")
 	if strings.HasPrefix(raw, "System.Nullable`1[") && strings.HasSuffix(raw, "]") {
 		inner := strings.TrimSuffix(strings.TrimPrefix(raw, "System.Nullable`1["), "]")
-		return "NullableOf" + typeShape(inner)
+		return "NullableOf" + typeShapeWithGenerics(generics, inner)
+	}
+	if name, ok := methodTypeParameterName(generics, strings.TrimSuffix(raw, "[]")); ok {
+		if strings.HasSuffix(raw, "[]") {
+			return "SliceOf" + name
+		}
+		return name
 	}
 	array := strings.HasSuffix(raw, "[]")
 	raw = strings.TrimSuffix(raw, "[]")

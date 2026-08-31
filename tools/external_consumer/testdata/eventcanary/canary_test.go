@@ -10,6 +10,7 @@ import (
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
+	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
 )
 
 func TestExternalTypeSatisfiesBothComponentContracts(t *testing.T) {
@@ -2902,4 +2903,40 @@ func TestTextureStreamSurfaceIsReachableFromOutside(t *testing.T) {
 		!strings.Contains(err.Error(), "This method does not accept null for this parameter.") {
 		t.Fatalf("a nil destination produced %v, want the reference's message", err)
 	}
+}
+
+// TestTheGenericMethodProjectionIsReachableFromOutside is where the Foundation
+// 54 rule is proved from a consumer's position, and it is the only place that
+// can: the rule is about a SHAPE, and the shape is what a consumer writes.
+//
+// C# writes `texture.SetData(pixels)`. Go cannot: methods may not declare type
+// parameters, so the member is a package-level function taking the texture
+// first, and its overload suffix names the type parameter the member declares
+// rather than the IL token's position.
+func TestTheGenericMethodProjectionIsReachableFromOutside(t *testing.T) {
+	texture := &graphics.Texture2D{}
+	pixels := make([]framework.Color, 4)
+
+	var _ func(*graphics.Texture2D, []framework.Color) error = graphics.Texture2DSetDataBySliceOfT[framework.Color]
+	var _ func(*graphics.Texture2D, []framework.Color, int32, int32) error = graphics.Texture2DSetDataBySliceOfTAndInt32AndInt32[framework.Color]
+	var _ func(*graphics.Texture2D, int32, *framework.Rectangle, []framework.Color, int32, int32) error = graphics.Texture2DSetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[framework.Color]
+	var _ func(*graphics.Texture2D, []framework.Color) error = graphics.Texture2DGetDataBySliceOfT[framework.Color]
+	var _ func(*graphics.Texture2D, []framework.Color, int32, int32) error = graphics.Texture2DGetDataBySliceOfTAndInt32AndInt32[framework.Color]
+	var _ func(*graphics.Texture2D, int32, *framework.Rectangle, []framework.Color, int32, int32) error = graphics.Texture2DGetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[framework.Color]
+
+	// The method-shaped name a C# reader would look for does not exist, which
+	// is the rule's whole consequence for a consumer.
+	if _, present := reflect.TypeOf(texture).MethodByName("SetData"); present {
+		t.Fatal("Texture2D has a SetData method; Go cannot declare one with a type parameter")
+	}
+
+	// Type inference works from the slice, so a consumer writes the type
+	// parameter only when they want to.
+	if err := graphics.Texture2DSetDataBySliceOfT(texture, pixels); err == nil {
+		t.Fatal("an unbound texture accepted a transfer")
+	}
+
+	// A packed vector is an element type too, which is what makes the mapping
+	// worth having rather than a Color special case.
+	var _ func(*graphics.Texture2D, []packedvector.Bgr565) error = graphics.Texture2DSetDataBySliceOfT[packedvector.Bgr565]
 }

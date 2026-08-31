@@ -742,6 +742,32 @@ CnaGoResult cna_go_texture2d_copy_encoded(CnaGoHandle texture, uint32_t image_fo
     return api.cna_texture2d_copy_encoded(texture, image_format, width, height, destination, capacity, out_byte_count);
 }
 
+static void cna_go_fill_texture_transfer(CNA_Texture2DTransfer* transfer, int32_t level, uint8_t has_rectangle, int32_t rect_x, int32_t rect_y, int32_t rect_width, int32_t rect_height, uint64_t start_index, uint64_t element_count) {
+    memset(transfer, 0, sizeof(*transfer));
+    transfer->struct_size = (uint32_t)sizeof(*transfer);
+    transfer->struct_version = 1;
+    transfer->level = level;
+    transfer->has_rectangle = has_rectangle;
+    transfer->rectangle.x = rect_x;
+    transfer->rectangle.y = rect_y;
+    transfer->rectangle.width = rect_width;
+    transfer->rectangle.height = rect_height;
+    transfer->start_index = start_index;
+    transfer->element_count = element_count;
+}
+
+CnaGoResult cna_go_texture2d_set_data(CnaGoHandle texture, uint32_t data_type, int32_t level, uint8_t has_rectangle, int32_t rect_x, int32_t rect_y, int32_t rect_width, int32_t rect_height, uint64_t start_index, uint64_t element_count, const void* data, uint64_t data_capacity) {
+    CNA_Texture2DTransfer transfer;
+    cna_go_fill_texture_transfer(&transfer, level, has_rectangle, rect_x, rect_y, rect_width, rect_height, start_index, element_count);
+    return api.cna_texture2d_set_data(texture, data_type, &transfer, data, data_capacity);
+}
+
+CnaGoResult cna_go_texture2d_get_data(CnaGoHandle texture, uint32_t data_type, int32_t level, uint8_t has_rectangle, int32_t rect_x, int32_t rect_y, int32_t rect_width, int32_t rect_height, uint64_t start_index, uint64_t element_count, void* destination, uint64_t destination_capacity, uint64_t* out_required_elements) {
+    CNA_Texture2DTransfer transfer;
+    cna_go_fill_texture_transfer(&transfer, level, has_rectangle, rect_x, rect_y, rect_width, rect_height, start_index, element_count);
+    return api.cna_texture2d_get_data(texture, data_type, &transfer, destination, destination_capacity, out_required_elements);
+}
+
 CnaGoResult cna_go_sprite_batch_draw_destination(CnaGoHandle batch, CnaGoHandle texture, int32_t destination_x, int32_t destination_y, int32_t destination_width, int32_t destination_height, int32_t source_x, int32_t source_y, int32_t source_width, int32_t source_height, uint8_t color_r, uint8_t color_g, uint8_t color_b, uint8_t color_a, float rotation, float origin_x, float origin_y, uint32_t effects, float layer_depth) {
     CNA_SpriteCommand command;
     memset(&command, 0, sizeof(command));

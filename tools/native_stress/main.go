@@ -94,6 +94,10 @@ type counters struct {
 	DeviceStateDecodeSizeChecks int `json:"DEVICE_STATE_TEXTURE_DECODE_SIZE_CHECKS"`
 	DeviceStateEncodeRefusals   int `json:"DEVICE_STATE_TEXTURE_ENCODE_REFUSALS"`
 
+	// Foundation 54. Typed transfers through the generic-method projection.
+	DeviceStateTransferRoundTrips int `json:"DEVICE_STATE_TEXTURE_TRANSFER_ROUND_TRIPS"`
+	DeviceStateTransferRefusals   int `json:"DEVICE_STATE_TEXTURE_TRANSFER_REFUSALS"`
+
 	FrameHookOverrideCycles  int `json:"FRAME_HOOK_OVERRIDE_CYCLES"`
 	FrameHookBeginRunHits    int `json:"FRAME_HOOK_BEGIN_RUN_DELIVERIES"`
 	FrameHookEndRunHits      int `json:"FRAME_HOOK_END_RUN_DELIVERIES"`
@@ -329,6 +333,12 @@ func runParent() (counters, error) {
 	if total.DeviceStateEncodeChecks < 40 || total.DeviceStateDecodeSizeChecks < 40 ||
 		total.DeviceStateEncodeRefusals < 20 {
 		return total, errors.New("a texture encode or sized-decode proof did not run in every cycle")
+	}
+	// Three typed round trips per cycle -- a full-surface Color transfer, a
+	// windowed one, and a rectangle one -- each written to the live texture and
+	// read back from it, plus the two refusals the projection makes itself.
+	if total.DeviceStateTransferRoundTrips < 60 || total.DeviceStateTransferRefusals < 40 {
+		return total, errors.New("a texture transfer proof did not run in every cycle")
 	}
 	if total.DeviceStateReadOnlyChecks < 60 || total.DeviceStateClearCalls < 40 ||
 		total.DeviceStateClearRefusals < 20 || total.DeviceStatePresentCalls < 20 ||
@@ -1406,6 +1416,72 @@ func (g *stressGame) exerciseDeviceState() error {
 	g.result.DeviceStateEncodeRefusals++
 	if err := source.Dispose(true); err != nil {
 		return fmt.Errorf("source texture disposal: %w", err)
+	}
+
+	// Typed transfers, through the generic-method projection. Each writes a
+	// pattern to the live texture and reads it back FROM the texture, so a
+	// projection that kept a managed copy would pass a test that compared its
+	// own input.
+	transferTexture, err := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(device, 4, 4)
+	if err != nil {
+		return fmt.Errorf("transfer texture: %w", err)
+	}
+	written := make([]framework.Color, 16)
+	for index := range written {
+		written[index] = framework.NewColorByInt32AndInt32AndInt32AndInt32(
+			int32(index*16%256), int32(index*8%256), int32(index*4%256), 255)
+	}
+	if err := graphics.Texture2DSetDataBySliceOfT(transferTexture, written); err != nil {
+		return fmt.Errorf("SetData: %w", err)
+	}
+	readBack := make([]framework.Color, 16)
+	if err := graphics.Texture2DGetDataBySliceOfT(transferTexture, readBack); err != nil {
+		return fmt.Errorf("GetData: %w", err)
+	}
+	for index := range written {
+		if readBack[index] != written[index] {
+			return fmt.Errorf("texel %d round-tripped as %v, want %v", index, readBack[index], written[index])
+		}
+	}
+	g.result.DeviceStateTransferRoundTrips++
+
+	// A WINDOW of the same array, through the three-argument overload.
+	windowed := make([]framework.Color, 16)
+	if err := graphics.Texture2DGetDataBySliceOfTAndInt32AndInt32(transferTexture, windowed, 0, 16); err != nil {
+		return fmt.Errorf("windowed GetData: %w", err)
+	}
+	if windowed[0] != written[0] || windowed[15] != written[15] {
+		return errors.New("a windowed transfer did not reproduce the full surface")
+	}
+	g.result.DeviceStateTransferRoundTrips++
+
+	// A RECTANGLE, through the five-argument overload the other two funnel
+	// into. Two by two at the origin is four texels of the sixteen.
+	region := framework.NewRectangle(0, 0, 2, 2)
+	corner := make([]framework.Color, 4)
+	if err := graphics.Texture2DGetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
+		transferTexture, 0, &region, corner, 0, 4); err != nil {
+		return fmt.Errorf("rectangle GetData: %w", err)
+	}
+	if corner[0] != written[0] {
+		return fmt.Errorf("the rectangle transfer's first texel is %v, want %v", corner[0], written[0])
+	}
+	g.result.DeviceStateTransferRoundTrips++
+
+	// The two refusals the projection makes before CNA is reached: an element
+	// type outside the eighteen CNA declares, and a transfer window that leaves
+	// the array.
+	if refusal := graphics.Texture2DSetDataBySliceOfT(transferTexture, []int64{1, 2, 3, 4}); refusal == nil ||
+		!strings.Contains(refusal.Error(), "is not one of the eighteen element types") {
+		return fmt.Errorf("an unsupported element type produced %v", refusal)
+	}
+	g.result.DeviceStateTransferRefusals++
+	if refusal := graphics.Texture2DSetDataBySliceOfTAndInt32AndInt32(transferTexture, written, 8, 16); refusal == nil {
+		return errors.New("a transfer window past the end of the array was accepted")
+	}
+	g.result.DeviceStateTransferRefusals++
+	if err := transferTexture.Dispose(true); err != nil {
+		return fmt.Errorf("transfer texture disposal: %w", err)
 	}
 
 	// The two refusals the projection makes itself, before CNA is reached: a

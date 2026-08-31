@@ -369,6 +369,35 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 		if _, missing := contains(result.MissingTypes, et.XNA); missing {
 			continue
 		}
+		// # A type may not be COMPLETE while public members it INHERITS are absent
+		//
+		// Completeness was computed from a type's DECLARED surface alone, and
+		// Foundation 54 found the hole by closing one: Texture2D's six generic
+		// members were the last of its own, so it was reported COMPLETE while
+		// LevelCount and Format -- public members it inherits from the DEFERRED
+		// Texture -- are not projected at all.
+		//
+		// The invariant that caught it was already in the profile, as a hard
+		// failure in measureXNABaseRelationships. That check stays; this is
+		// what makes it unreachable, by reporting the gap where a reader looks
+		// for it: as this type's own missing members.
+		//
+		// The rule is deliberately narrow. It fires ONLY for a type that would
+		// otherwise be reported complete, because that is the only case where
+		// the omission misleads -- a type already PARTIAL is already reported
+		// as partial, and its inherited gap is counted in
+		// XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED and named in its base's
+		// recorded blockers.
+		if typeDiagnostics[et.XNA] == 0 {
+			for _, inherited := range unprojectedInheritedPublicMembers(expected, et) {
+				addDiagnostic(&result, diagnostic{
+					Category: "MISSING_MEMBER", XNA: inherited, Go: et.Key.String(),
+					Message: "a public member inherited from a DEFERRED XNA base is not projected, so the type cannot be complete",
+				})
+				typeDiagnostics[et.XNA]++
+				missingMembers[et.XNA] = append(missingMembers[et.XNA], inherited)
+			}
+		}
 		if typeDiagnostics[et.XNA] == 0 {
 			result.CompleteTypes = append(result.CompleteTypes, et.XNA)
 		} else {
@@ -4748,4 +4777,48 @@ func measureXNAComposition(result *report, expected *expectedSurface, actual *ac
 		}
 	}
 	return measurements
+}
+
+// unprojectedInheritedPublicMembers lists the public CLR members a type
+// inherits from an XNA base whose relationship is DEFERRED, and which are
+// therefore not projected anywhere.
+//
+// It walks only ONE level, to the immediate base, and only when that base's
+// recorded relationship is DEFERRED. A base whose relationship is COMPOSED
+// re-exposes its surface on the derived type by definition, and a base outside
+// the pinned profile is the BCL frontier, which bclBaseRelationships measures
+// separately.
+func unprojectedInheritedPublicMembers(expected *expectedSurface, et *expectedType) []string {
+	if et.BaseType == "" {
+		return nil
+	}
+	relationship, recorded := xnaBaseRelationships[et.BaseType]
+	if !recorded || relationship.Status != "DEFERRED" {
+		return nil
+	}
+	base := expected.typeForXNA(et.BaseType)
+	if base == nil {
+		return nil
+	}
+	inherited := make([]string, 0, len(base.Members))
+	for _, key := range base.Members {
+		member := expected.Members[key]
+		if member == nil || member.SourceKind == "constructor" {
+			continue
+		}
+		inherited = append(inherited, member.XNA)
+	}
+	sort.Strings(inherited)
+	return uniqueStrings(inherited)
+}
+
+func uniqueStrings(values []string) []string {
+	out := values[:0:0]
+	for index, value := range values {
+		if index > 0 && value == values[index-1] {
+			continue
+		}
+		out = append(out, value)
+	}
+	return out
 }

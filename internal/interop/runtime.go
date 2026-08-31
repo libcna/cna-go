@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
+	"unsafe"
 )
 
 const (
@@ -1602,6 +1603,64 @@ const (
 	TextureImageFormatPNG  uint32 = 0
 	TextureImageFormatJPEG uint32 = 1
 )
+
+// TextureTransfer is CNA_Texture2DTransfer: which mip level, which optional
+// rectangle, and which window of the caller's array one transfer covers.
+type TextureTransfer struct {
+	Level               int32
+	HasRectangle        bool
+	X, Y, Width, Height int32
+	StartIndex          uint64
+	ElementCount        uint64
+}
+
+// The eighteen CNA_TEXTURE_DATA_* element representations, in CNA's own order.
+// They are the closed set a texture transfer's element type may be, and the
+// Graphics package maps one Go type onto each.
+const (
+	TextureDataColor           uint32 = 0
+	TextureDataBgr565          uint32 = 1
+	TextureDataBgra5551        uint32 = 2
+	TextureDataBgra4444        uint32 = 3
+	TextureDataByte            uint32 = 4
+	TextureDataNormalizedByte2 uint32 = 5
+	TextureDataNormalizedByte4 uint32 = 6
+	TextureDataRgba1010102     uint32 = 7
+	TextureDataRg32            uint32 = 8
+	TextureDataRgba64          uint32 = 9
+	TextureDataAlpha8          uint32 = 10
+	TextureDataSingle          uint32 = 11
+	TextureDataVector2         uint32 = 12
+	TextureDataVector4         uint32 = 13
+	TextureDataHalfSingle      uint32 = 14
+	TextureDataHalfVector2     uint32 = 15
+	TextureDataHalfVector4     uint32 = 16
+	TextureDataUShort          uint32 = 17
+)
+
+// SetTextureData and GetTextureData are the two typed transfers.
+//
+// Both take an unsafe.Pointer to the caller's array and its element count,
+// because the element TYPE is decided by the caller and CNA identifies it by a
+// CNA_TEXTURE_DATA_* identity rather than by a size. The Graphics package is
+// where a Go type is turned into that identity, and it is also where the
+// element size is checked against what the identity means -- interop copies
+// bytes and validates nothing about their shape.
+func (resource *Resource) SetTextureData(dataType uint32, transfer TextureTransfer, data unsafe.Pointer, capacity uint64) error {
+	handle, err := resource.liveHandle(resourceTexture2D)
+	if err != nil {
+		return err
+	}
+	return nativeTextureSetData(handle, dataType, transfer, data, capacity)
+}
+
+func (resource *Resource) GetTextureData(dataType uint32, transfer TextureTransfer, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	handle, err := resource.liveHandle(resourceTexture2D)
+	if err != nil {
+		return 0, err
+	}
+	return nativeTextureGetData(handle, dataType, transfer, destination, capacity)
+}
 
 // CreateTextureFromEncodedSized decodes bytes into a texture of a REQUESTED
 // size, which is cna_texture2d_create_from_encoded_memory with a decode info

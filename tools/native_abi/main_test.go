@@ -326,6 +326,26 @@ var probeMutations = []sourceMutation{
 	// The route pairing is the other half: the two prototypes differ only in
 	// which command pointer they take, so binding submit_many where
 	// submit_scaled_many belongs is a two-token edit that also compiles.
+	// Foundation 54. The typed transfer routes take the transfer BY POINTER and
+	// the payload as an untyped one, so C checks almost nothing about them.
+	{
+		name: "texture-transfer-passed-by-value",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_texture2d_set_data_fn)(CNA_Handle, CNA_TextureDataType, const CNA_Texture2DTransfer*, const void*, uint64_t);",
+		new:  "typedef CNA_Result (*cna_texture2d_set_data_fn)(CNA_Handle, CNA_TextureDataType, CNA_Texture2DTransfer, const void*, uint64_t);",
+	},
+	{
+		// get_data's destination is written and its out-count is a pointer.
+		// Dropping the out-count is a shorter prototype the bridge would still
+		// compile if it did not pass one -- and it does, so this is caught on
+		// both sides. It is listed because the DEFECT it plants is real: a
+		// transfer that cannot report how many elements it needed makes an
+		// undersized destination unreportable.
+		name: "get-data-drops-the-required-element-count",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_texture2d_get_data_fn)(CNA_Handle, CNA_TextureDataType, const CNA_Texture2DTransfer*, void*, uint64_t, uint64_t*);",
+		new:  "typedef CNA_Result (*cna_texture2d_get_data_fn)(CNA_Handle, CNA_TextureDataType, const CNA_Texture2DTransfer*, void*, uint64_t);",
+	},
 	// Foundation 53. The encode route's last two parameters are a capacity and
 	// an out count -- a uint64 and a pointer to one -- and the bridge passes
 	// both through, so nothing in C objects to their order until a prototype is
@@ -843,6 +863,25 @@ var layoutMutations = []sourceMutation{
 		file: "abi_manifest.h",
 		old:  "typedef uint32_t CNA_TextureImageFormat;",
 		new:  "typedef uint16_t CNA_TextureImageFormat;",
+	},
+	{
+		// The transfer's start_index and element_count are both uint64 and
+		// adjacent. Swapping them is invisible to every compiler check and
+		// turns "sixteen elements from zero" into "zero elements from
+		// sixteen" -- a transfer that succeeds and copies nothing.
+		name: "texture-transfer-start-and-count-swapped",
+		file: "abi_manifest.h",
+		old:  "    uint64_t start_index;\n    uint64_t element_count;",
+		new:  "    uint64_t element_count;\n    uint64_t start_index;",
+	},
+	{
+		// The packed-storage widths are what let CNA-Go pass a Go struct
+		// straight through. A Bgr565 read as four bytes would stride twice as
+		// far through the caller's array.
+		name: "packed-bgr565-widened",
+		file: "abi_manifest.h",
+		old:  "typedef uint16_t CNA_PackedBgr565;",
+		new:  "typedef uint32_t CNA_PackedBgr565;",
 	},
 	{
 		// A narrowed clear mask. Target, DepthBuffer and Stencil are 1, 2 and 4,

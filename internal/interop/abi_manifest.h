@@ -208,6 +208,32 @@ typedef struct CNA_SpriteScaledCommand {
 
 #ifndef CNA_C_TEXTURE_H
 typedef uint32_t CNA_TextureImageFormat;
+typedef uint32_t CNA_TextureDataType;
+#endif
+
+/* The packed-storage aliases the Graphics package's element mapping depends on.
+   Each is a plain unsigned integer in the canonical header, and CNA-Go passes
+   Go structs of the same width straight through, so their sizes are measured
+   here rather than assumed. They live under the MATH guard because that is the
+   header the canonical ones are declared in. */
+#ifndef CNA_C_MATH_VALUES_H
+typedef uint8_t CNA_PackedAlpha8;
+typedef uint16_t CNA_PackedBgr565;
+typedef uint64_t CNA_PackedRgba64;
+typedef uint64_t CNA_PackedHalfVector4;
+#endif
+
+#ifndef CNA_C_TEXTURE_H
+typedef struct CNA_Texture2DTransfer {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    int32_t level;
+    CNA_Bool has_rectangle;
+    uint8_t reserved[3];
+    CNA_Rectangle rectangle;
+    uint64_t start_index;
+    uint64_t element_count;
+} CNA_Texture2DTransfer;
 typedef struct CNA_Texture2DDecodeInfo {
     uint32_t struct_size;
     uint32_t struct_version;
@@ -297,6 +323,8 @@ typedef CNA_Result (*cna_graphics_device_get_display_mode_fn)(CNA_Handle, CNA_Di
 typedef CNA_Result (*cna_texture2d_create_fn)(CNA_Handle, const CNA_Texture2DCreateInfo*, CNA_Handle*);
 typedef CNA_Result (*cna_texture2d_get_encoded_byte_count_fn)(CNA_Handle, CNA_TextureImageFormat, uint32_t, uint32_t, uint64_t*);
 typedef CNA_Result (*cna_texture2d_copy_encoded_fn)(CNA_Handle, CNA_TextureImageFormat, uint32_t, uint32_t, uint8_t*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_texture2d_set_data_fn)(CNA_Handle, CNA_TextureDataType, const CNA_Texture2DTransfer*, const void*, uint64_t);
+typedef CNA_Result (*cna_texture2d_get_data_fn)(CNA_Handle, CNA_TextureDataType, const CNA_Texture2DTransfer*, void*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_sprite_batch_end_fn)(CNA_Handle);
 typedef CNA_Result (*cna_sprite_batch_destroy_fn)(CNA_Handle);
 typedef CNA_Result (*cna_keyboard_get_state_fn)(CNA_Handle, CNA_KeyboardState*);
@@ -391,6 +419,8 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_texture2d_create) \
     X(cna_texture2d_get_encoded_byte_count) \
     X(cna_texture2d_copy_encoded) \
+    X(cna_texture2d_set_data) \
+    X(cna_texture2d_get_data) \
     X(cna_sprite_batch_end) \
     X(cna_sprite_batch_destroy) \
     X(cna_keyboard_get_state) \

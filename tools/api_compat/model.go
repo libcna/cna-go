@@ -158,6 +158,14 @@ type expectedMember struct {
 	FlagsOwner     bool
 	OverloadMapped bool
 	ErrorAdded     bool
+	// GenericMethod records that the CLR member declares its own type
+	// parameters and is therefore projected as a package-level generic
+	// FUNCTION rather than as a method: Go methods cannot declare type
+	// parameters, so an instance generic method has no method-shaped
+	// projection at all. Its receiver becomes the first argument, exactly as
+	// the cross-package cycle rule already does for members a package cannot
+	// declare.
+	GenericMethod bool
 	// Accessor is "get" or "set" when this member is one projected accessor
 	// of a CLR property and empty for every other member kind. Fallibility is
 	// decided per accessor, so the two accessors of one property are separate

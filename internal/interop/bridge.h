@@ -245,6 +245,8 @@ CnaGoResult cna_go_texture2d_create(CnaGoHandle device, uint32_t width, uint32_t
 CnaGoResult cna_go_texture2d_create_from_encoded_memory_sized(CnaGoHandle device, const uint8_t* data, uint64_t byte_count, uint32_t width, uint32_t height, uint8_t zoom, CnaGoHandle* out_texture);
 CnaGoResult cna_go_texture2d_get_encoded_byte_count(CnaGoHandle texture, uint32_t image_format, uint32_t width, uint32_t height, uint64_t* out_byte_count);
 CnaGoResult cna_go_texture2d_copy_encoded(CnaGoHandle texture, uint32_t image_format, uint32_t width, uint32_t height, uint8_t* destination, uint64_t capacity, uint64_t* out_byte_count);
+CnaGoResult cna_go_texture2d_set_data(CnaGoHandle texture, uint32_t data_type, int32_t level, uint8_t has_rectangle, int32_t rect_x, int32_t rect_y, int32_t rect_width, int32_t rect_height, uint64_t start_index, uint64_t element_count, const void* data, uint64_t data_capacity);
+CnaGoResult cna_go_texture2d_get_data(CnaGoHandle texture, uint32_t data_type, int32_t level, uint8_t has_rectangle, int32_t rect_x, int32_t rect_y, int32_t rect_width, int32_t rect_height, uint64_t start_index, uint64_t element_count, void* destination, uint64_t destination_capacity, uint64_t* out_required_elements);
 CnaGoResult cna_go_graphics_device_clear_rgba(
     CnaGoHandle device,
     float r,
