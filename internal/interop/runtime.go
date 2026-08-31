@@ -105,6 +105,13 @@ type Callbacks interface {
 	// of that interface compiling.
 	GameEvent(event uint32) error
 
+	// TimingConfiguration reports the Game's configured timing and
+	// presentation state. It is read once, on the owner thread, immediately
+	// before cna_game_create, because the native loop has to START with what
+	// the managed state says rather than with a literal -- XNA's own loop
+	// reads those fields every frame, and a consumer may set them before Run.
+	TimingConfiguration() TimingConfiguration
+
 	// FrameHookOverrides reports which optional frame-boundary hooks this
 	// caller wants installed. It is read exactly once, on the owner thread,
 	// immediately before cna_game_create, because a Go callback object's
@@ -119,6 +126,16 @@ type Callbacks interface {
 	EndRun() error
 	BeginDraw() (bool, error)
 	EndDraw() error
+}
+
+// TimingConfiguration is the Game's configured timing and presentation state as
+// the native loop needs it: ticks rather than TimeSpan, because the C ABI
+// counts in 100-nanosecond ticks and the conversion belongs on the public side.
+type TimingConfiguration struct {
+	TargetElapsedTicks int64
+	InactiveSleepTicks int64
+	IsFixedTimeStep    bool
+	IsMouseVisible     bool
 }
 
 // Runtime owns one admitted native Game generation.
@@ -252,8 +269,9 @@ func (r *Runtime) Run() error {
 	// set is fixed for the object's whole lifetime, so there is nothing to
 	// re-read later and no mutable per-Game registration state anywhere.
 	frameHooks := r.callbacks.FrameHookOverrides()
+	timing := r.callbacks.TimingConfiguration()
 	callbackHandle := cgo.NewHandle(r)
-	game, createErr := nativeGameCreate(uintptr(callbackHandle), r.title, frameHooks)
+	game, createErr := nativeGameCreate(uintptr(callbackHandle), r.title, frameHooks, timing)
 	if createErr != nil {
 		callbackHandle.Delete()
 		r.deactivate()
@@ -413,6 +431,57 @@ func (r *Runtime) Exit() error {
 		return err
 	}
 	return nativeGameRequestExit(game)
+}
+
+// The four timing and presentation settings, and the two frame commands.
+//
+// Each reports whether a live native game received it. XNA keeps these as
+// managed fields its own loop reads, so the projected getter is a field read
+// and the SETTER is what has to reach the loop; with no native game there is
+// nothing to reach, and the value is carried in at creation instead. That is
+// not a swallowed failure: it is the difference between "the runtime refused"
+// and "there is no runtime yet", and the caller is told which.
+func (r *Runtime) SetIsMouseVisible(value bool) (bool, error) {
+	return r.applyToLiveGame(func(game uint64) error { return nativeGameSetIsMouseVisible(game, value) })
+}
+
+func (r *Runtime) SetIsFixedTimeStep(value bool) (bool, error) {
+	return r.applyToLiveGame(func(game uint64) error { return nativeGameSetIsFixedTimeStep(game, value) })
+}
+
+func (r *Runtime) SetTargetElapsedTimeTicks(ticks int64) (bool, error) {
+	return r.applyToLiveGame(func(game uint64) error { return nativeGameSetTargetElapsedTimeTicks(game, ticks) })
+}
+
+func (r *Runtime) SetInactiveSleepTimeTicks(ticks int64) (bool, error) {
+	return r.applyToLiveGame(func(game uint64) error { return nativeGameSetInactiveSleepTimeTicks(game, ticks) })
+}
+
+func (r *Runtime) ResetElapsedTime() (bool, error) {
+	return r.applyToLiveGame(nativeGameResetElapsedTime)
+}
+
+func (r *Runtime) SuppressDraw() (bool, error) {
+	return r.applyToLiveGame(nativeGameSuppressDraw)
+}
+
+// applyToLiveGame runs one owner-thread operation against the live native game,
+// or reports that there is none.
+//
+// requireCallback is false: every one of these is documented for an "active
+// owned or callback-borrowed game handle", so a consumer may set a timing value
+// from a lifecycle callback and from the owner thread between frames alike. The
+// thread check is kept, because CNA answers CNA_RESULT_THREAD from any other
+// thread and reporting that is more useful than reproducing it.
+func (r *Runtime) applyToLiveGame(operation func(game uint64) error) (bool, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		if errors.Is(err, ErrStaleGeneration) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, operation(game)
 }
 
 func (r *Runtime) Generation() uint64 {

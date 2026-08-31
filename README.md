@@ -436,6 +436,16 @@ projected, not that any derived type is complete -- neither of `GameComponent`'s
 two is, for reasons that are about device and GamerServices runtime rather than
 about inheritance.
 
+See [Foundation 42 Game timing evidence](docs/foundation-42-game-timing-evidence.md)
+for `TargetElapsedTime`, `InactiveSleepTime`, `IsFixedTimeStep`,
+`IsMouseVisible`, `SuppressDraw` and `ResetElapsedTime`. Each getter is the field
+read it is in the reference and carries no error; each setter validates, stores,
+and then pushes to the native loop, because in XNA the managed loop reads those
+same fields every frame and here that loop is native. A `Game` configured before
+`Run` is created with what it was configured with. The two `TimeSpan` setters
+differ by one IL instruction and the difference is preserved: `InactiveSleepTime`
+accepts zero, `TargetElapsedTime` does not.
+
 The `Media` package contains enum metadata only and carries no media runtime
 capability claim. The `Input/Touch` package adds `TouchLocation`,
 `GestureSample`, and the read-only `TouchCollection` alongside its enums, and

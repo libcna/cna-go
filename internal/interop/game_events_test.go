@@ -30,6 +30,7 @@ type recordingCallbacks struct {
 	frameHooks   FrameHookMask
 	hooks        []string
 	shouldDraw   bool
+	timing       TimingConfiguration
 	hookFailure  error
 	hookPanics   bool
 	beginDrawRan int
@@ -42,6 +43,8 @@ func (c *recordingCallbacks) Draw(FrameTime) error   { return nil }
 func (c *recordingCallbacks) UnloadContent() error   { return nil }
 
 func (c *recordingCallbacks) FrameHookOverrides() FrameHookMask { return c.frameHooks }
+
+func (c *recordingCallbacks) TimingConfiguration() TimingConfiguration { return c.timing }
 
 func (c *recordingCallbacks) BeginRun() error {
 	c.hooks = append(c.hooks, "BeginRun")
@@ -229,17 +232,18 @@ func TestTheIdentitiesAreContiguousFromZero(t *testing.T) {
 func TestCallbacksCarriesTheBridgeWithoutDisturbingTheFive(t *testing.T) {
 	contract := reflect.TypeOf((*Callbacks)(nil)).Elem()
 	want := map[string]string{
-		"Initialize":         "func() error",
-		"LoadContent":        "func() error",
-		"Update":             "func(interop.FrameTime) error",
-		"Draw":               "func(interop.FrameTime) error",
-		"UnloadContent":      "func() error",
-		"GameEvent":          "func(uint32) error",
-		"FrameHookOverrides": "func() interop.FrameHookMask",
-		"BeginRun":           "func() error",
-		"EndRun":             "func() error",
-		"BeginDraw":          "func() (bool, error)",
-		"EndDraw":            "func() error",
+		"Initialize":          "func() error",
+		"LoadContent":         "func() error",
+		"Update":              "func(interop.FrameTime) error",
+		"Draw":                "func(interop.FrameTime) error",
+		"UnloadContent":       "func() error",
+		"GameEvent":           "func(uint32) error",
+		"FrameHookOverrides":  "func() interop.FrameHookMask",
+		"TimingConfiguration": "func() interop.TimingConfiguration",
+		"BeginRun":            "func() error",
+		"EndRun":              "func() error",
+		"BeginDraw":           "func() (bool, error)",
+		"EndDraw":             "func() error",
 	}
 	if contract.NumMethod() != len(want) {
 		t.Fatalf("Callbacks has %d methods, want %d", contract.NumMethod(), len(want))
@@ -339,5 +343,61 @@ func TestAPanickingBeginDrawOverrideIsContained(t *testing.T) {
 	}
 	if runtime.callbackFailure == nil {
 		t.Fatal("a panicking begin_draw override recorded no callback failure")
+	}
+}
+
+// TestTimingSettersReportWhetherALiveGameReceivedThem holds the difference the
+// two-result shape exists for: "there is no runtime yet" is not a failure, and
+// is not reported as one, but it is also not reported as an application.
+func TestTimingSettersReportWhetherALiveGameReceivedThem(t *testing.T) {
+	callbacks := &recordingCallbacks{}
+	runtime := NewRuntime(callbacks)
+	for name, apply := range map[string]func() (bool, error){
+		"SetIsMouseVisible":         func() (bool, error) { return runtime.SetIsMouseVisible(true) },
+		"SetIsFixedTimeStep":        func() (bool, error) { return runtime.SetIsFixedTimeStep(false) },
+		"SetTargetElapsedTimeTicks": func() (bool, error) { return runtime.SetTargetElapsedTimeTicks(1) },
+		"SetInactiveSleepTimeTicks": func() (bool, error) { return runtime.SetInactiveSleepTimeTicks(0) },
+		"ResetElapsedTime":          runtime.ResetElapsedTime,
+		"SuppressDraw":              runtime.SuppressDraw,
+	} {
+		applied, err := apply()
+		if err != nil {
+			t.Fatalf("%s on a runtime that never ran = %v, want no error", name, err)
+		}
+		if applied {
+			t.Fatalf("%s reported that a live native game received it; there is none", name)
+		}
+	}
+}
+
+// TestTimingSettersRefuseAnotherGoroutine proves the thread check is reported
+// rather than reproduced: CNA answers CNA_RESULT_THREAD for these from any
+// thread but the owner, and a value the loop will not honour must not look
+// applied.
+func TestTimingSettersRefuseAnotherGoroutine(t *testing.T) {
+	callbacks := &recordingCallbacks{}
+	runtime := liveRuntime(callbacks)
+	runtime.game = 11
+	runtime.ownerThread = nativeOwnerThreadID() + 1
+	applied, err := runtime.SetIsFixedTimeStep(true)
+	if !errors.Is(err, ErrWrongThread) {
+		t.Fatalf("a timing setter from a non-owner thread = %v, want ErrWrongThread", err)
+	}
+	if applied {
+		t.Fatal("a refused timing setter reported that a live native game received it")
+	}
+}
+
+// TestTimingConfigurationIsReadOnceBeforeCreate pins the shape the create path
+// depends on: the whole configuration travels as one value, in ticks, so no
+// part of it can be applied out of step with the rest.
+func TestTimingConfigurationIsReadOnceBeforeCreate(t *testing.T) {
+	value := TimingConfiguration{
+		TargetElapsedTicks: 166667, InactiveSleepTicks: 200000,
+		IsFixedTimeStep: true, IsMouseVisible: true,
+	}
+	callbacks := &recordingCallbacks{timing: value}
+	if got := callbacks.TimingConfiguration(); got != value {
+		t.Fatalf("TimingConfiguration round-trip = %+v, want %+v", got, value)
 	}
 }

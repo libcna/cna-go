@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 639,
-    "ASSERTIONS": 639,
+    "OBSERVATIONS": 644,
+    "ASSERTIONS": 644,
     "FAILURES": 0
   },
   "observations": [
@@ -5109,6 +5109,46 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,3,0",
       "actual": "true,3,0",
+      "passed": true
+    },
+    {
+      "id": "game-timing.constructor-defaults",
+      "group": "GAME_TIMING",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "166667,200000,true,false",
+      "actual": "166667,200000,true,false",
+      "passed": true
+    },
+    {
+      "id": "game-timing.the-two-timespan-setters-have-different-boundaries",
+      "group": "GAME_TIMING",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,false,false,true,0,1",
+      "actual": "true,false,false,true,0,1",
+      "passed": true
+    },
+    {
+      "id": "game-timing.suppress-draw-and-reset-elapsed-time-succeed",
+      "group": "GAME_TIMING",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "game-timing.getters-are-field-reads",
+      "group": "GAME_TIMING",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "0,0,false,false",
+      "actual": "0,0,false,false",
+      "passed": true
+    },
+    {
+      "id": "game-timing.setters-refuse-an-unconstructed-game",
+      "group": "GAME_TIMING",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true,true,true,true",
+      "actual": "true,true,true,true,true",
       "passed": true
     },
     {

@@ -722,9 +722,31 @@ var managedStoredMembers = map[string]map[string]bool{
 	// throw site, so a synthetic error result would be an invented failure
 	// mode. Both are get-only in the reference, so there is no setter to
 	// classify.
+	//
+	// Foundation 42 adds four more, on the same evidence and with one extra
+	// consequence recorded. Each getter is the whole method:
+	//
+	//	get_InactiveSleepTime  ldarg.0; ldfld TimeSpan Game::inactiveSleepTime; ret
+	//	get_TargetElapsedTime  ldarg.0; ldfld TimeSpan Game::targetElapsedTime; ret
+	//	get_IsFixedTimeStep    ldarg.0; ldfld bool     Game::isFixedTimeStep;   ret
+	//	get_IsMouseVisible     ldarg.0; ldfld bool     Game::isMouseVisible;    ret
+	//
+	// Seven bytes each, no validation, no host, no window, no device, no throw
+	// site. They are field reads and a synthetic error would be an invented
+	// failure mode.
+	//
+	// Their SETTERS are deliberately NOT listed. In the reference the managed
+	// loop reads these fields every frame; in CNA-Go the loop is native, so a
+	// setter has to reach it, and that call can genuinely be refused -- from
+	// the wrong thread, or with an argument CNA rejects. Classifying a setter
+	// infallible would mean swallowing that.
 	"Microsoft.Xna.Framework.Game": {
-		"property-get|Components": true,
-		"property-get|Services":   true,
+		"property-get|Components":        true,
+		"property-get|Services":          true,
+		"property-get|InactiveSleepTime": true,
+		"property-get|TargetElapsedTime": true,
+		"property-get|IsFixedTimeStep":   true,
+		"property-get|IsMouseVisible":    true,
 	},
 }
 

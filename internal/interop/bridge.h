@@ -66,12 +66,31 @@ size_t cna_go_last_error_message(char* destination, size_t capacity);
    hook is always installed -- it is the position Game::Initialize occupies and
    is not an optional override -- and each of the other four members is
    assigned if and only if its bit is set. */
+/* The Game's configured timing and presentation state, applied at creation.
+   CNA_GameCreateInfo carries the first two; the other two have no creation
+   field, so cna_go_game_create pushes them immediately after the game exists
+   -- on the same owner thread, before anything can observe a frame. */
+typedef struct CnaGoGameTiming {
+    int64_t target_elapsed_time_ticks;
+    int64_t inactive_sleep_time_ticks;
+    uint8_t is_fixed_time_step;
+    uint8_t is_mouse_visible;
+} CnaGoGameTiming;
+
 CnaGoResult cna_go_game_create(
     uintptr_t context,
     const char* title,
     uint64_t title_length,
     uint32_t frame_hook_overrides,
+    const CnaGoGameTiming* timing,
     CnaGoHandle* out_game);
+
+CnaGoResult cna_go_game_set_is_mouse_visible(CnaGoHandle game, uint8_t visible);
+CnaGoResult cna_go_game_set_is_fixed_time_step(CnaGoHandle game, uint8_t fixed);
+CnaGoResult cna_go_game_set_target_elapsed_time_ticks(CnaGoHandle game, int64_t ticks);
+CnaGoResult cna_go_game_set_inactive_sleep_time_ticks(CnaGoHandle game, int64_t ticks);
+CnaGoResult cna_go_game_reset_elapsed_time(CnaGoHandle game);
+CnaGoResult cna_go_game_suppress_draw(CnaGoHandle game);
 CnaGoResult cna_go_game_run(CnaGoHandle game);
 CnaGoResult cna_go_game_request_exit(CnaGoHandle game);
 CnaGoResult cna_go_game_destroy(CnaGoHandle game);

@@ -69,6 +69,12 @@ type counters struct {
 	FrameHookOrderChecks     int `json:"FRAME_HOOK_ORDER_CHECKS"`
 	FrameHookSubsetCycles    int `json:"FRAME_HOOK_SUBSET_CYCLES"`
 	FrameHookUninstalledHits int `json:"FRAME_HOOK_UNINSTALLED_DELIVERIES"`
+
+	TimingCycles            int `json:"GAME_TIMING_CYCLES"`
+	TimingSettersApplied    int `json:"GAME_TIMING_SETTERS_APPLIED"`
+	TimingWrongThreadChecks int `json:"GAME_TIMING_WRONG_THREAD_CHECKS"`
+	TimingRangeChecks       int `json:"GAME_TIMING_RANGE_CHECKS"`
+	TimingCreatedWithConfig int `json:"GAME_TIMING_CREATED_WITH_CONFIGURED_STEP"`
 }
 
 type stressReport struct {
@@ -162,7 +168,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -254,6 +260,19 @@ func runParent() (counters, error) {
 	if total.FrameHookUninstalledHits != 0 {
 		return total, fmt.Errorf("%d hooks were delivered for capabilities the callback object never declared", total.FrameHookUninstalledHits)
 	}
+	// Foundation 42. Six timing and presentation settings reach the live native
+	// loop, one is refused from a non-owner goroutine, and a Game configured
+	// before Run is created with what it was configured with.
+	if total.TimingCycles < 20 || total.TimingCreatedWithConfig < 20 {
+		return total, errors.New("native timing minimum was not met")
+	}
+	if total.TimingSettersApplied != 6*total.TimingCycles {
+		return total, fmt.Errorf("%d timing settings reached a live native game across %d cycles, want six per cycle",
+			total.TimingSettersApplied, total.TimingCycles)
+	}
+	if total.TimingWrongThreadChecks < 20 || total.TimingRangeChecks < 20 {
+		return total, errors.New("the timing thread or range proof did not run in every cycle")
+	}
 	return total, nil
 }
 
@@ -274,6 +293,9 @@ func decodeLastJSONLine(output []byte, value any) error {
 func runChild(scenario string, index int) error {
 	if scenario == "frame-hook-override" || scenario == "frame-hook-subset" {
 		return runFrameHookChild(scenario)
+	}
+	if scenario == "timing" {
+		return runTimingChild()
 	}
 	game := &stressGame{scenario: scenario, index: index, data: encodedPNG()}
 	host, err := framework.NewGame(game)
@@ -1092,4 +1114,138 @@ func addCounters(target *counters, value counters) {
 	target.FrameHookOrderChecks += value.FrameHookOrderChecks
 	target.FrameHookSubsetCycles += value.FrameHookSubsetCycles
 	target.FrameHookUninstalledHits += value.FrameHookUninstalledHits
+	target.TimingCycles += value.TimingCycles
+	target.TimingSettersApplied += value.TimingSettersApplied
+	target.TimingWrongThreadChecks += value.TimingWrongThreadChecks
+	target.TimingRangeChecks += value.TimingRangeChecks
+	target.TimingCreatedWithConfig += value.TimingCreatedWithConfig
+}
+
+// ---------------------------------------------------------------------------
+// Game's timing and presentation state, against the pinned runtime.
+// ---------------------------------------------------------------------------
+
+// timingGame configures a Game before Run and then, from inside a lifecycle
+// callback on the owner thread, drives every timing setter against the live
+// native loop.
+//
+// The claim it proves is the one no in-process test can: these are not stored
+// values that look like they work. They reach CNA, CNA accepts them, and the
+// values a Game was configured with BEFORE Run are what cna_game_create was
+// handed -- a rejected target step would have failed creation outright.
+type timingGame struct {
+	result counters
+}
+
+func (g *timingGame) Initialize(host *framework.Game) error {
+	// Inside a lifecycle callback on the owner thread: every setter must reach
+	// the live native game.
+	if err := host.SetTargetElapsedTime(framework.TimeSpanFromTicks(100000)); err != nil {
+		return fmt.Errorf("SetTargetElapsedTime during a run: %w", err)
+	}
+	g.result.TimingSettersApplied++
+	if err := host.SetInactiveSleepTime(framework.TimeSpanFromTicks(0)); err != nil {
+		return fmt.Errorf("SetInactiveSleepTime during a run: %w", err)
+	}
+	g.result.TimingSettersApplied++
+	if err := host.SetIsFixedTimeStep(false); err != nil {
+		return fmt.Errorf("SetIsFixedTimeStep during a run: %w", err)
+	}
+	g.result.TimingSettersApplied++
+	if err := host.SetIsMouseVisible(true); err != nil {
+		return fmt.Errorf("SetIsMouseVisible during a run: %w", err)
+	}
+	g.result.TimingSettersApplied++
+	if err := host.SuppressDraw(); err != nil {
+		return fmt.Errorf("SuppressDraw during a run: %w", err)
+	}
+	g.result.TimingSettersApplied++
+	if err := host.ResetElapsedTime(); err != nil {
+		return fmt.Errorf("ResetElapsedTime during a run: %w", err)
+	}
+	g.result.TimingSettersApplied++
+
+	// The managed field is what the getter reads, and it holds what was stored
+	// regardless of where the value went afterwards.
+	if got := host.TargetElapsedTime().Ticks(); got != 100000 {
+		return fmt.Errorf("TargetElapsedTime = %d after setting it to 100000", got)
+	}
+	if host.IsFixedTimeStep() || !host.IsMouseVisible() {
+		return fmt.Errorf("flags = %t/%t after setting them false/true", host.IsFixedTimeStep(), host.IsMouseVisible())
+	}
+
+	// From another goroutine CNA answers CNA_RESULT_THREAD, and the projection
+	// reports it rather than pretending the loop was told.
+	wrongThread := make(chan error, 1)
+	go func() { wrongThread <- host.SetIsFixedTimeStep(true) }()
+	if err := <-wrongThread; !errors.Is(err, interop.ErrWrongThread) {
+		return fmt.Errorf("a timing setter from a non-owner goroutine reported %v, want ErrWrongThread", err)
+	}
+	g.result.TimingWrongThreadChecks++
+
+	// The argument checks are the reference's own and come before anything
+	// native: TargetElapsedTime rejects zero, InactiveSleepTime accepts it.
+	if err := host.SetTargetElapsedTime(framework.TimeSpanFromTicks(0)); err == nil {
+		return errors.New("TargetElapsedTime accepted zero; the reference compares with op_LessThanOrEqual")
+	}
+	if err := host.SetInactiveSleepTime(framework.TimeSpanFromTicks(0)); err != nil {
+		return fmt.Errorf("InactiveSleepTime rejected zero: %w", err)
+	}
+	g.result.TimingSettersApplied-- // the second accepted set is not a seventh setting
+	g.result.TimingRangeChecks++
+	if got := host.TargetElapsedTime().Ticks(); got != 100000 {
+		return fmt.Errorf("a rejected TargetElapsedTime still stored: %d", got)
+	}
+	// Restore the accounting: exactly six settings reached the loop.
+	g.result.TimingSettersApplied++
+	return nil
+}
+
+func (g *timingGame) LoadContent(*framework.Game) error                       { return nil }
+func (g *timingGame) Update(host *framework.Game, _ framework.GameTime) error { return host.Exit() }
+func (g *timingGame) Draw(*framework.Game, framework.GameTime) error          { return nil }
+func (g *timingGame) UnloadContent(*framework.Game) error                     { return nil }
+
+// runTimingChild configures the Game BEFORE Run, which is the state a real
+// consumer sets a frame rate in, and proves the configured values are what the
+// native game is created with.
+func runTimingChild() error {
+	game := &timingGame{}
+	host, err := framework.NewGame(game)
+	if err != nil {
+		return err
+	}
+	// A non-default, valid step. If cna_game_create did not accept it -- or if
+	// the create path still passed a literal -- this run would not start.
+	if err := host.SetTargetElapsedTime(framework.TimeSpanFromTicks(83333)); err != nil {
+		return fmt.Errorf("configure before Run: %w", err)
+	}
+	if err := host.SetIsMouseVisible(true); err != nil {
+		return fmt.Errorf("configure mouse visibility before Run: %w", err)
+	}
+	if err := host.SetInactiveSleepTime(framework.TimeSpanFromTicks(1000)); err != nil {
+		return fmt.Errorf("configure inactive sleep before Run: %w", err)
+	}
+	if err := host.Run(); err != nil {
+		return err
+	}
+	game.result.TimingCreatedWithConfig++
+	game.result.TimingCycles++
+	// After the run the managed state is still readable, and still says what
+	// the last successful set stored.
+	if got := host.TargetElapsedTime().Ticks(); got != 100000 {
+		return fmt.Errorf("TargetElapsedTime after the run = %d, want the value Initialize stored", got)
+	}
+	// With no live native game the setters store and report success again.
+	if err := host.SetIsFixedTimeStep(true); err != nil {
+		return fmt.Errorf("SetIsFixedTimeStep after the run: %w", err)
+	}
+	if !host.IsFixedTimeStep() {
+		return errors.New("a post-run set did not reach the managed field")
+	}
+	runtime.GC()
+	game.result.GCStressPoints++
+	data, _ := json.Marshal(game.result)
+	fmt.Println(string(data))
+	return nil
 }

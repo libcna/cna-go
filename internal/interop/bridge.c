@@ -262,7 +262,26 @@ size_t cna_go_last_error_message(char* destination, size_t capacity) {
     return (size_t)required;
 }
 
-CnaGoResult cna_go_game_create(uintptr_t context, const char* title, uint64_t title_length, uint32_t frame_hook_overrides, CnaGoHandle* out_game) {
+CnaGoResult cna_go_game_set_is_mouse_visible(CnaGoHandle game, uint8_t visible) {
+    return api.cna_game_set_is_mouse_visible(game, (CNA_Bool)(visible != 0));
+}
+CnaGoResult cna_go_game_set_is_fixed_time_step(CnaGoHandle game, uint8_t fixed) {
+    return api.cna_game_set_is_fixed_time_step(game, (CNA_Bool)(fixed != 0));
+}
+CnaGoResult cna_go_game_set_target_elapsed_time_ticks(CnaGoHandle game, int64_t ticks) {
+    return api.cna_game_set_target_elapsed_time_ticks(game, ticks);
+}
+CnaGoResult cna_go_game_set_inactive_sleep_time_ticks(CnaGoHandle game, int64_t ticks) {
+    return api.cna_game_set_inactive_sleep_time_ticks(game, ticks);
+}
+CnaGoResult cna_go_game_reset_elapsed_time(CnaGoHandle game) {
+    return api.cna_game_reset_elapsed_time(game);
+}
+CnaGoResult cna_go_game_suppress_draw(CnaGoHandle game) {
+    return api.cna_game_suppress_draw(game);
+}
+
+CnaGoResult cna_go_game_create(uintptr_t context, const char* title, uint64_t title_length, uint32_t frame_hook_overrides, const CnaGoGameTiming* timing, CnaGoHandle* out_game) {
     CNA_GameCallbacks callbacks;
     memset(&callbacks, 0, sizeof(callbacks));
     callbacks.struct_size = (uint32_t)sizeof(callbacks);
@@ -278,8 +297,12 @@ CnaGoResult cna_go_game_create(uintptr_t context, const char* title, uint64_t ti
     memset(&info, 0, sizeof(info));
     info.struct_size = (uint32_t)sizeof(info);
     info.struct_version = 1;
-    info.is_fixed_time_step = 1;
-    info.target_elapsed_time_ticks = 166667;
+    /* The Game's own configured values, not literals. XNA's Game constructor
+       sets isFixedTimeStep = true and targetElapsedTime = 166667 ticks, and a
+       consumer may change either before Run; the reference's loop would honour
+       that, so the native loop is handed what the managed state actually says. */
+    info.is_fixed_time_step = (CNA_Bool)(timing != NULL && timing->is_fixed_time_step != 0);
+    info.target_elapsed_time_ticks = timing == NULL ? 166667 : timing->target_elapsed_time_ticks;
     info.window_title.data = title;
     info.window_title.byte_length = title_length;
     info.callbacks = &callbacks;
@@ -314,6 +337,22 @@ CnaGoResult cna_go_game_create(uintptr_t context, const char* title, uint64_t ti
     if (result != 0) {
         (void)api.cna_game_destroy(*out_game);
         *out_game = 0;
+        return result;
+    }
+
+    /* The two settings CNA_GameCreateInfo has no field for, pushed on the
+       owner thread before the loop can run a frame. A failure here destroys
+       the game rather than leaving one whose configured state was silently
+       not applied. */
+    if (timing != NULL) {
+        result = api.cna_game_set_inactive_sleep_time_ticks(*out_game, timing->inactive_sleep_time_ticks);
+        if (result == 0) {
+            result = api.cna_game_set_is_mouse_visible(*out_game, (CNA_Bool)(timing->is_mouse_visible != 0));
+        }
+        if (result != 0) {
+            (void)api.cna_game_destroy(*out_game);
+            *out_game = 0;
+        }
     }
     return result;
 }

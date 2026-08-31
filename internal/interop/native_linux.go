@@ -87,15 +87,52 @@ func nativeLastErrorMessage() string {
 	return string(buffer)
 }
 
-func nativeGameCreate(context uintptr, title string, frameHooks FrameHookMask) (uint64, error) {
+func nativeGameCreate(context uintptr, title string, frameHooks FrameHookMask, timing TimingConfiguration) (uint64, error) {
 	titleBytes := []byte(title)
 	var titlePointer *C.char
 	if len(titleBytes) > 0 {
 		titlePointer = (*C.char)(unsafe.Pointer(&titleBytes[0]))
 	}
+	native := C.CnaGoGameTiming{
+		target_elapsed_time_ticks: C.int64_t(timing.TargetElapsedTicks),
+		inactive_sleep_time_ticks: C.int64_t(timing.InactiveSleepTicks),
+		is_fixed_time_step:        C.uint8_t(boolToByte(timing.IsFixedTimeStep)),
+		is_mouse_visible:          C.uint8_t(boolToByte(timing.IsMouseVisible)),
+	}
 	var handle C.CnaGoHandle
-	code := uint32(C.cna_go_game_create(C.uintptr_t(context), titlePointer, C.uint64_t(len(titleBytes)), C.uint32_t(frameHooks), &handle))
-	return uint64(handle), resultError("cna_game_create/cna_game_set_frame_hooks_ext", code)
+	code := uint32(C.cna_go_game_create(C.uintptr_t(context), titlePointer, C.uint64_t(len(titleBytes)), C.uint32_t(frameHooks), &native, &handle))
+	return uint64(handle), resultError("cna_game_create/cna_game_set_frame_hooks_ext/timing", code)
+}
+
+func boolToByte(value bool) uint8 {
+	if value {
+		return 1
+	}
+	return 0
+}
+
+func nativeGameSetIsMouseVisible(game uint64, visible bool) error {
+	return resultError("cna_game_set_is_mouse_visible", uint32(C.cna_go_game_set_is_mouse_visible(C.CnaGoHandle(game), C.uint8_t(boolToByte(visible)))))
+}
+
+func nativeGameSetIsFixedTimeStep(game uint64, fixed bool) error {
+	return resultError("cna_game_set_is_fixed_time_step", uint32(C.cna_go_game_set_is_fixed_time_step(C.CnaGoHandle(game), C.uint8_t(boolToByte(fixed)))))
+}
+
+func nativeGameSetTargetElapsedTimeTicks(game uint64, ticks int64) error {
+	return resultError("cna_game_set_target_elapsed_time_ticks", uint32(C.cna_go_game_set_target_elapsed_time_ticks(C.CnaGoHandle(game), C.int64_t(ticks))))
+}
+
+func nativeGameSetInactiveSleepTimeTicks(game uint64, ticks int64) error {
+	return resultError("cna_game_set_inactive_sleep_time_ticks", uint32(C.cna_go_game_set_inactive_sleep_time_ticks(C.CnaGoHandle(game), C.int64_t(ticks))))
+}
+
+func nativeGameResetElapsedTime(game uint64) error {
+	return resultError("cna_game_reset_elapsed_time", uint32(C.cna_go_game_reset_elapsed_time(C.CnaGoHandle(game))))
+}
+
+func nativeGameSuppressDraw(game uint64) error {
+	return resultError("cna_game_suppress_draw", uint32(C.cna_go_game_suppress_draw(C.CnaGoHandle(game))))
 }
 
 func nativeGameRun(game uint64) error {

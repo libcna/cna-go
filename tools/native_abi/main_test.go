@@ -127,6 +127,33 @@ var bridgeMutations = []sourceMutation{
 		old:  "typedef CNA_Result (*CNA_GameBeginDrawCallback)(CNA_Handle, const CNA_GameTime*, void*, CNA_Bool*, CNA_CallbackError*);",
 		new:  "typedef CNA_Result (*CNA_GameBeginDrawCallback)(CNA_Handle, const CNA_GameTime*, void*, CNA_CallbackError*);",
 	},
+	// The Foundation 42 timing setters, from the side the bridge translation
+	// unit can see: a prototype that loses the game handle, gains a parameter,
+	// or disappears from the required set.
+	{
+		name: "inactive-sleep-time-takes-no-game",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_set_inactive_sleep_time_ticks_fn)(CNA_Handle, int64_t);",
+		new:  "typedef CNA_Result (*cna_game_set_inactive_sleep_time_ticks_fn)(int64_t);",
+	},
+	{
+		name: "suppress-draw-takes-a-frame-count",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_suppress_draw_fn)(CNA_Handle);",
+		new:  "typedef CNA_Result (*cna_game_suppress_draw_fn)(CNA_Handle, uint32_t);",
+	},
+	{
+		name: "missing-suppress-draw-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_game_suppress_draw) \\\n",
+		new:  "",
+	},
+	{
+		name: "missing-reset-elapsed-time-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_game_reset_elapsed_time) \\\n",
+		new:  "",
+	},
 	{
 		name: "frame-hook-mask-bit-collision",
 		file: "bridge.h",
@@ -172,6 +199,26 @@ var probeMutations = []sourceMutation{
 		file: "abi_manifest.h",
 		old:  "#define CNA_GO_MANIFEST_GAME_EVENT_EXITING UINT32_C(3)",
 		new:  "#define CNA_GO_MANIFEST_GAME_EVENT_EXITING UINT32_C(2)",
+	},
+	// The two Foundation 42 mutations the BRIDGE translation unit cannot catch,
+	// and the reason is worth stating. C converts silently between integer
+	// widths and between a narrow unsigned return and a wider one, so a
+	// manifest that narrowed a tick count to 32 bits -- capping the target step
+	// at about 3.6 minutes -- or that turned a result code into a CNA_Bool
+	// would still compile against itself. Only comparing the manifest with the
+	// CANONICAL declaration catches them, which is what the probe's assignment
+	// pins do.
+	{
+		name: "target-elapsed-time-narrowed-to-32-bits",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_set_target_elapsed_time_ticks_fn)(CNA_Handle, int64_t);",
+		new:  "typedef CNA_Result (*cna_game_set_target_elapsed_time_ticks_fn)(CNA_Handle, int32_t);",
+	},
+	{
+		name: "mouse-visibility-returns-the-previous-value",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_game_set_is_mouse_visible_fn)(CNA_Handle, CNA_Bool);",
+		new:  "typedef CNA_Bool (*cna_game_set_is_mouse_visible_fn)(CNA_Handle, CNA_Bool);",
 	},
 	{
 		name: "probe-callback-returns-a-result",

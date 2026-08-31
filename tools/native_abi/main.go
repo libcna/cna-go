@@ -46,6 +46,13 @@ var parameterCounts = map[string]int{
 	"cna_game_set_frame_hooks_ext": 2, "cna_game_run": 1,
 	"cna_game_request_exit": 1, "cna_game_destroy": 1,
 	"cna_game_subscribe": 5, "cna_game_unsubscribe": 1,
+	// Foundation 42: the Game timing and presentation setters, and the two
+	// frame commands. All six were already exported by the pinned artifact and
+	// had never been reached from Go.
+	"cna_game_set_is_mouse_visible": 2, "cna_game_set_is_fixed_time_step": 2,
+	"cna_game_set_target_elapsed_time_ticks": 2,
+	"cna_game_set_inactive_sleep_time_ticks": 2,
+	"cna_game_reset_elapsed_time":            1, "cna_game_suppress_draw": 1,
 	"cna_graphics_device_manager_create":              2,
 	"cna_graphics_device_manager_get_graphics_device": 2,
 	"cna_graphics_device_manager_destroy":             1, "cna_game_get_graphics_device": 2,

@@ -77,6 +77,22 @@ type Game struct {
 	exiting     EventSource[*EventArgs]
 	disposed    EventSource[*EventArgs]
 
+	// Game's timing and presentation state. Every one of these is a private
+	// field in the reference whose getter is one `ldfld`, and whose readers are
+	// the managed loop -- which in CNA-Go is the native one, so the setters
+	// push as well as store. See game_timing.go for the exact bodies and for
+	// the constructor defaults.
+	inactiveSleepTime          int64
+	targetElapsedTime          int64
+	maximumElapsedTime         int64
+	isFixedTimeStep            bool
+	isMouseVisible             bool
+	suppressDraw               bool
+	forceElapsedTimeToZero     bool
+	drawRunningSlowly          bool
+	updatesSinceRunningSlowly1 int32
+	updatesSinceRunningSlowly2 int32
+
 	// The four optional frame-boundary overrides, captured once from the
 	// callback object in NewGame. Each is nil unless that object declares the
 	// corresponding exported method; a nil one means the matching native hook
@@ -134,7 +150,19 @@ func NewGame(callbacks GameCallbacks) (*Game, error) {
 	if callbacks == nil {
 		return nil, errors.New("Game callbacks must not be nil")
 	}
-	game := &Game{callbacks: callbacks}
+	// The constructor's own timing defaults, read from Game::.ctor's IL. They
+	// are assigned before anything else here because the reference assigns
+	// them from field initializers and at the head of the constructor body,
+	// ahead of every allocation below.
+	game := &Game{
+		callbacks:                  callbacks,
+		maximumElapsedTime:         gameMaximumElapsedTicks,
+		isFixedTimeStep:            true,
+		updatesSinceRunningSlowly1: gameRunningSlowlyReset,
+		updatesSinceRunningSlowly2: gameRunningSlowlyReset,
+		targetElapsedTime:          gameDefaultTargetElapsedTicks,
+		inactiveSleepTime:          gameDefaultInactiveSleepTicks,
+	}
 	// The optional frame-hook capabilities are discovered here, at the same
 	// boundary where the callback object becomes associated with the Game, and
 	// never again. A Go object's method set is fixed for its lifetime, so a

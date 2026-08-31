@@ -2148,3 +2148,106 @@ func TestDisposalSurfaceIsReachableFromOutside(t *testing.T) {
 		t.Fatal("Dispose() on an unconstructed Game reported no error")
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 42 — Game's timing and presentation state, from outside.
+// ---------------------------------------------------------------------------
+
+// TestTimingDefaultsAndBoundariesFromOutside is what a downstream consumer
+// actually sees: the constructor's own defaults, and the one-instruction
+// difference between the two TimeSpan setters.
+func TestTimingDefaultsAndBoundariesFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	if got := game.TargetElapsedTime().Ticks(); got != 166667 {
+		t.Fatalf("TargetElapsedTime = %d ticks, want 166667", got)
+	}
+	if got := game.InactiveSleepTime().Ticks(); got != 200000 {
+		t.Fatalf("InactiveSleepTime = %d ticks, want 200000", got)
+	}
+	if !game.IsFixedTimeStep() {
+		t.Fatal("IsFixedTimeStep = false; the constructor stores true")
+	}
+	if game.IsMouseVisible() {
+		t.Fatal("IsMouseVisible = true; the constructor does not assign it")
+	}
+
+	// InactiveSleepTime compares with op_LessThan, so zero is accepted.
+	if err := game.SetInactiveSleepTime(framework.TimeSpanFromTicks(0)); err != nil {
+		t.Fatalf("InactiveSleepTime = 0 was rejected: %v", err)
+	}
+	if err := game.SetInactiveSleepTime(framework.TimeSpanFromTicks(-1)); err == nil {
+		t.Fatal("InactiveSleepTime accepted a negative value")
+	}
+	// TargetElapsedTime compares with op_LessThanOrEqual, so zero is not.
+	if err := game.SetTargetElapsedTime(framework.TimeSpanFromTicks(0)); err == nil {
+		t.Fatal("TargetElapsedTime accepted zero")
+	}
+	if got := game.TargetElapsedTime().Ticks(); got != 166667 {
+		t.Fatalf("a rejected TargetElapsedTime still stored: %d", got)
+	}
+	if err := game.SetTargetElapsedTime(framework.TimeSpanFromTicks(333333)); err != nil {
+		t.Fatalf("SetTargetElapsedTime: %v", err)
+	}
+	if got := game.TargetElapsedTime().Ticks(); got != 333333 {
+		t.Fatalf("TargetElapsedTime = %d after storing 333333", got)
+	}
+}
+
+// TestTimingGettersAreInfallibleFromOutside pins the shape a consumer writes
+// against. Each getter is one `ldfld` in the reference -- no validation, no
+// host, no device, no throw site -- so none of them carries an error, and each
+// works on a Game whose constructor never ran.
+func TestTimingGettersAreInfallibleFromOutside(t *testing.T) {
+	zero := &framework.Game{}
+	var (
+		_ framework.TimeSpan = zero.TargetElapsedTime()
+		_ framework.TimeSpan = zero.InactiveSleepTime()
+		_ bool               = zero.IsFixedTimeStep()
+		_ bool               = zero.IsMouseVisible()
+	)
+	var (
+		_ func(framework.TimeSpan) error = zero.SetTargetElapsedTime
+		_ func(framework.TimeSpan) error = zero.SetInactiveSleepTime
+		_ func(bool) error               = zero.SetIsFixedTimeStep
+		_ func(bool) error               = zero.SetIsMouseVisible
+		_ func() error                   = zero.SuppressDraw
+		_ func() error                   = zero.ResetElapsedTime
+	)
+	// The setters refuse an unconstructed Game, but the argument check comes
+	// first, so a bad value is still reported as a bad value.
+	if err := zero.SetIsFixedTimeStep(true); err == nil {
+		t.Fatal("SetIsFixedTimeStep on an unconstructed Game reported no error")
+	}
+	if err := zero.SetTargetElapsedTime(framework.TimeSpanFromTicks(0)); err == nil {
+		t.Fatal("SetTargetElapsedTime(0) on an unconstructed Game reported no error")
+	}
+}
+
+// TestTimingIsConfigurableBeforeRunFromOutside is the case a real consumer
+// hits: set a frame rate on a Game that has not run yet. Every setter succeeds
+// and every getter reports what was stored, because there is no native loop to
+// reach and the value is carried into creation instead.
+func TestTimingIsConfigurableBeforeRunFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	if err := game.SetTargetElapsedTime(framework.TimeSpanFromTicks(83333)); err != nil {
+		t.Fatalf("SetTargetElapsedTime: %v", err)
+	}
+	if err := game.SetIsFixedTimeStep(false); err != nil {
+		t.Fatalf("SetIsFixedTimeStep: %v", err)
+	}
+	if err := game.SetIsMouseVisible(true); err != nil {
+		t.Fatalf("SetIsMouseVisible: %v", err)
+	}
+	if err := game.SuppressDraw(); err != nil {
+		t.Fatalf("SuppressDraw: %v", err)
+	}
+	if err := game.ResetElapsedTime(); err != nil {
+		t.Fatalf("ResetElapsedTime: %v", err)
+	}
+	if got := game.TargetElapsedTime().Ticks(); got != 83333 {
+		t.Fatalf("TargetElapsedTime = %d, want 83333", got)
+	}
+	if game.IsFixedTimeStep() || !game.IsMouseVisible() {
+		t.Fatalf("flags = %t/%t, want false/true", game.IsFixedTimeStep(), game.IsMouseVisible())
+	}
+}

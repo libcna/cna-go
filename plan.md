@@ -1504,6 +1504,23 @@ selected by precedent -- is recorded as the open fork it is.
 FOUNDATION_MILESTONE_41_COMPLETE=true
 ```
 
+## Foundation 42 qualification evidence
+
+Exact evidence is in `docs/foundation-42-game-timing-evidence.md`.
+
+Ten of Game's nineteen remaining members are complete, and CNA was not rebuilt:
+all six canonical operations behind them were already exported by the pinned
+artifact and had never been reached from Go. The getters project as the field
+reads they are in the reference and are infallible; the setters push to the
+native loop, because that loop is what the reference's own loop would have read.
+
+The Game's configured values are now what cna_game_create is handed, replacing
+the literals it used to pass.
+
+```text
+FOUNDATION_MILESTONE_42_COMPLETE=true
+```
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;

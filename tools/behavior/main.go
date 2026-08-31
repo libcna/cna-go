@@ -2727,6 +2727,61 @@ func runCorpus() corpusReport {
 		"true,3,0",
 		fmt.Sprintf("%t,%d,%d", snapshotError == nil, snapshotRaises, snapshotGame.Components().Count()))
 
+	// ------------------------------------------------------------------
+	// Foundation 42. Game's timing and presentation state.
+	// ------------------------------------------------------------------
+
+	// The constructor's own defaults, read from Game::.ctor's IL. They are what
+	// the native game is created with, so a wrong one is a wrong frame rate.
+	timingDefaults, _ := framework.NewGame(corpusCallbacks{})
+	check("game-timing.constructor-defaults", "GAME_TIMING",
+		"166667,200000,true,false",
+		fmt.Sprintf("%d,%d,%t,%t", timingDefaults.TargetElapsedTime().Ticks(),
+			timingDefaults.InactiveSleepTime().Ticks(), timingDefaults.IsFixedTimeStep(),
+			timingDefaults.IsMouseVisible()))
+
+	// One IL instruction separates the two TimeSpan setters, and it is
+	// observable: set_InactiveSleepTime compares with op_LessThan so ZERO IS
+	// ACCEPTED, while set_TargetElapsedTime compares with op_LessThanOrEqual so
+	// zero is rejected. The InactiveSleepTime message even says the value
+	// cannot be zero, and the comparison it sits behind admits it anyway.
+	inactiveZero := timingDefaults.SetInactiveSleepTime(framework.TimeSpanFromTicks(0))
+	inactiveNegative := timingDefaults.SetInactiveSleepTime(framework.TimeSpanFromTicks(-1))
+	targetZero := timingDefaults.SetTargetElapsedTime(framework.TimeSpanFromTicks(0))
+	targetOne := timingDefaults.SetTargetElapsedTime(framework.TimeSpanFromTicks(1))
+	check("game-timing.the-two-timespan-setters-have-different-boundaries", "GAME_TIMING",
+		"true,false,false,true,0,1",
+		fmt.Sprintf("%t,%t,%t,%t,%d,%d", inactiveZero == nil, inactiveNegative == nil,
+			targetZero == nil, targetOne == nil,
+			timingDefaults.InactiveSleepTime().Ticks(), timingDefaults.TargetElapsedTime().Ticks()))
+
+	// SuppressDraw is one `stfld`; ResetElapsedTime is four assignments and
+	// nothing else, and neither touches the other's state.
+	resetGame, _ := framework.NewGame(corpusCallbacks{})
+	suppressError := resetGame.SuppressDraw()
+	resetElapsedError := resetGame.ResetElapsedTime()
+	checkGoProjection("game-timing.suppress-draw-and-reset-elapsed-time-succeed", "GAME_TIMING",
+		"true,true", fmt.Sprintf("%t,%t", suppressError == nil, resetElapsedError == nil))
+
+	// The four getters are field reads: infallible, and readable on a Game
+	// whose constructor never ran.
+	unconstructedTiming := &framework.Game{}
+	checkGoProjection("game-timing.getters-are-field-reads", "GAME_TIMING",
+		"0,0,false,false",
+		fmt.Sprintf("%d,%d,%t,%t", unconstructedTiming.TargetElapsedTime().Ticks(),
+			unconstructedTiming.InactiveSleepTime().Ticks(),
+			unconstructedTiming.IsFixedTimeStep(), unconstructedTiming.IsMouseVisible()))
+
+	// And the setters refuse it, while still checking their argument first.
+	checkGoProjection("game-timing.setters-refuse-an-unconstructed-game", "GAME_TIMING",
+		"true,true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t,%t",
+			unconstructedTiming.SetIsFixedTimeStep(true) != nil,
+			unconstructedTiming.SetIsMouseVisible(true) != nil,
+			unconstructedTiming.SuppressDraw() != nil,
+			unconstructedTiming.ResetElapsedTime() != nil,
+			unconstructedTiming.SetTargetElapsedTime(framework.TimeSpanFromTicks(0)) != nil))
+
 	// The one Go-only failure, and the proof that a refused call does not also
 	// admit the frame.
 	unconstructedHooks := &framework.Game{}
