@@ -36,6 +36,18 @@ type sourceMutation struct {
 }
 
 var bridgeMutations = []sourceMutation{
+	// Foundation 50. Renaming CNA_SpriteCommand's destination member to the
+	// position-and-scale pair the OTHER command carries is the same 16 bytes at
+	// the same offset with the same alignment, so no measurement moves. What
+	// breaks is the trampoline that writes it: bridge.c assigns
+	// command.destination.x, and a member that is not there is not a silent
+	// conversion. This is the class of defect only the bridge TU can catch.
+	{
+		name: "sprite-destination-typed-as-a-position-and-scale",
+		file: "abi_manifest.h",
+		old:  "    CNA_Rectangle destination;\n    CNA_Rectangle source;\n    CNA_Color color;\n    float rotation;\n    CNA_Vector2 origin;\n    uint32_t effects;\n    float layer_depth;\n} CNA_SpriteCommand;",
+		new:  "    CNA_Vector2 destination_position;\n    CNA_Vector2 destination_scale;\n    CNA_Rectangle source;\n    CNA_Color color;\n    float rotation;\n    CNA_Vector2 origin;\n    uint32_t effects;\n    float layer_depth;\n} CNA_SpriteCommand;",
+	},
 	{
 		name: "wrong-event-constant",
 		file: "abi_manifest.h",
@@ -301,6 +313,31 @@ var bridgeMutations = []sourceMutation{
 // wrong. The pin has to compare the manifest with the canonical declaration,
 // which only the probe translation unit does.
 var probeMutations = []sourceMutation{
+	// Foundation 50 binds the SECOND sprite family, and the two commands are
+	// the reason a mutation here matters more than usual: CNA_SpriteCommand and
+	// CNA_SpriteScaledCommand carry the same handle, the same source rectangle,
+	// the same colour, the same rotation, the same origin, the same effects and
+	// the same depth, and differ only in ONE member -- a destination
+	// CNA_Rectangle of four int32 against a position CNA_Vector2 plus a scale
+	// CNA_Vector2 of four float32. Both are 16 bytes. A manifest that gave one
+	// the other's member would be the SAME SIZE, would compile through every
+	// static check, and would submit int32 pixels as float32 coordinates.
+	//
+	// The route pairing is the other half: the two prototypes differ only in
+	// which command pointer they take, so binding submit_many where
+	// submit_scaled_many belongs is a two-token edit that also compiles.
+	{
+		name: "sprite-submit-many-takes-the-scaled-command",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_sprite_batch_submit_many_fn)(CNA_Handle, const CNA_SpriteCommand*, uint64_t);",
+		new:  "typedef CNA_Result (*cna_sprite_batch_submit_many_fn)(CNA_Handle, const CNA_SpriteScaledCommand*, uint64_t);",
+	},
+	{
+		name: "sprite-scaled-submit-takes-the-destination-command",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_sprite_batch_submit_scaled_many_fn)(CNA_Handle, const CNA_SpriteScaledCommand*, uint64_t);",
+		new:  "typedef CNA_Result (*cna_sprite_batch_submit_scaled_many_fn)(CNA_Handle, const CNA_SpriteCommand*, uint64_t);",
+	},
 	{
 		name: "subscribe-user-data-before-callback",
 		file: "abi_manifest.h",
@@ -687,6 +724,16 @@ func TestUnmutatedProbesAgreeOnEveryMeasurement(t *testing.T) {
 // class the ABI evidence could not see until the manifest's own declarations
 // were measured, and each must produce a divergence.
 var layoutMutations = []sourceMutation{
+	{
+		// A destination rectangle of int16 is the same four fields at the same
+		// offset, and every screen coordinate above 32767 -- or below -32768 --
+		// wraps. C narrows an int32 assignment into it without a word, so the
+		// bridge compiles; only sizeof and the offsets after it move.
+		name: "sprite-destination-rectangle-narrowed",
+		file: "abi_manifest.h",
+		old:  "    CNA_Handle texture;\n    CNA_Rectangle destination;",
+		new:  "    CNA_Handle texture;\n    struct { int16_t x, y, width, height; } destination;",
+	},
 	{
 		name: "sprite-command-source-and-colour-swapped",
 		file: "abi_manifest.h",

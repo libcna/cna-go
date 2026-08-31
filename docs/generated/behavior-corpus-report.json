@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 667,
-    "ASSERTIONS": 667,
+    "OBSERVATIONS": 673,
+    "ASSERTIONS": 673,
     "FAILURES": 0
   },
   "observations": [
@@ -5205,6 +5205,54 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "4,false",
       "actual": "4,false",
+      "passed": true
+    },
+    {
+      "id": "sprite-batch.declares-seven-draw-overloads",
+      "group": "SPRITE_BATCH",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "7",
+      "actual": "7",
+      "passed": true
+    },
+    {
+      "id": "sprite-batch.a-nil-texture-is-reported-before-the-begin-end-state",
+      "group": "SPRITE_BATCH",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "sprite-batch.a-draw-outside-a-pair-reports-the-reference-message",
+      "group": "SPRITE_BATCH",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "sprite-batch.an-end-before-begin-reports-a-different-message",
+      "group": "SPRITE_BATCH",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "texture2d.bounds-on-an-unbound-texture-reports",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "game.is-active-starts-false-and-carries-no-error",
+      "group": "GAME",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "false",
+      "actual": "false",
       "passed": true
     },
     {

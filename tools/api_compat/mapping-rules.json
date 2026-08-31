@@ -76,7 +76,7 @@
   "managedStoredMemberIdentities": [
    "Microsoft.Xna.Framework.Game|property-get|Components",
    "Microsoft.Xna.Framework.Game|property-get|InactiveSleepTime",
-   "Microsoft.Xna.Framework.Game|property-get|IsFixedTimeStep",
+   "Microsoft.Xna.Framework.Game|property-get|IsActive", "Microsoft.Xna.Framework.Game|property-get|IsFixedTimeStep",
    "Microsoft.Xna.Framework.Game|property-get|IsMouseVisible",
    "Microsoft.Xna.Framework.Game|property-get|Services",
    "Microsoft.Xna.Framework.Game|property-get|TargetElapsedTime",

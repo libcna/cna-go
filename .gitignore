@@ -15,6 +15,7 @@ coverage.*
 /native_abi
 /native_stress
 /packed_vector_qualify
+/resource_strings
 
 # Shared build directories (closed list; never suffix per ticket)
 /build/

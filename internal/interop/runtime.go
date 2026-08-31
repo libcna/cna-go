@@ -246,6 +246,28 @@ type TextureInfo struct {
 	Format        uint32
 }
 
+// SpriteDestinationCommand is CNA_SpriteCommand: a sprite placed by a
+// DESTINATION RECTANGLE rather than by a position and a scale.
+//
+// CNA declares the two as separate structures and says why: with a position,
+// the origin is measured in source-texture pixels and the scale applies after
+// that offset, which a caller cannot reproduce by computing a rectangle without
+// repeating the canonical arithmetic. XNA agrees from the other side -- its
+// seven Draw overloads all funnel into one InternalDraw whose Vector4
+// destination means (x, y, scaleX, scaleY) or (x, y, width, height) depending
+// on a `scaleDestination` bool -- so the two families are two routes here too.
+type SpriteDestinationCommand struct {
+	DestinationX, DestinationY          int32
+	DestinationWidth, DestinationHeight int32
+	SourceX, SourceY                    int32
+	SourceWidth, SourceHeight           int32
+	Red, Green, Blue, Alpha             uint8
+	Rotation                            float32
+	OriginX, OriginY                    float32
+	Effects                             uint32
+	LayerDepth                          float32
+}
+
 type SpriteCommand struct {
 	PositionX, PositionY      float32
 	SourceX, SourceY          int32
@@ -1642,6 +1664,24 @@ func (resource *Resource) DrawSprite(texture *Resource, command SpriteCommand) e
 		return ErrStaleGeneration
 	}
 	return nativeSpriteBatchDrawScaled(batch, textureHandle, command)
+}
+
+// DrawSpriteToDestination is the destination-rectangle half of the same
+// submission. It applies exactly the checks DrawSprite applies, in the same
+// order, because a stale texture is stale for either family.
+func (resource *Resource) DrawSpriteToDestination(texture *Resource, command SpriteDestinationCommand) error {
+	batch, err := resource.liveHandle(resourceSpriteBatch)
+	if err != nil {
+		return err
+	}
+	textureHandle, err := texture.liveHandle(resourceTexture2D)
+	if err != nil {
+		return err
+	}
+	if resource.runtime != texture.runtime || resource.generation != texture.generation {
+		return ErrStaleGeneration
+	}
+	return nativeSpriteBatchDrawDestination(batch, textureHandle, command)
 }
 
 func (resource *Resource) EndSpriteBatch() error {

@@ -59,6 +59,17 @@ type counters struct {
 	GameEventRerunCycles      int `json:"GAME_EVENT_RERUN_CYCLES"`
 	GameEventPostRunChecks    int `json:"GAME_EVENT_POST_RUN_CHECKS"`
 
+	// Foundation 50. Every Draw overload the profile declares, submitted to a
+	// live native SpriteBatch inside a real draw callback, plus the two guards
+	// InternalDraw applies before it queues anything.
+	SpriteDrawCycles             int `json:"SPRITE_DRAW_CYCLES"`
+	SpriteDrawScaledSubmits      int `json:"SPRITE_DRAW_SCALED_SUBMISSIONS"`
+	SpriteDrawDestinationSubmits int `json:"SPRITE_DRAW_DESTINATION_SUBMISSIONS"`
+	SpriteDrawNullTextureChecks  int `json:"SPRITE_DRAW_NULL_TEXTURE_CHECKS"`
+	SpriteDrawOutsidePairChecks  int `json:"SPRITE_DRAW_OUTSIDE_PAIR_CHECKS"`
+	SpriteDrawPairGuardChecks    int `json:"SPRITE_DRAW_PAIR_GUARD_CHECKS"`
+	SpriteDrawBoundsChecks       int `json:"SPRITE_DRAW_TEXTURE_BOUNDS_CHECKS"`
+
 	FrameHookOverrideCycles  int `json:"FRAME_HOOK_OVERRIDE_CYCLES"`
 	FrameHookBeginRunHits    int `json:"FRAME_HOOK_BEGIN_RUN_DELIVERIES"`
 	FrameHookEndRunHits      int `json:"FRAME_HOOK_END_RUN_DELIVERIES"`
@@ -163,6 +174,11 @@ type stressGame struct {
 	ownerGoroutine  string
 	eventGoroutines map[string]bool
 
+	// The sprite-draw scenario's two live objects, created in LoadContent and
+	// used from inside Draw, which is the only moment CNA has a render pass.
+	spriteTexture *graphics.Texture2D
+	spriteBatch   *graphics.SpriteBatch
+
 	// runtime is captured from inside the first callback, which is the only
 	// place it is reachable, and it survives the run. It is how the native
 	// disposal signal is observed at all now that it raises no public event.
@@ -231,7 +247,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -257,6 +273,18 @@ func runParent() (counters, error) {
 	// staying at zero.
 	if total.GameEventActivated < 20 || total.GameEventExiting < 20 || total.GameNativeDisposalSignals < 20 {
 		return total, errors.New("native game-event delivery minimum was not met")
+	}
+	// Twenty sprite-draw cycles, each submitting five position commands and
+	// four destination commands through a live native SpriteBatch. The two
+	// families are required SEPARATELY: a projection that sent every overload
+	// down one route would still submit, and would place three of the seven
+	// wrong.
+	if total.SpriteDrawCycles < 20 || total.SpriteDrawScaledSubmits < 100 || total.SpriteDrawDestinationSubmits < 80 {
+		return total, errors.New("native sprite-draw submission minimum was not met")
+	}
+	if total.SpriteDrawNullTextureChecks < 20 || total.SpriteDrawOutsidePairChecks < 40 ||
+		total.SpriteDrawPairGuardChecks < 40 || total.SpriteDrawBoundsChecks < 20 {
+		return total, errors.New("a sprite-draw guard or bounds proof did not run in every cycle")
 	}
 	// Foundation 39. The native disposal signal never raises the public event,
 	// and the public event is raised only by a managed Dispose call.
@@ -519,6 +547,14 @@ func runChild(scenario string, index int) error {
 		if _, staleErr := game.device.Viewport(); !errors.Is(staleErr, interop.ErrStaleGeneration) {
 			game.result.ObservedUAF++
 			return fmt.Errorf("stale graphics device was not rejected by generation: %w", staleErr)
+		}
+	case "sprite-draw":
+		game.result.SpriteDrawCycles = 1
+		if err != nil {
+			return err
+		}
+		if game.result.SpriteDrawScaledSubmits == 0 || game.result.SpriteDrawDestinationSubmits == 0 {
+			return errors.New("the sprite-draw scenario submitted nothing")
 		}
 	case "callback-error":
 		game.result.CallbackErrorCycles = 1
@@ -890,6 +926,56 @@ func (g *stressGame) LoadContent(_ *framework.Game) error {
 		return err
 	}
 	g.device = device
+	if g.scenario == "sprite-draw" {
+		texture, err := graphics.Texture2DFromStreamByGraphicsDeviceAndStream(device, bytes.NewReader(g.data))
+		if err != nil {
+			return err
+		}
+		batch, err := graphics.NewSpriteBatch(device)
+		if err != nil {
+			return err
+		}
+		g.spriteTexture = texture
+		g.spriteBatch = batch
+		// The two guards are checked HERE, outside any begin/end pair, which is
+		// the state InternalDraw's second throw is about. A nil texture is
+		// checked first because the reference checks it first: its
+		// ArgumentNullException is thrown before the pair is even read, so this
+		// call is outside a pair AND has a nil texture, and must report the
+		// argument.
+		nullErr := batch.DrawByTexture2DAndVector2AndColor(nil, framework.Vector2{}, framework.NewColorByInt32AndInt32AndInt32AndInt32(255, 255, 255, 255))
+		if nullErr == nil || !strings.Contains(nullErr.Error(), "This method does not accept null for this parameter.") {
+			return fmt.Errorf("nil-texture Draw outside a pair = %v, want the ArgumentNullException message", nullErr)
+		}
+		g.result.SpriteDrawNullTextureChecks++
+		outsideErr := batch.DrawByTexture2DAndVector2AndColor(texture, framework.Vector2{}, framework.NewColorByInt32AndInt32AndInt32AndInt32(255, 255, 255, 255))
+		if outsideErr == nil || !strings.Contains(outsideErr.Error(), "Begin must be called successfully before a Draw can be called.") {
+			return fmt.Errorf("Draw outside a pair = %v, want the InvalidOperationException message", outsideErr)
+		}
+		g.result.SpriteDrawOutsidePairChecks++
+		endErr := batch.End()
+		if endErr == nil || !strings.Contains(endErr.Error(), "Begin must be called successfully before End can be called.") {
+			return fmt.Errorf("End outside a pair = %v, want the InvalidOperationException message", endErr)
+		}
+		g.result.SpriteDrawPairGuardChecks++
+		bounds, err := texture.Bounds()
+		if err != nil {
+			return err
+		}
+		width, err := texture.Width()
+		if err != nil {
+			return err
+		}
+		height, err := texture.Height()
+		if err != nil {
+			return err
+		}
+		if bounds.X != 0 || bounds.Y != 0 || bounds.Width != width || bounds.Height != height {
+			return fmt.Errorf("Bounds = %+v, want (0,0,%d,%d)", bounds, width, height)
+		}
+		g.result.SpriteDrawBoundsChecks++
+		return nil
+	}
 	if g.scenario != "success" || g.index != 0 {
 		return nil
 	}
@@ -994,7 +1080,105 @@ func (g *stressGame) Update(_ *framework.Game, _ framework.GameTime) error {
 }
 
 func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
+	if g.scenario == "sprite-draw" {
+		if err := g.drawEverySpriteOverload(); err != nil {
+			return err
+		}
+	}
 	return host.Exit()
+}
+
+// drawEverySpriteOverload submits one command through each of the profile's
+// seven Draw overloads, inside one begin/end pair, in a live draw callback.
+//
+// Four of the seven reach cna_sprite_batch_submit_scaled_many and three reach
+// cna_sprite_batch_submit_many, and the two counters below are what separate
+// them: a projection that routed a rectangle overload through the scaled family
+// would draw something, and would draw it in the wrong place, which no return
+// value reports.
+func (g *stressGame) drawEverySpriteOverload() error {
+	batch := g.spriteBatch
+	texture := g.spriteTexture
+	white := framework.NewColorByInt32AndInt32AndInt32AndInt32(255, 255, 255, 255)
+	source := framework.NewRectangle(0, 0, 16, 16)
+	destination := framework.NewRectangle(4, 8, 32, 24)
+	origin := framework.NewVector2BySingleAndSingle(2, 3)
+
+	// A second Begin inside a pair is the reference's EndMustBeCalledBeforeBegin
+	// throw, and it is checked while a pair is genuinely open rather than
+	// simulated.
+	if err := batch.BeginByNone(); err != nil {
+		return err
+	}
+	if again := batch.BeginByNone(); again == nil ||
+		!strings.Contains(again.Error(), "Begin cannot be called again until End has been successfully called.") {
+		return fmt.Errorf("second Begin = %v, want the InvalidOperationException message", again)
+	}
+	g.result.SpriteDrawPairGuardChecks++
+
+	scaled := []func() error{
+		func() error {
+			return batch.DrawByTexture2DAndVector2AndColor(texture, framework.NewVector2BySingleAndSingle(1, 2), white)
+		},
+		func() error {
+			return batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColor(texture, framework.NewVector2BySingleAndSingle(3, 4), &source, white)
+		},
+		func() error {
+			return batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle(
+				texture, framework.NewVector2BySingleAndSingle(5, 6), &source, white, 0.5, origin, 2, graphics.SpriteEffectsFlipHorizontally, 0.25)
+		},
+		func() error {
+			return batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle(
+				texture, framework.NewVector2BySingleAndSingle(7, 8), &source, white, 0.5, origin, framework.NewVector2BySingleAndSingle(2, 3), graphics.SpriteEffectsFlipVertically, 0.75)
+		},
+	}
+	for index, draw := range scaled {
+		if err := draw(); err != nil {
+			return fmt.Errorf("scaled Draw overload %d: %w", index, err)
+		}
+		g.result.SpriteDrawScaledSubmits++
+	}
+
+	destinations := []func() error{
+		func() error { return batch.DrawByTexture2DAndRectangleAndColor(texture, destination, white) },
+		func() error {
+			return batch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor(texture, destination, &source, white)
+		},
+		func() error {
+			return batch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColorAndSingleAndVector2AndSpriteEffectsAndSingle(
+				texture, destination, &source, white, 0.5, origin, graphics.SpriteEffectsFlipHorizontally, 0.5)
+		},
+	}
+	for index, draw := range destinations {
+		if err := draw(); err != nil {
+			return fmt.Errorf("destination Draw overload %d: %w", index, err)
+		}
+		g.result.SpriteDrawDestinationSubmits++
+	}
+
+	// A nil source rectangle is the static nullRectangle the three-argument
+	// overloads pass, and it must reach the same route rather than being
+	// refused. Both families are exercised with one.
+	if err := batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColor(texture, framework.NewVector2BySingleAndSingle(9, 10), nil, white); err != nil {
+		return fmt.Errorf("scaled Draw with a nil source: %w", err)
+	}
+	g.result.SpriteDrawScaledSubmits++
+	if err := batch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor(texture, destination, nil, white); err != nil {
+		return fmt.Errorf("destination Draw with a nil source: %w", err)
+	}
+	g.result.SpriteDrawDestinationSubmits++
+
+	if err := batch.End(); err != nil {
+		return err
+	}
+	// The pair is closed, so the guard is armed again -- which is what proves
+	// End cleared the flag rather than only flushing.
+	if after := batch.DrawByTexture2DAndVector2AndColor(texture, framework.Vector2{}, white); after == nil ||
+		!strings.Contains(after.Error(), "Begin must be called successfully before a Draw can be called.") {
+		return fmt.Errorf("Draw after End = %v, want the InvalidOperationException message", after)
+	}
+	g.result.SpriteDrawOutsidePairChecks++
+	return nil
 }
 
 func (g *stressGame) UnloadContent(_ *framework.Game) error {

@@ -44,7 +44,10 @@ Foundation 1 qualifies on **Linux amd64 desktop with cgo**:
   and contained callback errors/panics;
 - real GraphicsDeviceManager/device, native viewport and clear;
 - PNG `Texture2D` creation from `io.Reader`;
-- one exact real scaled SpriteBatch draw route;
+- all seven `SpriteBatch.Draw` overloads, over BOTH real CNA submission routes:
+  the four position overloads reach `cna_sprite_batch_submit_scaled_many` and
+  the three destination-rectangle overloads reach `cna_sprite_batch_submit_many`,
+  inside a begin/end pair whose three guards carry Microsoft's own messages;
 - native keyboard snapshots with exact XNA `Keys` values;
 - a complete first managed closure measured by the verifier and behavior
   corpus.

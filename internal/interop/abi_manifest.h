@@ -145,6 +145,18 @@ typedef struct CNA_SpriteBatchBeginInfo {
     uint32_t sort_mode;
     uint32_t reserved;
 } CNA_SpriteBatchBeginInfo;
+typedef struct CNA_SpriteCommand {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Handle texture;
+    CNA_Rectangle destination;
+    CNA_Rectangle source;
+    CNA_Color color;
+    float rotation;
+    CNA_Vector2 origin;
+    uint32_t effects;
+    float layer_depth;
+} CNA_SpriteCommand;
 typedef struct CNA_SpriteScaledCommand {
     uint32_t struct_size;
     uint32_t struct_version;
@@ -224,6 +236,7 @@ typedef CNA_Result (*cna_texture2d_destroy_fn)(CNA_Handle);
 typedef CNA_Result (*cna_sprite_batch_create_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_sprite_batch_begin_fn)(CNA_Handle, const CNA_SpriteBatchBeginInfo*);
 typedef CNA_Result (*cna_sprite_batch_submit_scaled_many_fn)(CNA_Handle, const CNA_SpriteScaledCommand*, uint64_t);
+typedef CNA_Result (*cna_sprite_batch_submit_many_fn)(CNA_Handle, const CNA_SpriteCommand*, uint64_t);
 typedef CNA_Result (*cna_sprite_batch_end_fn)(CNA_Handle);
 typedef CNA_Result (*cna_sprite_batch_destroy_fn)(CNA_Handle);
 typedef CNA_Result (*cna_keyboard_get_state_fn)(CNA_Handle, CNA_KeyboardState*);
@@ -299,6 +312,7 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_sprite_batch_create) \
     X(cna_sprite_batch_begin) \
     X(cna_sprite_batch_submit_scaled_many) \
+    X(cna_sprite_batch_submit_many) \
     X(cna_sprite_batch_end) \
     X(cna_sprite_batch_destroy) \
     X(cna_keyboard_get_state) \

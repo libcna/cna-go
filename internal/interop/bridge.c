@@ -602,6 +602,31 @@ CnaGoResult cna_go_sprite_batch_draw_scaled(CnaGoHandle batch, CnaGoHandle textu
     command.layer_depth = layer_depth;
     return api.cna_sprite_batch_submit_scaled_many(batch, &command, 1);
 }
+CnaGoResult cna_go_sprite_batch_draw_destination(CnaGoHandle batch, CnaGoHandle texture, int32_t destination_x, int32_t destination_y, int32_t destination_width, int32_t destination_height, int32_t source_x, int32_t source_y, int32_t source_width, int32_t source_height, uint8_t color_r, uint8_t color_g, uint8_t color_b, uint8_t color_a, float rotation, float origin_x, float origin_y, uint32_t effects, float layer_depth) {
+    CNA_SpriteCommand command;
+    memset(&command, 0, sizeof(command));
+    command.struct_size = (uint32_t)sizeof(command);
+    command.struct_version = 1;
+    command.texture = texture;
+    command.destination.x = destination_x;
+    command.destination.y = destination_y;
+    command.destination.width = destination_width;
+    command.destination.height = destination_height;
+    command.source.x = source_x;
+    command.source.y = source_y;
+    command.source.width = source_width;
+    command.source.height = source_height;
+    command.color.r = color_r;
+    command.color.g = color_g;
+    command.color.b = color_b;
+    command.color.a = color_a;
+    command.rotation = rotation;
+    command.origin.x = origin_x;
+    command.origin.y = origin_y;
+    command.effects = effects;
+    command.layer_depth = layer_depth;
+    return api.cna_sprite_batch_submit_many(batch, &command, 1);
+}
 CnaGoResult cna_go_sprite_batch_end(CnaGoHandle batch) { return api.cna_sprite_batch_end(batch); }
 CnaGoResult cna_go_sprite_batch_destroy(CnaGoHandle batch) { return api.cna_sprite_batch_destroy(batch); }
 

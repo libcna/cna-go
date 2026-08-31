@@ -2865,6 +2865,67 @@ func runCorpus() corpusReport {
 		"4,false", fmt.Sprintf("%d,%t", managerRaisers, managerHasDisposedRaiser))
 
 	// ------------------------------------------------------------------
+	// Foundation 50. SpriteBatch's Draw family and Game.IsActive.
+	//
+	// The native half -- that four overloads reach
+	// cna_sprite_batch_submit_scaled_many and three reach
+	// cna_sprite_batch_submit_many -- is proved in tools/native_stress, which
+	// submits every one of them through a real draw callback. What belongs
+	// here is the part that reaches no native code: the two guards, their
+	// order, and the shape of the surface.
+	// ------------------------------------------------------------------
+
+	// Seven Draw overloads, and the profile declares exactly seven. A count is
+	// worth an observation because an overload family is the one place a
+	// binding can look complete while missing a member: every name is the
+	// same.
+	spriteBatchType := reflect.TypeOf((*graphics.SpriteBatch)(nil))
+	spriteDrawOverloads := 0
+	for index := 0; index < spriteBatchType.NumMethod(); index++ {
+		if strings.HasPrefix(spriteBatchType.Method(index).Name, "DrawBy") {
+			spriteDrawOverloads++
+		}
+	}
+	check("sprite-batch.declares-seven-draw-overloads", "SPRITE_BATCH",
+		"7", fmt.Sprint(spriteDrawOverloads))
+
+	// The two guards, in the reference's order. Both conditions hold at once
+	// and the IL decides: the ArgumentNullException is at IL_0003 and the
+	// inBeginEndPair read is at IL_0014.
+	unguardedBatch := &graphics.SpriteBatch{}
+	nullTextureErr := unguardedBatch.DrawByTexture2DAndVector2AndColor(nil, framework.Vector2{}, framework.Color{})
+	check("sprite-batch.a-nil-texture-is-reported-before-the-begin-end-state", "SPRITE_BATCH",
+		"true,true",
+		fmt.Sprintf("%t,%t",
+			nullTextureErr != nil && strings.Contains(nullTextureErr.Error(), "does not accept null"),
+			nullTextureErr != nil && !strings.Contains(nullTextureErr.Error(), "Begin must be called")))
+
+	outsidePairErr := unguardedBatch.DrawByTexture2DAndVector2AndColor(&graphics.Texture2D{}, framework.Vector2{}, framework.Color{})
+	check("sprite-batch.a-draw-outside-a-pair-reports-the-reference-message", "SPRITE_BATCH",
+		"true", fmt.Sprintf("%t",
+			outsidePairErr != nil && strings.Contains(outsidePairErr.Error(),
+				"Begin must be called successfully before a Draw can be called.")))
+
+	endBeforeBeginErr := unguardedBatch.End()
+	check("sprite-batch.an-end-before-begin-reports-a-different-message", "SPRITE_BATCH",
+		"true", fmt.Sprintf("%t",
+			endBeforeBeginErr != nil && strings.Contains(endBeforeBeginErr.Error(),
+				"Begin must be called successfully before End can be called.")))
+
+	// Bounds is fallible for the reason Width and Height are, and does not
+	// paper over a disposed texture with an empty rectangle.
+	_, boundsErr := (&graphics.Texture2D{}).Bounds()
+	check("texture2d.bounds-on-an-unbound-texture-reports", "TEXTURE2D",
+		"true", fmt.Sprintf("%t", boundsErr != nil))
+
+	// Game.IsActive is the field the reference's edge-triggered host handlers
+	// maintain. A Game that has received no activation signal is not active,
+	// and the member is infallible: the reference's getter has no throw site.
+	activityGame := &framework.Game{}
+	check("game.is-active-starts-false-and-carries-no-error", "GAME",
+		"false", fmt.Sprintf("%t", activityGame.IsActive()))
+
+	// ------------------------------------------------------------------
 	// Foundation 47. The two frame steps. Their real evidence is
 	// tools/native_stress, which drives a live native game a frame at a time
 	// in an isolated process; what belongs HERE is the part that reaches no

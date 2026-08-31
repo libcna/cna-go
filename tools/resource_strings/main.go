@@ -16,10 +16,15 @@
 // than "positive", and nothing in the repository could tell the difference,
 // because a plausible sentence looks exactly like a measured one.
 //
-// This tool closes that. It is deliberately a SUBSTRING search over the raw
-// assembly bytes rather than a .resources parser: the streams store
-// length-prefixed UTF-8, so a message that is present is present as its own
-// bytes, and a parser would be a second thing that can be wrong.
+// Foundation 49 closed that with a SUBSTRING search over the raw assembly
+// bytes. Foundation 50 replaced it with a real read of the assembly's resource
+// sets, keyed by name -- see resources.go -- because a substring search checks
+// only half the claim. It proves the sentence is Microsoft's; it cannot prove
+// it is filed under the key the reference's throw site calls. The audio-emitter
+// message was recorded under `DopplerScaleMustBeGreaterThanOrEqualToZero`, a
+// key that exists nowhere; the string is real and its key is
+// `InvalidEmitterDopplerScale`. Four milestones of substring searches passed
+// it.
 package main
 
 import (
@@ -78,7 +83,27 @@ var registry = []claimedString{
 		Value: "Cannot add the same game component to a game component collection multiple times."},
 	{Key: "CannotSetItemsIntoGameComponentCollection", Assembly: "Microsoft.Xna.Framework.Game.dll",
 		Value: "Cannot set a value using operator[] on GameComponentCollection.  Use Add/Remove instead."},
-	{Key: "DopplerScaleMustBeGreaterThanOrEqualToZero", Assembly: "Microsoft.Xna.Framework.dll",
+	// Foundation 50. SpriteBatch's four throw sites, all in
+	// Microsoft.Xna.Framework.dll rather than the Graphics assembly the type
+	// lives in: FrameworkResources is in the shared one.
+	//
+	// The last two read alike and are different sentences at different throw
+	// sites -- one is about calling End without a Begin and the other about
+	// calling Begin twice -- which is exactly the pair a substring search could
+	// not have told apart.
+	{Key: "NullNotAllowed", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "This method does not accept null for this parameter."},
+	{Key: "BeginMustBeCalledBeforeDraw", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Begin must be called successfully before a Draw can be called."},
+	{Key: "BeginMustBeCalledBeforeEnd", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Begin must be called successfully before End can be called."},
+	{Key: "EndMustBeCalledBeforeBegin", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Begin cannot be called again until End has been successfully called."},
+	// Foundation 50 corrected this KEY. The value was right and its key was
+	// invented from the sentence; the resource-set reader found no
+	// DopplerScaleMustBeGreaterThanOrEqualToZero anywhere, and the real key is
+	// InvalidEmitterDopplerScale.
+	{Key: "InvalidEmitterDopplerScale", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "The doppler scale of an audio emitter must be greater than or equal to zero."},
 	{Key: "GameCannotBeNull", Assembly: "Microsoft.Xna.Framework.Game.dll",
 		Value: "Game cannot be null."},
@@ -141,9 +166,21 @@ func run(assemblyRoot, repositoryRoot string) (report, error) {
 				fmt.Sprintf("%s names assembly %s, which is not retained", entry.Key, entry.Assembly))
 			continue
 		}
-		if !strings.Contains(string(blob), clrSpelling(entry)) {
+		set, err := resourceStrings(blob)
+		if err != nil {
 			result.Findings = append(result.Findings,
-				fmt.Sprintf("%s is claimed as %q but that text is not in %s", entry.Key, entry.Value, entry.Assembly))
+				fmt.Sprintf("%s names assembly %s, whose resource sets could not be read: %v", entry.Key, entry.Assembly, err))
+			continue
+		}
+		actual, present := set[entry.Key]
+		if !present {
+			result.Findings = append(result.Findings,
+				fmt.Sprintf("%s is not a resource key in %s", entry.Key, entry.Assembly))
+			continue
+		}
+		if actual != clrSpelling(entry) {
+			result.Findings = append(result.Findings,
+				fmt.Sprintf("%s in %s is %q, and the source claims %q", entry.Key, entry.Assembly, actual, entry.Value))
 			continue
 		}
 		result.Verified++

@@ -40,7 +40,7 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 109,
+    "MISSING_MEMBER": 101,
     "MISSING_TYPE": 133,
     "MISSING_TYPES": 133,
     "OPERATOR_MAPPING_MISMATCH": 0,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1896,
+    "TARGET_MEMBERS": 1904,
     "TARGET_TYPES": 124,
-    "TOTAL_DIAGNOSTICS": 242,
+    "TOTAL_DIAGNOSTICS": 234,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -324,12 +324,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Game::LaunchParameters()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.LaunchParameters",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::IsActive()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.IsActive",
       "message": "mapped Go member is absent"
     },
     {
@@ -1090,42 +1084,6 @@
     },
     {
       "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndVector2AndColor",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Vector2,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],Microsoft.Xna.Framework.Color)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColor",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Vector2,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],Microsoft.Xna.Framework.Color,System.Single,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Graphics.SpriteEffects,System.Single)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Rectangle,Microsoft.Xna.Framework.Color)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndRectangleAndColor",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Rectangle,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],Microsoft.Xna.Framework.Color)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Rectangle,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],Microsoft.Xna.Framework.Color,System.Single,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Graphics.SpriteEffects,System.Single)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColorAndSingleAndVector2AndSpriteEffectsAndSingle",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch::DrawString(Microsoft.Xna.Framework.Graphics.SpriteFont,System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color)",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawStringBySpriteFontAndStringAndVector2AndColor",
       "message": "mapped Go member is absent"
@@ -1236,12 +1194,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(System.Int32,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32)",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataByInt32AndNullableOfRectangleAndSliceOf0AndInt32AndInt32",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture2D::Bounds()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.Bounds",
       "message": "mapped Go member is absent"
     },
     {
@@ -1660,11 +1612,10 @@
       "missingMembers": [
         "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:GameContent",
         "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:SetGameContent",
-        "Microsoft.Xna.Framework.Game::IsActive() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.IsActive",
         "Microsoft.Xna.Framework.Game::LaunchParameters() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.LaunchParameters",
         "Microsoft.Xna.Framework.Game::ShowMissingRequirementMessage(System.Exception) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.ShowMissingRequirementMessage"
       ],
-      "diagnostics": 5
+      "diagnostics": 4
     },
     {
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
@@ -1749,12 +1700,6 @@
         "Microsoft.Xna.Framework.Graphics.SpriteBatch::Begin(Microsoft.Xna.Framework.Graphics.SpriteSortMode,Microsoft.Xna.Framework.Graphics.BlendState,Microsoft.Xna.Framework.Graphics.SamplerState,Microsoft.Xna.Framework.Graphics.DepthStencilState,Microsoft.Xna.Framework.Graphics.RasterizerState) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerState",
         "Microsoft.Xna.Framework.Graphics.SpriteBatch::Begin(Microsoft.Xna.Framework.Graphics.SpriteSortMode,Microsoft.Xna.Framework.Graphics.BlendState,Microsoft.Xna.Framework.Graphics.SamplerState,Microsoft.Xna.Framework.Graphics.DepthStencilState,Microsoft.Xna.Framework.Graphics.RasterizerState,Microsoft.Xna.Framework.Graphics.Effect) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffect",
         "Microsoft.Xna.Framework.Graphics.SpriteBatch::Begin(Microsoft.Xna.Framework.Graphics.SpriteSortMode,Microsoft.Xna.Framework.Graphics.BlendState,Microsoft.Xna.Framework.Graphics.SamplerState,Microsoft.Xna.Framework.Graphics.DepthStencilState,Microsoft.Xna.Framework.Graphics.RasterizerState,Microsoft.Xna.Framework.Graphics.Effect,Microsoft.Xna.Framework.Matrix) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffectAndMatrix",
-        "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Rectangle,Microsoft.Xna.Framework.Color) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndRectangleAndColor",
-        "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Rectangle,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],Microsoft.Xna.Framework.Color) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor",
-        "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Rectangle,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],Microsoft.Xna.Framework.Color,System.Single,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Graphics.SpriteEffects,System.Single) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColorAndSingleAndVector2AndSpriteEffectsAndSingle",
-        "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndVector2AndColor",
-        "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Vector2,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],Microsoft.Xna.Framework.Color) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColor",
-        "Microsoft.Xna.Framework.Graphics.SpriteBatch::Draw(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Vector2,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],Microsoft.Xna.Framework.Color,System.Single,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Graphics.SpriteEffects,System.Single) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle",
         "Microsoft.Xna.Framework.Graphics.SpriteBatch::DrawString(Microsoft.Xna.Framework.Graphics.SpriteFont,System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawStringBySpriteFontAndStringAndVector2AndColor",
         "Microsoft.Xna.Framework.Graphics.SpriteBatch::DrawString(Microsoft.Xna.Framework.Graphics.SpriteFont,System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color,System.Single,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Graphics.SpriteEffects,System.Single) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawStringBySpriteFontAndStringAndVector2AndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle",
         "Microsoft.Xna.Framework.Graphics.SpriteBatch::DrawString(Microsoft.Xna.Framework.Graphics.SpriteFont,System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color,System.Single,Microsoft.Xna.Framework.Vector2,System.Single,Microsoft.Xna.Framework.Graphics.SpriteEffects,System.Single) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawStringBySpriteFontAndStringAndVector2AndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle",
@@ -1762,14 +1707,13 @@
         "Microsoft.Xna.Framework.Graphics.SpriteBatch::DrawString(Microsoft.Xna.Framework.Graphics.SpriteFont,System.Text.StringBuilder,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color,System.Single,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Graphics.SpriteEffects,System.Single) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawStringBySpriteFontAndStringBuilderAndVector2AndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle",
         "Microsoft.Xna.Framework.Graphics.SpriteBatch::DrawString(Microsoft.Xna.Framework.Graphics.SpriteFont,System.Text.StringBuilder,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color,System.Single,Microsoft.Xna.Framework.Vector2,System.Single,Microsoft.Xna.Framework.Graphics.SpriteEffects,System.Single) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SpriteBatch.DrawStringBySpriteFontAndStringBuilderAndVector2AndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle"
       ],
-      "diagnostics": 16
+      "diagnostics": 10
     },
     {
       "xna": "Microsoft.Xna.Framework.Graphics.Texture2D",
       "missingMembers": [
         "Microsoft.Xna.Framework.Graphics.Texture2D::.ctor(Microsoft.Xna.Framework.Graphics.GraphicsDevice,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NewTexture2DByGraphicsDeviceAndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.Texture2D::.ctor(Microsoft.Xna.Framework.Graphics.GraphicsDevice,System.Int32,System.Int32,System.Boolean,Microsoft.Xna.Framework.Graphics.SurfaceFormat) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NewTexture2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormat",
-        "Microsoft.Xna.Framework.Graphics.Texture2D::Bounds() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.Bounds",
         "Microsoft.Xna.Framework.Graphics.Texture2D::FromStream(Microsoft.Xna.Framework.Graphics.GraphicsDevice,System.IO.Stream,System.Int32,System.Int32,System.Boolean) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2DFromStreamByGraphicsDeviceAndStreamAndInt32AndInt32AndBoolean",
         "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(!!0[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataBySliceOf0",
         "Microsoft.Xna.Framework.Graphics.Texture2D::GetData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.GetDataBySliceOf0AndInt32AndInt32",
@@ -1780,7 +1724,7 @@
         "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataBySliceOf0AndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.Texture2D::SetData(System.Int32,System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture2D.SetDataByInt32AndNullableOfRectangleAndSliceOf0AndInt32AndInt32"
       ],
-      "diagnostics": 12
+      "diagnostics": 11
     },
     {
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager",

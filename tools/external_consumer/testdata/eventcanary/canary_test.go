@@ -2750,3 +2750,59 @@ func TestGraphicsDeviceManagerContractsFromOutside(t *testing.T) {
 		t.Fatalf("OnDeviceReset reached %d handlers, want one", raised)
 	}
 }
+
+// TestEverySpriteDrawOverloadIsReachableFromOutside compiles every one of the
+// profile's seven Draw overloads against its exact projected signature.
+//
+// It is the one thing an in-package test cannot check: an overload family is
+// where a binding can look complete while missing a member, because every name
+// is the same word and only the argument list differs. A consumer writing
+// `spriteBatch.Draw(texture, position, color)` in C# has to find the Go member
+// whose suffix spells those three types, and this is where that spelling is
+// pinned.
+func TestEverySpriteDrawOverloadIsReachableFromOutside(t *testing.T) {
+	batch := &graphics.SpriteBatch{}
+	texture := &graphics.Texture2D{}
+
+	var _ func(*graphics.Texture2D, framework.Vector2, framework.Color) error = batch.DrawByTexture2DAndVector2AndColor
+	var _ func(*graphics.Texture2D, framework.Vector2, *framework.Rectangle, framework.Color) error = batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColor
+	var _ func(*graphics.Texture2D, framework.Vector2, *framework.Rectangle, framework.Color, float32, framework.Vector2, float32, graphics.SpriteEffects, float32) error = batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle
+	var _ func(*graphics.Texture2D, framework.Vector2, *framework.Rectangle, framework.Color, float32, framework.Vector2, framework.Vector2, graphics.SpriteEffects, float32) error = batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle
+	var _ func(*graphics.Texture2D, framework.Rectangle, framework.Color) error = batch.DrawByTexture2DAndRectangleAndColor
+	var _ func(*graphics.Texture2D, framework.Rectangle, *framework.Rectangle, framework.Color) error = batch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor
+	var _ func(*graphics.Texture2D, framework.Rectangle, *framework.Rectangle, framework.Color, float32, framework.Vector2, graphics.SpriteEffects, float32) error = batch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColorAndSingleAndVector2AndSpriteEffectsAndSingle
+
+	// The optional Nullable<Rectangle> is a POINTER, and nil is the reference's
+	// static nullRectangle. A consumer must be able to pass one.
+	if err := batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColor(
+		texture, framework.Vector2{}, nil, framework.Color{}); err == nil {
+		t.Fatal("a Draw outside a begin/end pair was accepted")
+	}
+
+	// The two guards a consumer will actually hit, with Microsoft's own
+	// sentences, from outside the module.
+	nullTexture := batch.DrawByTexture2DAndVector2AndColor(nil, framework.Vector2{}, framework.Color{})
+	if nullTexture == nil || !strings.Contains(nullTexture.Error(), "This method does not accept null for this parameter.") {
+		t.Fatalf("nil-texture Draw = %v, want the reference's ArgumentNullException message", nullTexture)
+	}
+	outside := batch.DrawByTexture2DAndVector2AndColor(texture, framework.Vector2{}, framework.Color{})
+	if outside == nil || !strings.Contains(outside.Error(), "Begin must be called successfully before a Draw can be called.") {
+		t.Fatalf("Draw outside a pair = %v, want the reference's InvalidOperationException message", outside)
+	}
+}
+
+// TestTextureBoundsAndGameIsActiveAreReachableFromOutside pins the two smallest
+// members Foundation 50 added, at their exact projected shapes: Bounds is
+// FALLIBLE because Width and Height are, and IsActive is INFALLIBLE because the
+// reference's getter has no throw site.
+func TestTextureBoundsAndGameIsActiveAreReachableFromOutside(t *testing.T) {
+	var _ func() (framework.Rectangle, error) = (&graphics.Texture2D{}).Bounds
+	var _ func() bool = (&framework.Game{}).IsActive
+
+	if (&framework.Game{}).IsActive() {
+		t.Fatal("a Game that received no activation signal reports active")
+	}
+	if _, err := (&graphics.Texture2D{}).Bounds(); err == nil {
+		t.Fatal("Bounds on an unbound texture returned a rectangle and no error")
+	}
+}

@@ -163,6 +163,57 @@ func (g *Game) RemoveDisposedHandler(subscription EventSubscription) error {
 	return g.disposed.Remove(subscription)
 }
 
+// IsActive is Game::get_IsActive, and it is NOT the field read its name
+// suggests. The whole method is 30 bytes:
+//
+//	get_IsActive()
+//	  ldc.i4.0; stloc.0                                  // guideVisible = false
+//	  call GamerServicesDispatcher::get_IsInitialized()
+//	  brfalse.s SKIP
+//	  call Guide::get_IsVisible(); stloc.0               // guideVisible = Guide.IsVisible
+//	SKIP:
+//	  ldarg.0; ldfld bool Game::isActive
+//	  brfalse.s RET_FALSE
+//	  ldloc.0; ldc.i4.0; ceq; ret                        // return !guideVisible
+//	RET_FALSE:
+//	  ldc.i4.0; ret
+//
+// which is `this.isActive && !(GamerServicesDispatcher.IsInitialized &&
+// Guide.IsVisible)`. The Guide overlay makes an otherwise-active Game report
+// inactive, which is the whole point of the property: a game does not run its
+// simulation under the Xbox LIVE guide.
+//
+// # Why CNA-Go returns the field, and why that is exact rather than approximate
+//
+// Both static calls live in Microsoft.Xna.Framework.GamerServices.dll, which is
+// not one of the seven pinned profile assemblies. That assembly is RETAINED, so
+// this is measured rather than assumed:
+//
+//	GamerServicesDispatcher::get_IsInitialized
+//	  ldsfld UserPacketBuffer GamerServicesDispatcher::packetBuffer
+//	  ldnull; ceq; ldc.i4.0; ceq; ret                    // packetBuffer != null
+//
+// and `packetBuffer` has exactly ONE `stsfld` in the entire assembly, in
+// `GamerServicesDispatcher::Initialize(IServiceProvider)` -- a public static
+// method on a type CNA-Go projects no part of. There is no expressible CNA-Go
+// program in which that method has run, so `IsInitialized` is false for every
+// one of them and the guide branch is unreachable code rather than a
+// simplification. The Foundation 42 classification that deferred this member on
+// "Microsoft.Xna.Framework.GamerServices.dll" was measuring the same fact and
+// drawing the stronger conclusion.
+//
+// So this is a field read, and it is the field the native activation signals
+// already maintain through the reference's own edge-triggered host handlers.
+// The one thing that would make it wrong -- a CNA-Go program that shows the
+// Xbox LIVE guide -- is the thing CNA-Go cannot do at all, and the day
+// GamerServices is projected this member gains the branch with it.
+func (g *Game) IsActive() bool {
+	if g == nil {
+		return false
+	}
+	return g.isActive
+}
+
 // OnActivated is Game::OnActivated, the protected virtual raise site:
 //
 //	OnActivated(object sender, EventArgs args)

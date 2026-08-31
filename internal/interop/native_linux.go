@@ -290,6 +290,17 @@ func nativeSpriteBatchDrawScaled(batch, texture uint64, command SpriteCommand) e
 		C.float(command.ScaleX), C.float(command.ScaleY), C.uint32_t(command.Effects), C.float(command.LayerDepth))))
 }
 
+func nativeSpriteBatchDrawDestination(batch, texture uint64, command SpriteDestinationCommand) error {
+	return resultError("cna_sprite_batch_submit_many", uint32(C.cna_go_sprite_batch_draw_destination(
+		C.CnaGoHandle(batch), C.CnaGoHandle(texture),
+		C.int32_t(command.DestinationX), C.int32_t(command.DestinationY),
+		C.int32_t(command.DestinationWidth), C.int32_t(command.DestinationHeight),
+		C.int32_t(command.SourceX), C.int32_t(command.SourceY), C.int32_t(command.SourceWidth), C.int32_t(command.SourceHeight),
+		C.uint8_t(command.Red), C.uint8_t(command.Green), C.uint8_t(command.Blue), C.uint8_t(command.Alpha),
+		C.float(command.Rotation), C.float(command.OriginX), C.float(command.OriginY),
+		C.uint32_t(command.Effects), C.float(command.LayerDepth))))
+}
+
 func nativeSpriteBatchEnd(batch uint64) error {
 	return resultError("cna_sprite_batch_end", uint32(C.cna_go_sprite_batch_end(C.CnaGoHandle(batch))))
 }

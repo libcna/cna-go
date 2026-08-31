@@ -80,8 +80,74 @@ func TestAnInventedMessageIsRejected(t *testing.T) {
 	if len(result.Findings) == 0 {
 		t.Fatal("an invented message passed; the tool is not checking anything")
 	}
-	if !strings.Contains(strings.Join(result.Findings, "\n"), "is not in Microsoft.Xna.Framework.Game.dll") {
-		t.Fatalf("findings did not name the missing text: %v", result.Findings)
+	joined := strings.Join(result.Findings, "\n")
+	if !strings.Contains(joined, "BackBufferDimMustBePositive") || !strings.Contains(joined, "greater than zero") {
+		t.Fatalf("findings did not report the key's real value: %v", result.Findings)
+	}
+}
+
+// TestARealMessageUnderAnInventedKeyIsRejected is the falsifiability proof for
+// what Foundation 50 added, and it plants the defect the substring search could
+// not see: a sentence that IS Microsoft's, filed under a key that is not.
+//
+// This is not hypothetical. CNA-Go carried it from Foundation 44 to
+// Foundation 50 under DopplerScaleMustBeGreaterThanOrEqualToZero, and every
+// substring search passed, because the sentence really is in the assembly. The
+// key is InvalidEmitterDopplerScale, and the key is what names the throw site.
+func TestARealMessageUnderAnInventedKeyIsRejected(t *testing.T) {
+	assemblies := retainedAssemblies(t)
+	saved := registry
+	t.Cleanup(func() { registry = saved })
+	registry = []claimedString{{
+		Key:      "DopplerScaleMustBeGreaterThanOrEqualToZero",
+		Assembly: "Microsoft.Xna.Framework.dll",
+		Value:    "The doppler scale of an audio emitter must be greater than or equal to zero.",
+	}}
+	result, err := run(assemblies, repositoryRoot(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Findings) == 0 {
+		t.Fatal("a real message under an invented key passed; the reader is not keyed by name")
+	}
+	if !strings.Contains(strings.Join(result.Findings, "\n"), "is not a resource key") {
+		t.Fatalf("findings did not name the missing key: %v", result.Findings)
+	}
+}
+
+// TestTheResourceReaderFindsTheKeysTheThrowSitesCall reads four keys whose
+// values this milestone depends on and requires each to be exactly what the
+// assembly holds. It is the control for resources.go itself: a reader that
+// returned an empty map would make every registry check vacuous, and the
+// registry check alone cannot tell "verified" from "found nothing to compare".
+func TestTheResourceReaderFindsTheKeysTheThrowSitesCall(t *testing.T) {
+	blob, err := os.ReadFile(filepath.Join(retainedAssemblies(t), "Microsoft.Xna.Framework.dll"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := resourceStrings(blob)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(set) < 100 {
+		t.Fatalf("the reader found %d strings in Microsoft.Xna.Framework.dll, which is too few to be the real set", len(set))
+	}
+	for key, want := range map[string]string{
+		"NullNotAllowed":              "This method does not accept null for this parameter.",
+		"BeginMustBeCalledBeforeDraw": "Begin must be called successfully before a Draw can be called.",
+		"BeginMustBeCalledBeforeEnd":  "Begin must be called successfully before End can be called.",
+		"EndMustBeCalledBeforeBegin":  "Begin cannot be called again until End has been successfully called.",
+	} {
+		if got := set[key]; got != want {
+			t.Errorf("%s = %q, want %q", key, got, want)
+		}
+	}
+	// The two keys that read alike are DIFFERENT strings, and a reader that
+	// confused them would make one of the two throw sites report the other's
+	// message. Both name Begin and End; only one of them is about calling Begin
+	// twice.
+	if set["BeginMustBeCalledBeforeEnd"] == set["EndMustBeCalledBeforeBegin"] {
+		t.Fatal("the two begin/end messages came back identical")
 	}
 }
 

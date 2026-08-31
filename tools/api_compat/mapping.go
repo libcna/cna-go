@@ -845,6 +845,18 @@ var managedStoredMembers = map[string]map[string]bool{
 	// assigned once, by EnsureHost() from inside the constructor, so for a
 	// constructed Game the null branch is unreachable and the whole member is
 	// two field reads. It reaches no window, no device and no platform.
+	//
+	// Foundation 50 adds IsActive, and it is the one entry in this table whose
+	// reference body is NOT a field read: get_IsActive is 30 bytes that consult
+	// GamerServicesDispatcher.IsInitialized and Guide.IsVisible before reading
+	// the field. It is listed anyway, on measured evidence rather than on
+	// resemblance. Both statics live in
+	// Microsoft.Xna.Framework.GamerServices.dll, IsInitialized is
+	// `packetBuffer != null`, and packetBuffer has exactly one stsfld in that
+	// whole assembly -- inside GamerServicesDispatcher.Initialize, a method on
+	// a type CNA-Go projects no part of. The branch is unreachable for every
+	// expressible CNA-Go program, so what remains is `ldfld isActive`: no
+	// validation, no host, no window, no device, no throw site.
 	"Microsoft.Xna.Framework.Game": {
 		"property-get|Components":        true,
 		"property-get|Services":          true,
@@ -853,6 +865,7 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|IsFixedTimeStep":   true,
 		"property-get|IsMouseVisible":    true,
 		"property-get|Window":            true,
+		"property-get|IsActive":          true,
 	},
 	// Foundation 45. GameWindow is native-backed -- most of its members reach
 	// the platform window -- so it starts fallible and these three name their

@@ -268,6 +268,7 @@ CnaGoResult cna_go_sprite_batch_draw_scaled(
     float scale_y,
     uint32_t effects,
     float layer_depth);
+CnaGoResult cna_go_sprite_batch_draw_destination(CnaGoHandle batch, CnaGoHandle texture, int32_t destination_x, int32_t destination_y, int32_t destination_width, int32_t destination_height, int32_t source_x, int32_t source_y, int32_t source_width, int32_t source_height, uint8_t color_r, uint8_t color_g, uint8_t color_b, uint8_t color_a, float rotation, float origin_x, float origin_y, uint32_t effects, float layer_depth);
 CnaGoResult cna_go_sprite_batch_end(CnaGoHandle batch);
 CnaGoResult cna_go_sprite_batch_destroy(CnaGoHandle batch);
 

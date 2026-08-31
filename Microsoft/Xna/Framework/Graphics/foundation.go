@@ -216,6 +216,29 @@ func (t *Texture2D) Height() (int32, error) {
 	return int32(t.info.Height), nil
 }
 
+// Bounds is Texture2D::get_Bounds:
+//
+//	get_Bounds()
+//	  ldarg.0; call Texture2D::get_Width
+//	  ldarg.0; call Texture2D::get_Height
+//	  newobj Rectangle::.ctor(0, 0, width, height)
+//
+// A fresh rectangle at the origin, every call. It is fallible for the reason
+// Width and Height are: both getters read a disposed-checked native texture,
+// and the reference's own getters read a field on a GraphicsResource whose
+// disposal it checks.
+func (t *Texture2D) Bounds() (framework.Rectangle, error) {
+	width, err := t.Width()
+	if err != nil {
+		return framework.Rectangle{}, err
+	}
+	height, err := t.Height()
+	if err != nil {
+		return framework.Rectangle{}, err
+	}
+	return framework.NewRectangle(0, 0, width, height), nil
+}
+
 func (t *Texture2D) Dispose(disposing bool) error {
 	_ = disposing
 	if t == nil || t.resource == nil {
@@ -227,6 +250,11 @@ func (t *Texture2D) Dispose(disposing bool) error {
 // SpriteBatch is an OWNED, generation-checked native SpriteBatch.
 type SpriteBatch struct {
 	resource *interop.Resource
+	// inBeginEndPair is the reference's own field. It is tracked managed-side
+	// because the reference's two guards report Microsoft's messages, and CNA
+	// -- which refuses the same states with CNA_RESULT_INVALID_STATE -- reports
+	// its own. See sprite_batch_draw.go.
+	inBeginEndPair bool
 }
 
 func NewSpriteBatch(graphicsDevice *GraphicsDevice) (*SpriteBatch, error) {
@@ -240,13 +268,44 @@ func NewSpriteBatch(graphicsDevice *GraphicsDevice) (*SpriteBatch, error) {
 	return &SpriteBatch{resource: resource}, nil
 }
 
+// BeginByNone is SpriteBatch::Begin(), which forwards to the seven-argument
+// Begin with (SpriteSortMode.Deferred, null, null, null, null, null,
+// Matrix.Identity). That overload's FIRST statement is the guard:
+//
+//	if (this.inBeginEndPair)
+//	    throw new InvalidOperationException(FrameworkResources.EndMustBeCalledBeforeBegin);
+//
+// The flag is raised only after the state is stored, so a refused Begin leaves
+// the pair exactly as it was. CNA-Go raises it only after CNA accepts, for the
+// same reason.
 func (b *SpriteBatch) BeginByNone() error {
-	if b == nil || b.resource == nil {
+	if b == nil {
 		return interop.ErrDisposed
 	}
-	return b.resource.BeginSpriteBatch()
+	// The pair guard runs before the disposal check, for the reason it runs
+	// before everything else in the reference: it is the FIRST statement of
+	// the seven-argument Begin, ahead of any state the object holds.
+	if b.inBeginEndPair {
+		return fmt.Errorf("%w: %s", errSpriteInvalidOperation, endMustBeCalledBeforeBegin)
+	}
+	if b.resource == nil {
+		return interop.ErrDisposed
+	}
+	if err := b.resource.BeginSpriteBatch(); err != nil {
+		return err
+	}
+	b.inBeginEndPair = true
+	return nil
 }
 
+// DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle
+// is the UNIFORM-scale overload: the reference stores its one `scale` float
+// into BOTH the Vector4's Z and its W, which is what makes it the same route as
+// its per-axis sibling and a different member.
+//
+// Foundation 50 routed it through spriteDraw with the other six. Until then it
+// reported ErrDisposed for a nil texture and did not check the begin/end pair
+// at all, so it reported neither of the reference's two messages.
 func (b *SpriteBatch) DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle(
 	texture *Texture2D,
 	position framework.Vector2,
@@ -258,29 +317,32 @@ func (b *SpriteBatch) DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAnd
 	effects SpriteEffects,
 	layerDepth float32,
 ) error {
-	if b == nil || b.resource == nil || texture == nil || texture.resource == nil {
-		return interop.ErrDisposed
-	}
-	command := interop.SpriteCommand{
-		PositionX: position.X, PositionY: position.Y,
-		Red: color.R(), Green: color.G(), Blue: color.B(), Alpha: color.A(),
-		Rotation: rotation, OriginX: origin.X, OriginY: origin.Y,
-		ScaleX: scale, ScaleY: scale, Effects: uint32(effects), LayerDepth: layerDepth,
-	}
-	if sourceRectangle != nil {
-		command.SourceX = sourceRectangle.X
-		command.SourceY = sourceRectangle.Y
-		command.SourceWidth = sourceRectangle.Width
-		command.SourceHeight = sourceRectangle.Height
-	}
-	return b.resource.DrawSprite(texture.resource, command)
+	return b.spriteDraw(texture, position.X, position.Y, scale, scale, true,
+		sourceRectangle, color, rotation, origin, effects, layerDepth)
 }
 
+// End is SpriteBatch::End, whose first statement is the mirror guard:
+//
+//	if (!this.inBeginEndPair)
+//	    throw new InvalidOperationException(FrameworkResources.BeginMustBeCalledBeforeEnd);
+//
+// and whose LAST relevant statement clears the flag -- after the flush, so a
+// refused End leaves the pair open, which is what lets a consumer retry.
 func (b *SpriteBatch) End() error {
-	if b == nil || b.resource == nil {
+	if b == nil {
 		return interop.ErrDisposed
 	}
-	return b.resource.EndSpriteBatch()
+	if !b.inBeginEndPair {
+		return fmt.Errorf("%w: %s", errSpriteInvalidOperation, beginMustBeCalledBeforeEnd)
+	}
+	if b.resource == nil {
+		return interop.ErrDisposed
+	}
+	if err := b.resource.EndSpriteBatch(); err != nil {
+		return err
+	}
+	b.inBeginEndPair = false
+	return nil
 }
 
 func (b *SpriteBatch) Dispose(disposing bool) error {
