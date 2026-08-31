@@ -84,7 +84,15 @@
    "Microsoft.Xna.Framework.GameWindow|method|SetSupportedOrientations",
    "Microsoft.Xna.Framework.GameWindow|property-get|CurrentOrientation",
    "Microsoft.Xna.Framework.GameWindow|property-get|Title",
-   "Microsoft.Xna.Framework.GraphicsDeviceManager|property|SupportedOrientations"
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|GraphicsProfile",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|IsFullScreen",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|PreferMultiSampling",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|PreferredBackBufferFormat",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|PreferredBackBufferHeight",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|PreferredBackBufferWidth",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|PreferredDepthStencilFormat",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|SupportedOrientations",
+   "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|SynchronizeWithVerticalRetrace"
   ],
   "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
   "panicPolicy": "programmer-invariant-only-never-native-runtime-failure",

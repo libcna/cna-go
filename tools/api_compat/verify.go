@@ -1283,6 +1283,18 @@ func measureBufferUsageClosure(expected *expectedSurface, actual *actualSurface,
 	return measurement
 }
 
+// graphicsManagerRemainingMissing is the exact number of GraphicsDeviceManager
+// members the binding still does not project, and it is asserted rather than
+// bounded on purpose: this closure measurement exists to say how much of the
+// type is REACHED, and a range would let the number drift in either direction
+// without anyone noticing.
+//
+// It was 40 from Foundation 13 until Foundation 48 projected the type's nine
+// configuration properties, its two static defaults, ApplyChanges and
+// ToggleFullScreen. The six that remain need GraphicsDeviceInformation, which
+// needs GraphicsAdapter.
+const graphicsManagerRemainingMissing = 20
+
 func measureDisplayOrientationClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) displayOrientationClosure {
 	measurement := displayOrientationClosure{SourceTypes: 2, Status: "FAIL"}
 
@@ -1361,7 +1373,7 @@ func measureDisplayOrientationClosure(expected *expectedSurface, actual *actualS
 	if measurement.SourceIdentities == 6 && measurement.MappedGoIdentities == 6 &&
 		measurement.TargetTypes == 2 && measurement.TargetGoIdentities == 6 &&
 		measurement.DisplayOrientationLocalDiagnostics == 0 && measurement.SupportedPropertyLocalDiagnostics == 0 &&
-		measurement.GraphicsManagerRemainingMissing == 40 {
+		measurement.GraphicsManagerRemainingMissing == graphicsManagerRemainingMissing {
 		measurement.Status = "PASS"
 	}
 	return measurement

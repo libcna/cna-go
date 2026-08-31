@@ -211,6 +211,24 @@ var bridgeMutations = []sourceMutation{
 		old:  "typedef CNA_Result (*cna_game_tick_fn)(CNA_Handle);",
 		new:  "typedef CNA_Result (*cna_game_tick_fn)(CNA_Handle, uint32_t);",
 	},
+	// Foundation 48's GraphicsDeviceManager setters. Nine of the ten share the
+	// shape CNA_Result(CNA_Handle, <one value>), so a manifest that bound one
+	// where another belongs compiles whenever the value types match -- which
+	// is why the width and height routes, both CNA_Result(CNA_Handle, int32_t),
+	// are separated by the loader's dladdr identity check rather than by the
+	// compiler.
+	{
+		name: "missing-manager-apply-changes-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_graphics_device_manager_apply_changes) \\\n",
+		new:  "",
+	},
+	{
+		name: "missing-manager-full-screen-symbol",
+		file: "abi_manifest.h",
+		old:  "    X(cna_graphics_device_manager_set_is_full_screen) \\\n",
+		new:  "",
+	},
 	{
 		name: "missing-window-title-symbol",
 		file: "abi_manifest.h",
@@ -296,6 +314,24 @@ var probeMutations = []sourceMutation{
 	// Foundation 47. C narrows a CNA_Result to a CNA_Bool silently, so a
 	// manifest that turned a frame step's result code into a Boolean would
 	// compile against itself and report success for every failing frame.
+	{
+		name: "manager-back-buffer-width-narrowed",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_manager_set_preferred_back_buffer_width_fn)(CNA_Handle, int32_t);",
+		new:  "typedef CNA_Result (*cna_graphics_device_manager_set_preferred_back_buffer_width_fn)(CNA_Handle, int16_t);",
+	},
+	{
+		name: "manager-full-screen-takes-an-int",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_manager_set_is_full_screen_fn)(CNA_Handle, CNA_Bool);",
+		new:  "typedef CNA_Result (*cna_graphics_device_manager_set_is_full_screen_fn)(CNA_Handle, int32_t);",
+	},
+	{
+		name: "manager-apply-changes-takes-a-flag",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_manager_apply_changes_fn)(CNA_Handle);",
+		new:  "typedef CNA_Result (*cna_graphics_device_manager_apply_changes_fn)(CNA_Handle, CNA_Bool);",
+	},
 	{
 		name: "run-one-frame-returns-a-bool",
 		file: "abi_manifest.h",

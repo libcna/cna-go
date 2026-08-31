@@ -5,6 +5,17 @@
 *.out
 coverage.*
 
+# `go build ./tools/<name>` drops the binary in the repository root. They are
+# build output, not source, and one of them reached a commit once.
+/api_compat
+/behavior
+/capabilities
+/external_consumer
+/generate_keys
+/native_abi
+/native_stress
+/packed_vector_qualify
+
 # Shared build directories (closed list; never suffix per ticket)
 /build/
 /build-asan/

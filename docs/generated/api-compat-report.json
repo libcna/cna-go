@@ -40,7 +40,7 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 143,
+    "MISSING_MEMBER": 123,
     "MISSING_TYPE": 133,
     "MISSING_TYPES": 133,
     "OPERATOR_MAPPING_MISMATCH": 0,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1862,
+    "TARGET_MEMBERS": 1882,
     "TARGET_TYPES": 124,
-    "TOTAL_DIAGNOSTICS": 276,
+    "TOTAL_DIAGNOSTICS": 256,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -1312,18 +1312,6 @@
     },
     {
       "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::ApplyChanges()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.ApplyChanges",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::ToggleFullScreen()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.ToggleFullScreen",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::FindBestDevice(System.Boolean)",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.FindBestDevice",
       "message": "mapped Go member is absent"
@@ -1368,102 +1356,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::OnPreparingDeviceSettings(System.Object,Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs)",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnPreparingDeviceSettings",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::GraphicsProfile()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceManagerGraphicsProfile",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::GraphicsProfile()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SetGraphicsDeviceManagerGraphicsProfile",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredDepthStencilFormat()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceManagerPreferredDepthStencilFormat",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredDepthStencilFormat()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SetGraphicsDeviceManagerPreferredDepthStencilFormat",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferFormat()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceManagerPreferredBackBufferFormat",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferFormat()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SetGraphicsDeviceManagerPreferredBackBufferFormat",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferWidth()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.PreferredBackBufferWidth",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferWidth()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetPreferredBackBufferWidth",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferHeight()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.PreferredBackBufferHeight",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferHeight()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetPreferredBackBufferHeight",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::IsFullScreen()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.IsFullScreen",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::IsFullScreen()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetIsFullScreen",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::SynchronizeWithVerticalRetrace()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SynchronizeWithVerticalRetrace",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::SynchronizeWithVerticalRetrace()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetSynchronizeWithVerticalRetrace",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferMultiSampling()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.PreferMultiSampling",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferMultiSampling()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetPreferMultiSampling",
       "message": "mapped Go member is absent"
     },
     {
@@ -1536,18 +1428,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::Disposed()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDisposedHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DefaultBackBufferWidth()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManagerDefaultBackBufferWidth",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::DefaultBackBufferHeight()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManagerDefaultBackBufferHeight",
       "message": "mapped Go member is absent"
     },
     {
@@ -1989,10 +1869,7 @@
     {
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager",
       "missingMembers": [
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::ApplyChanges() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.ApplyChanges",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::CanResetDevice(Microsoft.Xna.Framework.GraphicsDeviceInformation) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.CanResetDevice",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DefaultBackBufferHeight() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManagerDefaultBackBufferHeight",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::DefaultBackBufferWidth() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManagerDefaultBackBufferWidth",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceCreated() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceCreatedHandler",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceCreated() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDeviceCreatedHandler",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::DeviceDisposing() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDeviceDisposingHandler",
@@ -2004,33 +1881,16 @@
         "Microsoft.Xna.Framework.GraphicsDeviceManager::Disposed() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddDisposedHandler",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::Disposed() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemoveDisposedHandler",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::FindBestDevice(System.Boolean) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.FindBestDevice",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::GraphicsProfile() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceManagerGraphicsProfile",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::GraphicsProfile() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SetGraphicsDeviceManagerGraphicsProfile",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::IsFullScreen() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.IsFullScreen",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::IsFullScreen() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetIsFullScreen",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceCreated(System.Object,System.EventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceCreated",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceDisposing(System.Object,System.EventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceDisposing",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceReset(System.Object,System.EventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceReset",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::OnDeviceResetting(System.Object,System.EventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnDeviceResetting",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::OnPreparingDeviceSettings(System.Object,Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnPreparingDeviceSettings",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferMultiSampling() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.PreferMultiSampling",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferMultiSampling() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetPreferMultiSampling",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferFormat() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceManagerPreferredBackBufferFormat",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferFormat() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SetGraphicsDeviceManagerPreferredBackBufferFormat",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferHeight() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.PreferredBackBufferHeight",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferHeight() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetPreferredBackBufferHeight",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferWidth() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.PreferredBackBufferWidth",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredBackBufferWidth() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetPreferredBackBufferWidth",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredDepthStencilFormat() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceManagerPreferredDepthStencilFormat",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreferredDepthStencilFormat() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SetGraphicsDeviceManagerPreferredDepthStencilFormat",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::PreparingDeviceSettings() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddPreparingDeviceSettingsHandler",
         "Microsoft.Xna.Framework.GraphicsDeviceManager::PreparingDeviceSettings() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemovePreparingDeviceSettingsHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::RankDevices(System.Collections.Generic.List`1[Microsoft.Xna.Framework.GraphicsDeviceInformation]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RankDevices",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::SynchronizeWithVerticalRetrace() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SetSynchronizeWithVerticalRetrace",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::SynchronizeWithVerticalRetrace() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.SynchronizeWithVerticalRetrace",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::ToggleFullScreen() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.ToggleFullScreen"
+        "Microsoft.Xna.Framework.GraphicsDeviceManager::RankDevices(System.Collections.Generic.List`1[Microsoft.Xna.Framework.GraphicsDeviceInformation]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RankDevices"
       ],
-      "diagnostics": 40
+      "diagnostics": 20
     }
   ],
   "missingTypes": [
@@ -2844,7 +2704,7 @@
     "targetGoIdentities": 6,
     "displayOrientationLocalDiagnostics": 0,
     "supportedOrientationsLocalDiagnostics": 0,
-    "graphicsDeviceManagerRemainingMissingMembers": 40,
+    "graphicsDeviceManagerRemainingMissingMembers": 20,
     "status": "PASS",
     "sliceMeasurements": [
       {
@@ -9966,7 +9826,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "3ba73cdae35dd7bd530e6f9c796a4619cfe119377ee121cfc9e0539d2e4c9478",
+    "mappingSha256": "4f39f86dcaa1458addadd6b1ba8b18bb02b8a1c921bd94080e18003e77b07332",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

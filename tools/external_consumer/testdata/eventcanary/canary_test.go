@@ -2637,3 +2637,65 @@ func TestFrameStepMembersExistAndRefuseAnUnconstructedGame(t *testing.T) {
 		}
 	}
 }
+
+// TestGraphicsDeviceManagerSurfaceFromOutside pins the configuration surface a
+// consumer actually writes against, including the part that lives in a
+// different package from the object it configures.
+//
+// It creates no manager: NewGraphicsDeviceManager needs a live native game, and
+// a canary that started one would decide the outcome of every later test in the
+// same process. What it measures is the shape -- which is exactly what a
+// consumer compiles against.
+func TestGraphicsDeviceManagerSurfaceFromOutside(t *testing.T) {
+	// The two static read-only fields. They are the BACK BUFFER's defaults and
+	// are deliberately different from GameWindow's 800x600.
+	if framework.GraphicsDeviceManagerDefaultBackBufferWidth() != 800 ||
+		framework.GraphicsDeviceManagerDefaultBackBufferHeight() != 480 {
+		t.Fatalf("default back buffer = %dx%d, want 800x480",
+			framework.GraphicsDeviceManagerDefaultBackBufferWidth(),
+			framework.GraphicsDeviceManagerDefaultBackBufferHeight())
+	}
+
+	// The six framework-typed accessors: infallible getters, fallible setters.
+	// These declarations would not compile if either half were classified the
+	// other way.
+	var manager *framework.GraphicsDeviceManager
+	var _ func() int32 = manager.PreferredBackBufferWidth
+	var _ func() int32 = manager.PreferredBackBufferHeight
+	var _ func() bool = manager.IsFullScreen
+	var _ func() bool = manager.SynchronizeWithVerticalRetrace
+	var _ func() bool = manager.PreferMultiSampling
+	var _ func() framework.DisplayOrientation = manager.SupportedOrientations
+	var _ func(int32) error = manager.SetPreferredBackBufferWidth
+	var _ func(int32) error = manager.SetPreferredBackBufferHeight
+	var _ func(bool) error = manager.SetIsFullScreen
+	var _ func(bool) error = manager.SetSynchronizeWithVerticalRetrace
+	var _ func(bool) error = manager.SetPreferMultiSampling
+	var _ func(framework.DisplayOrientation) error = manager.SetSupportedOrientations
+	var _ func() error = manager.ApplyChanges
+	var _ func() error = manager.ToggleFullScreen
+
+	// The three Graphics-typed ones live in the Graphics package, because the
+	// framework package cannot name their enums. A consumer reaches them as
+	// package functions taking the manager.
+	var _ func(*framework.GraphicsDeviceManager) graphics.GraphicsProfile = graphics.GraphicsDeviceManagerGraphicsProfile
+	var _ func(*framework.GraphicsDeviceManager, graphics.GraphicsProfile) error = graphics.SetGraphicsDeviceManagerGraphicsProfile
+	var _ func(*framework.GraphicsDeviceManager) graphics.SurfaceFormat = graphics.GraphicsDeviceManagerPreferredBackBufferFormat
+	var _ func(*framework.GraphicsDeviceManager, graphics.SurfaceFormat) error = graphics.SetGraphicsDeviceManagerPreferredBackBufferFormat
+	var _ func(*framework.GraphicsDeviceManager) graphics.DepthFormat = graphics.GraphicsDeviceManagerPreferredDepthStencilFormat
+	var _ func(*framework.GraphicsDeviceManager, graphics.DepthFormat) error = graphics.SetGraphicsDeviceManagerPreferredDepthStencilFormat
+
+	// And they are NOT methods on the manager, which is the observable half of
+	// the cross-package cycle rule.
+	managerType := reflect.TypeOf((*framework.GraphicsDeviceManager)(nil))
+	for _, absent := range []string{"GraphicsProfile", "PreferredBackBufferFormat", "PreferredDepthStencilFormat"} {
+		if _, ok := managerType.MethodByName(absent); ok {
+			t.Fatalf("GraphicsDeviceManager declares %s; its type lives in the Graphics package", absent)
+		}
+	}
+
+	// A nil Game is refused, which is the reference's ArgumentNullException.
+	if _, err := framework.NewGraphicsDeviceManager(nil); err == nil {
+		t.Fatal("NewGraphicsDeviceManager accepted a nil Game")
+	}
+}

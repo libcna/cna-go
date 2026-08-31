@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 663,
-    "ASSERTIONS": 663,
+    "OBSERVATIONS": 665,
+    "ASSERTIONS": 665,
     "FAILURES": 0
   },
   "observations": [
@@ -5170,6 +5170,22 @@
     {
       "id": "game-graphics-device.a-device-less-service-answers-nil",
       "group": "GAME_GRAPHICS_DEVICE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-manager.default-back-buffer-is-800x480",
+      "group": "GRAPHICS_DEVICE_MANAGER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "800,480",
+      "actual": "800,480",
+      "passed": true
+    },
+    {
+      "id": "graphics-device-manager.a-nil-game-is-refused",
+      "group": "GRAPHICS_DEVICE_MANAGER",
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true",
       "actual": "true,true",

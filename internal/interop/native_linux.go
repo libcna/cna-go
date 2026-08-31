@@ -298,6 +298,59 @@ func nativeSpriteBatchDestroy(batch uint64) error {
 	return resultError("cna_sprite_batch_destroy", uint32(C.cna_go_sprite_batch_destroy(C.CnaGoHandle(batch))))
 }
 
+// The GraphicsDeviceManager configuration setters. Each is a store CNA's own
+// manager applies at ChangeDevice time, so a value that never reached it would
+// be a setting that appears to work and does not.
+func nativeManagerSetGraphicsProfile(manager uint64, profile uint32) error {
+	return resultError("cna_graphics_device_manager_set_graphics_profile",
+		uint32(C.cna_go_graphics_device_manager_set_graphics_profile(C.CnaGoHandle(manager), C.uint32_t(profile))))
+}
+
+func nativeManagerSetIsFullScreen(manager uint64, value bool) error {
+	return resultError("cna_graphics_device_manager_set_is_full_screen",
+		uint32(C.cna_go_graphics_device_manager_set_is_full_screen(C.CnaGoHandle(manager), C.uint8_t(boolToByte(value)))))
+}
+
+func nativeManagerSetPreferMultiSampling(manager uint64, value bool) error {
+	return resultError("cna_graphics_device_manager_set_prefer_multi_sampling",
+		uint32(C.cna_go_graphics_device_manager_set_prefer_multi_sampling(C.CnaGoHandle(manager), C.uint8_t(boolToByte(value)))))
+}
+
+func nativeManagerSetPreferredBackBufferFormat(manager uint64, format uint32) error {
+	return resultError("cna_graphics_device_manager_set_preferred_back_buffer_format",
+		uint32(C.cna_go_graphics_device_manager_set_preferred_back_buffer_format(C.CnaGoHandle(manager), C.uint32_t(format))))
+}
+
+func nativeManagerSetPreferredBackBufferWidth(manager uint64, width int32) error {
+	return resultError("cna_graphics_device_manager_set_preferred_back_buffer_width",
+		uint32(C.cna_go_graphics_device_manager_set_preferred_back_buffer_width(C.CnaGoHandle(manager), C.int32_t(width))))
+}
+
+func nativeManagerSetPreferredBackBufferHeight(manager uint64, height int32) error {
+	return resultError("cna_graphics_device_manager_set_preferred_back_buffer_height",
+		uint32(C.cna_go_graphics_device_manager_set_preferred_back_buffer_height(C.CnaGoHandle(manager), C.int32_t(height))))
+}
+
+func nativeManagerSetPreferredDepthStencilFormat(manager uint64, format uint32) error {
+	return resultError("cna_graphics_device_manager_set_preferred_depth_stencil_format",
+		uint32(C.cna_go_graphics_device_manager_set_preferred_depth_stencil_format(C.CnaGoHandle(manager), C.uint32_t(format))))
+}
+
+func nativeManagerSetSynchronizeWithVerticalRetrace(manager uint64, value bool) error {
+	return resultError("cna_graphics_device_manager_set_synchronize_with_vertical_retrace",
+		uint32(C.cna_go_graphics_device_manager_set_synchronize_with_vertical_retrace(C.CnaGoHandle(manager), C.uint8_t(boolToByte(value)))))
+}
+
+func nativeManagerSetSupportedOrientations(manager uint64, orientations uint32) error {
+	return resultError("cna_graphics_device_manager_set_supported_orientations",
+		uint32(C.cna_go_graphics_device_manager_set_supported_orientations(C.CnaGoHandle(manager), C.uint32_t(orientations))))
+}
+
+func nativeManagerApplyChanges(manager uint64) error {
+	return resultError("cna_graphics_device_manager_apply_changes",
+		uint32(C.cna_go_graphics_device_manager_apply_changes(C.CnaGoHandle(manager))))
+}
+
 func nativeGameTick(game uint64) error {
 	return resultError("cna_game_tick", uint32(C.cna_go_game_tick(C.CnaGoHandle(game))))
 }

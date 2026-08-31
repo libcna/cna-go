@@ -605,6 +605,37 @@ CnaGoResult cna_go_sprite_batch_draw_scaled(CnaGoHandle batch, CnaGoHandle textu
 CnaGoResult cna_go_sprite_batch_end(CnaGoHandle batch) { return api.cna_sprite_batch_end(batch); }
 CnaGoResult cna_go_sprite_batch_destroy(CnaGoHandle batch) { return api.cna_sprite_batch_destroy(batch); }
 
+CnaGoResult cna_go_graphics_device_manager_set_graphics_profile(CnaGoHandle manager, uint32_t profile) {
+    return api.cna_graphics_device_manager_set_graphics_profile(manager, profile);
+}
+CnaGoResult cna_go_graphics_device_manager_set_is_full_screen(CnaGoHandle manager, uint8_t full_screen) {
+    return api.cna_graphics_device_manager_set_is_full_screen(manager, (CNA_Bool)(full_screen != 0));
+}
+CnaGoResult cna_go_graphics_device_manager_set_prefer_multi_sampling(CnaGoHandle manager, uint8_t prefer) {
+    return api.cna_graphics_device_manager_set_prefer_multi_sampling(manager, (CNA_Bool)(prefer != 0));
+}
+CnaGoResult cna_go_graphics_device_manager_set_preferred_back_buffer_format(CnaGoHandle manager, uint32_t format) {
+    return api.cna_graphics_device_manager_set_preferred_back_buffer_format(manager, format);
+}
+CnaGoResult cna_go_graphics_device_manager_set_preferred_back_buffer_width(CnaGoHandle manager, int32_t width) {
+    return api.cna_graphics_device_manager_set_preferred_back_buffer_width(manager, width);
+}
+CnaGoResult cna_go_graphics_device_manager_set_preferred_back_buffer_height(CnaGoHandle manager, int32_t height) {
+    return api.cna_graphics_device_manager_set_preferred_back_buffer_height(manager, height);
+}
+CnaGoResult cna_go_graphics_device_manager_set_preferred_depth_stencil_format(CnaGoHandle manager, uint32_t format) {
+    return api.cna_graphics_device_manager_set_preferred_depth_stencil_format(manager, format);
+}
+CnaGoResult cna_go_graphics_device_manager_set_synchronize_with_vertical_retrace(CnaGoHandle manager, uint8_t synchronize) {
+    return api.cna_graphics_device_manager_set_synchronize_with_vertical_retrace(manager, (CNA_Bool)(synchronize != 0));
+}
+CnaGoResult cna_go_graphics_device_manager_set_supported_orientations(CnaGoHandle manager, uint32_t orientations) {
+    return api.cna_graphics_device_manager_set_supported_orientations(manager, orientations);
+}
+CnaGoResult cna_go_graphics_device_manager_apply_changes(CnaGoHandle manager) {
+    return api.cna_graphics_device_manager_apply_changes(manager);
+}
+
 CnaGoResult cna_go_game_tick(CnaGoHandle game) {
     return api.cna_game_tick(game);
 }

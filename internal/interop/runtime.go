@@ -1057,6 +1057,119 @@ func (r *Runtime) GameDevice() (*Device, error) {
 	return &Device{runtime: r, generation: r.Generation(), ownership: borrowed}, nil
 }
 
+// managerHandle resolves a live GraphicsDeviceManager handle on the owner
+// thread. Unlike DeviceForManager it does NOT require an active lifecycle
+// callback: the reference's setters are managed field stores a consumer makes
+// from its own constructor, so requiring a callback would refuse the position
+// every real XNA program sets them from.
+func managerHandle(manager *Resource) (uint64, error) {
+	if manager == nil {
+		return 0, ErrDisposed
+	}
+	manager.mu.Lock()
+	handle := manager.handle
+	runtime := manager.runtime
+	generation := manager.generation
+	manager.mu.Unlock()
+	if handle == 0 || runtime == nil {
+		return 0, ErrDisposed
+	}
+	if _, err := runtime.activeGame(false); err != nil {
+		return 0, err
+	}
+	if err := runtime.validateGeneration(generation, false); err != nil {
+		return 0, err
+	}
+	return handle, nil
+}
+
+// The GraphicsDeviceManager configuration setters, one per projected property.
+// Each is the push half of the settled managed-store-plus-native-push split:
+// the framework package keeps the value the reference's own field keeps, and
+// these carry it to the manager CNA applies at ChangeDevice time.
+func ManagerSetGraphicsProfile(manager *Resource, profile uint32) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerSetGraphicsProfile(handle, profile)
+}
+
+func ManagerSetIsFullScreen(manager *Resource, value bool) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerSetIsFullScreen(handle, value)
+}
+
+func ManagerSetPreferMultiSampling(manager *Resource, value bool) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerSetPreferMultiSampling(handle, value)
+}
+
+func ManagerSetPreferredBackBufferFormat(manager *Resource, format uint32) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerSetPreferredBackBufferFormat(handle, format)
+}
+
+func ManagerSetPreferredBackBufferWidth(manager *Resource, width int32) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerSetPreferredBackBufferWidth(handle, width)
+}
+
+func ManagerSetPreferredBackBufferHeight(manager *Resource, height int32) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerSetPreferredBackBufferHeight(handle, height)
+}
+
+func ManagerSetPreferredDepthStencilFormat(manager *Resource, format uint32) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerSetPreferredDepthStencilFormat(handle, format)
+}
+
+func ManagerSetSynchronizeWithVerticalRetrace(manager *Resource, value bool) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerSetSynchronizeWithVerticalRetrace(handle, value)
+}
+
+func ManagerSetSupportedOrientations(manager *Resource, orientations uint32) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerSetSupportedOrientations(handle, orientations)
+}
+
+// ManagerApplyChanges is GraphicsDeviceManager::ApplyChanges. CNA implements
+// the reference's own guard -- a device that exists and is not dirty is left
+// alone -- so CNA-Go does not re-implement it over state it does not hold.
+func ManagerApplyChanges(manager *Resource) error {
+	handle, err := managerHandle(manager)
+	if err != nil {
+		return err
+	}
+	return nativeManagerApplyChanges(handle)
+}
+
 func DeviceForManager(manager *Resource) (*Device, error) {
 	if manager == nil {
 		return nil, ErrDisposed

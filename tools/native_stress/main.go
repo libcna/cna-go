@@ -112,6 +112,15 @@ type counters struct {
 	FrameStepDisposeChecks     int `json:"GAME_FRAME_STEP_DISPOSE_CHECKS"`
 	FrameStepRecreationChecks  int `json:"GAME_FRAME_STEP_RECREATION_CHECKS"`
 	FrameStepRunAfterStepCycle int `json:"GAME_FRAME_STEP_RUN_ADOPTS_SESSION_CYCLES"`
+
+	ManagerCycles           int `json:"GRAPHICS_MANAGER_CYCLES"`
+	ManagerDefaultChecks    int `json:"GRAPHICS_MANAGER_DEFAULT_CHECKS"`
+	ManagerSettersApplied   int `json:"GRAPHICS_MANAGER_SETTERS_APPLIED"`
+	ManagerCrossPackageSets int `json:"GRAPHICS_MANAGER_CROSS_PACKAGE_SETTERS_APPLIED"`
+	ManagerRangeChecks      int `json:"GRAPHICS_MANAGER_RANGE_CHECKS"`
+	ManagerApplyChanges     int `json:"GRAPHICS_MANAGER_APPLY_CHANGES"`
+	ManagerToggleChecks     int `json:"GRAPHICS_MANAGER_TOGGLE_FULL_SCREEN_CHECKS"`
+	ManagerWrongThreadCheck int `json:"GRAPHICS_MANAGER_WRONG_THREAD_CHECKS"`
 }
 
 type stressReport struct {
@@ -205,7 +214,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -381,6 +390,23 @@ func runParent() (counters, error) {
 	if total.FrameStepRunAfterStepCycle < 20 {
 		return total, errors.New("Run did not adopt a standalone session in every cycle")
 	}
+	// Foundation 48. GraphicsDeviceManager's nine configuration setters push to
+	// CNA's own manager, which is the object ApplyChanges reads.
+	if total.ManagerCycles < 20 || total.ManagerDefaultChecks < 20 {
+		return total, errors.New("native graphics-manager minimum was not met")
+	}
+	if total.ManagerSettersApplied != 6*total.ManagerCycles {
+		return total, fmt.Errorf("%d framework-typed settings across %d cycles, want six per cycle",
+			total.ManagerSettersApplied, total.ManagerCycles)
+	}
+	if total.ManagerCrossPackageSets != 3*total.ManagerCycles {
+		return total, fmt.Errorf("%d cross-package settings across %d cycles, want three per cycle",
+			total.ManagerCrossPackageSets, total.ManagerCycles)
+	}
+	if total.ManagerRangeChecks < 20 || total.ManagerApplyChanges < 20 ||
+		total.ManagerToggleChecks < 20 || total.ManagerWrongThreadCheck < 20 {
+		return total, errors.New("a graphics-manager range, apply, toggle or thread proof did not run in every cycle")
+	}
 	return total, nil
 }
 
@@ -413,6 +439,9 @@ func runChild(scenario string, index int) error {
 	}
 	if scenario == "frame-step-run" {
 		return runFrameStepRunChild()
+	}
+	if scenario == "graphics-manager" {
+		return runGraphicsManagerChild()
 	}
 	game := &stressGame{scenario: scenario, index: index, data: encodedPNG()}
 	host, err := framework.NewGame(game)
@@ -1852,6 +1881,161 @@ func runFrameStepRunChild() error {
 	runtime.GC()
 	result.GCStressPoints++
 	data, _ := json.Marshal(result)
+	fmt.Println(string(data))
+	return nil
+}
+
+// graphicsManagerGame proves GraphicsDeviceManager's configuration surface
+// against a LIVE native manager, which is the half the managed tests
+// structurally cannot reach: with no native manager every setter stores and
+// pushes nothing, so only a run can show that the value arrives.
+type graphicsManagerGame struct {
+	result counters
+}
+
+func (g *graphicsManagerGame) Initialize(host *framework.Game) error {
+	manager, err := framework.NewGraphicsDeviceManager(host)
+	if err != nil {
+		return fmt.Errorf("NewGraphicsDeviceManager: %w", err)
+	}
+
+	// The constructor's own field initializers, on a manager that now has a
+	// native one behind it.
+	if manager.PreferredBackBufferWidth() != framework.GraphicsDeviceManagerDefaultBackBufferWidth() ||
+		manager.PreferredBackBufferHeight() != framework.GraphicsDeviceManagerDefaultBackBufferHeight() ||
+		!manager.SynchronizeWithVerticalRetrace() || manager.IsFullScreen() || manager.PreferMultiSampling() {
+		return fmt.Errorf("constructor defaults: %dx%d vsync=%t fullscreen=%t multisample=%t",
+			manager.PreferredBackBufferWidth(), manager.PreferredBackBufferHeight(),
+			manager.SynchronizeWithVerticalRetrace(), manager.IsFullScreen(), manager.PreferMultiSampling())
+	}
+	if graphics.GraphicsDeviceManagerPreferredDepthStencilFormat(manager) != graphics.DepthFormatDepth24 {
+		return fmt.Errorf("PreferredDepthStencilFormat = %v, want Depth24",
+			graphics.GraphicsDeviceManagerPreferredDepthStencilFormat(manager))
+	}
+	g.result.ManagerDefaultChecks++
+
+	// The six framework-typed setters. Each stores AND reaches CNA's manager;
+	// a refused push would surface here rather than being swallowed.
+	type setting struct {
+		name  string
+		apply func() error
+		check func() bool
+	}
+	for _, s := range []setting{
+		{"PreferredBackBufferWidth", func() error { return manager.SetPreferredBackBufferWidth(1024) },
+			func() bool { return manager.PreferredBackBufferWidth() == 1024 }},
+		{"PreferredBackBufferHeight", func() error { return manager.SetPreferredBackBufferHeight(576) },
+			func() bool { return manager.PreferredBackBufferHeight() == 576 }},
+		{"IsFullScreen", func() error { return manager.SetIsFullScreen(false) },
+			func() bool { return !manager.IsFullScreen() }},
+		{"SynchronizeWithVerticalRetrace", func() error { return manager.SetSynchronizeWithVerticalRetrace(false) },
+			func() bool { return !manager.SynchronizeWithVerticalRetrace() }},
+		{"PreferMultiSampling", func() error { return manager.SetPreferMultiSampling(true) },
+			func() bool { return manager.PreferMultiSampling() }},
+		{"SupportedOrientations", func() error {
+			return manager.SetSupportedOrientations(framework.DisplayOrientationLandscapeLeft)
+		}, func() bool { return manager.SupportedOrientations() == framework.DisplayOrientationLandscapeLeft }},
+	} {
+		if err := s.apply(); err != nil {
+			return fmt.Errorf("Set%s against a live manager: %w", s.name, err)
+		}
+		if !s.check() {
+			return fmt.Errorf("Set%s did not reach the managed field", s.name)
+		}
+		g.result.ManagerSettersApplied++
+	}
+
+	// The three Graphics-typed ones, which travel through internal/servicebridge
+	// because the framework package cannot name their enums.
+	if err := graphics.SetGraphicsDeviceManagerGraphicsProfile(manager, graphics.GraphicsProfileReach); err != nil {
+		return fmt.Errorf("SetGraphicsProfile: %w", err)
+	}
+	if graphics.GraphicsDeviceManagerGraphicsProfile(manager) != graphics.GraphicsProfileReach {
+		return errors.New("GraphicsProfile did not round-trip across the package boundary")
+	}
+	g.result.ManagerCrossPackageSets++
+	if err := graphics.SetGraphicsDeviceManagerPreferredBackBufferFormat(manager, graphics.SurfaceFormatColor); err != nil {
+		return fmt.Errorf("SetPreferredBackBufferFormat: %w", err)
+	}
+	if graphics.GraphicsDeviceManagerPreferredBackBufferFormat(manager) != graphics.SurfaceFormatColor {
+		return errors.New("PreferredBackBufferFormat did not round-trip")
+	}
+	g.result.ManagerCrossPackageSets++
+	if err := graphics.SetGraphicsDeviceManagerPreferredDepthStencilFormat(manager, graphics.DepthFormatDepth16); err != nil {
+		return fmt.Errorf("SetPreferredDepthStencilFormat: %w", err)
+	}
+	if graphics.GraphicsDeviceManagerPreferredDepthStencilFormat(manager) != graphics.DepthFormatDepth16 {
+		return errors.New("PreferredDepthStencilFormat did not round-trip")
+	}
+	g.result.ManagerCrossPackageSets++
+
+	// The one validation, at its exact boundary, against a live manager: a
+	// rejected value never reaches CNA either.
+	if err := manager.SetPreferredBackBufferWidth(0); err == nil {
+		return errors.New("SetPreferredBackBufferWidth(0) was accepted; the IL compares with bgt on zero")
+	}
+	if manager.PreferredBackBufferWidth() != 1024 {
+		return fmt.Errorf("a rejected width stored: %d", manager.PreferredBackBufferWidth())
+	}
+	g.result.ManagerRangeChecks++
+
+	// A setter from another goroutine is refused, exactly as the timing
+	// setters and the window members are.
+	wrongThread := make(chan error, 1)
+	go func() { wrongThread <- manager.SetPreferMultiSampling(false) }()
+	if err := <-wrongThread; !errors.Is(err, interop.ErrWrongThread) {
+		return fmt.Errorf("a manager setter from a non-owner goroutine reported %v, want ErrWrongThread", err)
+	}
+	g.result.ManagerWrongThreadCheck++
+
+	if err := manager.ApplyChanges(); err != nil {
+		return fmt.Errorf("ApplyChanges: %w", err)
+	}
+	g.result.ManagerApplyChanges++
+
+	// ToggleFullScreen flips through the projected setter, so the managed flag
+	// follows the device.
+	before := manager.IsFullScreen()
+	if err := manager.ToggleFullScreen(); err != nil {
+		return fmt.Errorf("ToggleFullScreen: %w", err)
+	}
+	if manager.IsFullScreen() == before {
+		return errors.New("ToggleFullScreen did not flip the managed flag")
+	}
+	if err := manager.ToggleFullScreen(); err != nil {
+		return fmt.Errorf("second ToggleFullScreen: %w", err)
+	}
+	if manager.IsFullScreen() != before {
+		return errors.New("two ToggleFullScreen calls did not return to the starting state")
+	}
+	g.result.ManagerToggleChecks++
+
+	if err := manager.Dispose(true); err != nil {
+		return fmt.Errorf("Dispose: %w", err)
+	}
+	g.result.ManagerCycles++
+	return nil
+}
+
+func (g *graphicsManagerGame) LoadContent(*framework.Game) error { return nil }
+func (g *graphicsManagerGame) Update(host *framework.Game, _ framework.GameTime) error {
+	return host.Exit()
+}
+func (g *graphicsManagerGame) Draw(*framework.Game, framework.GameTime) error { return nil }
+func (g *graphicsManagerGame) UnloadContent(*framework.Game) error            { return nil }
+
+func runGraphicsManagerChild() error {
+	game := &graphicsManagerGame{}
+	host, err := framework.NewGame(game)
+	if err != nil {
+		return err
+	}
+	if err := host.Run(); err != nil {
+		return err
+	}
+	runtime.GC()
+	game.result.GCStressPoints++
+	data, _ := json.Marshal(game.result)
 	fmt.Println(string(data))
 	return nil
 }

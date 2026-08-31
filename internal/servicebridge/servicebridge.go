@@ -44,7 +44,10 @@
 // by a runtime check.
 package servicebridge
 
-import "sync"
+import (
+	"errors"
+	"sync"
+)
 
 // DeviceServiceResolver answers what the framework package cannot ask.
 //
@@ -72,10 +75,40 @@ type DeviceServiceResolver func(services any) (service any, hasDevice func() boo
 // private state of a framework type.
 type ComponentServiceReader func(component any) (service any, ok bool)
 
+// ManagerConfigurationSlot names one GraphicsDeviceManager configuration value
+// whose Go enum type lives in the Graphics package.
+//
+// Three of the nine configuration properties are typed by Graphics-package
+// enums -- GraphicsProfile, SurfaceFormat and DepthFormat -- so the settled
+// cross-package cycle rule projects those MEMBERS into the Graphics package
+// while their VALUES stay managed state on the framework-package object. The
+// framework package holds them as the raw int32 the CLR enums are; these slots
+// are how the Graphics package reads and writes them.
+//
+// The slot is an identity rather than a field name because a name would be a
+// string the compiler cannot check.
+type ManagerConfigurationSlot int
+
+const (
+	ManagerGraphicsProfile ManagerConfigurationSlot = iota
+	ManagerPreferredBackBufferFormat
+	ManagerPreferredDepthStencilFormat
+)
+
+// ManagerConfigurationReader reads one slot from a
+// *framework.GraphicsDeviceManager, passed as any for the usual reason.
+type ManagerConfigurationReader func(manager any, slot ManagerConfigurationSlot) (int32, bool)
+
+// ManagerConfigurationWriter writes one slot, performing the same store,
+// dirty-flag raise and native push the framework-package setters do.
+type ManagerConfigurationWriter func(manager any, slot ManagerConfigurationSlot, value int32) error
+
 var (
-	mu       sync.RWMutex
-	resolver DeviceServiceResolver
-	reader   ComponentServiceReader
+	mu            sync.RWMutex
+	resolver      DeviceServiceResolver
+	reader        ComponentServiceReader
+	managerReader ManagerConfigurationReader
+	managerWriter ManagerConfigurationWriter
 )
 
 // SetDeviceServiceResolver installs the Graphics package's resolver. It is
@@ -119,4 +152,36 @@ func ComponentService(component any) (any, bool) {
 		return nil, false
 	}
 	return current(component)
+}
+
+// SetManagerConfigurationAccessors installs the framework package's reader and
+// writer, from that package's init.
+func SetManagerConfigurationAccessors(read ManagerConfigurationReader, write ManagerConfigurationWriter) {
+	mu.Lock()
+	defer mu.Unlock()
+	managerReader, managerWriter = read, write
+}
+
+// ReadManagerConfiguration reads one slot, or reports that no reader is
+// installed. The framework package always installs one, so a false result here
+// means the value was not a GraphicsDeviceManager.
+func ReadManagerConfiguration(manager any, slot ManagerConfigurationSlot) (int32, bool) {
+	mu.RLock()
+	current := managerReader
+	mu.RUnlock()
+	if current == nil {
+		return 0, false
+	}
+	return current(manager, slot)
+}
+
+// WriteManagerConfiguration writes one slot.
+func WriteManagerConfiguration(manager any, slot ManagerConfigurationSlot, value int32) error {
+	mu.RLock()
+	current := managerWriter
+	mu.RUnlock()
+	if current == nil {
+		return errors.New("no GraphicsDeviceManager configuration writer is installed")
+	}
+	return current(manager, slot, value)
 }

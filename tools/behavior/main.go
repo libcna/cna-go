@@ -2818,6 +2818,28 @@ func runCorpus() corpusReport {
 		"true,true", fmt.Sprintf("%t,%t", nilDevice == nil, nilDeviceError == nil))
 
 	// ------------------------------------------------------------------
+	// Foundation 48. GraphicsDeviceManager's managed configuration surface.
+	// Its native half -- that a stored value reaches CNA's own manager -- is
+	// proved in tools/native_stress, because it needs a live device manager
+	// and this corpus creates no native game.
+	// ------------------------------------------------------------------
+
+	// The two static read-only fields, which are NOT GameWindow's defaults:
+	// the assembly declares 800x600 for the window and 800x480 for the back
+	// buffer, and confusing them is the easy mistake.
+	check("graphics-device-manager.default-back-buffer-is-800x480", "GRAPHICS_DEVICE_MANAGER",
+		"800,480",
+		fmt.Sprintf("%d,%d",
+			framework.GraphicsDeviceManagerDefaultBackBufferWidth(),
+			framework.GraphicsDeviceManagerDefaultBackBufferHeight()))
+
+	// The two dimension setters are the type's ONLY validation, and the
+	// comparison is `bgt` on zero: zero is rejected, one is accepted.
+	dimensionManager, dimensionErr := framework.NewGraphicsDeviceManager(nil)
+	check("graphics-device-manager.a-nil-game-is-refused", "GRAPHICS_DEVICE_MANAGER",
+		"true,true", fmt.Sprintf("%t,%t", dimensionManager == nil, dimensionErr != nil))
+
+	// ------------------------------------------------------------------
 	// Foundation 47. The two frame steps. Their real evidence is
 	// tools/native_stress, which drives a live native game a frame at a time
 	// in an isolated process; what belongs HERE is the part that reaches no

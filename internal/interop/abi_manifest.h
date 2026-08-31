@@ -172,6 +172,24 @@ typedef CNA_Result (*cna_game_unsubscribe_fn)(CNA_GameEventRegistrationHandle);
 typedef CNA_Result (*cna_graphics_device_manager_create_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_manager_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_manager_destroy_fn)(CNA_Handle);
+
+/* GraphicsDeviceManager's configuration surface.
+   Only the SETTERS are bound. Every one of the reference's getters is a single
+   `ldfld` over a managed field, so CNA-Go reads its own copy for the same
+   reason the Game timing getters do: a native getter would be a second source
+   of truth that could disagree with the field the setter wrote. The setters
+   ARE bound, because the value has to reach the loop that applies it --
+   cna_graphics_device_manager_apply_changes reads CNA's copy, not Go's. */
+typedef CNA_Result (*cna_graphics_device_manager_set_graphics_profile_fn)(CNA_Handle, uint32_t);
+typedef CNA_Result (*cna_graphics_device_manager_set_is_full_screen_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_graphics_device_manager_set_prefer_multi_sampling_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_graphics_device_manager_set_preferred_back_buffer_format_fn)(CNA_Handle, uint32_t);
+typedef CNA_Result (*cna_graphics_device_manager_set_preferred_back_buffer_width_fn)(CNA_Handle, int32_t);
+typedef CNA_Result (*cna_graphics_device_manager_set_preferred_back_buffer_height_fn)(CNA_Handle, int32_t);
+typedef CNA_Result (*cna_graphics_device_manager_set_preferred_depth_stencil_format_fn)(CNA_Handle, uint32_t);
+typedef CNA_Result (*cna_graphics_device_manager_set_synchronize_with_vertical_retrace_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_graphics_device_manager_set_supported_orientations_fn)(CNA_Handle, uint32_t);
+typedef CNA_Result (*cna_graphics_device_manager_apply_changes_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_get_viewport_fn)(CNA_Handle, CNA_Viewport*);
 typedef CNA_Result (*cna_graphics_device_clear_rgba_fn)(CNA_Handle, float, float, float, float);
@@ -233,6 +251,16 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_graphics_device_manager_create) \
     X(cna_graphics_device_manager_get_graphics_device) \
     X(cna_graphics_device_manager_destroy) \
+    X(cna_graphics_device_manager_set_graphics_profile) \
+    X(cna_graphics_device_manager_set_is_full_screen) \
+    X(cna_graphics_device_manager_set_prefer_multi_sampling) \
+    X(cna_graphics_device_manager_set_preferred_back_buffer_format) \
+    X(cna_graphics_device_manager_set_preferred_back_buffer_width) \
+    X(cna_graphics_device_manager_set_preferred_back_buffer_height) \
+    X(cna_graphics_device_manager_set_preferred_depth_stencil_format) \
+    X(cna_graphics_device_manager_set_synchronize_with_vertical_retrace) \
+    X(cna_graphics_device_manager_set_supported_orientations) \
+    X(cna_graphics_device_manager_apply_changes) \
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \

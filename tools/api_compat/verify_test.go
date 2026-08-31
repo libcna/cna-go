@@ -353,9 +353,15 @@ func TestDisplayOrientationGraphicsManagerMappedContract(t *testing.T) {
 	manager := surface.typeForXNA(graphicsManagerIdentity)
 	getter := surface.Members[symbolKey{Package: manager.PackagePath, Receiver: manager.GoName, Name: supportedOrientationsName}]
 	setter := surface.Members[symbolKey{Package: manager.PackagePath, Receiver: manager.GoName, Name: "Set" + supportedOrientationsName}]
+	// Foundation 48 split this property's two accessors. The getter is still
+	// one `ldfld` and still infallible; the SETTER now pushes the stored value
+	// to CNA's manager, because CNA's ApplyChanges reads CNA's copy and a value
+	// that never reached it would be a setting that appears to work and does
+	// not. A setter that could not report a refused push would be swallowing
+	// one.
 	if getter == nil || setter == nil || getter.SourceKind != "property" || setter.SourceKind != "property" ||
 		!equalStrings(getter.Results, []string{"DisplayOrientation"}) || len(getter.Parameters) != 0 || getter.ErrorAdded ||
-		!equalStrings(setter.Parameters, []string{"DisplayOrientation"}) || len(setter.Results) != 0 || setter.ErrorAdded {
+		!equalStrings(setter.Parameters, []string{"DisplayOrientation"}) || !equalStrings(setter.Results, []string{"error"}) || !setter.ErrorAdded {
 		t.Fatalf("SupportedOrientations projection = getter %+v setter %+v", getter, setter)
 	}
 }
@@ -778,7 +784,7 @@ func TestDisplayOrientationGraphicsManagerCurrentSurfaceAndSelectedClosure(t *te
 	closure := result.DisplayOrientationClosure
 	if closure.Status != "PASS" || closure.SourceTypes != 2 || closure.SourceIdentities != 6 || closure.MappedGoIdentities != 6 ||
 		closure.TargetTypes != 2 || closure.TargetGoIdentities != 6 || closure.DisplayOrientationLocalDiagnostics != 0 ||
-		closure.SupportedPropertyLocalDiagnostics != 0 || closure.GraphicsManagerRemainingMissing != 40 || len(closure.SliceMeasurements) != 2 {
+		closure.SupportedPropertyLocalDiagnostics != 0 || closure.GraphicsManagerRemainingMissing != 20 || len(closure.SliceMeasurements) != 2 {
 		t.Fatalf("DisplayOrientation/GDM closure = %+v", closure)
 	}
 	for _, row := range closure.SliceMeasurements {
@@ -1908,8 +1914,13 @@ func displayOrientationMutationCase(t *testing.T, mutation string) (*expectedSur
 		actual.Members[getter].Results = []string{"int32"}
 	case "graphics_manager_orientation_setter_wrong_type":
 		actual.Members[setter].Parameters = []string{"int32"}
+	// Foundation 48 INVERTED this control. Until then the setter stored a
+	// value that reached nothing, so an error result was the defect; now the
+	// setter pushes to CNA's manager, so a setter that CANNOT report a refused
+	// push is the defect. The mutation follows the contract rather than the
+	// other way round.
 	case "graphics_manager_orientation_setter_returns_error":
-		actual.Members[setter].Results = []string{"error"}
+		actual.Members[setter].Results = nil
 	case "graphics_manager_orientation_static":
 		member := actual.Members[getter]
 		delete(actual.Members, getter)

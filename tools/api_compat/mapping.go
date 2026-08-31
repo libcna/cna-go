@@ -770,8 +770,31 @@ func fallibilityKeys(m contractMember, accessor string) []string {
 // profile ships. A member is admitted here on its BODY, never on the intuition
 // that it "should not fail".
 var managedStoredMembers = map[string]map[string]bool{
+	// GraphicsDeviceManager's nine configuration properties. Every one of the
+	// reference's getters is a single `ldfld` -- no validation, no device, no
+	// throw site -- and every setter is a store plus `isDeviceDirty = true`,
+	// with the two dimension setters also validating their argument.
+	//
+	// So the GETTERS are listed and the SETTERS deliberately are not. In the
+	// reference the value reaches the device later, at ChangeDevice; in CNA-Go
+	// the object that runs ChangeDevice is CNA's manager, so a setter has to
+	// push and that call can genuinely be refused. Classifying a setter
+	// infallible would mean swallowing that.
+	//
+	// Foundation 48 moved SupportedOrientations from `property|` to
+	// `property-get|` for exactly that reason: it used to store a value that
+	// reached nothing, so both accessors were correctly infallible; it now
+	// pushes like its eight neighbours.
 	"Microsoft.Xna.Framework.GraphicsDeviceManager": {
-		"property|SupportedOrientations": true,
+		"property-get|SupportedOrientations":          true,
+		"property-get|GraphicsProfile":                true,
+		"property-get|PreferredBackBufferFormat":      true,
+		"property-get|PreferredBackBufferWidth":       true,
+		"property-get|PreferredBackBufferHeight":      true,
+		"property-get|PreferredDepthStencilFormat":    true,
+		"property-get|IsFullScreen":                   true,
+		"property-get|SynchronizeWithVerticalRetrace": true,
+		"property-get|PreferMultiSampling":            true,
 	},
 	// Foundation 30. Game is a hybrid: the native CNA runtime owns the host,
 	// the frame loop and the device, so Game stays a native-backed facade and
