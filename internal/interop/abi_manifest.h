@@ -398,6 +398,40 @@ typedef struct CNA_RenderTargetInfo {
 typedef uint32_t CNA_BufferUsage;
 typedef uint32_t CNA_IndexElementSize;
 typedef uint32_t CNA_SetDataOptions;
+typedef uint32_t CNA_VertexElementFormat;
+typedef uint32_t CNA_VertexElementUsage;
+typedef struct CNA_VertexElement {
+    int32_t offset;
+    CNA_VertexElementFormat format;
+    CNA_VertexElementUsage usage;
+    int32_t usage_index;
+} CNA_VertexElement;
+#endif
+
+#ifndef CNA_C_VERTEX_RESOURCES_H
+typedef CNA_Handle CNA_VertexDeclarationHandle;
+typedef CNA_Handle CNA_VertexBufferHandle;
+typedef struct CNA_VertexBufferCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_VertexDeclarationHandle vertex_declaration;
+    int32_t vertex_count;
+    CNA_BufferUsage buffer_usage;
+    CNA_Bool dynamic;
+    uint8_t reserved[7];
+} CNA_VertexBufferCreateInfo;
+typedef struct CNA_VertexBufferInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    int32_t vertex_count;
+    CNA_BufferUsage buffer_usage;
+    CNA_Bool dynamic;
+    CNA_Bool is_content_lost;
+    CNA_Bool has_renderer;
+    uint8_t reserved0;
+    int32_t vertex_stride;
+    uint64_t vertex_element_count;
+} CNA_VertexBufferInfo;
 #endif
 
 #ifndef CNA_C_INDEX_RESOURCES_H
@@ -486,6 +520,15 @@ typedef CNA_Result (*cna_graphics_device_manager_end_draw_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_get_viewport_fn)(CNA_Handle, CNA_Viewport*);
 typedef CNA_Result (*cna_graphics_device_clear_rgba_fn)(CNA_Handle, float, float, float, float);
+typedef CNA_Result (*cna_vertex_declaration_create_fn)(const CNA_VertexElement*, uint64_t, CNA_VertexDeclarationHandle*);
+typedef CNA_Result (*cna_vertex_declaration_create_with_stride_fn)(int32_t, const CNA_VertexElement*, uint64_t, CNA_VertexDeclarationHandle*);
+typedef CNA_Result (*cna_vertex_declaration_destroy_fn)(CNA_VertexDeclarationHandle);
+typedef CNA_Result (*cna_vertex_declaration_get_stride_fn)(CNA_VertexDeclarationHandle, int32_t*);
+typedef CNA_Result (*cna_vertex_buffer_create_fn)(CNA_Handle, const CNA_VertexBufferCreateInfo*, CNA_VertexBufferHandle*);
+typedef CNA_Result (*cna_vertex_buffer_destroy_fn)(CNA_VertexBufferHandle);
+typedef CNA_Result (*cna_vertex_buffer_get_info_fn)(CNA_VertexBufferHandle, CNA_VertexBufferInfo*);
+typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t, uint32_t);
+typedef CNA_Result (*cna_vertex_buffer_get_data_raw_fn)(CNA_VertexBufferHandle, uint64_t, void*, uint64_t, uint64_t, uint32_t);
 typedef CNA_Result (*cna_index_buffer_create_fn)(CNA_Handle, const CNA_IndexBufferCreateInfo*, CNA_IndexBufferHandle*);
 typedef CNA_Result (*cna_index_buffer_destroy_fn)(CNA_IndexBufferHandle);
 typedef CNA_Result (*cna_index_buffer_get_info_fn)(CNA_IndexBufferHandle, CNA_IndexBufferInfo*);
@@ -614,6 +657,15 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \
+    X(cna_vertex_declaration_create) \
+    X(cna_vertex_declaration_create_with_stride) \
+    X(cna_vertex_declaration_destroy) \
+    X(cna_vertex_declaration_get_stride) \
+    X(cna_vertex_buffer_create) \
+    X(cna_vertex_buffer_destroy) \
+    X(cna_vertex_buffer_get_info) \
+    X(cna_vertex_buffer_set_data_raw_at) \
+    X(cna_vertex_buffer_get_data_raw) \
     X(cna_index_buffer_create) \
     X(cna_index_buffer_destroy) \
     X(cna_index_buffer_get_info) \

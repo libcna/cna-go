@@ -148,6 +148,19 @@ var registry = []claimedString{
 		Value: "The array is not the correct size for the amount of data requested."},
 	{Key: "MustBeValidIndex", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "This parameter must be a valid index within the array."},
+	// Foundation 66. VertexBuffer's stride refusal and FromType's four. The
+	// four are formatted with the type's name at `{0}`, so Placeholders is not
+	// set for the same reason the vertex-element messages do not set it.
+	{Key: "VertexStrideTooSmall", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "The vertex stride is too small for the type of data requested. This is not allowed."},
+	{Key: "VertexTypeNotValueType", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid vertex type. {0} is not a value type."},
+	{Key: "VertexTypeNotIVertexType", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid vertex type. {0} does not implement the IVertexType interface."},
+	{Key: "VertexTypeNullDeclaration", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid vertex type. {0} returned a null VertexDeclaration."},
+	{Key: "VertexTypeWrongSize", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid vertex type. The size of {0} does not match the stride of its vertex declaration."},
 	// Foundation 50 corrected this KEY. The value was right and its key was
 	// invented from the sentence; the resource-set reader found no
 	// DopplerScaleMustBeGreaterThanOrEqualToZero anywhere, and the real key is

@@ -3139,3 +3139,76 @@ func TestIndexBufferIsReachableFromOutside(t *testing.T) {
 		t.Fatalf("%v, want the refusal to name the type", err)
 	}
 }
+
+// canaryVertex is a consumer's own vertex type, declared OUTSIDE the module.
+// It is the whole point of projecting IVertexType: without it the Type-keyed
+// VertexBuffer constructor would be a member nothing could satisfy.
+type canaryVertex struct {
+	Position framework.Vector3
+	Colour   framework.Color
+}
+
+var canaryVertexDeclaration = func() *graphics.VertexDeclaration {
+	declaration, err := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(12, graphics.VertexElementFormatColor, graphics.VertexElementUsageColor, 0),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return declaration
+}()
+
+func (canaryVertex) VertexDeclaration() *graphics.VertexDeclaration { return canaryVertexDeclaration }
+
+var _ graphics.IVertexType = canaryVertex{}
+
+// TestVertexBufferIsReachableFromOutside compiles VertexBuffer's whole
+// projected surface and proves the one thing only an outside consumer can: that
+// a vertex type declared in ANOTHER module satisfies IVertexType and is
+// resolved by the Type-keyed constructor.
+func TestVertexBufferIsReachableFromOutside(t *testing.T) {
+	var _ func(*graphics.GraphicsDevice, *graphics.VertexDeclaration, int32, graphics.BufferUsage) (*graphics.VertexBuffer, error) = graphics.NewVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage
+	var _ func(*graphics.GraphicsDevice, reflect.Type, int32, graphics.BufferUsage) (*graphics.VertexBuffer, error) = graphics.NewVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage
+
+	buffer := &graphics.VertexBuffer{}
+	var _ func() int32 = buffer.VertexCount
+	var _ func() *graphics.VertexDeclaration = buffer.VertexDeclaration
+	var _ func() graphics.BufferUsage = buffer.BufferUsage
+	var _ func() error = buffer.DisposeByNone
+
+	var _ func(*graphics.VertexBuffer, []canaryVertex) error = graphics.VertexBufferSetDataBySliceOfT[canaryVertex]
+	var _ func(*graphics.VertexBuffer, []canaryVertex, int32, int32) error = graphics.VertexBufferSetDataBySliceOfTAndInt32AndInt32[canaryVertex]
+	var _ func(*graphics.VertexBuffer, int32, []canaryVertex, int32, int32, int32) error = graphics.VertexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32[canaryVertex]
+	var _ func(*graphics.VertexBuffer, []canaryVertex) error = graphics.VertexBufferGetDataBySliceOfT[canaryVertex]
+	var _ func(*graphics.VertexBuffer, []canaryVertex, int32, int32) error = graphics.VertexBufferGetDataBySliceOfTAndInt32AndInt32[canaryVertex]
+	var _ func(*graphics.VertexBuffer, int32, []canaryVertex, int32, int32, int32) error = graphics.VertexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32[canaryVertex]
+
+	for _, name := range []string{"SetData", "GetData"} {
+		if _, present := reflect.TypeOf(buffer).MethodByName(name); present {
+			t.Fatalf("VertexBuffer has a %s method; Go cannot declare one with a type parameter", name)
+		}
+	}
+
+	// The Type-keyed constructor resolves an OUTSIDE type. It gets as far as
+	// the device, which is nil here -- so it must NOT fail with a vertex-type
+	// message.
+	_, err := graphics.NewVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(canaryVertex{}), 4, graphics.BufferUsageNone)
+	if err == nil {
+		t.Fatal("a nil device was accepted")
+	}
+	if strings.Contains(err.Error(), "Invalid vertex type") {
+		t.Fatalf("a consumer's own IVertexType was refused: %v", err)
+	}
+	// And a struct that is not one is refused by name, from outside.
+	type plainStruct struct{ A, B, C, D int32 }
+	_, err = graphics.NewVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(plainStruct{}), 4, graphics.BufferUsageNone)
+	if err == nil {
+		t.Fatal("a plain struct was accepted as a vertex type")
+	}
+	if !strings.Contains(err.Error(), "does not implement the IVertexType interface.") {
+		t.Fatalf("%v, want the reference's message", err)
+	}
+}

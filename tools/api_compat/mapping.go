@@ -570,6 +570,20 @@ var classifiedInterfaces = map[string]bool{
 	// because its CreateDevice, BeginDraw and EndDraw genuinely cross into the
 	// runtime. The boundary is read per contract, never per class.
 	"Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService": true,
+
+	// Foundation 66. IVertexType publishes a layout; it does not build one.
+	// Microsoft.Xna.Framework.Graphics.dll ships FIVE implementors --
+	// VertexPositionColor, VertexPositionTexture,
+	// VertexPositionColorTexture, VertexPositionNormalTexture and
+	// VertexPositionNormalTextureBumpTexture -- and every one of them is the
+	// same six bytes:
+	//
+	//	.override IVertexType::get_VertexDeclaration
+	//	  ldsfld VertexDeclaration; ret
+	//
+	// a static field read of a declaration the type's own `.cctor` built once.
+	// No device, no validation, no throw site.
+	"Microsoft.Xna.Framework.Graphics.IVertexType": true,
 }
 
 // managedFallibleMembers records, per pure-managed owner, exactly which
@@ -1010,6 +1024,15 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|IndexCount":       true,
 		"property-get|IndexElementSize": true,
 		"property-get|BufferUsage":      true,
+	},
+	// Foundation 66. VertexBuffer's three, on the same evidence as
+	// IndexBuffer's. get_VertexDeclaration is the plainest: it hands back the
+	// CALLER'S object, stored by the constructor, so it is one `ldfld` over a
+	// reference the buffer does not own.
+	"Microsoft.Xna.Framework.Graphics.VertexBuffer": {
+		"property-get|VertexCount":       true,
+		"property-get|VertexDeclaration": true,
+		"property-get|BufferUsage":       true,
 	},
 	// Texture2D's three geometry members, on the same evidence, and correcting
 	// a claim CNA-Go made without it. Their bodies are:

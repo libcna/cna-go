@@ -358,3 +358,36 @@ CNA_GO_MEASURE(offsetof_CNA_IndexBufferTransfer_index_element_size, offsetof(CNA
 CNA_GO_MEASURE(offsetof_CNA_IndexBufferTransfer_options, offsetof(CNA_IndexBufferTransfer, options))
 CNA_GO_MEASURE(offsetof_CNA_IndexBufferTransfer_start_index, offsetof(CNA_IndexBufferTransfer, start_index))
 CNA_GO_MEASURE(offsetof_CNA_IndexBufferTransfer_element_count, offsetof(CNA_IndexBufferTransfer, element_count))
+
+// Foundation 66. CNA_VertexElement and the two vertex-buffer structures.
+//
+// CNA_VertexElement is the one structure in this family that crosses as an
+// ARRAY, and its four fields are all four bytes wide -- so any permutation of
+// them is byte-identical to C and produces a declaration describing a different
+// layout. The offset and usage_index are both int32 and adjacent to their enum
+// neighbours, which is the swap a C compiler cannot see.
+//
+// The buffer create-info's `vertex_declaration` is a HANDLE before two int32s;
+// the info struct's `vertex_stride` sits after three CNA_Bools, so its offset
+// is what decides whether a stride is read out of the flag bytes.
+CNA_GO_MEASURE(sizeof_CNA_VertexElement, sizeof(CNA_VertexElement))
+CNA_GO_MEASURE(alignof_CNA_VertexElement, _Alignof(CNA_VertexElement))
+CNA_GO_MEASURE(offsetof_CNA_VertexElement_offset, offsetof(CNA_VertexElement, offset))
+CNA_GO_MEASURE(offsetof_CNA_VertexElement_format, offsetof(CNA_VertexElement, format))
+CNA_GO_MEASURE(offsetof_CNA_VertexElement_usage, offsetof(CNA_VertexElement, usage))
+CNA_GO_MEASURE(offsetof_CNA_VertexElement_usage_index, offsetof(CNA_VertexElement, usage_index))
+CNA_GO_MEASURE(sizeof_CNA_VertexBufferCreateInfo, sizeof(CNA_VertexBufferCreateInfo))
+CNA_GO_MEASURE(alignof_CNA_VertexBufferCreateInfo, _Alignof(CNA_VertexBufferCreateInfo))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferCreateInfo_vertex_declaration, offsetof(CNA_VertexBufferCreateInfo, vertex_declaration))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferCreateInfo_vertex_count, offsetof(CNA_VertexBufferCreateInfo, vertex_count))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferCreateInfo_buffer_usage, offsetof(CNA_VertexBufferCreateInfo, buffer_usage))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferCreateInfo_dynamic, offsetof(CNA_VertexBufferCreateInfo, dynamic))
+CNA_GO_MEASURE(sizeof_CNA_VertexBufferInfo, sizeof(CNA_VertexBufferInfo))
+CNA_GO_MEASURE(alignof_CNA_VertexBufferInfo, _Alignof(CNA_VertexBufferInfo))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_vertex_count, offsetof(CNA_VertexBufferInfo, vertex_count))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_buffer_usage, offsetof(CNA_VertexBufferInfo, buffer_usage))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_dynamic, offsetof(CNA_VertexBufferInfo, dynamic))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_is_content_lost, offsetof(CNA_VertexBufferInfo, is_content_lost))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_has_renderer, offsetof(CNA_VertexBufferInfo, has_renderer))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_vertex_stride, offsetof(CNA_VertexBufferInfo, vertex_stride))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_vertex_element_count, offsetof(CNA_VertexBufferInfo, vertex_element_count))

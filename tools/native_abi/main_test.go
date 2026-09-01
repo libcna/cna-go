@@ -486,6 +486,31 @@ var probeMutations = []sourceMutation{
 	// path into the caller's byte count.
 	// Foundation 65. The index-buffer routes. Creation takes the create-info BY
 	// POINTER; a by-value prototype is refused at the call, which passes `&info`.
+	// Foundation 66. The declaration route takes an ELEMENT ARRAY and a count.
+	// Dropping the count leaves a prototype whose remaining arguments still
+	// line up by type, so only the bridge's own three-argument call catches it.
+	{
+		name: "vertex-declaration-create-drops-its-element-count",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_vertex_declaration_create_fn)(const CNA_VertexElement*, uint64_t, CNA_VertexDeclarationHandle*);",
+		new:  "typedef CNA_Result (*cna_vertex_declaration_create_fn)(const CNA_VertexElement*, CNA_VertexDeclarationHandle*);",
+	},
+	// The raw transfers carry a BUFFER offset, a byte count, a vertex count and
+	// a stride. Dropping the stride is the one that matters: without it CNA
+	// could not know how far apart two vertices are, and the remaining
+	// arguments still line up.
+	{
+		name: "vertex-buffer-set-data-raw-drops-its-stride",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t, uint32_t);",
+		new:  "typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t);",
+	},
+	{
+		name: "vertex-buffer-create-takes-the-info-by-value",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_vertex_buffer_create_fn)(CNA_Handle, const CNA_VertexBufferCreateInfo*, CNA_VertexBufferHandle*);",
+		new:  "typedef CNA_Result (*cna_vertex_buffer_create_fn)(CNA_Handle, CNA_VertexBufferCreateInfo, CNA_VertexBufferHandle*);",
+	},
 	{
 		name: "index-buffer-create-takes-the-info-by-value",
 		file: "abi_manifest.h",
@@ -1066,6 +1091,33 @@ var layoutMutations = []sourceMutation{
 	// adjacent uint32s, so this swap is byte-identical to C and turns a 16-bit
 	// read-write buffer into a 32-bit write-only one -- a buffer that creates
 	// successfully, strides twice as far, and refuses every GetData.
+	// Foundation 66. CNA_VertexElement's four fields are all four bytes wide,
+	// so this permutation is byte-identical to C -- and it describes a
+	// completely different layout: every element's OFFSET becomes its FORMAT.
+	{
+		name: "vertex-element-offset-and-format-swapped",
+		file: "abi_manifest.h",
+		old:  "    int32_t offset;\n    CNA_VertexElementFormat format;\n    CNA_VertexElementUsage usage;\n    int32_t usage_index;",
+		new:  "    CNA_VertexElementFormat format;\n    int32_t offset;\n    CNA_VertexElementUsage usage;\n    int32_t usage_index;",
+	},
+	// The buffer create-info's handle moved behind the two int32s. Every field
+	// still exists and bridge.c still compiles; what changes is where CNA reads
+	// eight bytes of declaration handle from.
+	{
+		name: "vertex-create-info-declaration-moved-behind-the-counts",
+		file: "abi_manifest.h",
+		old:  "    CNA_VertexDeclarationHandle vertex_declaration;\n    int32_t vertex_count;\n    CNA_BufferUsage buffer_usage;",
+		new:  "    int32_t vertex_count;\n    CNA_BufferUsage buffer_usage;\n    CNA_VertexDeclarationHandle vertex_declaration;",
+	},
+	// The info struct's stride moved ahead of the three flags, which changes
+	// which bytes a stride is read from -- and the stride is what every
+	// transfer's fit check is measured in.
+	{
+		name: "vertex-info-stride-moved-ahead-of-the-flags",
+		file: "abi_manifest.h",
+		old:  "    CNA_Bool dynamic;\n    CNA_Bool is_content_lost;\n    CNA_Bool has_renderer;\n    uint8_t reserved0;\n    int32_t vertex_stride;",
+		new:  "    int32_t vertex_stride;\n    CNA_Bool dynamic;\n    CNA_Bool is_content_lost;\n    CNA_Bool has_renderer;\n    uint8_t reserved0;",
+	},
 	{
 		name: "index-create-info-element-size-and-usage-swapped",
 		file: "abi_manifest.h",

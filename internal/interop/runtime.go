@@ -96,6 +96,8 @@ const (
 	resourceRenderTarget2D
 	resourceContentManager
 	resourceIndexBuffer
+	resourceVertexDeclaration
+	resourceVertexBuffer
 )
 
 // FrameTime is the private tick-exact lifecycle value passed into the public
@@ -369,6 +371,102 @@ func (d *Device) CreateContentManager(rootDirectory string) (*Resource, error) {
 		return nil, err
 	}
 	return d.runtime.registerResource(manager, resourceContentManager, d.manager), nil
+}
+
+// Runtime reports the device's runtime, so a caller holding a live device can
+// create the standalone objects a device-owned one needs -- a vertex
+// declaration is the first. It is a plain accessor and cannot fail.
+func (d *Device) Runtime() *Runtime {
+	if d == nil {
+		return nil
+	}
+	return d.runtime
+}
+
+// VertexBufferInfo is CNA_VertexBufferInfo, flattened.
+type VertexBufferInfo struct {
+	VertexCount        int32
+	BufferUsage        uint32
+	Dynamic            bool
+	IsContentLost      bool
+	HasRenderer        bool
+	VertexStride       int32
+	VertexElementCount uint64
+}
+
+// CreateVertexDeclaration is cna_vertex_declaration_create or, when the caller
+// supplies one, cna_vertex_declaration_create_with_stride.
+//
+// It takes NO device: a declaration is a standalone CNA object, so this is
+// reachable outside a lifecycle callback, exactly as the reference's
+// constructor is. The elements arrive as a flat int32 array of four fields
+// each -- offset, format, usage, usage index -- because no CNA struct crosses
+// cgo.
+func (r *Runtime) CreateVertexDeclaration(stride int32, hasStride bool, elements []int32) (*Resource, error) {
+	handle, err := nativeVertexDeclarationCreate(stride, hasStride, elements)
+	if err != nil {
+		return nil, err
+	}
+	return r.registerResource(handle, resourceVertexDeclaration, nil), nil
+}
+
+// VertexDeclarationStride is cna_vertex_declaration_get_stride.
+func (resource *Resource) VertexDeclarationStride() (int32, error) {
+	handle, err := resource.liveHandle(resourceVertexDeclaration)
+	if err != nil {
+		return 0, err
+	}
+	return nativeVertexDeclarationStride(handle)
+}
+
+// CreateVertexBuffer is cna_vertex_buffer_create. The device handle is
+// callback-scoped, so this is reachable only from inside a lifecycle callback.
+func (d *Device) CreateVertexBuffer(declaration *Resource, vertexCount int32, usage uint32, dynamic bool) (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	declarationHandle, err := declaration.liveHandle(resourceVertexDeclaration)
+	if err != nil {
+		return nil, err
+	}
+	buffer, err := nativeVertexBufferCreate(handle, declarationHandle, vertexCount, usage, dynamic)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(buffer, resourceVertexBuffer, d.manager), nil
+}
+
+// VertexBufferInfo is cna_vertex_buffer_get_info.
+func (resource *Resource) VertexBufferInfo() (VertexBufferInfo, error) {
+	handle, err := resource.liveHandle(resourceVertexBuffer)
+	if err != nil {
+		return VertexBufferInfo{}, err
+	}
+	return nativeVertexBufferInfo(handle)
+}
+
+// SetVertexDataRaw and GetVertexDataRaw are the two RAW transfers, which are
+// the ones XNA's generic SetData<T>/GetData<T> correspond to: both sides
+// describe a vertex by an explicit byte stride rather than by a type identity,
+// which is exactly what `sizeof(T)` is in the reference.
+//
+// Both offsets index THE BUFFER, not the caller's array -- which is what XNA's
+// `offsetInBytes` means and the one place in this ABI where an offset does.
+func (resource *Resource) SetVertexDataRaw(bufferOffsetInBytes uint64, data unsafe.Pointer, byteCount, vertexCount uint64, stride uint32) error {
+	handle, err := resource.liveHandle(resourceVertexBuffer)
+	if err != nil {
+		return err
+	}
+	return nativeVertexBufferSetDataRawAt(handle, bufferOffsetInBytes, data, byteCount, vertexCount, stride)
+}
+
+func (resource *Resource) GetVertexDataRaw(bufferOffsetInBytes uint64, destination unsafe.Pointer, byteCount, vertexCount uint64, stride uint32) error {
+	handle, err := resource.liveHandle(resourceVertexBuffer)
+	if err != nil {
+		return err
+	}
+	return nativeVertexBufferGetDataRaw(handle, bufferOffsetInBytes, destination, byteCount, vertexCount, stride)
 }
 
 // IndexBufferInfo is CNA_IndexBufferInfo, flattened. Everything CNA reports
@@ -2448,6 +2546,10 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeContentManagerDestroy(handle)
 	case resourceIndexBuffer:
 		return nativeIndexBufferDestroy(handle)
+	case resourceVertexDeclaration:
+		return nativeVertexDeclarationDestroy(handle)
+	case resourceVertexBuffer:
+		return nativeVertexBufferDestroy(handle)
 	case resourceRenderTarget2D:
 		// A render target is a distinct CNA kind with its own destroy, and
 		// cna_texture2d_destroy is documented as destroying a Texture2D but NOT

@@ -152,6 +152,10 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 			// literally `call .ctor(device, sizeForType(type), count, usage)`
 			// in the reference too.
 			"Microsoft.Xna.Framework.Graphics.IndexBuffer": "newIndexBuffer",
+			// Foundation 66. Both public constructors reach the same builder;
+			// the Type-keyed one resolves a declaration first and then calls
+			// the other, which is what the reference's does too.
+			"Microsoft.Xna.Framework.Graphics.VertexBuffer": "newVertexBuffer",
 		},
 	},
 

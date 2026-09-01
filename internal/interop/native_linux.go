@@ -1196,3 +1196,90 @@ func nativeIndexBufferGetData(buffer uint64, elementSize uint32, startIndex, ele
 		C.uint64_t(startIndex), C.uint64_t(elementCount), destination, C.uint64_t(capacity), &required))
 	return uint64(required), resultError("cna_index_buffer_get_data", code)
 }
+
+// The nine vertex routes. Elements cross as a FLAT int32 array of four fields
+// each rather than as a struct, which is the settled boundary rule: no CNA
+// struct crosses cgo, and bridge.c is where the four scalars become one
+// CNA_VertexElement.
+
+func nativeVertexDeclarationCreate(stride int32, hasStride bool, elements []int32) (uint64, error) {
+	var handle C.CnaGoHandle
+	flag := C.uint8_t(0)
+	if hasStride {
+		flag = 1
+	}
+	var first *C.int32_t
+	if len(elements) > 0 {
+		first = (*C.int32_t)(unsafe.Pointer(&elements[0]))
+	}
+	code := uint32(C.cna_go_vertex_declaration_create(
+		C.int32_t(stride), flag, first, C.uint64_t(len(elements)/4), &handle))
+	runtime.KeepAlive(elements)
+	if err := resultError("cna_vertex_declaration_create", code); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeVertexDeclarationDestroy(declaration uint64) error {
+	return resultError("cna_vertex_declaration_destroy",
+		uint32(C.cna_go_vertex_declaration_destroy(C.CnaGoHandle(declaration))))
+}
+
+func nativeVertexDeclarationStride(declaration uint64) (int32, error) {
+	var stride C.int32_t
+	code := uint32(C.cna_go_vertex_declaration_get_stride(C.CnaGoHandle(declaration), &stride))
+	return int32(stride), resultError("cna_vertex_declaration_get_stride", code)
+}
+
+func nativeVertexBufferCreate(device, declaration uint64, vertexCount int32, usage uint32, dynamic bool) (uint64, error) {
+	var handle C.CnaGoHandle
+	flag := C.uint8_t(0)
+	if dynamic {
+		flag = 1
+	}
+	code := uint32(C.cna_go_vertex_buffer_create(
+		C.CnaGoHandle(device), C.CnaGoHandle(declaration), C.int32_t(vertexCount), C.uint32_t(usage), flag, &handle))
+	if err := resultError("cna_vertex_buffer_create", code); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeVertexBufferDestroy(buffer uint64) error {
+	return resultError("cna_vertex_buffer_destroy",
+		uint32(C.cna_go_vertex_buffer_destroy(C.CnaGoHandle(buffer))))
+}
+
+func nativeVertexBufferInfo(buffer uint64) (VertexBufferInfo, error) {
+	var count, stride C.int32_t
+	var usage C.uint32_t
+	var dynamic, contentLost, hasRenderer C.uint8_t
+	var elementCount C.uint64_t
+	code := uint32(C.cna_go_vertex_buffer_get_info(
+		C.CnaGoHandle(buffer), &count, &usage, &dynamic, &contentLost, &hasRenderer, &stride, &elementCount))
+	if err := resultError("cna_vertex_buffer_get_info", code); err != nil {
+		return VertexBufferInfo{}, err
+	}
+	return VertexBufferInfo{
+		VertexCount:        int32(count),
+		BufferUsage:        uint32(usage),
+		Dynamic:            dynamic != 0,
+		IsContentLost:      contentLost != 0,
+		HasRenderer:        hasRenderer != 0,
+		VertexStride:       int32(stride),
+		VertexElementCount: uint64(elementCount),
+	}, nil
+}
+
+func nativeVertexBufferSetDataRawAt(buffer, offset uint64, data unsafe.Pointer, byteCount, vertexCount uint64, stride uint32) error {
+	return resultError("cna_vertex_buffer_set_data_raw_at", uint32(C.cna_go_vertex_buffer_set_data_raw_at(
+		C.CnaGoHandle(buffer), C.uint64_t(offset), data,
+		C.uint64_t(byteCount), C.uint64_t(vertexCount), C.uint32_t(stride))))
+}
+
+func nativeVertexBufferGetDataRaw(buffer, offset uint64, destination unsafe.Pointer, byteCount, vertexCount uint64, stride uint32) error {
+	return resultError("cna_vertex_buffer_get_data_raw", uint32(C.cna_go_vertex_buffer_get_data_raw(
+		C.CnaGoHandle(buffer), C.uint64_t(offset), destination,
+		C.uint64_t(byteCount), C.uint64_t(vertexCount), C.uint32_t(stride))))
+}

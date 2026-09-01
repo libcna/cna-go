@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 730,
-    "ASSERTIONS": 730,
+    "OBSERVATIONS": 733,
+    "ASSERTIONS": 733,
     "FAILURES": 0
   },
   "observations": [
@@ -5757,6 +5757,30 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,Microsoft.Xna.Framework.Graphics.VertexDeclaration,1,true,12",
       "actual": "true,Microsoft.Xna.Framework.Graphics.VertexDeclaration,1,true,12",
+      "passed": true
+    },
+    {
+      "id": "vertex-buffer.from-type-reproduces-each-check-with-its-own-message",
+      "group": "VERTEX_BUFFER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,true",
+      "actual": "true,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "vertex-buffer.a-consumers-own-ivertextype-resolves",
+      "group": "VERTEX_BUFFER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "16,false",
+      "actual": "16,false",
+      "passed": true
+    },
+    {
+      "id": "vertex-buffer.the-declaration-guard-runs-before-the-count-guard",
+      "group": "VERTEX_BUFFER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
       "passed": true
     },
     {

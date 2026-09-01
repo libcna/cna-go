@@ -27,29 +27,31 @@ import (
 // `Bind`, `Unbind`, `FromType` and `_binding` are `assembly`, so none is public
 // surface here or there.
 //
-// # It reaches NOTHING native, and that is the reference's own shape
+// # Its PUBLIC surface reaches nothing native, and that is the reference's shape
 //
 // The constructor clones the element array, stores a stride and calls
 // VertexElementValidator. It never touches a device: `GraphicsResource::_parent`
 // is assigned by `Bind`, which is internal and which only the draw path calls.
 // So a constructed declaration has a NULL GraphicsDevice, and answers so.
 //
-// CNA does publish `cna_vertex_declaration_create`, `_create_with_stride`,
-// `_get_stride`, `_copy_elements` and `_destroy`. None is bound, and the reason
-// is the reachability rule rather than an oversight: every one of them would
-// answer a question this type already answers from the fields the reference
-// itself reads, so binding them would add routes whose only consumer is a
-// member that does not need them. The handle those routes produce becomes
-// necessary the moment a VertexBuffer is created FROM a declaration, and that
-// is where they will be bound and consumed.
-//
 // # Ownership
 //
-//	MANAGED. No CNA handle, nothing to destroy, no owner thread.
+//	OWNED, created LAZILY, destroyed with cna_vertex_declaration_destroy.
 //
-// The composed GraphicsResource carries a nil resource, which is exactly what
-// its `_internalHandle == 0` means in the reference: a graphics resource that
-// has not been given a native object.
+// Foundation 64 projected this type with no native half at all, because nothing
+// consumed one: every public member answers from the fields the reference
+// itself reads, so binding CNA's declaration routes would have added routes
+// with no real consumer. Foundation 66 is the milestone that gives them one --
+// `cna_vertex_buffer_create` takes a `CNA_VertexDeclarationHandle` -- so the
+// handle is created at the FIRST operation that needs it, which today is
+// exactly that call.
+//
+// Deferring it rather than creating it in the constructor is not a convenience:
+// `cna_vertex_declaration_create` needs no device and would work eagerly, but a
+// declaration a consumer builds and never binds would then own a CNA object for
+// nothing, and its Dispose would have to destroy one the reference does not
+// have. The lazy handle keeps the managed lifetime the reference has and adds a
+// native one only where a native consumer exists.
 type VertexDeclaration struct {
 	// resource is the composed GraphicsResource. Private named composition, no
 	// embedding, no accessor -- the settled rule.
@@ -61,6 +63,43 @@ type VertexDeclaration struct {
 	// vertexStride is `_vertexStride`, either the caller's or the one
 	// VertexElementValidator::GetVertexStride computed.
 	vertexStride int32
+	// native is the CNA declaration handle, created lazily. It is nil until
+	// something needs one, which today is only vertex-buffer creation.
+	native *interop.Resource
+}
+
+// nativeDeclaration creates the CNA declaration on first use and answers the
+// same handle afterwards.
+//
+// It passes the stride EXPLICITLY, always. CNA's stride-less route recomputes
+// one from the elements, and that would silently replace an explicit stride the
+// caller gave the two-argument constructor -- a declaration built as
+// `new VertexDeclaration(32, elements)` over a 16-byte layout would become a
+// 16-byte one. The reference stores what it was given; so does this.
+func (d *VertexDeclaration) nativeDeclaration(runtime *interop.Runtime) (*interop.Resource, error) {
+	if d == nil {
+		return nil, errVertexDeclarationNil
+	}
+	if d.native != nil {
+		return d.native, nil
+	}
+	if runtime == nil {
+		return nil, errVertexDeclarationNil
+	}
+	flattened := make([]int32, 0, len(d.elements)*4)
+	for index := range d.elements {
+		flattened = append(flattened,
+			d.elements[index].Offset(),
+			int32(d.elements[index].VertexElementFormat()),
+			int32(d.elements[index].VertexElementUsage()),
+			d.elements[index].UsageIndex())
+	}
+	created, err := runtime.CreateVertexDeclaration(d.vertexStride, true, flattened)
+	if err != nil {
+		return nil, err
+	}
+	d.native = created
+	return created, nil
 }
 
 // errVertexDeclarationNil is the Go-only guard. Go can produce a zero
@@ -298,5 +337,21 @@ func (d *VertexDeclaration) DisposeByBoolean(disposing bool) error {
 		return errVertexDeclarationNil
 	}
 	// Unbind(), whose one branch is unreachable from public surface.
-	return d.resource.DisposeByBoolean(disposing)
+	//
+	// The CNA handle is released here, on both branches, for the reason every
+	// other graphics resource releases on both: `!VertexDeclaration()` is the
+	// same body as `~VertexDeclaration()` in the reference, and a finalizer
+	// path that kept a native object alive would leak it. A declaration that
+	// never reached a vertex buffer has no handle and releases nothing.
+	var released error
+	if d.native != nil && !d.resource.IsDisposed() {
+		native := d.native
+		d.native = nil
+		released = native.Dispose()
+	}
+	baseErr := d.resource.DisposeByBoolean(disposing)
+	if released != nil {
+		return released
+	}
+	return baseErr
 }

@@ -1578,6 +1578,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 63 | the Content subsystem, and Game::Content | `foundation-63-content-manager-evidence.md` |
 | 64 | VertexDeclaration and its element validator | `foundation-64-vertex-declaration-evidence.md` |
 | 65 | IndexBuffer, and the shared copy validator | `foundation-65-index-buffer-evidence.md` |
+| 66 | VertexBuffer, IVertexType, and two narrowings | `foundation-66-vertex-buffer-evidence.md` |
 
 ### The rules these milestones settled
 

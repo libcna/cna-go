@@ -13,6 +13,7 @@
 #include <dlfcn.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct CnaGoApi {
@@ -1679,4 +1680,122 @@ CnaGoResult cna_go_keyboard_get_state(CnaGoHandle game, uint64_t* word0, uint64_
         *word3 = state.pressed_key_words[3];
     }
     return result;
+}
+
+// The vertex-declaration and vertex-buffer routes.
+//
+// Elements cross as a FLAT int32 array of four fields each, not as a
+// CNA_VertexElement array: the settled boundary rule is that no CNA struct
+// crosses cgo, so the Go side writes four int32s per element and this
+// translation unit is where they become the C structure.
+CnaGoResult cna_go_vertex_declaration_create(
+    int32_t vertex_stride,
+    uint8_t has_stride,
+    const int32_t* elements,
+    uint64_t element_count,
+    CnaGoHandle* out_declaration) {
+    CNA_VertexElement* converted;
+    CnaGoResult result;
+    uint64_t at;
+    if (element_count == 0) {
+        return CNA_GO_RESULT_INVALID_ARGUMENT;
+    }
+    converted = (CNA_VertexElement*)calloc((size_t)element_count, sizeof(CNA_VertexElement));
+    if (converted == NULL) {
+        return CNA_GO_RESULT_OUT_OF_MEMORY;
+    }
+    for (at = 0; at < element_count; at++) {
+        converted[at].offset = elements[at * 4 + 0];
+        converted[at].format = (CNA_VertexElementFormat)elements[at * 4 + 1];
+        converted[at].usage = (CNA_VertexElementUsage)elements[at * 4 + 2];
+        converted[at].usage_index = elements[at * 4 + 3];
+    }
+    if (has_stride) {
+        result = api.cna_vertex_declaration_create_with_stride(
+            vertex_stride, converted, element_count, out_declaration);
+    } else {
+        result = api.cna_vertex_declaration_create(converted, element_count, out_declaration);
+    }
+    free(converted);
+    return result;
+}
+
+CnaGoResult cna_go_vertex_declaration_destroy(CnaGoHandle declaration) {
+    return api.cna_vertex_declaration_destroy(declaration);
+}
+
+CnaGoResult cna_go_vertex_declaration_get_stride(CnaGoHandle declaration, int32_t* out_stride) {
+    return api.cna_vertex_declaration_get_stride(declaration, out_stride);
+}
+
+CnaGoResult cna_go_vertex_buffer_create(
+    CnaGoHandle device,
+    CnaGoHandle declaration,
+    int32_t vertex_count,
+    uint32_t buffer_usage,
+    uint8_t dynamic,
+    CnaGoHandle* out_vertex_buffer) {
+    CNA_VertexBufferCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.vertex_declaration = declaration;
+    info.vertex_count = vertex_count;
+    info.buffer_usage = buffer_usage;
+    info.dynamic = (CNA_Bool)(dynamic != 0);
+    return api.cna_vertex_buffer_create(device, &info, out_vertex_buffer);
+}
+
+CnaGoResult cna_go_vertex_buffer_destroy(CnaGoHandle vertex_buffer) {
+    return api.cna_vertex_buffer_destroy(vertex_buffer);
+}
+
+CnaGoResult cna_go_vertex_buffer_get_info(
+    CnaGoHandle vertex_buffer,
+    int32_t* out_vertex_count,
+    uint32_t* out_buffer_usage,
+    uint8_t* out_dynamic,
+    uint8_t* out_is_content_lost,
+    uint8_t* out_has_renderer,
+    int32_t* out_vertex_stride,
+    uint64_t* out_vertex_element_count) {
+    CNA_VertexBufferInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_vertex_buffer_get_info(vertex_buffer, &info);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_vertex_count = info.vertex_count;
+    *out_buffer_usage = info.buffer_usage;
+    *out_dynamic = info.dynamic ? 1u : 0u;
+    *out_is_content_lost = info.is_content_lost ? 1u : 0u;
+    *out_has_renderer = info.has_renderer ? 1u : 0u;
+    *out_vertex_stride = info.vertex_stride;
+    *out_vertex_element_count = info.vertex_element_count;
+    return result;
+}
+
+CnaGoResult cna_go_vertex_buffer_set_data_raw_at(
+    CnaGoHandle vertex_buffer,
+    uint64_t buffer_offset_in_bytes,
+    const void* data,
+    uint64_t data_byte_count,
+    uint64_t vertex_count,
+    uint32_t vertex_stride) {
+    return api.cna_vertex_buffer_set_data_raw_at(
+        vertex_buffer, buffer_offset_in_bytes, data, data_byte_count, vertex_count, vertex_stride);
+}
+
+CnaGoResult cna_go_vertex_buffer_get_data_raw(
+    CnaGoHandle vertex_buffer,
+    uint64_t buffer_offset_in_bytes,
+    void* destination,
+    uint64_t destination_byte_count,
+    uint64_t vertex_count,
+    uint32_t vertex_stride) {
+    return api.cna_vertex_buffer_get_data_raw(
+        vertex_buffer, buffer_offset_in_bytes, destination, destination_byte_count, vertex_count, vertex_stride);
 }

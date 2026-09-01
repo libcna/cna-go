@@ -83,14 +83,28 @@ type counters struct {
 	IndexBufferRefusals          int `json:"INDEX_BUFFER_REFUSALS"`
 	IndexBufferWriteOnlyChecks   int `json:"INDEX_BUFFER_WRITE_ONLY_CHECKS"`
 	IndexBufferDisposalChecks    int `json:"INDEX_BUFFER_DISPOSAL_CHECKS"`
-	CallbackErrorCycles          int `json:"CALLBACK_ERROR_CYCLES"`
-	CallbackPanicCycles          int `json:"CALLBACK_PANIC_CYCLES"`
-	WrongThreadChecks            int `json:"WRONG_THREAD_CHECKS"`
-	OwnerThreadRetries           int `json:"OWNER_THREAD_RETRIES"`
-	GCStressPoints               int `json:"GC_STRESS_POINTS"`
-	NativeCrashes                int `json:"NATIVE_CRASHES"`
-	ObservedUAF                  int `json:"OBSERVED_UAF"`
-	ObservedDoubleFree           int `json:"OBSERVED_DOUBLE_FREE"`
+	// The vertex-buffer slice. The declaration's CNA handle is created on the
+	// first buffer that needs one, so DeclarationHandles proves the lazy
+	// creation actually happened rather than being skipped.
+	VertexBufferCycles            int `json:"VERTEX_BUFFER_CYCLES"`
+	VertexBufferCreations         int `json:"VERTEX_BUFFER_CREATIONS"`
+	VertexBufferDeclarationShares int `json:"VERTEX_BUFFER_DECLARATION_SHARES"`
+	VertexBufferDescriptionChecks int `json:"VERTEX_BUFFER_DESCRIPTION_CHECKS"`
+	VertexBufferRoundTrips        int `json:"VERTEX_BUFFER_ROUND_TRIPS"`
+	VertexBufferReadbackRefusals  int `json:"VERTEX_BUFFER_READBACK_REFUSALS"`
+	VertexBufferOffsetRoundTrips  int `json:"VERTEX_BUFFER_OFFSET_ROUND_TRIPS"`
+	VertexBufferFromTypeChecks    int `json:"VERTEX_BUFFER_FROM_TYPE_CHECKS"`
+	VertexBufferRefusals          int `json:"VERTEX_BUFFER_REFUSALS"`
+	VertexBufferStrideChecks      int `json:"VERTEX_BUFFER_STRIDE_CHECKS"`
+	VertexBufferDisposalChecks    int `json:"VERTEX_BUFFER_DISPOSAL_CHECKS"`
+	CallbackErrorCycles           int `json:"CALLBACK_ERROR_CYCLES"`
+	CallbackPanicCycles           int `json:"CALLBACK_PANIC_CYCLES"`
+	WrongThreadChecks             int `json:"WRONG_THREAD_CHECKS"`
+	OwnerThreadRetries            int `json:"OWNER_THREAD_RETRIES"`
+	GCStressPoints                int `json:"GC_STRESS_POINTS"`
+	NativeCrashes                 int `json:"NATIVE_CRASHES"`
+	ObservedUAF                   int `json:"OBSERVED_UAF"`
+	ObservedDoubleFree            int `json:"OBSERVED_DOUBLE_FREE"`
 
 	GameEventActivated   int `json:"GAME_EVENT_ACTIVATED_DELIVERIES"`
 	GameEventDeactivated int `json:"GAME_EVENT_DEACTIVATED_DELIVERIES"`
@@ -359,7 +373,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer", "vertex-buffer"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -429,6 +443,21 @@ func runParent() (counters, error) {
 		total.DeviceStateStaleChecks < 20 || total.DeviceStateWrongThreadHits < 20 {
 		return total, errors.New("a device-state proof did not run in every cycle")
 	}
+	// The vertex-buffer slice, per cycle: one buffer created from a
+	// declaration and one from a consumer's own IVertexType, the shared
+	// declaration handle proved, and the two guards the projection makes
+	// itself exercised.
+	if total.VertexBufferCycles < 20 || total.VertexBufferCreations < 20 ||
+		total.VertexBufferDeclarationShares < 20 || total.VertexBufferDescriptionChecks < 20 ||
+		total.VertexBufferFromTypeChecks < 20 || total.VertexBufferRefusals < 20 ||
+		total.VertexBufferStrideChecks < 20 || total.VertexBufferDisposalChecks < 20 {
+		return total, errors.New("a vertex-buffer proof did not run in every cycle")
+	}
+	if total.VertexBufferOffsetRoundTrips != total.VertexBufferRoundTrips {
+		return total, fmt.Errorf("%d vertex round trips produced %d offset ones",
+			total.VertexBufferRoundTrips, total.VertexBufferOffsetRoundTrips)
+	}
+
 	// The index-buffer slice, per cycle: two buffers created, the description
 	// CNA applied checked on one, the projection's own refusals exercised, the
 	// WriteOnly read refused and disposal proved.
@@ -743,6 +772,18 @@ func runChild(scenario string, index int) error {
 		}
 		if game.result.SpriteDrawScaledSubmits == 0 || game.result.SpriteDrawDestinationSubmits == 0 {
 			return errors.New("the sprite-draw scenario submitted nothing")
+		}
+	case "vertex-buffer":
+		game.result.VertexBufferCycles = 1
+		if err != nil {
+			return err
+		}
+		if game.result.VertexBufferCreations == 0 {
+			return errors.New("the vertex-buffer scenario created nothing")
+		}
+		if game.result.VertexBufferRoundTrips+game.result.VertexBufferReadbackRefusals != game.result.VertexBufferCreations {
+			return fmt.Errorf("vertex-buffer round trips %d and refusals %d do not account for %d creations",
+				game.result.VertexBufferRoundTrips, game.result.VertexBufferReadbackRefusals, game.result.VertexBufferCreations)
 		}
 	case "index-buffer":
 		game.result.IndexBufferCycles = 1
@@ -1385,6 +1426,11 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 	}
 	if g.scenario == "index-buffer" {
 		if err := g.exerciseIndexBuffer(); err != nil {
+			return err
+		}
+	}
+	if g.scenario == "vertex-buffer" {
+		if err := g.exerciseVertexBuffer(); err != nil {
 			return err
 		}
 	}
@@ -3770,5 +3816,191 @@ func (g *stressGame) exerciseIndexBuffer() error {
 		return fmt.Errorf("disposing the 16-bit buffer: %w", err)
 	}
 	g.result.IndexBufferDisposalChecks++
+	return nil
+}
+
+// stressVertex is a consumer's own vertex type: a Go struct implementing
+// IVertexType, which is what the Type-keyed VertexBuffer constructor resolves.
+// Its layout is deliberately the one its declaration describes -- a Vector3 at
+// 0 and a Color at 12, sixteen bytes -- because FromType's last check compares
+// exactly those two numbers.
+type stressVertex struct {
+	Position framework.Vector3
+	Colour   framework.Color
+}
+
+var stressVertexDeclaration = func() *graphics.VertexDeclaration {
+	declaration, err := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(12, graphics.VertexElementFormatColor, graphics.VertexElementUsageColor, 0),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return declaration
+}()
+
+func (stressVertex) VertexDeclaration() *graphics.VertexDeclaration { return stressVertexDeclaration }
+
+// exerciseVertexBuffer is the vertex-buffer scenario. What it proves:
+//
+//   - A declaration's CNA handle is created LAZILY, on the first buffer that
+//     needs one, and the SAME handle serves a second buffer -- which is what
+//     makes the deferral safe rather than merely cheap.
+//   - Vertices written through the projection come back FROM CNA'S BUFFER
+//     unchanged, whole-buffer and from a byte offset into it.
+//   - The Type-keyed constructor resolves a consumer's own IVertexType and
+//     produces a buffer with that type's declaration.
+//   - The two refusals the projection makes ITSELF: an oversized transfer and
+//     a stride below sizeof(T).
+func (g *stressGame) exerciseVertexBuffer() error {
+	device := g.device
+
+	buffer, err := graphics.NewVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
+		device, stressVertexDeclaration, 4, graphics.BufferUsageNone)
+	if err != nil {
+		return fmt.Errorf("NewVertexBuffer: %w", err)
+	}
+	g.result.VertexBufferCreations++
+
+	if buffer.VertexCount() != 4 {
+		return fmt.Errorf("VertexCount = %d, want 4", buffer.VertexCount())
+	}
+	if buffer.VertexDeclaration() != stressVertexDeclaration {
+		return errors.New("VertexDeclaration did not answer the caller's own object")
+	}
+	if buffer.BufferUsage() != graphics.BufferUsageNone {
+		return fmt.Errorf("BufferUsage = %d, want None", buffer.BufferUsage())
+	}
+	if buffer.GraphicsDevice() != device {
+		return errors.New("the buffer does not report the device it was created on")
+	}
+	if got := buffer.ToString(); got != "Microsoft.Xna.Framework.Graphics.VertexBuffer" {
+		return fmt.Errorf("ToString = %q; the CLR `this` must reach the outermost object", got)
+	}
+	g.result.VertexBufferDescriptionChecks++
+
+	// A SECOND buffer over the same declaration. The declaration's CNA handle
+	// was created by the first and must be reused, not rebuilt: a second handle
+	// would be a second native owner for one managed object.
+	second, err := graphics.NewVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
+		device, stressVertexDeclaration, 2, graphics.BufferUsageNone)
+	if err != nil {
+		return fmt.Errorf("a second buffer over the same declaration: %w", err)
+	}
+	if second.VertexDeclaration() != stressVertexDeclaration {
+		return errors.New("the second buffer answered a different declaration")
+	}
+	g.result.VertexBufferDeclarationShares++
+
+	written := []stressVertex{
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(1, 2, 3), Colour: framework.NewColorByInt32AndInt32AndInt32(255, 0, 0)},
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(4, 5, 6), Colour: framework.NewColorByInt32AndInt32AndInt32(0, 255, 0)},
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(7, 8, 9), Colour: framework.NewColorByInt32AndInt32AndInt32(0, 0, 255)},
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(10, 11, 12), Colour: framework.NewColorByInt32AndInt32AndInt32(255, 255, 255)},
+	}
+	if err := graphics.VertexBufferSetDataBySliceOfT(buffer, written); err != nil {
+		return fmt.Errorf("SetData: %w", err)
+	}
+	readBack := make([]stressVertex, len(written))
+	if err := graphics.VertexBufferGetDataBySliceOfT(buffer, readBack); err != nil {
+		g.result.VertexBufferReadbackRefusals++
+		fmt.Fprintf(os.Stderr, "vertex-buffer readback refused: %v\n", err)
+	} else {
+		for at := range written {
+			if readBack[at] != written[at] {
+				return fmt.Errorf("vertex %d read back as %+v, want %+v", at, readBack[at], written[at])
+			}
+		}
+		g.result.VertexBufferRoundTrips++
+
+		// The BUFFER offset, which is what XNA's offsetInBytes means and the
+		// one offset in CNA's transfer family that indexes the buffer. Reading
+		// two vertices from byte 32 must produce the third and fourth.
+		fromOffset := make([]stressVertex, 2)
+		if err := graphics.VertexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32(
+			buffer, 32, fromOffset, 0, 2, 0); err != nil {
+			return fmt.Errorf("GetData from a byte offset: %w", err)
+		}
+		if fromOffset[0] != written[2] || fromOffset[1] != written[3] {
+			return fmt.Errorf("reading from byte 32 produced %+v, want the third and fourth vertices", fromOffset)
+		}
+		g.result.VertexBufferOffsetRoundTrips++
+	}
+
+	// A declaration with an EXPLICIT stride WIDER than its elements need. The
+	// projection passes the stride CNA's stride-less route would have
+	// recomputed as 16, so this is the control that proves it does not: CNA
+	// must report a 32-byte vertex, and every fit check is then measured in
+	// that.
+	padded, err := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(32, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(12, graphics.VertexElementFormatColor, graphics.VertexElementUsageColor, 0),
+	})
+	if err != nil {
+		return fmt.Errorf("a padded declaration: %w", err)
+	}
+	paddedBuffer, err := graphics.NewVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
+		device, padded, 2, graphics.BufferUsageNone)
+	if err != nil {
+		return fmt.Errorf("a buffer over a padded declaration: %w", err)
+	}
+	// Four 16-byte vertices fit two 32-byte ones exactly, and five do not.
+	// Both answers come from the stride CNA applied, not from the elements.
+	if err := graphics.VertexBufferSetDataBySliceOfT(paddedBuffer, make([]stressVertex, 4)); err != nil {
+		return fmt.Errorf("filling a padded buffer: %w", err)
+	}
+	if err := graphics.VertexBufferSetDataBySliceOfT(paddedBuffer, make([]stressVertex, 5)); err == nil {
+		return errors.New("a padded buffer accepted more bytes than its stride allows")
+	}
+	if err := paddedBuffer.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the padded buffer: %w", err)
+	}
+	if err := padded.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the padded declaration: %w", err)
+	}
+	g.result.VertexBufferStrideChecks++
+
+	// The Type-keyed constructor, over a consumer's own IVertexType.
+	fromType, err := graphics.NewVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		device, reflect.TypeOf(stressVertex{}), 3, graphics.BufferUsageNone)
+	if err != nil {
+		return fmt.Errorf("NewVertexBuffer(typeof(stressVertex)): %w", err)
+	}
+	if fromType.VertexDeclaration() != stressVertexDeclaration {
+		return errors.New("the Type-keyed constructor did not use the type's own declaration")
+	}
+	if fromType.VertexCount() != 3 {
+		return fmt.Errorf("the Type-keyed buffer has %d vertices, want 3", fromType.VertexCount())
+	}
+	g.result.VertexBufferFromTypeChecks++
+
+	// The two refusals the projection makes before CNA is reached.
+	if err := graphics.VertexBufferSetDataBySliceOfT(buffer, make([]stressVertex, 5)); err == nil {
+		return errors.New("a transfer larger than the buffer was accepted")
+	}
+	if err := graphics.VertexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32(
+		buffer, 0, written, 0, 1, 8); err == nil {
+		return errors.New("a vertex stride below sizeof(T) was accepted")
+	}
+	g.result.VertexBufferRefusals++
+
+	// Disposal destroys the CNA buffer, is idempotent, and leaves the shared
+	// declaration alive -- the buffer does not own it.
+	for _, disposable := range []*graphics.VertexBuffer{second, fromType, buffer} {
+		if err := disposable.DisposeByNone(); err != nil {
+			return fmt.Errorf("DisposeByNone: %w", err)
+		}
+		if err := disposable.DisposeByNone(); err != nil {
+			return fmt.Errorf("a second DisposeByNone: %w", err)
+		}
+	}
+	if stressVertexDeclaration.IsDisposed() {
+		return errors.New("disposing the buffers disposed the shared declaration")
+	}
+	if err := graphics.VertexBufferSetDataBySliceOfT(buffer, written); err == nil {
+		return errors.New("a disposed buffer accepted a transfer")
+	}
+	g.result.VertexBufferDisposalChecks++
 	return nil
 }

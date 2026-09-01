@@ -3705,6 +3705,51 @@ func runCorpus() corpusReport {
 			clonedDeclaration.IsDisposed(), clonedDeclaration.VertexStride()))
 
 	// ------------------------------------------------------------------
+	// Foundation 66. VertexDeclaration::FromType, which is `assembly` in the
+	// reference and is the whole failure surface of VertexBuffer's Type-keyed
+	// constructor. Every check is managed and reachable with a nil device.
+	// ------------------------------------------------------------------
+
+	_, vertexNotAValueType := graphics.NewVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(int32(0)), 4, graphics.BufferUsageNone)
+	_, vertexNotIVertexType := graphics.NewVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(corpusNotAVertexType{}), 4, graphics.BufferUsageNone)
+	_, vertexNullDeclaration := graphics.NewVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(corpusNullDeclarationVertex{}), 4, graphics.BufferUsageNone)
+	_, vertexWrongSize := graphics.NewVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(corpusWrongSizeVertex{}), 4, graphics.BufferUsageNone)
+	check("vertex-buffer.from-type-reproduces-each-check-with-its-own-message", "VERTEX_BUFFER",
+		"true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t",
+			strings.Contains(fmt.Sprint(vertexNotAValueType), "is not a value type."),
+			strings.Contains(fmt.Sprint(vertexNotIVertexType), "does not implement the IVertexType interface."),
+			strings.Contains(fmt.Sprint(vertexNullDeclaration), "returned a null VertexDeclaration."),
+			strings.Contains(fmt.Sprint(vertexWrongSize), "does not match the stride of its vertex declaration.")))
+
+	// A consumer's own IVertexType resolves, which is what makes the member
+	// reachable at all.
+	corpusVertexDeclaration := corpusVertexType{}.VertexDeclaration()
+	_, vertexTypeAccepted := graphics.NewVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(corpusVertexType{}), 4, graphics.BufferUsageNone)
+	check("vertex-buffer.a-consumers-own-ivertextype-resolves", "VERTEX_BUFFER",
+		"16,false",
+		fmt.Sprintf("%d,%t", corpusVertexDeclaration.VertexStride(),
+			strings.Contains(fmt.Sprint(vertexTypeAccepted), "Invalid vertex type")))
+
+	// The declaration check runs BEFORE the count check, so a caller with both
+	// wrong is told about the declaration.
+	_, vertexNullDeclarationArgument := graphics.NewVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
+		nil, nil, 0, graphics.BufferUsageNone)
+	_, vertexZeroCount := graphics.NewVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
+		nil, corpusVertexDeclaration, 0, graphics.BufferUsageNone)
+	check("vertex-buffer.the-declaration-guard-runs-before-the-count-guard", "VERTEX_BUFFER",
+		"true,true",
+		fmt.Sprintf("%t,%t",
+			strings.Contains(fmt.Sprint(vertexNullDeclarationArgument),
+				"This method does not accept null for this parameter."),
+			strings.Contains(fmt.Sprint(vertexZeroCount), "Resource size must be greater than zero.")))
+
+	// ------------------------------------------------------------------
 	// Foundation 65. IndexBuffer's managed guards. Creation itself needs a
 	// callback-scoped CNA device, which this corpus creates none of, so what
 	// is proved here is everything that runs BEFORE the device -- which is the
@@ -3862,6 +3907,41 @@ type corpusContentProvider struct{ name string }
 
 // corpusUnprojectedAsset stands for an asset kind CNA-Go projects no type for.
 type corpusUnprojectedAsset struct{}
+
+// The four vertex types FromType's four checks each turn on. Only the first is
+// valid; the others are a struct with no declaration method, one that returns
+// nil, and one whose size is not its declaration's stride.
+type corpusVertexType struct {
+	Position framework.Vector3
+	Colour   framework.Color
+}
+
+type corpusNotAVertexType struct{ A, B, C, D int32 }
+
+type corpusNullDeclarationVertex struct{ A, B, C, D int32 }
+
+type corpusWrongSizeVertex struct{ A int32 }
+
+var corpusVertexDeclarationValue = func() *graphics.VertexDeclaration {
+	declaration, err := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(12, graphics.VertexElementFormatColor, graphics.VertexElementUsageColor, 0),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return declaration
+}()
+
+func (corpusVertexType) VertexDeclaration() *graphics.VertexDeclaration {
+	return corpusVertexDeclarationValue
+}
+
+func (corpusNullDeclarationVertex) VertexDeclaration() *graphics.VertexDeclaration { return nil }
+
+func (corpusWrongSizeVertex) VertexDeclaration() *graphics.VertexDeclaration {
+	return corpusVertexDeclarationValue
+}
 
 // The corpus-local copies of the four optional override shapes. The binding's
 // own capability interfaces are unexported, and that is the claim being

@@ -15,6 +15,12 @@ typedef uint64_t CnaGoHandle;
 
 enum {
     CNA_GO_RESULT_SUCCESS = 0,
+    /* The two codes the bridge itself can produce, from CNA's own numbering:
+       an element array the bridge cannot convert, and a conversion buffer it
+       cannot allocate. Both are stated here rather than invented, so a caller
+       sees the same code CNA would have used. */
+    CNA_GO_RESULT_INVALID_ARGUMENT = 1,
+    CNA_GO_RESULT_OUT_OF_MEMORY = 4,
     CNA_GO_RESULT_CALLBACK = 9,
 
     /* The CNA C ABI admission policy, stated as a RANGE rather than one exact
@@ -561,3 +567,43 @@ CnaGoResult cna_go_keyboard_get_state(
 #endif
 
 #endif
+
+CnaGoResult cna_go_vertex_declaration_create(
+    int32_t vertex_stride,
+    uint8_t has_stride,
+    const int32_t* elements,
+    uint64_t element_count,
+    CnaGoHandle* out_declaration);
+CnaGoResult cna_go_vertex_declaration_destroy(CnaGoHandle declaration);
+CnaGoResult cna_go_vertex_declaration_get_stride(CnaGoHandle declaration, int32_t* out_stride);
+CnaGoResult cna_go_vertex_buffer_create(
+    CnaGoHandle device,
+    CnaGoHandle declaration,
+    int32_t vertex_count,
+    uint32_t buffer_usage,
+    uint8_t dynamic,
+    CnaGoHandle* out_vertex_buffer);
+CnaGoResult cna_go_vertex_buffer_destroy(CnaGoHandle vertex_buffer);
+CnaGoResult cna_go_vertex_buffer_get_info(
+    CnaGoHandle vertex_buffer,
+    int32_t* out_vertex_count,
+    uint32_t* out_buffer_usage,
+    uint8_t* out_dynamic,
+    uint8_t* out_is_content_lost,
+    uint8_t* out_has_renderer,
+    int32_t* out_vertex_stride,
+    uint64_t* out_vertex_element_count);
+CnaGoResult cna_go_vertex_buffer_set_data_raw_at(
+    CnaGoHandle vertex_buffer,
+    uint64_t buffer_offset_in_bytes,
+    const void* data,
+    uint64_t data_byte_count,
+    uint64_t vertex_count,
+    uint32_t vertex_stride);
+CnaGoResult cna_go_vertex_buffer_get_data_raw(
+    CnaGoHandle vertex_buffer,
+    uint64_t buffer_offset_in_bytes,
+    void* destination,
+    uint64_t destination_byte_count,
+    uint64_t vertex_count,
+    uint32_t vertex_stride);

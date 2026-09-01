@@ -12,7 +12,7 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 133,
+    "COMPLETE_TYPES": 135,
     "DECLARED_INTERFACE_CONFORMANCE": 3,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
@@ -41,8 +41,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 44,
-    "MISSING_TYPE": 120,
-    "MISSING_TYPES": 120,
+    "MISSING_TYPE": 118,
+    "MISSING_TYPES": 118,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2239,
-    "TARGET_TYPES": 137,
-    "TOTAL_DIAGNOSTICS": 164,
+    "TARGET_MEMBERS": 2262,
+    "TARGET_TYPES": 139,
+    "TOTAL_DIAGNOSTICS": 162,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -73,8 +73,8 @@
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
     "XNA_COMPOSED_BASE_RELATIONSHIPS": 4,
     "XNA_COMPOSED_DERIVED_TYPES": 17,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 11,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 11,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 12,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 12,
     "XNA_COMPOSED_IDENTITY_FORWARDS": 2,
     "XNA_COMPOSED_IDENTITY_SITES": 7,
     "XNA_COMPOSED_IDENTITY_USES": 8,
@@ -634,12 +634,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.IVertexType",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IVertexType",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.Model",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Model",
       "message": "mapped Go type is absent"
@@ -804,12 +798,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.TextureCube",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:TextureCube",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:VertexBuffer",
       "message": "mapped Go type is absent"
     },
     {
@@ -1119,6 +1107,7 @@
     "Microsoft.Xna.Framework.Graphics.IEffectFog",
     "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
     "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
+    "Microsoft.Xna.Framework.Graphics.IVertexType",
     "Microsoft.Xna.Framework.Graphics.IndexBuffer",
     "Microsoft.Xna.Framework.Graphics.IndexElementSize",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
@@ -1160,6 +1149,7 @@
     "Microsoft.Xna.Framework.Graphics.TextureAddressMode",
     "Microsoft.Xna.Framework.Graphics.TextureCollection",
     "Microsoft.Xna.Framework.Graphics.TextureFilter",
+    "Microsoft.Xna.Framework.Graphics.VertexBuffer",
     "Microsoft.Xna.Framework.Graphics.VertexDeclaration",
     "Microsoft.Xna.Framework.Graphics.VertexElement",
     "Microsoft.Xna.Framework.Graphics.VertexElementFormat",
@@ -1338,7 +1328,6 @@
     "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
     "Microsoft.Xna.Framework.Graphics.GraphicsAdapter",
     "Microsoft.Xna.Framework.Graphics.IEffectLights",
-    "Microsoft.Xna.Framework.Graphics.IVertexType",
     "Microsoft.Xna.Framework.Graphics.Model",
     "Microsoft.Xna.Framework.Graphics.ModelBone",
     "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
@@ -1359,7 +1348,6 @@
     "Microsoft.Xna.Framework.Graphics.SpriteFont",
     "Microsoft.Xna.Framework.Graphics.Texture3D",
     "Microsoft.Xna.Framework.Graphics.TextureCube",
-    "Microsoft.Xna.Framework.Graphics.VertexBuffer",
     "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
     "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
     "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
@@ -7910,7 +7898,7 @@
       "clrMembers": 3,
       "projectedMembers": 0,
       "declaringTypes": 7,
-      "projectedTypes": 2,
+      "projectedTypes": 3,
       "rationale": "assembly-visible device-loss plumbing declared by seven public graphics types; none of its three members appears in any public contract, and projecting one would expose CNA-internal recreation machinery",
       "verdict": "PASS"
     },
@@ -8848,7 +8836,7 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.GraphicsResource",
       "derivedTypes": 11,
-      "projectedDerivedTypes": 8,
+      "projectedDerivedTypes": 9,
       "positions": 0,
       "positionsOnProjectedCarriers": 0,
       "requirement": "NONE",
@@ -9267,9 +9255,10 @@
         {
           "derived": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
           "goDerived": "VertexBuffer",
+          "baseField": "resource",
           "inheritedCLRMembers": 7,
           "inheritedProjections": 10,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.Graphics.VertexDeclaration",
@@ -9436,6 +9425,12 @@
           "binds": true
         },
         {
+          "derived": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+          "goDerived": "VertexBuffer",
+          "constructor": "newVertexBuffer",
+          "binds": true
+        },
+        {
           "derived": "Microsoft.Xna.Framework.Graphics.VertexDeclaration",
           "goDerived": "VertexDeclaration",
           "constructor": "newVertexDeclaration",
@@ -9475,7 +9470,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "1e81774cb3e12a300baf213fbbb45366777e12c93d214d08903076a0b64c2329",
+    "mappingSha256": "3e70e303eb05fa460c903c2def90d40c4a4f675ec2a02fba9b0fa7703eafe999",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }
