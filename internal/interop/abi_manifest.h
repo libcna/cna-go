@@ -41,6 +41,10 @@ typedef struct CNA_Color { uint8_t r; uint8_t g; uint8_t b; uint8_t a; } CNA_Col
    numbering, and this one does NOT start its device events at zero: DISPOSED
    is 0 and DEVICE_CREATED is 1, so a table indexed as if it matched either of
    the other two families would be off by one. */
+#define CNA_GO_MANIFEST_GRAPHICS_DEVICE_EVENT_DISPOSING UINT32_C(0)
+#define CNA_GO_MANIFEST_GRAPHICS_DEVICE_EVENT_DEVICE_LOST UINT32_C(1)
+#define CNA_GO_MANIFEST_GRAPHICS_DEVICE_EVENT_DEVICE_RESET UINT32_C(2)
+#define CNA_GO_MANIFEST_GRAPHICS_DEVICE_EVENT_DEVICE_RESETTING UINT32_C(3)
 #define CNA_GO_MANIFEST_GDM_EVENT_DISPOSED UINT32_C(0)
 #define CNA_GO_MANIFEST_GDM_EVENT_DEVICE_CREATED UINT32_C(1)
 #define CNA_GO_MANIFEST_GDM_EVENT_DEVICE_DISPOSING UINT32_C(2)
@@ -247,6 +251,28 @@ typedef struct CNA_Texture2DDecodeInfo {
 #ifndef CNA_C_GRAPHICS_STATE_H
 typedef uint32_t CNA_SpriteSortMode;
 typedef uint32_t CNA_ShaderStage;
+typedef CNA_Handle CNA_GraphicsDeviceEventRegistrationHandle;
+typedef uint32_t CNA_GraphicsDeviceEvent;
+#define CNA_GRAPHICS_DEVICE_EVENT_DISPOSING CNA_GO_MANIFEST_GRAPHICS_DEVICE_EVENT_DISPOSING
+#define CNA_GRAPHICS_DEVICE_EVENT_DEVICE_LOST CNA_GO_MANIFEST_GRAPHICS_DEVICE_EVENT_DEVICE_LOST
+#define CNA_GRAPHICS_DEVICE_EVENT_DEVICE_RESET CNA_GO_MANIFEST_GRAPHICS_DEVICE_EVENT_DEVICE_RESET
+#define CNA_GRAPHICS_DEVICE_EVENT_DEVICE_RESETTING CNA_GO_MANIFEST_GRAPHICS_DEVICE_EVENT_DEVICE_RESETTING
+typedef struct CNA_ResourceCreatedEventInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Bool has_resource;
+    uint8_t reserved[7];
+} CNA_ResourceCreatedEventInfo;
+typedef struct CNA_ResourceDestroyedEventInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Bool has_tag;
+    uint8_t reserved[7];
+    CNA_StringView name;
+} CNA_ResourceDestroyedEventInfo;
+typedef void (*CNA_GraphicsDeviceEventCallback)(CNA_Handle, void*);
+typedef void (*CNA_GraphicsDeviceResourceCreatedCallback)(CNA_Handle, const CNA_ResourceCreatedEventInfo*, void*);
+typedef void (*CNA_GraphicsDeviceResourceDestroyedCallback)(CNA_Handle, const CNA_ResourceDestroyedEventInfo*, void*);
 typedef struct CNA_TextureSlotInfo {
     uint32_t struct_size;
     uint32_t struct_version;
@@ -413,6 +439,11 @@ typedef CNA_Result (*cna_graphics_device_manager_end_draw_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_get_viewport_fn)(CNA_Handle, CNA_Viewport*);
 typedef CNA_Result (*cna_graphics_device_clear_rgba_fn)(CNA_Handle, float, float, float, float);
+typedef CNA_Result (*cna_graphics_device_subscribe_event_fn)(CNA_Handle, CNA_GraphicsDeviceEvent, CNA_GraphicsDeviceEventCallback, void*, CNA_GraphicsDeviceEventRegistrationHandle*);
+typedef CNA_Result (*cna_graphics_device_subscribe_resource_created_fn)(CNA_Handle, CNA_GraphicsDeviceResourceCreatedCallback, void*, CNA_GraphicsDeviceEventRegistrationHandle*);
+typedef CNA_Result (*cna_graphics_device_subscribe_resource_destroyed_fn)(CNA_Handle, CNA_GraphicsDeviceResourceDestroyedCallback, void*, CNA_GraphicsDeviceEventRegistrationHandle*);
+typedef CNA_Result (*cna_graphics_device_unsubscribe_fn)(CNA_GraphicsDeviceEventRegistrationHandle);
+typedef CNA_Result (*cna_graphics_device_dispose_fn)(CNA_Handle);
 typedef CNA_Result (*cna_graphics_device_get_texture_fn)(CNA_Handle, CNA_ShaderStage, uint32_t, CNA_TextureSlotInfo*);
 typedef CNA_Result (*cna_graphics_device_set_texture_fn)(CNA_Handle, CNA_ShaderStage, uint32_t, CNA_Handle);
 typedef CNA_Result (*cna_graphics_device_get_sampler_state_fn)(CNA_Handle, CNA_ShaderStage, uint32_t, CNA_SamplerState*);
@@ -521,6 +552,11 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \
+    X(cna_graphics_device_subscribe_event) \
+    X(cna_graphics_device_subscribe_resource_created) \
+    X(cna_graphics_device_subscribe_resource_destroyed) \
+    X(cna_graphics_device_unsubscribe) \
+    X(cna_graphics_device_dispose) \
     X(cna_graphics_device_get_texture) \
     X(cna_graphics_device_set_texture) \
     X(cna_graphics_device_get_sampler_state) \

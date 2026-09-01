@@ -131,6 +131,9 @@ type GraphicsDevice struct {
 	vertexTextures      *TextureCollection
 	samplerStates       *SamplerStateCollection
 	vertexSamplerStates *SamplerStateCollection
+	// events is the six registration lists and the one native subscription
+	// behind them. See graphics_device_events.go.
+	events deviceEvents
 }
 
 // GraphicsDeviceManagerGraphicsDevice is the documented cross-package cycle

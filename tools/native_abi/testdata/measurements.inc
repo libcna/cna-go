@@ -304,3 +304,14 @@ CNA_GO_MEASURE(sizeof_CNA_TextureSlotInfo, sizeof(CNA_TextureSlotInfo))
 CNA_GO_MEASURE(alignof_CNA_TextureSlotInfo, _Alignof(CNA_TextureSlotInfo))
 CNA_GO_MEASURE(offsetof_CNA_TextureSlotInfo_bound, offsetof(CNA_TextureSlotInfo, bound))
 CNA_GO_MEASURE(offsetof_CNA_TextureSlotInfo_texture, offsetof(CNA_TextureSlotInfo, texture))
+
+// Foundation 62. The two device event payload structures. Only the destroyed
+// one carries data past its flag, and the StringView's offset is what decides
+// whether a resource name is read from the reserved bytes.
+CNA_GO_MEASURE(sizeof_CNA_ResourceCreatedEventInfo, sizeof(CNA_ResourceCreatedEventInfo))
+CNA_GO_MEASURE(alignof_CNA_ResourceCreatedEventInfo, _Alignof(CNA_ResourceCreatedEventInfo))
+CNA_GO_MEASURE(offsetof_CNA_ResourceCreatedEventInfo_has_resource, offsetof(CNA_ResourceCreatedEventInfo, has_resource))
+CNA_GO_MEASURE(sizeof_CNA_ResourceDestroyedEventInfo, sizeof(CNA_ResourceDestroyedEventInfo))
+CNA_GO_MEASURE(alignof_CNA_ResourceDestroyedEventInfo, _Alignof(CNA_ResourceDestroyedEventInfo))
+CNA_GO_MEASURE(offsetof_CNA_ResourceDestroyedEventInfo_has_tag, offsetof(CNA_ResourceDestroyedEventInfo, has_tag))
+CNA_GO_MEASURE(offsetof_CNA_ResourceDestroyedEventInfo_name, offsetof(CNA_ResourceDestroyedEventInfo, name))

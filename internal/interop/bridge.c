@@ -1222,6 +1222,133 @@ CnaGoResult cna_go_graphics_device_manager_subscribe_events(CnaGoHandle manager,
     return 0;
 }
 
+extern void cnaGoGraphicsDeviceEvent(uint32_t event, uintptr_t context);
+extern void cnaGoGraphicsDeviceResourceCreated(uint8_t has_resource, uintptr_t context);
+extern void cnaGoGraphicsDeviceResourceDestroyed(
+    uint8_t has_tag, const char* name, uint64_t name_length, uintptr_t context);
+
+/* One trampoline per canonical DEVICE event identity, for the fourth time and
+   the same reason: CNA_GraphicsDeviceEventCallback carries the device handle and
+   the caller context, not the identity, so the identity has to come from the
+   function that was registered.
+
+   The device handle the callback receives is deliberately DISCARDED. It is the
+   callback-scoped handle CNA already lends the Go side through the facade, and
+   retaining it would be the one thing the borrowed-device rule forbids. */
+#define CNA_GO_DEVICE_EVENT_CALLBACK(name, event) \
+    static void name(CNA_Handle device, void* context) { \
+        (void)device; \
+        cnaGoGraphicsDeviceEvent((uint32_t)(event), (uintptr_t)context); \
+    }
+
+CNA_GO_DEVICE_EVENT_CALLBACK(device_event_disposing, CNA_GO_DEVICE_EVENT_DISPOSING)
+CNA_GO_DEVICE_EVENT_CALLBACK(device_event_device_lost, CNA_GO_DEVICE_EVENT_DEVICE_LOST)
+CNA_GO_DEVICE_EVENT_CALLBACK(device_event_device_reset, CNA_GO_DEVICE_EVENT_DEVICE_RESET)
+CNA_GO_DEVICE_EVENT_CALLBACK(device_event_device_resetting, CNA_GO_DEVICE_EVENT_DEVICE_RESETTING)
+
+static void device_event_resource_created(
+    CNA_Handle device, const CNA_ResourceCreatedEventInfo* info, void* context) {
+    (void)device;
+    cnaGoGraphicsDeviceResourceCreated(
+        (uint8_t)(info != NULL && info->has_resource != 0), (uintptr_t)context);
+}
+
+static void device_event_resource_destroyed(
+    CNA_Handle device, const CNA_ResourceDestroyedEventInfo* info, void* context) {
+    (void)device;
+    if (info == NULL) {
+        cnaGoGraphicsDeviceResourceDestroyed(0, NULL, 0, (uintptr_t)context);
+        return;
+    }
+    cnaGoGraphicsDeviceResourceDestroyed(
+        (uint8_t)(info->has_tag != 0), info->name.data, info->name.byte_length, (uintptr_t)context);
+}
+
+static const CNA_GraphicsDeviceEventCallback device_event_callbacks[4] = {
+    device_event_disposing,
+    device_event_device_lost,
+    device_event_device_reset,
+    device_event_device_resetting
+};
+
+static const CNA_GraphicsDeviceEvent device_event_identities[4] = {
+    CNA_GRAPHICS_DEVICE_EVENT_DISPOSING,
+    CNA_GRAPHICS_DEVICE_EVENT_DEVICE_LOST,
+    CNA_GRAPHICS_DEVICE_EVENT_DEVICE_RESET,
+    CNA_GRAPHICS_DEVICE_EVENT_DEVICE_RESETTING
+};
+
+_Static_assert(CNA_GO_DEVICE_EVENT_DISPOSING == CNA_GRAPHICS_DEVICE_EVENT_DISPOSING, "device disposing identity drift");
+_Static_assert(CNA_GO_DEVICE_EVENT_DEVICE_LOST == CNA_GRAPHICS_DEVICE_EVENT_DEVICE_LOST, "device lost identity drift");
+_Static_assert(CNA_GO_DEVICE_EVENT_DEVICE_RESET == CNA_GRAPHICS_DEVICE_EVENT_DEVICE_RESET, "device reset identity drift");
+_Static_assert(CNA_GO_DEVICE_EVENT_DEVICE_RESETTING == CNA_GRAPHICS_DEVICE_EVENT_DEVICE_RESETTING, "device resetting identity drift");
+
+/* The two payload events sit ABOVE CNA's own identity space, which has no name
+   for them: they are separate routes rather than identities. Asserting that
+   they do not collide with a canonical one is what stops a future CNA identity
+   from silently aliasing them. */
+_Static_assert(CNA_GO_DEVICE_EVENT_RESOURCE_CREATED > CNA_GRAPHICS_DEVICE_EVENT_DEVICE_RESETTING,
+               "the payload-carrying device events must not alias a canonical identity");
+
+CnaGoResult cna_go_graphics_device_unsubscribe_events(CnaGoHandle* registrations) {
+    if (registrations == NULL) {
+        return 1; /* CNA_RESULT_INVALID_ARGUMENT */
+    }
+    CNA_Result first = 0;
+    for (int i = 0; i < CNA_GO_DEVICE_EVENT_COUNT; i++) {
+        if (registrations[i] == 0) {
+            continue;
+        }
+        const CNA_Result result = api.cna_graphics_device_unsubscribe(registrations[i]);
+        registrations[i] = 0;
+        if (result != 0 && first == 0) {
+            first = result;
+        }
+    }
+    return first;
+}
+
+CnaGoResult cna_go_graphics_device_subscribe_events(
+    CnaGoHandle device, uintptr_t context, CnaGoHandle* out_registrations) {
+    if (out_registrations == NULL) {
+        return 1; /* CNA_RESULT_INVALID_ARGUMENT */
+    }
+    for (int i = 0; i < CNA_GO_DEVICE_EVENT_COUNT; i++) {
+        out_registrations[i] = 0;
+    }
+    for (int i = 0; i < 4; i++) {
+        CNA_GraphicsDeviceEventRegistrationHandle registration = 0;
+        const CNA_Result result = api.cna_graphics_device_subscribe_event(
+            device, device_event_identities[i], device_event_callbacks[i], (void*)context, &registration);
+        if (result != 0) {
+            (void)cna_go_graphics_device_unsubscribe_events(out_registrations);
+            return result;
+        }
+        out_registrations[i] = registration;
+    }
+    CNA_GraphicsDeviceEventRegistrationHandle created = 0;
+    CNA_Result result = api.cna_graphics_device_subscribe_resource_created(
+        device, device_event_resource_created, (void*)context, &created);
+    if (result != 0) {
+        (void)cna_go_graphics_device_unsubscribe_events(out_registrations);
+        return result;
+    }
+    out_registrations[CNA_GO_DEVICE_EVENT_RESOURCE_CREATED] = created;
+    CNA_GraphicsDeviceEventRegistrationHandle destroyed = 0;
+    result = api.cna_graphics_device_subscribe_resource_destroyed(
+        device, device_event_resource_destroyed, (void*)context, &destroyed);
+    if (result != 0) {
+        (void)cna_go_graphics_device_unsubscribe_events(out_registrations);
+        return result;
+    }
+    out_registrations[CNA_GO_DEVICE_EVENT_RESOURCE_DESTROYED] = destroyed;
+    return 0;
+}
+
+CnaGoResult cna_go_graphics_device_dispose(CnaGoHandle device) {
+    return api.cna_graphics_device_dispose(device);
+}
+
 CnaGoResult cna_go_graphics_device_manager_set_graphics_profile(CnaGoHandle manager, uint32_t profile) {
     return api.cna_graphics_device_manager_set_graphics_profile(manager, profile);
 }

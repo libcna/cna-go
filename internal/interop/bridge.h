@@ -97,6 +97,19 @@ enum {
     CNA_GO_GDM_EVENT_COUNT = 5
 };
 
+/* The device family's own identities, mirroring CNA_GRAPHICS_DEVICE_EVENT_* for
+   the four payload-free events and adding the two that carry one. The order is
+   CNA-Go's, and the four that mirror CNA are static-asserted against it. */
+enum {
+    CNA_GO_DEVICE_EVENT_DISPOSING = 0,
+    CNA_GO_DEVICE_EVENT_DEVICE_LOST = 1,
+    CNA_GO_DEVICE_EVENT_DEVICE_RESET = 2,
+    CNA_GO_DEVICE_EVENT_DEVICE_RESETTING = 3,
+    CNA_GO_DEVICE_EVENT_RESOURCE_CREATED = 4,
+    CNA_GO_DEVICE_EVENT_RESOURCE_DESTROYED = 5,
+    CNA_GO_DEVICE_EVENT_COUNT = 6
+};
+
 /* The encoded-version arithmetic, mirrored from CNA_ABI_VERSION_ENCODE in the
    canonical CNA header. tools/native_abi compiles both spellings in one
    translation unit and asserts they agree on sample values, so a mirror that
@@ -217,6 +230,16 @@ CnaGoResult cna_go_graphics_device_manager_subscribe_events(
     uintptr_t context,
     CnaGoHandle* out_registrations);
 CnaGoResult cna_go_graphics_device_manager_unsubscribe_events(CnaGoHandle* registrations);
+
+/* Installs exactly one native subscription per canonical DEVICE event. Four
+   carry no payload and two do, so the six go through three CNA routes and one
+   registration array. */
+CnaGoResult cna_go_graphics_device_subscribe_events(
+    CnaGoHandle device,
+    uintptr_t context,
+    CnaGoHandle* out_registrations);
+CnaGoResult cna_go_graphics_device_unsubscribe_events(CnaGoHandle* registrations);
+CnaGoResult cna_go_graphics_device_dispose(CnaGoHandle device);
 CnaGoResult cna_go_game_get_graphics_device(CnaGoHandle game, CnaGoHandle* out_device);
 CnaGoResult cna_go_graphics_device_get_viewport(
     CnaGoHandle device,

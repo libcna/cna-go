@@ -704,6 +704,75 @@ func cnaGoGraphicsDeviceManagerEvent(event C.uint32_t, context C.uintptr_t) {
 	signals.deliver(uint32(event))
 }
 
+func nativeDeviceSubscribeEvents(device uint64, context uintptr) ([deviceEventCount]uint64, error) {
+	var registrations [deviceEventCount]C.CnaGoHandle
+	code := uint32(C.cna_go_graphics_device_subscribe_events(
+		C.CnaGoHandle(device), C.uintptr_t(context), &registrations[0]))
+	var result [deviceEventCount]uint64
+	for i := range registrations {
+		result[i] = uint64(registrations[i])
+	}
+	return result, resultError("cna_graphics_device_subscribe_event", code)
+}
+
+func nativeDeviceUnsubscribeEvents(registrations *[deviceEventCount]uint64) error {
+	var native [deviceEventCount]C.CnaGoHandle
+	for i, registration := range registrations {
+		native[i] = C.CnaGoHandle(registration)
+	}
+	code := uint32(C.cna_go_graphics_device_unsubscribe_events(&native[0]))
+	for i := range registrations {
+		registrations[i] = uint64(native[i])
+	}
+	return resultError("cna_graphics_device_unsubscribe", code)
+}
+
+func nativeGraphicsDeviceDispose(device uint64) error {
+	return resultError("cna_graphics_device_dispose",
+		uint32(C.cna_go_graphics_device_dispose(C.CnaGoHandle(device))))
+}
+
+// The three device trampolines. Their context is a per-DEVICE-FACADE cgo.Handle:
+// a game holds one device, but a facade is per manager per generation and a
+// signal has to reach the one that subscribed.
+
+//export cnaGoGraphicsDeviceEvent
+func cnaGoGraphicsDeviceEvent(event C.uint32_t, context C.uintptr_t) {
+	deliverDeviceSignal(context, uint32(event), DeviceSignalPayload{})
+}
+
+//export cnaGoGraphicsDeviceResourceCreated
+func cnaGoGraphicsDeviceResourceCreated(hasResource C.uint8_t, context C.uintptr_t) {
+	deliverDeviceSignal(context, DeviceEventResourceCreated,
+		DeviceSignalPayload{HasResource: hasResource != 0})
+}
+
+//export cnaGoGraphicsDeviceResourceDestroyed
+func cnaGoGraphicsDeviceResourceDestroyed(
+	hasTag C.uint8_t, name *C.char, nameLength C.uint64_t, context C.uintptr_t,
+) {
+	// The name borrows bytes that expire when the callback returns, so it is
+	// COPIED into Go memory here rather than retained.
+	payload := DeviceSignalPayload{HasTag: hasTag != 0}
+	if name != nil && nameLength > 0 {
+		payload.Name = C.GoStringN(name, C.int(nameLength))
+	}
+	deliverDeviceSignal(context, DeviceEventResourceDestroyed, payload)
+}
+
+func deliverDeviceSignal(context C.uintptr_t, event uint32, payload DeviceSignalPayload) {
+	var signals *DeviceSignals
+	defer func() {
+		if recovered := recover(); recovered != nil && signals != nil && signals.runtime != nil {
+			signals.runtime.recordCallbackFailure(
+				fmt.Errorf("panic in native device-event trampoline: %v", recovered))
+		}
+	}()
+	handle := cgo.Handle(uintptr(context))
+	signals = handle.Value().(*DeviceSignals)
+	signals.deliver(event, payload)
+}
+
 // The GraphicsDeviceManager configuration setters. Each is a store CNA's own
 // manager applies at ChangeDevice time, so a value that never reached it would
 // be a setting that appears to work and does not.

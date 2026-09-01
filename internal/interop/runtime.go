@@ -1286,6 +1286,142 @@ const ManagerEventCount = managerEventCount
 // window families: those two belong to the game itself and there is one, while
 // a manager is an object a consumer creates and a signal has to reach the one
 // that was subscribed.
+// The six canonical graphics-device signals. Four are CNA identities and two are
+// separate CNA routes that carry a payload, so CNA-Go indexes all six in one
+// array and bridge.c static-asserts that the four mirror CNA's numbering and
+// that the two do not alias it.
+const (
+	DeviceEventDisposing uint32 = iota
+	DeviceEventDeviceLost
+	DeviceEventDeviceReset
+	DeviceEventDeviceResetting
+	DeviceEventResourceCreated
+	DeviceEventResourceDestroyed
+	deviceEventCount = 6
+)
+
+// DeviceEventCount is the exported count, for qualification tooling.
+const DeviceEventCount = deviceEventCount
+
+// DeviceSignalPayload is what the two payload-carrying device events report.
+//
+// Neither carries the OBJECT. CNA states why for each: ResourceCreated fires
+// from the graphics-resource base constructor, where the concrete type does not
+// exist yet, and the destroyed resource's tag is caller-owned native state. So
+// the C event reports PRESENCE, and the name -- which is the one value that
+// survives -- is copied out of callback-scoped bytes before they expire.
+type DeviceSignalPayload struct {
+	HasResource bool
+	HasTag      bool
+	Name        string
+}
+
+// DeviceSignals is the manager family's shape over the device's six events.
+type DeviceSignals struct {
+	mu            sync.Mutex
+	runtime       *Runtime
+	handle        cgo.Handle
+	registrations [deviceEventCount]uint64
+	sink          func(event uint32, payload DeviceSignalPayload) error
+	deliveries    [deviceEventCount]int
+	released      bool
+}
+
+// SubscribeDeviceEvents installs one native subscription per canonical device
+// event, on the owner thread, against the callback-scoped device handle.
+func SubscribeDeviceEvents(d *Device, sink func(event uint32, payload DeviceSignalPayload) error) (*DeviceSignals, error) {
+	if sink == nil {
+		return nil, errors.New("device signal sink must not be nil")
+	}
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	signals := &DeviceSignals{runtime: d.runtime, sink: sink}
+	signals.handle = cgo.NewHandle(signals)
+	registrations, subscribeErr := nativeDeviceSubscribeEvents(handle, uintptr(signals.handle))
+	if subscribeErr != nil {
+		signals.handle.Delete()
+		return nil, subscribeErr
+	}
+	signals.registrations = registrations
+	return signals, nil
+}
+
+// Release releases every installed registration exactly once, for the reason
+// ManagerSignals.Release is idempotent: a second release would hand CNA a stale
+// registration and CNA answers that with CNA_RESULT_INVALID_HANDLE.
+func (s *DeviceSignals) Release() error {
+	if s == nil {
+		return nil
+	}
+	s.mu.Lock()
+	if s.released {
+		s.mu.Unlock()
+		return nil
+	}
+	s.released = true
+	registrations := s.registrations
+	s.registrations = [deviceEventCount]uint64{}
+	handle := s.handle
+	s.handle = 0
+	s.mu.Unlock()
+	err := nativeDeviceUnsubscribeEvents(&registrations)
+	// A zero handle is one SubscribeDeviceEvents never created, which is the
+	// state a signals value that was built but never subscribed is in. Deleting
+	// it would panic with "misuse of an invalid Handle", so the release is
+	// guarded rather than assumed.
+	if handle != 0 {
+		handle.Delete()
+	}
+	return err
+}
+
+// Deliveries reports how many times each canonical device signal arrived, for
+// native qualification only.
+func (s *DeviceSignals) Deliveries() [deviceEventCount]int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.deliveries
+}
+
+func (s *DeviceSignals) deliver(event uint32, payload DeviceSignalPayload) {
+	s.mu.Lock()
+	sink := s.sink
+	released := s.released
+	if int(event) < deviceEventCount {
+		s.deliveries[event]++
+	}
+	s.mu.Unlock()
+	if released || sink == nil {
+		return
+	}
+	var err error
+	func() {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				err = fmt.Errorf("panic in GraphicsDevice event handler: %v\n%s", recovered, debug.Stack())
+			}
+		}()
+		err = sink(event, payload)
+	}()
+	if err != nil && s.runtime != nil {
+		s.runtime.recordCallbackFailure(err)
+	}
+}
+
+// DisposeDevice is cna_graphics_device_dispose: the reference's own
+// GraphicsDevice::Dispose, which really disposes the device the Game owns. It is
+// reached only when a consumer asks, which is what the reference does too; the
+// facade's ownership stays BORROWED and CNA-Go never calls this on its own.
+func (d *Device) DisposeDevice() error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceDispose(handle)
+}
+
 type ManagerSignals struct {
 	mu            sync.Mutex
 	runtime       *Runtime

@@ -3478,6 +3478,36 @@ func runCorpus() corpusReport {
 			collectionTextureRef != nil, collectionTargetRef != nil, collectionBaseRef != nil))
 
 	// ------------------------------------------------------------------
+	// Foundation 62. GraphicsDevice's six events and its disposal.
+	// ------------------------------------------------------------------
+
+	// Every accessor refuses a nil facade rather than panicking, which is the
+	// Go-only state the CLR has no counterpart for.
+	var eventDevice *graphics.GraphicsDevice
+	_, eventAddErr := eventDevice.AddDeviceLostHandler(
+		func(sender any, args *framework.EventArgs) error { return nil })
+	eventRemoveErr := eventDevice.RemoveDeviceLostHandler(framework.EventSubscription{})
+	eventDisposeErr := eventDevice.DisposeByNone()
+	check("graphics-device.event-accessors-refuse-a-nil-facade", "GRAPHICS_DEVICE_EVENTS",
+		"true,true,true", fmt.Sprintf("%t,%t,%t",
+			eventAddErr != nil, eventRemoveErr != nil, eventDisposeErr != nil))
+
+	// Dispose(false) is the finalizer's branch and returns before it reaches
+	// the device, so on a nil facade it answers the nil guard -- and on a real
+	// one it does nothing, because CNA offers one disposal route and no
+	// unmanaged-only variant.
+	check("graphics-device.finalize-is-dispose-false", "GRAPHICS_DEVICE_EVENTS",
+		"true", fmt.Sprintf("%t", eventDevice.Finalize() != nil))
+
+	// The two payload events report PRESENCE, not the object. CNA says why for
+	// each, and the projected args carry nil rather than an invention.
+	check("graphics-device.resource-event-args-carry-what-cna-can-report", "GRAPHICS_DEVICE_EVENTS",
+		"<nil>,,<nil>", fmt.Sprintf("%v,%s,%v",
+			(&graphics.ResourceCreatedEventArgs{}).Resource(),
+			(&graphics.ResourceDestroyedEventArgs{}).Name(),
+			(&graphics.ResourceDestroyedEventArgs{}).Tag()))
+
+	// ------------------------------------------------------------------
 	// Foundation 45. GameWindow, whose behaviour is XNA-derived throughout:
 	// every row below comes from Microsoft.Xna.Framework.Game.dll's IL, and
 	// none of it comes from what CNA does.

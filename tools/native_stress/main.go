@@ -104,6 +104,8 @@ type counters struct {
 	DeviceCollectionRangeChecks       int `json:"DEVICE_COLLECTION_RANGE_CHECKS"`
 	DeviceCollectionTextureRoundTrips int `json:"DEVICE_COLLECTION_TEXTURE_ROUND_TRIPS"`
 	DeviceCollectionSamplerRoundTrips int `json:"DEVICE_COLLECTION_SAMPLER_ROUND_TRIPS"`
+	DeviceEventSubscriptions          int `json:"DEVICE_EVENT_SUBSCRIPTIONS"`
+	DeviceEventRegistrationChecks     int `json:"DEVICE_EVENT_REGISTRATION_CHECKS"`
 	DeviceStateReadOnlyChecks         int `json:"DEVICE_STATE_READ_ONLY_CHECKS"`
 	DeviceStateClearCalls             int `json:"DEVICE_STATE_CLEAR_CALLS"`
 	DeviceStateClearRefusals          int `json:"DEVICE_STATE_CLEAR_REFUSALS"`
@@ -1197,6 +1199,22 @@ func (g *stressGame) LoadContent(_ *framework.Game) error {
 	return nil
 }
 
+// removeDeviceHandler is the removal half of the event loop above, split out
+// because Go has no way to name a method value's receiver twice in a map.
+func removeDeviceHandler(device *graphics.GraphicsDevice, name string, subscription framework.EventSubscription) error {
+	switch name {
+	case "Disposing":
+		return device.RemoveDisposingHandler(subscription)
+	case "DeviceLost":
+		return device.RemoveDeviceLostHandler(subscription)
+	case "DeviceReset":
+		return device.RemoveDeviceResetHandler(subscription)
+	case "DeviceResetting":
+		return device.RemoveDeviceResettingHandler(subscription)
+	}
+	return fmt.Errorf("unknown device event %q", name)
+}
+
 func verifyKeyboardPlayerIndexSnapshots() error {
 	baseline, err := input.KeyboardGetStateByNone()
 	if err != nil {
@@ -1630,6 +1648,67 @@ func (g *stressGame) exerciseDeviceState() error {
 		return errors.New("SamplerStates[0] = nil was accepted")
 	}
 	g.result.DeviceCollectionSamplerRoundTrips++
+
+	// Foundation 62. The six device events, subscribed against the LIVE device.
+	// Registration is what is proved here: CNA raises DeviceLost, DeviceReset
+	// and DeviceResetting only when a renderer really loses or resets a device,
+	// which neither qualified artifact can be made to do, and it raises
+	// Disposing from a disposal this scenario must not perform on a device the
+	// Game owns and goes on using.
+	deviceRaises := 0
+	subscriptions := 0
+	for name, add := range map[string]func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error){
+		"Disposing": func(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+			return device.AddDisposingHandler(h)
+		},
+		"DeviceLost": func(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+			return device.AddDeviceLostHandler(h)
+		},
+		"DeviceReset": func(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+			return device.AddDeviceResetHandler(h)
+		},
+		"DeviceResetting": func(h framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) {
+			return device.AddDeviceResettingHandler(h)
+		},
+	} {
+		subscription, err := add(func(sender any, args *framework.EventArgs) error {
+			deviceRaises++
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("Add%sHandler: %w", name, err)
+		}
+		subscriptions++
+		if err := removeDeviceHandler(device, name, subscription); err != nil {
+			return fmt.Errorf("Remove%sHandler: %w", name, err)
+		}
+	}
+	createdSubscription, createdErr := device.AddResourceCreatedHandler(
+		func(sender any, args *graphics.ResourceCreatedEventArgs) error { return nil })
+	if createdErr != nil {
+		return fmt.Errorf("AddResourceCreatedHandler: %w", createdErr)
+	}
+	destroyedSubscription, destroyedErr := device.AddResourceDestroyedHandler(
+		func(sender any, args *graphics.ResourceDestroyedEventArgs) error { return nil })
+	if destroyedErr != nil {
+		return fmt.Errorf("AddResourceDestroyedHandler: %w", destroyedErr)
+	}
+	subscriptions += 2
+	if err := device.RemoveResourceCreatedHandler(createdSubscription); err != nil {
+		return fmt.Errorf("RemoveResourceCreatedHandler: %w", err)
+	}
+	if err := device.RemoveResourceDestroyedHandler(destroyedSubscription); err != nil {
+		return fmt.Errorf("RemoveResourceDestroyedHandler: %w", err)
+	}
+	if subscriptions != 6 {
+		return fmt.Errorf("%d device event subscriptions, want six", subscriptions)
+	}
+	g.result.DeviceEventSubscriptions += subscriptions
+	// Every registration must be released before cna_game_destroy succeeds, and
+	// the manager's disposal is what does it. A leaked registration would make
+	// the whole isolated cycle fail at teardown, which is the strongest form
+	// this control can take.
+	g.result.DeviceEventRegistrationChecks++
 
 	if err := device.SetMultiSampleMask(0x0f0f0f0f); err != nil {
 		return fmt.Errorf("SetMultiSampleMask: %w", err)

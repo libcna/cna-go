@@ -300,6 +300,44 @@ func WriteManagerDeviceFacade(manager any, facade any, generation uint64) {
 	current(manager, facade, generation)
 }
 
+// DeviceFacadeSignalReleaser releases the native event registrations a cached
+// GraphicsDevice facade installed.
+//
+// It exists because CNA's own contract requires it: "A registration is a C-owned
+// resource of the active game. It must be released with
+// cna_graphics_device_unsubscribe before cna_game_destroy succeeds." The facade
+// lives in the Graphics package and the object whose disposal ends its life --
+// the GraphicsDeviceManager -- lives in the framework one, so the release
+// crosses the same seam the facade itself does, through the same bridge and
+// with no public API on either side.
+type DeviceFacadeSignalReleaser func(facade any) error
+
+var facadeSignalReleaser DeviceFacadeSignalReleaser
+
+// SetDeviceFacadeSignalReleaser installs the Graphics package's releaser, from
+// that package's init.
+func SetDeviceFacadeSignalReleaser(release DeviceFacadeSignalReleaser) {
+	mu.Lock()
+	defer mu.Unlock()
+	facadeSignalReleaser = release
+}
+
+// ReleaseDeviceFacadeSignals releases a cached facade's registrations. A nil
+// facade, an absent releaser and a facade that installed nothing are all
+// successful no-ops.
+func ReleaseDeviceFacadeSignals(facade any) error {
+	if facade == nil {
+		return nil
+	}
+	mu.RLock()
+	current := facadeSignalReleaser
+	mu.RUnlock()
+	if current == nil {
+		return nil
+	}
+	return current(facade)
+}
+
 // SetManagerSignalReader installs the framework package's reader, from that
 // package's init.
 func SetManagerSignalReader(read ManagerSignalReader) {

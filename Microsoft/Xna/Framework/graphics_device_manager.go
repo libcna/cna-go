@@ -736,6 +736,16 @@ func (m *GraphicsDeviceManager) Dispose(disposing bool) error {
 	// boundary wider than the one that is measured.
 	releaseErr := m.signals.Release()
 	m.signals = nil
+	// The device facade's own registrations, if a consumer ever listened to
+	// one. CNA requires every graphics-device registration released before
+	// cna_game_destroy succeeds, and the facade is a Graphics-package object a
+	// framework-package type cannot name -- so the release crosses the same
+	// bridge the facade itself does.
+	if facade, _, cached := servicebridge.ReadManagerDeviceFacade(m); cached {
+		if err := servicebridge.ReleaseDeviceFacadeSignals(facade); err != nil && releaseErr == nil {
+			releaseErr = err
+		}
+	}
 	if err := m.resource.Dispose(); err != nil {
 		return err
 	}

@@ -40,7 +40,7 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 61,
+    "MISSING_MEMBER": 46,
     "MISSING_TYPE": 123,
     "MISSING_TYPES": 123,
     "OPERATOR_MAPPING_MISMATCH": 0,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2174,
+    "TARGET_MEMBERS": 2189,
     "TARGET_TYPES": 134,
-    "TOTAL_DIAGNOSTICS": 184,
+    "TOTAL_DIAGNOSTICS": 169,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -622,24 +622,6 @@
     },
     {
       "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Dispose(System.Boolean)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DisposeByBoolean",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Dispose()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DisposeByNone",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Finalize()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.Finalize",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Indices()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.Indices",
       "message": "mapped Go member is absent"
@@ -660,78 +642,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::PresentationParameters()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.PresentationParameters",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Disposing()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddDisposingHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Disposing()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveDisposingHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceDestroyed()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddResourceDestroyedHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceDestroyed()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveResourceDestroyedHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceCreated()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddResourceCreatedHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceCreated()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveResourceCreatedHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceLost()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddDeviceLostHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceLost()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveDeviceLostHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceReset()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddDeviceResetHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceReset()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveDeviceResetHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceResetting()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddDeviceResettingHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceResetting()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveDeviceResettingHandler",
       "message": "mapped Go member is absent"
     },
     {
@@ -1339,16 +1249,6 @@
       "missingMembers": [
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::.ctor(Microsoft.Xna.Framework.Graphics.GraphicsAdapter,Microsoft.Xna.Framework.Graphics.GraphicsProfile,Microsoft.Xna.Framework.Graphics.PresentationParameters) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NewGraphicsDevice",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Adapter() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.Adapter",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceLost() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddDeviceLostHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceLost() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveDeviceLostHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceReset() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddDeviceResetHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceReset() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveDeviceResetHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceResetting() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddDeviceResettingHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DeviceResetting() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveDeviceResettingHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Dispose() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DisposeByNone",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Dispose(System.Boolean) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DisposeByBoolean",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Disposing() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddDisposingHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Disposing() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveDisposingHandler",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawIndexedPrimitives",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawInstancedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawInstancedPrimitives",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawPrimitives",
@@ -1358,7 +1258,6 @@
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int32[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32AndVertexDeclaration",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndVertexDeclaration",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Finalize() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.Finalize",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataBySliceOfT",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataBySliceOfTAndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataByNullableOfRectangleAndSliceOfTAndInt32AndInt32",
@@ -1371,17 +1270,13 @@
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Reset() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.ResetByNone",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Reset(Microsoft.Xna.Framework.Graphics.PresentationParameters) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.ResetByPresentationParameters",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Reset(Microsoft.Xna.Framework.Graphics.PresentationParameters,Microsoft.Xna.Framework.Graphics.GraphicsAdapter) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.ResetByPresentationParametersAndGraphicsAdapter",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceCreated() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddResourceCreatedHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceCreated() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveResourceCreatedHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceDestroyed() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddResourceDestroyedHandler",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceDestroyed() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveResourceDestroyedHandler",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetRenderTarget(Microsoft.Xna.Framework.Graphics.RenderTargetCube,Microsoft.Xna.Framework.Graphics.CubeMapFace) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetRenderTargetByRenderTargetCubeAndCubeMapFace",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetRenderTargets(Microsoft.Xna.Framework.Graphics.RenderTargetBinding[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetRenderTargets",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffer(Microsoft.Xna.Framework.Graphics.VertexBuffer) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBufferByVertexBuffer",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffer(Microsoft.Xna.Framework.Graphics.VertexBuffer,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBufferByVertexBufferAndInt32",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffers(Microsoft.Xna.Framework.Graphics.VertexBufferBinding[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBuffers"
       ],
-      "diagnostics": 43
+      "diagnostics": 28
     },
     {
       "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch",

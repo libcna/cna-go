@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 709,
-    "ASSERTIONS": 709,
+    "OBSERVATIONS": 712,
+    "ASSERTIONS": 712,
     "FAILURES": 0
   },
   "observations": [
@@ -5605,6 +5605,30 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,true,true",
       "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device.event-accessors-refuse-a-nil-facade",
+      "group": "GRAPHICS_DEVICE_EVENTS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device.finalize-is-dispose-false",
+      "group": "GRAPHICS_DEVICE_EVENTS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device.resource-event-args-carry-what-cna-can-report",
+      "group": "GRAPHICS_DEVICE_EVENTS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "\u003cnil\u003e,,\u003cnil\u003e",
+      "actual": "\u003cnil\u003e,,\u003cnil\u003e",
       "passed": true
     },
     {
