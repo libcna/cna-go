@@ -1583,6 +1583,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 68 | GraphicsAdapter, and a narrowing that belongs to CNA | `foundation-68-graphics-adapter-evidence.md` |
 | 69 | SpriteFont, and a measurement that is the reference's | `foundation-69-sprite-font-evidence.md` |
 | 70 | SpriteBatch's six DrawString overloads | `foundation-70-draw-string-evidence.md` |
+| 71 | TextureCube, Texture3D, and a blocker that was false | `foundation-71-volume-cube-texture-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1646,7 +1647,9 @@ This section is a STATEMENT OF CURRENT STATE, not a permanent list, and it is
 rewritten whenever a milestone makes one of its entries false.
 
 Still deferred: audio/XACT; media/video; storage; touch; design;
-GamerServices; and broad platform work. Windows, macOS, Android, iOS, and
+GamerServices; and broad platform work. The 3D family is no longer deferred as
+a whole: Foundation 71 projected TextureCube and Texture3D, and what remains
+under it is the Effect cluster, the six stock effects and the Model family. Windows, macOS, Android, iOS, and
 Web/Wasm are unqualified even if the Go compiler can target them.
 
 No longer deferred, and the milestone that ended each:
@@ -1657,6 +1660,9 @@ Content/XNB    Foundation 63 projected ContentManager over CNA's own content
                second asset kind. LZX remains CNA's business, not the
                binding's: CNA-Go parses no container.
 SpriteFont     Foundation 69.
+cube/volume    Foundation 71 projected TextureCube and Texture3D. Their
+               RENDERER support is a separate question and is measured per
+               artifact rather than claimed.
 ```
 
 The Load<T> set is closed by PROJECTED TYPE IDENTITY, which is the mechanism

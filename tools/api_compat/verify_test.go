@@ -8030,9 +8030,10 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 		t.Fatalf("the composed relationships cover %d derived types, want 17", got)
 	}
 	// DrawableGameComponent, SpriteBatch, Texture, Texture2D, RenderTarget2D,
-	// the four state objects, VertexDeclaration, IndexBuffer and VertexBuffer.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 12 {
-		t.Fatalf("%d projected derived types, want 12", got)
+	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
+	// and Foundation 71's TextureCube and Texture3D.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 14 {
+		t.Fatalf("%d projected derived types, want 14", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.

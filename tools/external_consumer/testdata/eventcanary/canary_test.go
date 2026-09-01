@@ -3403,3 +3403,86 @@ func TestSpriteFontIsReachableFromOutside(t *testing.T) {
 		t.Fatalf("SpriteFont is not in the closed Load set: %v", err)
 	}
 }
+
+// TestTheCubeAndVolumeTexturesAreReachableFromOutside compiles both Foundation
+// 71 types at their exact shapes and proves the two things a consumer meets
+// first: the four geometry readers never fail, and the twelve typed transfers
+// accept exactly one element type -- a CNA ABI limit, not an XNA one, which the
+// refusal must say.
+func TestTheCubeAndVolumeTexturesAreReachableFromOutside(t *testing.T) {
+	var _ func(*graphics.GraphicsDevice, int32, bool, graphics.SurfaceFormat) (*graphics.TextureCube, error) = graphics.NewTextureCube
+	var _ func(*graphics.GraphicsDevice, int32, int32, int32, bool, graphics.SurfaceFormat) (*graphics.Texture3D, error) = graphics.NewTexture3D
+
+	cube := &graphics.TextureCube{}
+	var _ func() int32 = cube.Size
+	var _ func() graphics.SurfaceFormat = cube.Format
+	var _ func() int32 = cube.LevelCount
+	var _ func() bool = cube.IsDisposed
+	var _ func() error = cube.DisposeByNone
+	var _ func(bool) error = cube.DisposeByBoolean
+
+	volume := &graphics.Texture3D{}
+	var _ func() int32 = volume.Width
+	var _ func() int32 = volume.Height
+	var _ func() int32 = volume.Depth
+	var _ func() graphics.SurfaceFormat = volume.Format
+
+	// Both are usable at a Texture-typed parameter position, which is the
+	// substitutable-base rule reaching a second and third derived type.
+	var _ graphics.TextureReference = cube
+	var _ graphics.TextureReference = volume
+
+	// A nil device is refused with Microsoft's own sentence.
+	if _, err := graphics.NewTextureCube(nil, 4, false, graphics.SurfaceFormatColor); err == nil {
+		t.Fatal("a nil device built a cube")
+	} else if !strings.Contains(err.Error(), "The GraphicsDevice must not be null when creating new resources.") {
+		t.Fatalf("%v, want the reference's message", err)
+	}
+	// The element set is one type wide, and the refusal attributes the limit.
+	if err := graphics.Texture3DSetDataBySliceOfT[float32](nil, nil); err == nil {
+		t.Fatal("a float32 element was accepted")
+	} else if !strings.Contains(err.Error(), "CNA") || strings.Contains(err.Error(), "XNA") {
+		t.Fatalf("%v, want the limit attributed to CNA", err)
+	}
+	// And the accepted element type compiles at every one of the twelve
+	// generic call sites.
+	pixels := []framework.Color{{}}
+	for _, call := range []func() error{
+		func() error {
+			return graphics.TextureCubeSetDataByCubeMapFaceAndSliceOfT(cube, graphics.CubeMapFacePositiveX, pixels)
+		},
+		func() error {
+			return graphics.TextureCubeSetDataByCubeMapFaceAndSliceOfTAndInt32AndInt32(cube, graphics.CubeMapFacePositiveX, pixels, 0, 1)
+		},
+		func() error {
+			return graphics.TextureCubeSetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
+				cube, graphics.CubeMapFacePositiveX, 0, nil, pixels, 0, 1)
+		},
+		func() error {
+			return graphics.TextureCubeGetDataByCubeMapFaceAndSliceOfT(cube, graphics.CubeMapFacePositiveX, pixels)
+		},
+		func() error {
+			return graphics.TextureCubeGetDataByCubeMapFaceAndSliceOfTAndInt32AndInt32(cube, graphics.CubeMapFacePositiveX, pixels, 0, 1)
+		},
+		func() error {
+			return graphics.TextureCubeGetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
+				cube, graphics.CubeMapFacePositiveX, 0, nil, pixels, 0, 1)
+		},
+		func() error { return graphics.Texture3DSetDataBySliceOfT(volume, pixels) },
+		func() error { return graphics.Texture3DSetDataBySliceOfTAndInt32AndInt32(volume, pixels, 0, 1) },
+		func() error {
+			return graphics.Texture3DSetDataByInt32AndInt32AndInt32AndInt32AndInt32AndInt32AndInt32AndSliceOfTAndInt32AndInt32(
+				volume, 0, 0, 0, 1, 1, 0, 1, pixels, 0, 1)
+		},
+		func() error { return graphics.Texture3DGetDataBySliceOfT(volume, pixels) },
+		func() error { return graphics.Texture3DGetDataBySliceOfTAndInt32AndInt32(volume, pixels, 0, 1) },
+		func() error {
+			return graphics.Texture3DGetDataByInt32AndInt32AndInt32AndInt32AndInt32AndInt32AndInt32AndSliceOfTAndInt32AndInt32(
+				volume, 0, 0, 0, 1, 1, 0, 1, pixels, 0, 1)
+		},
+	} {
+		if err := call(); err == nil {
+			t.Fatal("a transfer on a texture with no native half reported success")
+		}
+	}
+}

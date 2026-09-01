@@ -169,6 +169,11 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 		ForwardsTo: "GraphicsResource",
 		DerivedConstructors: map[string]string{
 			"Microsoft.Xna.Framework.Graphics.Texture2D": "newTexture2D",
+			// Foundation 71. Both are unexported for the reason
+			// newTexture2D is: the projection of InitializeDescription, which
+			// the exported constructor calls once the native object exists.
+			"Microsoft.Xna.Framework.Graphics.Texture3D":   "newTexture3D",
+			"Microsoft.Xna.Framework.Graphics.TextureCube": "newTextureCube",
 		},
 	},
 

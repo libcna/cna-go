@@ -481,3 +481,60 @@ CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_origin, offsetof(CNA_SpriteTextCom
 CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_scale, offsetof(CNA_SpriteTextCommand, scale))
 CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_effects, offsetof(CNA_SpriteTextCommand, effects))
 CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_layer_depth, offsetof(CNA_SpriteTextCommand, layer_depth))
+
+// Foundation 71 — the volume and cube texture families.
+//
+// CNA_TextureCubeCreateInfo is the shorter of the two create structures and the
+// one whose reserved run is load-bearing: a uint32 size, a CNA_Bool and three
+// reserved bytes before the format word, so a manifest that dropped the run
+// would read the format from the mip flag's address.
+//
+// CNA_Texture3DTransfer is the widest transfer in this manifest: seven int32
+// box coordinates and a reserved word before two uint64 array-window values, so
+// the reserved word is what keeps start_index eight-byte aligned.
+//
+// CNA_TextureCubeTransfer puts a CNA_Rectangle between a three-byte reserved run
+// and a second reserved word, which is two independent runs in one struct.
+CNA_GO_MEASURE(sizeof_CNA_Texture3DCreateInfo, sizeof(CNA_Texture3DCreateInfo))
+CNA_GO_MEASURE(alignof_CNA_Texture3DCreateInfo, _Alignof(CNA_Texture3DCreateInfo))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DCreateInfo_width, offsetof(CNA_Texture3DCreateInfo, width))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DCreateInfo_height, offsetof(CNA_Texture3DCreateInfo, height))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DCreateInfo_depth, offsetof(CNA_Texture3DCreateInfo, depth))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DCreateInfo_mip_map, offsetof(CNA_Texture3DCreateInfo, mip_map))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DCreateInfo_format, offsetof(CNA_Texture3DCreateInfo, format))
+CNA_GO_MEASURE(sizeof_CNA_Texture3DInfo, sizeof(CNA_Texture3DInfo))
+CNA_GO_MEASURE(alignof_CNA_Texture3DInfo, _Alignof(CNA_Texture3DInfo))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DInfo_width, offsetof(CNA_Texture3DInfo, width))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DInfo_height, offsetof(CNA_Texture3DInfo, height))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DInfo_depth, offsetof(CNA_Texture3DInfo, depth))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DInfo_level_count, offsetof(CNA_Texture3DInfo, level_count))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DInfo_format, offsetof(CNA_Texture3DInfo, format))
+CNA_GO_MEASURE(sizeof_CNA_Texture3DTransfer, sizeof(CNA_Texture3DTransfer))
+CNA_GO_MEASURE(alignof_CNA_Texture3DTransfer, _Alignof(CNA_Texture3DTransfer))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DTransfer_level, offsetof(CNA_Texture3DTransfer, level))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DTransfer_left, offsetof(CNA_Texture3DTransfer, left))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DTransfer_top, offsetof(CNA_Texture3DTransfer, top))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DTransfer_right, offsetof(CNA_Texture3DTransfer, right))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DTransfer_bottom, offsetof(CNA_Texture3DTransfer, bottom))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DTransfer_front, offsetof(CNA_Texture3DTransfer, front))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DTransfer_back, offsetof(CNA_Texture3DTransfer, back))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DTransfer_start_index, offsetof(CNA_Texture3DTransfer, start_index))
+CNA_GO_MEASURE(offsetof_CNA_Texture3DTransfer_element_count, offsetof(CNA_Texture3DTransfer, element_count))
+CNA_GO_MEASURE(sizeof_CNA_TextureCubeCreateInfo, sizeof(CNA_TextureCubeCreateInfo))
+CNA_GO_MEASURE(alignof_CNA_TextureCubeCreateInfo, _Alignof(CNA_TextureCubeCreateInfo))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeCreateInfo_size, offsetof(CNA_TextureCubeCreateInfo, size))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeCreateInfo_mip_map, offsetof(CNA_TextureCubeCreateInfo, mip_map))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeCreateInfo_format, offsetof(CNA_TextureCubeCreateInfo, format))
+CNA_GO_MEASURE(sizeof_CNA_TextureCubeInfo, sizeof(CNA_TextureCubeInfo))
+CNA_GO_MEASURE(alignof_CNA_TextureCubeInfo, _Alignof(CNA_TextureCubeInfo))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeInfo_size, offsetof(CNA_TextureCubeInfo, size))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeInfo_level_count, offsetof(CNA_TextureCubeInfo, level_count))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeInfo_format, offsetof(CNA_TextureCubeInfo, format))
+CNA_GO_MEASURE(sizeof_CNA_TextureCubeTransfer, sizeof(CNA_TextureCubeTransfer))
+CNA_GO_MEASURE(alignof_CNA_TextureCubeTransfer, _Alignof(CNA_TextureCubeTransfer))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_face, offsetof(CNA_TextureCubeTransfer, face))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_level, offsetof(CNA_TextureCubeTransfer, level))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_has_rectangle, offsetof(CNA_TextureCubeTransfer, has_rectangle))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_rectangle, offsetof(CNA_TextureCubeTransfer, rectangle))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_start_index, offsetof(CNA_TextureCubeTransfer, start_index))
+CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_element_count, offsetof(CNA_TextureCubeTransfer, element_count))

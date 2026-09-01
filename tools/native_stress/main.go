@@ -87,6 +87,21 @@ type counters struct {
 	SpriteFontDrawStringSubmits  int `json:"SPRITE_FONT_DRAW_STRING_SUBMITS"`
 	SpriteFontDrawStringGuards   int `json:"SPRITE_FONT_DRAW_STRING_GUARDS"`
 	SpriteFontDrawStringRefusals int `json:"SPRITE_FONT_DRAW_STRING_REFUSALS"`
+	// The volume/cube slice. Foundation 71. CNA documents a volume texture as a
+	// RENDERER capability -- cna_texture3d_create returns NOT_SUPPORTED where
+	// the renderer has no volume storage -- so a creation refusal is recorded
+	// rather than failing the run.
+	TextureVolumeCycles          int `json:"TEXTURE_VOLUME_CYCLES"`
+	TextureCubeCreations         int `json:"TEXTURE_CUBE_CREATIONS"`
+	TextureCubeCreationRefusals  int `json:"TEXTURE_CUBE_CREATION_REFUSALS"`
+	TextureCubeRoundTrips        int `json:"TEXTURE_CUBE_ROUND_TRIPS"`
+	TextureCubeTransferRefusals  int `json:"TEXTURE_CUBE_TRANSFER_REFUSALS"`
+	Texture3DCreations           int `json:"TEXTURE_3D_CREATIONS"`
+	Texture3DCreationRefusals    int `json:"TEXTURE_3D_CREATION_REFUSALS"`
+	Texture3DRoundTrips          int `json:"TEXTURE_3D_ROUND_TRIPS"`
+	Texture3DTransferRefusals    int `json:"TEXTURE_3D_TRANSFER_REFUSALS"`
+	TextureVolumeElementRefusals int `json:"TEXTURE_VOLUME_ELEMENT_REFUSALS"`
+	TextureVolumeDisposalChecks  int `json:"TEXTURE_VOLUME_DISPOSAL_CHECKS"`
 	// The adapter slice. CNA enumerates adapters through a callback-scoped
 	// device, so every one of these is reachable only from inside LoadContent.
 	AdapterCycles                int `json:"ADAPTER_CYCLES"`
@@ -405,7 +420,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer", "vertex-buffer", "adapter", "sprite-font"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer", "vertex-buffer", "adapter", "sprite-font", "texture-volume"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -551,6 +566,29 @@ func runParent() (counters, error) {
 		return total, fmt.Errorf("sprite-font loads %d and refusals %d do not account for %d cycles",
 			total.SpriteFontLoads, total.SpriteFontLoadRefusals, total.SpriteFontCycles)
 	}
+	// Foundation 71. The volume/cube slice, per cycle: one outcome per family,
+	// and the Go-only element narrowing exercised in every one.
+	if total.TextureVolumeCycles < 20 {
+		return total, errors.New("the texture-volume scenario did not run in every cycle")
+	}
+	if total.TextureCubeCreations+total.TextureCubeCreationRefusals != total.TextureVolumeCycles ||
+		total.Texture3DCreations+total.Texture3DCreationRefusals != total.TextureVolumeCycles {
+		return total, fmt.Errorf("cube %d/%d and volume %d/%d creations and refusals do not account for %d cycles",
+			total.TextureCubeCreations, total.TextureCubeCreationRefusals,
+			total.Texture3DCreations, total.Texture3DCreationRefusals, total.TextureVolumeCycles)
+	}
+	if total.TextureCubeRoundTrips+total.TextureCubeTransferRefusals != total.TextureCubeCreations ||
+		total.Texture3DRoundTrips+total.Texture3DTransferRefusals != total.Texture3DCreations {
+		return total, fmt.Errorf("cube %d/%d and volume %d/%d round trips and refusals do not account for their creations",
+			total.TextureCubeRoundTrips, total.TextureCubeTransferRefusals,
+			total.Texture3DRoundTrips, total.Texture3DTransferRefusals)
+	}
+	if total.TextureVolumeElementRefusals != total.TextureVolumeCycles*2 ||
+		total.TextureVolumeDisposalChecks != total.TextureCubeCreations+total.Texture3DCreations {
+		return total, fmt.Errorf("%d element refusals and %d disposal checks across %d cycles",
+			total.TextureVolumeElementRefusals, total.TextureVolumeDisposalChecks, total.TextureVolumeCycles)
+	}
+
 	if total.SpriteFontDrawStringGuards != total.SpriteFontLoads {
 		return total, fmt.Errorf("%d font loads produced %d DrawString guard proofs",
 			total.SpriteFontLoads, total.SpriteFontDrawStringGuards)
@@ -957,6 +995,22 @@ func runChild(scenario string, index int) error {
 			game.result.SpriteFontDrawStringSubmits+game.result.SpriteFontDrawStringRefusals != 6 {
 			return fmt.Errorf("DrawString submits %d and refusals %d do not account for six overloads",
 				game.result.SpriteFontDrawStringSubmits, game.result.SpriteFontDrawStringRefusals)
+		}
+	case "texture-volume":
+		game.result.TextureVolumeCycles = 1
+		if err != nil {
+			return err
+		}
+		// Exactly one outcome per family per cycle: CNA created it, or CNA
+		// refused because this renderer has no cube or volume storage.
+		if game.result.TextureCubeCreations+game.result.TextureCubeCreationRefusals != 1 {
+			return errors.New("the cube family reported neither a creation nor a refusal")
+		}
+		if game.result.Texture3DCreations+game.result.Texture3DCreationRefusals != 1 {
+			return errors.New("the volume family reported neither a creation nor a refusal")
+		}
+		if game.result.TextureVolumeElementRefusals == 0 {
+			return errors.New("the one-element-wide narrowing was not exercised")
 		}
 	case "callback-error":
 		game.result.CallbackErrorCycles = 1
@@ -1554,6 +1608,11 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 	}
 	if g.scenario == "sprite-font" {
 		if err := g.exerciseSpriteFont(host); err != nil {
+			return err
+		}
+	}
+	if g.scenario == "texture-volume" {
+		if err := g.exerciseTextureVolume(); err != nil {
 			return err
 		}
 	}
@@ -4727,5 +4786,141 @@ func (g *stressGame) exerciseSpriteFont(host *framework.Game) error {
 	// in CNA's order, because the atlas is registered before the font and the
 	// runtime releases in reverse. A wrong order would surface as CNA's
 	// INVALID_STATE from the whole run.
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 71 — the cube and volume texture scenario.
+// ---------------------------------------------------------------------------
+
+// exerciseTextureVolume creates a real TextureCube and a real Texture3D on the
+// live device, round-trips Color texels through each, proves the one-element
+// narrowing is a refusal rather than a silent reinterpretation, and disposes
+// both.
+//
+// CNA documents both creations as RENDERER capabilities -- cna_texture3d_create
+// returns NOT_SUPPORTED where the renderer has no volume storage, and a cube
+// "may succeed even when face storage is unavailable" -- so a refusal from
+// either is recorded as a renderer limitation rather than failing the run. That
+// is the same shape the render-target bind already has.
+func (g *stressGame) exerciseTextureVolume() error {
+	// The Go-only element narrowing, proved on objects that never reach CNA:
+	// the accepted set is one type wide because CNA's cube and volume transfer
+	// routes take CNA_Color and carry no data-type identity.
+	//
+	// It is exercised HERE, before either creation, so a renderer that refuses
+	// both still proves it.
+	for _, refuse := range []func() error{
+		func() error {
+			return graphics.TextureCubeSetDataByCubeMapFaceAndSliceOfT[float32](nil, graphics.CubeMapFacePositiveX, nil)
+		},
+		func() error { return graphics.Texture3DSetDataBySliceOfT[float32](nil, nil) },
+	} {
+		if err := refuse(); err == nil {
+			return errors.New("a float32 element was accepted by a cube or volume transfer")
+		}
+	}
+	g.result.TextureVolumeElementRefusals += 2
+
+	white := framework.NewColorByInt32AndInt32AndInt32AndInt32(255, 255, 255, 255)
+	red := framework.NewColorByInt32AndInt32AndInt32(255, 0, 0)
+
+	// The cube. Four texels per face at size two.
+	cube, cubeErr := graphics.NewTextureCube(g.device, 2, false, graphics.SurfaceFormatColor)
+	switch {
+	case cubeErr != nil:
+		g.result.TextureCubeCreationRefusals++
+		fmt.Fprintf(os.Stderr, "TextureCube creation refused: %v\n", cubeErr)
+	default:
+		g.result.TextureCubeCreations++
+		if cube.Size() != 2 {
+			return fmt.Errorf("TextureCube.Size = %d, want the created cube's 2", cube.Size())
+		}
+		if cube.Format() != graphics.SurfaceFormatColor || cube.LevelCount() < 1 {
+			return fmt.Errorf("the cube's inherited description is %v / %d", cube.Format(), cube.LevelCount())
+		}
+		// A write to ONE face and a read back FROM THAT FACE. A projection that
+		// ignored the face would pass a write-then-read of the same face and
+		// fail the second face's check below.
+		written := []framework.Color{white, red, red, white}
+		if err := graphics.TextureCubeSetDataByCubeMapFaceAndSliceOfT(cube, graphics.CubeMapFacePositiveX, written); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("TextureCube.SetData: %w", err)
+			}
+			g.result.TextureCubeTransferRefusals++
+			fmt.Fprintf(os.Stderr, "TextureCube transfer refused: %v\n", err)
+		} else {
+			readBack := make([]framework.Color, 4)
+			if err := graphics.TextureCubeGetDataByCubeMapFaceAndSliceOfT(cube, graphics.CubeMapFacePositiveX, readBack); err != nil {
+				if !isNativeRefusal(err) {
+					return fmt.Errorf("TextureCube.GetData: %w", err)
+				}
+				g.result.TextureCubeTransferRefusals++
+				fmt.Fprintf(os.Stderr, "TextureCube readback refused: %v\n", err)
+			} else {
+				for index := range written {
+					if readBack[index] != written[index] {
+						return fmt.Errorf("cube texel %d read back %+v, want %+v", index, readBack[index], written[index])
+					}
+				}
+				g.result.TextureCubeRoundTrips++
+			}
+		}
+		if err := cube.DisposeByNone(); err != nil {
+			return fmt.Errorf("disposing the cube: %w", err)
+		}
+		if !cube.IsDisposed() {
+			return errors.New("the cube is not disposed after Dispose")
+		}
+		if err := cube.DisposeByNone(); err != nil {
+			return fmt.Errorf("a second cube Dispose: %w", err)
+		}
+		g.result.TextureVolumeDisposalChecks++
+	}
+
+	// The volume. Eight voxels at 2x2x2.
+	volume, volumeErr := graphics.NewTexture3D(g.device, 2, 2, 2, false, graphics.SurfaceFormatColor)
+	switch {
+	case volumeErr != nil:
+		g.result.Texture3DCreationRefusals++
+		fmt.Fprintf(os.Stderr, "Texture3D creation refused: %v\n", volumeErr)
+	default:
+		g.result.Texture3DCreations++
+		if volume.Width() != 2 || volume.Height() != 2 || volume.Depth() != 2 {
+			return fmt.Errorf("Texture3D is %dx%dx%d, want the created volume's 2x2x2",
+				volume.Width(), volume.Height(), volume.Depth())
+		}
+		written := []framework.Color{white, red, red, white, red, white, white, red}
+		if err := graphics.Texture3DSetDataBySliceOfT(volume, written); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("Texture3D.SetData: %w", err)
+			}
+			g.result.Texture3DTransferRefusals++
+			fmt.Fprintf(os.Stderr, "Texture3D transfer refused: %v\n", err)
+		} else {
+			readBack := make([]framework.Color, 8)
+			if err := graphics.Texture3DGetDataBySliceOfT(volume, readBack); err != nil {
+				if !isNativeRefusal(err) {
+					return fmt.Errorf("Texture3D.GetData: %w", err)
+				}
+				g.result.Texture3DTransferRefusals++
+				fmt.Fprintf(os.Stderr, "Texture3D readback refused: %v\n", err)
+			} else {
+				for index := range written {
+					if readBack[index] != written[index] {
+						return fmt.Errorf("volume voxel %d read back %+v, want %+v", index, readBack[index], written[index])
+					}
+				}
+				g.result.Texture3DRoundTrips++
+			}
+		}
+		if err := volume.DisposeByNone(); err != nil {
+			return fmt.Errorf("disposing the volume: %w", err)
+		}
+		if !volume.IsDisposed() {
+			return errors.New("the volume is not disposed after Dispose")
+		}
+		g.result.TextureVolumeDisposalChecks++
+	}
 	return nil
 }

@@ -1126,6 +1126,25 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|SupportedDisplayModes": true,
 		"property-get|MonitorHandle":         true,
 	},
+	// Foundation 71. TextureCube's one and Texture3D's three. Every one is
+	//
+	//	get_Size    ldarg.0; ldfld _size;   ret
+	//	get_Width   ldarg.0; ldfld _width;  ret
+	//	get_Height  ldarg.0; ldfld _height; ret
+	//	get_Depth   ldarg.0; ldfld _depth;  ret
+	//
+	// seven bytes each over a field the constructor's InitializeDescription
+	// filled once from the CREATED surface. None checks disposal, so all four
+	// answer after Dispose -- which is exactly the evidence Texture2D's Width
+	// and Height already rest on, on the same base and the same helper.
+	"Microsoft.Xna.Framework.Graphics.TextureCube": {
+		"property-get|Size": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.Texture3D": {
+		"property-get|Width":  true,
+		"property-get|Height": true,
+		"property-get|Depth":  true,
+	},
 	// Foundation 69. SpriteFont's four readers.
 	//
 	//	get_LineSpacing       ldarg.0; ldfld lineSpacing; ret
@@ -3113,11 +3132,16 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	// the type-specific destruction the reference's ReleaseNativeObject
 	// overrides perform is already inside `Resource.Dispose`.
 	"Microsoft.Xna.Framework.Graphics.GraphicsResource": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
-		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and the chain to Texture2D is complete. Nine of the eleven derived types remain missing for reasons that are not inheritance: BlendState, DepthStencilState, RasterizerState and SamplerState are the state-object family, Effect reaches a shader subsystem CNA-Go maps no part of, and IndexBuffer, VertexBuffer, TextureCube and Texture3D each need CNA routes CNA-Go does not bind yet"},
+		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and ten of the eleven derived types are complete: the four state objects, SpriteBatch, Texture and its three derived textures, VertexDeclaration, IndexBuffer and VertexBuffer. The one that remains is Effect, whose own derived family needs EffectParameter"},
 	}},
-	"Microsoft.Xna.Framework.Graphics.Texture": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
-		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and ONE of the three derived types is complete. Texture3D and TextureCube need CNA volume and cube texture routes, which the pinned 0.21.0 ABI does not expose to this binding yet"},
-	}},
+	// Foundation 71 emptied this one's blocker list, which no other entry has:
+	// the inheritance is projected and ALL THREE derived types are complete.
+	// The blocker it used to carry -- "Texture3D and TextureCube need CNA
+	// volume and cube texture routes, which the pinned 0.21.0 ABI does not
+	// expose" -- was FALSE when it was written: CNA/C/texture_volume.h declares
+	// sixteen of them, and Foundation 71 bound ten. An empty list is the only
+	// honest state for a family with nothing left to record.
+	"Microsoft.Xna.Framework.Graphics.Texture": {Status: "COMPOSED"},
 	// Foundation 58 composed it, and it is the one composed base whose
 	// substitutability requirement is LIVE: seven public positions name
 	// Texture2D and a projected type now derives from it, so the parameter
@@ -3125,9 +3149,12 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	"Microsoft.Xna.Framework.Graphics.Texture2D": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
 		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and its one derived type, RenderTarget2D, is complete. Binding a render target needs a renderer with real off-screen storage, which the qualified HEADLESS artifact does not have and the qualified SOFTWARE artifact does"},
 	}},
+	// Foundation 71 projected TextureCube itself; its one DERIVED type,
+	// RenderTargetCube, is still missing, so the relationship stays deferred --
+	// and the blocker is now RenderTargetCube's own, not TextureCube's.
 	"Microsoft.Xna.Framework.Graphics.TextureCube": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,
-		{Class: "TRANSITIVE", Detail: "TextureCube is a missing type for the same reason Texture is"},
+		{Class: "TRANSITIVE", Detail: "TextureCube is projected as of Foundation 71 and its one derived type, RenderTargetCube, is not: it needs CNA's cube render-target routes and the GraphicsDevice::SetRenderTarget(RenderTargetCube, CubeMapFace) overload that consumes one"},
 	}},
 	"Microsoft.Xna.Framework.Graphics.Effect": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,
@@ -3147,9 +3174,13 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 		xnaBaseComposition,
 		{Class: "SUBSYSTEM", Detail: "SoundEffectInstance is a missing type and CNA-Go has no audio backend: the qualification artifact pins a NULL audio renderer, so nothing behind it would play"},
 	}},
+	// Foundation 63 projected ContentManager itself. The relationship is still
+	// deferred because its DERIVED type is not projected, and the blocker is
+	// recorded as ResourceContentManager's rather than left as the stale claim
+	// that CNA-Go maps no content subsystem -- which stopped being true then.
 	"Microsoft.Xna.Framework.Content.ContentManager": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,
-		{Class: "SUBSYSTEM", Detail: "ContentManager is a missing type and CNA-Go maps no Content/XNB subsystem"},
+		{Class: "SUBSYSTEM", Detail: "ContentManager is projected as of Foundation 63 and its one derived type, ResourceContentManager, is not: it loads from a System.Resources.ResourceManager, which is a BCL subsystem outside the seven pinned assemblies and has no CNA counterpart"},
 	}},
 	"Microsoft.Xna.Framework.Content.ContentTypeReader": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,

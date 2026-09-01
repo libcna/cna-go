@@ -4,7 +4,7 @@
   "mode": "report",
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
-    "BASE_MAPPING_MISMATCH": 0,
+    "BASE_MAPPING_MISMATCH": 2,
     "BCL_BASE_ADAPTERS": 1,
     "BCL_BASE_ADAPTER_CONSUMERS": 1,
     "BCL_DEFERRED_BASE_BLOCKERS": 21,
@@ -12,7 +12,7 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 139,
+    "COMPLETE_TYPES": 141,
     "DECLARED_INTERFACE_CONFORMANCE": 3,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
@@ -41,8 +41,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 28,
-    "MISSING_TYPE": 114,
-    "MISSING_TYPES": 114,
+    "MISSING_TYPE": 112,
+    "MISSING_TYPES": 112,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -56,8 +56,8 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2316,
-    "TARGET_TYPES": 143,
+    "TARGET_MEMBERS": 2360,
+    "TARGET_TYPES": 145,
     "TOTAL_DIAGNOSTICS": 142,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
@@ -73,7 +73,7 @@
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
     "XNA_COMPOSED_BASE_RELATIONSHIPS": 4,
     "XNA_COMPOSED_DERIVED_TYPES": 17,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 12,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 14,
     "XNA_COMPOSED_IDENTITY_BINDINGS": 12,
     "XNA_COMPOSED_IDENTITY_FORWARDS": 2,
     "XNA_COMPOSED_IDENTITY_SITES": 7,
@@ -86,6 +86,16 @@
     "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 131
   },
   "diagnostics": [
+    {
+      "category": "BASE_MAPPING_MISMATCH",
+      "xna": "Microsoft.Xna.Framework.Graphics.Texture",
+      "message": "Microsoft.Xna.Framework.Graphics.Texture3D is projected and the identity registry names no constructor for it"
+    },
+    {
+      "category": "BASE_MAPPING_MISMATCH",
+      "xna": "Microsoft.Xna.Framework.Graphics.Texture",
+      "message": "Microsoft.Xna.Framework.Graphics.TextureCube is projected and the identity registry names no constructor for it"
+    },
     {
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.AudioCategory",
@@ -676,18 +686,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.Texture3D",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Texture3D",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.TextureCube",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:TextureCube",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:VertexPositionColor",
       "message": "mapped Go type is absent"
@@ -1029,8 +1027,10 @@
     "Microsoft.Xna.Framework.Graphics.SurfaceFormat",
     "Microsoft.Xna.Framework.Graphics.Texture",
     "Microsoft.Xna.Framework.Graphics.Texture2D",
+    "Microsoft.Xna.Framework.Graphics.Texture3D",
     "Microsoft.Xna.Framework.Graphics.TextureAddressMode",
     "Microsoft.Xna.Framework.Graphics.TextureCollection",
+    "Microsoft.Xna.Framework.Graphics.TextureCube",
     "Microsoft.Xna.Framework.Graphics.TextureFilter",
     "Microsoft.Xna.Framework.Graphics.VertexBuffer",
     "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
@@ -1211,8 +1211,6 @@
     "Microsoft.Xna.Framework.Graphics.RenderTargetBinding",
     "Microsoft.Xna.Framework.Graphics.RenderTargetCube",
     "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
-    "Microsoft.Xna.Framework.Graphics.Texture3D",
-    "Microsoft.Xna.Framework.Graphics.TextureCube",
     "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
     "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
     "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
@@ -7762,7 +7760,7 @@
       "clrMembers": 3,
       "projectedMembers": 0,
       "declaringTypes": 7,
-      "projectedTypes": 3,
+      "projectedTypes": 5,
       "rationale": "assembly-visible device-loss plumbing declared by seven public graphics types; none of its three members appears in any public contract, and projecting one would expose CNA-internal recreation machinery",
       "verdict": "PASS"
     },
@@ -8737,7 +8735,7 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.Texture",
       "derivedTypes": 3,
-      "projectedDerivedTypes": 1,
+      "projectedDerivedTypes": 3,
       "positions": 3,
       "positionsOnProjectedCarriers": 1,
       "requirement": "LIVE",
@@ -9150,16 +9148,18 @@
         {
           "derived": "Microsoft.Xna.Framework.Graphics.Texture3D",
           "goDerived": "Texture3D",
+          "baseField": "texture",
           "inheritedCLRMembers": 9,
           "inheritedProjections": 12,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.Graphics.TextureCube",
           "goDerived": "TextureCube",
+          "baseField": "texture",
           "inheritedCLRMembers": 9,
           "inheritedProjections": 12,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         }
       ],
       "verdict": "PASS"
@@ -9313,9 +9313,19 @@
           "goDerived": "Texture2D",
           "constructor": "newTexture2D",
           "binds": true
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.Texture3D",
+          "goDerived": "Texture3D",
+          "binds": false
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.TextureCube",
+          "goDerived": "TextureCube",
+          "binds": false
         }
       ],
-      "verdict": "PASS"
+      "verdict": "FAIL"
     },
     {
       "clrBase": "Microsoft.Xna.Framework.Graphics.Texture2D",
@@ -9334,7 +9344,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "2ac2fc9525cca9e87b9abe4ac42d0dd49fb34505c089ee5f7fab2efd6ba5a10e",
+    "mappingSha256": "77c2ed0d35eba88cd7709ebc4a79b2eb4ca408c7e0d6b0ea668c51e819059db7",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

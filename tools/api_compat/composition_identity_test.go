@@ -98,9 +98,10 @@ func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 		t.Fatalf("%d forwarding links, want the two middle links", got)
 	}
 	// DrawableGameComponent, Texture, SpriteBatch, Texture2D, RenderTarget2D,
-	// the four state objects, VertexDeclaration, IndexBuffer and VertexBuffer.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 12 {
-		t.Fatalf("%d identity bindings, want the twelve projected derived types", got)
+	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
+	// and Foundation 71's TextureCube and Texture3D.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 14 {
+		t.Fatalf("%d identity bindings, want the fourteen projected derived types", got)
 	}
 	for _, category := range []string{"BASE_MAPPING_MISMATCH"} {
 		if result.Summary[category] != 0 {

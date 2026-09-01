@@ -801,6 +801,118 @@ func nativeContentManagerLoadTexture2D(manager uint64, assetName string) (uint64
 	return uint64(handle), resultError("cna_content_manager_load_texture2d", code)
 }
 
+// The ten volume/cube texture routes. Foundation 71.
+//
+// Both transfer routes take CNA_Color elements only, so the pointer crossing
+// here is an unsafe.Pointer to a caller array of framework.Color -- the one
+// element type CNA's cube and volume transfers can express. The Graphics
+// package is where any other type is refused.
+
+func nativeTexture3DCreate(device uint64, width, height, depth uint32, mipMap bool, format uint32) (uint64, error) {
+	var handle C.CnaGoHandle
+	flag := C.uint8_t(0)
+	if mipMap {
+		flag = 1
+	}
+	code := uint32(C.cna_go_texture3d_create(
+		C.CnaGoHandle(device), C.uint32_t(width), C.uint32_t(height), C.uint32_t(depth),
+		flag, C.uint32_t(format), &handle))
+	if err := resultError("cna_texture3d_create", code); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeTexture3DDestroy(texture uint64) error {
+	return resultError("cna_texture3d_destroy",
+		uint32(C.cna_go_texture3d_destroy(C.CnaGoHandle(texture))))
+}
+
+func nativeTexture3DInfo(texture uint64) (Texture3DInfo, error) {
+	var width, height, depth, levels, format C.uint32_t
+	code := uint32(C.cna_go_texture3d_get_info(
+		C.CnaGoHandle(texture), &width, &height, &depth, &levels, &format))
+	if err := resultError("cna_texture3d_get_info", code); err != nil {
+		return Texture3DInfo{}, err
+	}
+	return Texture3DInfo{
+		Width: uint32(width), Height: uint32(height), Depth: uint32(depth),
+		Levels: uint32(levels), Format: uint32(format),
+	}, nil
+}
+
+func nativeTexture3DSetData(texture uint64, transfer Texture3DTransfer, data unsafe.Pointer, capacity uint64) error {
+	return resultError("cna_texture3d_set_data", uint32(C.cna_go_texture3d_set_data(
+		C.CnaGoHandle(texture), C.int32_t(transfer.Level),
+		C.int32_t(transfer.Left), C.int32_t(transfer.Top), C.int32_t(transfer.Right),
+		C.int32_t(transfer.Bottom), C.int32_t(transfer.Front), C.int32_t(transfer.Back),
+		C.uint64_t(transfer.StartIndex), C.uint64_t(transfer.ElementCount), data, C.uint64_t(capacity))))
+}
+
+func nativeTexture3DGetData(texture uint64, transfer Texture3DTransfer, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	var required C.uint64_t
+	code := uint32(C.cna_go_texture3d_get_data(
+		C.CnaGoHandle(texture), C.int32_t(transfer.Level),
+		C.int32_t(transfer.Left), C.int32_t(transfer.Top), C.int32_t(transfer.Right),
+		C.int32_t(transfer.Bottom), C.int32_t(transfer.Front), C.int32_t(transfer.Back),
+		C.uint64_t(transfer.StartIndex), C.uint64_t(transfer.ElementCount),
+		destination, C.uint64_t(capacity), &required))
+	return uint64(required), resultError("cna_texture3d_get_data", code)
+}
+
+func nativeTextureCubeCreate(device uint64, size uint32, mipMap bool, format uint32) (uint64, error) {
+	var handle C.CnaGoHandle
+	flag := C.uint8_t(0)
+	if mipMap {
+		flag = 1
+	}
+	code := uint32(C.cna_go_texturecube_create(
+		C.CnaGoHandle(device), C.uint32_t(size), flag, C.uint32_t(format), &handle))
+	if err := resultError("cna_texturecube_create", code); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeTextureCubeDestroy(texture uint64) error {
+	return resultError("cna_texturecube_destroy",
+		uint32(C.cna_go_texturecube_destroy(C.CnaGoHandle(texture))))
+}
+
+func nativeTextureCubeInfo(texture uint64) (TextureCubeInfo, error) {
+	var size, levels, format C.uint32_t
+	code := uint32(C.cna_go_texturecube_get_info(C.CnaGoHandle(texture), &size, &levels, &format))
+	if err := resultError("cna_texturecube_get_info", code); err != nil {
+		return TextureCubeInfo{}, err
+	}
+	return TextureCubeInfo{Size: uint32(size), Levels: uint32(levels), Format: uint32(format)}, nil
+}
+
+func nativeTextureCubeSetData(texture uint64, transfer TextureCubeTransfer, data unsafe.Pointer, capacity uint64) error {
+	rectangle := C.uint8_t(0)
+	if transfer.HasRectangle {
+		rectangle = 1
+	}
+	return resultError("cna_texturecube_set_data", uint32(C.cna_go_texturecube_set_data(
+		C.CnaGoHandle(texture), C.uint32_t(transfer.Face), C.int32_t(transfer.Level), rectangle,
+		C.int32_t(transfer.X), C.int32_t(transfer.Y), C.int32_t(transfer.Width), C.int32_t(transfer.Height),
+		C.uint64_t(transfer.StartIndex), C.uint64_t(transfer.ElementCount), data, C.uint64_t(capacity))))
+}
+
+func nativeTextureCubeGetData(texture uint64, transfer TextureCubeTransfer, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	rectangle := C.uint8_t(0)
+	if transfer.HasRectangle {
+		rectangle = 1
+	}
+	var required C.uint64_t
+	code := uint32(C.cna_go_texturecube_get_data(
+		C.CnaGoHandle(texture), C.uint32_t(transfer.Face), C.int32_t(transfer.Level), rectangle,
+		C.int32_t(transfer.X), C.int32_t(transfer.Y), C.int32_t(transfer.Width), C.int32_t(transfer.Height),
+		C.uint64_t(transfer.StartIndex), C.uint64_t(transfer.ElementCount),
+		destination, C.uint64_t(capacity), &required))
+	return uint64(required), resultError("cna_texturecube_get_data", code)
+}
+
 // The eight SpriteFont routes. Foundation 69.
 //
 // The loader is the only route in this file that produces TWO owned handles

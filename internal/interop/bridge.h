@@ -313,6 +313,41 @@ CnaGoResult cna_go_content_manager_copy_asset_path(
    for one asset -- the font and its glyph atlas -- because CNA retains the
    atlas for as long as the font lives and destroying the font first is the
    documented order. */
+/* Foundation 71. The volume and cube texture families. Both transfer routes
+   take CNA_Color elements ONLY -- unlike cna_texture2d_set_data, which takes a
+   CNA_TextureDataType identity -- so the element set these can express is one
+   type wide, and the Graphics package refuses any other by name. */
+CnaGoResult cna_go_texture3d_create(
+    CnaGoHandle device, uint32_t width, uint32_t height, uint32_t depth,
+    uint8_t mip_map, uint32_t format, CnaGoHandle* out_texture);
+CnaGoResult cna_go_texture3d_destroy(CnaGoHandle texture);
+CnaGoResult cna_go_texture3d_get_info(
+    CnaGoHandle texture, uint32_t* out_width, uint32_t* out_height, uint32_t* out_depth,
+    uint32_t* out_level_count, uint32_t* out_format);
+CnaGoResult cna_go_texture3d_set_data(
+    CnaGoHandle texture, int32_t level,
+    int32_t left, int32_t top, int32_t right, int32_t bottom, int32_t front, int32_t back,
+    uint64_t start_index, uint64_t element_count, const void* data, uint64_t data_capacity);
+CnaGoResult cna_go_texture3d_get_data(
+    CnaGoHandle texture, int32_t level,
+    int32_t left, int32_t top, int32_t right, int32_t bottom, int32_t front, int32_t back,
+    uint64_t start_index, uint64_t element_count, void* destination, uint64_t capacity,
+    uint64_t* out_required);
+CnaGoResult cna_go_texturecube_create(
+    CnaGoHandle device, uint32_t size, uint8_t mip_map, uint32_t format, CnaGoHandle* out_texture);
+CnaGoResult cna_go_texturecube_destroy(CnaGoHandle texture);
+CnaGoResult cna_go_texturecube_get_info(
+    CnaGoHandle texture, uint32_t* out_size, uint32_t* out_level_count, uint32_t* out_format);
+CnaGoResult cna_go_texturecube_set_data(
+    CnaGoHandle texture, uint32_t face, int32_t level, uint8_t has_rectangle,
+    int32_t x, int32_t y, int32_t width, int32_t height,
+    uint64_t start_index, uint64_t element_count, const void* data, uint64_t data_capacity);
+CnaGoResult cna_go_texturecube_get_data(
+    CnaGoHandle texture, uint32_t face, int32_t level, uint8_t has_rectangle,
+    int32_t x, int32_t y, int32_t width, int32_t height,
+    uint64_t start_index, uint64_t element_count, void* destination, uint64_t capacity,
+    uint64_t* out_required);
+
 CnaGoResult cna_go_content_manager_load_sprite_font(
     CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length,
     CnaGoHandle* out_sprite_font, CnaGoHandle* out_texture);

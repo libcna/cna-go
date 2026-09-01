@@ -1516,6 +1516,157 @@ CnaGoResult cna_go_content_manager_copy_asset_path(
         content_manager, cna_go_view(asset_name, asset_name_length), destination, capacity, out_bytes);
 }
 
+/* Foundation 71 -- the volume and cube texture families. */
+CnaGoResult cna_go_texture3d_create(
+    CnaGoHandle device, uint32_t width, uint32_t height, uint32_t depth,
+    uint8_t mip_map, uint32_t format, CnaGoHandle* out_texture) {
+    CNA_Texture3DCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.width = width;
+    info.height = height;
+    info.depth = depth;
+    info.mip_map = (CNA_Bool)(mip_map != 0);
+    info.format = format;
+    return api.cna_texture3d_create(device, &info, out_texture);
+}
+
+CnaGoResult cna_go_texture3d_destroy(CnaGoHandle texture) {
+    return api.cna_texture3d_destroy(texture);
+}
+
+CnaGoResult cna_go_texture3d_get_info(
+    CnaGoHandle texture, uint32_t* out_width, uint32_t* out_height, uint32_t* out_depth,
+    uint32_t* out_level_count, uint32_t* out_format) {
+    CNA_Texture3DInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_texture3d_get_info(texture, &info);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_width = info.width;
+    *out_height = info.height;
+    *out_depth = info.depth;
+    *out_level_count = info.level_count;
+    *out_format = info.format;
+    return result;
+}
+
+static void cna_go_fill_texture3d_transfer(
+    CNA_Texture3DTransfer* transfer, int32_t level,
+    int32_t left, int32_t top, int32_t right, int32_t bottom, int32_t front, int32_t back,
+    uint64_t start_index, uint64_t element_count) {
+    memset(transfer, 0, sizeof(*transfer));
+    transfer->struct_size = (uint32_t)sizeof(*transfer);
+    transfer->struct_version = 1;
+    transfer->level = level;
+    transfer->left = left;
+    transfer->top = top;
+    transfer->right = right;
+    transfer->bottom = bottom;
+    transfer->front = front;
+    transfer->back = back;
+    transfer->start_index = start_index;
+    transfer->element_count = element_count;
+}
+
+CnaGoResult cna_go_texture3d_set_data(
+    CnaGoHandle texture, int32_t level,
+    int32_t left, int32_t top, int32_t right, int32_t bottom, int32_t front, int32_t back,
+    uint64_t start_index, uint64_t element_count, const void* data, uint64_t data_capacity) {
+    CNA_Texture3DTransfer transfer;
+    cna_go_fill_texture3d_transfer(&transfer, level, left, top, right, bottom, front, back,
+        start_index, element_count);
+    return api.cna_texture3d_set_data(texture, &transfer, (const CNA_Color*)data, data_capacity);
+}
+
+CnaGoResult cna_go_texture3d_get_data(
+    CnaGoHandle texture, int32_t level,
+    int32_t left, int32_t top, int32_t right, int32_t bottom, int32_t front, int32_t back,
+    uint64_t start_index, uint64_t element_count, void* destination, uint64_t capacity,
+    uint64_t* out_required) {
+    CNA_Texture3DTransfer transfer;
+    cna_go_fill_texture3d_transfer(&transfer, level, left, top, right, bottom, front, back,
+        start_index, element_count);
+    return api.cna_texture3d_get_data(texture, &transfer, (CNA_Color*)destination, capacity, out_required);
+}
+
+CnaGoResult cna_go_texturecube_create(
+    CnaGoHandle device, uint32_t size, uint8_t mip_map, uint32_t format, CnaGoHandle* out_texture) {
+    CNA_TextureCubeCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.size = size;
+    info.mip_map = (CNA_Bool)(mip_map != 0);
+    info.format = format;
+    return api.cna_texturecube_create(device, &info, out_texture);
+}
+
+CnaGoResult cna_go_texturecube_destroy(CnaGoHandle texture) {
+    return api.cna_texturecube_destroy(texture);
+}
+
+CnaGoResult cna_go_texturecube_get_info(
+    CnaGoHandle texture, uint32_t* out_size, uint32_t* out_level_count, uint32_t* out_format) {
+    CNA_TextureCubeInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_texturecube_get_info(texture, &info);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_size = info.size;
+    *out_level_count = info.level_count;
+    *out_format = info.format;
+    return result;
+}
+
+static void cna_go_fill_texturecube_transfer(
+    CNA_TextureCubeTransfer* transfer, uint32_t face, int32_t level, uint8_t has_rectangle,
+    int32_t x, int32_t y, int32_t width, int32_t height,
+    uint64_t start_index, uint64_t element_count) {
+    memset(transfer, 0, sizeof(*transfer));
+    transfer->struct_size = (uint32_t)sizeof(*transfer);
+    transfer->struct_version = 1;
+    transfer->face = face;
+    transfer->level = level;
+    transfer->has_rectangle = (CNA_Bool)(has_rectangle != 0);
+    transfer->rectangle.x = x;
+    transfer->rectangle.y = y;
+    transfer->rectangle.width = width;
+    transfer->rectangle.height = height;
+    transfer->start_index = start_index;
+    transfer->element_count = element_count;
+}
+
+CnaGoResult cna_go_texturecube_set_data(
+    CnaGoHandle texture, uint32_t face, int32_t level, uint8_t has_rectangle,
+    int32_t x, int32_t y, int32_t width, int32_t height,
+    uint64_t start_index, uint64_t element_count, const void* data, uint64_t data_capacity) {
+    CNA_TextureCubeTransfer transfer;
+    cna_go_fill_texturecube_transfer(&transfer, face, level, has_rectangle, x, y, width, height,
+        start_index, element_count);
+    return api.cna_texturecube_set_data(texture, &transfer, (const CNA_Color*)data, data_capacity);
+}
+
+CnaGoResult cna_go_texturecube_get_data(
+    CnaGoHandle texture, uint32_t face, int32_t level, uint8_t has_rectangle,
+    int32_t x, int32_t y, int32_t width, int32_t height,
+    uint64_t start_index, uint64_t element_count, void* destination, uint64_t capacity,
+    uint64_t* out_required) {
+    CNA_TextureCubeTransfer transfer;
+    cna_go_fill_texturecube_transfer(&transfer, face, level, has_rectangle, x, y, width, height,
+        start_index, element_count);
+    return api.cna_texturecube_get_data(texture, &transfer, (CNA_Color*)destination, capacity, out_required);
+}
+
 /* Foundation 69 -- the SpriteFont family.
    The loader is the one CNA route that produces two owned handles from one
    asset. Both cross as handles; the ORDER their destruction must take is

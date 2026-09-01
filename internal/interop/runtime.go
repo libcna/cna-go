@@ -99,6 +99,8 @@ const (
 	resourceVertexDeclaration
 	resourceVertexBuffer
 	resourceSpriteFont
+	resourceTexture3D
+	resourceTextureCube
 )
 
 // FrameTime is the private tick-exact lifecycle value passed into the public
@@ -811,6 +813,120 @@ func (resource *Resource) ContentAssetPath(assetName string) (string, error) {
 		return "", err
 	}
 	return nativeContentManagerAssetPath(handle, assetName)
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 71 — the volume and cube texture families.
+// ---------------------------------------------------------------------------
+
+// Texture3DInfo is CNA_Texture3DInfo, flattened.
+type Texture3DInfo struct {
+	Width, Height, Depth uint32
+	Levels               uint32
+	Format               uint32
+}
+
+// TextureCubeInfo is CNA_TextureCubeInfo, flattened. A cube's faces are square,
+// so ONE dimension describes the whole texture.
+type TextureCubeInfo struct {
+	Size   uint32
+	Levels uint32
+	Format uint32
+}
+
+// Texture3DTransfer is CNA_Texture3DTransfer, flattened: a mip BOX rather than
+// a rectangle, which is what makes it a different structure from the 2D one
+// rather than a wider version of it.
+type Texture3DTransfer struct {
+	Level                                 int32
+	Left, Top, Right, Bottom, Front, Back int32
+	StartIndex, ElementCount              uint64
+}
+
+// TextureCubeTransfer is CNA_TextureCubeTransfer, flattened. The face is part
+// of the transfer rather than of the handle, which is why every cube member
+// takes one.
+type TextureCubeTransfer struct {
+	Face                     uint32
+	Level                    int32
+	HasRectangle             bool
+	X, Y, Width, Height      int32
+	StartIndex, ElementCount uint64
+}
+
+// CreateTexture3D is cna_texture3d_create. The device handle is
+// callback-scoped, so this is reachable only from inside a lifecycle callback.
+func (d *Device) CreateTexture3D(width, height, depth uint32, mipMap bool, format uint32) (*Resource, Texture3DInfo, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, Texture3DInfo{}, err
+	}
+	texture, err := nativeTexture3DCreate(handle, width, height, depth, mipMap, format)
+	if err != nil {
+		return nil, Texture3DInfo{}, err
+	}
+	resource := d.runtime.registerResource(texture, resourceTexture3D, d.manager)
+	info, infoErr := nativeTexture3DInfo(texture)
+	if infoErr != nil {
+		_ = resource.Dispose()
+		return nil, Texture3DInfo{}, infoErr
+	}
+	return resource, info, nil
+}
+
+// CreateTextureCube is cna_texturecube_create.
+func (d *Device) CreateTextureCube(size uint32, mipMap bool, format uint32) (*Resource, TextureCubeInfo, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, TextureCubeInfo{}, err
+	}
+	texture, err := nativeTextureCubeCreate(handle, size, mipMap, format)
+	if err != nil {
+		return nil, TextureCubeInfo{}, err
+	}
+	resource := d.runtime.registerResource(texture, resourceTextureCube, d.manager)
+	info, infoErr := nativeTextureCubeInfo(texture)
+	if infoErr != nil {
+		_ = resource.Dispose()
+		return nil, TextureCubeInfo{}, infoErr
+	}
+	return resource, info, nil
+}
+
+// SetTexture3DData is cna_texture3d_set_data.
+func (resource *Resource) SetTexture3DData(transfer Texture3DTransfer, data unsafe.Pointer, capacity uint64) error {
+	handle, err := resource.liveHandle(resourceTexture3D)
+	if err != nil {
+		return err
+	}
+	return nativeTexture3DSetData(handle, transfer, data, capacity)
+}
+
+// GetTexture3DData is cna_texture3d_get_data.
+func (resource *Resource) GetTexture3DData(transfer Texture3DTransfer, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	handle, err := resource.liveHandle(resourceTexture3D)
+	if err != nil {
+		return 0, err
+	}
+	return nativeTexture3DGetData(handle, transfer, destination, capacity)
+}
+
+// SetTextureCubeData is cna_texturecube_set_data.
+func (resource *Resource) SetTextureCubeData(transfer TextureCubeTransfer, data unsafe.Pointer, capacity uint64) error {
+	handle, err := resource.liveHandle(resourceTextureCube)
+	if err != nil {
+		return err
+	}
+	return nativeTextureCubeSetData(handle, transfer, data, capacity)
+}
+
+// GetTextureCubeData is cna_texturecube_get_data.
+func (resource *Resource) GetTextureCubeData(transfer TextureCubeTransfer, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	handle, err := resource.liveHandle(resourceTextureCube)
+	if err != nil {
+		return 0, err
+	}
+	return nativeTextureCubeGetData(handle, transfer, destination, capacity)
 }
 
 // ---------------------------------------------------------------------------
@@ -2901,6 +3017,13 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeVertexBufferDestroy(handle)
 	case resourceSpriteFont:
 		return nativeSpriteFontDestroy(handle)
+	case resourceTexture3D:
+		return nativeTexture3DDestroy(handle)
+	case resourceTextureCube:
+		// cna_texturecube_destroy is documented as destroying a TextureCube but
+		// NOT a RenderTargetCube, which is the same per-kind split the render
+		// target already has.
+		return nativeTextureCubeDestroy(handle)
 	case resourceRenderTarget2D:
 		// A render target is a distinct CNA kind with its own destroy, and
 		// cna_texture2d_destroy is documented as destroying a Texture2D but NOT

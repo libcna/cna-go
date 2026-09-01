@@ -518,6 +518,73 @@ typedef struct CNA_IndexBufferTransfer {
 } CNA_IndexBufferTransfer;
 #endif
 
+#ifndef CNA_C_TEXTURE_VOLUME_H
+typedef struct CNA_Texture3DCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth;
+    CNA_Bool mip_map;
+    uint8_t reserved0[3];
+    CNA_SurfaceFormat format;
+    uint32_t reserved1;
+} CNA_Texture3DCreateInfo;
+typedef struct CNA_Texture3DInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth;
+    uint32_t level_count;
+    CNA_SurfaceFormat format;
+    uint32_t reserved;
+} CNA_Texture3DInfo;
+typedef struct CNA_Texture3DTransfer {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    int32_t level;
+    int32_t left;
+    int32_t top;
+    int32_t right;
+    int32_t bottom;
+    int32_t front;
+    int32_t back;
+    uint32_t reserved;
+    uint64_t start_index;
+    uint64_t element_count;
+} CNA_Texture3DTransfer;
+typedef struct CNA_TextureCubeCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t size;
+    CNA_Bool mip_map;
+    uint8_t reserved0[3];
+    CNA_SurfaceFormat format;
+    uint32_t reserved1;
+} CNA_TextureCubeCreateInfo;
+typedef struct CNA_TextureCubeInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t size;
+    uint32_t level_count;
+    CNA_SurfaceFormat format;
+    uint32_t reserved;
+} CNA_TextureCubeInfo;
+typedef struct CNA_TextureCubeTransfer {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t face;
+    int32_t level;
+    CNA_Bool has_rectangle;
+    uint8_t reserved0[3];
+    CNA_Rectangle rectangle;
+    uint32_t reserved1;
+    uint64_t start_index;
+    uint64_t element_count;
+} CNA_TextureCubeTransfer;
+#endif
+
 #ifndef CNA_C_SPRITE_FONT_H
 typedef uint16_t CNA_Char16;
 typedef struct CNA_SpriteFontGlyph {
@@ -638,6 +705,16 @@ typedef CNA_Result (*cna_content_manager_load_texture2d_fn)(CNA_Handle, CNA_Stri
 typedef CNA_Result (*cna_content_manager_get_asset_path_size_fn)(CNA_Handle, CNA_StringView, uint64_t*);
 typedef CNA_Result (*cna_content_manager_copy_asset_path_fn)(CNA_Handle, CNA_StringView, char*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_content_manager_load_sprite_font_fn)(CNA_Handle, CNA_StringView, CNA_Handle*, CNA_Handle*);
+typedef CNA_Result (*cna_texture3d_create_fn)(CNA_Handle, const CNA_Texture3DCreateInfo*, CNA_Handle*);
+typedef CNA_Result (*cna_texture3d_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_texture3d_get_info_fn)(CNA_Handle, CNA_Texture3DInfo*);
+typedef CNA_Result (*cna_texture3d_set_data_fn)(CNA_Handle, const CNA_Texture3DTransfer*, const CNA_Color*, uint64_t);
+typedef CNA_Result (*cna_texture3d_get_data_fn)(CNA_Handle, const CNA_Texture3DTransfer*, CNA_Color*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_texturecube_create_fn)(CNA_Handle, const CNA_TextureCubeCreateInfo*, CNA_Handle*);
+typedef CNA_Result (*cna_texturecube_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_texturecube_get_info_fn)(CNA_Handle, CNA_TextureCubeInfo*);
+typedef CNA_Result (*cna_texturecube_set_data_fn)(CNA_Handle, const CNA_TextureCubeTransfer*, const CNA_Color*, uint64_t);
+typedef CNA_Result (*cna_texturecube_get_data_fn)(CNA_Handle, const CNA_TextureCubeTransfer*, CNA_Color*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_sprite_font_get_info_fn)(CNA_Handle, CNA_SpriteFontInfo*);
 typedef CNA_Result (*cna_sprite_batch_draw_string_fn)(CNA_Handle, const CNA_SpriteTextCommand*);
 typedef CNA_Result (*cna_sprite_font_copy_glyphs_fn)(CNA_Handle, CNA_SpriteFontGlyph*, uint64_t, uint64_t*);
@@ -801,6 +878,16 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_content_manager_get_asset_path_size) \
     X(cna_content_manager_copy_asset_path) \
     X(cna_content_manager_load_sprite_font) \
+    X(cna_texture3d_create) \
+    X(cna_texture3d_destroy) \
+    X(cna_texture3d_get_info) \
+    X(cna_texture3d_set_data) \
+    X(cna_texture3d_get_data) \
+    X(cna_texturecube_create) \
+    X(cna_texturecube_destroy) \
+    X(cna_texturecube_get_info) \
+    X(cna_texturecube_set_data) \
+    X(cna_texturecube_get_data) \
     X(cna_sprite_font_get_info) \
     X(cna_sprite_batch_draw_string) \
     X(cna_sprite_font_copy_glyphs) \
