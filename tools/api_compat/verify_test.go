@@ -107,7 +107,7 @@ func TestNullableMappingKeepsInputReturnOutAndErrorDistinct(t *testing.T) {
 	if got := typeShape(nullableSingle); got != "NullableOfSingle" {
 		t.Fatalf("nullable source shape = %q, want NullableOfSingle", got)
 	}
-	if got := mapReturn(surface, nil, owner, stringPointer(nullableSingle)); !equalStrings(got, []string{"float32", "bool"}) {
+	if got := mapReturn(surface, nil, owner, nil, stringPointer(nullableSingle)); !equalStrings(got, []string{"float32", "bool"}) {
 		t.Fatalf("nullable return = %v, want [float32 bool]", got)
 	}
 	inputs, outputs, directed := mapParameters(surface, nil, owner, []contractParameter{
@@ -117,7 +117,7 @@ func TestNullableMappingKeepsInputReturnOutAndErrorDistinct(t *testing.T) {
 	if !equalStrings(inputs, []string{"*float32"}) || !equalStrings(outputs, []string{"float32", "bool"}) || !directed {
 		t.Fatalf("nullable parameters = inputs %v outputs %v directed %t", inputs, outputs, directed)
 	}
-	withError := append(append([]string(nil), mapReturn(surface, nil, owner, stringPointer(nullableSingle))...), "error")
+	withError := append(append([]string(nil), mapReturn(surface, nil, owner, nil, stringPointer(nullableSingle))...), "error")
 	if !equalStrings(withError, []string{"float32", "bool", "error"}) {
 		t.Fatalf("nullable/error result = %v", withError)
 	}
@@ -8537,4 +8537,45 @@ func nearbyMemberNames(surface *expectedSurface, prefix string) []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+// TestAGenericMethodsRETURNResolvesItsTypeParameter is the other half of the
+// Foundation 54 rule, found by the first member that needed it.
+//
+// Foundation 54 resolved `!!0` at PARAMETER positions and left the return
+// unresolved, because the two generic members it closed both return
+// System.Void. `ContentManager::Load<T>(String) -> !!0` is the first that
+// returns its own type parameter, and before Foundation 63 it projected as
+// returning a type literally called `!!0` -- a name for a POSITION rather than a
+// type, which is the exact defect Foundation 54 named on the other side of the
+// signature.
+func TestAGenericMethodsRETURNResolvesItsTypeParameter(t *testing.T) {
+	surface, err := buildExpected(loadPinnedContract(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework/Content", Name: "ContentManagerLoad"}
+	member := surface.Members[key]
+	if member == nil {
+		t.Fatalf("ContentManager::Load<T> has no package-level projection; keys near it: %v",
+			nearbyMemberNames(surface, "ContentManagerLoad"))
+	}
+	if len(member.Results) == 0 || member.Results[0] != "T" {
+		t.Fatalf("results %v, want the method's own type parameter first", member.Results)
+	}
+	if len(member.Parameters) == 0 || member.Parameters[0] != "*ContentManager" {
+		t.Fatalf("parameters %v, want the receiver first", member.Parameters)
+	}
+	// A member with no generic parameters of its own must be unaffected: the
+	// resolution is per member, not a global rename.
+	texture := surface.Members[symbolKey{
+		Package: modulePath + "/Microsoft/Xna/Framework/Graphics",
+		Name:    "Texture2DFromStreamByGraphicsDeviceAndStream",
+	}]
+	if texture == nil {
+		t.Fatal("Texture2D::FromStream has no projection")
+	}
+	if len(texture.Results) == 0 || texture.Results[0] != "*Texture2D" {
+		t.Fatalf("FromStream results %v, want the concrete pointer", texture.Results)
+	}
 }

@@ -1262,7 +1262,7 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 	// does. Keying it by the derived identity would silently hand a
 	// RenderTarget2D an io.Reader it cannot write to.
 	base.Parameters = applyStreamDirection(memberIdentity(declaring.Name, m), parameters)
-	base.Results = mapReturn(s, byIdentity, owner, m.ReturnType)
+	base.Results = mapReturn(s, byIdentity, owner, m.GenericParameters, m.ReturnType)
 	base.Results = append(base.Results, outResults...)
 	if isFallible(declaring, m, "") {
 		base.Results = append(base.Results, "error")
@@ -1650,18 +1650,33 @@ func mapIndexerParameters(s *expectedSurface, byIdentity map[string]*contractTyp
 	return inputs
 }
 
-func mapReturn(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, raw *string) []string {
+// mapReturn projects a member's return type. `generics` are the METHOD's own
+// type parameters, and passing them is what stops a generic method's return
+// from being reported as the IL token for a position.
+//
+// Foundation 54 resolved `!!0` at parameter positions and left the return
+// unresolved, because the two generic members it closed both return
+// System.Void. Foundation 63 found the gap the first time a generic method
+// RETURNS its type parameter: `ContentManager::Load<T>(String) -> !!0` was
+// projected as returning a type literally called `!!0`, which is a name for a
+// position rather than a type -- the exact defect Foundation 54 named on the
+// other side of the signature.
+func mapReturn(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, generics []genericParameter, raw *string) []string {
 	if raw == nil || *raw == "System.Void" {
 		return nil
 	}
-	return mapResultType(s, byIdentity, owner, *raw)
+	return mapResultTypeWithGenerics(s, byIdentity, owner, generics, *raw)
 }
 
 func mapResultType(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, raw string) []string {
+	return mapResultTypeWithGenerics(s, byIdentity, owner, nil, raw)
+}
+
+func mapResultTypeWithGenerics(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, generics []genericParameter, raw string) []string {
 	if inner, ok := nullableInner(raw); ok {
-		return []string{strings.TrimPrefix(mapType(s, byIdentity, owner, inner), "*"), "bool"}
+		return []string{strings.TrimPrefix(mapTypeWithGenerics(s, byIdentity, owner, generics, inner), "*"), "bool"}
 	}
-	return []string{mapType(s, byIdentity, owner, raw)}
+	return []string{mapTypeWithGenerics(s, byIdentity, owner, generics, raw)}
 }
 
 // mapTypeWithGenerics is mapType plus the method's own type parameters, which
