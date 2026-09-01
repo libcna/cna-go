@@ -3486,3 +3486,150 @@ func TestTheCubeAndVolumeTexturesAreReachableFromOutside(t *testing.T) {
 		}
 	}
 }
+
+// TestTheEffectClusterIsReachableFromOutside compiles all nine Foundation 72
+// types at their exact shapes and proves the three things a consumer meets
+// first: both indexers answer nil instead of throwing, the string indexer and
+// GetParameterBySemantic disagree about case, and the compiled-bytecode
+// constructor is the type's only public door.
+func TestTheEffectClusterIsReachableFromOutside(t *testing.T) {
+	var _ func(*graphics.GraphicsDevice, []uint8) (*graphics.Effect, error) = graphics.NewEffectByGraphicsDeviceAndSliceOfByte
+	var _ func(*graphics.Effect) (*graphics.Effect, error) = graphics.NewEffectByEffect
+
+	effect := &graphics.Effect{}
+	var _ func() *graphics.EffectParameterCollection = effect.Parameters
+	var _ func() *graphics.EffectTechniqueCollection = effect.Techniques
+	var _ func() *graphics.EffectTechnique = effect.CurrentTechnique
+	var _ func(*graphics.EffectTechnique) error = effect.SetCurrentTechnique
+	var _ func() (*graphics.Effect, error) = effect.Clone
+	var _ func() error = effect.OnApply
+	var _ func() error = effect.DisposeByNone
+
+	techniques := &graphics.EffectTechniqueCollection{}
+	var _ func() int32 = techniques.Count
+	var _ func(int32) *graphics.EffectTechnique = techniques.ItemPropertySignatureA5F4623F
+	var _ func(string) *graphics.EffectTechnique = techniques.ItemPropertySignatureDA594950
+	var _ func() framework.Iterator[*graphics.EffectTechnique] = techniques.GetEnumerator
+
+	technique := &graphics.EffectTechnique{}
+	var _ func() string = technique.Name
+	var _ func() *graphics.EffectPassCollection = technique.Passes
+	var _ func() *graphics.EffectAnnotationCollection = technique.Annotations
+
+	pass := &graphics.EffectPass{}
+	var _ func() string = pass.Name
+	var _ func() error = pass.Apply
+
+	parameter := &graphics.EffectParameter{}
+	var _ func() string = parameter.Name
+	var _ func() string = parameter.Semantic
+	var _ func() graphics.EffectParameterClass = parameter.ParameterClass
+	var _ func() graphics.EffectParameterType = parameter.ParameterType
+	var _ func() (framework.Matrix, error) = parameter.GetValueMatrix
+	var _ func() (framework.Matrix, error) = parameter.GetValueMatrixTranspose
+	var _ func(framework.Matrix) error = parameter.SetValueByMatrix
+	var _ func(framework.Matrix) error = parameter.SetValueTransposeByMatrix
+	var _ func(graphics.TextureReference) error = parameter.SetValueByTexture
+	var _ func(int32) ([]float32, error) = parameter.GetValueSingleArray
+
+	annotation := &graphics.EffectAnnotation{}
+	var _ func() (bool, error) = annotation.GetValueBoolean
+	var _ func() (framework.Vector4, error) = annotation.GetValueVector4
+	var _ func() (framework.Matrix, error) = annotation.GetValueMatrix
+
+	// Both indexers answer nil out of range and for an unknown name.
+	if techniques.ItemPropertySignatureA5F4623F(0) != nil || techniques.ItemPropertySignatureDA594950("x") != nil {
+		t.Fatal("an empty technique collection answered a technique")
+	}
+	// set_CurrentTechnique checks DISPOSAL before the null argument -- the
+	// reference's CheckDisposed is at IL_000c and its null check at IL_0013 --
+	// and a zero Effect is disposed, so the disposal is what a consumer sees.
+	if err := effect.SetCurrentTechnique(nil); err == nil {
+		t.Fatal("a nil technique was accepted")
+	} else if !strings.Contains(err.Error(), "disposed") {
+		t.Fatalf("%v, want the disposal reported before the argument", err)
+	}
+	// A nil device is refused by the constructor.
+	if _, err := graphics.NewEffectByGraphicsDeviceAndSliceOfByte(nil, []uint8{1}); err == nil {
+		t.Fatal("a nil device built an effect")
+	} else if !strings.Contains(err.Error(), "The GraphicsDevice must not be null when creating new resources.") {
+		t.Fatalf("%v, want the reference's message", err)
+	}
+	// The last two SpriteBatch.Begin overloads exist and take an Effect.
+	batch := &graphics.SpriteBatch{}
+	var _ func(graphics.SpriteSortMode, *graphics.BlendState, *graphics.SamplerState, *graphics.DepthStencilState, *graphics.RasterizerState, *graphics.Effect) error = batch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffect
+	var _ func(graphics.SpriteSortMode, *graphics.BlendState, *graphics.SamplerState, *graphics.DepthStencilState, *graphics.RasterizerState, *graphics.Effect, framework.Matrix) error = batch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffectAndMatrix
+
+	// And Load<Effect> is in the closed set: it is refused for a reason other
+	// than the type.
+	manager, err := content.NewContentManagerByIServiceProviderAndString(&struct{}{}, "Content")
+	if err != nil {
+		t.Fatalf("NewContentManager: %v", err)
+	}
+	if _, err := content.ContentManagerLoad[*graphics.Effect](manager, "any"); err == nil {
+		t.Fatal("an effect loaded with no graphics device service")
+	} else if strings.Contains(err.Error(), "cannot load this asset type") {
+		t.Fatalf("Effect is not in the closed Load set: %v", err)
+	}
+}
+
+// TestTheSixUserPrimitiveDrawsAreReachableFromOutside compiles all six generic
+// draws at their exact shapes. They are PACKAGE FUNCTIONS on the settled
+// generic-method rule -- Go methods cannot declare type parameters -- and the
+// receiver is their first argument.
+func TestTheSixUserPrimitiveDrawsAreReachableFromOutside(t *testing.T) {
+	type canaryVertex struct {
+		Position framework.Vector3
+		Colour   framework.Color
+	}
+	device := &graphics.GraphicsDevice{}
+	vertices := make([]canaryVertex, 3)
+	indices16 := []int16{0, 1, 2}
+	indices32 := []int32{0, 1, 2}
+	declaration, err := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(12, graphics.VertexElementFormatColor, graphics.VertexElementUsageColor, 0),
+	})
+	if err != nil {
+		t.Fatalf("NewVertexDeclaration: %v", err)
+	}
+	for name, call := range map[string]func() error{
+		"primitives": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, vertices, 0, 1)
+		},
+		"primitives+decl": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, vertices, 0, 1, declaration)
+		},
+		"indexed16": func() error {
+			return graphics.GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, vertices, 0, 3, indices16, 0, 1)
+		},
+		"indexed32": func() error {
+			return graphics.GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, vertices, 0, 3, indices32, 0, 1)
+		},
+		"indexed16+decl": func() error {
+			return graphics.GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, vertices, 0, 3, indices16, 0, 1, declaration)
+		},
+		"indexed32+decl": func() error {
+			return graphics.GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, vertices, 0, 3, indices32, 0, 1, declaration)
+		},
+	} {
+		if err := call(); err == nil {
+			t.Fatalf("%s reported success on a device with no native half", name)
+		}
+	}
+	// The two declaration-less families resolve T's declaration, so a T that is
+	// not a vertex type gets VertexDeclaration.FromType's own sentence.
+	type notAVertex struct{ A, B, C, D int32 }
+	if err := graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32(
+		device, graphics.PrimitiveTypeTriangleList, make([]notAVertex, 3), 0, 1); err == nil {
+		t.Fatal("a type that is not a vertex type was accepted")
+	} else if !strings.Contains(err.Error(), "does not implement the IVertexType interface") {
+		t.Fatalf("%v, want FromType's message", err)
+	}
+}

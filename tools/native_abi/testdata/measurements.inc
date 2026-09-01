@@ -538,3 +538,61 @@ CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_has_rectangle, offsetof(CNA_Text
 CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_rectangle, offsetof(CNA_TextureCubeTransfer, rectangle))
 CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_start_index, offsetof(CNA_TextureCubeTransfer, start_index))
 CNA_GO_MEASURE(offsetof_CNA_TextureCubeTransfer_element_count, offsetof(CNA_TextureCubeTransfer, element_count))
+
+// Foundation 72 — the Effect cluster.
+//
+// CNA_EffectParameterInfo and CNA_EffectAnnotationInfo are byte-identical in
+// shape and are measured SEPARATELY on purpose: one Go type serves both, so if
+// CNA ever widened one of them the shared projection would read the other's
+// layout and nothing else here would notice.
+//
+// CNA_Matrix is the widest value this manifest carries and the one whose
+// ELEMENT ORDER is load-bearing: an effect parameter's matrix crosses as
+// sixteen floats in row-major order, and a manifest that transposed it would
+// produce a silently wrong transform rather than a failure.
+CNA_GO_MEASURE(sizeof_CNA_Vector4, sizeof(CNA_Vector4))
+CNA_GO_MEASURE(alignof_CNA_Vector4, _Alignof(CNA_Vector4))
+CNA_GO_MEASURE(offsetof_CNA_Vector4_w, offsetof(CNA_Vector4, w))
+CNA_GO_MEASURE(sizeof_CNA_Quaternion, sizeof(CNA_Quaternion))
+CNA_GO_MEASURE(offsetof_CNA_Quaternion_w, offsetof(CNA_Quaternion, w))
+CNA_GO_MEASURE(sizeof_CNA_Matrix, sizeof(CNA_Matrix))
+CNA_GO_MEASURE(alignof_CNA_Matrix, _Alignof(CNA_Matrix))
+CNA_GO_MEASURE(offsetof_CNA_Matrix_m12, offsetof(CNA_Matrix, m12))
+CNA_GO_MEASURE(offsetof_CNA_Matrix_m21, offsetof(CNA_Matrix, m21))
+CNA_GO_MEASURE(offsetof_CNA_Matrix_m44, offsetof(CNA_Matrix, m44))
+CNA_GO_MEASURE(sizeof_CNA_EffectParameterInfo, sizeof(CNA_EffectParameterInfo))
+CNA_GO_MEASURE(alignof_CNA_EffectParameterInfo, _Alignof(CNA_EffectParameterInfo))
+CNA_GO_MEASURE(offsetof_CNA_EffectParameterInfo_row_count, offsetof(CNA_EffectParameterInfo, row_count))
+CNA_GO_MEASURE(offsetof_CNA_EffectParameterInfo_column_count, offsetof(CNA_EffectParameterInfo, column_count))
+CNA_GO_MEASURE(offsetof_CNA_EffectParameterInfo_parameter_class, offsetof(CNA_EffectParameterInfo, parameter_class))
+CNA_GO_MEASURE(offsetof_CNA_EffectParameterInfo_parameter_type, offsetof(CNA_EffectParameterInfo, parameter_type))
+CNA_GO_MEASURE(sizeof_CNA_EffectAnnotationInfo, sizeof(CNA_EffectAnnotationInfo))
+CNA_GO_MEASURE(alignof_CNA_EffectAnnotationInfo, _Alignof(CNA_EffectAnnotationInfo))
+CNA_GO_MEASURE(offsetof_CNA_EffectAnnotationInfo_row_count, offsetof(CNA_EffectAnnotationInfo, row_count))
+CNA_GO_MEASURE(offsetof_CNA_EffectAnnotationInfo_column_count, offsetof(CNA_EffectAnnotationInfo, column_count))
+CNA_GO_MEASURE(offsetof_CNA_EffectAnnotationInfo_parameter_class, offsetof(CNA_EffectAnnotationInfo, parameter_class))
+CNA_GO_MEASURE(offsetof_CNA_EffectAnnotationInfo_parameter_type, offsetof(CNA_EffectAnnotationInfo, parameter_type))
+
+// Foundation 73 — the two user-primitive structures.
+//
+// CNA_UserPrimitives interleaves two uint32 identities, a pointer, a handle and
+// four int32s, so the POINTER's alignment is what decides where the handle and
+// every count after it sit; a manifest that made vertex_data a uint32 would put
+// the declaration where the pointer's high half is. CNA_UserIndices is the
+// smallest structure in this manifest with a pointer LAST, which is the one
+// position trailing padding cannot hide a mistake in.
+CNA_GO_MEASURE(sizeof_CNA_UserPrimitives, sizeof(CNA_UserPrimitives))
+CNA_GO_MEASURE(alignof_CNA_UserPrimitives, _Alignof(CNA_UserPrimitives))
+CNA_GO_MEASURE(offsetof_CNA_UserPrimitives_primitive_type, offsetof(CNA_UserPrimitives, primitive_type))
+CNA_GO_MEASURE(offsetof_CNA_UserPrimitives_vertex_source, offsetof(CNA_UserPrimitives, vertex_source))
+CNA_GO_MEASURE(offsetof_CNA_UserPrimitives_vertex_data, offsetof(CNA_UserPrimitives, vertex_data))
+CNA_GO_MEASURE(offsetof_CNA_UserPrimitives_vertex_declaration, offsetof(CNA_UserPrimitives, vertex_declaration))
+CNA_GO_MEASURE(offsetof_CNA_UserPrimitives_vertex_offset, offsetof(CNA_UserPrimitives, vertex_offset))
+CNA_GO_MEASURE(offsetof_CNA_UserPrimitives_num_vertices, offsetof(CNA_UserPrimitives, num_vertices))
+CNA_GO_MEASURE(offsetof_CNA_UserPrimitives_primitive_count, offsetof(CNA_UserPrimitives, primitive_count))
+CNA_GO_MEASURE(width_CNA_UserPrimitives_vertex_data, sizeof(((CNA_UserPrimitives*)0)->vertex_data))
+CNA_GO_MEASURE(sizeof_CNA_UserIndices, sizeof(CNA_UserIndices))
+CNA_GO_MEASURE(alignof_CNA_UserIndices, _Alignof(CNA_UserIndices))
+CNA_GO_MEASURE(offsetof_CNA_UserIndices_index_element_size, offsetof(CNA_UserIndices, index_element_size))
+CNA_GO_MEASURE(offsetof_CNA_UserIndices_index_offset, offsetof(CNA_UserIndices, index_offset))
+CNA_GO_MEASURE(offsetof_CNA_UserIndices_index_data, offsetof(CNA_UserIndices, index_data))

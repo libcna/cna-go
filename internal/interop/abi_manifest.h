@@ -16,6 +16,8 @@ typedef struct CNA_StringView { const char* data; uint64_t byte_length; } CNA_St
 typedef struct CNA_Vector2 { float x; float y; } CNA_Vector2;
 typedef struct CNA_Rectangle { int32_t x; int32_t y; int32_t width; int32_t height; } CNA_Rectangle;
 typedef struct CNA_Vector3 { float x; float y; float z; } CNA_Vector3;
+typedef struct CNA_Vector4 { float x; float y; float z; float w; } CNA_Vector4;
+typedef struct CNA_Quaternion { float x; float y; float z; float w; } CNA_Quaternion;
 typedef struct CNA_Color { uint8_t r; uint8_t g; uint8_t b; uint8_t a; } CNA_Color;
 #endif
 
@@ -455,6 +457,29 @@ typedef struct CNA_VertexElement {
 } CNA_VertexElement;
 #endif
 
+#ifndef CNA_C_GRAPHICS_DEVICE_H
+typedef uint32_t CNA_UserVertexSource;
+typedef struct CNA_UserPrimitives {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_PrimitiveType primitive_type;
+    CNA_UserVertexSource vertex_source;
+    const void* vertex_data;
+    CNA_Handle vertex_declaration;
+    int32_t vertex_offset;
+    int32_t num_vertices;
+    int32_t primitive_count;
+    uint32_t reserved;
+} CNA_UserPrimitives;
+typedef struct CNA_UserIndices {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_IndexElementSize index_element_size;
+    int32_t index_offset;
+    const void* index_data;
+} CNA_UserIndices;
+#endif
+
 #ifndef CNA_C_VERTEX_RESOURCES_H
 typedef CNA_Handle CNA_VertexDeclarationHandle;
 typedef CNA_Handle CNA_VertexBufferHandle;
@@ -516,6 +541,52 @@ typedef struct CNA_IndexBufferTransfer {
     uint64_t start_index;
     uint64_t element_count;
 } CNA_IndexBufferTransfer;
+#endif
+
+/* CNA_Matrix lives in CNA/C/math_values.h and is the widest value this manifest
+   carries: sixteen floats in ROW-MAJOR order, which is the order an effect
+   parameter's matrix value crosses in. */
+#ifndef CNA_C_MATH_VALUES_H_MATRIX
+#ifndef CNA_C_MATH_VALUES_H
+typedef struct CNA_Matrix {
+    float m11; float m12; float m13; float m14;
+    float m21; float m22; float m23; float m24;
+    float m31; float m32; float m33; float m34;
+    float m41; float m42; float m43; float m44;
+} CNA_Matrix;
+#endif
+#endif
+
+#ifndef CNA_C_EFFECTS_H
+typedef uint32_t CNA_EffectParameterClass;
+typedef uint32_t CNA_EffectParameterType;
+typedef uint32_t CNA_EffectValueType;
+typedef uint32_t CNA_EffectTextureType;
+typedef CNA_Handle CNA_EffectHandle;
+typedef CNA_Handle CNA_EffectParameterHandle;
+typedef CNA_Handle CNA_EffectParameterCollectionHandle;
+typedef CNA_Handle CNA_EffectAnnotationHandle;
+typedef CNA_Handle CNA_EffectAnnotationCollectionHandle;
+typedef CNA_Handle CNA_EffectPassHandle;
+typedef CNA_Handle CNA_EffectPassCollectionHandle;
+typedef CNA_Handle CNA_EffectTechniqueHandle;
+typedef CNA_Handle CNA_EffectTechniqueCollectionHandle;
+typedef struct CNA_EffectParameterInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    int32_t row_count;
+    int32_t column_count;
+    CNA_EffectParameterClass parameter_class;
+    CNA_EffectParameterType parameter_type;
+} CNA_EffectParameterInfo;
+typedef struct CNA_EffectAnnotationInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    int32_t row_count;
+    int32_t column_count;
+    CNA_EffectParameterClass parameter_class;
+    CNA_EffectParameterType parameter_type;
+} CNA_EffectAnnotationInfo;
 #endif
 
 #ifndef CNA_C_TEXTURE_VOLUME_H
@@ -689,6 +760,8 @@ typedef CNA_Result (*cna_graphics_device_set_index_buffer_fn)(CNA_Handle, CNA_In
 typedef CNA_Result (*cna_graphics_device_draw_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t);
 typedef CNA_Result (*cna_graphics_device_draw_indexed_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t, int32_t, int32_t, int32_t);
 typedef CNA_Result (*cna_graphics_device_draw_instanced_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
+typedef CNA_Result (*cna_graphics_device_draw_user_primitives_fn)(CNA_Handle, const CNA_UserPrimitives*);
+typedef CNA_Result (*cna_graphics_device_draw_user_indexed_primitives_fn)(CNA_Handle, const CNA_UserPrimitives*, const CNA_UserIndices*);
 typedef CNA_Result (*cna_index_buffer_create_fn)(CNA_Handle, const CNA_IndexBufferCreateInfo*, CNA_IndexBufferHandle*);
 typedef CNA_Result (*cna_index_buffer_destroy_fn)(CNA_IndexBufferHandle);
 typedef CNA_Result (*cna_index_buffer_get_info_fn)(CNA_IndexBufferHandle, CNA_IndexBufferInfo*);
@@ -717,6 +790,70 @@ typedef CNA_Result (*cna_texturecube_set_data_fn)(CNA_Handle, const CNA_TextureC
 typedef CNA_Result (*cna_texturecube_get_data_fn)(CNA_Handle, const CNA_TextureCubeTransfer*, CNA_Color*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_sprite_font_get_info_fn)(CNA_Handle, CNA_SpriteFontInfo*);
 typedef CNA_Result (*cna_sprite_batch_draw_string_fn)(CNA_Handle, const CNA_SpriteTextCommand*);
+typedef CNA_Result (*cna_sprite_batch_begin_with_effect_fn)(CNA_Handle, CNA_SpriteSortMode, const CNA_BlendState*, const CNA_SamplerState*, const CNA_DepthStencilState*, const CNA_RasterizerState*, CNA_Handle, const CNA_Matrix*);
+typedef CNA_Result (*cna_effect_create_compiled_fn)(CNA_Handle, const uint8_t*, uint64_t, CNA_EffectHandle*);
+typedef CNA_Result (*cna_content_manager_load_effect_fn)(CNA_Handle, CNA_StringView, CNA_EffectHandle*);
+typedef CNA_Result (*cna_effect_clone_fn)(CNA_EffectHandle, CNA_EffectHandle*);
+typedef CNA_Result (*cna_effect_destroy_fn)(CNA_EffectHandle);
+typedef CNA_Result (*cna_effect_apply_fn)(CNA_EffectHandle);
+typedef CNA_Result (*cna_effect_get_parameters_fn)(CNA_EffectHandle, CNA_EffectParameterCollectionHandle*);
+typedef CNA_Result (*cna_effect_get_techniques_fn)(CNA_EffectHandle, CNA_EffectTechniqueCollectionHandle*);
+typedef CNA_Result (*cna_effect_get_current_technique_fn)(CNA_EffectHandle, CNA_EffectTechniqueHandle*);
+typedef CNA_Result (*cna_effect_set_current_technique_fn)(CNA_EffectHandle, CNA_EffectTechniqueHandle);
+typedef CNA_Result (*cna_effect_technique_collection_get_count_fn)(CNA_EffectTechniqueCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_technique_collection_get_at_fn)(CNA_EffectTechniqueCollectionHandle, uint64_t, CNA_EffectTechniqueHandle*);
+typedef CNA_Result (*cna_effect_technique_destroy_fn)(CNA_EffectTechniqueHandle);
+typedef CNA_Result (*cna_effect_technique_get_name_byte_count_fn)(CNA_EffectTechniqueHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_technique_copy_name_fn)(CNA_EffectTechniqueHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_effect_technique_get_passes_fn)(CNA_EffectTechniqueHandle, CNA_EffectPassCollectionHandle*);
+typedef CNA_Result (*cna_effect_technique_get_annotations_fn)(CNA_EffectTechniqueHandle, CNA_EffectAnnotationCollectionHandle*);
+typedef CNA_Result (*cna_effect_technique_collection_destroy_fn)(CNA_EffectTechniqueCollectionHandle);
+typedef CNA_Result (*cna_effect_pass_collection_get_count_fn)(CNA_EffectPassCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_pass_collection_get_at_fn)(CNA_EffectPassCollectionHandle, uint64_t, CNA_EffectPassHandle*);
+typedef CNA_Result (*cna_effect_pass_collection_destroy_fn)(CNA_EffectPassCollectionHandle);
+typedef CNA_Result (*cna_effect_pass_destroy_fn)(CNA_EffectPassHandle);
+typedef CNA_Result (*cna_effect_pass_get_name_byte_count_fn)(CNA_EffectPassHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_pass_copy_name_fn)(CNA_EffectPassHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_effect_pass_get_annotations_fn)(CNA_EffectPassHandle, CNA_EffectAnnotationCollectionHandle*);
+typedef CNA_Result (*cna_effect_pass_apply_fn)(CNA_EffectPassHandle);
+typedef CNA_Result (*cna_effect_parameter_collection_get_count_fn)(CNA_EffectParameterCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_parameter_collection_get_at_fn)(CNA_EffectParameterCollectionHandle, uint64_t, CNA_EffectParameterHandle*);
+typedef CNA_Result (*cna_effect_parameter_collection_destroy_fn)(CNA_EffectParameterCollectionHandle);
+typedef CNA_Result (*cna_effect_parameter_destroy_fn)(CNA_EffectParameterHandle);
+typedef CNA_Result (*cna_effect_parameter_get_info_fn)(CNA_EffectParameterHandle, CNA_EffectParameterInfo*);
+typedef CNA_Result (*cna_effect_parameter_get_name_byte_count_fn)(CNA_EffectParameterHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_parameter_copy_name_fn)(CNA_EffectParameterHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_effect_parameter_get_semantic_byte_count_fn)(CNA_EffectParameterHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_parameter_copy_semantic_fn)(CNA_EffectParameterHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_effect_parameter_get_elements_fn)(CNA_EffectParameterHandle, CNA_EffectParameterCollectionHandle*);
+typedef CNA_Result (*cna_effect_parameter_get_structure_members_fn)(CNA_EffectParameterHandle, CNA_EffectParameterCollectionHandle*);
+typedef CNA_Result (*cna_effect_parameter_get_annotations_fn)(CNA_EffectParameterHandle, CNA_EffectAnnotationCollectionHandle*);
+typedef CNA_Result (*cna_effect_parameter_get_value_fn)(CNA_EffectParameterHandle, CNA_EffectValueType, void*);
+typedef CNA_Result (*cna_effect_parameter_get_values_fn)(CNA_EffectParameterHandle, CNA_EffectValueType, uint64_t, void*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_effect_parameter_set_value_fn)(CNA_EffectParameterHandle, CNA_EffectValueType, const void*);
+typedef CNA_Result (*cna_effect_parameter_set_values_fn)(CNA_EffectParameterHandle, CNA_EffectValueType, const void*, uint64_t);
+typedef CNA_Result (*cna_effect_parameter_get_value_string_byte_count_fn)(CNA_EffectParameterHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_parameter_copy_value_string_fn)(CNA_EffectParameterHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_effect_parameter_set_value_string_fn)(CNA_EffectParameterHandle, CNA_StringView);
+typedef CNA_Result (*cna_effect_parameter_set_value_texture_fn)(CNA_EffectParameterHandle, CNA_EffectTextureType, CNA_Handle);
+typedef CNA_Result (*cna_effect_annotation_collection_get_count_fn)(CNA_EffectAnnotationCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_annotation_collection_get_at_fn)(CNA_EffectAnnotationCollectionHandle, uint64_t, CNA_EffectAnnotationHandle*);
+typedef CNA_Result (*cna_effect_annotation_collection_destroy_fn)(CNA_EffectAnnotationCollectionHandle);
+typedef CNA_Result (*cna_effect_annotation_destroy_fn)(CNA_EffectAnnotationHandle);
+typedef CNA_Result (*cna_effect_annotation_get_info_fn)(CNA_EffectAnnotationHandle, CNA_EffectAnnotationInfo*);
+typedef CNA_Result (*cna_effect_annotation_get_name_byte_count_fn)(CNA_EffectAnnotationHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_annotation_copy_name_fn)(CNA_EffectAnnotationHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_effect_annotation_get_semantic_byte_count_fn)(CNA_EffectAnnotationHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_annotation_copy_semantic_fn)(CNA_EffectAnnotationHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_effect_annotation_get_value_boolean_fn)(CNA_EffectAnnotationHandle, CNA_Bool*);
+typedef CNA_Result (*cna_effect_annotation_get_value_int32_fn)(CNA_EffectAnnotationHandle, int32_t*);
+typedef CNA_Result (*cna_effect_annotation_get_value_single_fn)(CNA_EffectAnnotationHandle, float*);
+typedef CNA_Result (*cna_effect_annotation_get_value_string_byte_count_fn)(CNA_EffectAnnotationHandle, uint64_t*);
+typedef CNA_Result (*cna_effect_annotation_copy_value_string_fn)(CNA_EffectAnnotationHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_effect_annotation_get_value_vector2_fn)(CNA_EffectAnnotationHandle, CNA_Vector2*);
+typedef CNA_Result (*cna_effect_annotation_get_value_vector3_fn)(CNA_EffectAnnotationHandle, CNA_Vector3*);
+typedef CNA_Result (*cna_effect_annotation_get_value_vector4_fn)(CNA_EffectAnnotationHandle, CNA_Vector4*);
+typedef CNA_Result (*cna_effect_annotation_get_value_matrix_fn)(CNA_EffectAnnotationHandle, CNA_Matrix*);
 typedef CNA_Result (*cna_sprite_font_copy_glyphs_fn)(CNA_Handle, CNA_SpriteFontGlyph*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_sprite_font_set_default_character_fn)(CNA_Handle, CNA_Bool, CNA_Char16);
 typedef CNA_Result (*cna_sprite_font_set_line_spacing_fn)(CNA_Handle, int32_t);
@@ -734,7 +871,6 @@ typedef CNA_Result (*cna_graphics_device_set_sampler_state_fn)(CNA_Handle, CNA_S
 typedef CNA_Result (*cna_graphics_device_set_blend_state_fn)(CNA_Handle, const CNA_BlendState*);
 typedef CNA_Result (*cna_graphics_device_set_depth_stencil_state_fn)(CNA_Handle, const CNA_DepthStencilState*);
 typedef CNA_Result (*cna_graphics_device_set_rasterizer_state_fn)(CNA_Handle, const CNA_RasterizerState*);
-typedef CNA_Result (*cna_sprite_batch_begin_with_states_fn)(CNA_Handle, CNA_SpriteSortMode, const CNA_BlendState*, const CNA_SamplerState*, const CNA_DepthStencilState*, const CNA_RasterizerState*);
 typedef CNA_Result (*cna_render_target2d_create_fn)(CNA_Handle, const CNA_RenderTarget2DCreateInfo*, CNA_Handle*);
 typedef CNA_Result (*cna_render_target_get_info_fn)(CNA_Handle, CNA_RenderTargetInfo*);
 typedef CNA_Result (*cna_render_target_destroy_fn)(CNA_Handle);
@@ -853,6 +989,8 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_graphics_device_draw_primitives) \
     X(cna_graphics_device_draw_indexed_primitives) \
     X(cna_graphics_device_draw_instanced_primitives) \
+    X(cna_graphics_device_draw_user_primitives) \
+    X(cna_graphics_device_draw_user_indexed_primitives) \
     X(cna_vertex_declaration_create) \
     X(cna_vertex_declaration_create_with_stride) \
     X(cna_vertex_declaration_destroy) \
@@ -890,6 +1028,70 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_texturecube_get_data) \
     X(cna_sprite_font_get_info) \
     X(cna_sprite_batch_draw_string) \
+    X(cna_sprite_batch_begin_with_effect) \
+    X(cna_effect_create_compiled) \
+    X(cna_content_manager_load_effect) \
+    X(cna_effect_clone) \
+    X(cna_effect_destroy) \
+    X(cna_effect_apply) \
+    X(cna_effect_get_parameters) \
+    X(cna_effect_get_techniques) \
+    X(cna_effect_get_current_technique) \
+    X(cna_effect_set_current_technique) \
+    X(cna_effect_technique_collection_get_count) \
+    X(cna_effect_technique_collection_get_at) \
+    X(cna_effect_technique_destroy) \
+    X(cna_effect_technique_get_name_byte_count) \
+    X(cna_effect_technique_copy_name) \
+    X(cna_effect_technique_get_passes) \
+    X(cna_effect_technique_get_annotations) \
+    X(cna_effect_technique_collection_destroy) \
+    X(cna_effect_pass_collection_get_count) \
+    X(cna_effect_pass_collection_get_at) \
+    X(cna_effect_pass_collection_destroy) \
+    X(cna_effect_pass_destroy) \
+    X(cna_effect_pass_get_name_byte_count) \
+    X(cna_effect_pass_copy_name) \
+    X(cna_effect_pass_get_annotations) \
+    X(cna_effect_pass_apply) \
+    X(cna_effect_parameter_collection_get_count) \
+    X(cna_effect_parameter_collection_get_at) \
+    X(cna_effect_parameter_collection_destroy) \
+    X(cna_effect_parameter_destroy) \
+    X(cna_effect_parameter_get_info) \
+    X(cna_effect_parameter_get_name_byte_count) \
+    X(cna_effect_parameter_copy_name) \
+    X(cna_effect_parameter_get_semantic_byte_count) \
+    X(cna_effect_parameter_copy_semantic) \
+    X(cna_effect_parameter_get_elements) \
+    X(cna_effect_parameter_get_structure_members) \
+    X(cna_effect_parameter_get_annotations) \
+    X(cna_effect_parameter_get_value) \
+    X(cna_effect_parameter_get_values) \
+    X(cna_effect_parameter_set_value) \
+    X(cna_effect_parameter_set_values) \
+    X(cna_effect_parameter_get_value_string_byte_count) \
+    X(cna_effect_parameter_copy_value_string) \
+    X(cna_effect_parameter_set_value_string) \
+    X(cna_effect_parameter_set_value_texture) \
+    X(cna_effect_annotation_collection_get_count) \
+    X(cna_effect_annotation_collection_get_at) \
+    X(cna_effect_annotation_collection_destroy) \
+    X(cna_effect_annotation_destroy) \
+    X(cna_effect_annotation_get_info) \
+    X(cna_effect_annotation_get_name_byte_count) \
+    X(cna_effect_annotation_copy_name) \
+    X(cna_effect_annotation_get_semantic_byte_count) \
+    X(cna_effect_annotation_copy_semantic) \
+    X(cna_effect_annotation_get_value_boolean) \
+    X(cna_effect_annotation_get_value_int32) \
+    X(cna_effect_annotation_get_value_single) \
+    X(cna_effect_annotation_get_value_string_byte_count) \
+    X(cna_effect_annotation_copy_value_string) \
+    X(cna_effect_annotation_get_value_vector2) \
+    X(cna_effect_annotation_get_value_vector3) \
+    X(cna_effect_annotation_get_value_vector4) \
+    X(cna_effect_annotation_get_value_matrix) \
     X(cna_sprite_font_copy_glyphs) \
     X(cna_sprite_font_set_default_character) \
     X(cna_sprite_font_set_line_spacing) \
@@ -907,7 +1109,6 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_graphics_device_set_blend_state) \
     X(cna_graphics_device_set_depth_stencil_state) \
     X(cna_graphics_device_set_rasterizer_state) \
-    X(cna_sprite_batch_begin_with_states) \
     X(cna_render_target2d_create) \
     X(cna_render_target_get_info) \
     X(cna_render_target_destroy) \

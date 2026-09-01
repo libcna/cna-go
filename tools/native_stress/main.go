@@ -141,17 +141,30 @@ type counters struct {
 	VertexBufferIndexBindChecks   int `json:"VERTEX_BUFFER_INDEX_BIND_CHECKS"`
 	VertexBufferDraws             int `json:"VERTEX_BUFFER_DRAWS"`
 	VertexBufferDrawRefusals      int `json:"VERTEX_BUFFER_DRAW_REFUSALS"`
-	VertexBufferDrawGuardChecks   int `json:"VERTEX_BUFFER_DRAW_GUARD_CHECKS"`
-	VertexBufferUnbindChecks      int `json:"VERTEX_BUFFER_UNBIND_CHECKS"`
-	VertexBufferDisposalChecks    int `json:"VERTEX_BUFFER_DISPOSAL_CHECKS"`
-	CallbackErrorCycles           int `json:"CALLBACK_ERROR_CYCLES"`
-	CallbackPanicCycles           int `json:"CALLBACK_PANIC_CYCLES"`
-	WrongThreadChecks             int `json:"WRONG_THREAD_CHECKS"`
-	OwnerThreadRetries            int `json:"OWNER_THREAD_RETRIES"`
-	GCStressPoints                int `json:"GC_STRESS_POINTS"`
-	NativeCrashes                 int `json:"NATIVE_CRASHES"`
-	ObservedUAF                   int `json:"OBSERVED_UAF"`
-	ObservedDoubleFree            int `json:"OBSERVED_DOUBLE_FREE"`
+	// Foundation 72. The draw revalidation: the control refusal BEFORE any
+	// effect is applied, the effect itself, and what the draw does after.
+	VertexBufferDrawRefusalsBeforeApply int `json:"VERTEX_BUFFER_DRAW_REFUSALS_BEFORE_APPLY"`
+	VertexBufferEffectLoads             int `json:"VERTEX_BUFFER_EFFECT_LOADS"`
+	VertexBufferEffectRefusals          int `json:"VERTEX_BUFFER_EFFECT_REFUSALS"`
+	VertexBufferEffectApplies           int `json:"VERTEX_BUFFER_EFFECT_APPLIES"`
+	VertexBufferEffectApplyRefusals     int `json:"VERTEX_BUFFER_EFFECT_APPLY_REFUSALS"`
+	VertexBufferEffectDisposalChecks    int `json:"VERTEX_BUFFER_EFFECT_DISPOSAL_CHECKS"`
+	// The six user-primitive draws, and the four guards the projection makes
+	// before CNA is reached.
+	UserPrimitiveDraws          int `json:"USER_PRIMITIVE_DRAWS"`
+	UserPrimitiveDrawRefusals   int `json:"USER_PRIMITIVE_DRAW_REFUSALS"`
+	UserPrimitiveGuardChecks    int `json:"USER_PRIMITIVE_GUARD_CHECKS"`
+	VertexBufferDrawGuardChecks int `json:"VERTEX_BUFFER_DRAW_GUARD_CHECKS"`
+	VertexBufferUnbindChecks    int `json:"VERTEX_BUFFER_UNBIND_CHECKS"`
+	VertexBufferDisposalChecks  int `json:"VERTEX_BUFFER_DISPOSAL_CHECKS"`
+	CallbackErrorCycles         int `json:"CALLBACK_ERROR_CYCLES"`
+	CallbackPanicCycles         int `json:"CALLBACK_PANIC_CYCLES"`
+	WrongThreadChecks           int `json:"WRONG_THREAD_CHECKS"`
+	OwnerThreadRetries          int `json:"OWNER_THREAD_RETRIES"`
+	GCStressPoints              int `json:"GC_STRESS_POINTS"`
+	NativeCrashes               int `json:"NATIVE_CRASHES"`
+	ObservedUAF                 int `json:"OBSERVED_UAF"`
+	ObservedDoubleFree          int `json:"OBSERVED_DOUBLE_FREE"`
 
 	GameEventActivated   int `json:"GAME_EVENT_ACTIVATED_DELIVERIES"`
 	GameEventDeactivated int `json:"GAME_EVENT_DEACTIVATED_DELIVERIES"`
@@ -313,10 +326,14 @@ type stressReport struct {
 type stressGame struct {
 	scenario string
 	index    int
-	manager  *framework.GraphicsDeviceManager
-	device   *graphics.GraphicsDevice
-	data     []byte
-	result   counters
+	// effectRoots are the temporary content roots the stock-effect loads used.
+	// They outlive the load because CNA caches the asset by normalized key and
+	// may consult the file again; they are removed when the scenario ends.
+	effectRoots []string
+	manager     *framework.GraphicsDeviceManager
+	device      *graphics.GraphicsDevice
+	data        []byte
+	result      counters
 
 	// eventOrder records every native game signal in delivery order, and
 	// removedRan records whether a handler removed before Run ever fired.
@@ -530,6 +547,29 @@ func runParent() (counters, error) {
 		total.IndexBufferWriteOnlyChecks < 20 || total.IndexBufferDisposalChecks < 20 {
 		return total, errors.New("an index-buffer proof did not run in every cycle")
 	}
+	// Foundation 72. The draw revalidation, per cycle: the CONTROL refusal
+	// before anything is applied, one effect outcome, one apply outcome when
+	// the effect loaded, and one draw outcome.
+	//
+	// The control is the load-bearing one. A cycle whose pre-apply draw
+	// SUCCEEDED would prove nothing about the effect, because a draw that works
+	// either way is not evidence that applying the effect made it work -- so
+	// this requires the refusal rather than merely accounting for it.
+	if total.VertexBufferDrawRefusalsBeforeApply != total.VertexBufferCycles {
+		return total, fmt.Errorf("%d of %d cycles refused the draw before any effect was applied; the control must refuse in every one",
+			total.VertexBufferDrawRefusalsBeforeApply, total.VertexBufferCycles)
+	}
+	if total.VertexBufferEffectLoads+total.VertexBufferEffectRefusals != total.VertexBufferCycles {
+		return total, fmt.Errorf("effect loads %d and refusals %d do not account for %d cycles",
+			total.VertexBufferEffectLoads, total.VertexBufferEffectRefusals, total.VertexBufferCycles)
+	}
+	if total.VertexBufferEffectApplies+total.VertexBufferEffectApplyRefusals != total.VertexBufferEffectLoads ||
+		total.VertexBufferEffectDisposalChecks != total.VertexBufferEffectLoads {
+		return total, fmt.Errorf("%d effect loads produced %d applies, %d apply refusals and %d disposal checks",
+			total.VertexBufferEffectLoads, total.VertexBufferEffectApplies,
+			total.VertexBufferEffectApplyRefusals, total.VertexBufferEffectDisposalChecks)
+	}
+
 	// A cycle that READ BACK must also have proved the windowed overload.
 	if total.IndexBufferWindowRoundTrips != total.IndexBufferRoundTrips {
 		return total, fmt.Errorf("%d index round trips produced %d windowed ones",
@@ -587,6 +627,13 @@ func runParent() (counters, error) {
 		total.TextureVolumeDisposalChecks != total.TextureCubeCreations+total.Texture3DCreations {
 		return total, fmt.Errorf("%d element refusals and %d disposal checks across %d cycles",
 			total.TextureVolumeElementRefusals, total.TextureVolumeDisposalChecks, total.TextureVolumeCycles)
+	}
+
+	if total.UserPrimitiveDraws+total.UserPrimitiveDrawRefusals != total.VertexBufferCycles*6 ||
+		total.UserPrimitiveGuardChecks != total.VertexBufferCycles {
+		return total, fmt.Errorf("user-primitive draws %d, refusals %d and guard proofs %d do not account for %d cycles",
+			total.UserPrimitiveDraws, total.UserPrimitiveDrawRefusals,
+			total.UserPrimitiveGuardChecks, total.VertexBufferCycles)
 	}
 
 	if total.SpriteFontDrawStringGuards != total.SpriteFontLoads {
@@ -910,6 +957,21 @@ func runChild(scenario string, index int) error {
 		if game.result.VertexBufferRoundTrips+game.result.VertexBufferReadbackRefusals != game.result.VertexBufferCreations {
 			return fmt.Errorf("vertex-buffer round trips %d and refusals %d do not account for %d creations",
 				game.result.VertexBufferRoundTrips, game.result.VertexBufferReadbackRefusals, game.result.VertexBufferCreations)
+		}
+		// Foundation 72. Exactly one outcome for the effect, and the draw
+		// accounted for once.
+		if game.result.VertexBufferEffectLoads+game.result.VertexBufferEffectRefusals != 1 {
+			return errors.New("the stock effect reported neither a load nor a refusal")
+		}
+		if game.result.VertexBufferDraws+game.result.VertexBufferDrawRefusals != 1 {
+			return errors.New("the post-apply draw reported neither a success nor a refusal")
+		}
+		if game.result.UserPrimitiveDraws+game.result.UserPrimitiveDrawRefusals != 6 {
+			return fmt.Errorf("user-primitive draws %d and refusals %d do not account for six overloads",
+				game.result.UserPrimitiveDraws, game.result.UserPrimitiveDrawRefusals)
+		}
+		if game.result.UserPrimitiveGuardChecks == 0 {
+			return errors.New("the user-primitive guards did not run")
 		}
 	case "index-buffer":
 		game.result.IndexBufferCycles = 1
@@ -1597,7 +1659,7 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 		}
 	}
 	if g.scenario == "vertex-buffer" {
-		if err := g.exerciseVertexBuffer(); err != nil {
+		if err := g.exerciseVertexBuffer(host); err != nil {
 			return err
 		}
 	}
@@ -4035,7 +4097,7 @@ func (stressVertex) VertexDeclaration() *graphics.VertexDeclaration { return str
 //     produces a buffer with that type's declaration.
 //   - The two refusals the projection makes ITSELF: an oversized transfer and
 //     a stride below sizeof(T).
-func (g *stressGame) exerciseVertexBuffer() error {
+func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 	device := g.device
 
 	buffer, err := graphics.NewVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
@@ -4199,9 +4261,56 @@ func (g *stressGame) exerciseVertexBuffer() error {
 	}
 	g.result.VertexBufferIndexBindChecks++
 
-	// Three draws. CNA answers for whether the backend can execute them; what
-	// the projection owns is that they are submitted with the right arguments
-	// and that its own guards ran first.
+	// Foundation 67 measured three draws refusing with "no effect has been
+	// applied", and classified that BACKEND_BLOCKED / EFFECT_DEPENDENCY.
+	// Foundation 72 removes the dependency, so the same three draws run TWICE:
+	// once with nothing applied, which must still refuse, and once after a real
+	// Effect's pass has been applied.
+	//
+	// The first half is the control. If it ever stops refusing, the second
+	// half proves nothing -- a pass that succeeds either way is not evidence
+	// that applying the effect is what made it succeed.
+	beforeDraw := device.DrawPrimitives(graphics.PrimitiveTypeTriangleList, 0, 1)
+	if beforeDraw != nil {
+		g.result.VertexBufferDrawRefusalsBeforeApply++
+	}
+
+	// A real Effect, through the type's own public surface. The empty-effect
+	// route CNA offers has NO XNA counterpart and is deliberately unbound, so
+	// this is ContentManager.Load<Effect> over CNA's own `.cnj` stock-effect
+	// descriptor -- the one shape that does not need
+	// CNA_GRAPHICS_CAPABILITY_COMPILED_EFFECTS, which the Foundation 72 probe
+	// measured FALSE on all three published artifacts.
+	effect, effectErr := g.loadStockEffect(host)
+	switch {
+	case effectErr != nil:
+		g.result.VertexBufferEffectRefusals++
+		fmt.Fprintf(os.Stderr, "stock effect refused: %v\n", effectErr)
+	default:
+		g.result.VertexBufferEffectLoads++
+		technique := effect.CurrentTechnique()
+		if technique == nil {
+			return errors.New("a loaded effect has no current technique")
+		}
+		pass := technique.Passes().ItemPropertySignatureCA1DC5FC(0)
+		if pass == nil {
+			return errors.New("a loaded effect's current technique has no first pass")
+		}
+		if err := pass.Apply(); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("EffectPass.Apply: %w", err)
+			}
+			g.result.VertexBufferEffectApplyRefusals++
+			fmt.Fprintf(os.Stderr, "EffectPass.Apply refused: %v\n", err)
+		} else {
+			g.result.VertexBufferEffectApplies++
+		}
+	}
+
+	// Three draws, now with whatever the effect left applied. CNA answers for
+	// whether the backend can execute them; what the projection owns is that
+	// they are submitted with the right arguments and that its own guards ran
+	// first.
 	drawErr := device.DrawPrimitives(graphics.PrimitiveTypeTriangleList, 0, 1)
 	indexedErr := device.DrawIndexedPrimitives(graphics.PrimitiveTypeTriangleList, 0, 0, 4, 0, 2)
 	instancedErr := device.DrawInstancedPrimitives(graphics.PrimitiveTypeTriangleList, 0, 0, 4, 0, 2, 2)
@@ -4209,9 +4318,92 @@ func (g *stressGame) exerciseVertexBuffer() error {
 	case drawErr == nil && indexedErr == nil && instancedErr == nil:
 		g.result.VertexBufferDraws++
 	default:
-		// A backend that cannot draw without a shader. Recorded, not passed.
+		// A backend that still cannot draw. Recorded, not passed, and the
+		// reason CNA gives is printed so a reader can see whether it is still
+		// the effect dependency or something else.
 		g.result.VertexBufferDrawRefusals++
-		fmt.Fprintf(os.Stderr, "draw refused: %v / %v / %v\n", drawErr, indexedErr, instancedErr)
+		fmt.Fprintf(os.Stderr, "draw refused after apply: %v / %v / %v\n", drawErr, indexedErr, instancedErr)
+	}
+	// The six user-primitive draws, with the effect still applied. Their vertex
+	// data is the SAME stressVertex array the buffer round trip used, so the
+	// declaration CNA is given is the one FromType resolved from that type.
+	userVertices := []stressVertex{
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(0, 0, 0), Colour: framework.NewColorByInt32AndInt32AndInt32(255, 0, 0)},
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(1, 0, 0), Colour: framework.NewColorByInt32AndInt32AndInt32(0, 255, 0)},
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(0, 1, 0), Colour: framework.NewColorByInt32AndInt32AndInt32(0, 0, 255)},
+	}
+	userIndices16 := []int16{0, 1, 2}
+	userIndices32 := []int32{0, 1, 2}
+	userDeclaration := stressVertexDeclaration
+	for name, submit := range map[string]func() error{
+		"primitives": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 1)
+		},
+		"primitives+decl": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 1, userDeclaration)
+		},
+		"indexed16": func() error {
+			return graphics.GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 3, userIndices16, 0, 1)
+		},
+		"indexed32": func() error {
+			return graphics.GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 3, userIndices32, 0, 1)
+		},
+		"indexed16+decl": func() error {
+			return graphics.GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 3, userIndices16, 0, 1, userDeclaration)
+		},
+		"indexed32+decl": func() error {
+			return graphics.GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 3, userIndices32, 0, 1, userDeclaration)
+		},
+	} {
+		if err := submit(); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("DrawUser %s: %w", name, err)
+			}
+			g.result.UserPrimitiveDrawRefusals++
+			fmt.Fprintf(os.Stderr, "DrawUser %s refused: %v\n", name, err)
+			continue
+		}
+		g.result.UserPrimitiveDraws++
+	}
+	// The four guards the projection makes ITSELF, before CNA is reached.
+	for name, refuse := range map[string]func() error{
+		"nil vertex data": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, []stressVertex(nil), 0, 1, userDeclaration)
+		},
+		"nil declaration": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 1, nil)
+		},
+		"zero primitives": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 0, userDeclaration)
+		},
+		"window past the array": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndVertexDeclaration(
+				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 2, userDeclaration)
+		},
+	} {
+		if err := refuse(); err == nil {
+			return fmt.Errorf("DrawUser accepted %s", name)
+		}
+	}
+	g.result.UserPrimitiveGuardChecks++
+
+	if effect != nil {
+		if err := effect.DisposeByNone(); err != nil {
+			return fmt.Errorf("disposing the stock effect: %w", err)
+		}
+		if !effect.IsDisposed() {
+			return errors.New("the effect is not disposed after Dispose")
+		}
+		g.result.VertexBufferEffectDisposalChecks++
 	}
 
 	// The one draw guard the projection makes ITSELF, and the member that must
@@ -4923,4 +5115,43 @@ func (g *stressGame) exerciseTextureVolume() error {
 		g.result.TextureVolumeDisposalChecks++
 	}
 	return nil
+}
+
+// stockEffectDescriptor is CNA's own `.cnj` envelope for a stock effect: the
+// envelope's `type` names it and there is no separate field.
+//
+// This is the ONE shape of Effect a qualified artifact can produce. The
+// Foundation 72 probe measured CNA_GRAPHICS_CAPABILITY_COMPILED_EFFECTS FALSE
+// on HEADLESS, SOFTWARE and OPENGL33 alike, so Effect's compiled-bytecode
+// constructor is refused everywhere CNA-Go can be qualified -- and
+// cna_content_manager_load_effect's stock-descriptor path is not gated by it.
+const stockEffectDescriptor = `{"cnjVersion":1,"type":"BasicEffect"}`
+
+// loadStockEffect writes a `.cnj` stock-effect descriptor and loads it through
+// ContentManager.Load<Effect>, which is the public surface a consumer has.
+func (g *stressGame) loadStockEffect(host *framework.Game) (*graphics.Effect, error) {
+	manager := content.GameContent(host)
+	if manager == nil {
+		return nil, errors.New("the Game's ContentManager is nil")
+	}
+	root, err := os.MkdirTemp("", "cna-go-effect")
+	if err != nil {
+		return nil, err
+	}
+	// The directory outlives this call: CNA caches the loaded asset and the
+	// scenario keeps using the effect, so removing the root here would be
+	// removing a file the cache may still consult.
+	g.effectRoots = append(g.effectRoots, root)
+	if err := os.WriteFile(filepath.Join(root, "cna-go-stock-effect.cnj"), []byte(stockEffectDescriptor), 0o600); err != nil {
+		return nil, err
+	}
+	if err := manager.SetRootDirectory(root); err != nil {
+		return nil, err
+	}
+	// OpenStream is what creates the native manager; it is expected to fail for
+	// a name with no `.xnb`.
+	if _, err := manager.OpenStream("cna-go-stock-effect"); err == nil {
+		return nil, errors.New("OpenStream opened a stream for an asset with no .xnb")
+	}
+	return content.ContentManagerLoad[*graphics.Effect](manager, "cna-go-stock-effect")
 }

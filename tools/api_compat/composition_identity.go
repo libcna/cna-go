@@ -156,6 +156,11 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 			// the Type-keyed one resolves a declaration first and then calls
 			// the other, which is what the reference's does too.
 			"Microsoft.Xna.Framework.Graphics.VertexBuffer": "newVertexBuffer",
+			// Foundation 72. Effect has TWO doors -- its public compiled-bytecode
+			// constructor and ContentManager.Load<Effect> -- and both reach
+			// newEffect, which is where the whole reflected graph is built and
+			// where the CLR `this` is installed.
+			"Microsoft.Xna.Framework.Graphics.Effect": "newEffect",
 		},
 	},
 

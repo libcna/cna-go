@@ -161,6 +161,19 @@ var registry = []claimedString{
 		Value: "Invalid vertex type. {0} returned a null VertexDeclaration."},
 	{Key: "VertexTypeWrongSize", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "Invalid vertex type. The size of {0} does not match the stride of its vertex declaration."},
+	// Foundation 73. The one message the six DrawUser* generics add. The other
+	// three they throw -- NullNotAllowed, MustDrawSomething and
+	// MustBeValidIndex -- are already here, claimed by earlier members.
+	{Key: "OffsetNotValid", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "The offset must be within the valid range for this resource."},
+	// Foundation 72. The one message the Effect cluster throws with a resource
+	// string. Everything else it throws is parameterless -- all 49
+	// InvalidCastException sites in EffectParameter are
+	// `newobj InvalidCastException::.ctor()`, the array getters'
+	// ArgumentOutOfRangeException names no parameter, and
+	// set_CurrentTechnique's parent check is a bare InvalidOperationException.
+	{Key: "NotCurrentTechnique", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Cannot Apply an EffectPass that is not from the CurrentTechnique."},
 	// Foundation 69. SpriteFont's one message, thrown from TWO sites with two
 	// exception shapes: set_DefaultCharacter's ArgumentException(message) and
 	// GetIndexForCharacter's ArgumentException(message, "character").

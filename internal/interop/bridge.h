@@ -370,6 +370,98 @@ CnaGoResult cna_go_sprite_font_set_default_character(
 CnaGoResult cna_go_sprite_font_set_line_spacing(CnaGoHandle sprite_font, int32_t line_spacing);
 CnaGoResult cna_go_sprite_font_set_spacing(CnaGoHandle sprite_font, float spacing);
 CnaGoResult cna_go_sprite_font_destroy(CnaGoHandle sprite_font);
+
+/* Foundation 73 -- the six user-primitive draws. The two CNA structures are
+   filled on the C side and everything crosses cgo as scalars plus two caller
+   pointers, which is the rule every other family here follows. */
+CnaGoResult cna_go_graphics_device_draw_user_primitives(
+    CnaGoHandle device, uint32_t primitive_type, uint32_t vertex_source,
+    const void* vertex_data, CnaGoHandle vertex_declaration,
+    int32_t vertex_offset, int32_t num_vertices, int32_t primitive_count);
+CnaGoResult cna_go_graphics_device_draw_user_indexed_primitives(
+    CnaGoHandle device, uint32_t primitive_type, uint32_t vertex_source,
+    const void* vertex_data, CnaGoHandle vertex_declaration,
+    int32_t vertex_offset, int32_t num_vertices, int32_t primitive_count,
+    uint32_t index_element_size, int32_t index_offset, const void* index_data);
+
+/* Foundation 72 -- the Effect cluster. */
+CnaGoResult cna_go_sprite_batch_begin_with_effect(
+    CnaGoHandle batch,
+    uint32_t sort_mode,
+    const uint32_t* blend,
+    const int32_t* blend_mask,
+    const uint8_t* blend_factor,
+    const uint32_t* sampler,
+    const int32_t* sampler_ints,
+    float sampler_bias,
+    const uint8_t* depth_flags,
+    const uint32_t* depth_words,
+    const int32_t* depth_ints,
+    uint32_t cull_mode,
+    uint32_t fill_mode,
+    float depth_bias,
+    float slope_scale_depth_bias,
+    uint8_t multi_sample_anti_alias,
+    uint8_t scissor_test_enable,
+    CnaGoHandle effect,
+    uint8_t has_transform,
+    const float* transform);
+CnaGoResult cna_go_effect_create_compiled(
+    CnaGoHandle device, const uint8_t* effect_code, uint64_t effect_code_count, CnaGoHandle* out_effect);
+CnaGoResult cna_go_content_manager_load_effect(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length, CnaGoHandle* out_effect);
+CnaGoResult cna_go_effect_string(
+    uint32_t kind, CnaGoHandle handle, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_effect_parameter_get_info(
+    CnaGoHandle parameter, int32_t* out_rows, int32_t* out_columns,
+    uint32_t* out_class, uint32_t* out_type);
+CnaGoResult cna_go_effect_annotation_get_info(
+    CnaGoHandle annotation, int32_t* out_rows, int32_t* out_columns,
+    uint32_t* out_class, uint32_t* out_type);
+CnaGoResult cna_go_effect_parameter_set_value_string(
+    CnaGoHandle parameter, const char* value, uint64_t value_length);
+CnaGoResult cna_go_effect_annotation_get_value_vector(
+    CnaGoHandle annotation, uint32_t width, float* out_values);
+CnaGoResult cna_go_effect_annotation_get_value_matrix(CnaGoHandle annotation, float* out_values);
+CnaGoResult cna_go_effect_apply(CnaGoHandle effect);
+CnaGoResult cna_go_effect_destroy(CnaGoHandle effect);
+CnaGoResult cna_go_effect_clone(CnaGoHandle effect, CnaGoHandle* out_clone);
+CnaGoResult cna_go_effect_get_parameters(CnaGoHandle effect, CnaGoHandle* out_collection);
+CnaGoResult cna_go_effect_get_techniques(CnaGoHandle effect, CnaGoHandle* out_collection);
+CnaGoResult cna_go_effect_get_current_technique(CnaGoHandle effect, CnaGoHandle* out_technique);
+CnaGoResult cna_go_effect_set_current_technique(CnaGoHandle effect, CnaGoHandle technique);
+CnaGoResult cna_go_effect_technique_collection_get_count(CnaGoHandle collection, uint64_t* out_count);
+CnaGoResult cna_go_effect_technique_collection_get_at(CnaGoHandle collection, uint64_t index, CnaGoHandle* out_technique);
+CnaGoResult cna_go_effect_technique_collection_destroy(CnaGoHandle collection);
+CnaGoResult cna_go_effect_technique_destroy(CnaGoHandle technique);
+CnaGoResult cna_go_effect_technique_get_passes(CnaGoHandle technique, CnaGoHandle* out_collection);
+CnaGoResult cna_go_effect_technique_get_annotations(CnaGoHandle technique, CnaGoHandle* out_collection);
+CnaGoResult cna_go_effect_pass_collection_get_count(CnaGoHandle collection, uint64_t* out_count);
+CnaGoResult cna_go_effect_pass_collection_get_at(CnaGoHandle collection, uint64_t index, CnaGoHandle* out_pass);
+CnaGoResult cna_go_effect_pass_collection_destroy(CnaGoHandle collection);
+CnaGoResult cna_go_effect_pass_destroy(CnaGoHandle pass);
+CnaGoResult cna_go_effect_pass_get_annotations(CnaGoHandle pass, CnaGoHandle* out_collection);
+CnaGoResult cna_go_effect_pass_apply(CnaGoHandle pass);
+CnaGoResult cna_go_effect_parameter_collection_get_count(CnaGoHandle collection, uint64_t* out_count);
+CnaGoResult cna_go_effect_parameter_collection_get_at(CnaGoHandle collection, uint64_t index, CnaGoHandle* out_parameter);
+CnaGoResult cna_go_effect_parameter_collection_destroy(CnaGoHandle collection);
+CnaGoResult cna_go_effect_parameter_destroy(CnaGoHandle parameter);
+CnaGoResult cna_go_effect_parameter_get_elements(CnaGoHandle parameter, CnaGoHandle* out_collection);
+CnaGoResult cna_go_effect_parameter_get_structure_members(CnaGoHandle parameter, CnaGoHandle* out_collection);
+CnaGoResult cna_go_effect_parameter_get_annotations(CnaGoHandle parameter, CnaGoHandle* out_collection);
+CnaGoResult cna_go_effect_parameter_get_value(CnaGoHandle parameter, uint32_t value_type, void* out_value);
+CnaGoResult cna_go_effect_parameter_get_values(CnaGoHandle parameter, uint32_t value_type, uint64_t requested, void* destination, uint64_t capacity, uint64_t* out_count);
+CnaGoResult cna_go_effect_parameter_set_value(CnaGoHandle parameter, uint32_t value_type, const void* value);
+CnaGoResult cna_go_effect_parameter_set_values(CnaGoHandle parameter, uint32_t value_type, const void* values, uint64_t count);
+CnaGoResult cna_go_effect_parameter_set_value_texture(CnaGoHandle parameter, uint32_t texture_type, CnaGoHandle texture);
+CnaGoResult cna_go_effect_annotation_collection_get_count(CnaGoHandle collection, uint64_t* out_count);
+CnaGoResult cna_go_effect_annotation_collection_get_at(CnaGoHandle collection, uint64_t index, CnaGoHandle* out_annotation);
+CnaGoResult cna_go_effect_annotation_collection_destroy(CnaGoHandle collection);
+CnaGoResult cna_go_effect_annotation_destroy(CnaGoHandle annotation);
+CnaGoResult cna_go_effect_annotation_get_value_boolean(CnaGoHandle annotation, uint8_t* out_value);
+CnaGoResult cna_go_effect_annotation_get_value_int32(CnaGoHandle annotation, int32_t* out_value);
+CnaGoResult cna_go_effect_annotation_get_value_single(CnaGoHandle annotation, float* out_value);
+
 CnaGoResult cna_go_sprite_batch_draw_string(
     CnaGoHandle sprite_batch,
     CnaGoHandle sprite_font,
@@ -488,24 +580,6 @@ CnaGoResult cna_go_graphics_device_set_rasterizer_state(
     uint8_t multi_sample_anti_alias,
     uint8_t scissor_test_enable);
 
-CnaGoResult cna_go_sprite_batch_begin_with_states(
-    CnaGoHandle batch,
-    uint32_t sort_mode,
-    const uint32_t* blend,
-    const int32_t* blend_mask,
-    const uint8_t* blend_factor,
-    const uint32_t* sampler,
-    const int32_t* sampler_ints,
-    float sampler_bias,
-    const uint8_t* depth_flags,
-    const uint32_t* depth_words,
-    const int32_t* depth_ints,
-    uint32_t cull_mode,
-    uint32_t fill_mode,
-    float depth_bias,
-    float slope_scale_depth_bias,
-    uint8_t multi_sample_anti_alias,
-    uint8_t scissor_test_enable);
 
 CnaGoResult cna_go_render_target2d_create(
     CnaGoHandle device,

@@ -3,6 +3,7 @@ package graphics
 import (
 	"fmt"
 
+	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	"github.com/openeggbert/cna-go/internal/interop"
 )
 
@@ -59,11 +60,74 @@ func (b *SpriteBatch) BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthS
 	return b.beginWithStates(sortMode, blendState, samplerState, depthStencilState, rasterizerState)
 }
 
-// beginWithStates is the shared body: the pair guard, the null substitutions,
-// the native call, and only then the managed effects.
+// BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffect
+// is SpriteBatch::Begin(SpriteSortMode, BlendState, SamplerState,
+// DepthStencilState, RasterizerState, Effect) -- Foundation 72, and the last
+// Begin overload the type was missing.
+//
+// It forwards to the seven-argument Begin with Matrix.Identity, which is what
+// CNA's own route expresses as a NULL transform.
+//
+// A null Effect is not a refusal: SpriteBatch::SetRenderState resolves it to
+// the stock sprite effect, and CNA documents CNA_INVALID_HANDLE as selecting
+// exactly that. So the two runtimes agree, and this overload is the difference
+// between "the batch draws with the default shader" and "the batch draws with
+// mine" rather than between drawing and refusing.
+func (b *SpriteBatch) BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffect(
+	sortMode SpriteSortMode, blendState *BlendState, samplerState *SamplerState,
+	depthStencilState *DepthStencilState, rasterizerState *RasterizerState, effect *Effect,
+) error {
+	return b.beginWithEffect(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, nil)
+}
+
+// BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffectAndMatrix
+// is the seven-argument Begin every other overload funnels into.
+//
+// The transform reaches CNA as sixteen floats in row-major order, and a caller
+// that passes Matrix.Identity gets the same result as the six-argument
+// overload -- which is the identity CNA substitutes for a null transform, so
+// the two paths agree by construction rather than by coincidence.
+func (b *SpriteBatch) BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffectAndMatrix(
+	sortMode SpriteSortMode, blendState *BlendState, samplerState *SamplerState,
+	depthStencilState *DepthStencilState, rasterizerState *RasterizerState, effect *Effect,
+	transformMatrix framework.Matrix,
+) error {
+	transform := matrixToRowMajor(transformMatrix)
+	return b.beginWithEffect(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, &transform)
+}
+
+// beginWithStates is the two effect-free overloads' forwarder. It passes a nil
+// effect and a nil transform, which is EXACTLY what those two overloads pass in
+// the reference: every Begin funnels into the seven-argument one, and the two
+// short ones supply `null` and `Matrix.Identity`.
 func (b *SpriteBatch) beginWithStates(
 	sortMode SpriteSortMode, blendState *BlendState, samplerState *SamplerState,
 	depthStencilState *DepthStencilState, rasterizerState *RasterizerState,
+) error {
+	return b.beginWithEffect(sortMode, blendState, samplerState, depthStencilState, rasterizerState, nil, nil)
+}
+
+// beginWithEffect is the whole shared body: the pair guard, the null
+// substitutions, the native call, and only then the managed effects.
+//
+// # All FOUR overloads reach ONE native route
+//
+// Foundation 60 sent the two effect-free overloads to
+// `cna_sprite_batch_begin_with_states`, which cannot express an effect. Now that
+// all four exist, they all reach `cna_sprite_batch_begin_with_effect`, because
+// the REFERENCE has one Begin body and this is the route whose prototype
+// matches it: CNA documents CNA_INVALID_HANDLE as selecting the stock sprite
+// effect and a null transform as the identity, which is precisely what the two
+// short overloads supply.
+//
+// Keeping the narrower route bound as well would give one reference path two
+// native paths that could drift, which is the shape Foundation 50 accepted for
+// Draw only because CNA declares those two commands for a measured reason. Here
+// there is none: the wider route's contract contains the narrower one's.
+func (b *SpriteBatch) beginWithEffect(
+	sortMode SpriteSortMode, blendState *BlendState, samplerState *SamplerState,
+	depthStencilState *DepthStencilState, rasterizerState *RasterizerState,
+	effect *Effect, transform *[16]float32,
 ) error {
 	if b == nil {
 		return interop.ErrDisposed
@@ -100,9 +164,16 @@ func (b *SpriteBatch) beginWithStates(
 			return objectDisposedState(disposed.name)
 		}
 	}
-	if err := b.resource().BeginSpriteBatchWithStates(
+	// A disposed EFFECT is refused for the reason a disposed state object is:
+	// the reference's SetRenderState dereferences it, and CNA-Go's own object
+	// still holds a handle CNA has released.
+	if effect != nil && effect.IsDisposed() {
+		return objectDisposedState(effect.clrTypeName())
+	}
+	if err := b.resource().BeginSpriteBatchWithEffect(
 		uint32(sortMode), blendState.interopValue(), samplerState.interopValue(),
-		depthStencilState.interopValue(), rasterizerState.interopValue()); err != nil {
+		depthStencilState.interopValue(), rasterizerState.interopValue(),
+		effect.nativeResource(), transform); err != nil {
 		return err
 	}
 	// SetRenderState's managed half, in its order: the device caches the object

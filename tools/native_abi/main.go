@@ -470,6 +470,10 @@ var unboundRouteClasses = map[string]string{
 	// The route reports data a route CNA-Go already binds reports, and reading
 	// both would be two answers to one question that could disagree.
 	"REDUNDANT_READ": "the route re-reports data an already bound route carries",
+	// A WIDER bound route's contract contains this one's, and the reference has
+	// one body for both, so binding both would give one reference path two
+	// native paths that could drift.
+	"SUBSUMED": "a wider bound route expresses this one's whole contract",
 }
 
 // deliberatelyUnboundRoutes is the closed registry.
@@ -598,6 +602,21 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Member: "Microsoft.Xna.Framework.Graphics.SpriteFont::MeasureString(System.String)",
 		Class:  "CONTRACT_DIVERGENCE",
 		Detail: "measured to disagree with SpriteFont::InternalMeasure whenever the last glyph's right bearing is negative: over a font whose 'B' is kerning (-3, 6, -2), CNA measured \"B\" as 4 and the reference's own algorithm as 6, because the reference's final statement is `result.X += Math.Max(rightBearing, 0f)` and CNA adds the bearing unclamped. It also answers CNA result 1 for a character the font has no glyph and no default character for, where the reference throws ArgumentException carrying FrameworkResources.CharacterNotInFont. CNA-Go runs the reference's algorithm over the glyph table cna_sprite_font_copy_glyphs reports, so the DATA is CNA's and the arithmetic is the reference's",
+	},
+	// Foundation 72. Foundation 60 bound this one for the two effect-free Begin
+	// overloads; Foundation 72 added the other two and moved all four to
+	// cna_sprite_batch_begin_with_effect.
+	{
+		Route:  "cna_sprite_batch_begin_with_states",
+		Member: "Microsoft.Xna.Framework.Graphics.SpriteBatch::Begin(Microsoft.Xna.Framework.Graphics.SpriteSortMode,Microsoft.Xna.Framework.Graphics.BlendState)",
+		Class:  "SUBSUMED",
+		Detail: "cna_sprite_batch_begin_with_effect takes the same four state descriptors plus an effect handle and a transform, and CNA documents CNA_INVALID_HANDLE as selecting the stock sprite effect and a null transform as the identity -- which is exactly what the two effect-free overloads supply in the reference, where EVERY Begin funnels into the seven-argument one. Binding both would give one reference body two native paths that could drift",
+	},
+	{
+		Route:  "cna_effect_parameter_get_value_texture",
+		Member: "Microsoft.Xna.Framework.Graphics.EffectParameter::GetValueTexture2D()",
+		Class:  "REPRESENTATION",
+		Detail: "the route reports \"the retained handle or invalid handle for null\", and the reference's three texture getters return the SAME Texture2D, Texture3D or TextureCube OBJECT the setter was given -- it stores the managed reference alongside the D3DX handle. A handle cannot carry that identity, and building a fresh facade over it would hand back a different object with the same native half, so `p.GetValueTexture2D() == myTexture` would silently become false. The three getters refuse with a message that says so, without reaching CNA: calling the route and discarding its answer would bind it to produce a value nothing can use. The SETTER, cna_effect_parameter_set_value_texture, is bound and used -- the direction that loses nothing",
 	},
 	{
 		Route:  "cna_sprite_font_copy_characters",

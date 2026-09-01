@@ -101,7 +101,33 @@ const (
 	resourceSpriteFont
 	resourceTexture3D
 	resourceTextureCube
+	resourceEffect
+	// The eight effect VIEW kinds. Each is its own resource kind for the reason
+	// every other kind is: destruction is per-kind, and a shared kind would
+	// need a second field on Resource to say which of the eight destroy routes
+	// to call -- which is a second source of truth about the same handle.
+	resourceEffectTechniqueCollection
+	resourceEffectTechnique
+	resourceEffectPassCollection
+	resourceEffectPass
+	resourceEffectParameterCollection
+	resourceEffectParameter
+	resourceEffectAnnotationCollection
+	resourceEffectAnnotation
 )
+
+// effectViewResourceKinds maps a view kind onto its resource kind, in the order
+// the view constants declare them.
+var effectViewResourceKinds = [8]resourceKind{
+	resourceEffectTechniqueCollection,
+	resourceEffectTechnique,
+	resourceEffectPassCollection,
+	resourceEffectPass,
+	resourceEffectParameterCollection,
+	resourceEffectParameter,
+	resourceEffectAnnotationCollection,
+	resourceEffectAnnotation,
+}
 
 // FrameTime is the private tick-exact lifecycle value passed into the public
 // GameTime adapter.
@@ -342,20 +368,6 @@ func (d *Device) SetRasterizerState(value RasterizerStateValue) error {
 		return err
 	}
 	return nativeGraphicsDeviceSetRasterizerState(handle, value)
-}
-
-// BeginSpriteBatchWithStates is cna_sprite_batch_begin_with_states, which takes
-// all four descriptors at once. CNA requires every one of them, so the caller
-// resolves the reference's null defaults before it gets here.
-func (resource *Resource) BeginSpriteBatchWithStates(
-	sortMode uint32, blend BlendStateValue, sampler SamplerStateValue,
-	depth DepthStencilStateValue, rasterizer RasterizerStateValue,
-) error {
-	handle, err := resource.liveHandle(resourceSpriteBatch)
-	if err != nil {
-		return err
-	}
-	return nativeSpriteBatchBeginWithStates(handle, sortMode, blend, sampler, depth, rasterizer)
 }
 
 // CreateContentManager creates an owned game-child content manager.
@@ -813,6 +825,528 @@ func (resource *Resource) ContentAssetPath(assetName string) (string, error) {
 		return "", err
 	}
 	return nativeContentManagerAssetPath(handle, assetName)
+}
+
+// UserVertexSourceRawStream is CNA_USER_VERTEX_SOURCE_RAW_STREAM, the one
+// identity CNA-Go uses: the other four name CNA vertex value types the Graphics
+// package has no Go counterpart for, and a raw stream with an explicit
+// declaration expresses every layout they do.
+const UserVertexSourceRawStream uint32 = 0
+
+// DrawUserPrimitives is cna_graphics_device_draw_user_primitives.
+func (d *Device) DrawUserPrimitives(
+	primitiveType uint32, vertexData unsafe.Pointer, declaration *Resource,
+	vertexOffset, primitiveCount int32,
+) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	declarationHandle, err := declaration.liveHandle(resourceVertexDeclaration)
+	if err != nil {
+		return err
+	}
+	return nativeDrawUserPrimitives(handle, primitiveType, UserVertexSourceRawStream,
+		vertexData, declarationHandle, vertexOffset, 0, primitiveCount)
+}
+
+// DrawUserIndexedPrimitives is
+// cna_graphics_device_draw_user_indexed_primitives.
+func (d *Device) DrawUserIndexedPrimitives(
+	primitiveType uint32, vertexData unsafe.Pointer, declaration *Resource,
+	vertexOffset, numVertices, primitiveCount int32,
+	indexElementSize uint32, indexOffset int32, indexData unsafe.Pointer,
+) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	declarationHandle, err := declaration.liveHandle(resourceVertexDeclaration)
+	if err != nil {
+		return err
+	}
+	return nativeDrawUserIndexedPrimitives(handle, primitiveType, UserVertexSourceRawStream,
+		vertexData, declarationHandle, vertexOffset, numVertices, primitiveCount,
+		indexElementSize, indexOffset, indexData)
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 72 — the Effect cluster.
+// ---------------------------------------------------------------------------
+
+// The four collection kinds, and the eight view kinds behind them. They are
+// separate numberings because a collection's COUNT and its element ACCESS are
+// four routes each while a destroy is eight, and one shared numbering would
+// make an off-by-one route a compile-time success.
+const (
+	effectCollectionTechnique uint32 = iota
+	effectCollectionPass
+	effectCollectionParameter
+	effectCollectionAnnotation
+)
+
+const (
+	effectViewTechniqueCollection uint32 = iota
+	effectViewTechnique
+	effectViewPassCollection
+	effectViewPass
+	effectViewParameterCollection
+	effectViewParameter
+	effectViewAnnotationCollection
+	effectViewAnnotation
+)
+
+// The nine CNA_EFFECT_VALUE_* identities, and the four CNA_EFFECT_TEXTURE_*
+// ones. Both are CNA's own numbering and the Graphics package maps XNA onto
+// them explicitly rather than casting.
+const (
+	EffectValueBoolean         uint32 = 0
+	EffectValueInt32           uint32 = 1
+	EffectValueSingle          uint32 = 2
+	EffectValueMatrix          uint32 = 3
+	EffectValueMatrixTranspose uint32 = 4
+	EffectValueQuaternion      uint32 = 5
+	EffectValueVector2         uint32 = 6
+	EffectValueVector3         uint32 = 7
+	EffectValueVector4         uint32 = 8
+)
+
+const (
+	EffectTextureBase uint32 = 0
+	EffectTexture2D   uint32 = 1
+	EffectTexture3D   uint32 = 2
+	EffectTextureCube uint32 = 3
+)
+
+// The four collection kinds and the eight view kinds, exported for the Graphics
+// package, which is the only caller: an unexported identity would make every
+// call there pass a bare literal.
+const (
+	EffectCollectionTechnique  = effectCollectionTechnique
+	EffectCollectionPass       = effectCollectionPass
+	EffectCollectionParameter  = effectCollectionParameter
+	EffectCollectionAnnotation = effectCollectionAnnotation
+)
+
+const (
+	EffectViewTechniqueCollection  = effectViewTechniqueCollection
+	EffectViewTechnique            = effectViewTechnique
+	EffectViewPassCollection       = effectViewPassCollection
+	EffectViewPass                 = effectViewPass
+	EffectViewParameterCollection  = effectViewParameterCollection
+	EffectViewParameter            = effectViewParameter
+	EffectViewAnnotationCollection = effectViewAnnotationCollection
+	EffectViewAnnotation           = effectViewAnnotation
+)
+
+// The eight effect string reads, by kind.
+const (
+	EffectStringTechniqueName      = effectStringTechniqueName
+	EffectStringPassName           = effectStringPassName
+	EffectStringParameterName      = effectStringParameterName
+	EffectStringParameterSemantic  = effectStringParameterSemantic
+	EffectStringParameterValue     = effectStringParameterValue
+	EffectStringAnnotationName     = effectStringAnnotationName
+	EffectStringAnnotationSemantic = effectStringAnnotationSemantic
+	EffectStringAnnotationValue    = effectStringAnnotationValue
+)
+
+// EffectMetadata is the four values CNA_EffectParameterInfo and
+// CNA_EffectAnnotationInfo both carry, which are the same four fields in the
+// same order -- so one Go type serves both, and the two ABI structures are
+// still measured separately.
+type EffectMetadata struct {
+	RowCount       int32
+	ColumnCount    int32
+	ParameterClass uint32
+	ParameterType  uint32
+}
+
+// EffectView is an owned CNA view handle inside one effect's object graph: a
+// collection, a technique, a pass, a parameter or an annotation.
+//
+// # Why views are a distinct control block
+//
+// CNA hands out a FRESH owned handle from every accessor -- the Foundation 72
+// probe measured two cna_effect_get_parameters calls answering two different
+// handles -- and the reference answers the same managed object forever. So the
+// Graphics package asks ONCE per logical object and holds the answer, and this
+// type is what it holds.
+//
+// A view OUTLIVES its effect: the probe destroyed an effect with views alive
+// and the views still answered. So there is no destruction-order rule between
+// an effect and its graph, which is why views register under the effect's own
+// parent rather than under the effect.
+type EffectView struct {
+	resource *Resource
+	kind     uint32
+}
+
+// CreateCompiledEffect is cna_effect_create_compiled. The device handle is
+// callback-scoped, so this is reachable only from inside a lifecycle callback.
+func (d *Device) CreateCompiledEffect(effectCode []byte) (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	effect, err := nativeEffectCreateCompiled(handle, effectCode)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(effect, resourceEffect, d.manager), nil
+}
+
+// LoadContentEffect is cna_content_manager_load_effect.
+func (resource *Resource) LoadContentEffect(assetName string) (*Resource, error) {
+	handle, err := resource.liveHandle(resourceContentManager)
+	if err != nil {
+		return nil, err
+	}
+	effect, err := nativeContentManagerLoadEffect(handle, assetName)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(effect, resourceEffect, resource.parent), nil
+}
+
+// ApplyEffect is cna_effect_apply.
+func (resource *Resource) ApplyEffect() error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectApply(handle)
+}
+
+// CloneEffect is cna_effect_clone.
+func (resource *Resource) CloneEffect() (*Resource, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return nil, err
+	}
+	clone, err := nativeEffectClone(handle)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(clone, resourceEffect, resource.parent), nil
+}
+
+// registerEffectView wraps one owned view handle. Views register under the
+// EFFECT's parent, not under the effect, because a view outlives its effect and
+// a parent-child relationship would claim an ordering CNA does not have.
+func (resource *Resource) registerEffectView(handle uint64, kind uint32) *EffectView {
+	return &EffectView{
+		resource: resource.runtime.registerResource(handle, effectViewResourceKinds[kind], resource.parent),
+		kind:     kind,
+	}
+}
+
+// EffectParameters is cna_effect_get_parameters. Call it ONCE per effect.
+func (resource *Resource) EffectParameters() (*EffectView, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return nil, err
+	}
+	view, err := nativeEffectParameters(handle)
+	if err != nil {
+		return nil, err
+	}
+	return resource.registerEffectView(view, effectViewParameterCollection), nil
+}
+
+// EffectTechniques is cna_effect_get_techniques. Call it ONCE per effect.
+func (resource *Resource) EffectTechniques() (*EffectView, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return nil, err
+	}
+	view, err := nativeEffectTechniques(handle)
+	if err != nil {
+		return nil, err
+	}
+	return resource.registerEffectView(view, effectViewTechniqueCollection), nil
+}
+
+// EffectCurrentTechnique is cna_effect_get_current_technique. The handle it
+// reports is a FRESH OWNED view of whichever technique is selected -- the
+// Foundation 72 probe measured two calls answering two different handles -- so
+// it is registered like every other view and the caller disposes it after
+// matching it against the techniques it already holds. Reading it without
+// registering it leaked one handle per effect, which CNA reported at teardown
+// as "All owned C child resources must be destroyed before the game".
+func (resource *Resource) EffectCurrentTechnique() (*EffectView, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return nil, err
+	}
+	technique, err := nativeEffectCurrentTechnique(handle)
+	if err != nil {
+		return nil, err
+	}
+	if technique == 0 {
+		return nil, nil
+	}
+	return resource.registerEffectView(technique, effectViewTechnique), nil
+}
+
+// SetEffectCurrentTechnique is cna_effect_set_current_technique. A zero handle
+// is CNA_INVALID_HANDLE, which CNA documents as clearing the selection.
+func (resource *Resource) SetEffectCurrentTechnique(technique uint64) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectSetCurrentTechnique(handle, technique)
+}
+
+// BeginSpriteBatchWithEffect is cna_sprite_batch_begin_with_effect. A nil
+// effect is CNA_INVALID_HANDLE, which CNA documents as selecting the default
+// sprite effect -- what a null Effect means to the canonical call. A nil
+// transform is the identity the effect-only overload uses.
+func (resource *Resource) BeginSpriteBatchWithEffect(
+	sortMode uint32, blend BlendStateValue, sampler SamplerStateValue,
+	depth DepthStencilStateValue, rasterizer RasterizerStateValue,
+	effect *Resource, transform *[16]float32,
+) error {
+	batch, err := resource.liveHandle(resourceSpriteBatch)
+	if err != nil {
+		return err
+	}
+	var effectHandle uint64
+	if effect != nil {
+		if effectHandle, err = effect.liveHandle(resourceEffect); err != nil {
+			return err
+		}
+		if resource.runtime != effect.runtime || resource.generation != effect.generation {
+			return ErrStaleGeneration
+		}
+	}
+	return nativeSpriteBatchBeginWithEffect(batch, sortMode, blend, sampler, depth, rasterizer, effectHandle, transform)
+}
+
+// Handle is the raw view handle, for the one comparison CurrentTechnique needs.
+func (v *EffectView) Handle() (uint64, error) { return v.liveHandle() }
+
+// Dispose destroys the view through the destroy route its kind names.
+func (v *EffectView) Dispose() error {
+	if v == nil {
+		return nil
+	}
+	return v.resource.Dispose()
+}
+
+// Count is the collection count for a collection view.
+func (v *EffectView) Count(collectionKind uint32) (uint64, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeEffectCollectionCount(effectCollectionRoutes[collectionKind][0], collectionKind, handle)
+}
+
+// At is the element access for a collection view. It reports a FRESH owned
+// element handle, which the caller wraps once and keeps.
+func (v *EffectView) At(collectionKind uint32, index uint64, elementKind uint32) (*EffectView, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return nil, err
+	}
+	element, err := nativeEffectCollectionAt(effectCollectionRoutes[collectionKind][1], collectionKind, handle, index)
+	if err != nil {
+		return nil, err
+	}
+	return v.resource.registerEffectView(element, elementKind), nil
+}
+
+// effectCollectionRoutes names the canonical route behind each collection
+// operation, so a refusal reports CNA's route rather than the multiplexer's.
+var effectCollectionRoutes = [4][2]string{
+	{"cna_effect_technique_collection_get_count", "cna_effect_technique_collection_get_at"},
+	{"cna_effect_pass_collection_get_count", "cna_effect_pass_collection_get_at"},
+	{"cna_effect_parameter_collection_get_count", "cna_effect_parameter_collection_get_at"},
+	{"cna_effect_annotation_collection_get_count", "cna_effect_annotation_collection_get_at"},
+}
+
+func (v *EffectView) liveHandle() (uint64, error) {
+	if v == nil {
+		return 0, ErrDisposed
+	}
+	return v.resource.liveHandle(effectViewResourceKinds[v.kind])
+}
+
+// String reads one of the eight effect strings.
+func (v *EffectView) String(kind uint32) (string, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return "", err
+	}
+	return nativeEffectString(kind, handle)
+}
+
+// ParameterMetadata is cna_effect_parameter_get_info.
+func (v *EffectView) ParameterMetadata() (EffectMetadata, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return EffectMetadata{}, err
+	}
+	return nativeEffectParameterInfo(handle)
+}
+
+// AnnotationMetadata is cna_effect_annotation_get_info.
+func (v *EffectView) AnnotationMetadata() (EffectMetadata, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return EffectMetadata{}, err
+	}
+	return nativeEffectAnnotationInfo(handle)
+}
+
+// Elements, StructureMembers and Annotations are the three nested collections a
+// parameter reports; Passes and Annotations are a technique's; Annotations is a
+// pass's. Each returns a fresh owned view the caller keeps.
+func (v *EffectView) Elements() (*EffectView, error) {
+	return v.nested(nativeEffectParameterElements, effectViewParameterCollection)
+}
+
+func (v *EffectView) StructureMembers() (*EffectView, error) {
+	return v.nested(nativeEffectParameterStructureMembers, effectViewParameterCollection)
+}
+
+func (v *EffectView) ParameterAnnotations() (*EffectView, error) {
+	return v.nested(nativeEffectParameterAnnotations, effectViewAnnotationCollection)
+}
+
+func (v *EffectView) Passes() (*EffectView, error) {
+	return v.nested(nativeEffectTechniquePasses, effectViewPassCollection)
+}
+
+func (v *EffectView) TechniqueAnnotations() (*EffectView, error) {
+	return v.nested(nativeEffectTechniqueAnnotations, effectViewAnnotationCollection)
+}
+
+func (v *EffectView) PassAnnotations() (*EffectView, error) {
+	return v.nested(nativeEffectPassAnnotations, effectViewAnnotationCollection)
+}
+
+func (v *EffectView) nested(read func(uint64) (uint64, error), kind uint32) (*EffectView, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return nil, err
+	}
+	nested, err := read(handle)
+	if err != nil {
+		return nil, err
+	}
+	return v.resource.registerEffectView(nested, kind), nil
+}
+
+// ApplyPass is cna_effect_pass_apply.
+func (v *EffectView) ApplyPass() error {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return err
+	}
+	return nativeEffectPassApply(handle)
+}
+
+// The parameter value transfers. Every one takes CNA's own tagged identity,
+// which the Graphics package chooses from the XNA overload it is projecting.
+
+func (v *EffectView) ParameterValue(valueType uint32, out unsafe.Pointer) error {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return err
+	}
+	return nativeEffectParameterGetValue(handle, valueType, out)
+}
+
+func (v *EffectView) SetParameterValue(valueType uint32, value unsafe.Pointer) error {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return err
+	}
+	return nativeEffectParameterSetValue(handle, valueType, value)
+}
+
+func (v *EffectView) ParameterValues(valueType uint32, requested uint64, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeEffectParameterGetValues(handle, valueType, requested, destination, capacity)
+}
+
+func (v *EffectView) SetParameterValues(valueType uint32, values unsafe.Pointer, count uint64) error {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return err
+	}
+	return nativeEffectParameterSetValues(handle, valueType, values, count)
+}
+
+func (v *EffectView) SetParameterValueString(value string) error {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return err
+	}
+	return nativeEffectParameterSetValueString(handle, value)
+}
+
+func (v *EffectView) SetParameterValueTexture(textureType uint32, texture *Resource) error {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return err
+	}
+	var textureHandle uint64
+	if texture != nil {
+		textureHandle, err = texture.anyLiveHandle()
+		if err != nil {
+			return err
+		}
+	}
+	return nativeEffectParameterSetValueTexture(handle, textureType, textureHandle)
+}
+
+// The four annotation value reads that are not strings.
+
+func (v *EffectView) AnnotationBoolean() (bool, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return false, err
+	}
+	return nativeEffectAnnotationBoolean(handle)
+}
+
+func (v *EffectView) AnnotationInt32() (int32, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeEffectAnnotationInt32(handle)
+}
+
+func (v *EffectView) AnnotationSingle() (float32, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeEffectAnnotationSingle(handle)
+}
+
+func (v *EffectView) AnnotationVector(width uint32) ([4]float32, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return [4]float32{}, err
+	}
+	return nativeEffectAnnotationVector(handle, width)
+}
+
+func (v *EffectView) AnnotationMatrix() ([16]float32, error) {
+	handle, err := v.liveHandle()
+	if err != nil {
+		return [16]float32{}, err
+	}
+	return nativeEffectAnnotationMatrix(handle)
 }
 
 // ---------------------------------------------------------------------------
@@ -3019,6 +3553,24 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeSpriteFontDestroy(handle)
 	case resourceTexture3D:
 		return nativeTexture3DDestroy(handle)
+	case resourceEffect:
+		return nativeEffectDestroy(handle)
+	case resourceEffectTechniqueCollection:
+		return nativeEffectViewDestroy(effectViewTechniqueCollection, handle)
+	case resourceEffectTechnique:
+		return nativeEffectViewDestroy(effectViewTechnique, handle)
+	case resourceEffectPassCollection:
+		return nativeEffectViewDestroy(effectViewPassCollection, handle)
+	case resourceEffectPass:
+		return nativeEffectViewDestroy(effectViewPass, handle)
+	case resourceEffectParameterCollection:
+		return nativeEffectViewDestroy(effectViewParameterCollection, handle)
+	case resourceEffectParameter:
+		return nativeEffectViewDestroy(effectViewParameter, handle)
+	case resourceEffectAnnotationCollection:
+		return nativeEffectViewDestroy(effectViewAnnotationCollection, handle)
+	case resourceEffectAnnotation:
+		return nativeEffectViewDestroy(effectViewAnnotation, handle)
 	case resourceTextureCube:
 		// cna_texturecube_destroy is documented as destroying a TextureCube but
 		// NOT a RenderTargetCube, which is the same per-kind split the render

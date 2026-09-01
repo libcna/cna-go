@@ -426,6 +426,26 @@ func LoadContentSpriteFont(manager any, assetName string) (any, error) {
 	return current(manager, assetName)
 }
 
+var contentEffectLoader ContentAssetLoader
+
+// SetContentEffectLoader installs the Graphics package's Effect loader.
+func SetContentEffectLoader(load ContentAssetLoader) {
+	mu.Lock()
+	defer mu.Unlock()
+	contentEffectLoader = load
+}
+
+// LoadContentEffect loads an Effect asset.
+func LoadContentEffect(manager any, assetName string) (any, error) {
+	mu.RLock()
+	current := contentEffectLoader
+	mu.RUnlock()
+	if current == nil {
+		return nil, errors.New("no content effect loader is installed")
+	}
+	return current(manager, assetName)
+}
+
 // SetManagerSignalReader installs the framework package's reader, from that
 // package's init.
 func SetManagerSignalReader(read ManagerSignalReader) {

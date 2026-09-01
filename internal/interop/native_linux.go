@@ -416,9 +416,14 @@ func nativeGraphicsDeviceSetRasterizerState(device uint64, value RasterizerState
 		cnaBool(value.MultiSampleAntiAlias), cnaBool(value.ScissorTestEnable))))
 }
 
-func nativeSpriteBatchBeginWithStates(
+// nativeSpriteBatchBeginWithEffect is the same four descriptors plus the effect
+// and the transform. It repeats the flattening rather than sharing it, because
+// the two routes take DIFFERENT canonical prototypes and one shared builder
+// would make a prototype change on either side invisible.
+func nativeSpriteBatchBeginWithEffect(
 	batch uint64, sortMode uint32, blend BlendStateValue, sampler SamplerStateValue,
 	depth DepthStencilStateValue, rasterizer RasterizerStateValue,
+	effect uint64, transform *[16]float32,
 ) error {
 	blendWords := [10]C.uint32_t{
 		C.uint32_t(blend.AlphaBlendFunction), C.uint32_t(blend.AlphaDestinationBlend), C.uint32_t(blend.AlphaSourceBlend),
@@ -443,14 +448,25 @@ func nativeSpriteBatchBeginWithStates(
 		C.uint32_t(depth.CounterClockwiseStencilDepthBufferFail), C.uint32_t(depth.CounterClockwiseStencilPass)}
 	depthInts := [3]C.int32_t{
 		C.int32_t(depth.StencilMask), C.int32_t(depth.StencilWriteMask), C.int32_t(depth.ReferenceStencil)}
-	return resultError("cna_sprite_batch_begin_with_states", uint32(C.cna_go_sprite_batch_begin_with_states(
+	var matrix [16]C.float
+	var matrixPointer *C.float
+	hasTransform := C.uint8_t(0)
+	if transform != nil {
+		for index := range transform {
+			matrix[index] = C.float(transform[index])
+		}
+		matrixPointer = &matrix[0]
+		hasTransform = 1
+	}
+	return resultError("cna_sprite_batch_begin_with_effect", uint32(C.cna_go_sprite_batch_begin_with_effect(
 		C.CnaGoHandle(batch), C.uint32_t(sortMode),
 		&blendWords[0], &blendMask[0], &blendFactor[0],
 		&samplerWords[0], &samplerInts[0], C.float(sampler.MipMapLevelOfDetailBias),
 		&depthFlags[0], &depthWords[0], &depthInts[0],
 		C.uint32_t(rasterizer.CullMode), C.uint32_t(rasterizer.FillMode),
 		C.float(rasterizer.DepthBias), C.float(rasterizer.SlopeScaleDepthBias),
-		cnaBool(rasterizer.MultiSampleAntiAlias), cnaBool(rasterizer.ScissorTestEnable))))
+		cnaBool(rasterizer.MultiSampleAntiAlias), cnaBool(rasterizer.ScissorTestEnable),
+		C.CnaGoHandle(effect), hasTransform, matrixPointer)))
 }
 
 // cnaBool is CNA_Bool's one-byte convention, written once so seventeen call
@@ -799,6 +815,395 @@ func nativeContentManagerLoadTexture2D(manager uint64, assetName string) (uint64
 		C.CnaGoHandle(manager), data, C.uint64_t(len(assetName)), &handle))
 	runtime.KeepAlive(assetName)
 	return uint64(handle), resultError("cna_content_manager_load_texture2d", code)
+}
+
+// The two user-primitive routes. Foundation 73.
+//
+// Both take a RAW vertex stream and an explicit declaration: CNA's four TYPED
+// vertex sources name CNA_VertexPositionColor and its three siblings, which the
+// Graphics package has no Go types for, and a raw stream with a declaration
+// expresses every layout those four do and more.
+
+func nativeDrawUserPrimitives(
+	device uint64, primitiveType, vertexSource uint32, vertexData unsafe.Pointer,
+	declaration uint64, vertexOffset, numVertices, primitiveCount int32,
+) error {
+	return resultError("cna_graphics_device_draw_user_primitives",
+		uint32(C.cna_go_graphics_device_draw_user_primitives(
+			C.CnaGoHandle(device), C.uint32_t(primitiveType), C.uint32_t(vertexSource),
+			vertexData, C.CnaGoHandle(declaration),
+			C.int32_t(vertexOffset), C.int32_t(numVertices), C.int32_t(primitiveCount))))
+}
+
+func nativeDrawUserIndexedPrimitives(
+	device uint64, primitiveType, vertexSource uint32, vertexData unsafe.Pointer,
+	declaration uint64, vertexOffset, numVertices, primitiveCount int32,
+	indexElementSize uint32, indexOffset int32, indexData unsafe.Pointer,
+) error {
+	return resultError("cna_graphics_device_draw_user_indexed_primitives",
+		uint32(C.cna_go_graphics_device_draw_user_indexed_primitives(
+			C.CnaGoHandle(device), C.uint32_t(primitiveType), C.uint32_t(vertexSource),
+			vertexData, C.CnaGoHandle(declaration),
+			C.int32_t(vertexOffset), C.int32_t(numVertices), C.int32_t(primitiveCount),
+			C.uint32_t(indexElementSize), C.int32_t(indexOffset), indexData)))
+}
+
+// The Effect cluster. Foundation 72.
+//
+// Every accessor in CNA's effect API returns a FRESH owned view handle -- the
+// probe measured two cna_effect_get_parameters calls answering two different
+// handles -- while the reference's get_Parameters is one `ldfld` that answers
+// the same object forever. So the Graphics package caches each view exactly
+// once and this layer never calls an accessor twice for one logical object.
+
+func nativeEffectCreateCompiled(device uint64, code []byte) (uint64, error) {
+	var handle C.CnaGoHandle
+	var data *C.uint8_t
+	if len(code) > 0 {
+		data = (*C.uint8_t)(unsafe.Pointer(&code[0]))
+	}
+	code2 := uint32(C.cna_go_effect_create_compiled(
+		C.CnaGoHandle(device), data, C.uint64_t(len(code)), &handle))
+	runtime.KeepAlive(code)
+	if err := resultError("cna_effect_create_compiled", code2); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeContentManagerLoadEffect(manager uint64, assetName string) (uint64, error) {
+	var handle C.CnaGoHandle
+	var data *C.char
+	if len(assetName) > 0 {
+		data = (*C.char)(unsafe.Pointer(unsafe.StringData(assetName)))
+	}
+	code := uint32(C.cna_go_content_manager_load_effect(
+		C.CnaGoHandle(manager), data, C.uint64_t(len(assetName)), &handle))
+	runtime.KeepAlive(assetName)
+	if err := resultError("cna_content_manager_load_effect", code); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+// The eight effect string reads, through one trampoline selected by kind. The
+// route NAME reported on failure is the canonical one for that kind, so a
+// caller reading an error learns which CNA route refused rather than learning
+// the name of CNA-Go's own multiplexer.
+const (
+	effectStringTechniqueName uint32 = iota
+	effectStringPassName
+	effectStringParameterName
+	effectStringParameterSemantic
+	effectStringParameterValue
+	effectStringAnnotationName
+	effectStringAnnotationSemantic
+	effectStringAnnotationValue
+)
+
+var effectStringRoutes = [...]string{
+	"cna_effect_technique_copy_name",
+	"cna_effect_pass_copy_name",
+	"cna_effect_parameter_copy_name",
+	"cna_effect_parameter_copy_semantic",
+	"cna_effect_parameter_copy_value_string",
+	"cna_effect_annotation_copy_name",
+	"cna_effect_annotation_copy_semantic",
+	"cna_effect_annotation_copy_value_string",
+}
+
+func nativeEffectString(kind uint32, handle uint64) (string, error) {
+	route := "cna_effect_string"
+	if int(kind) < len(effectStringRoutes) {
+		route = effectStringRoutes[kind]
+	}
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_effect_string(C.uint32_t(kind), C.CnaGoHandle(handle), nil, 0, &byteCount))
+	if err := resultError(route, code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_effect_string(C.uint32_t(kind), C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError(route, code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+// handleOut is the shape most of this cluster takes: one input handle, one
+// output handle. The route name is passed so a refusal names the CNA route.
+func nativeEffectHandleOut(route string, call func(*C.CnaGoHandle) C.CnaGoResult) (uint64, error) {
+	var handle C.CnaGoHandle
+	if err := resultError(route, uint32(call(&handle))); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeEffectApply(effect uint64) error {
+	return resultError("cna_effect_apply", uint32(C.cna_go_effect_apply(C.CnaGoHandle(effect))))
+}
+
+func nativeEffectDestroy(effect uint64) error {
+	return resultError("cna_effect_destroy", uint32(C.cna_go_effect_destroy(C.CnaGoHandle(effect))))
+}
+
+func nativeEffectClone(effect uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_clone", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_clone(C.CnaGoHandle(effect), out)
+	})
+}
+
+func nativeEffectParameters(effect uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_get_parameters", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_get_parameters(C.CnaGoHandle(effect), out)
+	})
+}
+
+func nativeEffectTechniques(effect uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_get_techniques", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_get_techniques(C.CnaGoHandle(effect), out)
+	})
+}
+
+func nativeEffectCurrentTechnique(effect uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_get_current_technique", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_get_current_technique(C.CnaGoHandle(effect), out)
+	})
+}
+
+func nativeEffectSetCurrentTechnique(effect, technique uint64) error {
+	return resultError("cna_effect_set_current_technique",
+		uint32(C.cna_go_effect_set_current_technique(C.CnaGoHandle(effect), C.CnaGoHandle(technique))))
+}
+
+func nativeEffectCollectionCount(route string, kind uint32, collection uint64) (uint64, error) {
+	var count C.uint64_t
+	var code C.CnaGoResult
+	switch kind {
+	case effectCollectionTechnique:
+		code = C.cna_go_effect_technique_collection_get_count(C.CnaGoHandle(collection), &count)
+	case effectCollectionPass:
+		code = C.cna_go_effect_pass_collection_get_count(C.CnaGoHandle(collection), &count)
+	case effectCollectionParameter:
+		code = C.cna_go_effect_parameter_collection_get_count(C.CnaGoHandle(collection), &count)
+	default:
+		code = C.cna_go_effect_annotation_collection_get_count(C.CnaGoHandle(collection), &count)
+	}
+	if err := resultError(route, uint32(code)); err != nil {
+		return 0, err
+	}
+	return uint64(count), nil
+}
+
+func nativeEffectCollectionAt(route string, kind uint32, collection, index uint64) (uint64, error) {
+	var handle C.CnaGoHandle
+	var code C.CnaGoResult
+	switch kind {
+	case effectCollectionTechnique:
+		code = C.cna_go_effect_technique_collection_get_at(C.CnaGoHandle(collection), C.uint64_t(index), &handle)
+	case effectCollectionPass:
+		code = C.cna_go_effect_pass_collection_get_at(C.CnaGoHandle(collection), C.uint64_t(index), &handle)
+	case effectCollectionParameter:
+		code = C.cna_go_effect_parameter_collection_get_at(C.CnaGoHandle(collection), C.uint64_t(index), &handle)
+	default:
+		code = C.cna_go_effect_annotation_collection_get_at(C.CnaGoHandle(collection), C.uint64_t(index), &handle)
+	}
+	if err := resultError(route, uint32(code)); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeEffectTechniquePasses(technique uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_technique_get_passes", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_technique_get_passes(C.CnaGoHandle(technique), out)
+	})
+}
+
+func nativeEffectTechniqueAnnotations(technique uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_technique_get_annotations", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_technique_get_annotations(C.CnaGoHandle(technique), out)
+	})
+}
+
+func nativeEffectPassAnnotations(pass uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_pass_get_annotations", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_pass_get_annotations(C.CnaGoHandle(pass), out)
+	})
+}
+
+func nativeEffectPassApply(pass uint64) error {
+	return resultError("cna_effect_pass_apply", uint32(C.cna_go_effect_pass_apply(C.CnaGoHandle(pass))))
+}
+
+func nativeEffectParameterElements(parameter uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_parameter_get_elements", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_parameter_get_elements(C.CnaGoHandle(parameter), out)
+	})
+}
+
+func nativeEffectParameterStructureMembers(parameter uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_parameter_get_structure_members", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_parameter_get_structure_members(C.CnaGoHandle(parameter), out)
+	})
+}
+
+func nativeEffectParameterAnnotations(parameter uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_parameter_get_annotations", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_parameter_get_annotations(C.CnaGoHandle(parameter), out)
+	})
+}
+
+func nativeEffectParameterInfo(parameter uint64) (EffectMetadata, error) {
+	var rows, columns C.int32_t
+	var class, kind C.uint32_t
+	code := uint32(C.cna_go_effect_parameter_get_info(
+		C.CnaGoHandle(parameter), &rows, &columns, &class, &kind))
+	if err := resultError("cna_effect_parameter_get_info", code); err != nil {
+		return EffectMetadata{}, err
+	}
+	return EffectMetadata{
+		RowCount: int32(rows), ColumnCount: int32(columns),
+		ParameterClass: uint32(class), ParameterType: uint32(kind),
+	}, nil
+}
+
+func nativeEffectAnnotationInfo(annotation uint64) (EffectMetadata, error) {
+	var rows, columns C.int32_t
+	var class, kind C.uint32_t
+	code := uint32(C.cna_go_effect_annotation_get_info(
+		C.CnaGoHandle(annotation), &rows, &columns, &class, &kind))
+	if err := resultError("cna_effect_annotation_get_info", code); err != nil {
+		return EffectMetadata{}, err
+	}
+	return EffectMetadata{
+		RowCount: int32(rows), ColumnCount: int32(columns),
+		ParameterClass: uint32(class), ParameterType: uint32(kind),
+	}, nil
+}
+
+func nativeEffectParameterGetValue(parameter uint64, valueType uint32, out unsafe.Pointer) error {
+	return resultError("cna_effect_parameter_get_value", uint32(C.cna_go_effect_parameter_get_value(
+		C.CnaGoHandle(parameter), C.uint32_t(valueType), out)))
+}
+
+func nativeEffectParameterSetValue(parameter uint64, valueType uint32, value unsafe.Pointer) error {
+	return resultError("cna_effect_parameter_set_value", uint32(C.cna_go_effect_parameter_set_value(
+		C.CnaGoHandle(parameter), C.uint32_t(valueType), value)))
+}
+
+func nativeEffectParameterGetValues(parameter uint64, valueType uint32, requested uint64, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	var count C.uint64_t
+	code := uint32(C.cna_go_effect_parameter_get_values(
+		C.CnaGoHandle(parameter), C.uint32_t(valueType), C.uint64_t(requested),
+		destination, C.uint64_t(capacity), &count))
+	if err := resultError("cna_effect_parameter_get_values", code); err != nil {
+		return 0, err
+	}
+	return uint64(count), nil
+}
+
+func nativeEffectParameterSetValues(parameter uint64, valueType uint32, values unsafe.Pointer, count uint64) error {
+	return resultError("cna_effect_parameter_set_values", uint32(C.cna_go_effect_parameter_set_values(
+		C.CnaGoHandle(parameter), C.uint32_t(valueType), values, C.uint64_t(count))))
+}
+
+func nativeEffectParameterSetValueString(parameter uint64, value string) error {
+	var data *C.char
+	if len(value) > 0 {
+		data = (*C.char)(unsafe.Pointer(unsafe.StringData(value)))
+	}
+	code := uint32(C.cna_go_effect_parameter_set_value_string(
+		C.CnaGoHandle(parameter), data, C.uint64_t(len(value))))
+	runtime.KeepAlive(value)
+	return resultError("cna_effect_parameter_set_value_string", code)
+}
+
+func nativeEffectParameterSetValueTexture(parameter uint64, textureType uint32, texture uint64) error {
+	return resultError("cna_effect_parameter_set_value_texture",
+		uint32(C.cna_go_effect_parameter_set_value_texture(
+			C.CnaGoHandle(parameter), C.uint32_t(textureType), C.CnaGoHandle(texture))))
+}
+
+func nativeEffectAnnotationBoolean(annotation uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_effect_annotation_get_value_boolean(C.CnaGoHandle(annotation), &value))
+	return value != 0, resultError("cna_effect_annotation_get_value_boolean", code)
+}
+
+func nativeEffectAnnotationInt32(annotation uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_effect_annotation_get_value_int32(C.CnaGoHandle(annotation), &value))
+	return int32(value), resultError("cna_effect_annotation_get_value_int32", code)
+}
+
+func nativeEffectAnnotationSingle(annotation uint64) (float32, error) {
+	var value C.float
+	code := uint32(C.cna_go_effect_annotation_get_value_single(C.CnaGoHandle(annotation), &value))
+	return float32(value), resultError("cna_effect_annotation_get_value_single", code)
+}
+
+func nativeEffectAnnotationVector(annotation uint64, width uint32) ([4]float32, error) {
+	var values [4]C.float
+	code := uint32(C.cna_go_effect_annotation_get_value_vector(
+		C.CnaGoHandle(annotation), C.uint32_t(width), &values[0]))
+	route := "cna_effect_annotation_get_value_vector4"
+	switch width {
+	case 2:
+		route = "cna_effect_annotation_get_value_vector2"
+	case 3:
+		route = "cna_effect_annotation_get_value_vector3"
+	}
+	var result [4]float32
+	for index := range values {
+		result[index] = float32(values[index])
+	}
+	return result, resultError(route, code)
+}
+
+func nativeEffectAnnotationMatrix(annotation uint64) ([16]float32, error) {
+	var values [16]C.float
+	code := uint32(C.cna_go_effect_annotation_get_value_matrix(C.CnaGoHandle(annotation), &values[0]))
+	var result [16]float32
+	for index := range values {
+		result[index] = float32(values[index])
+	}
+	return result, resultError("cna_effect_annotation_get_value_matrix", code)
+}
+
+func nativeEffectViewDestroy(kind uint32, handle uint64) error {
+	switch kind {
+	case effectViewTechniqueCollection:
+		return resultError("cna_effect_technique_collection_destroy",
+			uint32(C.cna_go_effect_technique_collection_destroy(C.CnaGoHandle(handle))))
+	case effectViewTechnique:
+		return resultError("cna_effect_technique_destroy",
+			uint32(C.cna_go_effect_technique_destroy(C.CnaGoHandle(handle))))
+	case effectViewPassCollection:
+		return resultError("cna_effect_pass_collection_destroy",
+			uint32(C.cna_go_effect_pass_collection_destroy(C.CnaGoHandle(handle))))
+	case effectViewPass:
+		return resultError("cna_effect_pass_destroy",
+			uint32(C.cna_go_effect_pass_destroy(C.CnaGoHandle(handle))))
+	case effectViewParameterCollection:
+		return resultError("cna_effect_parameter_collection_destroy",
+			uint32(C.cna_go_effect_parameter_collection_destroy(C.CnaGoHandle(handle))))
+	case effectViewParameter:
+		return resultError("cna_effect_parameter_destroy",
+			uint32(C.cna_go_effect_parameter_destroy(C.CnaGoHandle(handle))))
+	case effectViewAnnotationCollection:
+		return resultError("cna_effect_annotation_collection_destroy",
+			uint32(C.cna_go_effect_annotation_collection_destroy(C.CnaGoHandle(handle))))
+	default:
+		return resultError("cna_effect_annotation_destroy",
+			uint32(C.cna_go_effect_annotation_destroy(C.CnaGoHandle(handle))))
+	}
 }
 
 // The ten volume/cube texture routes. Foundation 71.

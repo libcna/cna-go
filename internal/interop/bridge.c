@@ -908,36 +908,6 @@ CnaGoResult cna_go_graphics_device_set_rasterizer_state(
     return api.cna_graphics_device_set_rasterizer_state(device, &state);
 }
 
-CnaGoResult cna_go_sprite_batch_begin_with_states(
-    CnaGoHandle batch,
-    uint32_t sort_mode,
-    const uint32_t* blend,
-    const int32_t* blend_mask,
-    const uint8_t* blend_factor,
-    const uint32_t* sampler,
-    const int32_t* sampler_ints,
-    float sampler_bias,
-    const uint8_t* depth_flags,
-    const uint32_t* depth_words,
-    const int32_t* depth_ints,
-    uint32_t cull_mode,
-    uint32_t fill_mode,
-    float depth_bias,
-    float slope_scale_depth_bias,
-    uint8_t multi_sample_anti_alias,
-    uint8_t scissor_test_enable) {
-    CNA_BlendState blendState;
-    CNA_SamplerState samplerState;
-    CNA_DepthStencilState depthState;
-    CNA_RasterizerState rasterizerState;
-    cna_go_fill_blend_state(&blendState, blend, blend_mask[0], blend_factor);
-    cna_go_fill_sampler_state(&samplerState, sampler, sampler_ints, sampler_bias);
-    cna_go_fill_depth_stencil_state(&depthState, depth_flags, depth_words, depth_ints);
-    cna_go_fill_rasterizer_state(&rasterizerState, cull_mode, fill_mode, depth_bias,
-                                 slope_scale_depth_bias, multi_sample_anti_alias, scissor_test_enable);
-    return api.cna_sprite_batch_begin_with_states(
-        batch, sort_mode, &blendState, &samplerState, &depthState, &rasterizerState);
-}
 
 CnaGoResult cna_go_render_target2d_create(
     CnaGoHandle device,
@@ -1514,6 +1484,402 @@ CnaGoResult cna_go_content_manager_copy_asset_path(
     char* destination, uint64_t capacity, uint64_t* out_bytes) {
     return api.cna_content_manager_copy_asset_path(
         content_manager, cna_go_view(asset_name, asset_name_length), destination, capacity, out_bytes);
+}
+
+/* Foundation 73 -- the six user-primitive draws. */
+static void cna_go_fill_user_primitives(
+    CNA_UserPrimitives* primitives, uint32_t primitive_type, uint32_t vertex_source,
+    const void* vertex_data, CnaGoHandle vertex_declaration,
+    int32_t vertex_offset, int32_t num_vertices, int32_t primitive_count) {
+    memset(primitives, 0, sizeof(*primitives));
+    primitives->struct_size = (uint32_t)sizeof(*primitives);
+    primitives->struct_version = 1;
+    primitives->primitive_type = primitive_type;
+    primitives->vertex_source = vertex_source;
+    primitives->vertex_data = vertex_data;
+    primitives->vertex_declaration = vertex_declaration;
+    primitives->vertex_offset = vertex_offset;
+    primitives->num_vertices = num_vertices;
+    primitives->primitive_count = primitive_count;
+}
+
+CnaGoResult cna_go_graphics_device_draw_user_primitives(
+    CnaGoHandle device, uint32_t primitive_type, uint32_t vertex_source,
+    const void* vertex_data, CnaGoHandle vertex_declaration,
+    int32_t vertex_offset, int32_t num_vertices, int32_t primitive_count) {
+    CNA_UserPrimitives primitives;
+    cna_go_fill_user_primitives(&primitives, primitive_type, vertex_source, vertex_data,
+        vertex_declaration, vertex_offset, num_vertices, primitive_count);
+    return api.cna_graphics_device_draw_user_primitives(device, &primitives);
+}
+
+CnaGoResult cna_go_graphics_device_draw_user_indexed_primitives(
+    CnaGoHandle device, uint32_t primitive_type, uint32_t vertex_source,
+    const void* vertex_data, CnaGoHandle vertex_declaration,
+    int32_t vertex_offset, int32_t num_vertices, int32_t primitive_count,
+    uint32_t index_element_size, int32_t index_offset, const void* index_data) {
+    CNA_UserPrimitives primitives;
+    CNA_UserIndices indices;
+    cna_go_fill_user_primitives(&primitives, primitive_type, vertex_source, vertex_data,
+        vertex_declaration, vertex_offset, num_vertices, primitive_count);
+    memset(&indices, 0, sizeof(indices));
+    indices.struct_size = (uint32_t)sizeof(indices);
+    indices.struct_version = 1;
+    indices.index_element_size = index_element_size;
+    indices.index_offset = index_offset;
+    indices.index_data = index_data;
+    return api.cna_graphics_device_draw_user_indexed_primitives(device, &primitives, &indices);
+}
+
+/* Foundation 72 -- the Effect cluster. */
+/* The effect-bearing Begin. CNA expresses BOTH canonical overloads with one
+   route: a null transform is the identity the effect-only overload uses, and
+   CNA_INVALID_HANDLE selects the default sprite effect, which is what a null
+   Effect means to the canonical call. */
+CnaGoResult cna_go_sprite_batch_begin_with_effect(
+    CnaGoHandle batch,
+    uint32_t sort_mode,
+    const uint32_t* blend,
+    const int32_t* blend_mask,
+    const uint8_t* blend_factor,
+    const uint32_t* sampler,
+    const int32_t* sampler_ints,
+    float sampler_bias,
+    const uint8_t* depth_flags,
+    const uint32_t* depth_words,
+    const int32_t* depth_ints,
+    uint32_t cull_mode,
+    uint32_t fill_mode,
+    float depth_bias,
+    float slope_scale_depth_bias,
+    uint8_t multi_sample_anti_alias,
+    uint8_t scissor_test_enable,
+    CnaGoHandle effect,
+    uint8_t has_transform,
+    const float* transform) {
+    CNA_BlendState blendState;
+    CNA_SamplerState samplerState;
+    CNA_DepthStencilState depthState;
+    CNA_RasterizerState rasterizerState;
+    CNA_Matrix matrix;
+    cna_go_fill_blend_state(&blendState, blend, blend_mask[0], blend_factor);
+    cna_go_fill_sampler_state(&samplerState, sampler, sampler_ints, sampler_bias);
+    cna_go_fill_depth_stencil_state(&depthState, depth_flags, depth_words, depth_ints);
+    cna_go_fill_rasterizer_state(&rasterizerState, cull_mode, fill_mode, depth_bias,
+                                 slope_scale_depth_bias, multi_sample_anti_alias, scissor_test_enable);
+    if (has_transform != 0) {
+        memcpy(&matrix, transform, sizeof(matrix));
+    }
+    return api.cna_sprite_batch_begin_with_effect(
+        batch, sort_mode, &blendState, &samplerState, &depthState, &rasterizerState,
+        effect, has_transform != 0 ? &matrix : NULL);
+}
+
+CnaGoResult cna_go_effect_create_compiled(
+    CnaGoHandle device, const uint8_t* effect_code, uint64_t effect_code_count, CnaGoHandle* out_effect) {
+    return api.cna_effect_create_compiled(device, effect_code, effect_code_count, out_effect);
+}
+
+CnaGoResult cna_go_content_manager_load_effect(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length, CnaGoHandle* out_effect) {
+    return api.cna_content_manager_load_effect(
+        content_manager, cna_go_view(asset_name, asset_name_length), out_effect);
+}
+
+/* The six string reads in the effect cluster share ONE trampoline, selected by a
+   kind, because their size-then-copy pair is identical in every one and six
+   copies of it would be six chances to pair the wrong two routes.
+   A zero capacity asks only for the size. */
+#define CNA_GO_EFFECT_STRING_TECHNIQUE_NAME 0u
+#define CNA_GO_EFFECT_STRING_PASS_NAME 1u
+#define CNA_GO_EFFECT_STRING_PARAMETER_NAME 2u
+#define CNA_GO_EFFECT_STRING_PARAMETER_SEMANTIC 3u
+#define CNA_GO_EFFECT_STRING_PARAMETER_VALUE 4u
+#define CNA_GO_EFFECT_STRING_ANNOTATION_NAME 5u
+#define CNA_GO_EFFECT_STRING_ANNOTATION_SEMANTIC 6u
+#define CNA_GO_EFFECT_STRING_ANNOTATION_VALUE 7u
+
+CnaGoResult cna_go_effect_string(
+    uint32_t kind, CnaGoHandle handle, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    if (capacity == 0) {
+        switch (kind) {
+        case CNA_GO_EFFECT_STRING_TECHNIQUE_NAME:
+            return api.cna_effect_technique_get_name_byte_count(handle, out_bytes);
+        case CNA_GO_EFFECT_STRING_PASS_NAME:
+            return api.cna_effect_pass_get_name_byte_count(handle, out_bytes);
+        case CNA_GO_EFFECT_STRING_PARAMETER_NAME:
+            return api.cna_effect_parameter_get_name_byte_count(handle, out_bytes);
+        case CNA_GO_EFFECT_STRING_PARAMETER_SEMANTIC:
+            return api.cna_effect_parameter_get_semantic_byte_count(handle, out_bytes);
+        case CNA_GO_EFFECT_STRING_PARAMETER_VALUE:
+            return api.cna_effect_parameter_get_value_string_byte_count(handle, out_bytes);
+        case CNA_GO_EFFECT_STRING_ANNOTATION_NAME:
+            return api.cna_effect_annotation_get_name_byte_count(handle, out_bytes);
+        case CNA_GO_EFFECT_STRING_ANNOTATION_SEMANTIC:
+            return api.cna_effect_annotation_get_semantic_byte_count(handle, out_bytes);
+        case CNA_GO_EFFECT_STRING_ANNOTATION_VALUE:
+            return api.cna_effect_annotation_get_value_string_byte_count(handle, out_bytes);
+        default:
+            return CNA_GO_RESULT_INVALID_ARGUMENT;
+        }
+    }
+    switch (kind) {
+    case CNA_GO_EFFECT_STRING_TECHNIQUE_NAME:
+        return api.cna_effect_technique_copy_name(handle, destination, capacity, out_bytes);
+    case CNA_GO_EFFECT_STRING_PASS_NAME:
+        return api.cna_effect_pass_copy_name(handle, destination, capacity, out_bytes);
+    case CNA_GO_EFFECT_STRING_PARAMETER_NAME:
+        return api.cna_effect_parameter_copy_name(handle, destination, capacity, out_bytes);
+    case CNA_GO_EFFECT_STRING_PARAMETER_SEMANTIC:
+        return api.cna_effect_parameter_copy_semantic(handle, destination, capacity, out_bytes);
+    case CNA_GO_EFFECT_STRING_PARAMETER_VALUE:
+        return api.cna_effect_parameter_copy_value_string(handle, destination, capacity, out_bytes);
+    case CNA_GO_EFFECT_STRING_ANNOTATION_NAME:
+        return api.cna_effect_annotation_copy_name(handle, destination, capacity, out_bytes);
+    case CNA_GO_EFFECT_STRING_ANNOTATION_SEMANTIC:
+        return api.cna_effect_annotation_copy_semantic(handle, destination, capacity, out_bytes);
+    case CNA_GO_EFFECT_STRING_ANNOTATION_VALUE:
+        return api.cna_effect_annotation_copy_value_string(handle, destination, capacity, out_bytes);
+    default:
+        return CNA_GO_RESULT_INVALID_ARGUMENT;
+    }
+}
+
+CnaGoResult cna_go_effect_parameter_get_info(
+    CnaGoHandle parameter, int32_t* out_rows, int32_t* out_columns,
+    uint32_t* out_class, uint32_t* out_type) {
+    CNA_EffectParameterInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_effect_parameter_get_info(parameter, &info);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_rows = info.row_count;
+    *out_columns = info.column_count;
+    *out_class = info.parameter_class;
+    *out_type = info.parameter_type;
+    return result;
+}
+
+CnaGoResult cna_go_effect_annotation_get_info(
+    CnaGoHandle annotation, int32_t* out_rows, int32_t* out_columns,
+    uint32_t* out_class, uint32_t* out_type) {
+    CNA_EffectAnnotationInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_effect_annotation_get_info(annotation, &info);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_rows = info.row_count;
+    *out_columns = info.column_count;
+    *out_class = info.parameter_class;
+    *out_type = info.parameter_type;
+    return result;
+}
+
+CnaGoResult cna_go_effect_parameter_set_value_string(
+    CnaGoHandle parameter, const char* value, uint64_t value_length) {
+    return api.cna_effect_parameter_set_value_string(parameter, cna_go_view(value, value_length));
+}
+
+/* The three annotation vector reads share one trampoline selected by WIDTH, and
+   the destination is always four floats: a Vector2 read writes two of them and
+   a Vector3 three, so one Go buffer serves all three and no CNA struct crosses
+   cgo. */
+CnaGoResult cna_go_effect_annotation_get_value_vector(
+    CnaGoHandle annotation, uint32_t width, float* out_values) {
+    CNA_Vector2 v2;
+    CNA_Vector3 v3;
+    CNA_Vector4 v4;
+    CnaGoResult result;
+    switch (width) {
+    case 2u:
+        result = api.cna_effect_annotation_get_value_vector2(annotation, &v2);
+        if (result == CNA_GO_RESULT_SUCCESS) { out_values[0] = v2.x; out_values[1] = v2.y; }
+        return result;
+    case 3u:
+        result = api.cna_effect_annotation_get_value_vector3(annotation, &v3);
+        if (result == CNA_GO_RESULT_SUCCESS) { out_values[0] = v3.x; out_values[1] = v3.y; out_values[2] = v3.z; }
+        return result;
+    case 4u:
+        result = api.cna_effect_annotation_get_value_vector4(annotation, &v4);
+        if (result == CNA_GO_RESULT_SUCCESS) {
+            out_values[0] = v4.x; out_values[1] = v4.y; out_values[2] = v4.z; out_values[3] = v4.w;
+        }
+        return result;
+    default:
+        return CNA_GO_RESULT_INVALID_ARGUMENT;
+    }
+}
+
+CnaGoResult cna_go_effect_annotation_get_value_matrix(CnaGoHandle annotation, float* out_values) {
+    CNA_Matrix matrix;
+    CnaGoResult result;
+    memset(&matrix, 0, sizeof(matrix));
+    result = api.cna_effect_annotation_get_value_matrix(annotation, &matrix);
+    if (result == CNA_GO_RESULT_SUCCESS) {
+        memcpy(out_values, &matrix, sizeof(matrix));
+    }
+    return result;
+}
+
+CnaGoResult cna_go_effect_apply(CnaGoHandle effect) {
+    return api.cna_effect_apply(effect);
+}
+
+CnaGoResult cna_go_effect_destroy(CnaGoHandle effect) {
+    return api.cna_effect_destroy(effect);
+}
+
+CnaGoResult cna_go_effect_clone(CnaGoHandle effect, CnaGoHandle* out_clone) {
+    return api.cna_effect_clone(effect, out_clone);
+}
+
+CnaGoResult cna_go_effect_get_parameters(CnaGoHandle effect, CnaGoHandle* out_collection) {
+    return api.cna_effect_get_parameters(effect, out_collection);
+}
+
+CnaGoResult cna_go_effect_get_techniques(CnaGoHandle effect, CnaGoHandle* out_collection) {
+    return api.cna_effect_get_techniques(effect, out_collection);
+}
+
+CnaGoResult cna_go_effect_get_current_technique(CnaGoHandle effect, CnaGoHandle* out_technique) {
+    return api.cna_effect_get_current_technique(effect, out_technique);
+}
+
+CnaGoResult cna_go_effect_set_current_technique(CnaGoHandle effect, CnaGoHandle technique) {
+    return api.cna_effect_set_current_technique(effect, technique);
+}
+
+CnaGoResult cna_go_effect_technique_collection_get_count(CnaGoHandle collection, uint64_t* out_count) {
+    return api.cna_effect_technique_collection_get_count(collection, out_count);
+}
+
+CnaGoResult cna_go_effect_technique_collection_get_at(CnaGoHandle collection, uint64_t index, CnaGoHandle* out_technique) {
+    return api.cna_effect_technique_collection_get_at(collection, index, out_technique);
+}
+
+CnaGoResult cna_go_effect_technique_collection_destroy(CnaGoHandle collection) {
+    return api.cna_effect_technique_collection_destroy(collection);
+}
+
+CnaGoResult cna_go_effect_technique_destroy(CnaGoHandle technique) {
+    return api.cna_effect_technique_destroy(technique);
+}
+
+CnaGoResult cna_go_effect_technique_get_passes(CnaGoHandle technique, CnaGoHandle* out_collection) {
+    return api.cna_effect_technique_get_passes(technique, out_collection);
+}
+
+CnaGoResult cna_go_effect_technique_get_annotations(CnaGoHandle technique, CnaGoHandle* out_collection) {
+    return api.cna_effect_technique_get_annotations(technique, out_collection);
+}
+
+CnaGoResult cna_go_effect_pass_collection_get_count(CnaGoHandle collection, uint64_t* out_count) {
+    return api.cna_effect_pass_collection_get_count(collection, out_count);
+}
+
+CnaGoResult cna_go_effect_pass_collection_get_at(CnaGoHandle collection, uint64_t index, CnaGoHandle* out_pass) {
+    return api.cna_effect_pass_collection_get_at(collection, index, out_pass);
+}
+
+CnaGoResult cna_go_effect_pass_collection_destroy(CnaGoHandle collection) {
+    return api.cna_effect_pass_collection_destroy(collection);
+}
+
+CnaGoResult cna_go_effect_pass_destroy(CnaGoHandle pass) {
+    return api.cna_effect_pass_destroy(pass);
+}
+
+CnaGoResult cna_go_effect_pass_get_annotations(CnaGoHandle pass, CnaGoHandle* out_collection) {
+    return api.cna_effect_pass_get_annotations(pass, out_collection);
+}
+
+CnaGoResult cna_go_effect_pass_apply(CnaGoHandle pass) {
+    return api.cna_effect_pass_apply(pass);
+}
+
+CnaGoResult cna_go_effect_parameter_collection_get_count(CnaGoHandle collection, uint64_t* out_count) {
+    return api.cna_effect_parameter_collection_get_count(collection, out_count);
+}
+
+CnaGoResult cna_go_effect_parameter_collection_get_at(CnaGoHandle collection, uint64_t index, CnaGoHandle* out_parameter) {
+    return api.cna_effect_parameter_collection_get_at(collection, index, out_parameter);
+}
+
+CnaGoResult cna_go_effect_parameter_collection_destroy(CnaGoHandle collection) {
+    return api.cna_effect_parameter_collection_destroy(collection);
+}
+
+CnaGoResult cna_go_effect_parameter_destroy(CnaGoHandle parameter) {
+    return api.cna_effect_parameter_destroy(parameter);
+}
+
+CnaGoResult cna_go_effect_parameter_get_elements(CnaGoHandle parameter, CnaGoHandle* out_collection) {
+    return api.cna_effect_parameter_get_elements(parameter, out_collection);
+}
+
+CnaGoResult cna_go_effect_parameter_get_structure_members(CnaGoHandle parameter, CnaGoHandle* out_collection) {
+    return api.cna_effect_parameter_get_structure_members(parameter, out_collection);
+}
+
+CnaGoResult cna_go_effect_parameter_get_annotations(CnaGoHandle parameter, CnaGoHandle* out_collection) {
+    return api.cna_effect_parameter_get_annotations(parameter, out_collection);
+}
+
+CnaGoResult cna_go_effect_parameter_get_value(CnaGoHandle parameter, uint32_t value_type, void* out_value) {
+    return api.cna_effect_parameter_get_value(parameter, value_type, out_value);
+}
+
+CnaGoResult cna_go_effect_parameter_get_values(CnaGoHandle parameter, uint32_t value_type, uint64_t requested, void* destination, uint64_t capacity, uint64_t* out_count) {
+    return api.cna_effect_parameter_get_values(parameter, value_type, requested, destination, capacity, out_count);
+}
+
+CnaGoResult cna_go_effect_parameter_set_value(CnaGoHandle parameter, uint32_t value_type, const void* value) {
+    return api.cna_effect_parameter_set_value(parameter, value_type, value);
+}
+
+CnaGoResult cna_go_effect_parameter_set_values(CnaGoHandle parameter, uint32_t value_type, const void* values, uint64_t count) {
+    return api.cna_effect_parameter_set_values(parameter, value_type, values, count);
+}
+
+
+CnaGoResult cna_go_effect_parameter_set_value_texture(CnaGoHandle parameter, uint32_t texture_type, CnaGoHandle texture) {
+    return api.cna_effect_parameter_set_value_texture(parameter, texture_type, texture);
+}
+
+CnaGoResult cna_go_effect_annotation_collection_get_count(CnaGoHandle collection, uint64_t* out_count) {
+    return api.cna_effect_annotation_collection_get_count(collection, out_count);
+}
+
+CnaGoResult cna_go_effect_annotation_collection_get_at(CnaGoHandle collection, uint64_t index, CnaGoHandle* out_annotation) {
+    return api.cna_effect_annotation_collection_get_at(collection, index, out_annotation);
+}
+
+CnaGoResult cna_go_effect_annotation_collection_destroy(CnaGoHandle collection) {
+    return api.cna_effect_annotation_collection_destroy(collection);
+}
+
+CnaGoResult cna_go_effect_annotation_destroy(CnaGoHandle annotation) {
+    return api.cna_effect_annotation_destroy(annotation);
+}
+
+CnaGoResult cna_go_effect_annotation_get_value_boolean(CnaGoHandle annotation, uint8_t* out_value) {
+    return api.cna_effect_annotation_get_value_boolean(annotation, out_value);
+}
+
+CnaGoResult cna_go_effect_annotation_get_value_int32(CnaGoHandle annotation, int32_t* out_value) {
+    return api.cna_effect_annotation_get_value_int32(annotation, out_value);
+}
+
+CnaGoResult cna_go_effect_annotation_get_value_single(CnaGoHandle annotation, float* out_value) {
+    return api.cna_effect_annotation_get_value_single(annotation, out_value);
 }
 
 /* Foundation 71 -- the volume and cube texture families. */

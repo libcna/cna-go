@@ -111,6 +111,25 @@ func init() {
 		}
 		return newSpriteFont(font, texture, info, glyphs), nil
 	})
+	// Foundation 72. The Content package's fourth reach. CNA's effect loader
+	// reads three shapes -- a compiled `.xnb`, a `.cnj` naming a stock effect,
+	// and a `.cnj` carrying shader source -- and only the first is gated by
+	// CNA_GRAPHICS_CAPABILITY_COMPILED_EFFECTS, so this route reaches a real
+	// Effect on artifacts where Effect's own constructor cannot.
+	servicebridge.SetContentEffectLoader(func(manager any, assetName string) (any, error) {
+		resource, typed := manager.(*interop.Resource)
+		if !typed || resource == nil {
+			return nil, interop.ErrDisposed
+		}
+		effect, err := resource.LoadContentEffect(assetName)
+		if err != nil {
+			return nil, err
+		}
+		// The device is left nil for the reason a loaded texture's is: it is
+		// not reachable from the manager resource, and the reference's loaded
+		// effect carries the device its ContentManager resolved.
+		return newEffect(nil, effect)
+	})
 	servicebridge.SetDeviceFacadeSignalReleaser(func(facade any) error {
 		device, typed := facade.(*GraphicsDevice)
 		if !typed || device == nil {

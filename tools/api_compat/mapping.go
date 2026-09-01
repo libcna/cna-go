@@ -1126,6 +1126,79 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|SupportedDisplayModes": true,
 		"property-get|MonitorHandle":         true,
 	},
+	// Foundation 72. The Effect cluster's thirty-six readers.
+	//
+	// Every one is a field read over state the reference's CONSTRUCTOR filled
+	// from D3DX reflection, and the whole graph is built before anyone can read
+	// it -- which is exactly what CNA-Go does, once, at construction. So none
+	// of them reaches a runtime in either implementation.
+	//
+	// The four collections' members are the same managed list walk
+	// DisplayModeCollection's already are: get_Count is one forwarded
+	// List<T>.Count, both indexers are bounds-checked reads that answer NULL
+	// rather than throwing, GetEnumerator forwards to the list's own, and
+	// GetParameterBySemantic is a linear scan with String.Compare.
+	//
+	// Deliberately ABSENT and therefore fallible: every SetValue, every
+	// GetValue*, EffectPass::Apply, Effect::Clone, Effect::OnApply and
+	// set_CurrentTechnique. Each of those reaches D3DX in the reference and
+	// CNA here, and each carries a real refusal -- InvalidCastException from a
+	// value member, InvalidOperationException from Apply and the technique
+	// setter, ObjectDisposedException from both.
+	"Microsoft.Xna.Framework.Graphics.Effect": {
+		"property-get|Parameters":       true,
+		"property-get|Techniques":       true,
+		"property-get|CurrentTechnique": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.EffectTechnique": {
+		"property-get|Name":        true,
+		"property-get|Passes":      true,
+		"property-get|Annotations": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.EffectPass": {
+		"property-get|Name":        true,
+		"property-get|Annotations": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.EffectParameter": {
+		"property-get|Name":             true,
+		"property-get|Semantic":         true,
+		"property-get|RowCount":         true,
+		"property-get|ColumnCount":      true,
+		"property-get|ParameterClass":   true,
+		"property-get|ParameterType":    true,
+		"property-get|Elements":         true,
+		"property-get|StructureMembers": true,
+		"property-get|Annotations":      true,
+	},
+	"Microsoft.Xna.Framework.Graphics.EffectAnnotation": {
+		"property-get|Name":           true,
+		"property-get|Semantic":       true,
+		"property-get|RowCount":       true,
+		"property-get|ColumnCount":    true,
+		"property-get|ParameterClass": true,
+		"property-get|ParameterType":  true,
+	},
+	"Microsoft.Xna.Framework.Graphics.EffectTechniqueCollection": {
+		"property-get|Count":   true,
+		"property-get|Item":    true,
+		"method|GetEnumerator": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.EffectPassCollection": {
+		"property-get|Count":   true,
+		"property-get|Item":    true,
+		"method|GetEnumerator": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.EffectParameterCollection": {
+		"property-get|Count":            true,
+		"property-get|Item":             true,
+		"method|GetEnumerator":          true,
+		"method|GetParameterBySemantic": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.EffectAnnotationCollection": {
+		"property-get|Count":   true,
+		"property-get|Item":    true,
+		"method|GetEnumerator": true,
+	},
 	// Foundation 71. TextureCube's one and Texture3D's three. Every one is
 	//
 	//	get_Size    ldarg.0; ldfld _size;   ret
@@ -1923,6 +1996,28 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 		return mapped
 	}
 	if inner, ok := genericTypeArgument(raw, "System.Collections.Generic.IEnumerator`1["); ok {
+		return frameworkQualified(owner, "Iterator") + "[" + mapType(s, byIdentity, owner, inner) + "]"
+	}
+	// Foundation 72. System.Collections.Generic.List<T>.Enumerator, which the
+	// Effect cluster's four collections return DIRECTLY from GetEnumerator
+	// rather than boxing as IEnumerator<T> the way DisplayModeCollection does.
+	//
+	// It is the same projection, because it is the same contract: List<T>'s
+	// enumerator IS an IEnumerator<T>, and the settled collection rule already
+	// says IEnumerator<T> is Iterator<T>. Before this it fell through to `any`,
+	// which is an unmeasured degradation of exactly the kind the StringBuilder
+	// position had.
+	//
+	// The concrete-enumerator rule does NOT apply: it is for a collection that
+	// declares its OWN public enumerator type, as TouchCollection does, and
+	// none of these four declares one -- they hand out the BCL list's.
+	//
+	// One difference is recorded rather than hidden. List<T>.Enumerator is a
+	// STRUCT, so a C# caller who copies it gets an independent cursor, and a Go
+	// interface value cannot express that. The four lists here are built in a
+	// constructor and never mutated, so the version check that struct carries
+	// has nothing to detect either.
+	if inner, ok := genericTypeArgument(raw, "System.Collections.Generic.List`1+Enumerator["); ok {
 		return frameworkQualified(owner, "Iterator") + "[" + mapType(s, byIdentity, owner, inner) + "]"
 	}
 	// System.EventHandler<T> is the delegate every one of the 49 public CLR

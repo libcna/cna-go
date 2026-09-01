@@ -27,17 +27,25 @@ import (
 //
 //	*graphics.Texture2D    cna_content_manager_load_texture2d
 //	*graphics.SpriteFont   cna_content_manager_load_sprite_font
+//	*graphics.Effect       cna_content_manager_load_effect
 //
 // A T outside that set is refused BY NAME, which is the same shape the texture
 // transfer rule takes: the CLR would fail at runtime for an asset whose reader
 // does not match, and reporting the type is more useful than reporting a cast.
 //
-// SoundEffect, TextureCube and Effect have CNA routes too and are absent here
-// for one reason each: CNA-Go does not project those types yet. Each is a
-// missing TYPE rather than a missing loader, and adding a loader for a type
-// that has no Go identity would be a route with nothing to return. SpriteFont
-// left that list in Foundation 69, when the type became real -- which is the
-// rule working, not an exception to it.
+// SoundEffect has a CNA route too and is absent here for one reason: CNA-Go
+// does not project that type yet. It is a missing TYPE rather than a missing
+// loader, and adding a loader for a type that has no Go identity would be a
+// route with nothing to return. SpriteFont left that list in Foundation 69 and
+// Effect in Foundation 72, each when its type became real -- which is the rule
+// working, not an exception to it.
+//
+// TextureCube became real in Foundation 71 and is still absent, for a DIFFERENT
+// reason worth naming: cna_content_manager_load_texture_cube exists, but the
+// type's own transfers are refused by every qualified renderer, so a loader
+// would hand back an object whose data members cannot be reached. That is a
+// renderer limitation rather than a missing type, and it is recorded rather
+// than papered over with a loader nothing can use.
 
 // errContentUnsupportedAsset projects the refusal a T outside the closed set
 // gets. The reference has no counterpart -- its Load<T> would throw
@@ -76,6 +84,20 @@ func ContentManagerLoad[T any](manager *ContentManager, assetName string) (T, er
 			return zero, err
 		}
 		asset, loadErr := servicebridge.LoadContentTexture2D(resource, assetName)
+		if loadErr != nil {
+			return zero, loadErr
+		}
+		loaded, ok := asset.(T)
+		if !ok {
+			return zero, errContentUnsupportedAsset
+		}
+		return loaded, nil
+	case *graphics.Effect:
+		resource, err := manager.native()
+		if err != nil {
+			return zero, err
+		}
+		asset, loadErr := servicebridge.LoadContentEffect(resource, assetName)
 		if loadErr != nil {
 			return zero, loadErr
 		}
