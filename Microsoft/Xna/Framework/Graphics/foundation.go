@@ -178,10 +178,29 @@ func (d *GraphicsDevice) ClearByColor(color framework.Color) error {
 	)
 }
 
-// Texture2D is an OWNED, generation-checked native texture.
+// Texture2D is an OWNED, generation-checked native texture, composed over the
+// projected base chain:
+//
+//	GraphicsResource -> Texture -> Texture2D
+//
+// The native handle is NOT here. It lives on the composed GraphicsResource,
+// exactly where the reference's `_internalHandle` lives, so there is one native
+// owner per logical object; what this type keeps is what the reference keeps on
+// it, which is the two dimensions:
+//
+//	.field int32 _width
+//	.field int32 _height
+//
+// Both are stored once by Texture2D::InitializeDescription, and from the
+// D3DSURFACE_DESC of the CREATED surface rather than from the constructor's
+// arguments. CNA-Go stores CNA's reported description for the same reason and
+// from the same moment.
 type Texture2D struct {
-	resource *interop.Resource
-	info     interop.TextureInfo
+	// texture is the composed Texture. Private named composition, never
+	// embedding, and no accessor for it.
+	texture *Texture
+	width   int32
+	height  int32
 }
 
 func Texture2DFromStreamByGraphicsDeviceAndStream(device *GraphicsDevice, stream io.Reader) (*Texture2D, error) {
@@ -199,7 +218,43 @@ func Texture2DFromStreamByGraphicsDeviceAndStream(device *GraphicsDevice, stream
 	if err != nil {
 		return nil, err
 	}
-	return &Texture2D{resource: resource, info: info}, nil
+	return newTexture2D(device, resource, info, nil), nil
+}
+
+// newTexture2D is Texture2D::InitializeDescription, which is the whole of what
+// every Texture2D constructor does after the native object exists:
+//
+//	GetLevelDesc(0, &desc);                       // the CREATED surface
+//	if (!format.HasValue)
+//	    format = ConvertWindowsFormatToXna(desc.Format);
+//	_width  = desc.Width;
+//	_height = desc.Height;
+//	Texture::InitializeDescription(format.Value); // _format, then _levelCount
+//
+// The `format` argument is nullable and the branch is load-bearing. A
+// CONSTRUCTOR passes the format it was asked for, so `_format` is the requested
+// one; FromStream passes no value, so `_format` is whatever the decoder
+// produced. CNA-Go reproduces exactly that split: `requested` is non-nil on the
+// constructor path and nil on the stream path, and CNA's reported format
+// answers only in the second case.
+//
+// Width and height come from the created surface on BOTH paths, which is why
+// they are read out of CNA's TextureInfo rather than from the arguments.
+func newTexture2D(device *GraphicsDevice, resource *interop.Resource, info interop.TextureInfo, requested *SurfaceFormat) *Texture2D {
+	format := SurfaceFormat(info.Format)
+	if requested != nil {
+		format = *requested
+	}
+	texture := &Texture2D{
+		texture: newTexture(device, resource, format, int32(info.Levels)),
+		width:   int32(info.Width),
+		height:  int32(info.Height),
+	}
+	// The CLR `this`. It rebinds the WHOLE chain, not just the nearest link:
+	// GraphicsResource::ToString answers with the runtime type's full name, and
+	// the runtime type is Texture2D.
+	texture.texture.bindDerived(texture)
+	return texture
 }
 
 // The two Texture2D constructors. Both are thirty bytes of IL over one private
@@ -265,21 +320,35 @@ func NewTexture2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormat(
 	if err != nil {
 		return nil, err
 	}
-	return &Texture2D{resource: resource, info: info}, nil
+	return newTexture2D(graphicsDevice, resource, info, &format), nil
 }
 
-func (t *Texture2D) Width() (int32, error) {
-	if t == nil || t.resource == nil {
-		return 0, interop.ErrDisposed
+// Width is Texture2D::get_Width:
+//
+//	ldarg.0; ldfld _width; ret
+//
+// One managed field read. It carries no error and does not check disposal,
+// because the reference does neither: `_width` is stored once at construction
+// and answers afterwards for as long as the object exists, disposed or not.
+//
+// It USED to carry an error, on a comment claiming it "reads a disposed-checked
+// native texture". It never did -- CNA-Go caches CNA's reported description at
+// construction exactly as the reference caches D3D's -- and Foundation 56
+// removed the invented failure mode rather than keeping a channel nothing could
+// ever put a value in.
+func (t *Texture2D) Width() int32 {
+	if t == nil {
+		return 0
 	}
-	return int32(t.info.Width), nil
+	return t.width
 }
 
-func (t *Texture2D) Height() (int32, error) {
-	if t == nil || t.resource == nil {
-		return 0, interop.ErrDisposed
+// Height is Texture2D::get_Height, the same shape over `_height`.
+func (t *Texture2D) Height() int32 {
+	if t == nil {
+		return 0
 	}
-	return int32(t.info.Height), nil
+	return t.height
 }
 
 // Bounds is Texture2D::get_Bounds:
@@ -289,33 +358,26 @@ func (t *Texture2D) Height() (int32, error) {
 //	  ldarg.0; call Texture2D::get_Height
 //	  newobj Rectangle::.ctor(0, 0, width, height)
 //
-// A fresh rectangle at the origin, every call. It is fallible for the reason
-// Width and Height are: both getters read a disposed-checked native texture,
-// and the reference's own getters read a field on a GraphicsResource whose
-// disposal it checks.
-func (t *Texture2D) Bounds() (framework.Rectangle, error) {
-	width, err := t.Width()
-	if err != nil {
-		return framework.Rectangle{}, err
-	}
-	height, err := t.Height()
-	if err != nil {
-		return framework.Rectangle{}, err
-	}
-	return framework.NewRectangle(0, 0, width, height), nil
+// A fresh rectangle at the origin, every call, over two managed field reads. It
+// is infallible for the reason Width and Height are: nothing in the body
+// reaches the texture, in either runtime.
+func (t *Texture2D) Bounds() framework.Rectangle {
+	return framework.NewRectangle(0, 0, t.Width(), t.Height())
 }
 
-func (t *Texture2D) Dispose(disposing bool) error {
-	_ = disposing
-	if t == nil || t.resource == nil {
-		return nil
-	}
-	return t.resource.Dispose()
-}
-
-// SpriteBatch is an OWNED, generation-checked native SpriteBatch.
+// SpriteBatch is an OWNED, generation-checked native SpriteBatch, composed over
+// GraphicsResource:
+//
+//	.class public auto ansi beforefieldinit SpriteBatch
+//	       extends Microsoft.Xna.Framework.Graphics.GraphicsResource
+//
+// It is the second family the graphics base chain reaches, and it reaches it
+// directly rather than through Texture: a SpriteBatch is a graphics resource
+// but not a texture.
 type SpriteBatch struct {
-	resource *interop.Resource
+	// graphicsResource is the composed base, which carries the one owned CNA
+	// handle. Private named composition, never embedding, no accessor.
+	graphicsResource *GraphicsResource
 	// inBeginEndPair is the reference's own field. It is tracked managed-side
 	// because the reference's two guards report Microsoft's messages, and CNA
 	// -- which refuses the same states with CNA_RESULT_INVALID_STATE -- reports
@@ -331,7 +393,20 @@ func NewSpriteBatch(graphicsDevice *GraphicsDevice) (*SpriteBatch, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SpriteBatch{resource: resource}, nil
+	batch := &SpriteBatch{graphicsResource: newGraphicsResource(graphicsDevice, resource)}
+	// The CLR `this`, so the base announces and names this object rather than
+	// its own half. See GraphicsResource.derived.
+	batch.graphicsResource.bindDerived(batch)
+	return batch, nil
+}
+
+// resource is the one owned CNA handle, reached through the composed base. It
+// is unexported and never escapes the package.
+func (b *SpriteBatch) resource() *interop.Resource {
+	if b == nil || b.graphicsResource == nil {
+		return nil
+	}
+	return b.graphicsResource.nativeResource()
 }
 
 // BeginByNone is SpriteBatch::Begin(), which forwards to the seven-argument
@@ -354,10 +429,10 @@ func (b *SpriteBatch) BeginByNone() error {
 	if b.inBeginEndPair {
 		return fmt.Errorf("%w: %s", errSpriteInvalidOperation, endMustBeCalledBeforeBegin)
 	}
-	if b.resource == nil {
+	if b.resource() == nil {
 		return interop.ErrDisposed
 	}
-	if err := b.resource.BeginSpriteBatch(); err != nil {
+	if err := b.resource().BeginSpriteBatch(); err != nil {
 		return err
 	}
 	b.inBeginEndPair = true
@@ -401,20 +476,12 @@ func (b *SpriteBatch) End() error {
 	if !b.inBeginEndPair {
 		return fmt.Errorf("%w: %s", errSpriteInvalidOperation, beginMustBeCalledBeforeEnd)
 	}
-	if b.resource == nil {
+	if b.resource() == nil {
 		return interop.ErrDisposed
 	}
-	if err := b.resource.EndSpriteBatch(); err != nil {
+	if err := b.resource().EndSpriteBatch(); err != nil {
 		return err
 	}
 	b.inBeginEndPair = false
 	return nil
-}
-
-func (b *SpriteBatch) Dispose(disposing bool) error {
-	_ = disposing
-	if b == nil || b.resource == nil {
-		return nil
-	}
-	return b.resource.Dispose()
 }

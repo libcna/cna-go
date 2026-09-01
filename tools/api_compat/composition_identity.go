@@ -68,6 +68,13 @@ type xnaCompositionIdentity struct {
 	SelfMember string
 	// BindMember is the unexported installer a derived constructor calls.
 	BindMember string
+	// ForwardsTo names the Go base this one hands its binding to, for a base
+	// that is ITSELF composed over another. A three-deep chain has ONE CLR
+	// `this` and one place that answers with it; a middle link that kept a copy
+	// would be a second answer that could disagree. Texture is such a link: it
+	// takes a bind and passes it to GraphicsResource, and holds no derived
+	// field, self accessor or identity site of its own.
+	ForwardsTo string
 	// Sites are the Go members of GoBase whose reference IL pushes `ldarg.0`
 	// as an OBJECT. Every one must reach SelfMember.
 	Sites []xnaCompositionIdentitySite
@@ -108,6 +115,38 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 		},
 		DerivedConstructors: map[string]string{
 			"Microsoft.Xna.Framework.DrawableGameComponent": "NewDrawableGameComponent",
+		},
+	},
+
+	// Foundation 56. GraphicsResource carries two identity sites, and they are
+	// two DIFFERENT uses of `ldarg.0` as an object: one needs the object, the
+	// other needs its TYPE.
+	"Microsoft.Xna.Framework.Graphics.GraphicsResource": {
+		Package:      modulePath + "/Microsoft/Xna/Framework/Graphics",
+		GoBase:       "GraphicsResource",
+		DerivedField: "derived",
+		SelfMember:   "self",
+		BindMember:   "bindDerived",
+		Sites: []xnaCompositionIdentitySite{
+			{GoMember: "ToString", Uses: 1, Reference: "ToString: the name is empty, so `call instance string System.Object::ToString()` on `ldarg.0` -- which answers with the RUNTIME type's full CLR name, so a Texture2D must not answer with GraphicsResource's"},
+			{GoMember: "DisposeByBoolean", Uses: 1, Reference: "~GraphicsResource(): ldfld <backing_store>Disposing; ldarg.0; ldsfld EventArgs::Empty; callvirt EventHandler`1::Invoke(object, !0)"},
+		},
+		DerivedConstructors: map[string]string{
+			"Microsoft.Xna.Framework.Graphics.Texture":     "newTexture",
+			"Microsoft.Xna.Framework.Graphics.SpriteBatch": "NewSpriteBatch",
+		},
+	},
+
+	// Texture is the middle link. It has no identity site of its own -- both of
+	// its members are plain field reads -- and holds no copy of the CLR `this`:
+	// it forwards.
+	"Microsoft.Xna.Framework.Graphics.Texture": {
+		Package:    modulePath + "/Microsoft/Xna/Framework/Graphics",
+		GoBase:     "Texture",
+		BindMember: "bindDerived",
+		ForwardsTo: "GraphicsResource",
+		DerivedConstructors: map[string]string{
+			"Microsoft.Xna.Framework.Graphics.Texture2D": "newTexture2D",
 		},
 	},
 }
@@ -158,27 +197,53 @@ func measureXNACompositionIdentity(result *report, expected *expectedSurface, ac
 			continue
 		}
 
-		// (2) the unexported derived-reference field.
-		if !fields[identity.GoBase][identity.DerivedField] {
-			fail(fmt.Sprintf("%s declares no unexported %s field; a composed base cannot reach the CLR `this` without one",
-				identity.GoBase, identity.DerivedField))
-		}
+		measurement.ForwardsTo = identity.ForwardsTo
 		if ast.IsExported(identity.DerivedField) || ast.IsExported(identity.SelfMember) || ast.IsExported(identity.BindMember) {
 			fail("the object-identity mechanism is exported; it is private implementation state and the contract declares no accessor for the base object")
 		}
 
-		// (3) the two unexported members, and the field each must touch. A
-		// self accessor that never reads the derived reference, or a bind that
-		// never writes it, is a mechanism that compiles and does nothing.
-		for _, member := range []string{identity.SelfMember, identity.BindMember} {
-			body, present := bodies[identity.GoBase+"."+member]
-			if !present {
-				fail(fmt.Sprintf("%s declares no %s member", identity.GoBase, member))
-				continue
+		if identity.ForwardsTo != "" {
+			// A middle link. It holds nothing of its own and must not: one CLR
+			// `this`, one place that answers with it.
+			if identity.DerivedField != "" || identity.SelfMember != "" || len(identity.Sites) != 0 {
+				fail(fmt.Sprintf("%s forwards its binding to %s and also records state or sites of its own; a middle link keeps neither",
+					identity.GoBase, identity.ForwardsTo))
 			}
-			if !selectsField(body, identity.DerivedField) {
-				fail(fmt.Sprintf("%s.%s never touches %s; the object-identity mechanism would compile and hold nothing",
-					identity.GoBase, member, identity.DerivedField))
+			body, present := bodies[identity.GoBase+"."+identity.BindMember]
+			switch {
+			case !present:
+				fail(fmt.Sprintf("%s declares no %s member", identity.GoBase, identity.BindMember))
+			case !callsMethod(body, identity.BindMember):
+				fail(fmt.Sprintf("%s.%s does not pass the binding on to %s; a middle link that swallows it leaves the chain answering with the wrong object",
+					identity.GoBase, identity.BindMember, identity.ForwardsTo))
+			default:
+				result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]++
+			}
+		} else {
+			// (2) the unexported derived-reference field.
+			if !fields[identity.GoBase][identity.DerivedField] {
+				fail(fmt.Sprintf("%s declares no unexported %s field; a composed base cannot reach the CLR `this` without one",
+					identity.GoBase, identity.DerivedField))
+			}
+
+			// (3) the two unexported members, and the field each must touch. A
+			// self accessor that never reads the derived reference, or a bind
+			// that never writes it, is a mechanism that compiles and does
+			// nothing.
+			for _, member := range []string{identity.SelfMember, identity.BindMember} {
+				body, present := bodies[identity.GoBase+"."+member]
+				if !present {
+					fail(fmt.Sprintf("%s declares no %s member", identity.GoBase, member))
+					continue
+				}
+				if !selectsField(body, identity.DerivedField) {
+					fail(fmt.Sprintf("%s.%s never touches %s; the object-identity mechanism would compile and hold nothing",
+						identity.GoBase, member, identity.DerivedField))
+				}
+			}
+			if len(identity.Sites) == 0 {
+				fail(fmt.Sprintf("%s holds the CLR `this` and records no identity site; a base that needs none forwards instead of holding one",
+					identity.GoBase))
 			}
 		}
 

@@ -210,7 +210,7 @@ func Texture2DGetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[T 
 func prepareTransfer[T any](
 	texture *Texture2D, level int32, rect *framework.Rectangle, length int, startIndex, elementCount int32,
 ) (*interop.Resource, interop.TextureTransfer, uint32, error) {
-	if texture == nil || texture.resource == nil {
+	if texture == nil || texture.nativeResource() == nil {
 		return nil, interop.TextureTransfer{}, 0, interop.ErrDisposed
 	}
 	identity, _, err := resolveTextureElement[T]()
@@ -237,5 +237,5 @@ func prepareTransfer[T any](
 		transfer.X, transfer.Y = rect.X, rect.Y
 		transfer.Width, transfer.Height = rect.Width, rect.Height
 	}
-	return texture.resource, transfer, identity, nil
+	return texture.nativeResource(), transfer, identity, nil
 }

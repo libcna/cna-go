@@ -107,7 +107,7 @@ func TestEverySevenOverloadsShareTheTwoGuards(t *testing.T) {
 // the other two sides: End before Begin, and Begin twice. Neither reaches a
 // native batch, because the reference throws before it touches one.
 func TestTheBeginEndPairGuardsAreTheReferencesTwoMessages(t *testing.T) {
-	batch := &SpriteBatch{resource: &interop.Resource{}}
+	batch := &SpriteBatch{graphicsResource: newGraphicsResource(nil, &interop.Resource{})}
 	err := batch.End()
 	if !errors.Is(err, errSpriteInvalidOperation) || !strings.Contains(err.Error(), beginMustBeCalledBeforeEnd) {
 		t.Fatalf("End before Begin = %v, want FrameworkResources.BeginMustBeCalledBeforeEnd", err)
@@ -138,15 +138,23 @@ func TestTheFourMessagesAreFourDistinctSentences(t *testing.T) {
 	}
 }
 
-// TestBoundsOnADisposedTextureReportsRatherThanReturningAZeroRectangle pins that
-// Bounds is fallible for the reason Width and Height are, and does not paper
-// over a disposed texture with an empty rectangle.
-func TestBoundsOnADisposedTextureReportsRatherThanReturningAZeroRectangle(t *testing.T) {
+// TestBoundsIsTwoManagedFieldReads pins that Bounds carries no error, and why.
+//
+// Foundation 56 corrected this on evidence. get_Bounds is
+//
+//	newobj Rectangle::.ctor(0, 0, _width, _height)
+//
+// over two managed fields the constructor stored once, and neither get_Width
+// nor get_Height checks disposal. CNA-Go caches CNA's reported description at
+// exactly the moment the reference caches D3D's, so its reads are as managed as
+// the reference's. The test that used to stand here required an error channel
+// nothing could ever put a value in.
+func TestBoundsIsTwoManagedFieldReads(t *testing.T) {
 	var texture *Texture2D
-	if _, err := texture.Bounds(); !errors.Is(err, interop.ErrDisposed) {
-		t.Fatalf("Bounds on a nil texture = %v, want ErrDisposed", err)
+	if got := texture.Bounds(); got != (framework.Rectangle{}) {
+		t.Fatalf("Bounds on a nil texture = %+v, want the empty rectangle", got)
 	}
-	if _, err := (&Texture2D{}).Bounds(); !errors.Is(err, interop.ErrDisposed) {
-		t.Fatalf("Bounds on an unbound texture = %v, want ErrDisposed", err)
+	if got := (&Texture2D{}).Bounds(); got != (framework.Rectangle{}) {
+		t.Fatalf("Bounds on an unbound texture = %+v, want the empty rectangle", got)
 	}
 }

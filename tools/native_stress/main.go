@@ -30,15 +30,20 @@ type counters struct {
 	GameCycles           int `json:"GAME_CYCLES"`
 	GameRecreationCycles int `json:"GAME_RECREATION_CYCLES"`
 	TextureCycles        int `json:"TEXTURE_CYCLES"`
-	SpriteBatchCycles    int `json:"SPRITEBATCH_CYCLES"`
-	CallbackErrorCycles  int `json:"CALLBACK_ERROR_CYCLES"`
-	CallbackPanicCycles  int `json:"CALLBACK_PANIC_CYCLES"`
-	WrongThreadChecks    int `json:"WRONG_THREAD_CHECKS"`
-	OwnerThreadRetries   int `json:"OWNER_THREAD_RETRIES"`
-	GCStressPoints       int `json:"GC_STRESS_POINTS"`
-	NativeCrashes        int `json:"NATIVE_CRASHES"`
-	ObservedUAF          int `json:"OBSERVED_UAF"`
-	ObservedDoubleFree   int `json:"OBSERVED_DOUBLE_FREE"`
+	// InheritedDisposeVirtualChecks counts the runs of the one control that can
+	// tell the inherited Dispose() reaching the DERIVED override from it
+	// reaching the composed base's slot. Every managed observable agrees for
+	// both; only the native handle disagrees.
+	InheritedDisposeVirtualChecks int `json:"INHERITED_DISPOSE_VIRTUAL_CHECKS"`
+	SpriteBatchCycles             int `json:"SPRITEBATCH_CYCLES"`
+	CallbackErrorCycles           int `json:"CALLBACK_ERROR_CYCLES"`
+	CallbackPanicCycles           int `json:"CALLBACK_PANIC_CYCLES"`
+	WrongThreadChecks             int `json:"WRONG_THREAD_CHECKS"`
+	OwnerThreadRetries            int `json:"OWNER_THREAD_RETRIES"`
+	GCStressPoints                int `json:"GC_STRESS_POINTS"`
+	NativeCrashes                 int `json:"NATIVE_CRASHES"`
+	ObservedUAF                   int `json:"OBSERVED_UAF"`
+	ObservedDoubleFree            int `json:"OBSERVED_DOUBLE_FREE"`
 
 	GameEventActivated   int `json:"GAME_EVENT_ACTIVATED_DELIVERIES"`
 	GameEventDeactivated int `json:"GAME_EVENT_DEACTIVATED_DELIVERIES"`
@@ -1029,18 +1034,9 @@ func (g *stressGame) LoadContent(_ *framework.Game) error {
 			return fmt.Errorf("End outside a pair = %v, want the InvalidOperationException message", endErr)
 		}
 		g.result.SpriteDrawPairGuardChecks++
-		bounds, err := texture.Bounds()
-		if err != nil {
-			return err
-		}
-		width, err := texture.Width()
-		if err != nil {
-			return err
-		}
-		height, err := texture.Height()
-		if err != nil {
-			return err
-		}
+		bounds := texture.Bounds()
+		width := texture.Width()
+		height := texture.Height()
 		if bounds.X != 0 || bounds.Y != 0 || bounds.Width != width || bounds.Height != height {
 			return fmt.Errorf("Bounds = %+v, want (0,0,%d,%d)", bounds, width, height)
 		}
@@ -1064,26 +1060,54 @@ func (g *stressGame) LoadContent(_ *framework.Game) error {
 				return fmt.Errorf("parent-before-child result: %w", err)
 			}
 			wrongThread := make(chan error, 1)
-			go func() { wrongThread <- texture.Dispose(true) }()
+			go func() { wrongThread <- texture.DisposeByBoolean(true) }()
 			if err := <-wrongThread; !errors.Is(err, interop.ErrWrongThread) {
 				return fmt.Errorf("wrong-thread texture disposal result: %w", err)
 			}
 			g.result.WrongThreadChecks++
-			if err := texture.Dispose(true); err != nil {
+			if err := texture.DisposeByBoolean(true); err != nil {
 				return fmt.Errorf("owner-thread retry: %w", err)
 			}
 			g.result.OwnerThreadRetries++
-		} else if err := texture.Dispose(true); err != nil {
+		} else if cycle == 1 {
+			// # The inherited Dispose() must reach the DERIVED body
+			//
+			// GraphicsResource::Dispose() is `callvirt Dispose(bool)`, which
+			// dispatches to Texture2D's override and releases the native
+			// texture. A Go forwarding that called the COMPOSED BASE's
+			// DisposeByNone instead would set the flag, raise Disposing and
+			// leak the CNA texture -- and every managed observable would agree
+			// with the correct version, because the flag and the event are the
+			// base's either way.
+			//
+			// The one observable that disagrees is the native handle. After the
+			// derived body runs, the resource is destroyed and a later
+			// operation reports ErrDisposed; after the base body runs, the
+			// handle is still live and the same operation SUCCEEDS. That is why
+			// this control lives here and not in a managed unit test.
+			if err := texture.DisposeByNone(); err != nil {
+				return fmt.Errorf("inherited Dispose(): %w", err)
+			}
+			if !texture.IsDisposed() {
+				return errors.New("inherited Dispose() left IsDisposed false; the base half runs in a finally")
+			}
+			var sink bytes.Buffer
+			if err := texture.SaveAsPng(&sink, 4, 4); !errors.Is(err, interop.ErrDisposed) {
+				return fmt.Errorf("SaveAsPng after the inherited Dispose() = %v, want ErrDisposed: "+
+					"the native texture is still alive, so Dispose() reached the composed base's slot instead of Texture2D's override", err)
+			}
+			g.result.InheritedDisposeVirtualChecks++
+		} else if err := texture.DisposeByBoolean(true); err != nil {
 			return err
 		}
-		if err := texture.Dispose(true); err != nil {
+		if err := texture.DisposeByBoolean(true); err != nil {
 			g.result.ObservedDoubleFree++
 			return fmt.Errorf("double texture Dispose was not idempotent: %w", err)
 		}
-		if err := batch.Dispose(true); err != nil {
+		if err := batch.DisposeByBoolean(true); err != nil {
 			return err
 		}
-		if err := batch.Dispose(true); err != nil {
+		if err := batch.DisposeByBoolean(true); err != nil {
 			g.result.ObservedDoubleFree++
 			return fmt.Errorf("double SpriteBatch Dispose was not idempotent: %w", err)
 		}
@@ -1340,11 +1364,7 @@ func (g *stressGame) exerciseDeviceState() error {
 		if createErr != nil {
 			return fmt.Errorf("empty texture %d: %w", index, createErr)
 		}
-		width, widthErr := created.Width()
-		height, heightErr := created.Height()
-		if widthErr != nil || heightErr != nil {
-			return fmt.Errorf("empty texture %d dimensions: %v %v", index, widthErr, heightErr)
-		}
+		width, height := created.Width(), created.Height()
 		wantWidth, wantHeight := int32(32), int32(16)
 		if index == 2 {
 			wantWidth, wantHeight = 64, 64
@@ -1352,7 +1372,7 @@ func (g *stressGame) exerciseDeviceState() error {
 		if width != wantWidth || height != wantHeight {
 			return fmt.Errorf("empty texture %d = %dx%d, want %dx%d", index, width, height, wantWidth, wantHeight)
 		}
-		if err := created.Dispose(true); err != nil {
+		if err := created.DisposeByBoolean(true); err != nil {
 			return fmt.Errorf("empty texture %d disposal: %w", index, err)
 		}
 		g.result.DeviceStateTextureCreations++
@@ -1393,15 +1413,11 @@ func (g *stressGame) exerciseDeviceState() error {
 		if decodeErr != nil {
 			return fmt.Errorf("sized decode (zoom=%t): %w", zoom, decodeErr)
 		}
-		width, widthErr := decoded.Width()
-		height, heightErr := decoded.Height()
-		if widthErr != nil || heightErr != nil {
-			return fmt.Errorf("sized decode dimensions: %v %v", widthErr, heightErr)
-		}
+		width, height := decoded.Width(), decoded.Height()
 		if width != 24 || height != 24 {
 			return fmt.Errorf("sized decode (zoom=%t) = %dx%d, want 24x24", zoom, width, height)
 		}
-		if err := decoded.Dispose(true); err != nil {
+		if err := decoded.DisposeByBoolean(true); err != nil {
 			return fmt.Errorf("sized decode disposal: %w", err)
 		}
 		g.result.DeviceStateDecodeSizeChecks++
@@ -1414,7 +1430,7 @@ func (g *stressGame) exerciseDeviceState() error {
 		return fmt.Errorf("SaveAsPng to a nil writer = %v, want the reference's message", refusal)
 	}
 	g.result.DeviceStateEncodeRefusals++
-	if err := source.Dispose(true); err != nil {
+	if err := source.DisposeByBoolean(true); err != nil {
 		return fmt.Errorf("source texture disposal: %w", err)
 	}
 
@@ -1480,7 +1496,7 @@ func (g *stressGame) exerciseDeviceState() error {
 		return errors.New("a transfer window past the end of the array was accepted")
 	}
 	g.result.DeviceStateTransferRefusals++
-	if err := transferTexture.Dispose(true); err != nil {
+	if err := transferTexture.DisposeByBoolean(true); err != nil {
 		return fmt.Errorf("transfer texture disposal: %w", err)
 	}
 

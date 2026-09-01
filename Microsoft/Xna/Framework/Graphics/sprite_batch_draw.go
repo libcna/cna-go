@@ -105,7 +105,7 @@ func (b *SpriteBatch) spriteDraw(
 	if !b.inBeginEndPair {
 		return fmt.Errorf("%w: %s", errSpriteInvalidOperation, beginMustBeCalledBeforeDraw)
 	}
-	if b.resource == nil || texture.resource == nil {
+	if b.resource() == nil || texture.nativeResource() == nil {
 		return interop.ErrDisposed
 	}
 
@@ -123,7 +123,7 @@ func (b *SpriteBatch) spriteDraw(
 			command.SourceWidth = sourceRectangle.Width
 			command.SourceHeight = sourceRectangle.Height
 		}
-		return b.resource.DrawSprite(texture.resource, command)
+		return b.resource().DrawSprite(texture.nativeResource(), command)
 	}
 
 	command := interop.SpriteDestinationCommand{
@@ -139,7 +139,7 @@ func (b *SpriteBatch) spriteDraw(
 		command.SourceWidth = sourceRectangle.Width
 		command.SourceHeight = sourceRectangle.Height
 	}
-	return b.resource.DrawSpriteToDestination(texture.resource, command)
+	return b.resource().DrawSpriteToDestination(texture.nativeResource(), command)
 }
 
 // DrawByTexture2DAndVector2AndColor is

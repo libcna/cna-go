@@ -279,6 +279,11 @@ var (
 	errGraphicsResourceArgumentNull = errors.New("graphics resource argument is nil")
 	// errGraphicsResourceArgument projects System.ArgumentException.
 	errGraphicsResourceArgument = errors.New("graphics resource argument is invalid")
+	// errGraphicsResourceNil is the Go-only refusal a nil receiver needs. The
+	// reference has no counterpart: a CLR instance member cannot be reached
+	// through a null reference at all, and the CLR raises NullReferenceException
+	// at the call site rather than inside the member.
+	errGraphicsResourceNil = errors.New("GraphicsResource is nil")
 )
 
 // The exact FrameworkResources string the reference's resource constructors

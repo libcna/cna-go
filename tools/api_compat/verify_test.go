@@ -56,7 +56,7 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// with a CLR-signature one, and GameComponent::Dispose() -- a public slot
 	// DrawableGameComponent never occupies, because what it overrides is the
 	// PROTECTED Dispose(bool) -- stopped being dropped.
-	if surface.XNAInheritedCLRMembers != 15 || surface.XNAInheritedProjections != 25 {
+	if surface.XNAInheritedCLRMembers != 119 || surface.XNAInheritedProjections != 171 {
 		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
 	}
 	// The subtraction the exclusion performs is measured rather than implied:
@@ -66,7 +66,7 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	if surface.XNAInheritedOverriddenMembers != 3 {
 		t.Fatalf("XNA inherited overridden count = %d", surface.XNAInheritedOverriddenMembers)
 	}
-	if surface.ExpectedGoMembers != 3280 {
+	if surface.ExpectedGoMembers != 3426 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -4507,8 +4507,8 @@ func TestEventProjectionIsMeasuredExactly(t *testing.T) {
 	if declaredEvents != 49 || declaredAccessors != 98 {
 		t.Fatalf("XNA-declared events = %d producing %d accessors, want 49 and 98", declaredEvents, declaredAccessors)
 	}
-	if inheritedEvents != 6 || inheritedAccessors != 12 {
-		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 6 and 12", inheritedEvents, inheritedAccessors)
+	if inheritedEvents != 20 || inheritedAccessors != 40 {
+		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 20 and 40", inheritedEvents, inheritedAccessors)
 	}
 	if events != declaredEvents+inheritedEvents || accessors != declaredAccessors+inheritedAccessors {
 		t.Fatalf("event partition = %d/%d, walk found %d/%d", events, accessors,
@@ -6501,7 +6501,13 @@ func withXNABaseRelationships(t *testing.T, mutate func(), fn func()) {
 // It has to be a relationship that is still DEFERRED: GameComponent became the
 // first COMPOSED one in Foundation 41, and a COMPOSED relationship is not held
 // to the blocker rules, which is the whole point of the status.
-const deferredBaseFixtureName = "Microsoft.Xna.Framework.Graphics.GraphicsResource"
+// deferredBaseFixtureName is the DEFERRED base the mutations below act on.
+//
+// It used to be GraphicsResource, which Foundation 56 composed. Effect took its
+// place because it is deferred for reasons that are not inheritance -- it
+// reaches a shader subsystem CNA-Go maps no part of -- so it is the entry least
+// likely to be composed next and least likely to make this fixture stale again.
+const deferredBaseFixtureName = "Microsoft.Xna.Framework.Graphics.Effect"
 
 const gameComponentBase = "Microsoft.Xna.Framework.GameComponent"
 
@@ -6546,11 +6552,16 @@ var xnaBaseDefects = map[string]func(complete *[]string){
 			Status: "DEFERRED", Blockers: []xnaBaseBlocker{{Class: "ARCHITECTURE", Detail: "invented"}},
 		}
 	},
-	// The substantive rule. Texture2D inherits nine public members from
-	// Texture and GraphicsResource that CNA-Go does not project, so calling it
-	// COMPLETE asserts something false.
+	// The substantive rule. BasicEffect inherits four public members from the
+	// DEFERRED Effect that CNA-Go does not project, so calling it COMPLETE
+	// asserts something false.
+	//
+	// It used to be Texture2D over the deferred Texture. Foundation 56 composed
+	// that chain and Texture2D became genuinely complete -- inherited surface
+	// included -- so the fixture moved to a relationship that is still deferred
+	// rather than being weakened to keep passing.
 	"derived_type_of_a_deferred_base_reported_complete": func(complete *[]string) {
-		*complete = append(*complete, "Microsoft.Xna.Framework.Graphics.Texture2D")
+		*complete = append(*complete, "Microsoft.Xna.Framework.Graphics.BasicEffect")
 	},
 }
 
@@ -7984,16 +7995,28 @@ func xnaCompositionFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 	return expected, actual
 }
 
-// TestGameComponentIsTheFirstComposedRelationship records the state the
-// architecture reached, and why this family and not another.
-func TestGameComponentIsTheFirstComposedRelationship(t *testing.T) {
+// TestTheComposedRelationshipsAreTheThreeMeasuredFamilies records the state the
+// architecture reached, and why these families and not others.
+//
+// GameComponent came first because Foundation 40 measured that nothing in the
+// profile names it in a public signature, so private composition is exactly
+// sufficient there rather than a compromise. GraphicsResource and Texture
+// followed in Foundation 56, and their substitutability requirement is asserted
+// separately: GraphicsResource is also NONE, and Texture's derived types are
+// what the RenderTarget2D question will turn on.
+func TestTheComposedRelationshipsAreTheThreeMeasuredFamilies(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 1 {
-		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 1", got)
+	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 3 {
+		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 3", got)
 	}
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 2 {
-		t.Fatalf("the composed relationship covers %d derived types, want 2", got)
+	// Two for GameComponent, eleven for GraphicsResource, three for Texture.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 16 {
+		t.Fatalf("the composed relationships cover %d derived types, want 16", got)
+	}
+	// DrawableGameComponent, SpriteBatch, Texture and Texture2D.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 4 {
+		t.Fatalf("%d projected derived types, want 4", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.
@@ -8006,14 +8029,14 @@ func TestGameComponentIsTheFirstComposedRelationship(t *testing.T) {
 				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
 		}
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 15 {
-		t.Fatalf("%d inherited public CLR members, want 15", got)
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 119 {
+		t.Fatalf("%d inherited public CLR members, want 119", got)
 	}
-	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 25 {
-		t.Fatalf("%d inherited Go projections, want 25", got)
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 171 {
+		t.Fatalf("%d inherited Go projections, want 171", got)
 	}
-	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 25 {
-		t.Fatalf("%d attributed inherited members, want every one of the 25", got)
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 171 {
+		t.Fatalf("%d attributed inherited members, want every one of the 171", got)
 	}
 	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"]; got != 3 {
 		t.Fatalf("%d overridden inherited members, want 3", got)
@@ -8434,25 +8457,31 @@ func TestAMethodTypeParameterTokenResolvesToItsDeclaredName(t *testing.T) {
 }
 
 // TestATypeWithUnprojectedInheritedMembersIsNotComplete is the control for the
-// second Foundation 54 rule, and it is the one the milestone tripped over:
-// Texture2D's declared surface closed, and it must still not be COMPLETE while
-// the two public members it inherits from the DEFERRED Texture are absent.
+// second Foundation 54 rule: a type whose DECLARED surface is closed must still
+// not be COMPLETE while public members it inherits from a DEFERRED base are
+// absent.
+//
+// Foundation 54 found the rule by tripping over Texture2D, whose Texture base
+// was deferred. Foundation 56 composed that chain, so the fixture moved to a
+// family that is still deferred rather than being weakened to keep passing:
+// BasicEffect over Effect, whose four inherited public members CNA-Go projects
+// nowhere.
 func TestATypeWithUnprojectedInheritedMembersIsNotComplete(t *testing.T) {
 	surface, err := buildExpected(loadPinnedContract(t))
 	if err != nil {
 		t.Fatal(err)
 	}
-	texture2D := surface.typeForXNA("Microsoft.Xna.Framework.Graphics.Texture2D")
-	if texture2D == nil {
-		t.Fatal("Texture2D is not in the expected surface")
+	basicEffect := surface.typeForXNA("Microsoft.Xna.Framework.Graphics.BasicEffect")
+	if basicEffect == nil {
+		t.Fatal("BasicEffect is not in the expected surface")
 	}
-	inherited := unprojectedInheritedPublicMembers(surface, texture2D)
+	inherited := unprojectedInheritedPublicMembers(surface, basicEffect)
 	if len(inherited) == 0 {
-		t.Fatal("Texture2D inherits nothing from Texture, so this test measures nothing")
+		t.Fatal("BasicEffect inherits nothing from Effect, so this test measures nothing")
 	}
 	for _, want := range []string{
-		"Microsoft.Xna.Framework.Graphics.Texture::Format()",
-		"Microsoft.Xna.Framework.Graphics.Texture::LevelCount()",
+		"Microsoft.Xna.Framework.Graphics.Effect::Parameters()",
+		"Microsoft.Xna.Framework.Graphics.Effect::Techniques()",
 	} {
 		found := false
 		for _, got := range inherited {

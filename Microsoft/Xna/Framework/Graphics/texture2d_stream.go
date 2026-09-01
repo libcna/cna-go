@@ -62,7 +62,7 @@ func Texture2DFromStreamByGraphicsDeviceAndStreamAndInt32AndInt32AndBoolean(
 	if err != nil {
 		return nil, err
 	}
-	return &Texture2D{resource: resource, info: info}, nil
+	return newTexture2D(graphicsDevice, resource, info, nil), nil
 }
 
 // SaveAsPng is
@@ -100,14 +100,14 @@ func (t *Texture2D) saveAsImage(stream io.Writer, imageFormat uint32, width, hei
 	if stream == nil {
 		return fmt.Errorf("%w: stream: %s", errGraphicsResourceArgumentNull, nullNotAllowed)
 	}
-	if t == nil || t.resource == nil {
+	if t == nil || t.nativeResource() == nil {
 		return interop.ErrDisposed
 	}
 	if width < 0 || height < 0 {
 		return fmt.Errorf("%w: an encoded dimension is negative: %dx%d",
 			errGraphicsResourceArgument, width, height)
 	}
-	encoded, err := t.resource.EncodeTexture(imageFormat, uint32(width), uint32(height))
+	encoded, err := t.nativeResource().EncodeTexture(imageFormat, uint32(width), uint32(height))
 	if err != nil {
 		return err
 	}

@@ -914,6 +914,74 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|CurrentOrientation": true,
 		"method|SetSupportedOrientations": true,
 	},
+	// Foundation 56. The graphics base chain. GraphicsResource is native-backed
+	// -- it holds the resource handle and its Dispose destroys it -- so it
+	// starts fallible and these six name their own evidence.
+	//
+	//	get_GraphicsDevice  ldarg.0; ldfld _parent; ret
+	//	get_IsDisposed      ldarg.0; ldfld isDisposed; ret
+	//
+	// Two field reads, seven bytes each, no validation and no throw site.
+	//
+	// Name and Tag are listed with BOTH accessors, which is unusual here and is
+	// measured rather than assumed. Their bodies are conditional:
+	//
+	//	get_Name  if (_internalHandle != 0)
+	//	              return _parent.Resources.GetCachedName(_internalHandle);
+	//	          return _localName;
+	//
+	// and the branch that looks like it reaches something does not.
+	// DeviceResourceManager::GetCachedName is 79 bytes of
+	// `Dictionary<ulong, ResourceData>` under a `Monitor`, answering
+	// `String.Empty` for an absent key; SetCachedName is its store. Both are
+	// managed, allocate nothing, reach no D3D call and have no throw site. The
+	// cache is per-resource storage reached indirectly, so a setter here pushes
+	// nothing to a device and cannot be refused -- which is exactly why the
+	// GraphicsDeviceManager setters above are NOT listed and these are.
+	//
+	// CNA has no counterpart cache and no route to one, so CNA-Go stores both
+	// values on the resource. That difference makes the members MORE clearly
+	// managed, never less.
+	"Microsoft.Xna.Framework.Graphics.GraphicsResource": {
+		"property-get|GraphicsDevice": true,
+		"property-get|IsDisposed":     true,
+		"property-get|Name":           true,
+		"property-set|Name":           true,
+		"property-get|Tag":            true,
+		"property-set|Tag":            true,
+	},
+	// Texture's whole public surface, and both members are the same shape:
+	//
+	//	get_Format      ldarg.0; ldfld _format; ret
+	//	get_LevelCount  ldarg.0; ldfld _levelCount; ret
+	//
+	// Both fields are filled once by Texture::InitializeDescription during
+	// construction and never written again. Neither getter checks disposal --
+	// the reference answers after Dispose and so does CNA-Go.
+	"Microsoft.Xna.Framework.Graphics.Texture": {
+		"property-get|Format":     true,
+		"property-get|LevelCount": true,
+	},
+	// Texture2D's three geometry members, on the same evidence, and correcting
+	// a claim CNA-Go made without it. Their bodies are:
+	//
+	//	get_Width   ldarg.0; ldfld _width; ret
+	//	get_Height  ldarg.0; ldfld _height; ret
+	//	get_Bounds  newobj Rectangle::.ctor(0, 0, _width, _height)
+	//
+	// `_width` and `_height` are stored by Texture2D::InitializeDescription
+	// from the CREATED surface's D3DSURFACE_DESC, once, at construction. No
+	// getter consults the texture again and none checks disposal.
+	//
+	// CNA-Go used to project all three fallible, on a comment claiming they
+	// "read a disposed-checked native texture". They do not, in either runtime:
+	// CNA-Go caches CNA's reported description at construction exactly as the
+	// reference caches D3D's, and both then answer from a managed field.
+	"Microsoft.Xna.Framework.Graphics.Texture2D": {
+		"property-get|Width":  true,
+		"property-get|Height": true,
+		"property-get|Bounds": true,
+	},
 }
 
 func buildExpected(c contract) (*expectedSurface, error) {
@@ -967,7 +1035,7 @@ func buildExpected(c contract) (*expectedSurface, error) {
 		groups := overloadGroupsWithXNAInherited(*t, xnaInheritedSource)
 		for j := range t.Members {
 			m := &t.Members[j]
-			mapped := mapMember(s, byIdentity, owner, *t, *m, groups)
+			mapped := mapMember(s, byIdentity, owner, *t, *t, *m, groups)
 			allMembers = append(allMembers, mapped...)
 		}
 		inherited := mapInheritedBaseMembers(s, byIdentity, owner, *t)
@@ -1079,14 +1147,21 @@ func overloadGroups(t contractType) map[string]int {
 	return result
 }
 
-func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, t contractType, m contractMember, groups map[string]int) []*expectedMember {
+// mapMember projects one CLR member. `t` is the type the member is projected
+// ONTO -- the owner of the resulting Go identity -- and `declaring` is the type
+// whose body the member actually has. The two differ for an inherited member,
+// and only fallibility reads `declaring`: whether a member reaches a runtime
+// boundary is a property of ITS OWN body, so a base member classified managed
+// stored stays managed stored on every derived type that inherits it, without
+// being registered once per derived type.
+func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, t, declaring contractType, m contractMember, groups map[string]int) []*expectedMember {
 	xna := memberIdentity(t.Name, m)
 	base := &expectedMember{XNA: xna, Owner: t.Name, SourceKind: m.Kind, SourceAccess: m.Access, PackagePath: owner.PackagePath, Receiver: owner.GoName}
 	parameters, outResults, hasDirection := mapParametersWithGenerics(s, byIdentity, owner, m.GenericParameters, m.Parameters)
 	base.Parameters = applyStreamDirection(xna, parameters)
 	base.Results = mapReturn(s, byIdentity, owner, m.ReturnType)
 	base.Results = append(base.Results, outResults...)
-	if isFallible(t, m, "") {
+	if isFallible(declaring, m, "") {
 		base.Results = append(base.Results, "error")
 		base.ErrorAdded = true
 	}
@@ -1156,7 +1231,7 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 			// it on a native-backed one, so a get-only stored property such as
 			// Game::Components would keep a synthetic error its IL cannot
 			// produce while its results no longer carried one.
-			get.ErrorAdded = isFallible(t, m, "get")
+			get.ErrorAdded = isFallible(declaring, m, "get")
 			if get.ErrorAdded {
 				get.Results = append(get.Results, "error")
 			}
@@ -1173,7 +1248,7 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 			set.Parameters = append(mapIndexerParameters(s, byIdentity, owner, m.Parameters), mappedType)
 			set.Results = nil
 			set.Accessor = "set"
-			set.ErrorAdded = isFallible(t, m, "set")
+			set.ErrorAdded = isFallible(declaring, m, "set")
 			if set.ErrorAdded {
 				set.Results = []string{"error"}
 			}
@@ -1191,7 +1266,7 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 					item.GoName = owner.GoName + m.Name
 					item.Parameters = []string{"*framework." + owner.GoName}
 					item.Results = []string{mapType(s, byIdentity, target, valueOrEmpty(m.Type))}
-					if isFallible(t, m, "get") {
+					if isFallible(declaring, m, "get") {
 						item.Results = append(item.Results, "error")
 					}
 				}
@@ -2226,7 +2301,7 @@ func mapInheritedBaseMembers(s *expectedSurface, byIdentity map[string]*contract
 	var mapped []*expectedMember
 	groups := overloadGroups(synthetic)
 	for _, instance := range synthetic.Members {
-		for _, member := range mapMember(s, byIdentity, owner, synthetic, instance, groups) {
+		for _, member := range mapMember(s, byIdentity, owner, synthetic, synthetic, instance, groups) {
 			member.BCLBase = identity
 			member.BCLMember = instance.Name
 			member.XNA = identity + "::" + strings.TrimPrefix(member.XNA, t.Name+"::")
@@ -2617,19 +2692,25 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and ONE of the two derived types is now complete. Foundation 46 projected DrawableGameComponent: its Initialize resolves Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService out of Game.Services, which the framework package cannot name because the Graphics package imports it, and internal/servicebridge resolves that with two function values installed from package inits -- no public API, no retained object, and no import cycle. GamerServicesComponent remains blocked and its blockers are not inheritance either: GamerServicesDispatcher lives in Microsoft.Xna.Framework.GamerServices.dll, which is not one of the seven pinned assemblies and has no CNA runtime behind it. Game.Window.Handle stopped being one of its blockers in Foundation 45"},
 	}},
 
-	// The one Foundation 25 measured from the other side: it alone blocks
+	// The one Foundation 25 measured from the other side: it alone blocked
 	// seven missing types, and eleven derive from it.
-	"Microsoft.Xna.Framework.Graphics.GraphicsResource": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "NATIVE_OWNERSHIP", Detail: "it is `public abstract` with an `assembly` constructor, carries `.field assembly uint64 _internalHandle`, and its Dispose(bool) dispatches to the C++/CLI ~GraphicsResource/!GraphicsResource pair. Who owns a graphics resource's lifetime across the C ABI is an open decision this milestone does not reopen"},
+	//
+	// Foundation 56 composed it. The NATIVE_OWNERSHIP blocker was the real one
+	// and it is now answered rather than deferred: the resource handle lives on
+	// GraphicsResource, exactly where the reference's `_internalHandle` lives,
+	// so there is ONE native owner per logical object and a derived wrapper
+	// never creates a second. `interop.Resource` carries its own kind tag, so
+	// the type-specific destruction the reference's ReleaseNativeObject
+	// overrides perform is already inside `Resource.Dispose`.
+	"Microsoft.Xna.Framework.Graphics.GraphicsResource": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
+		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and the chain to Texture2D is complete. Nine of the eleven derived types remain missing for reasons that are not inheritance: BlendState, DepthStencilState, RasterizerState and SamplerState are the state-object family, Effect reaches a shader subsystem CNA-Go maps no part of, and IndexBuffer, VertexBuffer, TextureCube and Texture3D each need CNA routes CNA-Go does not bind yet"},
 	}},
-	"Microsoft.Xna.Framework.Graphics.Texture": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "TRANSITIVE", Detail: "Texture extends GraphicsResource, whose ownership is undecided, so Texture is itself a missing type and cannot be a base of anything"},
+	"Microsoft.Xna.Framework.Graphics.Texture": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
+		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and ONE of the three derived types is complete. Texture3D and TextureCube need CNA volume and cube texture routes, which the pinned 0.21.0 ABI does not expose to this binding yet"},
 	}},
 	"Microsoft.Xna.Framework.Graphics.Texture2D": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,
-		{Class: "TRANSITIVE", Detail: "Texture2D is a PARTIAL type whose own base chain -- Texture, GraphicsResource -- is deferred, so RenderTarget2D would inherit an already-incomplete surface"},
+		{Class: "SUBSYSTEM", Detail: "Texture2D's own base chain is composed and its surface is complete, so inheritance no longer blocks RenderTarget2D. What does is CNA: a render target needs creation, binding and unbinding routes, and the substitutability question a derived texture raises where the profile names Texture2D in a public signature"},
 	}},
 	"Microsoft.Xna.Framework.Graphics.TextureCube": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,
@@ -3296,7 +3377,11 @@ func mapInheritedXNABaseMembers(
 	}
 	var mapped []*expectedMember
 	for _, entry := range inherited {
-		for _, member := range mapMember(s, byIdentity, owner, synthetic, entry.Member, groups) {
+		declaring := synthetic
+		if base, inProfile := byIdentity[entry.Base]; inProfile {
+			declaring = *base
+		}
+		for _, member := range mapMember(s, byIdentity, owner, synthetic, declaring, entry.Member, groups) {
 			member.XNABase = entry.Base
 			member.XNABaseMember = entry.Member.Name
 			member.XNA = entry.Base + "::" + strings.TrimPrefix(member.XNA, t.Name+"::")

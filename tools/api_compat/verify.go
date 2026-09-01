@@ -161,6 +161,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"] = 0
 	result.Summary["XNA_COMPOSED_IDENTITY_SITES"] = 0
 	result.Summary["XNA_COMPOSED_IDENTITY_USES"] = 0
+	result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"] = 0
 	result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"] = 0
 	result.Summary["XNA_COMPOSED_DERIVED_TYPES"] = 0
 	result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"] = 0

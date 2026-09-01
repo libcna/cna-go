@@ -272,6 +272,7 @@ type xnaCompositionIdentityMeasurement struct {
 	CLRBase      string                             `json:"clrBase"`
 	GoBase       string                             `json:"goBase,omitempty"`
 	DerivedField string                             `json:"derivedField,omitempty"`
+	ForwardsTo   string                             `json:"forwardsTo,omitempty"`
 	Sites        []xnaCompositionIdentitySiteRow    `json:"sites,omitempty"`
 	Bindings     []xnaCompositionIdentityBindingRow `json:"bindings,omitempty"`
 	Verdict      string                             `json:"verdict"`

@@ -16,7 +16,11 @@ import (
 // that still passes is a hole in the evidence rather than a passing test.
 func stageIdentityPackage(t *testing.T, file, old, replacement string) string {
 	t.Helper()
-	source := filepath.Join("..", "..", "Microsoft", "Xna", "Framework")
+	return stagePackage(t, filepath.Join("..", "..", "Microsoft", "Xna", "Framework"), file, old, replacement)
+}
+
+func stagePackage(t *testing.T, source, file, old, replacement string) string {
+	t.Helper()
 	entries, err := os.ReadDir(source)
 	if err != nil {
 		t.Fatal(err)
@@ -49,32 +53,52 @@ func stageIdentityPackage(t *testing.T, file, old, replacement string) string {
 	return staged
 }
 
-func identityMeasurement(t *testing.T, staged string) (report, []xnaCompositionIdentityMeasurement) {
+func identityMeasurement(t *testing.T, staged string) (report, map[string]xnaCompositionIdentityMeasurement) {
 	t.Helper()
 	expected, actual := loadPinnedSurfaces(t)
 	if staged != "" {
 		actual.PackageDirs[modulePath+"/Microsoft/Xna/Framework"] = staged
 	}
 	result := report{Summary: map[string]int{}}
-	measurements := measureXNACompositionIdentity(&result, expected, actual)
-	return result, measurements
+	byBase := make(map[string]xnaCompositionIdentityMeasurement)
+	for _, measurement := range measureXNACompositionIdentity(&result, expected, actual) {
+		byBase[measurement.CLRBase] = measurement
+	}
+	return result, byBase
 }
+
+// gameComponentIdentity is the base every mutation below acts on. It is named
+// rather than indexed, because the registry has three entries now and a
+// positional assertion would silently start measuring another family.
+const gameComponentIdentity = "Microsoft.Xna.Framework.GameComponent"
 
 // TestXNACompositionIdentityIsMeasuredOnTheRealSources is the control. It has
 // to pass unmutated, or every mutation below would "fail" for the wrong reason.
 func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	result, measurements := identityMeasurement(t, "")
-	if len(measurements) != 1 || measurements[0].Verdict != "PASS" {
-		t.Fatalf("identity measurement = %+v", measurements)
+	if len(measurements) != 3 {
+		t.Fatalf("%d identity measurements, want three composed bases", len(measurements))
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_SITES"]; got != 5 {
-		t.Fatalf("%d identity sites, want the five GameComponent has", got)
+	for base, measurement := range measurements {
+		if measurement.Verdict != "PASS" {
+			t.Fatalf("%s identity measurement = %+v", base, measurement)
+		}
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 6 {
-		t.Fatalf("%d identity uses, want six: Dispose(bool) has two and the other four have one each", got)
+	// Five GameComponent sites and two GraphicsResource ones. Texture has none:
+	// it is a middle link that forwards, and its entry is checked by the
+	// forwarding claim instead.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_SITES"]; got != 7 {
+		t.Fatalf("%d identity sites, want seven", got)
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 1 {
-		t.Fatalf("%d identity bindings, want the one projected derived type", got)
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 8 {
+		t.Fatalf("%d identity uses, want eight: GameComponent's Dispose(bool) has two and the other six sites have one each", got)
+	}
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]; got != 1 {
+		t.Fatalf("%d forwarding links, want the one Texture is", got)
+	}
+	// DrawableGameComponent, Texture, SpriteBatch and Texture2D.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 4 {
+		t.Fatalf("%d identity bindings, want the four projected derived types", got)
 	}
 	for _, category := range []string{"BASE_MAPPING_MISMATCH"} {
 		if result.Summary[category] != 0 {
@@ -142,8 +166,8 @@ func TestXNACompositionIdentityMutationsAreRejected(t *testing.T) {
 			if result.Summary["BASE_MAPPING_MISMATCH"] == 0 {
 				t.Fatalf("mutation %q produced no BASE_MAPPING_MISMATCH; the identity rule it breaks is not enforced", name)
 			}
-			if len(measurements) != 1 || measurements[0].Verdict != "FAIL" {
-				t.Fatalf("mutation %q left the measurement %+v", name, measurements)
+			if measurements[gameComponentIdentity].Verdict != "FAIL" {
+				t.Fatalf("mutation %q left the measurement %+v", name, measurements[gameComponentIdentity])
 			}
 		})
 	}
@@ -166,7 +190,68 @@ func TestSelfIgnoringMutationIsNotCaughtStructurally(t *testing.T) {
 	if result.Summary["BASE_MAPPING_MISMATCH"] != 0 {
 		t.Fatalf("the structural gate rejected a body it cannot actually distinguish: %+v", measurements)
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 6 {
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 8 {
 		t.Fatalf("identity uses = %d", got)
 	}
+}
+
+// TestGraphicsChainIdentityMutationsAreRejected is the same falsification over
+// the graphics chain, whose identity sites are a different KIND: one needs the
+// object and one needs its runtime TYPE, and the chain is three deep so a
+// middle link can swallow the binding.
+func TestGraphicsChainIdentityMutationsAreRejected(t *testing.T) {
+	const graphicsResourceIdentity = "Microsoft.Xna.Framework.Graphics.GraphicsResource"
+	const textureIdentity = "Microsoft.Xna.Framework.Graphics.Texture"
+	for name, mutation := range map[string]struct{ file, old, replacement, base string }{
+		"to_string_answers_with_the_base_types_name": {
+			"graphics_resource.go", "return r.self().clrTypeName()", "return r.clrTypeName()", graphicsResourceIdentity,
+		},
+		"disposing_event_announces_the_base_half": {
+			"graphics_resource.go",
+			"return r.disposing.Raise(r.self(), framework.EventArgsEmpty())",
+			"return r.disposing.Raise(r, framework.EventArgsEmpty())", graphicsResourceIdentity,
+		},
+		"self_never_reads_the_installed_object": {
+			"graphics_resource.go",
+			"\tif r.derived != nil {\n\t\treturn r.derived\n\t}\n\treturn r", "\treturn r", graphicsResourceIdentity,
+		},
+		"sprite_batch_does_not_install_the_clr_this": {
+			"foundation.go", "batch.graphicsResource.bindDerived(batch)", "_ = batch", graphicsResourceIdentity,
+		},
+		"texture_does_not_install_the_clr_this": {
+			"texture.go", "texture.resource.bindDerived(texture)", "_ = texture", graphicsResourceIdentity,
+		},
+		// The middle link swallows the binding instead of passing it on, so
+		// GraphicsResource keeps answering with the Texture rather than with the
+		// Texture2D that composes it.
+		"texture_swallows_the_forwarded_binding": {
+			"texture.go", "\tt.resource.bindDerived(derived)", "\t_ = derived", textureIdentity,
+		},
+		"texture2d_does_not_install_the_clr_this": {
+			"foundation.go", "texture.texture.bindDerived(texture)", "_ = texture", textureIdentity,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			staged := stageGraphicsPackage(t, mutation.file, mutation.old, mutation.replacement)
+			expected, actual := loadPinnedSurfaces(t)
+			actual.PackageDirs[modulePath+"/Microsoft/Xna/Framework/Graphics"] = staged
+			result := report{Summary: map[string]int{}}
+			byBase := make(map[string]xnaCompositionIdentityMeasurement)
+			for _, measurement := range measureXNACompositionIdentity(&result, expected, actual) {
+				byBase[measurement.CLRBase] = measurement
+			}
+			if result.Summary["BASE_MAPPING_MISMATCH"] == 0 {
+				t.Fatalf("mutation %q produced no BASE_MAPPING_MISMATCH", name)
+			}
+			if byBase[mutation.base].Verdict != "FAIL" {
+				t.Fatalf("mutation %q left %s as %+v", name, mutation.base, byBase[mutation.base])
+			}
+		})
+	}
+}
+
+// stageGraphicsPackage is stageIdentityPackage over the Graphics package.
+func stageGraphicsPackage(t *testing.T, file, old, replacement string) string {
+	t.Helper()
+	return stagePackage(t, filepath.Join("..", "..", "Microsoft", "Xna", "Framework", "Graphics"), file, old, replacement)
 }

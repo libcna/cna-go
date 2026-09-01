@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 690,
-    "ASSERTIONS": 690,
+    "OBSERVATIONS": 694,
+    "ASSERTIONS": 694,
     "FAILURES": 0
   },
   "observations": [
@@ -5240,11 +5240,11 @@
       "passed": true
     },
     {
-      "id": "texture2d.bounds-on-an-unbound-texture-reports",
+      "id": "texture2d.bounds-is-two-managed-field-reads",
       "group": "TEXTURE2D",
       "provenance": "PURE_XNA_DERIVED",
-      "expected": "true",
-      "actual": "true",
+      "expected": "{0 0 0 0}",
+      "actual": "{0 0 0 0}",
       "passed": true
     },
     {
@@ -5453,6 +5453,38 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true",
       "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "graphics-resource.derived-types-take-the-two-overload-dispose-spelling",
+      "group": "GRAPHICS_RESOURCE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-resource.the-six-field-reads-carry-no-error",
+      "group": "GRAPHICS_RESOURCE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "texture2d.geometry-is-three-managed-reads",
+      "group": "TEXTURE2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,0,{0 0 0 0}",
+      "actual": "0,0,{0 0 0 0}",
+      "passed": true
+    },
+    {
+      "id": "graphics-resource.a-zero-value-answers-with-zero-values",
+      "group": "GRAPHICS_RESOURCE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": ",\u003cnil\u003e,\u003cnil\u003e,true,,0",
+      "actual": ",\u003cnil\u003e,\u003cnil\u003e,true,,0",
       "passed": true
     },
     {

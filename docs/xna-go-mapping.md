@@ -637,6 +637,59 @@ the Microsoft assemblies declare and is never inflated with inherited mscorlib
 members; inherited projections are counted separately, and the two partitions
 are disjoint and exhaustive, so no member is ever counted twice.
 
+### XNA-to-XNA base composition
+
+An XNA base is a type **inside** the contract that CNA-Go already projects, and
+whose public surface the contract does not redeclare on the derived type. Three
+are composed: `GameComponent`, `GraphicsResource`, and `Texture`.
+
+The shape is the BCL one plus three rules the BCL case never needed.
+
+**The inherited set is decided by CLR SLOT, not by name.** A derived class
+excludes an inherited member only when it declares one with the same kind, name,
+generic arity and parameter list. `DrawableGameComponent` and `Texture2D` both
+override the **protected** `Dispose(bool)` and both inherit the **public**
+`Dispose()`; a name-keyed exclusion deleted that member from their projected
+surface, and in `DrawableGameComponent`'s case it was the member `Game.Dispose`
+looks for.
+
+**Inherited and declared members share one overload namespace.** A derived class
+that declares one overload of an inherited name does not own the name, so the
+group is sized over the effective method set and every member of a group larger
+than one carries `By<ParameterShape>`. That is why `Texture2D` spells
+`DisposeByNone`/`DisposeByBoolean` while `Texture` — which overrides nothing —
+spells the same inherited member `Dispose`.
+
+**Fallibility follows the DECLARING type.** Whether a member reaches a runtime
+boundary is a property of its own body, so a base member classified managed
+stored stays managed stored on every derived type, without being registered once
+per derived type.
+
+#### The CLR `this` under composition
+
+`ldarg.0` in a base body is the **whole** object. Composition splits it, so a
+composed base holds an unexported reference to the outermost derived object,
+installed by the derived constructor and read only through an unexported
+accessor. It is used wherever the reference uses `ldarg.0` as an **object** —
+an event sender, a collection identity, `ToString`'s runtime type — and never
+where `ldarg.0` merely reaches a field.
+
+Nothing else changes: still no embedding, no exported base field, and no public
+`Base`, `Parent` or `As<Base>` accessor. The mechanism is what makes private
+composition **correct** rather than merely private, and the verifier holds it
+from the Go syntax tree: every recorded identity site must reach the accessor
+exactly as many times as the reference pushes `ldarg.0` as an object there, and
+every projected derived constructor must install it. A base that is itself
+composed over another — `Texture` — holds no copy and **forwards** instead:
+one CLR `this`, one place that answers with it.
+
+A derived override must forward to **its own** body, not the base's, wherever
+the reference uses `callvirt`. `GraphicsResource::Dispose()` is
+`callvirt Dispose(bool)`, so `Texture2D.DisposeByNone` calls
+`Texture2D.DisposeByBoolean`; calling the composed base's would reproduce the
+base's slot and leak the native texture. No managed observable distinguishes the
+two, so that one is proved natively.
+
 ## Structural counts
 
 The 257 reference types map one-to-one to 257 expected Go XNA types. Member

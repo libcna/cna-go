@@ -2915,11 +2915,13 @@ func runCorpus() corpusReport {
 			endBeforeBeginErr != nil && strings.Contains(endBeforeBeginErr.Error(),
 				"Begin must be called successfully before End can be called.")))
 
-	// Bounds is fallible for the reason Width and Height are, and does not
-	// paper over a disposed texture with an empty rectangle.
-	_, boundsErr := (&graphics.Texture2D{}).Bounds()
-	check("texture2d.bounds-on-an-unbound-texture-reports", "TEXTURE2D",
-		"true", fmt.Sprintf("%t", boundsErr != nil))
+	// Bounds is INFALLIBLE, and Foundation 56 corrected that on evidence:
+	// get_Bounds is `newobj Rectangle::.ctor(0, 0, _width, _height)` over two
+	// managed field reads, with no disposal check in either runtime. A
+	// zero-value Texture2D therefore answers with the empty rectangle rather
+	// than reporting, which is what the reference's own field reads would do.
+	check("texture2d.bounds-is-two-managed-field-reads", "TEXTURE2D",
+		"{0 0 0 0}", fmt.Sprintf("%v", (&graphics.Texture2D{}).Bounds()))
 
 	// Game.IsActive is the field the reference's edge-triggered host handlers
 	// maintain. A Game that has received no activation signal is not active,
@@ -3243,6 +3245,71 @@ func runCorpus() corpusReport {
 	}
 	check("game-component.raise-sites-announce-the-whole-object", "XNA_COMPOSITION_IDENTITY",
 		"true", fmt.Sprintf("%t", identityWholeObject))
+
+	// ------------------------------------------------------------------
+	// Foundation 56. The graphics base chain
+	// GraphicsResource -> Texture -> Texture2D, and GraphicsResource ->
+	// SpriteBatch. Every row is read from Microsoft.Xna.Framework.Graphics.dll.
+	//
+	// The rows here are the ones a corpus WITHOUT a device can carry: the
+	// projected spelling of the inherited members, their fallibility, and the
+	// zero-value rule. The behaviour of a CONSTRUCTED resource -- ToString's
+	// runtime-type fallback, Name/Tag storage, idempotent disposal, the
+	// Disposing sender -- needs a real native texture and is measured in the
+	// Graphics package tests and in tools/native_stress instead. Recording that
+	// split is the point: a corpus row that observed a Go zero value and called
+	// it XNA behaviour would be measuring the wrong object.
+	// ------------------------------------------------------------------
+
+	// GraphicsResource declares Dispose() public and Dispose(bool) family, and
+	// Texture2D and SpriteBatch each override the PROTECTED one. So each has an
+	// effective Dispose group of two and takes the two-overload spelling, while
+	// Texture -- which overrides neither -- has a group of one and takes the
+	// bare name. The same CLR member, spelled two ways, decided by group size.
+	var chainDisposePair interface {
+		DisposeByNone() error
+		DisposeByBoolean(bool) error
+	} = &graphics.Texture2D{}
+	var chainBatchPair interface {
+		DisposeByNone() error
+		DisposeByBoolean(bool) error
+	} = &graphics.SpriteBatch{}
+	var chainTextureSingle interface{ Dispose() error } = &graphics.Texture{}
+	check("graphics-resource.derived-types-take-the-two-overload-dispose-spelling", "GRAPHICS_RESOURCE",
+		"true,true,true", fmt.Sprintf("%t,%t,%t",
+			chainDisposePair != nil, chainBatchPair != nil, chainTextureSingle != nil))
+
+	// Name, Tag, IsDisposed, GraphicsDevice, Format and LevelCount are all
+	// `ldfld`, and get_Name/set_Name reach only DeviceResourceManager's managed
+	// Dictionary. None is fallible, which the Go signatures state directly.
+	var chainName func() string = (&graphics.Texture2D{}).Name
+	var chainSetName func(string) = (&graphics.Texture2D{}).SetName
+	var chainTag func() any = (&graphics.Texture2D{}).Tag
+	var chainFormat func() graphics.SurfaceFormat = (&graphics.Texture2D{}).Format
+	var chainLevels func() int32 = (&graphics.Texture2D{}).LevelCount
+	check("graphics-resource.the-six-field-reads-carry-no-error", "GRAPHICS_RESOURCE",
+		"true", fmt.Sprintf("%t", chainName != nil && chainSetName != nil && chainTag != nil &&
+			chainFormat != nil && chainLevels != nil))
+
+	// Texture2D::get_Width, get_Height and get_Bounds are `ldfld` over fields
+	// InitializeDescription stored from the CREATED surface. None checks
+	// disposal, so none is fallible.
+	geometryTexture := &graphics.Texture2D{}
+	check("texture2d.geometry-is-three-managed-reads", "TEXTURE2D",
+		"0,0,{0 0 0 0}", fmt.Sprintf("%d,%d,%v",
+			geometryTexture.Width(), geometryTexture.Height(), geometryTexture.Bounds()))
+
+	// The Go-only rule the composition creates. A CLR object is never
+	// half-constructed, so the reference has no counterpart for a zero-value
+	// Texture2D whose composed base is absent. Every inherited member answers
+	// with the zero value the corresponding field would hold rather than
+	// panicking: a panic crossing into consumer code is reserved for violated
+	// internal invariants, and this is a state a consumer can simply write.
+	zeroChain := &graphics.Texture2D{}
+	check("graphics-resource.a-zero-value-answers-with-zero-values", "GRAPHICS_RESOURCE",
+		",<nil>,<nil>,true,,0", fmt.Sprintf("%s,%v,%v,%t,%s,%d",
+			zeroChain.Name(), zeroChain.Tag(), zeroChain.GraphicsDevice(),
+			zeroChain.IsDisposed(), zeroChain.ToString(), zeroChain.LevelCount()))
 
 	// ------------------------------------------------------------------
 	// Foundation 45. GameWindow, whose behaviour is XNA-derived throughout:
