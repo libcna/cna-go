@@ -7876,7 +7876,7 @@ func TestTheThreeFamiliesWithNoSubstitutabilityRequirement(t *testing.T) {
 // Every other family is still LATENT or NONE, and the registry must agree with
 // the measurement in both directions -- which measureXNABaseSubstitutability
 // itself now checks.
-func TestTexture2DIsTheOneLiveSubstitutabilityRequirement(t *testing.T) {
+func TestTheLiveSubstitutabilityFamiliesAreTextureAndTexture2D(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
 	var live []string
@@ -7885,17 +7885,25 @@ func TestTexture2DIsTheOneLiveSubstitutabilityRequirement(t *testing.T) {
 			live = append(live, measurement.Base)
 		}
 	}
-	if len(live) != 1 || live[0] != "Microsoft.Xna.Framework.Graphics.Texture2D" {
-		t.Fatalf("live substitutability families = %v, want exactly Texture2D", live)
+	sort.Strings(live)
+	// Texture2D went live in Foundation 58, when RenderTarget2D was projected.
+	// Texture went live in Foundation 61, when TextureCollection put a
+	// Texture-typed position on a carrier CNA-Go projects.
+	want := []string{
+		"Microsoft.Xna.Framework.Graphics.Texture",
+		"Microsoft.Xna.Framework.Graphics.Texture2D",
 	}
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 1 {
-		t.Fatalf("%d registered substitutable bases, want the one live family", got)
+	if len(live) != len(want) || live[0] != want[0] || live[1] != want[1] {
+		t.Fatalf("live substitutability families = %v, want %v", live, want)
+	}
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 2 {
+		t.Fatalf("%d registered substitutable bases, want the two live families", got)
 	}
 	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_NONE"]; got != 3 {
 		t.Fatalf("%d families have no substitutability requirement, want 3", got)
 	}
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 8 {
-		t.Fatalf("%d families have a latent requirement, want 8", got)
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 7 {
+		t.Fatalf("%d families have a latent requirement, want 7", got)
 	}
 	if got := result.Summary["XNA_BASE_TYPED_SIGNATURE_POSITIONS"]; got != 51 {
 		t.Fatalf("%d base-typed public signature positions, want 51", got)

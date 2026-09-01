@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 707,
-    "ASSERTIONS": 707,
+    "OBSERVATIONS": 709,
+    "ASSERTIONS": 709,
     "FAILURES": 0
   },
   "observations": [
@@ -5589,6 +5589,22 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "BlendState.AlphaBlend,SamplerState.LinearClamp,DepthStencilState.None,RasterizerState.CullCounterClockwise",
       "actual": "BlendState.AlphaBlend,SamplerState.LinearClamp,DepthStencilState.None,RasterizerState.CullCounterClockwise",
+      "passed": true
+    },
+    {
+      "id": "device-collections.a-nil-collection-reports-rather-than-panicking",
+      "group": "DEVICE_COLLECTIONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "device-collections.texture-positions-accept-every-derived-texture",
+      "group": "DEVICE_COLLECTIONS",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
       "passed": true
     },
     {

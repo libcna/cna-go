@@ -719,6 +719,21 @@ Go has two nil shapes at an interface position — a nil interface, and a non-ni
 interface holding a typed nil — and the CLR has one null. Both reach the same
 `ArgumentNullException`.
 
+A property **setter's value** is a parameter position and widens with the rest:
+`device.Textures[0] = myTexture2D` is legal in C# because the indexer's value is
+typed `Texture`.
+
+#### The downcast Go cannot express
+
+A base-typed **return** keeps the concrete pointer, and a consumer who needs the
+derived object back has no Go counterpart for the CLR's cast.
+`TextureCollection.Item` returns a `*Texture` carrying the two members `Texture`
+declares — the same member set the CLR's static type gives — and a Texture2D
+bound into that slot cannot be recovered from it. That is a **GO language
+limitation**, recorded rather than worked around: widening the return to the
+reference interface would take those two members away to buy an assertion the
+CLR spells as a cast.
+
 ## Structural counts
 
 The 257 reference types map one-to-one to 257 expected Go XNA types. Member

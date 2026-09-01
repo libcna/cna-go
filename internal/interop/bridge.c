@@ -772,6 +772,70 @@ static void cna_go_fill_sampler_state(
     state->mip_map_level_of_detail_bias = bias;
 }
 
+CnaGoResult cna_go_graphics_device_get_texture(
+    CnaGoHandle device,
+    uint32_t stage,
+    uint32_t slot,
+    uint8_t* out_bound,
+    CnaGoHandle* out_texture) {
+    CNA_TextureSlotInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    const CNA_Result result = api.cna_graphics_device_get_texture(device, stage, slot, &info);
+    if (result != 0) {
+        return result;
+    }
+    *out_bound = (uint8_t)(info.bound != 0);
+    *out_texture = info.texture;
+    return result;
+}
+
+CnaGoResult cna_go_graphics_device_set_texture(
+    CnaGoHandle device,
+    uint32_t stage,
+    uint32_t slot,
+    CnaGoHandle texture) {
+    return api.cna_graphics_device_set_texture(device, stage, slot, texture);
+}
+
+CnaGoResult cna_go_graphics_device_get_sampler_state(
+    CnaGoHandle device,
+    uint32_t stage,
+    uint32_t slot,
+    uint32_t* out_words,
+    int32_t* out_ints,
+    float* out_bias) {
+    CNA_SamplerState state;
+    memset(&state, 0, sizeof(state));
+    state.struct_size = (uint32_t)sizeof(state);
+    state.struct_version = 1;
+    const CNA_Result result = api.cna_graphics_device_get_sampler_state(device, stage, slot, &state);
+    if (result != 0) {
+        return result;
+    }
+    out_words[0] = state.address_u;
+    out_words[1] = state.address_v;
+    out_words[2] = state.address_w;
+    out_words[3] = state.filter;
+    out_ints[0] = state.max_anisotropy;
+    out_ints[1] = state.max_mip_level;
+    *out_bias = state.mip_map_level_of_detail_bias;
+    return result;
+}
+
+CnaGoResult cna_go_graphics_device_set_sampler_state(
+    CnaGoHandle device,
+    uint32_t stage,
+    uint32_t slot,
+    const uint32_t* words,
+    const int32_t* ints,
+    float bias) {
+    CNA_SamplerState state;
+    cna_go_fill_sampler_state(&state, words, ints, bias);
+    return api.cna_graphics_device_set_sampler_state(device, stage, slot, &state);
+}
+
 CnaGoResult cna_go_graphics_device_set_blend_state(
     CnaGoHandle device,
     uint32_t alpha_blend_function,

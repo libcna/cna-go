@@ -351,6 +351,58 @@ func (resource *Resource) BeginSpriteBatchWithStates(
 	return nativeSpriteBatchBeginWithStates(handle, sortMode, blend, sampler, depth, rasterizer)
 }
 
+// MaxTextureSlots and MaxSamplerSlots are CNA_TEXTURE_COLLECTION_MAX_TEXTURES
+// and CNA_MAX_SAMPLERS. Both are sixteen, and both are what the projected
+// collections report as their length.
+const (
+	MaxTextureSlots = 16
+	MaxSamplerSlots = 16
+)
+
+// TextureSlot reads one slot of one of the device's two texture collections.
+func (d *Device) TextureSlot(stage, slot uint32) (TextureSlot, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return TextureSlot{}, err
+	}
+	return nativeGraphicsDeviceGetTexture(handle, stage, slot)
+}
+
+// SetTextureSlot binds a texture to one slot, or empties it when texture is nil.
+func (d *Device) SetTextureSlot(stage, slot uint32, texture *Resource) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	var textureHandle uint64
+	if texture != nil {
+		textureHandle, err = texture.liveTextureHandle()
+		if err != nil {
+			return err
+		}
+	}
+	return nativeGraphicsDeviceSetTexture(handle, stage, slot, textureHandle)
+}
+
+// SamplerSlot reads one entry of one of the device's two sampler collections.
+func (d *Device) SamplerSlot(stage, slot uint32) (SamplerStateValue, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return SamplerStateValue{}, err
+	}
+	return nativeGraphicsDeviceGetSamplerState(handle, stage, slot)
+}
+
+// SetSamplerSlot replaces one entry of one of the device's two sampler
+// collections.
+func (d *Device) SetSamplerSlot(stage, slot uint32, value SamplerStateValue) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceSetSamplerState(handle, stage, slot, value)
+}
+
 // RenderTargetInfo is CNA_RenderTargetInfo, flattened.
 //
 // Every field is what CNA APPLIED, not what was asked for. That is the same

@@ -95,17 +95,21 @@ type counters struct {
 
 	// Foundation 51. GraphicsDevice's render state, round-tripped through the
 	// live device, plus the two masked Clear overloads and Present.
-	DeviceStateCycles          int `json:"DEVICE_STATE_CYCLES"`
-	DeviceStateRoundTrips      int `json:"DEVICE_STATE_ROUND_TRIPS"`
-	DeviceStateObjectRefusals  int `json:"DEVICE_STATE_OBJECT_REFUSALS"`
-	DeviceStateObjectBinds     int `json:"DEVICE_STATE_OBJECT_BINDS"`
-	SpriteBatchStateBegins     int `json:"SPRITE_BATCH_STATE_BEGINS"`
-	DeviceStateReadOnlyChecks  int `json:"DEVICE_STATE_READ_ONLY_CHECKS"`
-	DeviceStateClearCalls      int `json:"DEVICE_STATE_CLEAR_CALLS"`
-	DeviceStateClearRefusals   int `json:"DEVICE_STATE_CLEAR_REFUSALS"`
-	DeviceStatePresentCalls    int `json:"DEVICE_STATE_PRESENT_CALLS"`
-	DeviceStateStaleChecks     int `json:"DEVICE_STATE_STALE_CHECKS"`
-	DeviceStateWrongThreadHits int `json:"DEVICE_STATE_WRONG_THREAD_CHECKS"`
+	DeviceStateCycles                 int `json:"DEVICE_STATE_CYCLES"`
+	DeviceStateRoundTrips             int `json:"DEVICE_STATE_ROUND_TRIPS"`
+	DeviceStateObjectRefusals         int `json:"DEVICE_STATE_OBJECT_REFUSALS"`
+	DeviceStateObjectBinds            int `json:"DEVICE_STATE_OBJECT_BINDS"`
+	SpriteBatchStateBegins            int `json:"SPRITE_BATCH_STATE_BEGINS"`
+	DeviceCollectionIdentityChecks    int `json:"DEVICE_COLLECTION_IDENTITY_CHECKS"`
+	DeviceCollectionRangeChecks       int `json:"DEVICE_COLLECTION_RANGE_CHECKS"`
+	DeviceCollectionTextureRoundTrips int `json:"DEVICE_COLLECTION_TEXTURE_ROUND_TRIPS"`
+	DeviceCollectionSamplerRoundTrips int `json:"DEVICE_COLLECTION_SAMPLER_ROUND_TRIPS"`
+	DeviceStateReadOnlyChecks         int `json:"DEVICE_STATE_READ_ONLY_CHECKS"`
+	DeviceStateClearCalls             int `json:"DEVICE_STATE_CLEAR_CALLS"`
+	DeviceStateClearRefusals          int `json:"DEVICE_STATE_CLEAR_REFUSALS"`
+	DeviceStatePresentCalls           int `json:"DEVICE_STATE_PRESENT_CALLS"`
+	DeviceStateStaleChecks            int `json:"DEVICE_STATE_STALE_CHECKS"`
+	DeviceStateWrongThreadHits        int `json:"DEVICE_STATE_WRONG_THREAD_CHECKS"`
 
 	// Foundation 52. The device's display mode, and an EMPTY texture created
 	// from its dimensions and format rather than decoded from bytes.
@@ -1544,6 +1548,88 @@ func (g *stressGame) exerciseDeviceState() error {
 	if err := stateBatch.DisposeByNone(); err != nil {
 		return fmt.Errorf("state SpriteBatch disposal: %w", err)
 	}
+
+	// Foundation 61. The four collections, through the LIVE device.
+	textures, texturesErr := device.Textures()
+	if texturesErr != nil {
+		return fmt.Errorf("Textures: %w", texturesErr)
+	}
+	again, _ := device.Textures()
+	if textures != again {
+		return errors.New("Textures returned two objects; the reference holds one per device")
+	}
+	vertexTextures, _ := device.VertexTextures()
+	if vertexTextures == textures {
+		return errors.New("Textures and VertexTextures are the same collection")
+	}
+	g.result.DeviceCollectionIdentityChecks++
+
+	// The refusal must be the PROJECTION's ArgumentOutOfRangeException, not
+	// CNA's own out-of-range answer: an off-by-one bound would still refuse,
+	// through the wrong guard, with the wrong identity.
+	for _, index := range []int32{-1, 16} {
+		_, readErr := textures.Item(index)
+		writeErr := textures.SetItem(index, nil)
+		for name, err := range map[string]error{"get": readErr, "set": writeErr} {
+			if err == nil {
+				return fmt.Errorf("Textures[%d] %s was accepted; the indexer refuses out of range", index, name)
+			}
+			if !strings.Contains(err.Error(), "index is out of range") {
+				return fmt.Errorf("Textures[%d] %s = %v, want the projection's ArgumentOutOfRangeException", index, name, err)
+			}
+		}
+	}
+	g.result.DeviceCollectionRangeChecks++
+
+	// An empty slot answers nil, a bound one answers the texture that was
+	// bound, and unbinding empties it again.
+	slotTexture, slotErr := graphics.Texture2DFromStreamByGraphicsDeviceAndStream(device, bytes.NewReader(g.data))
+	if slotErr != nil {
+		return fmt.Errorf("slot texture: %w", slotErr)
+	}
+	if err := textures.SetItem(0, slotTexture); err != nil {
+		return fmt.Errorf("Textures[0] = texture: %w", err)
+	}
+	readSlot, readSlotErr := textures.Item(0)
+	if readSlotErr != nil {
+		return fmt.Errorf("Textures[0]: %w", readSlotErr)
+	}
+	if readSlot == nil {
+		return errors.New("Textures[0] answered nil for a slot it had just bound")
+	}
+	if readSlot.Format() != slotTexture.Format() || readSlot.LevelCount() != slotTexture.LevelCount() {
+		return errors.New("Textures[0] answered with a different texture")
+	}
+	if err := textures.SetItem(0, nil); err != nil {
+		return fmt.Errorf("Textures[0] = nil: %w", err)
+	}
+	if empty, err := textures.Item(0); err != nil || empty != nil {
+		return fmt.Errorf("Textures[0] after unbinding = %v, %v; want nil and no error", empty, err)
+	}
+	g.result.DeviceCollectionTextureRoundTrips++
+	if err := slotTexture.DisposeByNone(); err != nil {
+		return fmt.Errorf("slot texture disposal: %w", err)
+	}
+
+	samplers, samplersErr := device.SamplerStates()
+	if samplersErr != nil {
+		return fmt.Errorf("SamplerStates: %w", samplersErr)
+	}
+	// A slot nothing has written answers with what CNA reports, materialised.
+	reported, reportedErr := samplers.Item(0)
+	if reportedErr != nil || reported == nil {
+		return fmt.Errorf("SamplerStates[0] = %v, %v", reported, reportedErr)
+	}
+	if err := samplers.SetItem(0, graphics.SamplerStatePointClamp()); err != nil {
+		return fmt.Errorf("SamplerStates[0] = PointClamp: %w", err)
+	}
+	if bound, err := samplers.Item(0); err != nil || bound != graphics.SamplerStatePointClamp() {
+		return fmt.Errorf("SamplerStates[0] after setting = %v, %v; the getter answers with the object that was set", bound, err)
+	}
+	if refusal := samplers.SetItem(0, nil); refusal == nil {
+		return errors.New("SamplerStates[0] = nil was accepted")
+	}
+	g.result.DeviceCollectionSamplerRoundTrips++
 
 	if err := device.SetMultiSampleMask(0x0f0f0f0f); err != nil {
 		return fmt.Errorf("SetMultiSampleMask: %w", err)

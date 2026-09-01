@@ -246,6 +246,14 @@ typedef struct CNA_Texture2DDecodeInfo {
 
 #ifndef CNA_C_GRAPHICS_STATE_H
 typedef uint32_t CNA_SpriteSortMode;
+typedef uint32_t CNA_ShaderStage;
+typedef struct CNA_TextureSlotInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Bool bound;
+    uint8_t reserved[7];
+    CNA_Handle texture;
+} CNA_TextureSlotInfo;
 typedef uint32_t CNA_Blend;
 typedef uint32_t CNA_BlendFunction;
 typedef uint32_t CNA_ColorWriteChannels;
@@ -405,6 +413,10 @@ typedef CNA_Result (*cna_graphics_device_manager_end_draw_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_get_viewport_fn)(CNA_Handle, CNA_Viewport*);
 typedef CNA_Result (*cna_graphics_device_clear_rgba_fn)(CNA_Handle, float, float, float, float);
+typedef CNA_Result (*cna_graphics_device_get_texture_fn)(CNA_Handle, CNA_ShaderStage, uint32_t, CNA_TextureSlotInfo*);
+typedef CNA_Result (*cna_graphics_device_set_texture_fn)(CNA_Handle, CNA_ShaderStage, uint32_t, CNA_Handle);
+typedef CNA_Result (*cna_graphics_device_get_sampler_state_fn)(CNA_Handle, CNA_ShaderStage, uint32_t, CNA_SamplerState*);
+typedef CNA_Result (*cna_graphics_device_set_sampler_state_fn)(CNA_Handle, CNA_ShaderStage, uint32_t, const CNA_SamplerState*);
 typedef CNA_Result (*cna_graphics_device_set_blend_state_fn)(CNA_Handle, const CNA_BlendState*);
 typedef CNA_Result (*cna_graphics_device_set_depth_stencil_state_fn)(CNA_Handle, const CNA_DepthStencilState*);
 typedef CNA_Result (*cna_graphics_device_set_rasterizer_state_fn)(CNA_Handle, const CNA_RasterizerState*);
@@ -509,6 +521,10 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \
+    X(cna_graphics_device_get_texture) \
+    X(cna_graphics_device_set_texture) \
+    X(cna_graphics_device_get_sampler_state) \
+    X(cna_graphics_device_set_sampler_state) \
     X(cna_graphics_device_set_blend_state) \
     X(cna_graphics_device_set_depth_stencil_state) \
     X(cna_graphics_device_set_rasterizer_state) \

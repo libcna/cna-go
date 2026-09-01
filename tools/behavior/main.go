@@ -3455,6 +3455,29 @@ func runCorpus() corpusReport {
 			graphics.DepthStencilStateNone().Name(), graphics.RasterizerStateCullCounterClockwise().Name()))
 
 	// ------------------------------------------------------------------
+	// Foundation 61. The device's two texture and two sampler collections.
+	// ------------------------------------------------------------------
+
+	// Both indexers refuse an out-of-range index with the reference's own
+	// ArgumentOutOfRangeException, whose constructor takes the PARAMETER NAME
+	// and no message.
+	var collectionTextures *graphics.TextureCollection
+	var collectionSamplers *graphics.SamplerStateCollection
+	_, collectionReadErr := collectionTextures.Item(0)
+	collectionWriteErr := collectionSamplers.SetItem(0, nil)
+	check("device-collections.a-nil-collection-reports-rather-than-panicking", "DEVICE_COLLECTIONS",
+		"true,true", fmt.Sprintf("%t,%t", collectionReadErr != nil, collectionWriteErr != nil))
+
+	// A Texture2D and a RenderTarget2D both satisfy the Texture-typed indexer
+	// setter, which is the second family the substitutable-base rule reaches.
+	var collectionTextureRef graphics.TextureReference = &graphics.Texture2D{}
+	var collectionTargetRef graphics.TextureReference = &graphics.RenderTarget2D{}
+	var collectionBaseRef graphics.TextureReference = &graphics.Texture{}
+	check("device-collections.texture-positions-accept-every-derived-texture", "DEVICE_COLLECTIONS",
+		"true,true,true", fmt.Sprintf("%t,%t,%t",
+			collectionTextureRef != nil, collectionTargetRef != nil, collectionBaseRef != nil))
+
+	// ------------------------------------------------------------------
 	// Foundation 45. GameWindow, whose behaviour is XNA-derived throughout:
 	// every row below comes from Microsoft.Xna.Framework.Game.dll's IL, and
 	// none of it comes from what CNA does.

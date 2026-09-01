@@ -124,6 +124,13 @@ type GraphicsDevice struct {
 	blendState        *BlendState
 	depthStencilState *DepthStencilState
 	rasterizerState   *RasterizerState
+	// The four collections. The reference holds each in a field and hands the
+	// SAME object back every call, so the facade builds each lazily and keeps
+	// it: `device.Textures == device.Textures` is true in C# and here.
+	textures            *TextureCollection
+	vertexTextures      *TextureCollection
+	samplerStates       *SamplerStateCollection
+	vertexSamplerStates *SamplerStateCollection
 }
 
 // GraphicsDeviceManagerGraphicsDevice is the documented cross-package cycle

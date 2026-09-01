@@ -295,3 +295,12 @@ CNA_GO_MEASURE(offsetof_CNA_SamplerState_filter, offsetof(CNA_SamplerState, filt
 CNA_GO_MEASURE(offsetof_CNA_SamplerState_max_anisotropy, offsetof(CNA_SamplerState, max_anisotropy))
 CNA_GO_MEASURE(offsetof_CNA_SamplerState_max_mip_level, offsetof(CNA_SamplerState, max_mip_level))
 CNA_GO_MEASURE(offsetof_CNA_SamplerState_mip_map_level_of_detail_bias, offsetof(CNA_SamplerState, mip_map_level_of_detail_bias))
+
+// Foundation 61. CNA_TextureSlotInfo. The `reserved[7]` between a one-byte
+// CNA_Bool and a uint64 handle is the one that is NOT a control: the compiler
+// pads to eight either way. The handle's offset is, and it decides whether a
+// slot's occupant is read from the flag's bytes.
+CNA_GO_MEASURE(sizeof_CNA_TextureSlotInfo, sizeof(CNA_TextureSlotInfo))
+CNA_GO_MEASURE(alignof_CNA_TextureSlotInfo, _Alignof(CNA_TextureSlotInfo))
+CNA_GO_MEASURE(offsetof_CNA_TextureSlotInfo_bound, offsetof(CNA_TextureSlotInfo, bound))
+CNA_GO_MEASURE(offsetof_CNA_TextureSlotInfo_texture, offsetof(CNA_TextureSlotInfo, texture))

@@ -242,6 +242,35 @@ CnaGoResult cna_go_graphics_device_get_is_disposed(CnaGoHandle device, uint8_t* 
 // The four state descriptors cross the boundary as FLAT SCALARS, like every
 // other CNA structure here: the bridge builds the versioned C POD on its own
 // side and cgo never sees one.
+CnaGoResult cna_go_graphics_device_get_texture(
+    CnaGoHandle device,
+    uint32_t stage,
+    uint32_t slot,
+    uint8_t* out_bound,
+    CnaGoHandle* out_texture);
+
+CnaGoResult cna_go_graphics_device_set_texture(
+    CnaGoHandle device,
+    uint32_t stage,
+    uint32_t slot,
+    CnaGoHandle texture);
+
+CnaGoResult cna_go_graphics_device_get_sampler_state(
+    CnaGoHandle device,
+    uint32_t stage,
+    uint32_t slot,
+    uint32_t* out_words,
+    int32_t* out_ints,
+    float* out_bias);
+
+CnaGoResult cna_go_graphics_device_set_sampler_state(
+    CnaGoHandle device,
+    uint32_t stage,
+    uint32_t slot,
+    const uint32_t* words,
+    const int32_t* ints,
+    float bias);
+
 CnaGoResult cna_go_graphics_device_set_blend_state(
     CnaGoHandle device,
     uint32_t alpha_blend_function,

@@ -325,6 +325,62 @@ func nativeTextureInfo(texture uint64) (TextureInfo, error) {
 	return TextureInfo{Width: uint32(width), Height: uint32(height), Levels: uint32(levels), Format: uint32(format)}, resultError("cna_texture2d_get_info", code)
 }
 
+// ShaderStage is CNA_ShaderStage: which of the device's two sampler and texture
+// collections a slot belongs to.
+const (
+	ShaderStagePixel  uint32 = 0
+	ShaderStageVertex uint32 = 1
+)
+
+// TextureSlot is CNA_TextureSlotInfo, flattened.
+//
+// Handle is deliberately not a *Resource. CNA states plainly that there is NO
+// route from a native object back to a handle, so a slot filled by CNA's own
+// code -- a SpriteBatch flush, for example -- reports Bound with an INVALID
+// handle. A binding that answered from a cache alone could not tell that case
+// from an empty slot, which is exactly what this field is for.
+type TextureSlot struct {
+	Bound  bool
+	Handle uint64
+}
+
+func nativeGraphicsDeviceGetTexture(device uint64, stage, slot uint32) (TextureSlot, error) {
+	var bound C.uint8_t
+	var handle C.CnaGoHandle
+	code := uint32(C.cna_go_graphics_device_get_texture(
+		C.CnaGoHandle(device), C.uint32_t(stage), C.uint32_t(slot), &bound, &handle))
+	return TextureSlot{Bound: bound != 0, Handle: uint64(handle)},
+		resultError("cna_graphics_device_get_texture", code)
+}
+
+func nativeGraphicsDeviceSetTexture(device uint64, stage, slot uint32, texture uint64) error {
+	return resultError("cna_graphics_device_set_texture", uint32(C.cna_go_graphics_device_set_texture(
+		C.CnaGoHandle(device), C.uint32_t(stage), C.uint32_t(slot), C.CnaGoHandle(texture))))
+}
+
+func nativeGraphicsDeviceGetSamplerState(device uint64, stage, slot uint32) (SamplerStateValue, error) {
+	var words [4]C.uint32_t
+	var ints [2]C.int32_t
+	var bias C.float
+	code := uint32(C.cna_go_graphics_device_get_sampler_state(
+		C.CnaGoHandle(device), C.uint32_t(stage), C.uint32_t(slot), &words[0], &ints[0], &bias))
+	return SamplerStateValue{
+		AddressU: uint32(words[0]), AddressV: uint32(words[1]), AddressW: uint32(words[2]),
+		Filter: uint32(words[3]), MaxAnisotropy: int32(ints[0]), MaxMipLevel: int32(ints[1]),
+		MipMapLevelOfDetailBias: float32(bias),
+	}, resultError("cna_graphics_device_get_sampler_state", code)
+}
+
+func nativeGraphicsDeviceSetSamplerState(device uint64, stage, slot uint32, value SamplerStateValue) error {
+	words := [4]C.uint32_t{
+		C.uint32_t(value.AddressU), C.uint32_t(value.AddressV),
+		C.uint32_t(value.AddressW), C.uint32_t(value.Filter)}
+	ints := [2]C.int32_t{C.int32_t(value.MaxAnisotropy), C.int32_t(value.MaxMipLevel)}
+	return resultError("cna_graphics_device_set_sampler_state", uint32(C.cna_go_graphics_device_set_sampler_state(
+		C.CnaGoHandle(device), C.uint32_t(stage), C.uint32_t(slot),
+		&words[0], &ints[0], C.float(value.MipMapLevelOfDetailBias))))
+}
+
 // The four state routes. Each flattens its descriptor into scalars; the bridge
 // builds CNA's versioned POD on the C side.
 

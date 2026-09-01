@@ -1348,7 +1348,14 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 				set.GoName = "Set" + owner.GoName + m.Name
 				set.Receiver = ""
 			}
-			set.Parameters = append(mapIndexerParameters(s, byIdentity, owner, m.Parameters), mappedType)
+			// The setter's VALUE is a parameter position, so the
+			// substitutable-base rule applies to it exactly as it does to a
+			// method argument: `device.Textures[0] = myTexture2D` is legal in
+			// C# because the indexer's value is typed `Texture`. The GETTER
+			// keeps the concrete pointer -- see Texture2DReference for why a
+			// return does.
+			set.Parameters = append(mapIndexerParameters(s, byIdentity, owner, m.Parameters),
+				applySubstitutableParameter(s, owner, valueOrEmpty(m.Type), mappedType))
 			set.Results = nil
 			set.Accessor = "set"
 			set.ErrorAdded = isFallible(declaring, m, "set")
@@ -1572,6 +1579,11 @@ func mapParametersWithGenerics(s *expectedSurface, byIdentity map[string]*contra
 // recorded, is a diagnostic rather than a silent signature.
 var substitutableBases = map[string]string{
 	"Microsoft.Xna.Framework.Graphics.Texture2D": "Texture2DReference",
+	// Foundation 61. TextureCollection's indexer setter takes a `Texture`, and
+	// projecting that collection put the position on a carrier CNA-Go
+	// projects; Texture already had a projected derived type, so its
+	// requirement went LIVE for exactly the reason Texture2D's did.
+	"Microsoft.Xna.Framework.Graphics.Texture": "TextureReference",
 }
 
 // applySubstitutableParameter rewrites one mapped parameter type when its CLR
