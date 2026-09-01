@@ -11,6 +11,7 @@ import "C"
 
 import (
 	"fmt"
+	"runtime"
 	"runtime/cgo"
 	"unsafe"
 )
@@ -730,6 +731,102 @@ func nativeDeviceUnsubscribeEvents(registrations *[deviceEventCount]uint64) erro
 func nativeGraphicsDeviceDispose(device uint64) error {
 	return resultError("cna_graphics_device_dispose",
 		uint32(C.cna_go_graphics_device_dispose(C.CnaGoHandle(device))))
+}
+
+// The nine content-manager routes. Every string crosses as a pointer and a
+// length, which the bridge wraps in a CNA_StringView on its own side, and every
+// read is the two-call length-then-copy shape CNA's string reads take.
+
+func nativeContentManagerCreate(device uint64, rootDirectory string) (uint64, error) {
+	var handle C.CnaGoHandle
+	var data *C.char
+	if len(rootDirectory) > 0 {
+		data = (*C.char)(unsafe.Pointer(unsafe.StringData(rootDirectory)))
+	}
+	code := uint32(C.cna_go_content_manager_create(
+		C.CnaGoHandle(device), data, C.uint64_t(len(rootDirectory)), &handle))
+	runtime.KeepAlive(rootDirectory)
+	return uint64(handle), resultError("cna_content_manager_create", code)
+}
+
+func nativeContentManagerDestroy(manager uint64) error {
+	return resultError("cna_content_manager_destroy",
+		uint32(C.cna_go_content_manager_destroy(C.CnaGoHandle(manager))))
+}
+
+func nativeContentManagerRootDirectory(manager uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_content_manager_get_root_directory_size(C.CnaGoHandle(manager), &byteCount))
+	if err := resultError("cna_content_manager_get_root_directory_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_content_manager_copy_root_directory(
+		C.CnaGoHandle(manager), (*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_content_manager_copy_root_directory", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeContentManagerSetRootDirectory(manager uint64, rootDirectory string) error {
+	var data *C.char
+	if len(rootDirectory) > 0 {
+		data = (*C.char)(unsafe.Pointer(unsafe.StringData(rootDirectory)))
+	}
+	code := uint32(C.cna_go_content_manager_set_root_directory(
+		C.CnaGoHandle(manager), data, C.uint64_t(len(rootDirectory))))
+	runtime.KeepAlive(rootDirectory)
+	return resultError("cna_content_manager_set_root_directory", code)
+}
+
+func nativeContentManagerUnload(manager uint64) error {
+	return resultError("cna_content_manager_unload",
+		uint32(C.cna_go_content_manager_unload(C.CnaGoHandle(manager))))
+}
+
+func nativeContentManagerLoadTexture2D(manager uint64, assetName string) (uint64, error) {
+	var handle C.CnaGoHandle
+	var data *C.char
+	if len(assetName) > 0 {
+		data = (*C.char)(unsafe.Pointer(unsafe.StringData(assetName)))
+	}
+	code := uint32(C.cna_go_content_manager_load_texture2d(
+		C.CnaGoHandle(manager), data, C.uint64_t(len(assetName)), &handle))
+	runtime.KeepAlive(assetName)
+	return uint64(handle), resultError("cna_content_manager_load_texture2d", code)
+}
+
+func nativeContentManagerAssetPath(manager uint64, assetName string) (string, error) {
+	var data *C.char
+	if len(assetName) > 0 {
+		data = (*C.char)(unsafe.Pointer(unsafe.StringData(assetName)))
+	}
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_content_manager_get_asset_path_size(
+		C.CnaGoHandle(manager), data, C.uint64_t(len(assetName)), &byteCount))
+	if err := resultError("cna_content_manager_get_asset_path_size", code); err != nil {
+		runtime.KeepAlive(assetName)
+		return "", err
+	}
+	if byteCount == 0 {
+		runtime.KeepAlive(assetName)
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_content_manager_copy_asset_path(
+		C.CnaGoHandle(manager), data, C.uint64_t(len(assetName)),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	runtime.KeepAlive(assetName)
+	if err := resultError("cna_content_manager_copy_asset_path", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
 }
 
 // The three device trampolines. Their context is a per-DEVICE-FACADE cgo.Handle:

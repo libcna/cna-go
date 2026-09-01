@@ -351,6 +351,15 @@ typedef struct CNA_SamplerState {
 } CNA_SamplerState;
 #endif
 
+#ifndef CNA_C_CONTENT_H
+typedef struct CNA_ContentManagerCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_StringView root_directory;
+    uint64_t reserved;
+} CNA_ContentManagerCreateInfo;
+#endif
+
 #ifndef CNA_C_RENDER_TARGET_H
 typedef uint32_t CNA_DepthFormat;
 typedef uint32_t CNA_RenderTargetUsage;
@@ -439,6 +448,15 @@ typedef CNA_Result (*cna_graphics_device_manager_end_draw_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_get_viewport_fn)(CNA_Handle, CNA_Viewport*);
 typedef CNA_Result (*cna_graphics_device_clear_rgba_fn)(CNA_Handle, float, float, float, float);
+typedef CNA_Result (*cna_content_manager_create_fn)(CNA_Handle, const CNA_ContentManagerCreateInfo*, CNA_Handle*);
+typedef CNA_Result (*cna_content_manager_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_content_manager_get_root_directory_size_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_content_manager_copy_root_directory_fn)(CNA_Handle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_content_manager_set_root_directory_fn)(CNA_Handle, CNA_StringView);
+typedef CNA_Result (*cna_content_manager_unload_fn)(CNA_Handle);
+typedef CNA_Result (*cna_content_manager_load_texture2d_fn)(CNA_Handle, CNA_StringView, CNA_Handle*);
+typedef CNA_Result (*cna_content_manager_get_asset_path_size_fn)(CNA_Handle, CNA_StringView, uint64_t*);
+typedef CNA_Result (*cna_content_manager_copy_asset_path_fn)(CNA_Handle, CNA_StringView, char*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_graphics_device_subscribe_event_fn)(CNA_Handle, CNA_GraphicsDeviceEvent, CNA_GraphicsDeviceEventCallback, void*, CNA_GraphicsDeviceEventRegistrationHandle*);
 typedef CNA_Result (*cna_graphics_device_subscribe_resource_created_fn)(CNA_Handle, CNA_GraphicsDeviceResourceCreatedCallback, void*, CNA_GraphicsDeviceEventRegistrationHandle*);
 typedef CNA_Result (*cna_graphics_device_subscribe_resource_destroyed_fn)(CNA_Handle, CNA_GraphicsDeviceResourceDestroyedCallback, void*, CNA_GraphicsDeviceEventRegistrationHandle*);
@@ -552,6 +570,15 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \
+    X(cna_content_manager_create) \
+    X(cna_content_manager_destroy) \
+    X(cna_content_manager_get_root_directory_size) \
+    X(cna_content_manager_copy_root_directory) \
+    X(cna_content_manager_set_root_directory) \
+    X(cna_content_manager_unload) \
+    X(cna_content_manager_load_texture2d) \
+    X(cna_content_manager_get_asset_path_size) \
+    X(cna_content_manager_copy_asset_path) \
     X(cna_graphics_device_subscribe_event) \
     X(cna_graphics_device_subscribe_resource_created) \
     X(cna_graphics_device_subscribe_resource_destroyed) \

@@ -315,3 +315,16 @@ CNA_GO_MEASURE(sizeof_CNA_ResourceDestroyedEventInfo, sizeof(CNA_ResourceDestroy
 CNA_GO_MEASURE(alignof_CNA_ResourceDestroyedEventInfo, _Alignof(CNA_ResourceDestroyedEventInfo))
 CNA_GO_MEASURE(offsetof_CNA_ResourceDestroyedEventInfo_has_tag, offsetof(CNA_ResourceDestroyedEventInfo, has_tag))
 CNA_GO_MEASURE(offsetof_CNA_ResourceDestroyedEventInfo_name, offsetof(CNA_ResourceDestroyedEventInfo, name))
+
+// Foundation 63. CNA_ContentManagerCreateInfo. The two uint32 header fields sit
+// before a CNA_StringView, so the root directory's offset is what decides
+// whether CNA reads the root from the struct_size and struct_version bytes --
+// a manager that "created successfully" with a garbage root, resolving every
+// asset path under it. The trailing `reserved` is measured for its offset
+// rather than its existence: a root that moved into it would be read as zero.
+CNA_GO_MEASURE(sizeof_CNA_ContentManagerCreateInfo, sizeof(CNA_ContentManagerCreateInfo))
+CNA_GO_MEASURE(alignof_CNA_ContentManagerCreateInfo, _Alignof(CNA_ContentManagerCreateInfo))
+CNA_GO_MEASURE(offsetof_CNA_ContentManagerCreateInfo_struct_size, offsetof(CNA_ContentManagerCreateInfo, struct_size))
+CNA_GO_MEASURE(offsetof_CNA_ContentManagerCreateInfo_struct_version, offsetof(CNA_ContentManagerCreateInfo, struct_version))
+CNA_GO_MEASURE(offsetof_CNA_ContentManagerCreateInfo_root_directory, offsetof(CNA_ContentManagerCreateInfo, root_directory))
+CNA_GO_MEASURE(offsetof_CNA_ContentManagerCreateInfo_reserved, offsetof(CNA_ContentManagerCreateInfo, reserved))

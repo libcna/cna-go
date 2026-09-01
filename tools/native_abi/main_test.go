@@ -459,6 +459,37 @@ var probeMutations = []sourceMutation{
 		old:  "#define CNA_GO_MANIFEST_GAME_EVENT_EXITING UINT32_C(3)",
 		new:  "#define CNA_GO_MANIFEST_GAME_EVENT_EXITING UINT32_C(2)",
 	},
+	// Foundation 63. The content routes. Creation takes the create-info BY
+	// POINTER, and a by-value prototype is the defect the bridge catches:
+	// bridge.c passes `&info`, and a struct parameter does not accept an
+	// address.
+	{
+		name: "content-create-takes-the-info-by-value",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_content_manager_create_fn)(CNA_Handle, const CNA_ContentManagerCreateInfo*, CNA_Handle*);",
+		new:  "typedef CNA_Result (*cna_content_manager_create_fn)(CNA_Handle, CNA_ContentManagerCreateInfo, CNA_Handle*);",
+	},
+	// The load's asset name is a CNA_StringView, not a bare pointer. A
+	// prototype that took `const char*` would compile at the CALL only if the
+	// bridge stopped building a view -- so this catches the shape that would
+	// hand CNA a name with no length and let it read to the first NUL in
+	// whatever follows.
+	{
+		name: "content-load-takes-a-bare-asset-pointer",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_content_manager_load_texture2d_fn)(CNA_Handle, CNA_StringView, CNA_Handle*);",
+		new:  "typedef CNA_Result (*cna_content_manager_load_texture2d_fn)(CNA_Handle, const char*, CNA_Handle*);",
+	},
+	// The asset-path copy drops its capacity. The remaining arguments still
+	// line up by type -- handle, view, pointer, pointer -- so a caller that
+	// passed capacity where the count belongs would be writing the resolved
+	// path into the caller's byte count.
+	{
+		name: "content-asset-path-copy-drops-its-capacity",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_content_manager_copy_asset_path_fn)(CNA_Handle, CNA_StringView, char*, uint64_t, uint64_t*);",
+		new:  "typedef CNA_Result (*cna_content_manager_copy_asset_path_fn)(CNA_Handle, CNA_StringView, char*, uint64_t*);",
+	},
 	// The two Foundation 42 mutations the BRIDGE translation unit cannot catch,
 	// and the reason is worth stating. C converts silently between integer
 	// widths and between a narrow unsigned return and a wider one, so a
@@ -986,6 +1017,30 @@ var layoutMutations = []sourceMutation{
 		file: "abi_manifest.h",
 		old:  "typedef struct CNA_StringView { const char* data; uint64_t byte_length; } CNA_StringView;",
 		new:  "typedef struct CNA_StringView { const char* data; uint32_t byte_length; } CNA_StringView;",
+	},
+	// Foundation 63. The content create-info's root directory moved behind the
+	// reserved field. Every field still exists, every name still resolves and
+	// bridge.c still compiles: `info.root_directory = ...` is valid either way.
+	// What changes is WHERE CNA reads eight bytes of pointer from, which is the
+	// difference between a content manager rooted at the caller's directory and
+	// one rooted at whatever the zeroed reserved word points at.
+	{
+		name: "content-create-info-root-moved-behind-reserved",
+		file: "abi_manifest.h",
+		old:  "    uint32_t struct_size;\n    uint32_t struct_version;\n    CNA_StringView root_directory;\n    uint64_t reserved;\n} CNA_ContentManagerCreateInfo;",
+		new:  "    uint32_t struct_size;\n    uint32_t struct_version;\n    uint64_t reserved;\n    CNA_StringView root_directory;\n} CNA_ContentManagerCreateInfo;",
+	},
+	// The two header words swapped. They are both uint32 and adjacent, so the
+	// struct is byte-identical -- but bridge.c writes sizeof(info) into the
+	// first and the version 1 into the second, so a swap tells CNA it was
+	// handed a struct of size 1 and version 24. A versioned create-info exists
+	// precisely to be checked, and this is the mutation that proves the check
+	// is being fed the right two words.
+	{
+		name: "content-create-info-size-and-version-swapped",
+		file: "abi_manifest.h",
+		old:  "    uint32_t struct_size;\n    uint32_t struct_version;\n    CNA_StringView root_directory;",
+		new:  "    uint32_t struct_version;\n    uint32_t struct_size;\n    CNA_StringView root_directory;",
 	},
 }
 

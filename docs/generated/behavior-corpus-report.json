@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 712,
-    "ASSERTIONS": 712,
+    "OBSERVATIONS": 720,
+    "ASSERTIONS": 720,
     "FAILURES": 0
   },
   "observations": [
@@ -5701,6 +5701,70 @@
       "provenance": "GO_LANGUAGE_PROJECTION",
       "expected": "true,true,true,true,false",
       "actual": "true,true,true,true,false",
+      "passed": true
+    },
+    {
+      "id": "content-manager.both-constructors-refuse-a-null-service-provider",
+      "group": "CONTENT_MANAGER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "content-manager.the-one-argument-constructor-stores-and-leaves-an-empty-root",
+      "group": "CONTENT_MANAGER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "content-manager.the-two-argument-constructor-stores-the-root",
+      "group": "CONTENT_MANAGER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "Assets,true",
+      "actual": "Assets,true",
+      "passed": true
+    },
+    {
+      "id": "content-manager.set-root-directory-stores-and-unload-of-an-empty-cache-succeeds",
+      "group": "CONTENT_MANAGER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "second,true,true",
+      "actual": "second,true,true",
+      "passed": true
+    },
+    {
+      "id": "content-manager.dispose-false-does-nothing-and-dispose-true-is-idempotent",
+      "group": "CONTENT_MANAGER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,second,true,true,true,true",
+      "actual": "true,second,true,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "content-manager.an-unprojected-asset-type-is-refused-by-name",
+      "group": "CONTENT_MANAGER",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-content.the-constructor-creates-it-over-the-games-own-services",
+      "group": "GAME_CONTENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true",
+      "actual": "true,true,true",
+      "passed": true
+    },
+    {
+      "id": "game-content.the-setter-refuses-null-before-its-store",
+      "group": "GAME_CONTENT",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true,true,true,true",
+      "actual": "true,true,true,true,true",
       "passed": true
     }
   ]

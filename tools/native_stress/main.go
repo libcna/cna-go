@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
+	content "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
 	"github.com/openeggbert/cna-go/internal/interop"
@@ -53,14 +54,31 @@ type counters struct {
 	// both; only the native handle disagrees.
 	InheritedDisposeVirtualChecks int `json:"INHERITED_DISPOSE_VIRTUAL_CHECKS"`
 	SpriteBatchCycles             int `json:"SPRITEBATCH_CYCLES"`
-	CallbackErrorCycles           int `json:"CALLBACK_ERROR_CYCLES"`
-	CallbackPanicCycles           int `json:"CALLBACK_PANIC_CYCLES"`
-	WrongThreadChecks             int `json:"WRONG_THREAD_CHECKS"`
-	OwnerThreadRetries            int `json:"OWNER_THREAD_RETRIES"`
-	GCStressPoints                int `json:"GC_STRESS_POINTS"`
-	NativeCrashes                 int `json:"NATIVE_CRASHES"`
-	ObservedUAF                   int `json:"OBSERVED_UAF"`
-	ObservedDoubleFree            int `json:"OBSERVED_DOUBLE_FREE"`
+	// The content slice. Loads and LoadRefusals are counted separately for the
+	// same reason the render-target bind is: a refusal is CNA answering "this
+	// asset is not there", and a run that only ever refused must not read as a
+	// run that loaded.
+	ContentCycles               int `json:"CONTENT_CYCLES"`
+	ContentManagerCreations     int `json:"CONTENT_MANAGER_CREATIONS"`
+	ContentIdentityChecks       int `json:"CONTENT_IDENTITY_CHECKS"`
+	ContentRootRoundTrips       int `json:"CONTENT_ROOT_ROUND_TRIPS"`
+	ContentAssetPathChecks      int `json:"CONTENT_ASSET_PATH_CHECKS"`
+	ContentLoads                int `json:"CONTENT_LOADS"`
+	ContentLoadPixelChecks      int `json:"CONTENT_LOAD_PIXEL_CHECKS"`
+	ContentLoadReadbackRefusals int `json:"CONTENT_LOAD_READBACK_REFUSALS"`
+	ContentCacheChecks          int `json:"CONTENT_CACHE_CHECKS"`
+	ContentLoadRefusals         int `json:"CONTENT_LOAD_REFUSALS"`
+	ContentTypeRefusals         int `json:"CONTENT_TYPE_REFUSALS"`
+	ContentUnloadCalls          int `json:"CONTENT_UNLOAD_CALLS"`
+	ContentDisposalChecks       int `json:"CONTENT_DISPOSAL_CHECKS"`
+	CallbackErrorCycles         int `json:"CALLBACK_ERROR_CYCLES"`
+	CallbackPanicCycles         int `json:"CALLBACK_PANIC_CYCLES"`
+	WrongThreadChecks           int `json:"WRONG_THREAD_CHECKS"`
+	OwnerThreadRetries          int `json:"OWNER_THREAD_RETRIES"`
+	GCStressPoints              int `json:"GC_STRESS_POINTS"`
+	NativeCrashes               int `json:"NATIVE_CRASHES"`
+	ObservedUAF                 int `json:"OBSERVED_UAF"`
+	ObservedDoubleFree          int `json:"OBSERVED_DOUBLE_FREE"`
 
 	GameEventActivated   int `json:"GAME_EVENT_ACTIVATED_DELIVERIES"`
 	GameEventDeactivated int `json:"GAME_EVENT_DEACTIVATED_DELIVERIES"`
@@ -329,7 +347,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -399,6 +417,25 @@ func runParent() (counters, error) {
 		total.DeviceStateStaleChecks < 20 || total.DeviceStateWrongThreadHits < 20 {
 		return total, errors.New("a device-state proof did not run in every cycle")
 	}
+	// The content slice, per cycle: one manager created, its identity proved,
+	// one root round trip through CNA, one resolved path, one type refusal the
+	// projection makes itself, one unload and one disposal.
+	if total.ContentCycles < 20 || total.ContentManagerCreations < 20 || total.ContentIdentityChecks < 20 ||
+		total.ContentRootRoundTrips < 20 || total.ContentAssetPathChecks < 20 || total.ContentTypeRefusals < 20 ||
+		total.ContentUnloadCalls < 20 || total.ContentDisposalChecks < 20 {
+		return total, errors.New("a content proof did not run in every cycle")
+	}
+	// A cycle that LOADED must also have proved the cache. The pixel check is
+	// separate: a renderer with no readback path refuses it, and that refusal
+	// is recorded rather than counted as a pass.
+	if total.ContentCacheChecks != total.ContentLoads {
+		return total, fmt.Errorf("%d content loads produced %d cache proofs", total.ContentLoads, total.ContentCacheChecks)
+	}
+	if total.ContentLoadPixelChecks+total.ContentLoadReadbackRefusals != total.ContentLoads {
+		return total, fmt.Errorf("content pixel checks %d and readback refusals %d do not account for %d loads",
+			total.ContentLoadPixelChecks, total.ContentLoadReadbackRefusals, total.ContentLoads)
+	}
+
 	// Foundation 39. The native disposal signal never raises the public event,
 	// and the public event is raised only by a managed Dispose call.
 	if total.GameDisposedDuringRun != 0 {
@@ -680,6 +717,21 @@ func runChild(scenario string, index int) error {
 		}
 		if game.result.SpriteDrawScaledSubmits == 0 || game.result.SpriteDrawDestinationSubmits == 0 {
 			return errors.New("the sprite-draw scenario submitted nothing")
+		}
+	case "content":
+		game.result.ContentCycles = 1
+		if err != nil {
+			return err
+		}
+		if game.result.ContentManagerCreations == 0 {
+			return errors.New("the content scenario created no native content manager")
+		}
+		// Exactly one of the two outcomes per cycle, for the same reason the
+		// render-target bind has: a run reporting neither never reached the
+		// load, and one reporting both ran twice.
+		if game.result.ContentLoads+game.result.ContentLoadRefusals != game.result.ContentManagerCreations {
+			return fmt.Errorf("content loads %d and refusals %d do not account for %d managers",
+				game.result.ContentLoads, game.result.ContentLoadRefusals, game.result.ContentManagerCreations)
 		}
 	case "render-target":
 		game.result.RenderTargetCycles = 1
@@ -1283,6 +1335,11 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 	}
 	if g.scenario == "render-target" {
 		if err := g.exerciseRenderTarget(); err != nil {
+			return err
+		}
+	}
+	if g.scenario == "content" {
+		if err := g.exerciseContent(host); err != nil {
 			return err
 		}
 	}
@@ -3349,5 +3406,189 @@ func runGraphicsManagerChild() error {
 	game.result.GCStressPoints++
 	data, _ := json.Marshal(game.result)
 	fmt.Println(string(data))
+	return nil
+}
+
+// exerciseContent is the content scenario: one ContentManager per cycle, over
+// the live device the manager's own service resolves, inside the callback CNA
+// requires a device handle to be live in.
+//
+// What it proves, and what it cannot:
+//
+//   - The manager Game's constructor created is the one this reaches, and it is
+//     the same object on every call. Identity is managed and always provable.
+//   - The root directory ROUND TRIPS THROUGH CNA once the native manager
+//     exists. This is the proof that the getter is not answering a managed copy,
+//     which no managed test can make: with no native half there is nothing to
+//     disagree with.
+//   - The resolved asset path is CNA's, and contains the root CNA was given.
+//   - A load either succeeds or is refused, and the two are counted apart.
+//     There is no compiled `.xnb` corpus in this repository, so a refusal is the
+//     expected outcome on the pinned artifacts and is recorded as BLOCKED_ASSET
+//     rather than reported as a pass.
+func (g *stressGame) exerciseContent(host *framework.Game) error {
+	manager := content.GameContent(host)
+	if manager == nil {
+		return errors.New("the Game's ContentManager is nil inside LoadContent; the constructor creates it")
+	}
+	if content.GameContent(host) != manager {
+		return errors.New("GameContent answered two different managers; the reference reads one field")
+	}
+	g.result.ContentIdentityChecks++
+
+	// A directory that exists and holds one file with a name no asset uses.
+	// The point is a root CNA can normalise and echo back, not a corpus.
+	root, err := os.MkdirTemp("", "cna-go-content")
+	if err != nil {
+		return fmt.Errorf("content root: %w", err)
+	}
+	defer os.RemoveAll(root)
+
+	if err := manager.SetRootDirectory(root); err != nil {
+		return fmt.Errorf("SetRootDirectory before the native manager exists: %w", err)
+	}
+
+	// OpenStream is the first member that needs the native manager, so this is
+	// where it is created. The stream itself is expected to fail: nothing has
+	// written the `.xnb` the reference's OpenStream opens.
+	if _, err := manager.OpenStream("nothing-here"); err == nil {
+		return errors.New("OpenStream opened a stream for an asset that does not exist")
+	}
+	g.result.ContentManagerCreations++
+
+	// The round trip that only a native manager can prove. The value is written
+	// through the projection and read back from CNA; a getter answering a
+	// managed field would pass with the write removed.
+	second := filepath.Join(root, "second")
+	if err := os.Mkdir(second, 0o755); err != nil {
+		return fmt.Errorf("second content root: %w", err)
+	}
+	if err := manager.SetRootDirectory(second); err != nil {
+		return fmt.Errorf("SetRootDirectory: %w", err)
+	}
+	readBack, err := manager.RootDirectory()
+	if err != nil {
+		return fmt.Errorf("RootDirectory: %w", err)
+	}
+	if readBack != second {
+		return fmt.Errorf("RootDirectory = %q after setting %q; the value must come back from CNA", readBack, second)
+	}
+	g.result.ContentRootRoundTrips++
+
+	// CNA resolves the path, and it must be under the root CNA holds. A
+	// projection that joined the path itself would agree here by accident and
+	// disagree the moment CNA normalised anything.
+	resolved, err := manager.OpenStream("asset")
+	if err == nil {
+		return errors.New("OpenStream opened a stream for an asset with no file")
+	}
+	if resolved != nil {
+		return errors.New("OpenStream returned a reader alongside its error")
+	}
+	if !strings.Contains(err.Error(), second) {
+		return fmt.Errorf("the OpenStream failure %v does not name the resolved path under %q", err, second)
+	}
+	g.result.ContentAssetPathChecks++
+
+	// The asset itself. CNA's content pipeline resolves `<root>/<name>` and
+	// decodes what it finds there, so the PNG this tool already encodes for the
+	// sprite scenario IS a loadable asset -- the load below is a real one, not a
+	// probe of the failure path.
+	if err := os.WriteFile(filepath.Join(second, "asset"), g.data, 0o600); err != nil {
+		return fmt.Errorf("writing the content asset: %w", err)
+	}
+
+	// The typed load. A T outside the closed set is refused by the projection
+	// before CNA is reached; the projected one reaches CNA and is answered.
+	type unprojectedAsset struct{}
+	if _, err := content.ContentManagerLoad[*unprojectedAsset](manager, "asset"); err == nil {
+		return errors.New("Load of an unprojected asset type reported no error")
+	}
+	g.result.ContentTypeRefusals++
+
+	texture, loadErr := content.ContentManagerLoad[*graphics.Texture2D](manager, "asset")
+	switch {
+	case loadErr == nil:
+		if texture == nil {
+			return errors.New("Load reported success and produced no texture")
+		}
+		// The asset is the 2x2 PNG this tool encodes, and its four texels are
+		// known. Checking them is what separates "CNA returned a texture" from
+		// "CNA decoded THIS asset": a pipeline that handed back an empty
+		// surface of the right size would pass a dimension check.
+		if texture.Width() != 2 || texture.Height() != 2 {
+			return fmt.Errorf("loaded texture is %dx%d, want the asset's 2x2", texture.Width(), texture.Height())
+		}
+		pixels := make([]framework.Color, 4)
+		if err := graphics.Texture2DGetDataBySliceOfT(texture, pixels); err != nil {
+			// A renderer with no readback path. Recorded, not passed.
+			g.result.ContentLoadReadbackRefusals++
+			fmt.Fprintf(os.Stderr, "content readback refused: %v\n", err)
+		} else {
+			want := []framework.Color{
+				framework.NewColorByInt32AndInt32AndInt32(255, 0, 0),
+				framework.NewColorByInt32AndInt32AndInt32(0, 255, 0),
+				framework.NewColorByInt32AndInt32AndInt32(0, 0, 255),
+				framework.NewColorByInt32AndInt32AndInt32(255, 255, 255),
+			}
+			for index := range want {
+				if pixels[index] != want[index] {
+					return fmt.Errorf("loaded texel %d = %+v, want %+v: the content pipeline did not decode the asset",
+						index, pixels[index], want[index])
+				}
+			}
+			g.result.ContentLoadPixelChecks++
+		}
+		// A second load of the same name. CNA caches by normalized key, so this
+		// must succeed with the file already deleted -- which is the observable
+		// difference between CNA's cache and a projection that re-read.
+		if err := os.Remove(filepath.Join(second, "asset")); err != nil {
+			return fmt.Errorf("removing the content asset: %w", err)
+		}
+		cached, cacheErr := content.ContentManagerLoad[*graphics.Texture2D](manager, "asset")
+		if cacheErr != nil {
+			return fmt.Errorf("a second Load of a cached asset: %w", cacheErr)
+		}
+		if cached == nil || cached.Width() != 2 {
+			return errors.New("the cached Load produced no usable texture")
+		}
+		g.result.ContentCacheChecks++
+		g.result.ContentLoads++
+		// Both handles are independently owned: CNA says a loaded texture
+		// "remains valid across content-manager unload or destruction and must
+		// be destroyed before the parent game". So both are destroyed here, by
+		// this scenario, and neither is left to the manager.
+		if err := cached.DisposeByNone(); err != nil {
+			return fmt.Errorf("disposing the cached texture: %w", err)
+		}
+		if err := texture.DisposeByNone(); err != nil {
+			return fmt.Errorf("disposing the loaded texture: %w", err)
+		}
+	default:
+		// CNA_RESULT_IO for an asset that is not there. Recorded, not passed.
+		g.result.ContentLoadRefusals++
+		fmt.Fprintf(os.Stderr, "content load refused: %v\n", loadErr)
+	}
+
+	if err := manager.Unload(); err != nil {
+		return fmt.Errorf("Unload: %w", err)
+	}
+	g.result.ContentUnloadCalls++
+
+	// Disposal is the manager's own, and it must be idempotent and must close
+	// every member -- the same shape every other native-backed type here has.
+	if err := manager.DisposeByNone(); err != nil {
+		return fmt.Errorf("DisposeByNone: %w", err)
+	}
+	if err := manager.DisposeByNone(); err != nil {
+		return fmt.Errorf("a second DisposeByNone: %w", err)
+	}
+	if _, err := manager.RootDirectory(); err == nil {
+		return errors.New("RootDirectory answered after Dispose")
+	}
+	if err := manager.Unload(); err == nil {
+		return errors.New("Unload succeeded after Dispose")
+	}
+	g.result.ContentDisposalChecks++
 	return nil
 }

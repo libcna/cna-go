@@ -78,6 +78,7 @@
       "Microsoft.Xna.Framework.GameWindow|property-get|CurrentOrientation",
       "Microsoft.Xna.Framework.GameWindow|property-get|Title",
       "Microsoft.Xna.Framework.Game|property-get|Components",
+      "Microsoft.Xna.Framework.Game|property-get|Content",
       "Microsoft.Xna.Framework.Game|property-get|InactiveSleepTime",
       "Microsoft.Xna.Framework.Game|property-get|IsActive",
       "Microsoft.Xna.Framework.Game|property-get|IsFixedTimeStep",

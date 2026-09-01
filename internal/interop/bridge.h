@@ -240,6 +240,26 @@ CnaGoResult cna_go_graphics_device_subscribe_events(
     CnaGoHandle* out_registrations);
 CnaGoResult cna_go_graphics_device_unsubscribe_events(CnaGoHandle* registrations);
 CnaGoResult cna_go_graphics_device_dispose(CnaGoHandle device);
+
+CnaGoResult cna_go_content_manager_create(
+    CnaGoHandle device,
+    const char* root_directory,
+    uint64_t root_directory_length,
+    CnaGoHandle* out_content_manager);
+CnaGoResult cna_go_content_manager_destroy(CnaGoHandle content_manager);
+CnaGoResult cna_go_content_manager_get_root_directory_size(CnaGoHandle content_manager, uint64_t* out_bytes);
+CnaGoResult cna_go_content_manager_copy_root_directory(
+    CnaGoHandle content_manager, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_content_manager_set_root_directory(
+    CnaGoHandle content_manager, const char* root_directory, uint64_t root_directory_length);
+CnaGoResult cna_go_content_manager_unload(CnaGoHandle content_manager);
+CnaGoResult cna_go_content_manager_load_texture2d(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length, CnaGoHandle* out_texture);
+CnaGoResult cna_go_content_manager_get_asset_path_size(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length, uint64_t* out_bytes);
+CnaGoResult cna_go_content_manager_copy_asset_path(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length,
+    char* destination, uint64_t capacity, uint64_t* out_bytes);
 CnaGoResult cna_go_game_get_graphics_device(CnaGoHandle game, CnaGoHandle* out_device);
 CnaGoResult cna_go_graphics_device_get_viewport(
     CnaGoHandle device,

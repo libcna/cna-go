@@ -1349,6 +1349,68 @@ CnaGoResult cna_go_graphics_device_dispose(CnaGoHandle device) {
     return api.cna_graphics_device_dispose(device);
 }
 
+static CNA_StringView cna_go_view(const char* data, uint64_t length) {
+    CNA_StringView view;
+    view.data = data;
+    view.byte_length = length;
+    return view;
+}
+
+CnaGoResult cna_go_content_manager_create(
+    CnaGoHandle device,
+    const char* root_directory,
+    uint64_t root_directory_length,
+    CnaGoHandle* out_content_manager) {
+    CNA_ContentManagerCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.root_directory = cna_go_view(root_directory, root_directory_length);
+    return api.cna_content_manager_create(device, &info, out_content_manager);
+}
+
+CnaGoResult cna_go_content_manager_destroy(CnaGoHandle content_manager) {
+    return api.cna_content_manager_destroy(content_manager);
+}
+
+CnaGoResult cna_go_content_manager_get_root_directory_size(CnaGoHandle content_manager, uint64_t* out_bytes) {
+    return api.cna_content_manager_get_root_directory_size(content_manager, out_bytes);
+}
+
+CnaGoResult cna_go_content_manager_copy_root_directory(
+    CnaGoHandle content_manager, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_content_manager_copy_root_directory(content_manager, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_content_manager_set_root_directory(
+    CnaGoHandle content_manager, const char* root_directory, uint64_t root_directory_length) {
+    return api.cna_content_manager_set_root_directory(
+        content_manager, cna_go_view(root_directory, root_directory_length));
+}
+
+CnaGoResult cna_go_content_manager_unload(CnaGoHandle content_manager) {
+    return api.cna_content_manager_unload(content_manager);
+}
+
+CnaGoResult cna_go_content_manager_load_texture2d(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length, CnaGoHandle* out_texture) {
+    return api.cna_content_manager_load_texture2d(
+        content_manager, cna_go_view(asset_name, asset_name_length), out_texture);
+}
+
+CnaGoResult cna_go_content_manager_get_asset_path_size(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length, uint64_t* out_bytes) {
+    return api.cna_content_manager_get_asset_path_size(
+        content_manager, cna_go_view(asset_name, asset_name_length), out_bytes);
+}
+
+CnaGoResult cna_go_content_manager_copy_asset_path(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length,
+    char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_content_manager_copy_asset_path(
+        content_manager, cna_go_view(asset_name, asset_name_length), destination, capacity, out_bytes);
+}
+
 CnaGoResult cna_go_graphics_device_manager_set_graphics_profile(CnaGoHandle manager, uint32_t profile) {
     return api.cna_graphics_device_manager_set_graphics_profile(manager, profile);
 }

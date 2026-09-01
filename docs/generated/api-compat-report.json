@@ -12,7 +12,7 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 130,
+    "COMPLETE_TYPES": 131,
     "DECLARED_INTERFACE_CONFORMANCE": 3,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
@@ -40,9 +40,9 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 46,
-    "MISSING_TYPE": 123,
-    "MISSING_TYPES": 123,
+    "MISSING_MEMBER": 44,
+    "MISSING_TYPE": 122,
+    "MISSING_TYPES": 122,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2189,
-    "TARGET_TYPES": 134,
-    "TOTAL_DIAGNOSTICS": 169,
+    "TARGET_MEMBERS": 2202,
+    "TARGET_TYPES": 135,
+    "TOTAL_DIAGNOSTICS": 166,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -168,12 +168,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Content.ContentLoadException",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentManager",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentManager",
       "message": "mapped Go type is absent"
     },
     {
@@ -330,18 +324,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Game::LaunchParameters()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.LaunchParameters",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::Content()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:GameContent",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::Content()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:SetGameContent",
       "message": "mapped Go member is absent"
     },
     {
@@ -1113,6 +1095,7 @@
     "Microsoft.Xna.Framework.BoundingSphere",
     "Microsoft.Xna.Framework.Color",
     "Microsoft.Xna.Framework.ContainmentType",
+    "Microsoft.Xna.Framework.Content.ContentManager",
     "Microsoft.Xna.Framework.Curve",
     "Microsoft.Xna.Framework.CurveContinuity",
     "Microsoft.Xna.Framework.CurveKey",
@@ -1237,12 +1220,10 @@
     {
       "xna": "Microsoft.Xna.Framework.Game",
       "missingMembers": [
-        "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:GameContent",
-        "Microsoft.Xna.Framework.Game::Content() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:SetGameContent",
         "Microsoft.Xna.Framework.Game::LaunchParameters() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.LaunchParameters",
         "Microsoft.Xna.Framework.Game::ShowMissingRequirementMessage(System.Exception) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.ShowMissingRequirementMessage"
       ],
-      "diagnostics": 4
+      "diagnostics": 2
     },
     {
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
@@ -1320,7 +1301,6 @@
     "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.WaveBank",
     "Microsoft.Xna.Framework.Content.ContentLoadException",
-    "Microsoft.Xna.Framework.Content.ContentManager",
     "Microsoft.Xna.Framework.Content.ContentReader",
     "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
     "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
@@ -7466,7 +7446,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 21,
+      "projectedTypes": 22,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -8002,7 +7982,7 @@
       "clrMembers": 1,
       "projectedMembers": 0,
       "declaringTypes": 29,
-      "projectedTypes": 5,
+      "projectedTypes": 6,
       "rationale": "adds no Go surface of its own: no Disposable interface, no Close alias, no io.Closer adaptation, and no finalizer. Twenty-eight of the twenty-nine declaring types already declare Dispose publicly and it maps as an ordinary member; GraphicsDeviceManager implements it explicitly, so its Dispose() is not public surface and nothing is projected for it. Ownership and lifetime remain a per-type question that this relationship does not answer.",
       "verdict": "PASS"
     },
@@ -9493,7 +9473,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "7b1bdf987878a5ef7115ba330f270ddcfaf73a0ae56cb272839680b12a272312",
+    "mappingSha256": "f00a08fb6fc213ccabb4448fa9eba9470338531e553a6147003307deac2fd87f",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

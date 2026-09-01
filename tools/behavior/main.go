@@ -15,6 +15,7 @@ import (
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	audio "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio"
+	content "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
@@ -3610,8 +3611,104 @@ func runCorpus() corpusReport {
 			refusedDrawError != nil,
 			refusedDraw))
 
+	// ------------------------------------------------------------------
+	// Foundation 63. ContentManager's managed surface, and Game::Content.
+	//
+	// Everything below reaches no runtime. The reference's constructors,
+	// RootDirectory, Unload and Dispose(bool) are stores, reads and an empty
+	// cache; the native manager is created at the first operation that needs a
+	// device, which this corpus creates none of. The native half -- the root
+	// directory ROUND TRIPPING through CNA, an asset decoded to its four known
+	// texels, and CNA's own cache answering a second load -- is proved in
+	// tools/native_stress, where a live device exists.
+	// ------------------------------------------------------------------
+
+	_, contentNilProvider := content.NewContentManagerByIServiceProvider(nil)
+	_, contentNilProviderTwo := content.NewContentManagerByIServiceProviderAndString(nil, "Content")
+	check("content-manager.both-constructors-refuse-a-null-service-provider", "CONTENT_MANAGER",
+		"true,true", fmt.Sprintf("%t,%t", contentNilProvider != nil, contentNilProviderTwo != nil))
+
+	contentProvider := &corpusContentProvider{}
+	contentManager, contentManagerError := content.NewContentManagerByIServiceProvider(contentProvider)
+	contentStored, _ := contentManager.ServiceProvider()
+	contentRoot, _ := contentManager.RootDirectory()
+	check("content-manager.the-one-argument-constructor-stores-and-leaves-an-empty-root", "CONTENT_MANAGER",
+		"true,true,true", fmt.Sprintf("%t,%t,%t",
+			contentManagerError == nil, contentStored == any(contentProvider), contentRoot == ""))
+
+	rootedManager, _ := content.NewContentManagerByIServiceProviderAndString(contentProvider, "Assets")
+	rootedValue, rootedError := rootedManager.RootDirectory()
+	check("content-manager.the-two-argument-constructor-stores-the-root", "CONTENT_MANAGER",
+		"Assets,true", fmt.Sprintf("%s,%t", rootedValue, rootedError == nil))
+
+	// The setter is a store and does NOT unload: CNA and the reference agree,
+	// and Unload is the way to invalidate a cache.
+	_ = rootedManager.SetRootDirectory("first")
+	setRootError := rootedManager.SetRootDirectory("second")
+	afterSet, _ := rootedManager.RootDirectory()
+	unloadEmpty := rootedManager.Unload()
+	check("content-manager.set-root-directory-stores-and-unload-of-an-empty-cache-succeeds", "CONTENT_MANAGER",
+		"second,true,true", fmt.Sprintf("%s,%t,%t", afterSet, setRootError == nil, unloadEmpty == nil))
+
+	// Dispose(bool) is `if (disposing) Unload()`, so the finalizer path does
+	// nothing, the disposing path is idempotent, and every member closes.
+	finalizerPath := rootedManager.DisposeByBoolean(false)
+	stillLive, _ := rootedManager.RootDirectory()
+	firstDispose := rootedManager.DisposeByNone()
+	secondContentDispose := rootedManager.DisposeByNone()
+	_, afterDisposeError := rootedManager.RootDirectory()
+	unloadAfterDispose := rootedManager.Unload()
+	check("content-manager.dispose-false-does-nothing-and-dispose-true-is-idempotent", "CONTENT_MANAGER",
+		"true,second,true,true,true,true",
+		fmt.Sprintf("%t,%s,%t,%t,%t,%t",
+			finalizerPath == nil, stillLive, firstDispose == nil, secondContentDispose == nil,
+			afterDisposeError != nil, unloadAfterDispose != nil))
+
+	// The two generic loaders. A T outside the closed set is refused BY NAME,
+	// and the refusal happens before any device is resolved.
+	_, contentTypeRefusal := content.ContentManagerLoad[*corpusUnprojectedAsset](contentManager, "asset")
+	_, contentEmptyName := content.ContentManagerLoad[*graphics.Texture2D](contentManager, "")
+	_, contentReadAssetRefusal := content.ContentManagerReadAsset[*corpusUnprojectedAsset](contentManager, "asset", nil)
+	checkGoProjection("content-manager.an-unprojected-asset-type-is-refused-by-name", "CONTENT_MANAGER",
+		"true,true,true",
+		fmt.Sprintf("%t,%t,%t",
+			strings.Contains(fmt.Sprint(contentTypeRefusal), "corpusUnprojectedAsset"),
+			contentEmptyName != nil,
+			strings.Contains(fmt.Sprint(contentReadAssetRefusal), "corpusUnprojectedAsset")))
+
+	// Game::Content. The constructor creates it, the getter is one field read,
+	// and the setter refuses null before its store.
+	contentGame, _ := framework.NewGame(corpusCallbacks{})
+	gameManager := content.GameContent(contentGame)
+	gameManagerAgain := content.GameContent(contentGame)
+	gameManagerProvider, _ := gameManager.ServiceProvider()
+	check("game-content.the-constructor-creates-it-over-the-games-own-services", "GAME_CONTENT",
+		"true,true,true",
+		fmt.Sprintf("%t,%t,%t",
+			gameManager != nil, gameManager == gameManagerAgain,
+			gameManagerProvider == any(contentGame.Services())))
+
+	otherContentGame, _ := framework.NewGame(corpusCallbacks{})
+	setNilContent := content.SetGameContent(contentGame, nil)
+	afterNilSet := content.GameContent(contentGame)
+	replacementManager, _ := content.NewContentManagerByIServiceProviderAndString(contentGame.Services(), "Replaced")
+	setContentError := content.SetGameContent(contentGame, replacementManager)
+	check("game-content.the-setter-refuses-null-before-its-store", "GAME_CONTENT",
+		"true,true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t,%t",
+			setNilContent != nil, afterNilSet == gameManager,
+			setContentError == nil, content.GameContent(contentGame) == replacementManager,
+			content.GameContent(otherContentGame) != replacementManager))
+
 	return report
 }
+
+// corpusContentProvider is a consumer's own IServiceProvider. The BCL interface
+// projects to `any`, so anything at all is one.
+type corpusContentProvider struct{ name string }
+
+// corpusUnprojectedAsset stands for an asset kind CNA-Go projects no type for.
+type corpusUnprojectedAsset struct{}
 
 // The corpus-local copies of the four optional override shapes. The binding's
 // own capability interfaces are unexported, and that is the claim being

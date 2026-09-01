@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
+	content "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
 )
@@ -2767,13 +2768,21 @@ func TestEverySpriteDrawOverloadIsReachableFromOutside(t *testing.T) {
 	batch := &graphics.SpriteBatch{}
 	texture := &graphics.Texture2D{}
 
-	var _ func(*graphics.Texture2D, framework.Vector2, framework.Color) error = batch.DrawByTexture2DAndVector2AndColor
-	var _ func(*graphics.Texture2D, framework.Vector2, *framework.Rectangle, framework.Color) error = batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColor
-	var _ func(*graphics.Texture2D, framework.Vector2, *framework.Rectangle, framework.Color, float32, framework.Vector2, float32, graphics.SpriteEffects, float32) error = batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle
-	var _ func(*graphics.Texture2D, framework.Vector2, *framework.Rectangle, framework.Color, float32, framework.Vector2, framework.Vector2, graphics.SpriteEffects, float32) error = batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle
-	var _ func(*graphics.Texture2D, framework.Rectangle, framework.Color) error = batch.DrawByTexture2DAndRectangleAndColor
-	var _ func(*graphics.Texture2D, framework.Rectangle, *framework.Rectangle, framework.Color) error = batch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor
-	var _ func(*graphics.Texture2D, framework.Rectangle, *framework.Rectangle, framework.Color, float32, framework.Vector2, graphics.SpriteEffects, float32) error = batch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColorAndSingleAndVector2AndSpriteEffectsAndSingle
+	// The texture position is graphics.Texture2DReference, NOT *Texture2D. That
+	// is the Foundation 58 substitutability rule seen from outside: C# accepts
+	// a RenderTarget2D wherever an overload declares Texture2D, and a consumer
+	// who could not pass one would have a binding that refused legal XNA.
+	var _ func(graphics.Texture2DReference, framework.Vector2, framework.Color) error = batch.DrawByTexture2DAndVector2AndColor
+	var _ func(graphics.Texture2DReference, framework.Vector2, *framework.Rectangle, framework.Color) error = batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColor
+	var _ func(graphics.Texture2DReference, framework.Vector2, *framework.Rectangle, framework.Color, float32, framework.Vector2, float32, graphics.SpriteEffects, float32) error = batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle
+	var _ func(graphics.Texture2DReference, framework.Vector2, *framework.Rectangle, framework.Color, float32, framework.Vector2, framework.Vector2, graphics.SpriteEffects, float32) error = batch.DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle
+	var _ func(graphics.Texture2DReference, framework.Rectangle, framework.Color) error = batch.DrawByTexture2DAndRectangleAndColor
+	var _ func(graphics.Texture2DReference, framework.Rectangle, *framework.Rectangle, framework.Color) error = batch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor
+	var _ func(graphics.Texture2DReference, framework.Rectangle, *framework.Rectangle, framework.Color, float32, framework.Vector2, graphics.SpriteEffects, float32) error = batch.DrawByTexture2DAndRectangleAndNullableOfRectangleAndColorAndSingleAndVector2AndSpriteEffectsAndSingle
+
+	// And a RenderTarget2D really does satisfy that position from outside the
+	// module. This assignment is the whole proof; it does not compile otherwise.
+	var _ graphics.Texture2DReference = (*graphics.RenderTarget2D)(nil)
 
 	// The optional Nullable<Rectangle> is a POINTER, and nil is the reference's
 	// static nullRectangle. A consumer must be able to pass one.
@@ -2795,18 +2804,21 @@ func TestEverySpriteDrawOverloadIsReachableFromOutside(t *testing.T) {
 }
 
 // TestTextureBoundsAndGameIsActiveAreReachableFromOutside pins the two smallest
-// members Foundation 50 added, at their exact projected shapes: Bounds is
-// FALLIBLE because Width and Height are, and IsActive is INFALLIBLE because the
-// reference's getter has no throw site.
+// members Foundation 50 added, at their exact projected shapes. BOTH are
+// infallible, and Bounds became so in Foundation 52: the constructor records
+// the dimensions CNA applied, so Width, Height and Bounds are field reads with
+// no throw site, exactly as the reference's are.
 func TestTextureBoundsAndGameIsActiveAreReachableFromOutside(t *testing.T) {
-	var _ func() (framework.Rectangle, error) = (&graphics.Texture2D{}).Bounds
+	var _ func() framework.Rectangle = (&graphics.Texture2D{}).Bounds
 	var _ func() bool = (&framework.Game{}).IsActive
 
 	if (&framework.Game{}).IsActive() {
 		t.Fatal("a Game that received no activation signal reports active")
 	}
-	if _, err := (&graphics.Texture2D{}).Bounds(); err == nil {
-		t.Fatal("Bounds on an unbound texture returned a rectangle and no error")
+	// A zero Texture2D has recorded no dimensions, so its bounds are empty --
+	// which is what the field holds, not a failure.
+	if got := (&graphics.Texture2D{}).Bounds(); got != (framework.Rectangle{}) {
+		t.Fatalf("Bounds on an unconstructed texture = %+v, want the zero rectangle", got)
 	}
 }
 
@@ -2917,12 +2929,12 @@ func TestTheGenericMethodProjectionIsReachableFromOutside(t *testing.T) {
 	texture := &graphics.Texture2D{}
 	pixels := make([]framework.Color, 4)
 
-	var _ func(*graphics.Texture2D, []framework.Color) error = graphics.Texture2DSetDataBySliceOfT[framework.Color]
-	var _ func(*graphics.Texture2D, []framework.Color, int32, int32) error = graphics.Texture2DSetDataBySliceOfTAndInt32AndInt32[framework.Color]
-	var _ func(*graphics.Texture2D, int32, *framework.Rectangle, []framework.Color, int32, int32) error = graphics.Texture2DSetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[framework.Color]
-	var _ func(*graphics.Texture2D, []framework.Color) error = graphics.Texture2DGetDataBySliceOfT[framework.Color]
-	var _ func(*graphics.Texture2D, []framework.Color, int32, int32) error = graphics.Texture2DGetDataBySliceOfTAndInt32AndInt32[framework.Color]
-	var _ func(*graphics.Texture2D, int32, *framework.Rectangle, []framework.Color, int32, int32) error = graphics.Texture2DGetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[framework.Color]
+	var _ func(graphics.Texture2DReference, []framework.Color) error = graphics.Texture2DSetDataBySliceOfT[framework.Color]
+	var _ func(graphics.Texture2DReference, []framework.Color, int32, int32) error = graphics.Texture2DSetDataBySliceOfTAndInt32AndInt32[framework.Color]
+	var _ func(graphics.Texture2DReference, int32, *framework.Rectangle, []framework.Color, int32, int32) error = graphics.Texture2DSetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[framework.Color]
+	var _ func(graphics.Texture2DReference, []framework.Color) error = graphics.Texture2DGetDataBySliceOfT[framework.Color]
+	var _ func(graphics.Texture2DReference, []framework.Color, int32, int32) error = graphics.Texture2DGetDataBySliceOfTAndInt32AndInt32[framework.Color]
+	var _ func(graphics.Texture2DReference, int32, *framework.Rectangle, []framework.Color, int32, int32) error = graphics.Texture2DGetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[framework.Color]
 
 	// The method-shaped name a C# reader would look for does not exist, which
 	// is the rule's whole consequence for a consumer.
@@ -2938,5 +2950,97 @@ func TestTheGenericMethodProjectionIsReachableFromOutside(t *testing.T) {
 
 	// A packed vector is an element type too, which is what makes the mapping
 	// worth having rather than a Color special case.
-	var _ func(*graphics.Texture2D, []packedvector.Bgr565) error = graphics.Texture2DSetDataBySliceOfT[packedvector.Bgr565]
+	var _ func(graphics.Texture2DReference, []packedvector.Bgr565) error = graphics.Texture2DSetDataBySliceOfT[packedvector.Bgr565]
+}
+
+// TestContentManagerIsReachableFromOutside compiles ContentManager's whole
+// projected surface against its exact shapes, from a module that imports
+// CNA-Go rather than living inside it.
+//
+// The two generic loaders are the point. Go methods cannot declare type
+// parameters, so `manager.Load<Texture2D>("x")` has no method-shaped
+// counterpart at all -- a consumer writes the package function with the
+// receiver first, and this is where that spelling is pinned.
+func TestContentManagerIsReachableFromOutside(t *testing.T) {
+	manager := &content.ContentManager{}
+
+	var _ func(any) (*content.ContentManager, error) = content.NewContentManagerByIServiceProvider
+	var _ func(any, string) (*content.ContentManager, error) = content.NewContentManagerByIServiceProviderAndString
+	var _ func() (any, error) = manager.ServiceProvider
+	var _ func() (string, error) = manager.RootDirectory
+	var _ func(string) error = manager.SetRootDirectory
+	var _ func() error = manager.Unload
+	var _ func(string) (io.Reader, error) = manager.OpenStream
+	var _ func() error = manager.DisposeByNone
+	var _ func(bool) error = manager.DisposeByBoolean
+	var _ func(*content.ContentManager, string) (*graphics.Texture2D, error) = content.ContentManagerLoad[*graphics.Texture2D]
+	var _ func(*content.ContentManager, string, any) (*graphics.Texture2D, error) = content.ContentManagerReadAsset[*graphics.Texture2D]
+
+	// The method-shaped names a C# reader would look for do not exist.
+	for _, name := range []string{"Load", "ReadAsset"} {
+		if _, present := reflect.TypeOf(manager).MethodByName(name); present {
+			t.Fatalf("ContentManager has a %s method; Go cannot declare one with a type parameter", name)
+		}
+	}
+
+	// The constructor guard, with the reference's own failure.
+	if _, err := content.NewContentManagerByIServiceProvider(nil); err == nil {
+		t.Fatal("a nil service provider was accepted")
+	}
+
+	// A T outside the closed set is refused BY NAME, before any device is
+	// resolved -- which is what a consumer reaching for an unprojected asset
+	// kind needs to learn.
+	live, err := content.NewContentManagerByIServiceProvider(struct{}{})
+	if err != nil {
+		t.Fatalf("NewContentManagerByIServiceProvider: %v", err)
+	}
+	type unprojectedAsset struct{}
+	if _, err := content.ContentManagerLoad[*unprojectedAsset](live, "asset"); err == nil {
+		t.Fatal("a Load of an unprojected asset type was accepted")
+	} else if !strings.Contains(err.Error(), "unprojectedAsset") {
+		t.Fatalf("Load = %v, want the refusal to name the type it cannot load", err)
+	}
+}
+
+// TestGameContentIsTheCrossPackageProjection pins where Game::Content lives for
+// a consumer, and that it behaves like the field it is.
+//
+// Game is in the framework package and ContentManager is in the Content package
+// below it, so the settled cycle rule puts both accessors HERE, as package
+// functions taking the Game first. A consumer writing `game.Content` in C#
+// writes `content.GameContent(game)` in Go, and nothing on Game itself spells
+// it -- which is exactly what this checks.
+func TestGameContentIsTheCrossPackageProjection(t *testing.T) {
+	var _ func(*framework.Game) *content.ContentManager = content.GameContent
+	var _ func(*framework.Game, *content.ContentManager) error = content.SetGameContent
+
+	if _, present := reflect.TypeOf(&framework.Game{}).MethodByName("Content"); present {
+		t.Fatal("Game has a Content method; the framework package cannot name ContentManager")
+	}
+
+	game, _ := newCanaryGame(t)
+	manager := content.GameContent(game)
+	if manager == nil {
+		t.Fatal("a constructed Game has no ContentManager; its constructor creates one")
+	}
+	if content.GameContent(game) != manager {
+		t.Fatal("GameContent answered a different manager on a second call")
+	}
+	if err := content.SetGameContent(game, nil); err == nil {
+		t.Fatal("SetGameContent accepted nil; set_Content throws ArgumentNullException")
+	}
+	if content.GameContent(game) != manager {
+		t.Fatal("the refused assignment changed the field")
+	}
+	replacement, err := content.NewContentManagerByIServiceProviderAndString(game.Services(), "Assets")
+	if err != nil {
+		t.Fatalf("NewContentManagerByIServiceProviderAndString: %v", err)
+	}
+	if err := content.SetGameContent(game, replacement); err != nil {
+		t.Fatalf("SetGameContent: %v", err)
+	}
+	if content.GameContent(game) != replacement {
+		t.Fatal("GameContent did not answer the assigned manager")
+	}
 }

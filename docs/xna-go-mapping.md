@@ -391,6 +391,26 @@ package function named `OwnerTypeMember`, taking the ancestor facade. Private
 interop registries transfer the association; no handle appears publicly. This
 is reported as a language mapping limitation, not disguised as CLR inheritance.
 
+The rule covers SETTERS on the same terms — `SetOwnerTypeMember(owner, value)`
+— and its reach is not limited to the Graphics package. `Game::Content` is typed
+`Microsoft.Xna.Framework.Content.ContentManager`, so both its accessors are
+projected in the `content` package:
+
+```go
+func GameContent(game *framework.Game) *ContentManager
+func SetGameContent(game *framework.Game, value *ContentManager) error
+```
+
+The projected FIELD stays on the ancestor type, where the reference keeps it. A
+registry in the descendant package keyed by the ancestor object would retain
+every such object for the life of the process, so the association travels as two
+`any`-typed closures the ancestor package installs and the descendant package
+calls. A descendant-package constructor the ancestor's own constructor must run
+— `new ContentManager(this.Services)` — travels the same way, and an absent one
+means that package was never linked, which leaves the field empty rather than
+refusing the construction: nothing that can observe the field exists in such a
+program.
+
 ## Events and callback identity
 
 An XNA event maps to `Add<EventName>Handler` and
@@ -743,13 +763,21 @@ accessors, and expands 49 events into 98 add/remove accessors:
 ```text
 XNA-declared        = 2964 - 49 - 840 + 1119 - 49 + 98 = 3243
 BCL-inherited                                          =   12
-EXPECTED_GO_MEMBERS                                    = 3255
+XNA-inherited                                          =  188
+EXPECTED_GO_MEMBERS                                    = 3443
 ```
 
 The XNA-declared total is pinned and does not move. The BCL-inherited total is
 the surface the composition projection makes representable: eleven public CLR
 members of `Collection<IGameComponent>`, of which the indexer contributes two
 accessors.
+
+The XNA-inherited total is the same idea one level up, and it grows as base
+relationships are settled: 133 public members declared on an XNA base and
+reachable on a derived type, expanded into 188 accessors. A derived type's
+inherited surface is projected on the DERIVED type, so each such member is
+expected once per type that inherits it; three of the 133 are overridden by a
+derived declaration and are therefore projected from the override instead.
 
 Language adapter types (`EventArgs`, `EventHandler<T>`, `EventSource<T>`,
 `EventSubscription`, `GameCallbacks`, `Iterator<T>`, and `TimeSpan`) and error

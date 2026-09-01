@@ -872,7 +872,20 @@ var managedStoredMembers = map[string]map[string]bool{
 	// a type CNA-Go projects no part of. The branch is unreachable for every
 	// expressible CNA-Go program, so what remains is `ldfld isActive`: no
 	// validation, no host, no window, no device, no throw site.
+	//
+	// Foundation 63 adds Content, the plainest entry in the table:
+	//
+	//	get_Content
+	//	  ldarg.0; ldfld ContentManager Game::content; ret
+	//
+	// seven bytes, one field read. The field is assigned in the constructor and
+	// by set_Content, and NOTHING about reading it reaches the content
+	// pipeline: the ContentManager it hands back defers its own native manager
+	// to the first load. Its SETTER is not listed and stays fallible -- it
+	// throws ArgumentNullException for a null value, which is a real reference
+	// failure, not a synthetic one.
 	"Microsoft.Xna.Framework.Game": {
+		"property-get|Content":           true,
 		"property-get|Components":        true,
 		"property-get|Services":          true,
 		"property-get|InactiveSleepTime": true,

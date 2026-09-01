@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/openeggbert/cna-go/internal/interop"
+	"github.com/openeggbert/cna-go/internal/servicebridge"
 )
 
 // Game is the concrete Go facade for the XNA Game class. Protected virtual
@@ -117,6 +118,16 @@ type Game struct {
 	// caller observes must never change.
 	window *GameWindow
 
+	// content is Game::content, the ContentManager the constructor creates.
+	//
+	// It is `any` because the framework package cannot name
+	// Microsoft.Xna.Framework.Content.ContentManager: the Content package
+	// imports this one. The field is still HERE, on the object that owns it in
+	// the reference, so the value's lifetime is the Game's and no registry
+	// outside retains either. See game_content.go for the two accessors the
+	// Content package reaches it through.
+	content any
+
 	// isActive is Game::isActive, the private bool HostActivated and
 	// HostDeactivated maintain. It is NOT Game::IsActive: that getter also
 	// consults GamerServices' Guide and stays a missing member. This field
@@ -190,6 +201,19 @@ func NewGame(callbacks GameCallbacks) (*Game, error) {
 	if _, err := game.gameComponents.AddComponentRemovedHandler(game.gameComponentRemoved); err != nil {
 		return nil, err
 	}
+	// `this.content = new ContentManager(this.Services);` -- the reference's
+	// statement between the collection's handlers and the window's Paint
+	// subscription, in that position here for the same reason every other
+	// allocation is: the identity a caller observes is fixed at construction
+	// and never changes afterwards. The creator is the Content package's, and
+	// is absent only in a program that never linked that package; see
+	// servicebridge.CreateGameContent.
+	created, err := servicebridge.CreateGameContent(game.gameServices)
+	if err != nil {
+		return nil, err
+	}
+	game.content = created
+
 	// EnsureHost()'s position in the reference constructor: after the service
 	// container and before LaunchParameters, the component collection and the
 	// ContentManager. Allocating the window here rather than lazily in the

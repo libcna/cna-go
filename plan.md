@@ -1574,6 +1574,8 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 59 | the four graphics state objects and their freeze rule | `foundation-59-state-objects-evidence.md` |
 | 60 | applying state objects to the device | `foundation-60-device-state-evidence.md` |
 | 61 | the device's texture and sampler collections | `foundation-61-device-collections-evidence.md` |
+| 62 | GraphicsDevice's six events, and its disposal | `foundation-62-device-events-evidence.md` |
+| 63 | the Content subsystem, and Game::Content | `foundation-63-content-manager-evidence.md` |
 
 ### The rules these milestones settled
 

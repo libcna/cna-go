@@ -56,6 +56,36 @@ func init() {
 	// package's GraphicsDeviceManager.Dispose calls it through the bridge, so
 	// the registrations CNA requires released before cna_game_destroy really
 	// are -- with no public API on either side.
+	// The Content package's one reach into a facade's borrowed native device.
+	// CNA's cna_content_manager_create takes a callback-scoped handle and only
+	// this package's facade holds one; exporting that reach would put a
+	// *interop.Resource in a public signature, which the raw-handle rule
+	// refuses. It crosses the bridge as `any` instead.
+	servicebridge.SetContentManagerFactory(func(device any, rootDirectory string) (any, error) {
+		facade, typed := device.(*GraphicsDevice)
+		if !typed || facade == nil || facade.device == nil {
+			return nil, errors.New("GraphicsDevice is nil")
+		}
+		return facade.device.CreateContentManager(rootDirectory)
+	})
+	// The Content package's second reach: a loaded asset is a projected XNA
+	// object, and only this package can build one. The native manager crosses
+	// as `any` for the same reason the device does.
+	servicebridge.SetContentTextureLoader(func(manager any, assetName string) (any, error) {
+		resource, typed := manager.(*interop.Resource)
+		if !typed || resource == nil {
+			return nil, interop.ErrDisposed
+		}
+		texture, info, err := resource.LoadContentTexture2D(assetName)
+		if err != nil {
+			return nil, err
+		}
+		// The device is left nil. It is not reachable from the manager
+		// resource, and the reference's loaded texture carries the device its
+		// ContentManager resolved -- so GraphicsDevice answers nil here, which
+		// is recorded rather than invented.
+		return newTexture2D(nil, texture, info, nil), nil
+	})
 	servicebridge.SetDeviceFacadeSignalReleaser(func(facade any) error {
 		device, typed := facade.(*GraphicsDevice)
 		if !typed || device == nil {

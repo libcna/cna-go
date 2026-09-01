@@ -338,6 +338,69 @@ func ReleaseDeviceFacadeSignals(facade any) error {
 	return current(facade)
 }
 
+// ContentManagerFactory creates a native content manager from a graphics-device
+// facade and a root directory, returning an opaque native resource.
+//
+// It exists because CNA's cna_content_manager_create takes a callback-scoped
+// device handle and only the Graphics package's facade holds one, while the
+// type that needs it lives in the Content package. Exporting the reach from the
+// Graphics package would put a *interop.Resource in a public signature, which
+// the raw-handle rule refuses -- so it crosses here instead, as `any`, where
+// neither package publishes anything.
+type ContentManagerFactory func(device any, rootDirectory string) (any, error)
+
+var contentManagerFactory ContentManagerFactory
+
+// SetContentManagerFactory installs the Graphics package's factory, from that
+// package's init.
+func SetContentManagerFactory(create ContentManagerFactory) {
+	mu.Lock()
+	defer mu.Unlock()
+	contentManagerFactory = create
+}
+
+// CreateContentManagerResource creates the native manager. An absent factory is
+// a build with no Graphics package linked in, which cannot happen in a program
+// that has a device to pass, and is reported rather than assumed away.
+func CreateContentManagerResource(device any, rootDirectory string) (any, error) {
+	mu.RLock()
+	current := contentManagerFactory
+	mu.RUnlock()
+	if current == nil {
+		return nil, errors.New("no content manager factory is installed")
+	}
+	return current(device, rootDirectory)
+}
+
+// ContentAssetLoader loads one asset through a native content manager and
+// returns the projected XNA object.
+//
+// It crosses here for the reason the factory does: the manager is an internal
+// resource the Content package holds and may not publish, and the projected
+// asset type lives in the Graphics package. Both ends stay `any`, so neither
+// package puts a handle in a public signature.
+type ContentAssetLoader func(manager any, assetName string) (any, error)
+
+var contentTextureLoader ContentAssetLoader
+
+// SetContentTextureLoader installs the Graphics package's Texture2D loader.
+func SetContentTextureLoader(load ContentAssetLoader) {
+	mu.Lock()
+	defer mu.Unlock()
+	contentTextureLoader = load
+}
+
+// LoadContentTexture2D loads a Texture2D asset.
+func LoadContentTexture2D(manager any, assetName string) (any, error) {
+	mu.RLock()
+	current := contentTextureLoader
+	mu.RUnlock()
+	if current == nil {
+		return nil, errors.New("no content texture loader is installed")
+	}
+	return current(manager, assetName)
+}
+
 // SetManagerSignalReader installs the framework package's reader, from that
 // package's init.
 func SetManagerSignalReader(read ManagerSignalReader) {
@@ -356,4 +419,95 @@ func ReadManagerSignalDeliveries(manager any) ([]int, bool) {
 		return nil, false
 	}
 	return current(manager)
+}
+
+// ---------------------------------------------------------------------------
+// Game::Content -- the slot, not the value.
+// ---------------------------------------------------------------------------
+//
+// Microsoft.Xna.Framework.Game::.ctor creates the ContentManager and stores it
+// in a private field; get_Content is one `ldfld` and set_Content is one guard
+// and one `stfld`. The field belongs to Game, which lives in the framework
+// package; the type belongs to the Content package, which imports the framework
+// package. Neither can name the other's half.
+//
+// So the FIELD is Game's, exactly as in the reference, and the two accessors
+// below are how the Content package reaches it. Both sides stay `any`: the
+// framework package never names ContentManager and the Content package never
+// touches a Game field. This carries no state of its own -- there is no map
+// keyed by Game and nothing here retains a Game -- because a registry would
+// keep every Game that ever had content alive for the life of the process.
+
+// GameContentReader reads a Game's content field.
+type GameContentReader func(game any) (any, bool)
+
+// GameContentWriter writes a Game's content field. It reports false for
+// anything that is not a live Game, which is what makes the write refusable
+// without the framework package naming the failure.
+type GameContentWriter func(game any, value any) bool
+
+// GameContentCreator builds the ContentManager Game's constructor creates. The
+// argument is the Game's own service container, which is what the reference
+// passes: `new ContentManager(this.Services)`.
+type GameContentCreator func(services any) (any, error)
+
+var (
+	gameContentReader  GameContentReader
+	gameContentWriter  GameContentWriter
+	gameContentCreator GameContentCreator
+)
+
+// SetGameContentAccessors installs the framework package's field accessors,
+// from that package's init.
+func SetGameContentAccessors(read GameContentReader, write GameContentWriter) {
+	mu.Lock()
+	defer mu.Unlock()
+	gameContentReader, gameContentWriter = read, write
+}
+
+// SetGameContentCreator installs the Content package's constructor, from that
+// package's init.
+func SetGameContentCreator(create GameContentCreator) {
+	mu.Lock()
+	defer mu.Unlock()
+	gameContentCreator = create
+}
+
+// ReadGameContent reports a Game's content field and whether the argument was a
+// Game at all.
+func ReadGameContent(game any) (any, bool) {
+	mu.RLock()
+	current := gameContentReader
+	mu.RUnlock()
+	if current == nil {
+		return nil, false
+	}
+	return current(game)
+}
+
+// WriteGameContent assigns a Game's content field.
+func WriteGameContent(game any, value any) bool {
+	mu.RLock()
+	current := gameContentWriter
+	mu.RUnlock()
+	if current == nil {
+		return false
+	}
+	return current(game, value)
+}
+
+// CreateGameContent builds the ContentManager for a Game under construction.
+//
+// An absent creator is a program that never linked the Content package in.
+// Nothing in such a program can observe Game.Content -- the only two members
+// that read the field live in that package -- so the Game is constructed with
+// an empty slot rather than refused.
+func CreateGameContent(services any) (any, error) {
+	mu.RLock()
+	current := gameContentCreator
+	mu.RUnlock()
+	if current == nil {
+		return nil, nil
+	}
+	return current(services)
 }

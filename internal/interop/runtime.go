@@ -94,6 +94,7 @@ const (
 	resourceTexture2D
 	resourceSpriteBatch
 	resourceRenderTarget2D
+	resourceContentManager
 )
 
 // FrameTime is the private tick-exact lifecycle value passed into the public
@@ -349,6 +350,85 @@ func (resource *Resource) BeginSpriteBatchWithStates(
 		return err
 	}
 	return nativeSpriteBatchBeginWithStates(handle, sortMode, blend, sampler, depth, rasterizer)
+}
+
+// CreateContentManager creates an owned game-child content manager.
+//
+// CNA requires a callback-scoped device handle, which the reference's
+// constructor does not: it takes an IServiceProvider and resolves the device
+// lazily. The projection therefore creates LAZILY too, at the first operation
+// that needs the native manager -- which is inside a callback by construction.
+func (d *Device) CreateContentManager(rootDirectory string) (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	manager, err := nativeContentManagerCreate(handle, rootDirectory)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(manager, resourceContentManager, d.manager), nil
+}
+
+// ContentRootDirectory is cna_content_manager_copy_root_directory.
+func (resource *Resource) ContentRootDirectory() (string, error) {
+	handle, err := resource.liveHandle(resourceContentManager)
+	if err != nil {
+		return "", err
+	}
+	return nativeContentManagerRootDirectory(handle)
+}
+
+// SetContentRootDirectory is cna_content_manager_set_root_directory. CNA does
+// NOT unload the existing cache, and neither does the reference's setter.
+func (resource *Resource) SetContentRootDirectory(value string) error {
+	handle, err := resource.liveHandle(resourceContentManager)
+	if err != nil {
+		return err
+	}
+	return nativeContentManagerSetRootDirectory(handle, value)
+}
+
+// UnloadContent is cna_content_manager_unload. Handles already handed out stay
+// valid and must still be destroyed, which is CNA's rule and the reference's.
+func (resource *Resource) UnloadContent() error {
+	handle, err := resource.liveHandle(resourceContentManager)
+	if err != nil {
+		return err
+	}
+	return nativeContentManagerUnload(handle)
+}
+
+// LoadContentTexture2D is cna_content_manager_load_texture2d. The texture it
+// returns is INDEPENDENTLY owned: it survives the manager's unload and its
+// destruction, and must be destroyed before the parent game.
+func (resource *Resource) LoadContentTexture2D(assetName string) (*Resource, TextureInfo, error) {
+	handle, err := resource.liveHandle(resourceContentManager)
+	if err != nil {
+		return nil, TextureInfo{}, err
+	}
+	texture, err := nativeContentManagerLoadTexture2D(handle, assetName)
+	if err != nil {
+		return nil, TextureInfo{}, err
+	}
+	owned := resource.runtime.registerResource(texture, resourceTexture2D, resource.parent)
+	info, infoErr := nativeTextureInfo(texture)
+	if infoErr != nil {
+		_ = owned.Dispose()
+		return nil, TextureInfo{}, infoErr
+	}
+	return owned, info, nil
+}
+
+// ContentAssetPath is the root directory joined with the asset name. CNA
+// reports it whether or not a file exists there, which is what makes it usable
+// for the reference's OpenStream.
+func (resource *Resource) ContentAssetPath(assetName string) (string, error) {
+	handle, err := resource.liveHandle(resourceContentManager)
+	if err != nil {
+		return "", err
+	}
+	return nativeContentManagerAssetPath(handle, assetName)
 }
 
 // MaxTextureSlots and MaxSamplerSlots are CNA_TEXTURE_COLLECTION_MAX_TEXTURES
@@ -2279,6 +2359,8 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeTextureDestroy(handle)
 	case resourceSpriteBatch:
 		return nativeSpriteBatchDestroy(handle)
+	case resourceContentManager:
+		return nativeContentManagerDestroy(handle)
 	case resourceRenderTarget2D:
 		// A render target is a distinct CNA kind with its own destroy, and
 		// cna_texture2d_destroy is documented as destroying a Texture2D but NOT
