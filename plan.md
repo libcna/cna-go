@@ -1585,6 +1585,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 70 | SpriteBatch's six DrawString overloads | `foundation-70-draw-string-evidence.md` |
 | 71 | TextureCube, Texture3D, and a blocker that was false | `foundation-71-volume-cube-texture-evidence.md` |
 | 72 | the Effect cluster, and the draws it unblocked | `foundation-72-effect-cluster-evidence.md` |
+| 73 | the rest of GraphicsDevice, and the profile's first pixels | `foundation-73-presentation-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1638,6 +1639,19 @@ the member's reference body** (57, 69). Foundation 69 added the fifth class,
 disagreement rather than by a shape: `cna_sprite_font_measure_utf8` adds the
 last glyph's right bearing unclamped where `InternalMeasure` clamps it.
 
+**A substitutable-base position is a PARAMETER position** (73). The
+substitutable-base rule widens a base-typed parameter to an exported reference
+interface; a return and a read-only getter keep the concrete pointer. The
+verifier now counts only `parameter:*`, `property-set` and `field-type` when it
+computes a projected carrier's LIVE positions, which is that rule as it was
+already written down rather than a new one.
+
+**A handle's OWNERSHIP KIND is recorded, never inferred from the handle** (73).
+`GraphicsDevice` is the one type with two kinds -- BORROWED from a Game, and
+OWNED from the public constructor -- and a destroyed OWNED device must report
+itself disposed rather than falling back to the borrowed path and answering as
+the running game's device.
+
 **A graphics state object freezes** (59). Every setter is fallible because
 `ThrowIfBound` is a refusal the reference really throws; every getter is one
 `ldfld`. The static presets are frozen from construction.
@@ -1654,6 +1668,10 @@ the whole Effect cluster, so what remains under it is the six stock effects,
 EffectMaterial and the Model family. Windows, macOS, Android, iOS, and
 Web/Wasm are unqualified even if the Go compiler can target them.
 
+`ROADMAP.md` carries the measured, per-family breakdown of everything still
+missing, with the CNA route counts each family has to work with. It is the file
+to read when selecting the next milestone; this section is the summary.
+
 No longer deferred, and the milestone that ended each:
 
 ```text
@@ -1669,6 +1687,12 @@ effects        Foundation 72 projected Effect, EffectTechnique(Collection),
 cube/volume    Foundation 71 projected TextureCube and Texture3D. Their
                RENDERER support is a separate question and is measured per
                artifact rather than claimed.
+GraphicsDevice Foundation 73 closed the type: Reset, Present,
+               GetBackBufferData, the render-target members, RenderTargetCube,
+               RenderTargetBinding and the public constructor. It also
+               produced the profile's first VERIFIED_PIXEL evidence -- the
+               SOFTWARE artifact reads the back buffer back and every texel
+               equals the colour it was cleared to.
 ```
 
 The Load<T> set is closed by PROJECTED TYPE IDENTITY, which is the mechanism

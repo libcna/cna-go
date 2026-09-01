@@ -56,7 +56,9 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// with a CLR-signature one, and GameComponent::Dispose() -- a public slot
 	// DrawableGameComponent never occupies, because what it overrides is the
 	// PROTECTED Dispose(bool) -- stopped being dropped.
-	if surface.XNAInheritedCLRMembers != 133 || surface.XNAInheritedProjections != 188 {
+	// 143/201, not 133/188: Foundation 73 composed TextureCube, so
+	// RenderTargetCube's inherited surface joined the enumeration.
+	if surface.XNAInheritedCLRMembers != 143 || surface.XNAInheritedProjections != 201 {
 		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
 	}
 	// The subtraction the exclusion performs is measured rather than implied:
@@ -66,7 +68,9 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	if surface.XNAInheritedOverriddenMembers != 3 {
 		t.Fatalf("XNA inherited overridden count = %d", surface.XNAInheritedOverriddenMembers)
 	}
-	if surface.ExpectedGoMembers != 3443 {
+	// 3456, not 3443: Foundation 73's newly composed TextureCube adds
+	// RenderTargetCube's thirteen inherited projections.
+	if surface.ExpectedGoMembers != 3456 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -4507,8 +4511,10 @@ func TestEventProjectionIsMeasuredExactly(t *testing.T) {
 	if declaredEvents != 49 || declaredAccessors != 98 {
 		t.Fatalf("XNA-declared events = %d producing %d accessors, want 49 and 98", declaredEvents, declaredAccessors)
 	}
-	if inheritedEvents != 21 || inheritedAccessors != 42 {
-		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 21 and 42", inheritedEvents, inheritedAccessors)
+	// 22, not 21: Foundation 73's RenderTargetCube inherits GraphicsResource's
+	// Disposing through the newly composed TextureCube.
+	if inheritedEvents != 22 || inheritedAccessors != 44 {
+		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 22 and 44", inheritedEvents, inheritedAccessors)
 	}
 	if events != declaredEvents+inheritedEvents || accessors != declaredAccessors+inheritedAccessors {
 		t.Fatalf("event partition = %d/%d, walk found %d/%d", events, accessors,
@@ -8021,19 +8027,21 @@ func xnaCompositionFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 4 {
-		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 4", got)
+	// Five since Foundation 73 composed TextureCube.
+	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 5 {
+		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 5", got)
 	}
-	// Two for GameComponent, eleven for GraphicsResource, three for Texture and
-	// one for Texture2D.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 17 {
-		t.Fatalf("the composed relationships cover %d derived types, want 17", got)
+	// Two for GameComponent, eleven for GraphicsResource, three for Texture,
+	// one for Texture2D and one for TextureCube.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 18 {
+		t.Fatalf("the composed relationships cover %d derived types, want 18", got)
 	}
 	// DrawableGameComponent, SpriteBatch, Texture, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
-	// Foundation 71's TextureCube and Texture3D, and Foundation 72's Effect.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 15 {
-		t.Fatalf("%d projected derived types, want 15", got)
+	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect and
+	// Foundation 73's RenderTargetCube.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 16 {
+		t.Fatalf("%d projected derived types, want 16", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.
@@ -8046,14 +8054,14 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
 		}
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 133 {
-		t.Fatalf("%d inherited public CLR members, want 133", got)
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 143 {
+		t.Fatalf("%d inherited public CLR members, want 143", got)
 	}
-	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 188 {
-		t.Fatalf("%d inherited Go projections, want 188", got)
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 201 {
+		t.Fatalf("%d inherited Go projections, want 201", got)
 	}
-	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 188 {
-		t.Fatalf("%d attributed inherited members, want every one of the 188", got)
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 201 {
+		t.Fatalf("%d attributed inherited members, want every one of the 201", got)
 	}
 	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"]; got != 3 {
 		t.Fatalf("%d overridden inherited members, want 3", got)

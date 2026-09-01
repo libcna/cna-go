@@ -145,6 +145,13 @@ var pureManagedTypes = map[string]bool{
 	// error, and a struct describing where in it to start does not.
 	"Microsoft.Xna.Framework.Graphics.VertexBufferBinding": true,
 
+	// Foundation 73. RenderTargetBinding is the same shape one family over: two
+	// private fields, two constructors that validate and store, one
+	// op_Implicit over the shorter of them, and two one-`ldfld` getters. It
+	// owns no native object -- the TARGET does -- so the same native-SOURCED /
+	// pure-managed split admits it.
+	"Microsoft.Xna.Framework.Graphics.RenderTargetBinding": true,
+
 	// Foundation 32. Microsoft.Xna.Framework.Game.dll IL
 	// (sha256 b5dffdd8125abef2a4507ba4e1d2f11062143f0a63d48fe4f298b95ad746a1f0)
 	// shows GameComponent as managed field work throughout. The constructor is
@@ -659,6 +666,20 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"constructor|.ctor":  true,
 		"method|op_Implicit": true,
 	},
+	// Foundation 73. RenderTargetBinding's two constructors and its
+	// op_Implicit, on the same evidence:
+	//
+	//	.ctor(RenderTarget2D)             renderTarget == null  ArgumentNullException
+	//	.ctor(RenderTargetCube, face)     renderTarget == null  ArgumentNullException
+	//	                                  face out of range     ArgumentOutOfRangeException
+	//
+	// and op_Implicit is `newobj .ctor(RenderTarget2D); ret`, so it carries
+	// exactly that constructor's failure. The two GETTERS are field reads and
+	// are deliberately absent.
+	"Microsoft.Xna.Framework.Graphics.RenderTargetBinding": {
+		"constructor|.ctor":  true,
+		"method|op_Implicit": true,
+	},
 	"Microsoft.Xna.Framework.CurveKey": {
 		"method|CompareTo": true,
 	},
@@ -1103,6 +1124,14 @@ var managedStoredMembers = map[string]map[string]bool{
 	"Microsoft.Xna.Framework.Graphics.GraphicsDevice": {
 		"property-get|Indices":    true,
 		"method|GetVertexBuffers": true,
+		// Foundation 73. GetRenderTargets is GetVertexBuffers' twin:
+		//
+		//	if (currentRenderTargetCount == 0) return emptyRenderTargetBindings;
+		//	copy = new RenderTargetBinding[count]; Array.Copy(...); return copy;
+		//
+		// a managed count and a managed array copy, with no device in it. The
+		// SETTERS stay fallible: binding is what reaches CNA.
+		"method|GetRenderTargets": true,
 	},
 	// Foundation 68. GraphicsAdapter's eleven readers. Every one is one `ldfld`
 	// in the reference over a value D3D9 enumeration filled once, and CNA-Go
@@ -1364,6 +1393,14 @@ var managedStoredMembers = map[string]map[string]bool{
 	//
 	// and GraphicsDevice::get_IsDeviceLost reaches D3D. CNA-Go asks CNA the
 	// same question, and that call can be refused.
+	// Foundation 73. RenderTargetCube's three, on RenderTarget2D's own
+	// evidence: the same RenderTargetHelper, the same two field reads each, and
+	// IsContentLost absent for the same reason.
+	"Microsoft.Xna.Framework.Graphics.RenderTargetCube": {
+		"property-get|DepthStencilFormat": true,
+		"property-get|MultiSampleCount":   true,
+		"property-get|RenderTargetUsage":  true,
+	},
 	"Microsoft.Xna.Framework.Graphics.RenderTarget2D": {
 		"property-get|DepthStencilFormat": true,
 		"property-get|MultiSampleCount":   true,
@@ -3244,13 +3281,10 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	"Microsoft.Xna.Framework.Graphics.Texture2D": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
 		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and its one derived type, RenderTarget2D, is complete. Binding a render target needs a renderer with real off-screen storage, which the qualified HEADLESS artifact does not have and the qualified SOFTWARE artifact does"},
 	}},
-	// Foundation 71 projected TextureCube itself; its one DERIVED type,
-	// RenderTargetCube, is still missing, so the relationship stays deferred --
-	// and the blocker is now RenderTargetCube's own, not TextureCube's.
-	"Microsoft.Xna.Framework.Graphics.TextureCube": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "TRANSITIVE", Detail: "TextureCube is projected as of Foundation 71 and its one derived type, RenderTargetCube, is not: it needs CNA's cube render-target routes and the GraphicsDevice::SetRenderTarget(RenderTargetCube, CubeMapFace) overload that consumes one"},
-	}},
+	// Foundation 71 projected TextureCube and Foundation 73 its one derived
+	// type, so this relationship joins the composed set with an empty blocker
+	// list -- the second one in the registry to have nothing left to record.
+	"Microsoft.Xna.Framework.Graphics.TextureCube": {Status: "COMPOSED"},
 	"Microsoft.Xna.Framework.Graphics.Effect": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,
 		{Class: "TRANSITIVE", Detail: "Effect extends GraphicsResource and is itself a missing type"},
@@ -3744,6 +3778,15 @@ func buildXNABaseSubstitutability(s *expectedSurface, c contract) {
 			if memberType == "" {
 				memberType = valueOrEmpty(m.Type)
 				position = m.Kind + "-type"
+				// Foundation 73. A property with a PUBLIC SETTER carries the
+				// base at an assignable position, and the settled rule says a
+				// setter's value IS a parameter position. Recording both as
+				// "property-type" made the two indistinguishable, and the LIVE
+				// measurement below could not then tell a base a consumer must
+				// be able to PASS from one it can only RECEIVE.
+				if m.Kind == "property" && valueOrEmpty(m.SetAccess) == "public" {
+					position = "property-set"
+				}
 			}
 			if memberType != "" {
 				scan(t.Name, m.Name, m.Kind, position, memberType)

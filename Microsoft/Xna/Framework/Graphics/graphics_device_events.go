@@ -324,6 +324,16 @@ func (d *GraphicsDevice) DisposeByBoolean(disposing bool) error {
 	if !disposing {
 		return nil
 	}
+	// Foundation 73. A CALLER-CREATED device is released rather than disposed:
+	// cna_graphics_device_destroy is documented as accepting only a
+	// caller-created handle and refusing a Game's, so the two kinds take the
+	// two routes CNA declares for them. The probe confirmed both directions.
+	if d.device.IsOwned() {
+		if err := d.device.DestroyOwnedDevice(); err != nil {
+			return err
+		}
+		return d.releaseDeviceSignals()
+	}
 	if err := d.device.DisposeDevice(); err != nil {
 		return err
 	}

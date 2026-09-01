@@ -182,6 +182,21 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 		},
 	},
 
+	// Foundation 73. TextureCube is the third middle link, and the chain it
+	// heads is four deep too: RenderTargetCube -> TextureCube -> Texture ->
+	// GraphicsResource. It has no identity site of its own -- its one member is
+	// a field read -- and holds no copy of the CLR `this`: it forwards, exactly
+	// as Texture and Texture2D do.
+	"Microsoft.Xna.Framework.Graphics.TextureCube": {
+		Package:    modulePath + "/Microsoft/Xna/Framework/Graphics",
+		GoBase:     "TextureCube",
+		BindMember: "bindDerived",
+		ForwardsTo: "Texture",
+		DerivedConstructors: map[string]string{
+			"Microsoft.Xna.Framework.Graphics.RenderTargetCube": "NewRenderTargetCubeByGraphicsDeviceAndInt32AndBooleanAndSurfaceFormatAndDepthFormatAndInt32AndRenderTargetUsage",
+		},
+	},
+
 	// Texture2D is the second middle link, and the chain is now four deep:
 	// RenderTarget2D -> Texture2D -> Texture -> GraphicsResource. Every link but
 	// the root forwards, so a RenderTarget2D's ToString answers with ITS name

@@ -76,8 +76,8 @@ const gameComponentIdentity = "Microsoft.Xna.Framework.GameComponent"
 // to pass unmutated, or every mutation below would "fail" for the wrong reason.
 func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	result, measurements := identityMeasurement(t, "")
-	if len(measurements) != 4 {
-		t.Fatalf("%d identity measurements, want four composed bases", len(measurements))
+	if len(measurements) != 5 {
+		t.Fatalf("%d identity measurements, want five composed bases", len(measurements))
 	}
 	for base, measurement := range measurements {
 		if measurement.Verdict != "PASS" {
@@ -93,15 +93,16 @@ func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 8 {
 		t.Fatalf("%d identity uses, want eight: GameComponent's Dispose(bool) has two and the other six sites have one each", got)
 	}
-	// Texture and Texture2D are both middle links in a four-deep chain.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]; got != 2 {
-		t.Fatalf("%d forwarding links, want the two middle links", got)
+	// Texture, Texture2D and Foundation 73's TextureCube are middle links.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]; got != 3 {
+		t.Fatalf("%d forwarding links, want the three middle links", got)
 	}
 	// DrawableGameComponent, Texture, SpriteBatch, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
-	// Foundation 71's TextureCube and Texture3D, and Foundation 72's Effect.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 15 {
-		t.Fatalf("%d identity bindings, want the fifteen projected derived types", got)
+	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect and
+	// Foundation 73's RenderTargetCube.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 16 {
+		t.Fatalf("%d identity bindings, want the sixteen projected derived types", got)
 	}
 	for _, category := range []string{"BASE_MAPPING_MISMATCH"} {
 		if result.Summary[category] != 0 {

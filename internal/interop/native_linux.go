@@ -817,6 +817,150 @@ func nativeContentManagerLoadTexture2D(manager uint64, assetName string) (uint64
 	return uint64(handle), resultError("cna_content_manager_load_texture2d", code)
 }
 
+// The four cube render-target routes. Foundation 73.
+
+func nativeRenderTargetCubeCreate(device uint64, size uint32, mipMap bool, format, depthFormat uint32, multiSampleCount int32, usage uint32) (uint64, error) {
+	var handle C.CnaGoHandle
+	code := uint32(C.cna_go_render_target_cube_create(
+		C.CnaGoHandle(device), C.uint32_t(size), cnaBool(mipMap), C.uint32_t(format),
+		C.uint32_t(depthFormat), C.int32_t(multiSampleCount), C.uint32_t(usage), &handle))
+	if err := resultError("cna_render_target_cube_create", code); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeGraphicsDeviceSetRenderTargetCube(device, renderTarget uint64, face uint32) error {
+	return resultError("cna_graphics_device_set_render_target_cube",
+		uint32(C.cna_go_graphics_device_set_render_target_cube(
+			C.CnaGoHandle(device), C.CnaGoHandle(renderTarget), C.uint32_t(face))))
+}
+
+func nativeGraphicsDeviceSetRenderTargets(device uint64, handles []uint64, faces []uint32) error {
+	if len(handles) == 0 {
+		return resultError("cna_graphics_device_set_render_targets",
+			uint32(C.cna_go_graphics_device_set_render_targets(C.CnaGoHandle(device), nil, nil, 0)))
+	}
+	nativeHandles := make([]C.CnaGoHandle, len(handles))
+	nativeFaces := make([]C.uint32_t, len(handles))
+	for index := range handles {
+		nativeHandles[index] = C.CnaGoHandle(handles[index])
+		nativeFaces[index] = C.uint32_t(faces[index])
+	}
+	code := uint32(C.cna_go_graphics_device_set_render_targets(
+		C.CnaGoHandle(device), &nativeHandles[0], &nativeFaces[0], C.uint64_t(len(handles))))
+	runtime.KeepAlive(nativeHandles)
+	runtime.KeepAlive(nativeFaces)
+	return resultError("cna_graphics_device_set_render_targets", code)
+}
+
+func nativeGraphicsDeviceRenderTargetCount(device uint64) (uint64, error) {
+	var count C.uint64_t
+	code := uint32(C.cna_go_graphics_device_get_render_target_count(C.CnaGoHandle(device), &count))
+	return uint64(count), resultError("cna_graphics_device_get_render_target_count", code)
+}
+
+// Device reset, presentation parameters and back-buffer readback.
+// Foundation 73.
+
+// presentationIntCount is the number of int32-shaped presentation fields the
+// bridge exchanges, in the order bridge.c's CNA_GO_PRESENTATION_* indices name.
+const presentationIntCount = 8
+
+// PresentationValue is CNA_PresentationParameters, flattened. The two CNA_Bools
+// stay Go bools and everything else is an int32, which is what the eight-slot
+// array the bridge takes carries.
+type PresentationValue struct {
+	BackBufferFormat     int32
+	BackBufferWidth      int32
+	BackBufferHeight     int32
+	DepthStencilFormat   int32
+	MultiSampleCount     int32
+	PresentationInterval int32
+	DisplayOrientation   int32
+	RenderTargetUsage    int32
+	IsFullScreen         bool
+	Headless             bool
+}
+
+func (v PresentationValue) ints() [presentationIntCount]C.int32_t {
+	return [presentationIntCount]C.int32_t{
+		C.int32_t(v.BackBufferFormat), C.int32_t(v.BackBufferWidth), C.int32_t(v.BackBufferHeight),
+		C.int32_t(v.DepthStencilFormat), C.int32_t(v.MultiSampleCount),
+		C.int32_t(v.PresentationInterval), C.int32_t(v.DisplayOrientation),
+		C.int32_t(v.RenderTargetUsage),
+	}
+}
+
+func nativeGraphicsDeviceCreate(adapterIndex, profile uint32, value PresentationValue) (uint64, error) {
+	ints := value.ints()
+	var handle C.CnaGoHandle
+	code := uint32(C.cna_go_graphics_device_create(
+		C.uint32_t(adapterIndex), C.uint32_t(profile), &ints[0],
+		cnaBool(value.IsFullScreen), cnaBool(value.Headless), &handle))
+	if err := resultError("cna_graphics_device_create", code); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeGraphicsDeviceDestroy(device uint64) error {
+	return resultError("cna_graphics_device_destroy",
+		uint32(C.cna_go_graphics_device_destroy(C.CnaGoHandle(device))))
+}
+
+func nativeGraphicsDeviceReset(device uint64) error {
+	return resultError("cna_graphics_device_reset",
+		uint32(C.cna_go_graphics_device_reset(C.CnaGoHandle(device))))
+}
+
+func nativeGraphicsDeviceResetWithParameters(device uint64, value PresentationValue, adapterIndex *uint32) error {
+	ints := value.ints()
+	hasAdapter := C.uint8_t(0)
+	index := C.uint32_t(0)
+	if adapterIndex != nil {
+		hasAdapter = 1
+		index = C.uint32_t(*adapterIndex)
+	}
+	return resultError("cna_graphics_device_reset_with_parameters",
+		uint32(C.cna_go_graphics_device_reset_with_parameters(
+			C.CnaGoHandle(device), &ints[0], cnaBool(value.IsFullScreen), cnaBool(value.Headless),
+			hasAdapter, index)))
+}
+
+func nativeGraphicsDevicePresentationParameters(device uint64) (PresentationValue, error) {
+	var ints [presentationIntCount]C.int32_t
+	var fullScreen, headless C.uint8_t
+	code := uint32(C.cna_go_graphics_device_get_presentation_parameters(
+		C.CnaGoHandle(device), &ints[0], &fullScreen, &headless))
+	if err := resultError("cna_graphics_device_get_presentation_parameters", code); err != nil {
+		return PresentationValue{}, err
+	}
+	return PresentationValue{
+		BackBufferFormat:     int32(ints[0]),
+		BackBufferWidth:      int32(ints[1]),
+		BackBufferHeight:     int32(ints[2]),
+		DepthStencilFormat:   int32(ints[3]),
+		MultiSampleCount:     int32(ints[4]),
+		PresentationInterval: int32(ints[5]),
+		DisplayOrientation:   int32(ints[6]),
+		RenderTargetUsage:    int32(ints[7]),
+		IsFullScreen:         fullScreen != 0,
+		Headless:             headless != 0,
+	}, nil
+}
+
+func nativeGraphicsDeviceBackBufferData(
+	device uint64, hasRectangle bool, x, y, width, height int32,
+	startIndex, elementCount uint64, destination unsafe.Pointer, capacity uint64,
+) error {
+	return resultError("cna_graphics_device_get_backbuffer_data_window",
+		uint32(C.cna_go_graphics_device_get_backbuffer_data_window(
+			C.CnaGoHandle(device), cnaBool(hasRectangle),
+			C.int32_t(x), C.int32_t(y), C.int32_t(width), C.int32_t(height),
+			C.uint64_t(startIndex), C.uint64_t(elementCount), destination, C.uint64_t(capacity))))
+}
+
 // The two user-primitive routes. Foundation 73.
 //
 // Both take a RAW vertex stream and an explicit declaration: CNA's four TYPED

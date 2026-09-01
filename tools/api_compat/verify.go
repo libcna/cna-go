@@ -4560,6 +4560,26 @@ var xnaBaseSubstitutabilityRequirements = map[string]string{
 	"LIVE": "a projected carrier names this base and a derived type is projected, so a derived value must be acceptable where the base is named",
 }
 
+// substitutablePositionIsGoverned reports whether the substitutable-parameter
+// registry can do anything about a position.
+//
+// The settled rule is that a base-typed PARAMETER position widens to a
+// reference interface and a return or a read-only property getter keeps the
+// concrete pointer -- because widening a return would take members away from a
+// caller to solve a problem returns do not have. A property SETTER's value is a
+// parameter position, and a public settable field is one too.
+//
+// Foundation 73 added this. Before it, the LIVE measurement counted EVERY
+// position on a projected carrier, so a base named only at a return was
+// reported LIVE and the registry check then demanded an entry that could not
+// change anything -- which is exactly the state TextureCube reached when
+// RenderTargetCube was projected and its only projected-carrier position was
+// EffectParameter::GetValueTextureCube's return.
+func substitutablePositionIsGoverned(position string) bool {
+	return strings.HasPrefix(position, "parameter:") ||
+		position == "property-set" || position == "field-type"
+}
+
 // measureXNABaseSubstitutability turns the mechanical inventory into a per-family
 // verdict, and cross-checks the contract-derived relationships against the
 // registry so neither can drift alone.
@@ -4609,15 +4629,20 @@ func measureXNABaseSubstitutability(result *report, expected *expectedSurface, a
 				measurement.ProjectedDerivedTypes++
 			}
 		}
+		governedOnProjectedCarriers := 0
 		for _, row := range rows[base] {
-			if projected[row.Carrier] {
-				measurement.PositionsOnProjectedCarriers++
+			if !projected[row.Carrier] {
+				continue
+			}
+			measurement.PositionsOnProjectedCarriers++
+			if substitutablePositionIsGoverned(row.Position) {
+				governedOnProjectedCarriers++
 			}
 		}
 		switch {
 		case measurement.Positions == 0:
 			measurement.Requirement = "NONE"
-		case measurement.PositionsOnProjectedCarriers > 0 && measurement.ProjectedDerivedTypes > 0:
+		case governedOnProjectedCarriers > 0 && measurement.ProjectedDerivedTypes > 0:
 			measurement.Requirement = "LIVE"
 		default:
 			measurement.Requirement = "LATENT"

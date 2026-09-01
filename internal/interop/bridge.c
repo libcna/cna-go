@@ -1486,6 +1486,161 @@ CnaGoResult cna_go_content_manager_copy_asset_path(
         content_manager, cna_go_view(asset_name, asset_name_length), destination, capacity, out_bytes);
 }
 
+/* Foundation 73 -- device reset, presentation parameters and back-buffer
+   readback.
+   The eight int32-shaped presentation fields cross as ONE array in a fixed
+   order rather than as eight arguments, so a field added on either side is a
+   length change the layout probe sees rather than an argument a compiler
+   silently accepts in the wrong position. */
+#define CNA_GO_PRESENTATION_FORMAT 0
+#define CNA_GO_PRESENTATION_WIDTH 1
+#define CNA_GO_PRESENTATION_HEIGHT 2
+#define CNA_GO_PRESENTATION_DEPTH_FORMAT 3
+#define CNA_GO_PRESENTATION_MULTI_SAMPLE 4
+#define CNA_GO_PRESENTATION_INTERVAL 5
+#define CNA_GO_PRESENTATION_ORIENTATION 6
+#define CNA_GO_PRESENTATION_USAGE 7
+#define CNA_GO_PRESENTATION_COUNT 8
+
+static void cna_go_fill_presentation(
+    CNA_PresentationParameters* parameters, const int32_t* ints,
+    uint8_t is_full_screen, uint8_t headless) {
+    memset(parameters, 0, sizeof(*parameters));
+    parameters->struct_size = (uint32_t)sizeof(*parameters);
+    parameters->struct_version = 1;
+    parameters->back_buffer_format = (CNA_SurfaceFormat)ints[CNA_GO_PRESENTATION_FORMAT];
+    parameters->back_buffer_width = ints[CNA_GO_PRESENTATION_WIDTH];
+    parameters->back_buffer_height = ints[CNA_GO_PRESENTATION_HEIGHT];
+    parameters->depth_stencil_format = (CNA_DepthFormat)ints[CNA_GO_PRESENTATION_DEPTH_FORMAT];
+    parameters->multi_sample_count = ints[CNA_GO_PRESENTATION_MULTI_SAMPLE];
+    parameters->presentation_interval = (CNA_PresentInterval)ints[CNA_GO_PRESENTATION_INTERVAL];
+    parameters->display_orientation = (CNA_DisplayOrientation)ints[CNA_GO_PRESENTATION_ORIENTATION];
+    parameters->render_target_usage = (CNA_RenderTargetUsage)ints[CNA_GO_PRESENTATION_USAGE];
+    parameters->is_full_screen = (CNA_Bool)(is_full_screen != 0);
+    parameters->headless_ext = (CNA_Bool)(headless != 0);
+}
+
+CnaGoResult cna_go_render_target_cube_create(
+    CnaGoHandle device, uint32_t size, uint8_t mip_map, uint32_t format, uint32_t depth_format,
+    int32_t multi_sample_count, uint32_t usage, CnaGoHandle* out_render_target) {
+    CNA_RenderTargetCubeCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.size = size;
+    info.mip_map = (CNA_Bool)(mip_map != 0);
+    info.format = format;
+    info.depth_format = depth_format;
+    info.multi_sample_count = multi_sample_count;
+    info.usage = usage;
+    return api.cna_render_target_cube_create(device, &info, out_render_target);
+}
+
+CnaGoResult cna_go_graphics_device_set_render_target_cube(
+    CnaGoHandle device, CnaGoHandle render_target, uint32_t cube_map_face) {
+    return api.cna_graphics_device_set_render_target_cube(device, render_target, cube_map_face);
+}
+
+/* The binding array crosses as TWO parallel arrays, handles and faces, because
+   no CNA struct crosses cgo. array_slice is left at zero for every element:
+   CNA requires it to be zero for a cube target, and refuses a nonzero one for a
+   2D target outright, so the only value the canonical contract admits is the
+   one this fills in. */
+CnaGoResult cna_go_graphics_device_set_render_targets(
+    CnaGoHandle device, const CnaGoHandle* handles, const uint32_t* faces, uint64_t count) {
+    CNA_RenderTargetBinding* bindings;
+    CnaGoResult result;
+    uint64_t at;
+    if (count == 0) {
+        return api.cna_graphics_device_set_render_targets(device, NULL, 0);
+    }
+    bindings = (CNA_RenderTargetBinding*)calloc((size_t)count, sizeof(CNA_RenderTargetBinding));
+    if (bindings == NULL) {
+        return CNA_GO_RESULT_OUT_OF_MEMORY;
+    }
+    for (at = 0; at < count; at++) {
+        bindings[at].struct_size = (uint32_t)sizeof(CNA_RenderTargetBinding);
+        bindings[at].struct_version = 1;
+        bindings[at].render_target = handles[at];
+        bindings[at].array_slice = 0;
+        bindings[at].cube_map_face = faces[at];
+    }
+    result = api.cna_graphics_device_set_render_targets(device, bindings, count);
+    free(bindings);
+    return result;
+}
+
+CnaGoResult cna_go_graphics_device_get_render_target_count(CnaGoHandle device, uint64_t* out_count) {
+    return api.cna_graphics_device_get_render_target_count(device, out_count);
+}
+
+CnaGoResult cna_go_graphics_device_create(
+    uint32_t adapter_index, uint32_t graphics_profile, const int32_t* ints,
+    uint8_t is_full_screen, uint8_t headless, CnaGoHandle* out_device) {
+    CNA_PresentationParameters parameters;
+    cna_go_fill_presentation(&parameters, ints, is_full_screen, headless);
+    return api.cna_graphics_device_create(adapter_index, graphics_profile, &parameters, out_device);
+}
+
+CnaGoResult cna_go_graphics_device_destroy(CnaGoHandle device) {
+    return api.cna_graphics_device_destroy(device);
+}
+
+CnaGoResult cna_go_graphics_device_reset(CnaGoHandle device) {
+    return api.cna_graphics_device_reset(device);
+}
+
+CnaGoResult cna_go_graphics_device_reset_with_parameters(
+    CnaGoHandle device, const int32_t* ints, uint8_t is_full_screen, uint8_t headless,
+    uint8_t has_adapter, uint32_t adapter_index) {
+    CNA_PresentationParameters parameters;
+    cna_go_fill_presentation(&parameters, ints, is_full_screen, headless);
+    return api.cna_graphics_device_reset_with_parameters(
+        device, &parameters, has_adapter != 0 ? &adapter_index : NULL);
+}
+
+CnaGoResult cna_go_graphics_device_get_presentation_parameters(
+    CnaGoHandle device, int32_t* out_ints, uint8_t* out_is_full_screen, uint8_t* out_headless) {
+    CNA_PresentationParameters parameters;
+    CnaGoResult result;
+    memset(&parameters, 0, sizeof(parameters));
+    parameters.struct_size = (uint32_t)sizeof(parameters);
+    parameters.struct_version = 1;
+    result = api.cna_graphics_device_get_presentation_parameters(device, &parameters);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    out_ints[CNA_GO_PRESENTATION_FORMAT] = (int32_t)parameters.back_buffer_format;
+    out_ints[CNA_GO_PRESENTATION_WIDTH] = parameters.back_buffer_width;
+    out_ints[CNA_GO_PRESENTATION_HEIGHT] = parameters.back_buffer_height;
+    out_ints[CNA_GO_PRESENTATION_DEPTH_FORMAT] = (int32_t)parameters.depth_stencil_format;
+    out_ints[CNA_GO_PRESENTATION_MULTI_SAMPLE] = parameters.multi_sample_count;
+    out_ints[CNA_GO_PRESENTATION_INTERVAL] = (int32_t)parameters.presentation_interval;
+    out_ints[CNA_GO_PRESENTATION_ORIENTATION] = (int32_t)parameters.display_orientation;
+    out_ints[CNA_GO_PRESENTATION_USAGE] = (int32_t)parameters.render_target_usage;
+    *out_is_full_screen = parameters.is_full_screen ? 1u : 0u;
+    *out_headless = parameters.headless_ext ? 1u : 0u;
+    return result;
+}
+
+CnaGoResult cna_go_graphics_device_get_backbuffer_data_window(
+    CnaGoHandle device, uint8_t has_rectangle, int32_t x, int32_t y, int32_t width, int32_t height,
+    uint64_t start_index, uint64_t element_count, void* destination, uint64_t capacity) {
+    CNA_BackBufferReadback readback;
+    memset(&readback, 0, sizeof(readback));
+    readback.struct_size = (uint32_t)sizeof(readback);
+    readback.struct_version = 1;
+    readback.has_source_rectangle = (CNA_Bool)(has_rectangle != 0);
+    readback.source_rectangle.x = x;
+    readback.source_rectangle.y = y;
+    readback.source_rectangle.width = width;
+    readback.source_rectangle.height = height;
+    readback.start_index = start_index;
+    readback.element_count = element_count;
+    return api.cna_graphics_device_get_backbuffer_data_window(
+        device, &readback, (CNA_Color*)destination, capacity);
+}
+
 /* Foundation 73 -- the six user-primitive draws. */
 static void cna_go_fill_user_primitives(
     CNA_UserPrimitives* primitives, uint32_t primitive_type, uint32_t vertex_source,

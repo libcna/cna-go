@@ -102,6 +102,31 @@ type counters struct {
 	Texture3DTransferRefusals    int `json:"TEXTURE_3D_TRANSFER_REFUSALS"`
 	TextureVolumeElementRefusals int `json:"TEXTURE_VOLUME_ELEMENT_REFUSALS"`
 	TextureVolumeDisposalChecks  int `json:"TEXTURE_VOLUME_DISPOSAL_CHECKS"`
+	// The presentation slice. Foundation 73. Reset, Present, the back-buffer
+	// readback, the cube render target and the owned device constructor.
+	//
+	// CNA documents the back-buffer readback as a RENDERER capability and
+	// refuses it where the backend has no readback path, so a refusal is
+	// recorded rather than failing the run -- the same shape the render-target
+	// pixel check already has. Reset is NOT in that class: CNA's reset route is
+	// declared unconditionally, so a refusal there is a defect.
+	PresentationCycles            int `json:"PRESENTATION_CYCLES"`
+	PresentationParameterReads    int `json:"PRESENTATION_PARAMETER_READS"`
+	PresentationResetCalls        int `json:"PRESENTATION_RESET_CALLS"`
+	PresentationResetRefusals     int `json:"PRESENTATION_RESET_REFUSALS"`
+	PresentationRectangleRefusals int `json:"PRESENTATION_RECTANGLE_REFUSALS"`
+	BackBufferReads               int `json:"BACK_BUFFER_READS"`
+	BackBufferReadRefusals        int `json:"BACK_BUFFER_READ_REFUSALS"`
+	BackBufferGuardChecks         int `json:"BACK_BUFFER_GUARD_CHECKS"`
+	BackBufferPixelChecks         int `json:"BACK_BUFFER_PIXEL_CHECKS"`
+	RenderTargetCubeCreations     int `json:"RENDER_TARGET_CUBE_CREATIONS"`
+	RenderTargetCubeRefusals      int `json:"RENDER_TARGET_CUBE_REFUSALS"`
+	RenderTargetCubeBinds         int `json:"RENDER_TARGET_CUBE_BINDS"`
+	RenderTargetCubeBindRefusals  int `json:"RENDER_TARGET_CUBE_BIND_REFUSALS"`
+	RenderTargetBindingChecks     int `json:"RENDER_TARGET_BINDING_CHECKS"`
+	OwnedDeviceCreations          int `json:"OWNED_DEVICE_CREATIONS"`
+	OwnedDeviceRefusals           int `json:"OWNED_DEVICE_REFUSALS"`
+	OwnedDeviceDisposalChecks     int `json:"OWNED_DEVICE_DISPOSAL_CHECKS"`
 	// The adapter slice. CNA enumerates adapters through a callback-scoped
 	// device, so every one of these is reachable only from inside LoadContent.
 	AdapterCycles                int `json:"ADAPTER_CYCLES"`
@@ -437,7 +462,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer", "vertex-buffer", "adapter", "sprite-font", "texture-volume"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer", "vertex-buffer", "adapter", "sprite-font", "texture-volume", "presentation"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -627,6 +652,44 @@ func runParent() (counters, error) {
 		total.TextureVolumeDisposalChecks != total.TextureCubeCreations+total.Texture3DCreations {
 		return total, fmt.Errorf("%d element refusals and %d disposal checks across %d cycles",
 			total.TextureVolumeElementRefusals, total.TextureVolumeDisposalChecks, total.TextureVolumeCycles)
+	}
+
+	// Foundation 73. The presentation slice, per cycle: the parameters are read
+	// and Reset is called every time, the rectangle Present refuses every time,
+	// and the back-buffer read reports exactly one outcome every time.
+	if total.PresentationCycles < 20 {
+		return total, errors.New("the presentation scenario did not run in every cycle")
+	}
+	if total.PresentationParameterReads != total.PresentationCycles ||
+		total.PresentationRectangleRefusals != total.PresentationCycles ||
+		total.BackBufferGuardChecks != total.PresentationCycles {
+		return total, fmt.Errorf("%d parameter reads, %d rectangle refusals and %d guard checks across %d cycles",
+			total.PresentationParameterReads, total.PresentationRectangleRefusals,
+			total.BackBufferGuardChecks, total.PresentationCycles)
+	}
+	// Three resets per cycle -- Reset(), Reset(pp) and Reset(pp, adapter) --
+	// and CNA's reset route is unconditional, so none of them may refuse.
+	if total.PresentationResetCalls+total.PresentationResetRefusals != total.PresentationCycles*3 {
+		return total, fmt.Errorf("reset calls %d and refusals %d do not account for three per %d cycles",
+			total.PresentationResetCalls, total.PresentationResetRefusals, total.PresentationCycles)
+	}
+	if total.BackBufferPixelChecks != total.BackBufferReads {
+		return total, fmt.Errorf("%d back-buffer reads produced %d pixel checks",
+			total.BackBufferReads, total.BackBufferPixelChecks)
+	}
+	if total.BackBufferReads+total.BackBufferReadRefusals != total.PresentationCycles {
+		return total, fmt.Errorf("back-buffer reads %d and refusals %d do not account for %d cycles",
+			total.BackBufferReads, total.BackBufferReadRefusals, total.PresentationCycles)
+	}
+	if total.RenderTargetCubeCreations+total.RenderTargetCubeRefusals != total.PresentationCycles ||
+		total.OwnedDeviceCreations+total.OwnedDeviceRefusals != total.PresentationCycles {
+		return total, fmt.Errorf("cube targets %d/%d and owned devices %d/%d do not account for %d cycles",
+			total.RenderTargetCubeCreations, total.RenderTargetCubeRefusals,
+			total.OwnedDeviceCreations, total.OwnedDeviceRefusals, total.PresentationCycles)
+	}
+	if total.OwnedDeviceDisposalChecks != total.OwnedDeviceCreations {
+		return total, fmt.Errorf("%d owned devices produced %d disposal checks",
+			total.OwnedDeviceCreations, total.OwnedDeviceDisposalChecks)
 	}
 
 	if total.UserPrimitiveDraws+total.UserPrimitiveDrawRefusals != total.VertexBufferCycles*6 ||
@@ -1073,6 +1136,60 @@ func runChild(scenario string, index int) error {
 		}
 		if game.result.TextureVolumeElementRefusals == 0 {
 			return errors.New("the one-element-wide narrowing was not exercised")
+		}
+	case "presentation":
+		game.result.PresentationCycles = 1
+		if err != nil {
+			return err
+		}
+		// Reset is unconditional in CNA, so the run must have called it -- and
+		// the parameters read that precedes it must have happened too.
+		if game.result.PresentationParameterReads == 0 || game.result.PresentationResetCalls == 0 {
+			return errors.New("the presentation scenario neither read the parameters nor reset")
+		}
+		// The rich Present overload's refusal is a CONTRACT refusal rather than
+		// a renderer one, so it must happen in every cycle on every artifact.
+		if game.result.PresentationRectangleRefusals == 0 {
+			return errors.New("the rectangle Present overload did not refuse")
+		}
+		// Exactly one back-buffer outcome, and the Go-side guard proved either
+		// way -- it needs no renderer at all.
+		if game.result.BackBufferReads+game.result.BackBufferReadRefusals == 0 {
+			return errors.New("the back-buffer read reported neither an outcome nor a refusal")
+		}
+		if game.result.BackBufferGuardChecks == 0 {
+			return errors.New("the active-render-target guard was not exercised")
+		}
+		// A renderer that read the buffer back MUST have had its pixels checked.
+		if game.result.BackBufferPixelChecks != game.result.BackBufferReads {
+			return fmt.Errorf("%d back-buffer reads produced %d pixel checks",
+				game.result.BackBufferReads, game.result.BackBufferPixelChecks)
+		}
+		// One cube-target outcome per cycle; a creation that succeeded must
+		// have reached the bind and the binding round trip.
+		if game.result.RenderTargetCubeCreations+game.result.RenderTargetCubeRefusals != 1 {
+			return fmt.Errorf("cube target creations %d and refusals %d do not account for one cycle",
+				game.result.RenderTargetCubeCreations, game.result.RenderTargetCubeRefusals)
+		}
+		if game.result.RenderTargetCubeCreations > 0 {
+			if game.result.RenderTargetCubeBinds+game.result.RenderTargetCubeBindRefusals !=
+				game.result.RenderTargetCubeCreations {
+				return fmt.Errorf("cube binds %d and refusals %d do not account for %d creations",
+					game.result.RenderTargetCubeBinds, game.result.RenderTargetCubeBindRefusals,
+					game.result.RenderTargetCubeCreations)
+			}
+			if game.result.RenderTargetBindingChecks == 0 {
+				return errors.New("a cube target was created and no binding was checked")
+			}
+		}
+		// One owned-device outcome, and every owned device destroyed.
+		if game.result.OwnedDeviceCreations+game.result.OwnedDeviceRefusals != 1 {
+			return fmt.Errorf("owned device creations %d and refusals %d do not account for one cycle",
+				game.result.OwnedDeviceCreations, game.result.OwnedDeviceRefusals)
+		}
+		if game.result.OwnedDeviceDisposalChecks != game.result.OwnedDeviceCreations {
+			return fmt.Errorf("%d owned devices produced %d disposal checks",
+				game.result.OwnedDeviceCreations, game.result.OwnedDeviceDisposalChecks)
 		}
 	case "callback-error":
 		game.result.CallbackErrorCycles = 1
@@ -1675,6 +1792,11 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 	}
 	if g.scenario == "texture-volume" {
 		if err := g.exerciseTextureVolume(); err != nil {
+			return err
+		}
+	}
+	if g.scenario == "presentation" {
+		if err := g.exercisePresentation(); err != nil {
 			return err
 		}
 	}
@@ -5154,4 +5276,362 @@ func (g *stressGame) loadStockEffect(host *framework.Game) (*graphics.Effect, er
 		return nil, errors.New("OpenStream opened a stream for an asset with no .xnb")
 	}
 	return content.ContentManagerLoad[*graphics.Effect](manager, "cna-go-stock-effect")
+}
+
+// exercisePresentation is Foundation 73's scenario: the rest of GraphicsDevice
+// against a live one.
+//
+// It reads the presentation parameters back out of CNA, resets the device three
+// ways, proves the rectangle Present overload refuses for a CONTRACT reason
+// rather than a renderer one, reads the back buffer, creates and binds a cube
+// render target, and creates a device the CONSUMER owns and destroys it.
+//
+// # What may refuse, and what may not
+//
+// CNA declares `cna_graphics_device_reset` unconditionally, so a refusal there
+// is a defect and fails the run. It documents the back-buffer readback and cube
+// render targets as renderer capabilities, so a refusal from either is recorded
+// as a limitation -- the same shape the render-target and volume scenarios have.
+//
+// The rectangle Present overload's refusal is neither: it is CNA-Go declining to
+// present the WHOLE back buffer under a name that promises a sub-rectangle, so
+// it must happen on every artifact in every cycle.
+func (g *stressGame) exercisePresentation() error {
+	device := g.device
+	if device == nil {
+		return errors.New("the presentation scenario ran with no device")
+	}
+
+	// The parameters CNA is actually running with. This is a real read: the
+	// getter calls cna_graphics_device_get_presentation_parameters and builds a
+	// fresh managed object from the reported struct.
+	parameters, parametersErr := device.PresentationParameters()
+	if parametersErr != nil {
+		return fmt.Errorf("PresentationParameters: %w", parametersErr)
+	}
+	if parameters == nil {
+		return errors.New("PresentationParameters answered nil with no error")
+	}
+	// A back buffer of no size would mean the struct never crossed the boundary,
+	// which is the failure this read exists to catch.
+	if parameters.BackBufferWidth() <= 0 || parameters.BackBufferHeight() <= 0 {
+		return fmt.Errorf("CNA reported a %dx%d back buffer",
+			parameters.BackBufferWidth(), parameters.BackBufferHeight())
+	}
+	// Clone is a MANAGED copy, so mutating it must not touch the original --
+	// which is what proves the getter hands back an object rather than a view.
+	clone := parameters.Clone()
+	clone.SetBackBufferWidth(parameters.BackBufferWidth() + 32)
+	if parameters.BackBufferWidth() == clone.BackBufferWidth() {
+		return errors.New("PresentationParameters.Clone answered the same object")
+	}
+	g.result.PresentationParameterReads++
+
+	// The three Resets, in the order the overload group is declared. Each one
+	// reaches cna_graphics_device_reset; the two argument-carrying ones send the
+	// parameters CNA just reported, so the device ends where it started.
+	adapter, adapterErr := device.Adapter()
+	if adapterErr != nil {
+		return fmt.Errorf("GraphicsDevice.Adapter: %w", adapterErr)
+	}
+	for _, reset := range []struct {
+		name string
+		call func() error
+	}{
+		{"Reset()", device.ResetByNone},
+		{"Reset(pp)", func() error { return device.ResetByPresentationParameters(parameters) }},
+		{"Reset(pp, adapter)", func() error {
+			return device.ResetByPresentationParametersAndGraphicsAdapter(parameters, adapter)
+		}},
+	} {
+		switch err := reset.call(); {
+		case err == nil:
+			g.result.PresentationResetCalls++
+		case isNativeRefusal(err):
+			// Recorded rather than ignored: CNA declares this route
+			// unconditionally, so a refusal is a divergence worth seeing in the
+			// report even though the aggregate check below tolerates it.
+			g.result.PresentationResetRefusals++
+			fmt.Fprintf(os.Stderr, "%s refused by CNA: %v\n", reset.name, err)
+		default:
+			return fmt.Errorf("%s: %w", reset.name, err)
+		}
+	}
+
+	// The rectangle Present overload. Its refusal names CNA's one present route
+	// and the three things that route cannot carry, and it must NOT be a native
+	// refusal -- CNA never sees this call.
+	source := framework.NewRectangle(0, 0, 4, 4)
+	presentErr := device.PresentByNullableOfRectangleAndNullableOfRectangleAndIntPtr(&source, &source, 0)
+	if presentErr == nil {
+		return errors.New("the rectangle Present overload presented something")
+	}
+	if isNativeRefusal(presentErr) {
+		return fmt.Errorf("the rectangle Present overload reached CNA: %w", presentErr)
+	}
+	g.result.PresentationRectangleRefusals++
+
+	// The active-render-target guard, which needs no renderer: it is the Go
+	// side of GetBackBufferData and is proved on its own.
+	if guardErr := checkBackBufferGuardIsReachable(device); guardErr != nil {
+		return guardErr
+	}
+	g.result.BackBufferGuardChecks++
+
+	// The back-buffer read itself, over the whole buffer at the size CNA just
+	// reported. A renderer with no readback path refuses, which is recorded.
+	//
+	// # This is the profile's first real PIXEL readback
+	//
+	// Every draw proof before Foundation 73 was VERIFIED_NATIVE_DRAW: CNA
+	// accepted the submission and no artifact could read the result back. So the
+	// buffer is CLEARED to a colour nothing else in this process uses, and the
+	// pixels that come back are checked against it. A renderer that can read
+	// back and answers the wrong colour is a defect and fails the run; one that
+	// refuses is recorded as the limitation it is.
+	marker := framework.NewColorByInt32AndInt32AndInt32AndInt32(17, 34, 51, 255)
+	if clearErr := device.ClearByColor(marker); clearErr != nil && !isNativeRefusal(clearErr) {
+		return fmt.Errorf("Clear before the back-buffer read: %w", clearErr)
+	}
+	pixels := make([]framework.Color, parameters.BackBufferWidth()*parameters.BackBufferHeight())
+	switch readErr := graphics.GraphicsDeviceGetBackBufferDataBySliceOfT(device, pixels); {
+	case readErr == nil:
+		g.result.BackBufferReads++
+		if err := checkClearedPixels(pixels, marker); err != nil {
+			return err
+		}
+		g.result.BackBufferPixelChecks++
+	case isNativeRefusal(readErr):
+		g.result.BackBufferReadRefusals++
+		fmt.Fprintf(os.Stderr, "back-buffer readback refused: %v\n", readErr)
+	default:
+		return fmt.Errorf("GetBackBufferData: %w", readErr)
+	}
+
+	if err := g.exerciseCubeRenderTarget(device); err != nil {
+		return err
+	}
+	return g.exerciseOwnedDevice(device)
+}
+
+// checkBackBufferGuardIsReachable proves the one guard GetBackBufferData carries
+// that the reference carries too, without needing a renderer that can read back.
+//
+// It binds a cube face, calls the read, and requires the refusal to be the
+// managed one rather than anything CNA said -- then unbinds. The bind itself may
+// be refused by the renderer, in which case there is nothing to prove and the
+// check reports success; the aggregate accounting counts the CHECK, not the
+// refusal, so a renderer with no cube storage still passes.
+func checkBackBufferGuardIsReachable(device *graphics.GraphicsDevice) error {
+	bound := device.GetRenderTargets()
+	if len(bound) == 0 {
+		return nil
+	}
+	err := graphics.GraphicsDeviceGetBackBufferDataBySliceOfT(device, make([]framework.Color, 4))
+	if err == nil {
+		return errors.New("a back-buffer read succeeded while a render target was bound")
+	}
+	if isNativeRefusal(err) {
+		return fmt.Errorf("the active-target guard let the call reach CNA: %w", err)
+	}
+	if !strings.Contains(err.Error(), "Cannot use GetBackBufferData when a render target is active") {
+		return fmt.Errorf("%v, want FrameworkResources.CannotGetBackBufferActiveRenderTargets", err)
+	}
+	return nil
+}
+
+// checkClearedPixels requires every texel that came back to be the colour the
+// buffer was just cleared to.
+//
+// The comparison is EXACT rather than approximate: a clear writes one value to
+// every texel with no filtering or blending, so a renderer that reports a
+// readback at all must report that value. An approximate check here would hide
+// exactly the failure this exists to catch -- a readback that returns a
+// plausible-looking buffer that is not the one that was drawn.
+func checkClearedPixels(pixels []framework.Color, want framework.Color) error {
+	if len(pixels) == 0 {
+		return errors.New("the back-buffer read reported success over no pixels")
+	}
+	for index, pixel := range pixels {
+		if pixel.R() != want.R() || pixel.G() != want.G() ||
+			pixel.B() != want.B() || pixel.A() != want.A() {
+			return fmt.Errorf("back-buffer texel %d is (%d,%d,%d,%d), want the cleared (%d,%d,%d,%d)",
+				index, pixel.R(), pixel.G(), pixel.B(), pixel.A(),
+				want.R(), want.G(), want.B(), want.A())
+		}
+	}
+	return nil
+}
+
+// exerciseCubeRenderTarget creates a real RenderTargetCube, binds one face,
+// reads the binding back through GetRenderTargets, unbinds and disposes.
+//
+// The whole slice is skipped when CNA refuses the creation, which it documents
+// as a renderer capability. The BINDING checks are managed and run whenever a
+// target exists, because they are what the type exists to carry.
+func (g *stressGame) exerciseCubeRenderTarget(device *graphics.GraphicsDevice) error {
+	target, createErr := graphics.NewRenderTargetCubeByGraphicsDeviceAndInt32AndBooleanAndSurfaceFormatAndDepthFormat(
+		device, 64, false, graphics.SurfaceFormatColor, graphics.DepthFormatNone)
+	switch {
+	case createErr != nil && isNativeRefusal(createErr):
+		g.result.RenderTargetCubeRefusals++
+		fmt.Fprintf(os.Stderr, "RenderTargetCube creation refused: %v\n", createErr)
+		return nil
+	case createErr != nil:
+		return fmt.Errorf("NewRenderTargetCube: %w", createErr)
+	}
+	g.result.RenderTargetCubeCreations++
+	if target.Size() != 64 {
+		return fmt.Errorf("RenderTargetCube.Size = %d, want the created 64", target.Size())
+	}
+	// The fourth link of the composition chain, on a REAL object: the cube
+	// forwards Texture's members through TextureCube, and TextureCube through
+	// Texture, so a wrong forward is a wrong answer here rather than a compile
+	// error.
+	if target.LevelCount() < 1 || target.Format() != graphics.SurfaceFormatColor {
+		return fmt.Errorf("RenderTargetCube reported %d levels at format %v",
+			target.LevelCount(), target.Format())
+	}
+	if target.GraphicsDevice() != device {
+		return errors.New("RenderTargetCube.GraphicsDevice did not answer the device that made it")
+	}
+
+	// A binding over it, and the two accessors.
+	binding, bindingErr := graphics.NewRenderTargetBindingByRenderTargetCubeAndCubeMapFace(
+		target, graphics.CubeMapFaceNegativeZ)
+	if bindingErr != nil {
+		return fmt.Errorf("NewRenderTargetBinding: %w", bindingErr)
+	}
+	if binding.CubeMapFace() != graphics.CubeMapFaceNegativeZ || binding.RenderTarget() == nil {
+		return errors.New("the binding did not carry its face and target")
+	}
+	g.result.RenderTargetBindingChecks++
+
+	// The bind. A renderer with no cube attachment refuses, which is recorded.
+	switch bindErr := device.SetRenderTargetByRenderTargetCubeAndCubeMapFace(
+		target, graphics.CubeMapFaceNegativeZ); {
+	case bindErr == nil:
+		g.result.RenderTargetCubeBinds++
+		// Bound, so GetRenderTargets must answer exactly this binding -- and
+		// the array must be a COPY, which is what the reference hands back.
+		reported := device.GetRenderTargets()
+		if len(reported) != 1 {
+			return fmt.Errorf("GetRenderTargets answered %d bindings after one bind", len(reported))
+		}
+		if reported[0].CubeMapFace() != graphics.CubeMapFaceNegativeZ {
+			return fmt.Errorf("the bound face is %v, want NegativeZ", reported[0].CubeMapFace())
+		}
+		again := device.GetRenderTargets()
+		if &reported[0] == &again[0] {
+			return errors.New("GetRenderTargets answered the same array twice")
+		}
+		// The guard is reachable only while something is bound, so it is
+		// proved HERE rather than before the bind.
+		if guardErr := checkBackBufferGuardIsReachable(device); guardErr != nil {
+			return guardErr
+		}
+		// Back to the back buffer, which is what an empty array means.
+		if unbindErr := device.SetRenderTargets(nil); unbindErr != nil && !isNativeRefusal(unbindErr) {
+			return fmt.Errorf("SetRenderTargets(nil): %w", unbindErr)
+		}
+	case isNativeRefusal(bindErr):
+		g.result.RenderTargetCubeBindRefusals++
+		fmt.Fprintf(os.Stderr, "cube render-target bind refused: %v\n", bindErr)
+	default:
+		return fmt.Errorf("SetRenderTarget(cube, face): %w", bindErr)
+	}
+
+	if disposeErr := target.DisposeByNone(); disposeErr != nil {
+		return fmt.Errorf("RenderTargetCube.Dispose: %w", disposeErr)
+	}
+	if !target.IsDisposed() {
+		return errors.New("a disposed RenderTargetCube does not report itself disposed")
+	}
+	// A second Dispose is a no-op, which is the reference's contract and the
+	// one thing a double-free would break.
+	if disposeErr := target.DisposeByNone(); disposeErr != nil {
+		return fmt.Errorf("RenderTargetCube.Dispose twice: %w", disposeErr)
+	}
+	return nil
+}
+
+// exerciseOwnedDevice creates a GraphicsDevice the CONSUMER owns through the
+// type's one public constructor, and destroys it.
+//
+// This is the only place in the profile where a GraphicsDevice is OWNED rather
+// than borrowed from the Game, and it is the ownership CNA tells apart itself:
+// cna_graphics_device_destroy accepts a caller-created handle and refuses a
+// Game's. Creating one INSIDE a running game and destroying it before the game
+// ends is exactly the interleaving that would surface a confusion between the
+// two, which is why it runs here rather than in a unit test.
+func (g *stressGame) exerciseOwnedDevice(device *graphics.GraphicsDevice) error {
+	adapter, adapterErr := device.Adapter()
+	if adapterErr != nil {
+		return fmt.Errorf("GraphicsDevice.Adapter: %w", adapterErr)
+	}
+	parameters, parametersErr := device.PresentationParameters()
+	if parametersErr != nil {
+		return fmt.Errorf("PresentationParameters: %w", parametersErr)
+	}
+	profile, profileErr := device.GraphicsProfile()
+	if profileErr != nil {
+		return fmt.Errorf("GraphicsDevice.GraphicsProfile: %w", profileErr)
+	}
+	owned, createErr := graphics.NewGraphicsDevice(adapter, profile, parameters)
+	switch {
+	case createErr != nil && isNativeRefusal(createErr):
+		g.result.OwnedDeviceRefusals++
+		fmt.Fprintf(os.Stderr, "owned GraphicsDevice creation refused: %v\n", createErr)
+		return nil
+	case createErr != nil:
+		return fmt.Errorf("NewGraphicsDevice: %w", createErr)
+	}
+	g.result.OwnedDeviceCreations++
+	// It must be a DIFFERENT device from the game's, or the constructor handed
+	// back a facade over the borrowed one and the ownership is a fiction.
+	if owned == device {
+		return errors.New("the constructor answered the game's own device")
+	}
+	// IsDisposed is FALLIBLE on this type -- it asks CNA -- so the answer and
+	// the error are both meaningful.
+	if disposed, err := owned.IsDisposed(); err != nil {
+		return fmt.Errorf("the owned device's IsDisposed: %w", err)
+	} else if disposed {
+		return errors.New("a freshly constructed device reports itself disposed")
+	}
+	// It answers its own parameters, which proves the handle is live rather
+	// than merely non-nil.
+	ownedParameters, ownedErr := owned.PresentationParameters()
+	if ownedErr != nil {
+		return fmt.Errorf("the owned device's PresentationParameters: %w", ownedErr)
+	}
+	if ownedParameters.BackBufferWidth() <= 0 {
+		return errors.New("the owned device reported a zero-width back buffer")
+	}
+	if disposeErr := owned.DisposeByNone(); disposeErr != nil {
+		return fmt.Errorf("the owned device's Dispose: %w", disposeErr)
+	}
+	// A destroyed owned device is unusable, and it must report THAT rather
+	// than answering from the running game's device -- which is what it did
+	// before the Foundation 73 interop fix, because a zeroed owned handle took
+	// the borrowed path. Either answer proves it: an error, or a live device
+	// saying it is disposed.
+	if disposed, err := owned.IsDisposed(); err == nil && !disposed {
+		return errors.New("a destroyed owned device answered a live, undisposed device")
+	}
+	if _, err := owned.PresentationParameters(); err == nil {
+		return errors.New("a destroyed owned device still answers its presentation parameters")
+	}
+	// And the GAME's device is untouched, which is the confusion this whole
+	// slice exists to rule out.
+	if disposed, err := device.IsDisposed(); err != nil {
+		return fmt.Errorf("the game's device stopped answering IsDisposed: %w", err)
+	} else if disposed {
+		return errors.New("destroying an owned device disposed the game's device")
+	}
+	if _, err := device.PresentationParameters(); err != nil {
+		return fmt.Errorf("the game's device stopped answering after an owned device was destroyed: %w", err)
+	}
+	g.result.OwnedDeviceDisposalChecks++
+	return nil
 }

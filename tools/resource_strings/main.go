@@ -161,6 +161,10 @@ var registry = []claimedString{
 		Value: "Invalid vertex type. {0} returned a null VertexDeclaration."},
 	{Key: "VertexTypeWrongSize", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "Invalid vertex type. The size of {0} does not match the stride of its vertex declaration."},
+	// Foundation 73. The one message GetBackBufferData adds; its other guard,
+	// the ProfileCapabilities one, is not reproduced.
+	{Key: "CannotGetBackBufferActiveRenderTargets", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Cannot use GetBackBufferData when a render target is active."},
 	// Foundation 73. The one message the six DrawUser* generics add. The other
 	// three they throw -- NullNotAllowed, MustDrawSomething and
 	// MustBeValidIndex -- are already here, claimed by earlier members.

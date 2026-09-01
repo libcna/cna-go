@@ -318,11 +318,26 @@ func (d *GraphicsDevice) SetRenderTargetByRenderTarget2D(renderTarget *RenderTar
 		return errors.New("GraphicsDevice is nil")
 	}
 	if renderTarget == nil {
-		return d.device.SetRenderTarget2D(nil)
+		if err := d.device.SetRenderTarget2D(nil); err != nil {
+			return err
+		}
+		d.renderTargets = nil
+		return nil
 	}
 	resource := renderTarget.texture.nativeResource()
 	if resource == nil {
 		return interop.ErrDisposed
 	}
-	return d.device.SetRenderTarget2D(resource)
+	// The binding the reference builds. Foundation 73 keeps it, because
+	// GetRenderTargets must answer the SAME objects that were bound and
+	// GetBackBufferData must be able to see that one is active.
+	binding, err := NewRenderTargetBindingByRenderTarget2D(renderTarget)
+	if err != nil {
+		return err
+	}
+	if err := d.device.SetRenderTarget2D(resource); err != nil {
+		return err
+	}
+	d.renderTargets = []RenderTargetBinding{binding}
+	return nil
 }

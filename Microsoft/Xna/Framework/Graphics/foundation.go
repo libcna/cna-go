@@ -120,6 +120,12 @@ type GraphicsDevice struct {
 	// handle cannot be turned into the Go object a consumer is holding.
 	vertexBuffers []VertexBufferBinding
 	indices       *IndexBuffer
+	// renderTargets is the reference's own currentRenderTargets array, and it
+	// is managed for the reason vertexBuffers is: GetRenderTargets must answer
+	// the SAME Go objects that were bound, and CNA reports handles. An empty
+	// slice is the back buffer, which is what a zero-length binding array means
+	// to the reference and a zero count means to CNA.
+	renderTargets []RenderTargetBinding
 
 	device *interop.Device
 	// The three state objects the reference caches on the device itself.

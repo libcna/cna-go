@@ -379,6 +379,9 @@ typedef struct CNA_ContentManagerCreateInfo {
 #ifndef CNA_C_RENDER_TARGET_H
 typedef uint32_t CNA_DepthFormat;
 typedef uint32_t CNA_RenderTargetUsage;
+typedef uint32_t CNA_CubeMapFace;
+typedef uint32_t CNA_PresentInterval;
+typedef uint32_t CNA_DisplayOrientation;
 typedef uint32_t CNA_RenderTargetKind;
 typedef struct CNA_RenderTarget2DCreateInfo {
     uint32_t struct_size;
@@ -408,6 +411,24 @@ typedef struct CNA_RenderTargetInfo {
     CNA_Bool renderer_available;
     uint8_t reserved[2];
 } CNA_RenderTargetInfo;
+typedef struct CNA_RenderTargetCubeCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t size;
+    CNA_Bool mip_map;
+    uint8_t reserved[3];
+    CNA_SurfaceFormat format;
+    CNA_DepthFormat depth_format;
+    int32_t multi_sample_count;
+    CNA_RenderTargetUsage usage;
+} CNA_RenderTargetCubeCreateInfo;
+typedef struct CNA_RenderTargetBinding {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Handle render_target;
+    int32_t array_slice;
+    CNA_CubeMapFace cube_map_face;
+} CNA_RenderTargetBinding;
 #endif
 
 /* The display block's second half. It sits AFTER the render-target block
@@ -440,6 +461,21 @@ typedef struct CNA_GraphicsFormatSelection {
     CNA_DepthFormat depth_format;
     int32_t multi_sample_count;
 } CNA_GraphicsFormatSelection;
+typedef struct CNA_PresentationParameters {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_SurfaceFormat back_buffer_format;
+    int32_t back_buffer_width;
+    int32_t back_buffer_height;
+    CNA_DepthFormat depth_stencil_format;
+    int32_t multi_sample_count;
+    CNA_PresentInterval presentation_interval;
+    CNA_DisplayOrientation display_orientation;
+    CNA_RenderTargetUsage render_target_usage;
+    CNA_Bool is_full_screen;
+    CNA_Bool headless_ext;
+    uint8_t reserved[2];
+} CNA_PresentationParameters;
 #endif
 
 #ifndef CNA_C_GRAPHICS3D_H
@@ -455,6 +491,18 @@ typedef struct CNA_VertexElement {
     CNA_VertexElementUsage usage;
     int32_t usage_index;
 } CNA_VertexElement;
+#endif
+
+#ifndef CNA_C_GRAPHICS_DEVICE_H
+typedef struct CNA_BackBufferReadback {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Bool has_source_rectangle;
+    uint8_t reserved[3];
+    CNA_Rectangle source_rectangle;
+    uint64_t start_index;
+    uint64_t element_count;
+} CNA_BackBufferReadback;
 #endif
 
 #ifndef CNA_C_GRAPHICS_DEVICE_H
@@ -760,6 +808,16 @@ typedef CNA_Result (*cna_graphics_device_set_index_buffer_fn)(CNA_Handle, CNA_In
 typedef CNA_Result (*cna_graphics_device_draw_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t);
 typedef CNA_Result (*cna_graphics_device_draw_indexed_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t, int32_t, int32_t, int32_t);
 typedef CNA_Result (*cna_graphics_device_draw_instanced_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
+typedef CNA_Result (*cna_render_target_cube_create_fn)(CNA_Handle, const CNA_RenderTargetCubeCreateInfo*, CNA_Handle*);
+typedef CNA_Result (*cna_graphics_device_set_render_target_cube_fn)(CNA_Handle, CNA_Handle, CNA_CubeMapFace);
+typedef CNA_Result (*cna_graphics_device_set_render_targets_fn)(CNA_Handle, const CNA_RenderTargetBinding*, uint64_t);
+typedef CNA_Result (*cna_graphics_device_get_render_target_count_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_graphics_device_create_fn)(uint32_t, uint32_t, const CNA_PresentationParameters*, CNA_Handle*);
+typedef CNA_Result (*cna_graphics_device_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_graphics_device_reset_fn)(CNA_Handle);
+typedef CNA_Result (*cna_graphics_device_reset_with_parameters_fn)(CNA_Handle, const CNA_PresentationParameters*, const uint32_t*);
+typedef CNA_Result (*cna_graphics_device_get_presentation_parameters_fn)(CNA_Handle, CNA_PresentationParameters*);
+typedef CNA_Result (*cna_graphics_device_get_backbuffer_data_window_fn)(CNA_Handle, const CNA_BackBufferReadback*, CNA_Color*, uint64_t);
 typedef CNA_Result (*cna_graphics_device_draw_user_primitives_fn)(CNA_Handle, const CNA_UserPrimitives*);
 typedef CNA_Result (*cna_graphics_device_draw_user_indexed_primitives_fn)(CNA_Handle, const CNA_UserPrimitives*, const CNA_UserIndices*);
 typedef CNA_Result (*cna_index_buffer_create_fn)(CNA_Handle, const CNA_IndexBufferCreateInfo*, CNA_IndexBufferHandle*);
@@ -989,6 +1047,16 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_graphics_device_draw_primitives) \
     X(cna_graphics_device_draw_indexed_primitives) \
     X(cna_graphics_device_draw_instanced_primitives) \
+    X(cna_render_target_cube_create) \
+    X(cna_graphics_device_set_render_target_cube) \
+    X(cna_graphics_device_set_render_targets) \
+    X(cna_graphics_device_get_render_target_count) \
+    X(cna_graphics_device_create) \
+    X(cna_graphics_device_destroy) \
+    X(cna_graphics_device_reset) \
+    X(cna_graphics_device_reset_with_parameters) \
+    X(cna_graphics_device_get_presentation_parameters) \
+    X(cna_graphics_device_get_backbuffer_data_window) \
     X(cna_graphics_device_draw_user_primitives) \
     X(cna_graphics_device_draw_user_indexed_primitives) \
     X(cna_vertex_declaration_create) \

@@ -1,5 +1,10 @@
 # CNA-Go resumable handoff
 
+> **Looking for what is left to do? Read [`ROADMAP.md`](ROADMAP.md).** It
+> carries the measured, per-family breakdown of the remaining work, the
+> suggested milestone order, and the gates every milestone must pass. This file
+> is a historical record kept for its detail.
+
 > **This file records the session that produced Foundation 38 through 43 and is
 > kept for its detail.** Foundation 44 through 61 followed, each with its own
 > evidence document under `docs/`, and `plan.md` carries the index and the

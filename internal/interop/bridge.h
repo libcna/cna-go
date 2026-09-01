@@ -371,6 +371,31 @@ CnaGoResult cna_go_sprite_font_set_line_spacing(CnaGoHandle sprite_font, int32_t
 CnaGoResult cna_go_sprite_font_set_spacing(CnaGoHandle sprite_font, float spacing);
 CnaGoResult cna_go_sprite_font_destroy(CnaGoHandle sprite_font);
 
+/* Foundation 73 -- device reset, presentation parameters and back-buffer
+   readback. The eleven presentation fields cross as scalars, which is the rule
+   every other family here follows. */
+CnaGoResult cna_go_render_target_cube_create(
+    CnaGoHandle device, uint32_t size, uint8_t mip_map, uint32_t format, uint32_t depth_format,
+    int32_t multi_sample_count, uint32_t usage, CnaGoHandle* out_render_target);
+CnaGoResult cna_go_graphics_device_set_render_target_cube(
+    CnaGoHandle device, CnaGoHandle render_target, uint32_t cube_map_face);
+CnaGoResult cna_go_graphics_device_set_render_targets(
+    CnaGoHandle device, const CnaGoHandle* handles, const uint32_t* faces, uint64_t count);
+CnaGoResult cna_go_graphics_device_get_render_target_count(CnaGoHandle device, uint64_t* out_count);
+CnaGoResult cna_go_graphics_device_create(
+    uint32_t adapter_index, uint32_t graphics_profile, const int32_t* ints,
+    uint8_t is_full_screen, uint8_t headless, CnaGoHandle* out_device);
+CnaGoResult cna_go_graphics_device_destroy(CnaGoHandle device);
+CnaGoResult cna_go_graphics_device_reset(CnaGoHandle device);
+CnaGoResult cna_go_graphics_device_reset_with_parameters(
+    CnaGoHandle device, const int32_t* ints, uint8_t is_full_screen, uint8_t headless,
+    uint8_t has_adapter, uint32_t adapter_index);
+CnaGoResult cna_go_graphics_device_get_presentation_parameters(
+    CnaGoHandle device, int32_t* out_ints, uint8_t* out_is_full_screen, uint8_t* out_headless);
+CnaGoResult cna_go_graphics_device_get_backbuffer_data_window(
+    CnaGoHandle device, uint8_t has_rectangle, int32_t x, int32_t y, int32_t width, int32_t height,
+    uint64_t start_index, uint64_t element_count, void* destination, uint64_t capacity);
+
 /* Foundation 73 -- the six user-primitive draws. The two CNA structures are
    filled on the C side and everything crosses cgo as scalars plus two caller
    pointers, which is the rule every other family here follows. */

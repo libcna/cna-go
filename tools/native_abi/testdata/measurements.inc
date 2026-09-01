@@ -596,3 +596,45 @@ CNA_GO_MEASURE(alignof_CNA_UserIndices, _Alignof(CNA_UserIndices))
 CNA_GO_MEASURE(offsetof_CNA_UserIndices_index_element_size, offsetof(CNA_UserIndices, index_element_size))
 CNA_GO_MEASURE(offsetof_CNA_UserIndices_index_offset, offsetof(CNA_UserIndices, index_offset))
 CNA_GO_MEASURE(offsetof_CNA_UserIndices_index_data, offsetof(CNA_UserIndices, index_data))
+
+// Foundation 73 — presentation, back-buffer readback and the cube render target.
+//
+// CNA_PresentationParameters is the widest all-scalar structure in this
+// manifest: eight int32-shaped fields, two CNA_Bools and a two-byte reserved
+// run, so the run's WIDTH is what decides the size CNA validates struct_size
+// against. CNA_BackBufferReadback puts a three-byte reserved run between a
+// CNA_Bool and a CNA_Rectangle, which is what keeps the rectangle four-byte
+// aligned. CNA_RenderTargetBinding is the smallest structure here that mixes a
+// handle with two enum-shaped words, so the handle's alignment decides where
+// both sit.
+CNA_GO_MEASURE(sizeof_CNA_PresentationParameters, sizeof(CNA_PresentationParameters))
+CNA_GO_MEASURE(alignof_CNA_PresentationParameters, _Alignof(CNA_PresentationParameters))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_back_buffer_format, offsetof(CNA_PresentationParameters, back_buffer_format))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_back_buffer_width, offsetof(CNA_PresentationParameters, back_buffer_width))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_back_buffer_height, offsetof(CNA_PresentationParameters, back_buffer_height))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_depth_stencil_format, offsetof(CNA_PresentationParameters, depth_stencil_format))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_multi_sample_count, offsetof(CNA_PresentationParameters, multi_sample_count))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_presentation_interval, offsetof(CNA_PresentationParameters, presentation_interval))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_display_orientation, offsetof(CNA_PresentationParameters, display_orientation))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_render_target_usage, offsetof(CNA_PresentationParameters, render_target_usage))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_is_full_screen, offsetof(CNA_PresentationParameters, is_full_screen))
+CNA_GO_MEASURE(offsetof_CNA_PresentationParameters_headless_ext, offsetof(CNA_PresentationParameters, headless_ext))
+CNA_GO_MEASURE(sizeof_CNA_BackBufferReadback, sizeof(CNA_BackBufferReadback))
+CNA_GO_MEASURE(alignof_CNA_BackBufferReadback, _Alignof(CNA_BackBufferReadback))
+CNA_GO_MEASURE(offsetof_CNA_BackBufferReadback_has_source_rectangle, offsetof(CNA_BackBufferReadback, has_source_rectangle))
+CNA_GO_MEASURE(offsetof_CNA_BackBufferReadback_source_rectangle, offsetof(CNA_BackBufferReadback, source_rectangle))
+CNA_GO_MEASURE(offsetof_CNA_BackBufferReadback_start_index, offsetof(CNA_BackBufferReadback, start_index))
+CNA_GO_MEASURE(offsetof_CNA_BackBufferReadback_element_count, offsetof(CNA_BackBufferReadback, element_count))
+CNA_GO_MEASURE(sizeof_CNA_RenderTargetCubeCreateInfo, sizeof(CNA_RenderTargetCubeCreateInfo))
+CNA_GO_MEASURE(alignof_CNA_RenderTargetCubeCreateInfo, _Alignof(CNA_RenderTargetCubeCreateInfo))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetCubeCreateInfo_size, offsetof(CNA_RenderTargetCubeCreateInfo, size))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetCubeCreateInfo_mip_map, offsetof(CNA_RenderTargetCubeCreateInfo, mip_map))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetCubeCreateInfo_format, offsetof(CNA_RenderTargetCubeCreateInfo, format))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetCubeCreateInfo_depth_format, offsetof(CNA_RenderTargetCubeCreateInfo, depth_format))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetCubeCreateInfo_multi_sample_count, offsetof(CNA_RenderTargetCubeCreateInfo, multi_sample_count))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetCubeCreateInfo_usage, offsetof(CNA_RenderTargetCubeCreateInfo, usage))
+CNA_GO_MEASURE(sizeof_CNA_RenderTargetBinding, sizeof(CNA_RenderTargetBinding))
+CNA_GO_MEASURE(alignof_CNA_RenderTargetBinding, _Alignof(CNA_RenderTargetBinding))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetBinding_render_target, offsetof(CNA_RenderTargetBinding, render_target))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetBinding_array_slice, offsetof(CNA_RenderTargetBinding, array_slice))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetBinding_cube_map_face, offsetof(CNA_RenderTargetBinding, cube_map_face))

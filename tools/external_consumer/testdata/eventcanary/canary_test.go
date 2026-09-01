@@ -3633,3 +3633,149 @@ func TestTheSixUserPrimitiveDrawsAreReachableFromOutside(t *testing.T) {
 		t.Fatalf("%v, want FromType's message", err)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 73 — the rest of GraphicsDevice, from outside the module.
+// ---------------------------------------------------------------------------
+
+// TestTheDeviceConstructorIsReachableFromOutside compiles the profile's only
+// public GraphicsDevice constructor at its exact CLR shape and pins that a
+// downstream consumer sees the two ArgumentNullExceptions before anything else.
+func TestTheDeviceConstructorIsReachableFromOutside(t *testing.T) {
+	parameters := graphics.NewPresentationParameters()
+	if parameters == nil {
+		t.Fatal("NewPresentationParameters answered nil")
+	}
+	if _, err := graphics.NewGraphicsDevice(nil, graphics.GraphicsProfileReach, parameters); err == nil ||
+		!strings.Contains(err.Error(), "adapter") {
+		t.Fatalf("%v, want ArgumentNullException(adapter)", err)
+	}
+	if _, err := graphics.NewGraphicsDevice(&graphics.GraphicsAdapter{}, graphics.GraphicsProfileHiDef, nil); err == nil ||
+		!strings.Contains(err.Error(), "presentationParameters") {
+		t.Fatalf("%v, want ArgumentNullException(presentationParameters)", err)
+	}
+	// PresentationParameters carries public settable properties, so a consumer
+	// can shape one before handing it over.
+	parameters.SetBackBufferWidth(640)
+	parameters.SetBackBufferHeight(480)
+	if parameters.BackBufferWidth() != 640 || parameters.BackBufferHeight() != 480 {
+		t.Fatalf("the parameters did not keep 640x480, got %dx%d",
+			parameters.BackBufferWidth(), parameters.BackBufferHeight())
+	}
+}
+
+// TestTheThreeResetsAndPresentAreReachableFromOutside compiles all four members
+// at their exact shapes. The rich Present overload is the profile's declared
+// BLOCKED_UPSTREAM member, and a consumer must be able to SEE that rather than
+// find a name that is simply absent.
+func TestTheThreeResetsAndPresentAreReachableFromOutside(t *testing.T) {
+	device := &graphics.GraphicsDevice{}
+	parameters := graphics.NewPresentationParameters()
+	if err := device.ResetByNone(); err == nil {
+		t.Fatal("Reset() succeeded on a device with no native half")
+	}
+	if err := device.ResetByPresentationParameters(parameters); err == nil {
+		t.Fatal("Reset(pp) succeeded on a device with no native half")
+	}
+	if err := device.ResetByPresentationParametersAndGraphicsAdapter(
+		parameters, &graphics.GraphicsAdapter{}); err == nil {
+		t.Fatal("Reset(pp, adapter) succeeded on a device with no native half")
+	}
+	if _, err := device.PresentationParameters(); err == nil {
+		t.Fatal("PresentationParameters succeeded on a device with no native half")
+	}
+	if err := device.PresentByNullableOfRectangleAndNullableOfRectangleAndIntPtr(
+		nil, nil, 0); err == nil {
+		t.Fatal("the rectangle Present succeeded on a device with no native half")
+	}
+}
+
+// TestTheThreeBackBufferReadsAreReachableFromOutside compiles the three
+// GetBackBufferData generics -- package functions on the settled generic-method
+// rule -- and pins the narrowing a consumer meets when T is not framework.Color.
+func TestTheThreeBackBufferReadsAreReachableFromOutside(t *testing.T) {
+	device := &graphics.GraphicsDevice{}
+	pixels := make([]framework.Color, 16)
+	rect := framework.NewRectangle(0, 0, 4, 4)
+	if err := graphics.GraphicsDeviceGetBackBufferDataBySliceOfT(device, pixels); err == nil {
+		t.Fatal("a back-buffer read succeeded on a device with no native half")
+	}
+	if err := graphics.GraphicsDeviceGetBackBufferDataBySliceOfTAndInt32AndInt32(
+		device, pixels, 0, 16); err == nil {
+		t.Fatal("the windowed read succeeded on a device with no native half")
+	}
+	if err := graphics.GraphicsDeviceGetBackBufferDataByNullableOfRectangleAndSliceOfTAndInt32AndInt32(
+		device, &rect, pixels, 0, 16); err == nil {
+		t.Fatal("the rectangle read succeeded on a device with no native half")
+	}
+	// A nil rectangle is the WHOLE back buffer rather than a refusal, which is
+	// the reference's own Nullable<Rectangle> contract.
+	if err := graphics.GraphicsDeviceGetBackBufferDataByNullableOfRectangleAndSliceOfTAndInt32AndInt32(
+		device, nil, pixels, 0, 16); err == nil {
+		t.Fatal("a nil rectangle succeeded on a device with no native half")
+	}
+}
+
+// TestTheRenderTargetMembersAreReachableFromOutside compiles RenderTargetCube,
+// RenderTargetBinding, its op_Implicit and the three device members over them.
+func TestTheRenderTargetMembersAreReachableFromOutside(t *testing.T) {
+	device := &graphics.GraphicsDevice{}
+	// A device with no target answers no bindings, and the array is FRESH.
+	if got := device.GetRenderTargets(); len(got) != 0 {
+		t.Fatalf("GetRenderTargets answered %d bindings on a bare device", len(got))
+	}
+	if err := device.SetRenderTargets(nil); err == nil {
+		t.Fatal("SetRenderTargets succeeded on a device with no native half")
+	}
+	if err := device.SetRenderTargetByRenderTargetCubeAndCubeMapFace(
+		nil, graphics.CubeMapFacePositiveX); err == nil {
+		t.Fatal("a nil cube target was accepted")
+	}
+	// The two binding constructors and op_Implicit refuse their nulls by name.
+	if _, err := graphics.NewRenderTargetBindingByRenderTarget2D(nil); err == nil {
+		t.Fatal("a nil 2D target built a binding")
+	}
+	if _, err := graphics.NewRenderTargetBindingByRenderTargetCubeAndCubeMapFace(
+		nil, graphics.CubeMapFaceNegativeY); err == nil {
+		t.Fatal("a nil cube target built a binding")
+	}
+	if _, err := graphics.RenderTargetBindingOperatorImplicitByRenderTarget2D(nil); err == nil {
+		t.Fatal("op_Implicit accepted a nil target")
+	}
+	// The zero binding is a value a consumer can hold, which the reference
+	// cannot express -- Go has no way to forbid it -- and it answers empty.
+	var zero graphics.RenderTargetBinding
+	if zero.RenderTarget() != nil {
+		t.Fatal("the zero binding answered a render target")
+	}
+	if zero.CubeMapFace() != graphics.CubeMapFacePositiveX {
+		t.Fatalf("the zero binding's face is %v, want PositiveX", zero.CubeMapFace())
+	}
+	// RenderTargetCube's constructor is reachable and refuses its nil device.
+	if _, err := graphics.NewRenderTargetCubeByGraphicsDeviceAndInt32AndBooleanAndSurfaceFormatAndDepthFormat(
+		nil, 64, false, graphics.SurfaceFormatColor, graphics.DepthFormatNone); err == nil {
+		t.Fatal("a nil device built a RenderTargetCube")
+	}
+}
+
+// TestARenderTargetCubeSubstitutesForATextureFromOutside is the fourth link of
+// the composition chain seen from a consumer: RenderTargetCube composes
+// TextureCube composes Texture composes GraphicsResource, and the whole chain
+// must satisfy the exported reference interface a Texture PARAMETER position
+// widens to.
+func TestARenderTargetCubeSubstitutesForATextureFromOutside(t *testing.T) {
+	var target graphics.TextureReference = (*graphics.RenderTargetCube)(nil)
+	if target == nil {
+		t.Fatal("a typed nil RenderTargetCube did not satisfy TextureReference")
+	}
+	var cube graphics.TextureReference = (*graphics.TextureCube)(nil)
+	if cube == nil {
+		t.Fatal("a typed nil TextureCube did not satisfy TextureReference")
+	}
+	// And the interface is usable at the position it exists for.
+	device := &graphics.GraphicsDevice{}
+	if err := device.SetRenderTargetByRenderTargetCubeAndCubeMapFace(
+		nil, graphics.CubeMapFacePositiveZ); err == nil {
+		t.Fatal("a nil cube reached the device")
+	}
+}

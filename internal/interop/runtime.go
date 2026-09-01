@@ -266,7 +266,56 @@ type Device struct {
 	manager    *Resource
 	generation uint64
 	ownership  ownership
+	// owned is a CALLER-CREATED device's persistent handle, from
+	// cna_graphics_device_create. It is zero for the borrowed device a Game's
+	// manager publishes, which is the only kind that existed before
+	// Foundation 73.
+	owned uint64
+	// wasOwned stays true once a caller-created device has been destroyed, and
+	// it is what keeps a destroyed one from silently becoming a facade over the
+	// GAME's device.
+	//
+	// Without it, `owned` returning to zero makes nativeHandle take the
+	// borrowed path, so a destroyed device would answer the running game's
+	// handle: the Foundation 73 stress run caught exactly that -- a destroyed
+	// owned device reported IsDisposed false because it was asking the game's
+	// device. The kind a Device was created as never changes, so it is recorded
+	// rather than inferred from the handle.
+	wasOwned bool
 }
+
+// CreateOwnedDevice is cna_graphics_device_create, which is the ONLY route in
+// this ABI that produces a graphics device a caller owns.
+//
+// It is a process-level call rather than a callback-scoped one: the Foundation
+// 73 probe created and destroyed one with no Game at all. So this takes no
+// Runtime state beyond the one it registers into, and the returned Device's
+// handle is persistent instead of reacquired per call.
+func (r *Runtime) CreateOwnedDevice(adapterIndex, profile uint32, value PresentationValue) (*Device, error) {
+	handle, err := nativeGraphicsDeviceCreate(adapterIndex, profile, value)
+	if err != nil {
+		return nil, err
+	}
+	return &Device{
+		runtime: r, generation: r.Generation(),
+		ownership: owned, owned: handle, wasOwned: true,
+	}, nil
+}
+
+// DestroyOwnedDevice is cna_graphics_device_destroy, which CNA documents as
+// accepting ONLY a caller-created handle: a Game's borrowed device is not the
+// caller's to destroy and is refused. The probe confirmed both halves.
+func (d *Device) DestroyOwnedDevice() error {
+	if d == nil || d.owned == 0 {
+		return ErrDisposed
+	}
+	handle := d.owned
+	d.owned = 0
+	return nativeGraphicsDeviceDestroy(handle)
+}
+
+// IsOwned reports whether this Device is a caller-created one.
+func (d *Device) IsOwned() bool { return d != nil && d.owned != 0 }
 
 // DisplayMode is CNA_DisplayMode.
 //
@@ -825,6 +874,112 @@ func (resource *Resource) ContentAssetPath(assetName string) (string, error) {
 		return "", err
 	}
 	return nativeContentManagerAssetPath(handle, assetName)
+}
+
+// CreateRenderTargetCube is cna_render_target_cube_create. It registers under
+// the RENDER TARGET kind, not the cube-texture one: cna_texturecube_destroy is
+// documented as NOT destroying a render target, exactly as cna_texture2d_destroy
+// is not.
+func (d *Device) CreateRenderTargetCube(size uint32, mipMap bool, format, depthFormat uint32, multiSampleCount int32, usage uint32) (*Resource, RenderTargetInfo, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, RenderTargetInfo{}, err
+	}
+	target, err := nativeRenderTargetCubeCreate(handle, size, mipMap, format, depthFormat, multiSampleCount, usage)
+	if err != nil {
+		return nil, RenderTargetInfo{}, err
+	}
+	resource := d.runtime.registerResource(target, resourceRenderTarget2D, d.manager)
+	info, infoErr := nativeRenderTargetInfo(target)
+	if infoErr != nil {
+		_ = resource.Dispose()
+		return nil, RenderTargetInfo{}, infoErr
+	}
+	return resource, info, nil
+}
+
+// SetRenderTargetCube is cna_graphics_device_set_render_target_cube. A nil
+// target is CNA_INVALID_HANDLE, which restores the back buffer.
+func (d *Device) SetRenderTargetCube(target *Resource, face uint32) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	var targetHandle uint64
+	if target != nil {
+		if targetHandle, err = target.liveHandle(resourceRenderTarget2D); err != nil {
+			return err
+		}
+	}
+	return nativeGraphicsDeviceSetRenderTargetCube(handle, targetHandle, face)
+}
+
+// SetRenderTargets is cna_graphics_device_set_render_targets. An empty slice
+// restores the back buffer, which is what a zero count means to CNA and what a
+// zero-length binding array means to the reference.
+func (d *Device) SetRenderTargets(targets []*Resource, faces []uint32) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	handles := make([]uint64, len(targets))
+	for index := range targets {
+		if handles[index], err = targets[index].liveHandle(resourceRenderTarget2D); err != nil {
+			return err
+		}
+	}
+	return nativeGraphicsDeviceSetRenderTargets(handle, handles, faces)
+}
+
+// RenderTargetCount is cna_graphics_device_get_render_target_count.
+func (d *Device) RenderTargetCount() (uint64, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeGraphicsDeviceRenderTargetCount(handle)
+}
+
+// ResetDevice is cna_graphics_device_reset.
+func (d *Device) ResetDevice() error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceReset(handle)
+}
+
+// ResetDeviceWithParameters is cna_graphics_device_reset_with_parameters. A nil
+// adapter index keeps the current adapter, which is what CNA documents a null
+// pointer to mean.
+func (d *Device) ResetDeviceWithParameters(value PresentationValue, adapterIndex *uint32) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceResetWithParameters(handle, value, adapterIndex)
+}
+
+// PresentationParameters is cna_graphics_device_get_presentation_parameters.
+func (d *Device) PresentationParameters() (PresentationValue, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return PresentationValue{}, err
+	}
+	return nativeGraphicsDevicePresentationParameters(handle)
+}
+
+// BackBufferData is cna_graphics_device_get_backbuffer_data_window.
+func (d *Device) BackBufferData(
+	hasRectangle bool, x, y, width, height int32,
+	startIndex, elementCount uint64, destination unsafe.Pointer, capacity uint64,
+) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceBackBufferData(handle, hasRectangle, x, y, width, height,
+		startIndex, elementCount, destination, capacity)
 }
 
 // UserVertexSourceRawStream is CNA_USER_VERTEX_SOURCE_RAW_STREAM, the one
@@ -2947,6 +3102,19 @@ func (d *Device) Live() error {
 
 func (d *Device) nativeHandle() (uint64, error) {
 	if d == nil || d.runtime == nil {
+		return 0, ErrDisposed
+	}
+	// A caller-created device holds its own handle and outlives any callback,
+	// so it neither needs an active game nor a generation check: nothing about
+	// a Game's lifetime can invalidate it, and cna_graphics_device_destroy is
+	// the only thing that can.
+	if d.owned != 0 {
+		return d.owned, nil
+	}
+	// A caller-created device that has been destroyed is DISPOSED, not
+	// borrowed. Falling through here would answer the running game's handle,
+	// which is a different device that is very much alive.
+	if d.wasOwned {
 		return 0, ErrDisposed
 	}
 	game, err := d.runtime.activeGame(true)
