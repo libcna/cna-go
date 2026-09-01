@@ -1,5 +1,13 @@
 # CNA-Go resumable handoff
 
+> **This file records the session that produced Foundation 38 through 43 and is
+> kept for its detail.** Foundation 44 through 61 followed, each with its own
+> evidence document under `docs/`, and `plan.md` carries the index and the
+> normative rules they settled. The scoreboard below is the one that session
+> measured; the LIVE one is whatever
+> `go run ./tools/api_compat --mode report` prints now.
+
+
 ## Current state
 
 Foundation Milestones 1 through 43 are complete. Milestones 38 through 43 were

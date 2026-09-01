@@ -1545,6 +1545,76 @@ resource KEYS instead of reading from the resource VALUES.
 FOUNDATION_MILESTONE_43_COMPLETE=true
 ```
 
+## Foundation 44 through 61 — the milestone index and the rules they settled
+
+Foundation 1 through 43 are recorded above, one policy section and one
+qualification section each. From Foundation 44 the same material lives in one
+evidence document per milestone under `docs/`, because each milestone's
+argument is long enough to deserve its own file and short enough that a shared
+section would only index it. This section IS that index, and it records the
+NORMATIVE rules those milestones added; the evidence for each is in its file.
+
+| #  | milestone | evidence |
+| -- | --------- | -------- |
+| 44 | the live CNA C ABI migration | `foundation-44-abi-migration-evidence.md` |
+| 45 | GameWindow and Game.Window | `foundation-45-game-window-evidence.md` |
+| 46 | DrawableGameComponent and device-service resolution | `foundation-46-...` |
+| 47 | the native session split out of Run | `foundation-47-frame-step-evidence.md` |
+| 48 | GraphicsDeviceManager's configuration surface | `foundation-48-...` |
+| 49 | the device service the manager publishes | `foundation-49-...` |
+| 50 | every SpriteBatch.Draw overload, both native routes | `foundation-50-...` |
+| 51 | GraphicsDevice render state | `foundation-51-...` |
+| 52 | DisplayMode, and Texture2D's two constructors | `foundation-52-...` |
+| 53 | Texture2D's stream surface, both directions | `foundation-53-...` |
+| 54 | the generic-method projection rule | `foundation-54-...` |
+| 55 | the inherited slot, and the CLR `this` a composed base lost | `foundation-55-composition-identity-evidence.md` |
+| 56 | the graphics resource base chain, composed | `foundation-56-graphics-resource-chain-evidence.md` |
+| 57 | the routes CNA-Go deliberately does not bind | `foundation-57-unbound-routes-evidence.md` |
+| 58 | RenderTarget2D and the substitutability rule | `foundation-58-render-target-evidence.md` |
+| 59 | the four graphics state objects and their freeze rule | `foundation-59-state-objects-evidence.md` |
+| 60 | applying state objects to the device | `foundation-60-device-state-evidence.md` |
+| 61 | the device's texture and sampler collections | `foundation-61-device-collections-evidence.md` |
+
+### The rules these milestones settled
+
+**Inheritance is excluded by CLR SIGNATURE, not by name** (55). A derived class
+excludes an inherited member only when it declares one with the same kind, name,
+generic arity and parameter list. The old name-keyed rule deleted
+`DrawableGameComponent`'s inherited public `Dispose()`, which is the member
+`Game.Dispose` looks for.
+
+**Inherited and declared members share one overload namespace** (55). A group
+larger than one carries `By<ParameterShape>` whichever half declared it.
+
+**Fallibility follows the DECLARING type** (56), and so does stream direction
+(58). Both are properties of a member's own body.
+
+**A composed base holds the CLR `this`** (55, 56, 58). It is unexported,
+installed by the derived constructor, and used wherever the reference uses
+`ldarg.0` as an OBJECT rather than as a path to a field. A base that is itself
+composed forwards instead of holding a second copy. The verifier holds this from
+the Go syntax tree, counting reaches against `ldarg.0` object uses.
+
+**A base-typed PARAMETER position widens to a reference interface when
+substitutability is LIVE** (58, 61). Exported so a consumer can name it,
+unexported method so only this module satisfies it. Returns and property getters
+keep the concrete pointer; a property setter's value is a parameter position. A
+base-typed return leaves a downcast Go cannot express, which is recorded as a
+language limitation rather than worked around.
+
+**An inherited member whose projection is a PACKAGE FUNCTION is not
+re-projected** (58). A static, or a generic instance method: its Go identity
+already names its declaring type, and its receiver-first parameter carries the
+reference interface.
+
+**A route CNA offers for a PROJECTED member and CNA-Go does not bind is
+recorded, with the measured reason** (57). Four classes, checked against the
+canonical headers and against the manifest.
+
+**A graphics state object freezes** (59). Every setter is fallible because
+`ThrowIfBound` is a refusal the reference really throws; every getter is one
+`ldfld`. The static presets are frozen from construction.
+
 ## Deferred families
 
 Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
