@@ -308,6 +308,33 @@ CnaGoResult cna_go_content_manager_get_asset_path_size(
 CnaGoResult cna_go_content_manager_copy_asset_path(
     CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length,
     char* destination, uint64_t capacity, uint64_t* out_bytes);
+
+/* Foundation 69. The SpriteFont family. The loader reports TWO owned handles
+   for one asset -- the font and its glyph atlas -- because CNA retains the
+   atlas for as long as the font lives and destroying the font first is the
+   documented order. */
+CnaGoResult cna_go_content_manager_load_sprite_font(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length,
+    CnaGoHandle* out_sprite_font, CnaGoHandle* out_texture);
+CnaGoResult cna_go_sprite_font_get_info(
+    CnaGoHandle sprite_font,
+    uint64_t* out_character_count,
+    int32_t* out_line_spacing,
+    float* out_spacing,
+    uint16_t* out_default_character,
+    uint8_t* out_has_default_character);
+CnaGoResult cna_go_sprite_font_copy_glyphs(
+    CnaGoHandle sprite_font,
+    uint64_t capacity,
+    uint16_t* out_characters,
+    int32_t* out_rectangles,
+    float* out_kerning,
+    uint64_t* out_count);
+CnaGoResult cna_go_sprite_font_set_default_character(
+    CnaGoHandle sprite_font, uint8_t has_value, uint16_t value);
+CnaGoResult cna_go_sprite_font_set_line_spacing(CnaGoHandle sprite_font, int32_t line_spacing);
+CnaGoResult cna_go_sprite_font_set_spacing(CnaGoHandle sprite_font, float spacing);
+CnaGoResult cna_go_sprite_font_destroy(CnaGoHandle sprite_font);
 CnaGoResult cna_go_game_get_graphics_device(CnaGoHandle game, CnaGoHandle* out_device);
 CnaGoResult cna_go_graphics_device_get_viewport(
     CnaGoHandle device,

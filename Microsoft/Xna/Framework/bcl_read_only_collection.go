@@ -219,3 +219,17 @@ func NewReadOnlyCollectionOverSingles(items []float32) *ReadOnlyCollection[float
 func NewReadOnlyCollectionOverReferences[T comparable](items []T) *ReadOnlyCollection[T] {
 	return newReadOnlyCollectionOverSlice(items, func(a, b T) bool { return a == b })
 }
+
+// NewReadOnlyCollectionOverCharacters is the third element-kind constructor,
+// for System.Char. It exists for the reason the second does -- the XNA type
+// that owns one, Microsoft.Xna.Framework.Graphics.SpriteFont, whose Characters
+// property returns ReadOnlyCollection<char>, lives in a different Go package --
+// and it is its own name rather than a use of the reference constructor because
+// a font's characters are VALUES, and a constructor named "over references"
+// would say the opposite of what the collection holds.
+//
+// The element comparer is Go's `==` on the UTF-16 code unit System.Char
+// projects to, which is EqualityComparer<Char>.Default.
+func NewReadOnlyCollectionOverCharacters(items []uint16) *ReadOnlyCollection[uint16] {
+	return newReadOnlyCollectionOverSlice(items, func(a, b uint16) bool { return a == b })
+}

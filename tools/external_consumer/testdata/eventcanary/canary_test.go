@@ -3305,3 +3305,72 @@ func TestGraphicsAdapterIsReachableFromOutside(t *testing.T) {
 		t.Fatal("the indexer did not answer a display-mode sequence")
 	}
 }
+
+// TestSpriteFontIsReachableFromOutside compiles SpriteFont at its exact shapes
+// and proves the two things a consumer meets first: there is NO public
+// constructor -- the reference's is `assembly` and CNA-Go exports none -- and
+// the four readers never fail while the three setters do.
+//
+// The StringBuilder overload is the reason this test matters beyond compiling:
+// its parameter is `*strings.Builder`, so the CLR's two-member DrawString/
+// MeasureString overload set is two Go members here, and a consumer can tell
+// them apart. A projection that collapsed both onto `string` would still
+// compile everything above it.
+func TestSpriteFontIsReachableFromOutside(t *testing.T) {
+	font := &graphics.SpriteFont{}
+	var _ func() int32 = font.LineSpacing
+	var _ func(int32) error = font.SetLineSpacing
+	var _ func() float32 = font.Spacing
+	var _ func(float32) error = font.SetSpacing
+	var _ func() (uint16, bool) = font.DefaultCharacter
+	var _ func(*uint16) error = font.SetDefaultCharacter
+	var _ func() *framework.ReadOnlyCollection[uint16] = font.Characters
+	var _ func(string) (framework.Vector2, error) = font.MeasureStringByString
+	var _ func(*strings.Builder) (framework.Vector2, error) = font.MeasureStringByStringBuilder
+
+	// A zero font has an empty glyph table, so its character view is empty and
+	// its identity is still cached.
+	characters := font.Characters()
+	if characters == nil || characters.Count() != 0 {
+		t.Fatalf("a zero font reported %v characters", characters)
+	}
+	if font.Characters() != characters {
+		t.Fatal("Characters() built a second view; the reference caches the first")
+	}
+	// An empty string measures Vector2.Zero without reaching a glyph, which is
+	// the reference's first branch and the one member a fontless font answers.
+	if size, err := font.MeasureStringByString(""); err != nil || size != (framework.Vector2{}) {
+		t.Fatalf(`MeasureString("") = (%v, %v), want Vector2.Zero`, size, err)
+	}
+	// Any other string reaches the glyph table and is refused with Microsoft's
+	// own sentence, because a zero font has neither the glyph nor a default.
+	if _, err := font.MeasureStringByString("A"); err == nil {
+		t.Fatal("a fontless font measured a character")
+	} else if !strings.Contains(err.Error(), "is not available in this SpriteFont") {
+		t.Fatalf("%v, want the reference's CharacterNotInFont message", err)
+	}
+	// A nil StringBuilder is the reference's null and takes its
+	// ArgumentNullException.
+	if _, err := font.MeasureStringByStringBuilder(nil); err == nil {
+		t.Fatal("a nil StringBuilder was measured")
+	} else if !strings.Contains(err.Error(), "text") {
+		t.Fatalf("%v, want the refusal to name the `text` parameter", err)
+	}
+	// Clearing the default character is always legal; setting one the font
+	// does not have never is.
+	missing := uint16('A')
+	if err := font.SetDefaultCharacter(&missing); err == nil {
+		t.Fatal("a character outside the font was accepted as the default")
+	}
+	// And Load<SpriteFont> is in the closed set: it is refused for a reason
+	// other than the type, which is what an unprojected asset gets.
+	manager, err := content.NewContentManagerByIServiceProviderAndString(&struct{}{}, "Content")
+	if err != nil {
+		t.Fatalf("NewContentManager: %v", err)
+	}
+	if _, err := content.ContentManagerLoad[*graphics.SpriteFont](manager, "any"); err == nil {
+		t.Fatal("a font loaded with no graphics device service")
+	} else if strings.Contains(err.Error(), "cannot load this asset type") {
+		t.Fatalf("SpriteFont is not in the closed Load set: %v", err)
+	}
+}

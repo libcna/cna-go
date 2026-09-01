@@ -26,15 +26,18 @@ import (
 // per asset kind, and CNA-Go binds the one whose asset type it projects:
 //
 //	*graphics.Texture2D    cna_content_manager_load_texture2d
+//	*graphics.SpriteFont   cna_content_manager_load_sprite_font
 //
 // A T outside that set is refused BY NAME, which is the same shape the texture
 // transfer rule takes: the CLR would fail at runtime for an asset whose reader
 // does not match, and reporting the type is more useful than reporting a cast.
 //
-// SpriteFont, SoundEffect and TextureCube have CNA routes too and are absent
-// here for one reason each: CNA-Go does not project those types yet. Each is a
+// SoundEffect, TextureCube and Effect have CNA routes too and are absent here
+// for one reason each: CNA-Go does not project those types yet. Each is a
 // missing TYPE rather than a missing loader, and adding a loader for a type
-// that has no Go identity would be a route with nothing to return.
+// that has no Go identity would be a route with nothing to return. SpriteFont
+// left that list in Foundation 69, when the type became real -- which is the
+// rule working, not an exception to it.
 
 // errContentUnsupportedAsset projects the refusal a T outside the closed set
 // gets. The reference has no counterpart -- its Load<T> would throw
@@ -73,6 +76,24 @@ func ContentManagerLoad[T any](manager *ContentManager, assetName string) (T, er
 			return zero, err
 		}
 		asset, loadErr := servicebridge.LoadContentTexture2D(resource, assetName)
+		if loadErr != nil {
+			return zero, loadErr
+		}
+		loaded, ok := asset.(T)
+		if !ok {
+			return zero, errContentUnsupportedAsset
+		}
+		return loaded, nil
+	case *graphics.SpriteFont:
+		// The SpriteFont route reports the font AND its glyph atlas, and the
+		// projected font holds both. Nothing here sees the texture: XNA's
+		// SpriteFont keeps it in a private field with no public accessor, and
+		// CNA-Go keeps it the same way.
+		resource, err := manager.native()
+		if err != nil {
+			return zero, err
+		}
+		asset, loadErr := servicebridge.LoadContentSpriteFont(resource, assetName)
 		if loadErr != nil {
 			return zero, loadErr
 		}

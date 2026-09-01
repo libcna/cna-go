@@ -467,6 +467,9 @@ var unboundRouteClasses = map[string]string{
 	// The reference's own implementation reaches no runtime at all, so there is
 	// nothing for a native route to be more faithful than.
 	"MANAGED_REFERENCE": "the reference implementation is managed and reaches no runtime",
+	// The route reports data a route CNA-Go already binds reports, and reading
+	// both would be two answers to one question that could disagree.
+	"REDUNDANT_READ": "the route re-reports data an already bound route carries",
 }
 
 // deliberatelyUnboundRoutes is the closed registry.
@@ -562,6 +565,45 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Disposing()",
 		Class:  "CONTRACT_DIVERGENCE",
 		Detail: "the removal half of a subscription CNA-Go does not make",
+	},
+	// Foundation 69 -- SpriteFont, measured with build-probe/f69-spritefont.c
+	// against the pinned 0.21.0 artifact on the HEADLESS renderer, over a
+	// three-glyph `.cnj` font whose 'B' carries a NEGATIVE bearing on each
+	// side:
+	//
+	//	'?' kerning (1, 4, 2)   crop height 8
+	//	'A' kerning (0, 5, 0)   crop height 8
+	//	'B' kerning (-3, 6, -2) crop height 12   lineSpacing 10, spacing 1
+	//
+	//	text     cna_sprite_font_measure_utf8   InternalMeasure from the IL
+	//	"A"      (5, 10)                        (5, 10)     agree
+	//	"?"      (7, 10)                        (7, 10)     agree
+	//	"B"      (4, 12)                        (6, 12)     DIVERGE
+	//	"AB"     (7, 12)                        (9, 12)     DIVERGE
+	//	"BA"     (10, 12)                       (10, 12)    agree
+	//	"AB\nA"  (7, 20)                        (9, 20)     DIVERGE
+	//	"Z"      CNA result 1                   ArgumentException
+	//
+	// Every divergence is the same two pixels and the same cause: the
+	// reference's LAST statement over the width is
+	//
+	//	result.X += Math.Max(rightBearing, 0f);
+	//
+	// and CNA adds the final glyph's right bearing UNCLAMPED. The two agree
+	// wherever the last glyph's right bearing is non-negative, which is why
+	// "BA" agrees and "AB" does not. CNA does clamp the FIRST glyph's left
+	// bearing, so that half of the algorithm matches.
+	{
+		Route:  "cna_sprite_font_measure_utf8",
+		Member: "Microsoft.Xna.Framework.Graphics.SpriteFont::MeasureString(System.String)",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "measured to disagree with SpriteFont::InternalMeasure whenever the last glyph's right bearing is negative: over a font whose 'B' is kerning (-3, 6, -2), CNA measured \"B\" as 4 and the reference's own algorithm as 6, because the reference's final statement is `result.X += Math.Max(rightBearing, 0f)` and CNA adds the bearing unclamped. It also answers CNA result 1 for a character the font has no glyph and no default character for, where the reference throws ArgumentException carrying FrameworkResources.CharacterNotInFont. CNA-Go runs the reference's algorithm over the glyph table cna_sprite_font_copy_glyphs reports, so the DATA is CNA's and the arithmetic is the reference's",
+	},
+	{
+		Route:  "cna_sprite_font_copy_characters",
+		Member: "Microsoft.Xna.Framework.Graphics.SpriteFont::Characters()",
+		Class:  "REDUNDANT_READ",
+		Detail: "measured to report exactly the character column of cna_sprite_font_copy_glyphs, in the same order and the same count, which CNA's own documentation states and the probe confirmed. The reference's characterMap is ONE list that get_Characters views and GetIndexForCharacter binary-searches, and reading it from two routes could produce two lists whose indices no longer correspond -- which is the invariant every other member depends on",
 	},
 	{
 		Route:  "cna_graphics_resource_get_graphics_device",

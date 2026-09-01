@@ -401,6 +401,31 @@ func LoadContentTexture2D(manager any, assetName string) (any, error) {
 	return current(manager, assetName)
 }
 
+var contentSpriteFontLoader ContentAssetLoader
+
+// SetContentSpriteFontLoader installs the Graphics package's SpriteFont loader.
+//
+// It is a SECOND slot rather than a map keyed by a type name, for the reason
+// the first is a function value: a name is a string the compiler cannot check,
+// and the closed Load<T> set is expressed in Go's own type switch on the other
+// side of this seam.
+func SetContentSpriteFontLoader(load ContentAssetLoader) {
+	mu.Lock()
+	defer mu.Unlock()
+	contentSpriteFontLoader = load
+}
+
+// LoadContentSpriteFont loads a SpriteFont asset.
+func LoadContentSpriteFont(manager any, assetName string) (any, error) {
+	mu.RLock()
+	current := contentSpriteFontLoader
+	mu.RUnlock()
+	if current == nil {
+		return nil, errors.New("no content sprite font loader is installed")
+	}
+	return current(manager, assetName)
+}
+
 // SetManagerSignalReader installs the framework package's reader, from that
 // package's init.
 func SetManagerSignalReader(read ManagerSignalReader) {

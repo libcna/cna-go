@@ -3948,6 +3948,26 @@ func runCorpus() corpusReport {
 			setContentError == nil, content.GameContent(contentGame) == replacementManager,
 			content.GameContent(otherContentGame) != replacementManager))
 
+	// ------------------------------------------------------------------
+	// Foundation 69. SpriteFont has no rows here, and the reason is the type's
+	// own shape rather than an omission.
+	//
+	// SpriteFont::.ctor is `assembly` in the pinned contract, so neither
+	// runtime has a public constructor for one and a consumer can only obtain a
+	// font from ContentManager.Load<SpriteFont> -- which needs a live CNA
+	// content manager, which needs a device, which this corpus creates none of.
+	// A public constructor added to make the corpus reachable would be a test
+	// helper on the shipped surface, which is the same refusal the index-buffer
+	// transfer guards took.
+	//
+	// The measurement algorithm is proved instead where a font can exist:
+	// Microsoft/Xna/Framework/Graphics/sprite_font_test.go builds the glyph
+	// table directly and pins InternalMeasure statement by statement against
+	// the IL, and tools/native_stress's `sprite-font` scenario runs the same
+	// assertions over a REAL font CNA loaded -- including the three cases where
+	// cna_sprite_font_measure_utf8 itself disagrees with the reference.
+	// ------------------------------------------------------------------
+
 	return report
 }
 

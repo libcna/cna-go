@@ -86,6 +86,31 @@ func init() {
 		// is recorded rather than invented.
 		return newTexture2D(nil, texture, info, nil), nil
 	})
+	// Foundation 69. The Content package's third reach. A SpriteFont asset
+	// produces TWO owned CNA handles and one projected object that holds both,
+	// so the loader is the only place that pairing is made; a Content package
+	// that received them separately would own a texture it cannot name.
+	servicebridge.SetContentSpriteFontLoader(func(manager any, assetName string) (any, error) {
+		resource, typed := manager.(*interop.Resource)
+		if !typed || resource == nil {
+			return nil, interop.ErrDisposed
+		}
+		font, texture, info, err := resource.LoadContentSpriteFont(assetName)
+		if err != nil {
+			return nil, err
+		}
+		// The glyph table is read ONCE, here, because the reference's four
+		// parallel Lists are constructor arguments it never re-reads. A font
+		// with no glyphs is legal to CNA and measures nothing but the line
+		// spacing, so a zero count is not an error.
+		glyphs, glyphErr := font.SpriteFontGlyphs(info.CharacterCount)
+		if glyphErr != nil {
+			_ = font.Dispose()
+			_ = texture.Dispose()
+			return nil, glyphErr
+		}
+		return newSpriteFont(font, texture, info, glyphs), nil
+	})
 	servicebridge.SetDeviceFacadeSignalReleaser(func(facade any) error {
 		device, typed := facade.(*GraphicsDevice)
 		if !typed || device == nil {

@@ -23,19 +23,24 @@ nor native handles.
 
 ## What is qualified
 
-The current structural scoreboard maps the authoritative XNA 4.0 Windows
-runtime profile (257 types and 2,964 members) to 257 expected Go types and
-3,255 expected Go members — 3,243 projected from XNA-declared members plus 12
-projected from the public surface a supported BCL base contributes. The current
-target has 122 types and 1,791 members: 117 types are complete, five
-native/runtime types are partial, and 135 are missing. The strict verifier
-remains red because most XNA surface is intentionally absent. Every mismatch,
-leak, allowlist, and unmeasured-category gate is green.
+The structural scoreboard maps the authoritative XNA 4.0 Windows runtime
+profile (257 types and 2,964 members) onto expected Go types and members, and
+every count in it is generated rather than restated here — the current values
+are in
+[docs/generated/api-compat-report.json](docs/generated/api-compat-report.json)
+and
+[docs/generated/missing-type-inventory.md](docs/generated/missing-type-inventory.md).
+The strict verifier remains red because XNA surface is still intentionally
+absent; every mismatch, leak, allowlist, and unmeasured-category gate is green,
+and `UNEXPECTED_TYPE`, `UNEXPECTED_MEMBER` and `ABI_MISMATCHES` are zero.
 
-Forty-one of the missing types inherit from another type in the profile whose
-base relationship is deferred; they are recorded with classified blockers rather
-than left silent, and none of them is selectable until XNA-to-XNA class
-inheritance is decided.
+Some missing types inherit from another type in the profile whose base
+relationship is still deferred. They are recorded with classified blockers
+rather than left silent. Foundation 41 settled the inheritance architecture —
+private named composition with explicit measured forwarding — so a deferred
+base is now a per-family decision rather than one global blocker, and
+`DrawableGameComponent` and the whole `GraphicsResource` chain are projected
+through it.
 
 Foundation 1 qualifies on **Linux amd64 desktop with cgo**:
 
@@ -502,12 +507,19 @@ go run ./tools/packed_vector_qualify
 go run ./tools/capabilities --check
 go run ./tools/native_abi -headers ~/deps/cna-c-abi-0.21.0/include -library ~/deps/cna-c-abi-0.21.0/libcna_c_api.so
 go run ./tools/native_stress
+go run ./tools/external_consumer -source .
 ```
 
 Normal structural strict mode is expected to exit nonzero until all mapped XNA
-surface exists; its 295 missing-surface diagnostics are the work queue, not a
-compatibility claim.
+surface exists; its missing-surface diagnostics are the work queue, not a
+compatibility claim. The current count is in
+[docs/generated/api-compat-report.json](docs/generated/api-compat-report.json)
+and is not restated here, because a number written into prose goes stale the
+next milestone and nothing checks it.
 The native ABI and stress commands require the qualified native environment.
+`external_consumer` is the gate any public signature change must re-run: it
+builds and runs the canary as its own module against an extracted source tree,
+so a moved signature fails there rather than in a downstream consumer.
 
 The normative rules are in [plan.md](plan.md), the language projection in
 [docs/xna-go-mapping.md](docs/xna-go-mapping.md), the native boundary in

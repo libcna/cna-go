@@ -1516,6 +1516,101 @@ CnaGoResult cna_go_content_manager_copy_asset_path(
         content_manager, cna_go_view(asset_name, asset_name_length), destination, capacity, out_bytes);
 }
 
+/* Foundation 69 -- the SpriteFont family.
+   The loader is the one CNA route that produces two owned handles from one
+   asset. Both cross as handles; the ORDER their destruction must take is
+   CNA's rule and is enforced by the Go side, which destroys the font first. */
+CnaGoResult cna_go_content_manager_load_sprite_font(
+    CnaGoHandle content_manager, const char* asset_name, uint64_t asset_name_length,
+    CnaGoHandle* out_sprite_font, CnaGoHandle* out_texture) {
+    return api.cna_content_manager_load_sprite_font(
+        content_manager, cna_go_view(asset_name, asset_name_length), out_sprite_font, out_texture);
+}
+
+CnaGoResult cna_go_sprite_font_get_info(
+    CnaGoHandle sprite_font,
+    uint64_t* out_character_count,
+    int32_t* out_line_spacing,
+    float* out_spacing,
+    uint16_t* out_default_character,
+    uint8_t* out_has_default_character) {
+    CNA_SpriteFontInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_sprite_font_get_info(sprite_font, &info);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_character_count = info.character_count;
+    *out_line_spacing = info.line_spacing;
+    *out_spacing = info.spacing;
+    *out_default_character = (uint16_t)info.default_character;
+    *out_has_default_character = info.has_default_character ? 1u : 0u;
+    return result;
+}
+
+/* The glyph table crosses as THREE flat arrays rather than one struct array,
+   for the reason every other array does: no CNA struct crosses cgo. Element i
+   of each describes the same glyph, which is the correspondence the reference's
+   four parallel Lists have. */
+CnaGoResult cna_go_sprite_font_copy_glyphs(
+    CnaGoHandle sprite_font,
+    uint64_t capacity,
+    uint16_t* out_characters,
+    int32_t* out_rectangles,
+    float* out_kerning,
+    uint64_t* out_count) {
+    CNA_SpriteFontGlyph* glyphs;
+    CnaGoResult result;
+    uint64_t at;
+    if (capacity == 0) {
+        return api.cna_sprite_font_copy_glyphs(sprite_font, NULL, 0, out_count);
+    }
+    glyphs = (CNA_SpriteFontGlyph*)calloc((size_t)capacity, sizeof(CNA_SpriteFontGlyph));
+    if (glyphs == NULL) {
+        return CNA_GO_RESULT_OUT_OF_MEMORY;
+    }
+    result = api.cna_sprite_font_copy_glyphs(sprite_font, glyphs, capacity, out_count);
+    if (result == CNA_GO_RESULT_SUCCESS) {
+        for (at = 0; at < *out_count && at < capacity; at++) {
+            out_characters[at] = (uint16_t)glyphs[at].character;
+            out_rectangles[at * 8 + 0] = glyphs[at].glyph_bounds.x;
+            out_rectangles[at * 8 + 1] = glyphs[at].glyph_bounds.y;
+            out_rectangles[at * 8 + 2] = glyphs[at].glyph_bounds.width;
+            out_rectangles[at * 8 + 3] = glyphs[at].glyph_bounds.height;
+            out_rectangles[at * 8 + 4] = glyphs[at].cropping.x;
+            out_rectangles[at * 8 + 5] = glyphs[at].cropping.y;
+            out_rectangles[at * 8 + 6] = glyphs[at].cropping.width;
+            out_rectangles[at * 8 + 7] = glyphs[at].cropping.height;
+            out_kerning[at * 3 + 0] = glyphs[at].kerning.x;
+            out_kerning[at * 3 + 1] = glyphs[at].kerning.y;
+            out_kerning[at * 3 + 2] = glyphs[at].kerning.z;
+        }
+    }
+    free(glyphs);
+    return result;
+}
+
+CnaGoResult cna_go_sprite_font_set_default_character(
+    CnaGoHandle sprite_font, uint8_t has_value, uint16_t value) {
+    return api.cna_sprite_font_set_default_character(
+        sprite_font, (CNA_Bool)(has_value != 0), (CNA_Char16)value);
+}
+
+CnaGoResult cna_go_sprite_font_set_line_spacing(CnaGoHandle sprite_font, int32_t line_spacing) {
+    return api.cna_sprite_font_set_line_spacing(sprite_font, line_spacing);
+}
+
+CnaGoResult cna_go_sprite_font_set_spacing(CnaGoHandle sprite_font, float spacing) {
+    return api.cna_sprite_font_set_spacing(sprite_font, spacing);
+}
+
+CnaGoResult cna_go_sprite_font_destroy(CnaGoHandle sprite_font) {
+    return api.cna_sprite_font_destroy(sprite_font);
+}
+
 CnaGoResult cna_go_graphics_device_manager_set_graphics_profile(CnaGoHandle manager, uint32_t profile) {
     return api.cna_graphics_device_manager_set_graphics_profile(manager, profile);
 }

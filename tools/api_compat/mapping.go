@@ -32,6 +32,26 @@ var bclTypes = map[string]string{
 	"System.TimeSpan":  "TimeSpan",
 	"System.Type":      "reflect.Type",
 	"System.IO.Stream": "io.Reader",
+	// Foundation 69. System.Text.StringBuilder, on exactly the measurement
+	// System.IO.Stream's entry rests on.
+	//
+	// The pinned contract carries StringBuilder at FOUR public signature
+	// positions -- SpriteFont::MeasureString and SpriteBatch's three DrawString
+	// shapes -- and every one of them is an input the reference only READS.
+	// SpriteFont/StringProxy is the proof: it stores the builder and calls
+	// get_Length and get_Chars, and nothing anywhere else in the profile
+	// touches one.
+	//
+	// So the position takes the standard-library Go type whose ROLE it is,
+	// exactly as a read-only Stream position takes io.Reader, rather than a
+	// reimplemented BCL class. `strings.Builder` is Go's mutable text
+	// accumulator, `Len` and `String` are the two reads StringProxy makes, and
+	// nil is the reference's null.
+	//
+	// The overload identity survives: `string` and `*strings.Builder` are
+	// different Go types, so the CLR's two-member overload set stays two Go
+	// members, which is what the overload set means.
+	"System.Text.StringBuilder": "*strings.Builder",
 }
 
 var operatorNames = map[string]string{
@@ -1105,6 +1125,34 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|CurrentDisplayMode":    true,
 		"property-get|SupportedDisplayModes": true,
 		"property-get|MonitorHandle":         true,
+	},
+	// Foundation 69. SpriteFont's four readers.
+	//
+	//	get_LineSpacing       ldarg.0; ldfld lineSpacing; ret
+	//	get_Spacing           ldarg.0; ldfld spacing; ret
+	//	get_DefaultCharacter  ldarg.0; ldfld defaultCharacter; ret
+	//	get_Characters        the lazily built ReadOnlyCollection<char>, cached
+	//
+	// The first three are seven bytes each over a managed field. The fourth
+	// builds a view over another managed field on first call and stores it, so
+	// the second call is one more `ldfld` -- and neither branch reaches a
+	// runtime.
+	//
+	// The three SETTERS are deliberately absent and stay fallible, for the
+	// reason Game's `stfld` setters are: each has to reach CNA as well, because
+	// cna_sprite_batch_draw_string lays text out from the NATIVE font's values.
+	// A managed-only store would let a drawn string disagree with a measured
+	// one.
+	//
+	// MeasureString is absent too, and for a DIFFERENT reason -- it is not a
+	// stored read at all. Its body throws a real ArgumentException for a
+	// character the font has no glyph for and no default character to
+	// substitute, so its error channel carries the reference's own refusal.
+	"Microsoft.Xna.Framework.Graphics.SpriteFont": {
+		"property-get|LineSpacing":      true,
+		"property-get|Spacing":          true,
+		"property-get|DefaultCharacter": true,
+		"property-get|Characters":       true,
 	},
 	// DisplayModeCollection's two members are a managed list walk and a
 	// managed filter over it. Its constructor is `assembly`, so every
@@ -2781,6 +2829,12 @@ var bclSignatureAdapterConstructors = map[string]string{
 	// comparers differ and the difference is observable: Single's comparer
 	// finds a NaN, and a reference comparer is identity.
 	"NewReadOnlyCollectionOverReferences": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+	// Foundation 69. The VALUE-element counterpart, for
+	// SpriteFont::get_Characters, whose CLR type is ReadOnlyCollection<char>.
+	// A third constructor rather than a use of the second because a font's
+	// characters are values: a name saying "over references" would describe
+	// the opposite of what the collection holds.
+	"NewReadOnlyCollectionOverCharacters": "System.Collections.ObjectModel.ReadOnlyCollection`1",
 }
 
 // bclSignatureAdapterGoName is the Go type name of one signature adapter,

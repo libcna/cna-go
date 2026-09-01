@@ -98,6 +98,7 @@ const (
 	resourceIndexBuffer
 	resourceVertexDeclaration
 	resourceVertexBuffer
+	resourceSpriteFont
 )
 
 // FrameTime is the private tick-exact lifecycle value passed into the public
@@ -810,6 +811,124 @@ func (resource *Resource) ContentAssetPath(assetName string) (string, error) {
 		return "", err
 	}
 	return nativeContentManagerAssetPath(handle, assetName)
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 69 — the SpriteFont family.
+// ---------------------------------------------------------------------------
+
+// SpriteFontInfo is CNA_SpriteFontInfo, flattened. It is the point-in-time
+// snapshot CNA reports for a font: the three MUTABLE layout values plus the
+// character count the glyph read is sized from.
+type SpriteFontInfo struct {
+	CharacterCount      uint64
+	LineSpacing         int32
+	Spacing             float32
+	DefaultCharacter    uint16
+	HasDefaultCharacter bool
+}
+
+// SpriteFontRectangle is CNA_Rectangle in the two positions a glyph carries it.
+// It is its own type rather than a reuse of ScissorRectangle for the reason
+// every other interop struct here is its own: a shared name would make a change
+// to one route's meaning silently change another's.
+type SpriteFontRectangle struct {
+	X, Y, Width, Height int32
+}
+
+// SpriteFontGlyph is CNA_SpriteFontGlyph, flattened. The three kerning values
+// cross as separate fields rather than as a vector because interop declares no
+// vector type: the Graphics package is where they become a Vector3.
+type SpriteFontGlyph struct {
+	Character   uint16
+	GlyphBounds SpriteFontRectangle
+	Cropping    SpriteFontRectangle
+	KerningX    float32
+	KerningY    float32
+	KerningZ    float32
+}
+
+// LoadContentSpriteFont is cna_content_manager_load_sprite_font, the one CNA
+// content route that reports TWO owned handles for one asset.
+//
+// Both are registered under the content manager's own parent, which is the
+// game: CNA documents a loaded font and its atlas as independently owned and
+// destroyed before the parent game, exactly as a loaded texture is.
+//
+// # The registration ORDER is load-bearing
+//
+// CNA retains the atlas while the font lives, so `cna_texture2d_destroy`
+// refuses with INVALID_STATE until the font is destroyed. disposeAllResources
+// releases in REVERSE registration order, so the ATLAS is registered FIRST and
+// the font second -- which makes the runtime's own teardown release the font
+// before the texture it holds, whatever else is registered afterwards. A
+// registration in the natural reading order would make every game teardown
+// that loaded a font report CNA's refusal.
+func (resource *Resource) LoadContentSpriteFont(assetName string) (*Resource, *Resource, SpriteFontInfo, error) {
+	handle, err := resource.liveHandle(resourceContentManager)
+	if err != nil {
+		return nil, nil, SpriteFontInfo{}, err
+	}
+	font, texture, err := nativeContentManagerLoadSpriteFont(handle, assetName)
+	if err != nil {
+		return nil, nil, SpriteFontInfo{}, err
+	}
+	ownedTexture := resource.runtime.registerResource(texture, resourceTexture2D, resource.parent)
+	ownedFont := resource.runtime.registerResource(font, resourceSpriteFont, resource.parent)
+	info, infoErr := nativeSpriteFontInfo(font)
+	if infoErr != nil {
+		// The documented order, even on the failure path: the font first, so
+		// the atlas becomes releasable.
+		_ = ownedFont.Dispose()
+		_ = ownedTexture.Dispose()
+		return nil, nil, SpriteFontInfo{}, infoErr
+	}
+	return ownedFont, ownedTexture, info, nil
+}
+
+// SpriteFontInfo is cna_sprite_font_get_info.
+func (resource *Resource) SpriteFontInfo() (SpriteFontInfo, error) {
+	handle, err := resource.liveHandle(resourceSpriteFont)
+	if err != nil {
+		return SpriteFontInfo{}, err
+	}
+	return nativeSpriteFontInfo(handle)
+}
+
+// SpriteFontGlyphs is cna_sprite_font_copy_glyphs, the whole table in one call.
+func (resource *Resource) SpriteFontGlyphs(capacity uint64) ([]SpriteFontGlyph, error) {
+	handle, err := resource.liveHandle(resourceSpriteFont)
+	if err != nil {
+		return nil, err
+	}
+	return nativeSpriteFontGlyphs(handle, capacity)
+}
+
+// SetSpriteFontDefaultCharacter is cna_sprite_font_set_default_character.
+func (resource *Resource) SetSpriteFontDefaultCharacter(hasValue bool, value uint16) error {
+	handle, err := resource.liveHandle(resourceSpriteFont)
+	if err != nil {
+		return err
+	}
+	return nativeSpriteFontSetDefaultCharacter(handle, hasValue, value)
+}
+
+// SetSpriteFontLineSpacing is cna_sprite_font_set_line_spacing.
+func (resource *Resource) SetSpriteFontLineSpacing(lineSpacing int32) error {
+	handle, err := resource.liveHandle(resourceSpriteFont)
+	if err != nil {
+		return err
+	}
+	return nativeSpriteFontSetLineSpacing(handle, lineSpacing)
+}
+
+// SetSpriteFontSpacing is cna_sprite_font_set_spacing.
+func (resource *Resource) SetSpriteFontSpacing(spacing float32) error {
+	handle, err := resource.liveHandle(resourceSpriteFont)
+	if err != nil {
+		return err
+	}
+	return nativeSpriteFontSetSpacing(handle, spacing)
 }
 
 // MaxTextureSlots and MaxSamplerSlots are CNA_TEXTURE_COLLECTION_MAX_TEXTURES
@@ -2748,6 +2867,8 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeVertexDeclarationDestroy(handle)
 	case resourceVertexBuffer:
 		return nativeVertexBufferDestroy(handle)
+	case resourceSpriteFont:
+		return nativeSpriteFontDestroy(handle)
 	case resourceRenderTarget2D:
 		// A render target is a distinct CNA kind with its own destroy, and
 		// cna_texture2d_destroy is documented as destroying a Texture2D but NOT

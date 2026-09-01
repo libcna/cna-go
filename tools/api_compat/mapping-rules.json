@@ -158,6 +158,10 @@
       "Microsoft.Xna.Framework.Graphics.SamplerState|property-get|MaxAnisotropy",
       "Microsoft.Xna.Framework.Graphics.SamplerState|property-get|MaxMipLevel",
       "Microsoft.Xna.Framework.Graphics.SamplerState|property-get|MipMapLevelOfDetailBias",
+      "Microsoft.Xna.Framework.Graphics.SpriteFont|property-get|Characters",
+      "Microsoft.Xna.Framework.Graphics.SpriteFont|property-get|DefaultCharacter",
+      "Microsoft.Xna.Framework.Graphics.SpriteFont|property-get|LineSpacing",
+      "Microsoft.Xna.Framework.Graphics.SpriteFont|property-get|Spacing",
       "Microsoft.Xna.Framework.Graphics.Texture2D|property-get|Bounds",
       "Microsoft.Xna.Framework.Graphics.Texture2D|property-get|Height",
       "Microsoft.Xna.Framework.Graphics.Texture2D|property-get|Width",
@@ -372,7 +376,8 @@
     "System.Type": "reflect.Type",
     "System.EventArgs": "*framework.EventArgs",
     "System.EventHandler`1": "framework.EventHandler[MappedT]",
-    "System.Collections.ObjectModel.ReadOnlyCollection`1": "*framework.ReadOnlyCollection[MappedT]"
+    "System.Collections.ObjectModel.ReadOnlyCollection`1": "*framework.ReadOnlyCollection[MappedT]",
+    "System.Text.StringBuilder": "*strings.Builder"
   },
   "events": {
     "handler": "System.EventHandler<T> -> EventHandler[T]; the generic argument is mapped exactly and never degraded to any, a bare func, a channel, or a callback word",

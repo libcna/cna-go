@@ -801,6 +801,126 @@ func nativeContentManagerLoadTexture2D(manager uint64, assetName string) (uint64
 	return uint64(handle), resultError("cna_content_manager_load_texture2d", code)
 }
 
+// The eight SpriteFont routes. Foundation 69.
+//
+// The loader is the only route in this file that produces TWO owned handles
+// from one call, and the pair is reported together for the reason CNA reports
+// it together: the atlas is retained while the font lives, so a caller that
+// received only the font would hold a texture it could neither reach nor
+// release.
+
+func nativeContentManagerLoadSpriteFont(manager uint64, assetName string) (uint64, uint64, error) {
+	var font, texture C.CnaGoHandle
+	var data *C.char
+	if len(assetName) > 0 {
+		data = (*C.char)(unsafe.Pointer(unsafe.StringData(assetName)))
+	}
+	code := uint32(C.cna_go_content_manager_load_sprite_font(
+		C.CnaGoHandle(manager), data, C.uint64_t(len(assetName)), &font, &texture))
+	runtime.KeepAlive(assetName)
+	if err := resultError("cna_content_manager_load_sprite_font", code); err != nil {
+		return 0, 0, err
+	}
+	return uint64(font), uint64(texture), nil
+}
+
+func nativeSpriteFontInfo(font uint64) (SpriteFontInfo, error) {
+	var characterCount C.uint64_t
+	var lineSpacing C.int32_t
+	var spacing C.float
+	var defaultCharacter C.uint16_t
+	var hasDefault C.uint8_t
+	code := uint32(C.cna_go_sprite_font_get_info(
+		C.CnaGoHandle(font), &characterCount, &lineSpacing, &spacing, &defaultCharacter, &hasDefault))
+	if err := resultError("cna_sprite_font_get_info", code); err != nil {
+		return SpriteFontInfo{}, err
+	}
+	return SpriteFontInfo{
+		CharacterCount:      uint64(characterCount),
+		LineSpacing:         int32(lineSpacing),
+		Spacing:             float32(spacing),
+		DefaultCharacter:    uint16(defaultCharacter),
+		HasDefaultCharacter: hasDefault != 0,
+	}, nil
+}
+
+// nativeSpriteFontGlyphs reads the whole glyph table in one call. capacity is
+// the count cna_sprite_font_get_info already reported, so the two-call
+// size-then-copy shape the string reads use is not needed here.
+func nativeSpriteFontGlyphs(font uint64, capacity uint64) ([]SpriteFontGlyph, error) {
+	if capacity == 0 {
+		var count C.uint64_t
+		code := uint32(C.cna_go_sprite_font_copy_glyphs(
+			C.CnaGoHandle(font), 0, nil, nil, nil, &count))
+		if err := resultError("cna_sprite_font_copy_glyphs", code); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+	characters := make([]uint16, capacity)
+	rectangles := make([]int32, capacity*8)
+	kerning := make([]float32, capacity*3)
+	var count C.uint64_t
+	code := uint32(C.cna_go_sprite_font_copy_glyphs(
+		C.CnaGoHandle(font), C.uint64_t(capacity),
+		(*C.uint16_t)(unsafe.Pointer(&characters[0])),
+		(*C.int32_t)(unsafe.Pointer(&rectangles[0])),
+		(*C.float)(unsafe.Pointer(&kerning[0])),
+		&count))
+	runtime.KeepAlive(characters)
+	runtime.KeepAlive(rectangles)
+	runtime.KeepAlive(kerning)
+	if err := resultError("cna_sprite_font_copy_glyphs", code); err != nil {
+		return nil, err
+	}
+	written := uint64(count)
+	if written > capacity {
+		written = capacity
+	}
+	glyphs := make([]SpriteFontGlyph, written)
+	for at := uint64(0); at < written; at++ {
+		glyphs[at] = SpriteFontGlyph{
+			Character: characters[at],
+			GlyphBounds: SpriteFontRectangle{
+				X: rectangles[at*8+0], Y: rectangles[at*8+1],
+				Width: rectangles[at*8+2], Height: rectangles[at*8+3],
+			},
+			Cropping: SpriteFontRectangle{
+				X: rectangles[at*8+4], Y: rectangles[at*8+5],
+				Width: rectangles[at*8+6], Height: rectangles[at*8+7],
+			},
+			KerningX: kerning[at*3+0],
+			KerningY: kerning[at*3+1],
+			KerningZ: kerning[at*3+2],
+		}
+	}
+	return glyphs, nil
+}
+
+func nativeSpriteFontSetDefaultCharacter(font uint64, hasValue bool, value uint16) error {
+	flag := C.uint8_t(0)
+	if hasValue {
+		flag = 1
+	}
+	return resultError("cna_sprite_font_set_default_character",
+		uint32(C.cna_go_sprite_font_set_default_character(C.CnaGoHandle(font), flag, C.uint16_t(value))))
+}
+
+func nativeSpriteFontSetLineSpacing(font uint64, lineSpacing int32) error {
+	return resultError("cna_sprite_font_set_line_spacing",
+		uint32(C.cna_go_sprite_font_set_line_spacing(C.CnaGoHandle(font), C.int32_t(lineSpacing))))
+}
+
+func nativeSpriteFontSetSpacing(font uint64, spacing float32) error {
+	return resultError("cna_sprite_font_set_spacing",
+		uint32(C.cna_go_sprite_font_set_spacing(C.CnaGoHandle(font), C.float(spacing))))
+}
+
+func nativeSpriteFontDestroy(font uint64) error {
+	return resultError("cna_sprite_font_destroy",
+		uint32(C.cna_go_sprite_font_destroy(C.CnaGoHandle(font))))
+}
+
 func nativeContentManagerAssetPath(manager uint64, assetName string) (string, error) {
 	var data *C.char
 	if len(assetName) > 0 {

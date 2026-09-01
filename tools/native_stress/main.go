@@ -71,6 +71,19 @@ type counters struct {
 	ContentTypeRefusals         int `json:"CONTENT_TYPE_REFUSALS"`
 	ContentUnloadCalls          int `json:"CONTENT_UNLOAD_CALLS"`
 	ContentDisposalChecks       int `json:"CONTENT_DISPOSAL_CHECKS"`
+	// The sprite-font slice. Foundation 69. Loads and LoadRefusals are counted
+	// apart for the reason the texture load's are: a refusal is CNA answering
+	// "this asset is not there", and a run that only ever refused must not read
+	// as a run that loaded a font.
+	SpriteFontCycles           int `json:"SPRITE_FONT_CYCLES"`
+	SpriteFontLoads            int `json:"SPRITE_FONT_LOADS"`
+	SpriteFontLoadRefusals     int `json:"SPRITE_FONT_LOAD_REFUSALS"`
+	SpriteFontGlyphChecks      int `json:"SPRITE_FONT_GLYPH_CHECKS"`
+	SpriteFontMeasureChecks    int `json:"SPRITE_FONT_MEASURE_CHECKS"`
+	SpriteFontDivergenceChecks int `json:"SPRITE_FONT_DIVERGENCE_CHECKS"`
+	SpriteFontSetterRoundTrips int `json:"SPRITE_FONT_SETTER_ROUND_TRIPS"`
+	SpriteFontRefusals         int `json:"SPRITE_FONT_REFUSALS"`
+	SpriteFontCacheChecks      int `json:"SPRITE_FONT_CACHE_CHECKS"`
 	// The adapter slice. CNA enumerates adapters through a callback-scoped
 	// device, so every one of these is reachable only from inside LoadContent.
 	AdapterCycles                int `json:"ADAPTER_CYCLES"`
@@ -389,7 +402,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer", "vertex-buffer", "adapter"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer", "vertex-buffer", "adapter", "sprite-font"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -522,6 +535,29 @@ func runParent() (counters, error) {
 	if total.ContentLoadPixelChecks+total.ContentLoadReadbackRefusals != total.ContentLoads {
 		return total, fmt.Errorf("content pixel checks %d and readback refusals %d do not account for %d loads",
 			total.ContentLoadPixelChecks, total.ContentLoadReadbackRefusals, total.ContentLoads)
+	}
+
+	// Foundation 69. The sprite-font slice. A cycle either loaded a font or was
+	// refused, and a cycle that LOADED must have proved all five slices --
+	// including the divergence one, which is what separates "the projection
+	// measures" from "the projection measures the way the reference does".
+	if total.SpriteFontCycles < 20 {
+		return total, errors.New("the sprite-font scenario did not run in every cycle")
+	}
+	if total.SpriteFontLoads+total.SpriteFontLoadRefusals != total.SpriteFontCycles {
+		return total, fmt.Errorf("sprite-font loads %d and refusals %d do not account for %d cycles",
+			total.SpriteFontLoads, total.SpriteFontLoadRefusals, total.SpriteFontCycles)
+	}
+	if total.SpriteFontGlyphChecks != total.SpriteFontLoads ||
+		total.SpriteFontMeasureChecks != total.SpriteFontLoads ||
+		total.SpriteFontDivergenceChecks != total.SpriteFontLoads ||
+		total.SpriteFontSetterRoundTrips != total.SpriteFontLoads ||
+		total.SpriteFontRefusals != total.SpriteFontLoads ||
+		total.SpriteFontCacheChecks != total.SpriteFontLoads {
+		return total, fmt.Errorf("%d font loads produced %d glyph, %d measure, %d divergence, %d setter, %d refusal and %d cache proofs",
+			total.SpriteFontLoads, total.SpriteFontGlyphChecks, total.SpriteFontMeasureChecks,
+			total.SpriteFontDivergenceChecks, total.SpriteFontSetterRoundTrips,
+			total.SpriteFontRefusals, total.SpriteFontCacheChecks)
 	}
 
 	// Foundation 39. The native disposal signal never raises the public event,
@@ -885,6 +921,23 @@ func runChild(scenario string, index int) error {
 				return fmt.Errorf("render-target pixel checks %d and readback refusals %d do not account for %d binds",
 					game.result.RenderTargetPixelChecks, game.result.RenderTargetReadbackRefusals, game.result.RenderTargetBinds)
 			}
+		}
+	case "sprite-font":
+		game.result.SpriteFontCycles = 1
+		if err != nil {
+			return err
+		}
+		// Exactly one of the two outcomes per cycle, for the reason the content
+		// scenario has one: a run reporting neither never reached the load.
+		if game.result.SpriteFontLoads+game.result.SpriteFontLoadRefusals != 1 {
+			return fmt.Errorf("sprite-font loads %d and refusals %d do not account for one cycle",
+				game.result.SpriteFontLoads, game.result.SpriteFontLoadRefusals)
+		}
+		if game.result.SpriteFontLoads > 0 &&
+			(game.result.SpriteFontGlyphChecks == 0 || game.result.SpriteFontMeasureChecks == 0 ||
+				game.result.SpriteFontDivergenceChecks == 0 || game.result.SpriteFontSetterRoundTrips == 0 ||
+				game.result.SpriteFontCacheChecks == 0) {
+			return errors.New("a font loaded and the semantic slice did not complete")
 		}
 	case "callback-error":
 		game.result.CallbackErrorCycles = 1
@@ -1477,6 +1530,11 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 	}
 	if g.scenario == "adapter" {
 		if err := g.exerciseAdapter(); err != nil {
+			return err
+		}
+	}
+	if g.scenario == "sprite-font" {
+		if err := g.exerciseSpriteFont(host); err != nil {
 			return err
 		}
 	}
@@ -4315,5 +4373,260 @@ func (g *stressGame) exerciseAdapter() error {
 		fmt.Fprintln(os.Stderr, "the adapter reports neither a description nor a device name")
 	}
 	g.result.AdapterOutsideCallbackChecks++
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 69 — the sprite-font scenario.
+// ---------------------------------------------------------------------------
+
+// spriteFontAtlas is the same one-pixel 24-bit BMP CNA's own content tests use
+// as a font atlas. What a font needs from its atlas here is that it decodes,
+// not what it contains.
+var spriteFontAtlas = []byte{
+	0x42, 0x4D, 0x3A, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x36, 0x00, 0x00, 0x00, 0x28, 0x00,
+	0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00,
+	0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x13, 0x0B,
+	0x00, 0x00, 0x13, 0x0B, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1E, 0x14,
+	0x0A, 0x00,
+}
+
+// spriteFontDescriptor is CNA's own `.cnj` SpriteFont format, authored here
+// rather than compiled: there is no `.xnb` font corpus in this repository and
+// CNA reads both containers through the same loader.
+//
+// The three glyphs are chosen so the measurement is not symmetric. 'B' carries
+// a NEGATIVE bearing on each side, which is what makes InternalMeasure's two
+// clamps observable and what the Foundation 69 probe measured CNA's own
+// measurement disagreeing about. Characters ascend, which the reference's
+// binary search requires and CNA's reader enforces.
+const spriteFontDescriptor = `{"cnjVersion":1,"type":"SpriteFont",` +
+	`"texture":"cna-go-stress-font-atlas.bmp",` +
+	`"lineSpacing":10,"spacing":1.0,` +
+	`"glyphs":[` +
+	`{"char":63,"source":[0,0,4,8],"crop":[0,0,4,8],"kerning":[1.0,4.0,2.0]},` +
+	`{"char":65,"source":[4,0,5,8],"crop":[0,0,5,8],"kerning":[0.0,5.0,0.0]},` +
+	`{"char":66,"source":[9,0,6,12],"crop":[0,0,6,12],"kerning":[-3.0,6.0,-2.0]}` +
+	`]}`
+
+// exerciseSpriteFont is the sprite-font scenario. Everything here runs inside a
+// lifecycle callback, because CNA's content manager is created from a
+// callback-scoped device.
+//
+// What it proves that a unit test cannot:
+//
+//   - a REAL CNA font is loaded through ContentManager.Load<SpriteFont>, and
+//     the glyph table the projection measures with is the one CNA reported;
+//   - the measurement is the REFERENCE's, and it is proved so by reproducing
+//     the exact case the Foundation 69 probe measured CNA's own measurement
+//     disagreeing about;
+//   - the three setters really reach CNA and really come back;
+//   - a font is CNA-cached by asset name, exactly as a texture is;
+//   - the two owned handles are released, in CNA's order, by the game's own
+//     teardown -- which is what the reverse registration order exists for.
+func (g *stressGame) exerciseSpriteFont(host *framework.Game) error {
+	manager := content.GameContent(host)
+	if manager == nil {
+		return errors.New("the Game's ContentManager is nil inside the sprite-font scenario")
+	}
+	root, err := os.MkdirTemp("", "cna-go-sprite-font")
+	if err != nil {
+		return fmt.Errorf("sprite-font root: %w", err)
+	}
+	defer os.RemoveAll(root)
+	if err := os.WriteFile(filepath.Join(root, "cna-go-stress-font-atlas.bmp"), spriteFontAtlas, 0o600); err != nil {
+		return fmt.Errorf("writing the font atlas: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "cna-go-stress-font.cnj"), []byte(spriteFontDescriptor), 0o600); err != nil {
+		return fmt.Errorf("writing the font descriptor: %w", err)
+	}
+	if err := manager.SetRootDirectory(root); err != nil {
+		return fmt.Errorf("SetRootDirectory: %w", err)
+	}
+	// OpenStream is what creates the native manager, and it is expected to fail
+	// for a name with no `.xnb`.
+	if _, err := manager.OpenStream("cna-go-stress-font"); err == nil {
+		return errors.New("OpenStream opened a stream for an asset with no .xnb")
+	}
+
+	font, loadErr := content.ContentManagerLoad[*graphics.SpriteFont](manager, "cna-go-stress-font")
+	if loadErr != nil {
+		// CNA could not read the fixture. Recorded, not passed.
+		g.result.SpriteFontLoadRefusals++
+		fmt.Fprintf(os.Stderr, "sprite-font load refused: %v\n", loadErr)
+		return nil
+	}
+	if font == nil {
+		return errors.New("Load<SpriteFont> reported success and produced no font")
+	}
+	g.result.SpriteFontLoads++
+
+	// The descriptor's own values, read back through the projection from the
+	// snapshot CNA reported.
+	if font.LineSpacing() != 10 {
+		return fmt.Errorf("LineSpacing = %d, want the descriptor's 10", font.LineSpacing())
+	}
+	if font.Spacing() != 1 {
+		return fmt.Errorf("Spacing = %v, want the descriptor's 1", font.Spacing())
+	}
+	if _, ok := font.DefaultCharacter(); ok {
+		return errors.New("DefaultCharacter has a value; the descriptor names none")
+	}
+	characters := font.Characters()
+	if characters == nil || characters.Count() != 3 {
+		return fmt.Errorf("Characters() reported %v entries, want the descriptor's three", characters)
+	}
+	for index, want := range []uint16{'?', 'A', 'B'} {
+		got, err := characters.Item(int32(index))
+		if err != nil || got != want {
+			return fmt.Errorf("Characters()[%d] = (%v, %v), want %v", index, got, err, want)
+		}
+	}
+	if font.Characters() != characters {
+		return errors.New("Characters() built a second view; the reference caches the first")
+	}
+	g.result.SpriteFontGlyphChecks++
+
+	// The measurement, over the table CNA reported. These are the descriptor's
+	// own numbers run through the reference's arithmetic, so a projection that
+	// measured a DIFFERENT font -- or the same font with different glyph
+	// metrics -- fails here rather than passing on a plausible size.
+	for _, probe := range []struct {
+		text string
+		x, y float32
+	}{
+		{"", 0, 0},
+		{"A", 5, 10},
+		{"?", 7, 10},
+		{"AA", 11, 10},
+		{"BA", 10, 12},
+		{"A\nA", 5, 20},
+		{"A\r\nA", 5, 20},
+		{"\r", 0, 10},
+	} {
+		size, err := font.MeasureStringByString(probe.text)
+		if err != nil {
+			return fmt.Errorf("MeasureString(%q): %w", probe.text, err)
+		}
+		if size.X != probe.x || size.Y != probe.y {
+			return fmt.Errorf("MeasureString(%q) = (%v, %v), want (%v, %v)",
+				probe.text, size.X, size.Y, probe.x, probe.y)
+		}
+	}
+	g.result.SpriteFontMeasureChecks++
+
+	// The measured divergence, reproduced against a live font. CNA's own
+	// cna_sprite_font_measure_utf8 answers 4 for "B" and 7 for "AB" because it
+	// adds the last glyph's negative right bearing unclamped; the reference's
+	// final statement is `result.X += Math.Max(rightBearing, 0f)` and answers 6
+	// and 9. The projection must answer the REFERENCE's numbers, over CNA's
+	// data. This is the one assertion that separates "the algorithm is the
+	// reference's" from "the algorithm is whatever the runtime does".
+	for _, probe := range []struct {
+		text string
+		x    float32
+	}{{"B", 6}, {"AB", 9}, {"AB\nA", 9}} {
+		size, err := font.MeasureStringByString(probe.text)
+		if err != nil {
+			return fmt.Errorf("MeasureString(%q): %w", probe.text, err)
+		}
+		if size.X != probe.x {
+			return fmt.Errorf("MeasureString(%q).X = %v, want the reference's %v (CNA's own measure answers two less)",
+				probe.text, size.X, probe.x)
+		}
+	}
+	g.result.SpriteFontDivergenceChecks++
+
+	// A character with no glyph and no default character is the reference's
+	// ArgumentException, with the exact FrameworkResources sentence CNA cannot
+	// produce.
+	if _, err := font.MeasureStringByString("Z"); err == nil {
+		return errors.New("an unknown character with no default character measured successfully")
+	} else if !strings.Contains(err.Error(), "is not available in this SpriteFont") {
+		return fmt.Errorf("the unknown-character refusal is not the reference's: %v", err)
+	}
+	g.result.SpriteFontRefusals++
+
+	// The three setters, each written through the projection and each proved to
+	// have reached CNA by a value only CNA could refuse.
+	missing := uint16('#')
+	if err := font.SetDefaultCharacter(&missing); err == nil {
+		return errors.New("SetDefaultCharacter accepted a character the font does not have")
+	}
+	fallback := uint16('?')
+	if err := font.SetDefaultCharacter(&fallback); err != nil {
+		return fmt.Errorf("SetDefaultCharacter('?'): %w", err)
+	}
+	if value, ok := font.DefaultCharacter(); !ok || value != '?' {
+		return fmt.Errorf("DefaultCharacter() = (%v, %v) after setting '?'", value, ok)
+	}
+	// With a default character, the unknown character now measures as it.
+	unknown, err := font.MeasureStringByString("Z")
+	if err != nil {
+		return fmt.Errorf("MeasureString(\"Z\") with a default character: %w", err)
+	}
+	if unknown.X != 7 {
+		return fmt.Errorf("the fallback glyph measured %v, want '?' at 1+4+2", unknown.X)
+	}
+	if err := font.SetLineSpacing(20); err != nil {
+		return fmt.Errorf("SetLineSpacing(20): %w", err)
+	}
+	if err := font.SetSpacing(2.5); err != nil {
+		return fmt.Errorf("SetSpacing(2.5): %w", err)
+	}
+	// CNA narrows what XNA stores: a non-finite spacing is refused by
+	// cna_sprite_font_set_spacing and the reference stores it. The refusal is
+	// CNA's own, recorded rather than reworded.
+	if err := font.SetSpacing(float32(math.NaN())); err == nil {
+		return errors.New("CNA accepted a non-finite spacing; the pinned artifact refuses one")
+	}
+	if !math.IsNaN(float64(font.Spacing())) {
+		return errors.New("the managed store did not precede the refused native push")
+	}
+	if err := font.SetSpacing(2.5); err != nil {
+		return fmt.Errorf("restoring the spacing: %w", err)
+	}
+	measured, err := font.MeasureStringByString("AB")
+	if err != nil {
+		return fmt.Errorf("MeasureString after the setters: %w", err)
+	}
+	if measured.X != 5+2.5+0+(-3)+6 || measured.Y != 20+0 {
+		return fmt.Errorf("MeasureString(\"AB\") = %v after setting spacing 2.5 and line spacing 20", measured)
+	}
+	g.result.SpriteFontSetterRoundTrips++
+
+	// The cache is CNA's, exactly as it is for a texture: a second Load of the
+	// same name answers with the files already deleted.
+	if err := os.Remove(filepath.Join(root, "cna-go-stress-font.cnj")); err != nil {
+		return fmt.Errorf("removing the font descriptor: %w", err)
+	}
+	cached, cacheErr := content.ContentManagerLoad[*graphics.SpriteFont](manager, "cna-go-stress-font")
+	if cacheErr != nil {
+		return fmt.Errorf("a second Load of a cached font: %w", cacheErr)
+	}
+	if cached == nil {
+		return errors.New("the cached Load produced no font")
+	}
+	// The projection is a NEW Go object over CNA's cached handles, which is a
+	// measured difference from the reference: XNA's ContentManager caches the
+	// managed object and returns the same reference. CNA caches natively and
+	// CNA-Go builds a facade per call, so the two fonts are equal in every
+	// observable and are not the same object.
+	if cached == font {
+		return errors.New("the second Load returned the same Go object; CNA-Go builds a facade per call")
+	}
+	if cached.LineSpacing() != 10 {
+		return fmt.Errorf("the cached font's LineSpacing = %d, want the descriptor's 10 on a fresh facade", cached.LineSpacing())
+	}
+	g.result.SpriteFontCacheChecks++
+
+	// Nothing disposes either font. XNA's SpriteFont is not IDisposable, so the
+	// two owned CNA handles per load are released by the game's own teardown --
+	// in CNA's order, because the atlas is registered before the font and the
+	// runtime releases in reverse. A wrong order would surface as CNA's
+	// INVALID_STATE from the whole run.
 	return nil
 }

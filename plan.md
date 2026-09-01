@@ -1581,6 +1581,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 66 | VertexBuffer, IVertexType, and two narrowings | `foundation-66-vertex-buffer-evidence.md` |
 | 67 | binding buffers to the device, and the draw calls | `foundation-67-device-buffer-binding-evidence.md` |
 | 68 | GraphicsAdapter, and a narrowing that belongs to CNA | `foundation-68-graphics-adapter-evidence.md` |
+| 69 | SpriteFont, and a measurement that is the reference's | `foundation-69-sprite-font-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1618,16 +1619,50 @@ reference interface.
 recorded, with the measured reason** (57). Four classes, checked against the
 canonical headers and against the manifest.
 
+**A BCL type at a public signature position takes the standard-library Go
+type whose ROLE it is, chosen from what the profile's positions MEASURABLY do
+with it** (53, 69). `System.IO.Stream` is `io.Reader` because every stream
+position in the profile is read, with the two written ones named in a registry;
+`System.Text.StringBuilder` is `*strings.Builder` because all four of its
+positions are inputs whose only reads are `get_Length` and `get_Chars`. This is
+not the same rule as `bclSignatureAdapters`, which reproduces a BCL type's own
+measured member inventory: an adapter is needed when a projected member RETURNS
+the BCL object and a consumer must use its surface.
+
+**A native route whose XNA member is projected is bound only if it AGREES with
+the member's reference body** (57, 69). Foundation 69 added the fifth class,
+`REDUNDANT_READ`, and the first entry justified by a measured numeric
+disagreement rather than by a shape: `cna_sprite_font_measure_utf8` adds the
+last glyph's right bearing unclamped where `InternalMeasure` clamps it.
+
 **A graphics state object freezes** (59). Every setter is fallible because
 `ThrowIfBound` is a refusal the reference really throws; every getter is one
 `ldfld`. The static presets are frozen from construction.
 
 ## Deferred families
 
-Content/XNB and LZX; effects, models, and 3D; audio/XACT; media/video; storage;
-touch; design; GamerServices; and broad platform work are not
-Foundation 1 count-filling opportunities. Windows, macOS, Android, iOS, and
+This section is a STATEMENT OF CURRENT STATE, not a permanent list, and it is
+rewritten whenever a milestone makes one of its entries false.
+
+Still deferred: audio/XACT; media/video; storage; touch; design;
+GamerServices; and broad platform work. Windows, macOS, Android, iOS, and
 Web/Wasm are unqualified even if the Go compiler can target them.
+
+No longer deferred, and the milestone that ended each:
+
+```text
+Content/XNB    Foundation 63 projected ContentManager over CNA's own content
+               pipeline, and Foundation 69 grew its closed Load<T> set to a
+               second asset kind. LZX remains CNA's business, not the
+               binding's: CNA-Go parses no container.
+SpriteFont     Foundation 69.
+```
+
+The Load<T> set is closed by PROJECTED TYPE IDENTITY, which is the mechanism
+that keeps the two facts above from drifting apart: CNA has native loaders for
+`SoundEffect`, `TextureCube` and `Effect` today, and each is absent from the
+set because CNA-Go projects no Go type for it. Each is a missing TYPE, not a
+missing loader, and each becomes actionable the milestone its type does.
 
 ## Next milestone selection rule
 

@@ -161,6 +161,18 @@ var registry = []claimedString{
 		Value: "Invalid vertex type. {0} returned a null VertexDeclaration."},
 	{Key: "VertexTypeWrongSize", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "Invalid vertex type. The size of {0} does not match the stride of its vertex declaration."},
+	// Foundation 69. SpriteFont's one message, thrown from TWO sites with two
+	// exception shapes: set_DefaultCharacter's ArgumentException(message) and
+	// GetIndexForCharacter's ArgumentException(message, "character").
+	//
+	// Placeholders is deliberately NOT set, for the reason BoundStateObject's
+	// is not: both placeholders take the SAME argument -- boxed as Char at {0}
+	// and as Int32 at {1} -- and {1} carries the `x4` format specifier Go has
+	// no `%`-verb equivalent for. CNA-Go keeps the CLR spelling in the source
+	// constant and substitutes positionally, so the registry compares the exact
+	// bytes the assembly holds.
+	{Key: "CharacterNotInFont", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "The character '{0}' (0x{1:x4}) is not available in this SpriteFont. If applicable, adjust the font's start and end CharacterRegions to include this character."},
 	// Foundation 67. The two the draw members throw. The second is the one a
 	// consumer can trip without a shader: it refuses a NON-instanced draw while
 	// any bound stream carries a non-zero instance frequency.

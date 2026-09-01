@@ -433,3 +433,35 @@ CNA_GO_MEASURE(offsetof_CNA_GraphicsFormatSelection_exact_match, offsetof(CNA_Gr
 CNA_GO_MEASURE(offsetof_CNA_GraphicsFormatSelection_format, offsetof(CNA_GraphicsFormatSelection, format))
 CNA_GO_MEASURE(offsetof_CNA_GraphicsFormatSelection_depth_format, offsetof(CNA_GraphicsFormatSelection, depth_format))
 CNA_GO_MEASURE(offsetof_CNA_GraphicsFormatSelection_multi_sample_count, offsetof(CNA_GraphicsFormatSelection, multi_sample_count))
+
+// Foundation 69 — the SpriteFont family.
+//
+// CNA_SpriteFontGlyph is the one array element in this manifest whose fields
+// have THREE different widths in one struct: two 16-byte rectangles, a uint16
+// character, a uint16 reserved and three floats. The reserved half-word is what
+// makes the kerning vector land on a four-byte boundary, so a manifest that
+// dropped it would read the kerning from the character's address and every
+// glyph after the first from the wrong offset.
+//
+// CNA_SpriteFontInfo puts a uint16 and a CNA_Bool before a five-byte reserved
+// run, so the run's WIDTH is what decides the structure's size; a manifest one
+// byte short would make CNA reject struct_size on every call.
+CNA_GO_MEASURE(sizeof_CNA_Vector3, sizeof(CNA_Vector3))
+CNA_GO_MEASURE(alignof_CNA_Vector3, _Alignof(CNA_Vector3))
+CNA_GO_MEASURE(offsetof_CNA_Vector3_y, offsetof(CNA_Vector3, y))
+CNA_GO_MEASURE(offsetof_CNA_Vector3_z, offsetof(CNA_Vector3, z))
+CNA_GO_MEASURE(sizeof_CNA_SpriteFontGlyph, sizeof(CNA_SpriteFontGlyph))
+CNA_GO_MEASURE(alignof_CNA_SpriteFontGlyph, _Alignof(CNA_SpriteFontGlyph))
+CNA_GO_MEASURE(offsetof_CNA_SpriteFontGlyph_glyph_bounds, offsetof(CNA_SpriteFontGlyph, glyph_bounds))
+CNA_GO_MEASURE(offsetof_CNA_SpriteFontGlyph_cropping, offsetof(CNA_SpriteFontGlyph, cropping))
+CNA_GO_MEASURE(offsetof_CNA_SpriteFontGlyph_character, offsetof(CNA_SpriteFontGlyph, character))
+CNA_GO_MEASURE(offsetof_CNA_SpriteFontGlyph_kerning, offsetof(CNA_SpriteFontGlyph, kerning))
+CNA_GO_MEASURE(width_CNA_SpriteFontGlyph_character, sizeof(((CNA_SpriteFontGlyph*)0)->character))
+CNA_GO_MEASURE(sizeof_CNA_SpriteFontInfo, sizeof(CNA_SpriteFontInfo))
+CNA_GO_MEASURE(alignof_CNA_SpriteFontInfo, _Alignof(CNA_SpriteFontInfo))
+CNA_GO_MEASURE(offsetof_CNA_SpriteFontInfo_character_count, offsetof(CNA_SpriteFontInfo, character_count))
+CNA_GO_MEASURE(offsetof_CNA_SpriteFontInfo_line_spacing, offsetof(CNA_SpriteFontInfo, line_spacing))
+CNA_GO_MEASURE(offsetof_CNA_SpriteFontInfo_spacing, offsetof(CNA_SpriteFontInfo, spacing))
+CNA_GO_MEASURE(offsetof_CNA_SpriteFontInfo_default_character, offsetof(CNA_SpriteFontInfo, default_character))
+CNA_GO_MEASURE(offsetof_CNA_SpriteFontInfo_has_default_character, offsetof(CNA_SpriteFontInfo, has_default_character))
+CNA_GO_MEASURE(width_CNA_SpriteFontInfo_default_character, sizeof(((CNA_SpriteFontInfo*)0)->default_character))

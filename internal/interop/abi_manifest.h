@@ -15,6 +15,7 @@ typedef uint64_t CNA_Handle;
 typedef struct CNA_StringView { const char* data; uint64_t byte_length; } CNA_StringView;
 typedef struct CNA_Vector2 { float x; float y; } CNA_Vector2;
 typedef struct CNA_Rectangle { int32_t x; int32_t y; int32_t width; int32_t height; } CNA_Rectangle;
+typedef struct CNA_Vector3 { float x; float y; float z; } CNA_Vector3;
 typedef struct CNA_Color { uint8_t r; uint8_t g; uint8_t b; uint8_t a; } CNA_Color;
 #endif
 
@@ -504,6 +505,29 @@ typedef struct CNA_IndexBufferTransfer {
 } CNA_IndexBufferTransfer;
 #endif
 
+#ifndef CNA_C_SPRITE_FONT_H
+typedef uint16_t CNA_Char16;
+typedef struct CNA_SpriteFontGlyph {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Rectangle glyph_bounds;
+    CNA_Rectangle cropping;
+    CNA_Char16 character;
+    uint16_t reserved;
+    CNA_Vector3 kerning;
+} CNA_SpriteFontGlyph;
+typedef struct CNA_SpriteFontInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint64_t character_count;
+    int32_t line_spacing;
+    float spacing;
+    CNA_Char16 default_character;
+    CNA_Bool has_default_character;
+    uint8_t reserved[5];
+} CNA_SpriteFontInfo;
+#endif
+
 #ifndef CNA_C_INPUT_H
 typedef struct CNA_KeyboardState {
     uint32_t struct_size;
@@ -600,6 +624,13 @@ typedef CNA_Result (*cna_content_manager_unload_fn)(CNA_Handle);
 typedef CNA_Result (*cna_content_manager_load_texture2d_fn)(CNA_Handle, CNA_StringView, CNA_Handle*);
 typedef CNA_Result (*cna_content_manager_get_asset_path_size_fn)(CNA_Handle, CNA_StringView, uint64_t*);
 typedef CNA_Result (*cna_content_manager_copy_asset_path_fn)(CNA_Handle, CNA_StringView, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_content_manager_load_sprite_font_fn)(CNA_Handle, CNA_StringView, CNA_Handle*, CNA_Handle*);
+typedef CNA_Result (*cna_sprite_font_get_info_fn)(CNA_Handle, CNA_SpriteFontInfo*);
+typedef CNA_Result (*cna_sprite_font_copy_glyphs_fn)(CNA_Handle, CNA_SpriteFontGlyph*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_sprite_font_set_default_character_fn)(CNA_Handle, CNA_Bool, CNA_Char16);
+typedef CNA_Result (*cna_sprite_font_set_line_spacing_fn)(CNA_Handle, int32_t);
+typedef CNA_Result (*cna_sprite_font_set_spacing_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_sprite_font_destroy_fn)(CNA_Handle);
 typedef CNA_Result (*cna_graphics_device_subscribe_event_fn)(CNA_Handle, CNA_GraphicsDeviceEvent, CNA_GraphicsDeviceEventCallback, void*, CNA_GraphicsDeviceEventRegistrationHandle*);
 typedef CNA_Result (*cna_graphics_device_subscribe_resource_created_fn)(CNA_Handle, CNA_GraphicsDeviceResourceCreatedCallback, void*, CNA_GraphicsDeviceEventRegistrationHandle*);
 typedef CNA_Result (*cna_graphics_device_subscribe_resource_destroyed_fn)(CNA_Handle, CNA_GraphicsDeviceResourceDestroyedCallback, void*, CNA_GraphicsDeviceEventRegistrationHandle*);
@@ -755,6 +786,13 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_content_manager_load_texture2d) \
     X(cna_content_manager_get_asset_path_size) \
     X(cna_content_manager_copy_asset_path) \
+    X(cna_content_manager_load_sprite_font) \
+    X(cna_sprite_font_get_info) \
+    X(cna_sprite_font_copy_glyphs) \
+    X(cna_sprite_font_set_default_character) \
+    X(cna_sprite_font_set_line_spacing) \
+    X(cna_sprite_font_set_spacing) \
+    X(cna_sprite_font_destroy) \
     X(cna_graphics_device_subscribe_event) \
     X(cna_graphics_device_subscribe_resource_created) \
     X(cna_graphics_device_subscribe_resource_destroyed) \
