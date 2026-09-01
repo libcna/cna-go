@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 704,
-    "ASSERTIONS": 704,
+    "OBSERVATIONS": 707,
+    "ASSERTIONS": 707,
     "FAILURES": 0
   },
   "observations": [
@@ -5565,6 +5565,30 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,1,true",
       "actual": "true,1,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device.state-objects-start-null",
+      "group": "GRAPHICS_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-device.a-null-state-is-the-references-argument-null",
+      "group": "GRAPHICS_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "sprite-batch.begin-substitutes-the-references-four-defaults",
+      "group": "GRAPHICS_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "BlendState.AlphaBlend,SamplerState.LinearClamp,DepthStencilState.None,RasterizerState.CullCounterClockwise",
+      "actual": "BlendState.AlphaBlend,SamplerState.LinearClamp,DepthStencilState.None,RasterizerState.CullCounterClockwise",
       "passed": true
     },
     {

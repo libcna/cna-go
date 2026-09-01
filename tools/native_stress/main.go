@@ -97,6 +97,9 @@ type counters struct {
 	// live device, plus the two masked Clear overloads and Present.
 	DeviceStateCycles          int `json:"DEVICE_STATE_CYCLES"`
 	DeviceStateRoundTrips      int `json:"DEVICE_STATE_ROUND_TRIPS"`
+	DeviceStateObjectRefusals  int `json:"DEVICE_STATE_OBJECT_REFUSALS"`
+	DeviceStateObjectBinds     int `json:"DEVICE_STATE_OBJECT_BINDS"`
+	SpriteBatchStateBegins     int `json:"SPRITE_BATCH_STATE_BEGINS"`
 	DeviceStateReadOnlyChecks  int `json:"DEVICE_STATE_READ_ONLY_CHECKS"`
 	DeviceStateClearCalls      int `json:"DEVICE_STATE_CLEAR_CALLS"`
 	DeviceStateClearRefusals   int `json:"DEVICE_STATE_CLEAR_REFUSALS"`
@@ -1454,6 +1457,93 @@ func (g *stressGame) exerciseDeviceState() error {
 		return fmt.Errorf("BlendFactor round trip = %+v, want %+v", readFactor, factor)
 	}
 	g.result.DeviceStateRoundTrips++
+
+	// Foundation 60. The three state-object properties, through the LIVE
+	// device: a null is the reference's ArgumentNullException, a set pushes the
+	// descriptor to CNA and FREEZES the object, and the getter answers with the
+	// very object that was set rather than with a fresh one built from values.
+	if _, initial := device.BlendState(); initial != nil {
+		return fmt.Errorf("BlendState on a live device: %w", initial)
+	}
+	if refusal := device.SetBlendState(nil); refusal == nil ||
+		!strings.Contains(refusal.Error(), "This method does not accept null for this parameter.") {
+		return fmt.Errorf("SetBlendState(nil) = %v, want the ArgumentNullException message", refusal)
+	}
+	g.result.DeviceStateObjectRefusals++
+
+	ownBlend := graphics.NewBlendState()
+	if err := ownBlend.SetColorSourceBlend(graphics.BlendSourceAlpha); err != nil {
+		return fmt.Errorf("a fresh BlendState refused a write: %w", err)
+	}
+	if err := device.SetBlendState(ownBlend); err != nil {
+		return fmt.Errorf("SetBlendState: %w", err)
+	}
+	readBlend, readErr := device.BlendState()
+	if readErr != nil {
+		return fmt.Errorf("BlendState: %w", readErr)
+	}
+	if readBlend != ownBlend {
+		return errors.New("BlendState returned a different object; the getter answers with the one the setter was given")
+	}
+	if err := ownBlend.SetColorSourceBlend(graphics.BlendOne); err == nil {
+		return errors.New("a bound BlendState accepted a write; Apply raises isBound")
+	}
+	if ownBlend.GraphicsDevice() != device {
+		return errors.New("Apply did not store the device as the state's parent")
+	}
+	g.result.DeviceStateObjectBinds++
+
+	if err := device.SetDepthStencilState(graphics.DepthStencilStateDepthRead()); err != nil {
+		return fmt.Errorf("SetDepthStencilState: %w", err)
+	}
+	if err := device.SetRasterizerState(graphics.RasterizerStateCullNone()); err != nil {
+		return fmt.Errorf("SetRasterizerState: %w", err)
+	}
+	readDepth, _ := device.DepthStencilState()
+	readRaster, _ := device.RasterizerState()
+	if readDepth != graphics.DepthStencilStateDepthRead() || readRaster != graphics.RasterizerStateCullNone() {
+		return errors.New("the device did not cache the preset objects it was given")
+	}
+	g.result.DeviceStateObjectBinds += 2
+
+	// And the two state-carrying Begin overloads, which reach CNA through one
+	// route carrying all four descriptors and then perform SetRenderState's
+	// managed half.
+	stateBatch, stateBatchErr := graphics.NewSpriteBatch(device)
+	if stateBatchErr != nil {
+		return fmt.Errorf("NewSpriteBatch: %w", stateBatchErr)
+	}
+	if err := stateBatch.BeginBySpriteSortModeAndBlendState(
+		graphics.SpriteSortModeDeferred, graphics.BlendStateAdditive()); err != nil {
+		return fmt.Errorf("Begin(sortMode, blendState): %w", err)
+	}
+	if bound, _ := device.BlendState(); bound != graphics.BlendStateAdditive() {
+		return errors.New("Begin did not apply its blend state to the device")
+	}
+	// SetRenderState substitutes the reference's defaults for the three nulls.
+	if depth, _ := device.DepthStencilState(); depth != graphics.DepthStencilStateNone() {
+		return errors.New("Begin did not substitute DepthStencilState.None for a null")
+	}
+	if raster, _ := device.RasterizerState(); raster != graphics.RasterizerStateCullCounterClockwise() {
+		return errors.New("Begin did not substitute RasterizerState.CullCounterClockwise for a null")
+	}
+	if err := stateBatch.End(); err != nil {
+		return fmt.Errorf("End after a state Begin: %w", err)
+	}
+	g.result.SpriteBatchStateBegins++
+
+	if err := stateBatch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerState(
+		graphics.SpriteSortModeDeferred, graphics.BlendStateOpaque(), graphics.SamplerStatePointClamp(),
+		graphics.DepthStencilStateDefault(), graphics.RasterizerStateCullClockwise()); err != nil {
+		return fmt.Errorf("Begin with four states: %w", err)
+	}
+	if err := stateBatch.End(); err != nil {
+		return fmt.Errorf("End after the four-state Begin: %w", err)
+	}
+	g.result.SpriteBatchStateBegins++
+	if err := stateBatch.DisposeByNone(); err != nil {
+		return fmt.Errorf("state SpriteBatch disposal: %w", err)
+	}
 
 	if err := device.SetMultiSampleMask(0x0f0f0f0f); err != nil {
 		return fmt.Errorf("SetMultiSampleMask: %w", err)

@@ -115,6 +115,15 @@ func withinViewportEpsilon(value1, value2 float32) bool {
 // retains CNA's callback-scoped device handle.
 type GraphicsDevice struct {
 	device *interop.Device
+	// The three state objects the reference caches on the device itself.
+	// InitializeDeviceState stores null into all three, so a device answers nil
+	// until something sets one, and the getters must answer with the very
+	// OBJECT the setter was given -- which is why they cannot read CNA back.
+	// The facade is one object per manager per generation, so the identity is
+	// as stable as the reference's field.
+	blendState        *BlendState
+	depthStencilState *DepthStencilState
+	rasterizerState   *RasterizerState
 }
 
 // GraphicsDeviceManagerGraphicsDevice is the documented cross-package cycle

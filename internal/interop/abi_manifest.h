@@ -244,6 +244,79 @@ typedef struct CNA_Texture2DDecodeInfo {
 } CNA_Texture2DDecodeInfo;
 #endif
 
+#ifndef CNA_C_GRAPHICS_STATE_H
+typedef uint32_t CNA_SpriteSortMode;
+typedef uint32_t CNA_Blend;
+typedef uint32_t CNA_BlendFunction;
+typedef uint32_t CNA_ColorWriteChannels;
+typedef uint32_t CNA_CompareFunction;
+typedef uint32_t CNA_StencilOperation;
+typedef uint32_t CNA_CullMode;
+typedef uint32_t CNA_FillMode;
+typedef uint32_t CNA_TextureAddressMode;
+typedef uint32_t CNA_TextureFilter;
+typedef struct CNA_BlendState {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_BlendFunction alpha_blend_function;
+    CNA_Blend alpha_destination_blend;
+    CNA_Blend alpha_source_blend;
+    CNA_BlendFunction color_blend_function;
+    CNA_Blend color_destination_blend;
+    CNA_Blend color_source_blend;
+    CNA_ColorWriteChannels color_write_channels;
+    CNA_ColorWriteChannels color_write_channels1;
+    CNA_ColorWriteChannels color_write_channels2;
+    CNA_ColorWriteChannels color_write_channels3;
+    CNA_Color blend_factor;
+    int32_t multi_sample_mask;
+} CNA_BlendState;
+typedef struct CNA_DepthStencilState {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Bool depth_buffer_enable;
+    CNA_Bool depth_buffer_write_enable;
+    CNA_Bool stencil_enable;
+    CNA_Bool two_sided_stencil_mode;
+    CNA_CompareFunction depth_buffer_function;
+    CNA_CompareFunction stencil_function;
+    int32_t stencil_mask;
+    int32_t stencil_write_mask;
+    int32_t reference_stencil;
+    CNA_StencilOperation stencil_fail;
+    CNA_StencilOperation stencil_depth_buffer_fail;
+    CNA_StencilOperation stencil_pass;
+    CNA_CompareFunction counter_clockwise_stencil_function;
+    CNA_StencilOperation counter_clockwise_stencil_fail;
+    CNA_StencilOperation counter_clockwise_stencil_depth_buffer_fail;
+    CNA_StencilOperation counter_clockwise_stencil_pass;
+    uint32_t reserved;
+} CNA_DepthStencilState;
+typedef struct CNA_RasterizerState {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_CullMode cull_mode;
+    CNA_FillMode fill_mode;
+    float depth_bias;
+    float slope_scale_depth_bias;
+    CNA_Bool multi_sample_anti_alias;
+    CNA_Bool scissor_test_enable;
+    uint8_t reserved[2];
+} CNA_RasterizerState;
+typedef struct CNA_SamplerState {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_TextureAddressMode address_u;
+    CNA_TextureAddressMode address_v;
+    CNA_TextureAddressMode address_w;
+    CNA_TextureFilter filter;
+    int32_t max_anisotropy;
+    int32_t max_mip_level;
+    float mip_map_level_of_detail_bias;
+    uint32_t reserved;
+} CNA_SamplerState;
+#endif
+
 #ifndef CNA_C_RENDER_TARGET_H
 typedef uint32_t CNA_DepthFormat;
 typedef uint32_t CNA_RenderTargetUsage;
@@ -332,6 +405,10 @@ typedef CNA_Result (*cna_graphics_device_manager_end_draw_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_get_viewport_fn)(CNA_Handle, CNA_Viewport*);
 typedef CNA_Result (*cna_graphics_device_clear_rgba_fn)(CNA_Handle, float, float, float, float);
+typedef CNA_Result (*cna_graphics_device_set_blend_state_fn)(CNA_Handle, const CNA_BlendState*);
+typedef CNA_Result (*cna_graphics_device_set_depth_stencil_state_fn)(CNA_Handle, const CNA_DepthStencilState*);
+typedef CNA_Result (*cna_graphics_device_set_rasterizer_state_fn)(CNA_Handle, const CNA_RasterizerState*);
+typedef CNA_Result (*cna_sprite_batch_begin_with_states_fn)(CNA_Handle, CNA_SpriteSortMode, const CNA_BlendState*, const CNA_SamplerState*, const CNA_DepthStencilState*, const CNA_RasterizerState*);
 typedef CNA_Result (*cna_render_target2d_create_fn)(CNA_Handle, const CNA_RenderTarget2DCreateInfo*, CNA_Handle*);
 typedef CNA_Result (*cna_render_target_get_info_fn)(CNA_Handle, CNA_RenderTargetInfo*);
 typedef CNA_Result (*cna_render_target_destroy_fn)(CNA_Handle);
@@ -432,6 +509,10 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \
+    X(cna_graphics_device_set_blend_state) \
+    X(cna_graphics_device_set_depth_stencil_state) \
+    X(cna_graphics_device_set_rasterizer_state) \
+    X(cna_sprite_batch_begin_with_states) \
     X(cna_render_target2d_create) \
     X(cna_render_target_get_info) \
     X(cna_render_target_destroy) \

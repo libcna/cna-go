@@ -239,6 +239,74 @@ CnaGoResult cna_go_graphics_device_get_graphics_profile(CnaGoHandle device, uint
 CnaGoResult cna_go_graphics_device_get_status(CnaGoHandle device, uint32_t* out_status);
 CnaGoResult cna_go_graphics_device_get_is_disposed(CnaGoHandle device, uint8_t* out_is_disposed);
 
+// The four state descriptors cross the boundary as FLAT SCALARS, like every
+// other CNA structure here: the bridge builds the versioned C POD on its own
+// side and cgo never sees one.
+CnaGoResult cna_go_graphics_device_set_blend_state(
+    CnaGoHandle device,
+    uint32_t alpha_blend_function,
+    uint32_t alpha_destination_blend,
+    uint32_t alpha_source_blend,
+    uint32_t color_blend_function,
+    uint32_t color_destination_blend,
+    uint32_t color_source_blend,
+    uint32_t color_write_channels,
+    uint32_t color_write_channels1,
+    uint32_t color_write_channels2,
+    uint32_t color_write_channels3,
+    uint8_t blend_factor_r,
+    uint8_t blend_factor_g,
+    uint8_t blend_factor_b,
+    uint8_t blend_factor_a,
+    int32_t multi_sample_mask);
+
+CnaGoResult cna_go_graphics_device_set_depth_stencil_state(
+    CnaGoHandle device,
+    uint8_t depth_buffer_enable,
+    uint8_t depth_buffer_write_enable,
+    uint8_t stencil_enable,
+    uint8_t two_sided_stencil_mode,
+    uint32_t depth_buffer_function,
+    uint32_t stencil_function,
+    int32_t stencil_mask,
+    int32_t stencil_write_mask,
+    int32_t reference_stencil,
+    uint32_t stencil_fail,
+    uint32_t stencil_depth_buffer_fail,
+    uint32_t stencil_pass,
+    uint32_t counter_clockwise_stencil_function,
+    uint32_t counter_clockwise_stencil_fail,
+    uint32_t counter_clockwise_stencil_depth_buffer_fail,
+    uint32_t counter_clockwise_stencil_pass);
+
+CnaGoResult cna_go_graphics_device_set_rasterizer_state(
+    CnaGoHandle device,
+    uint32_t cull_mode,
+    uint32_t fill_mode,
+    float depth_bias,
+    float slope_scale_depth_bias,
+    uint8_t multi_sample_anti_alias,
+    uint8_t scissor_test_enable);
+
+CnaGoResult cna_go_sprite_batch_begin_with_states(
+    CnaGoHandle batch,
+    uint32_t sort_mode,
+    const uint32_t* blend,
+    const int32_t* blend_mask,
+    const uint8_t* blend_factor,
+    const uint32_t* sampler,
+    const int32_t* sampler_ints,
+    float sampler_bias,
+    const uint8_t* depth_flags,
+    const uint32_t* depth_words,
+    const int32_t* depth_ints,
+    uint32_t cull_mode,
+    uint32_t fill_mode,
+    float depth_bias,
+    float slope_scale_depth_bias,
+    uint8_t multi_sample_anti_alias,
+    uint8_t scissor_test_enable);
+
 CnaGoResult cna_go_render_target2d_create(
     CnaGoHandle device,
     uint32_t width,

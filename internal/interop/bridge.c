@@ -680,6 +680,200 @@ CnaGoResult cna_go_graphics_device_get_status(CnaGoHandle device, uint32_t* out_
     return api.cna_graphics_device_get_status(device, out_status);
 }
 
+// fillBlendState and its three siblings build a versioned CNA state descriptor
+// from flat scalars. They are static because the descriptor never leaves this
+// translation unit: the boundary carries numbers, and the STRUCTURE -- its
+// size, its version and every offset -- is CNA-Go's private manifest's, pinned
+// against the canonical headers by tools/native_abi.
+static void cna_go_fill_blend_state(
+    CNA_BlendState* state,
+    const uint32_t* blend,
+    int32_t multi_sample_mask,
+    const uint8_t* blend_factor) {
+    memset(state, 0, sizeof(*state));
+    state->struct_size = (uint32_t)sizeof(*state);
+    state->struct_version = 1;
+    state->alpha_blend_function = blend[0];
+    state->alpha_destination_blend = blend[1];
+    state->alpha_source_blend = blend[2];
+    state->color_blend_function = blend[3];
+    state->color_destination_blend = blend[4];
+    state->color_source_blend = blend[5];
+    state->color_write_channels = blend[6];
+    state->color_write_channels1 = blend[7];
+    state->color_write_channels2 = blend[8];
+    state->color_write_channels3 = blend[9];
+    state->blend_factor.r = blend_factor[0];
+    state->blend_factor.g = blend_factor[1];
+    state->blend_factor.b = blend_factor[2];
+    state->blend_factor.a = blend_factor[3];
+    state->multi_sample_mask = multi_sample_mask;
+}
+
+static void cna_go_fill_depth_stencil_state(
+    CNA_DepthStencilState* state,
+    const uint8_t* flags,
+    const uint32_t* words,
+    const int32_t* ints) {
+    memset(state, 0, sizeof(*state));
+    state->struct_size = (uint32_t)sizeof(*state);
+    state->struct_version = 1;
+    state->depth_buffer_enable = (CNA_Bool)(flags[0] != 0);
+    state->depth_buffer_write_enable = (CNA_Bool)(flags[1] != 0);
+    state->stencil_enable = (CNA_Bool)(flags[2] != 0);
+    state->two_sided_stencil_mode = (CNA_Bool)(flags[3] != 0);
+    state->depth_buffer_function = words[0];
+    state->stencil_function = words[1];
+    state->stencil_fail = words[2];
+    state->stencil_depth_buffer_fail = words[3];
+    state->stencil_pass = words[4];
+    state->counter_clockwise_stencil_function = words[5];
+    state->counter_clockwise_stencil_fail = words[6];
+    state->counter_clockwise_stencil_depth_buffer_fail = words[7];
+    state->counter_clockwise_stencil_pass = words[8];
+    state->stencil_mask = ints[0];
+    state->stencil_write_mask = ints[1];
+    state->reference_stencil = ints[2];
+}
+
+static void cna_go_fill_rasterizer_state(
+    CNA_RasterizerState* state,
+    uint32_t cull_mode,
+    uint32_t fill_mode,
+    float depth_bias,
+    float slope_scale_depth_bias,
+    uint8_t multi_sample_anti_alias,
+    uint8_t scissor_test_enable) {
+    memset(state, 0, sizeof(*state));
+    state->struct_size = (uint32_t)sizeof(*state);
+    state->struct_version = 1;
+    state->cull_mode = cull_mode;
+    state->fill_mode = fill_mode;
+    state->depth_bias = depth_bias;
+    state->slope_scale_depth_bias = slope_scale_depth_bias;
+    state->multi_sample_anti_alias = (CNA_Bool)(multi_sample_anti_alias != 0);
+    state->scissor_test_enable = (CNA_Bool)(scissor_test_enable != 0);
+}
+
+static void cna_go_fill_sampler_state(
+    CNA_SamplerState* state,
+    const uint32_t* words,
+    const int32_t* ints,
+    float bias) {
+    memset(state, 0, sizeof(*state));
+    state->struct_size = (uint32_t)sizeof(*state);
+    state->struct_version = 1;
+    state->address_u = words[0];
+    state->address_v = words[1];
+    state->address_w = words[2];
+    state->filter = words[3];
+    state->max_anisotropy = ints[0];
+    state->max_mip_level = ints[1];
+    state->mip_map_level_of_detail_bias = bias;
+}
+
+CnaGoResult cna_go_graphics_device_set_blend_state(
+    CnaGoHandle device,
+    uint32_t alpha_blend_function,
+    uint32_t alpha_destination_blend,
+    uint32_t alpha_source_blend,
+    uint32_t color_blend_function,
+    uint32_t color_destination_blend,
+    uint32_t color_source_blend,
+    uint32_t color_write_channels,
+    uint32_t color_write_channels1,
+    uint32_t color_write_channels2,
+    uint32_t color_write_channels3,
+    uint8_t blend_factor_r,
+    uint8_t blend_factor_g,
+    uint8_t blend_factor_b,
+    uint8_t blend_factor_a,
+    int32_t multi_sample_mask) {
+    const uint32_t blend[10] = {
+        alpha_blend_function, alpha_destination_blend, alpha_source_blend,
+        color_blend_function, color_destination_blend, color_source_blend,
+        color_write_channels, color_write_channels1, color_write_channels2, color_write_channels3};
+    const uint8_t factor[4] = {blend_factor_r, blend_factor_g, blend_factor_b, blend_factor_a};
+    CNA_BlendState state;
+    cna_go_fill_blend_state(&state, blend, multi_sample_mask, factor);
+    return api.cna_graphics_device_set_blend_state(device, &state);
+}
+
+CnaGoResult cna_go_graphics_device_set_depth_stencil_state(
+    CnaGoHandle device,
+    uint8_t depth_buffer_enable,
+    uint8_t depth_buffer_write_enable,
+    uint8_t stencil_enable,
+    uint8_t two_sided_stencil_mode,
+    uint32_t depth_buffer_function,
+    uint32_t stencil_function,
+    int32_t stencil_mask,
+    int32_t stencil_write_mask,
+    int32_t reference_stencil,
+    uint32_t stencil_fail,
+    uint32_t stencil_depth_buffer_fail,
+    uint32_t stencil_pass,
+    uint32_t counter_clockwise_stencil_function,
+    uint32_t counter_clockwise_stencil_fail,
+    uint32_t counter_clockwise_stencil_depth_buffer_fail,
+    uint32_t counter_clockwise_stencil_pass) {
+    const uint8_t flags[4] = {
+        depth_buffer_enable, depth_buffer_write_enable, stencil_enable, two_sided_stencil_mode};
+    const uint32_t words[9] = {
+        depth_buffer_function, stencil_function, stencil_fail, stencil_depth_buffer_fail,
+        stencil_pass, counter_clockwise_stencil_function, counter_clockwise_stencil_fail,
+        counter_clockwise_stencil_depth_buffer_fail, counter_clockwise_stencil_pass};
+    const int32_t ints[3] = {stencil_mask, stencil_write_mask, reference_stencil};
+    CNA_DepthStencilState state;
+    cna_go_fill_depth_stencil_state(&state, flags, words, ints);
+    return api.cna_graphics_device_set_depth_stencil_state(device, &state);
+}
+
+CnaGoResult cna_go_graphics_device_set_rasterizer_state(
+    CnaGoHandle device,
+    uint32_t cull_mode,
+    uint32_t fill_mode,
+    float depth_bias,
+    float slope_scale_depth_bias,
+    uint8_t multi_sample_anti_alias,
+    uint8_t scissor_test_enable) {
+    CNA_RasterizerState state;
+    cna_go_fill_rasterizer_state(&state, cull_mode, fill_mode, depth_bias,
+                                 slope_scale_depth_bias, multi_sample_anti_alias, scissor_test_enable);
+    return api.cna_graphics_device_set_rasterizer_state(device, &state);
+}
+
+CnaGoResult cna_go_sprite_batch_begin_with_states(
+    CnaGoHandle batch,
+    uint32_t sort_mode,
+    const uint32_t* blend,
+    const int32_t* blend_mask,
+    const uint8_t* blend_factor,
+    const uint32_t* sampler,
+    const int32_t* sampler_ints,
+    float sampler_bias,
+    const uint8_t* depth_flags,
+    const uint32_t* depth_words,
+    const int32_t* depth_ints,
+    uint32_t cull_mode,
+    uint32_t fill_mode,
+    float depth_bias,
+    float slope_scale_depth_bias,
+    uint8_t multi_sample_anti_alias,
+    uint8_t scissor_test_enable) {
+    CNA_BlendState blendState;
+    CNA_SamplerState samplerState;
+    CNA_DepthStencilState depthState;
+    CNA_RasterizerState rasterizerState;
+    cna_go_fill_blend_state(&blendState, blend, blend_mask[0], blend_factor);
+    cna_go_fill_sampler_state(&samplerState, sampler, sampler_ints, sampler_bias);
+    cna_go_fill_depth_stencil_state(&depthState, depth_flags, depth_words, depth_ints);
+    cna_go_fill_rasterizer_state(&rasterizerState, cull_mode, fill_mode, depth_bias,
+                                 slope_scale_depth_bias, multi_sample_anti_alias, scissor_test_enable);
+    return api.cna_sprite_batch_begin_with_states(
+        batch, sort_mode, &blendState, &samplerState, &depthState, &rasterizerState);
+}
+
 CnaGoResult cna_go_render_target2d_create(
     CnaGoHandle device,
     uint32_t width,

@@ -230,3 +230,68 @@ CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_multi_sample_count, offsetof(CNA_Re
 CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_usage, offsetof(CNA_RenderTargetInfo, usage))
 CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_is_content_lost, offsetof(CNA_RenderTargetInfo, is_content_lost))
 CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_renderer_available, offsetof(CNA_RenderTargetInfo, renderer_available))
+
+// Foundation 60. The four state descriptors. bridge.c FILLS every field of each
+// one, so every offset is load-bearing in the same way the render target's are.
+//
+// CNA_BlendState's blend_factor is a CNA_Color -- four bytes inside a run of
+// uint32s -- and its offset is what decides whether the constant blend colour
+// lands on the colour or on the multisample mask.
+//
+// The two reserved fields are measured through the structure SIZE rather than
+// directly: CNA_DepthStencilState's trailing `reserved` is a full uint32 and
+// CNA_RasterizerState's `reserved[2]` sits after two one-byte booleans, where
+// the compiler would pad anyway. Only the first is a control; that distinction
+// is the settled padding rule and is applied rather than re-argued.
+CNA_GO_MEASURE(sizeof_CNA_BlendState, sizeof(CNA_BlendState))
+CNA_GO_MEASURE(alignof_CNA_BlendState, _Alignof(CNA_BlendState))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_alpha_blend_function, offsetof(CNA_BlendState, alpha_blend_function))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_alpha_destination_blend, offsetof(CNA_BlendState, alpha_destination_blend))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_alpha_source_blend, offsetof(CNA_BlendState, alpha_source_blend))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_color_blend_function, offsetof(CNA_BlendState, color_blend_function))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_color_destination_blend, offsetof(CNA_BlendState, color_destination_blend))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_color_source_blend, offsetof(CNA_BlendState, color_source_blend))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_color_write_channels, offsetof(CNA_BlendState, color_write_channels))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_color_write_channels1, offsetof(CNA_BlendState, color_write_channels1))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_color_write_channels2, offsetof(CNA_BlendState, color_write_channels2))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_color_write_channels3, offsetof(CNA_BlendState, color_write_channels3))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_blend_factor, offsetof(CNA_BlendState, blend_factor))
+CNA_GO_MEASURE(offsetof_CNA_BlendState_multi_sample_mask, offsetof(CNA_BlendState, multi_sample_mask))
+
+CNA_GO_MEASURE(sizeof_CNA_DepthStencilState, sizeof(CNA_DepthStencilState))
+CNA_GO_MEASURE(alignof_CNA_DepthStencilState, _Alignof(CNA_DepthStencilState))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_depth_buffer_enable, offsetof(CNA_DepthStencilState, depth_buffer_enable))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_depth_buffer_write_enable, offsetof(CNA_DepthStencilState, depth_buffer_write_enable))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_stencil_enable, offsetof(CNA_DepthStencilState, stencil_enable))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_two_sided_stencil_mode, offsetof(CNA_DepthStencilState, two_sided_stencil_mode))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_depth_buffer_function, offsetof(CNA_DepthStencilState, depth_buffer_function))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_stencil_function, offsetof(CNA_DepthStencilState, stencil_function))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_stencil_mask, offsetof(CNA_DepthStencilState, stencil_mask))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_stencil_write_mask, offsetof(CNA_DepthStencilState, stencil_write_mask))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_reference_stencil, offsetof(CNA_DepthStencilState, reference_stencil))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_stencil_fail, offsetof(CNA_DepthStencilState, stencil_fail))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_stencil_depth_buffer_fail, offsetof(CNA_DepthStencilState, stencil_depth_buffer_fail))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_stencil_pass, offsetof(CNA_DepthStencilState, stencil_pass))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_ccw_stencil_function, offsetof(CNA_DepthStencilState, counter_clockwise_stencil_function))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_ccw_stencil_fail, offsetof(CNA_DepthStencilState, counter_clockwise_stencil_fail))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_ccw_stencil_depth_buffer_fail, offsetof(CNA_DepthStencilState, counter_clockwise_stencil_depth_buffer_fail))
+CNA_GO_MEASURE(offsetof_CNA_DepthStencilState_ccw_stencil_pass, offsetof(CNA_DepthStencilState, counter_clockwise_stencil_pass))
+
+CNA_GO_MEASURE(sizeof_CNA_RasterizerState, sizeof(CNA_RasterizerState))
+CNA_GO_MEASURE(alignof_CNA_RasterizerState, _Alignof(CNA_RasterizerState))
+CNA_GO_MEASURE(offsetof_CNA_RasterizerState_cull_mode, offsetof(CNA_RasterizerState, cull_mode))
+CNA_GO_MEASURE(offsetof_CNA_RasterizerState_fill_mode, offsetof(CNA_RasterizerState, fill_mode))
+CNA_GO_MEASURE(offsetof_CNA_RasterizerState_depth_bias, offsetof(CNA_RasterizerState, depth_bias))
+CNA_GO_MEASURE(offsetof_CNA_RasterizerState_slope_scale_depth_bias, offsetof(CNA_RasterizerState, slope_scale_depth_bias))
+CNA_GO_MEASURE(offsetof_CNA_RasterizerState_multi_sample_anti_alias, offsetof(CNA_RasterizerState, multi_sample_anti_alias))
+CNA_GO_MEASURE(offsetof_CNA_RasterizerState_scissor_test_enable, offsetof(CNA_RasterizerState, scissor_test_enable))
+
+CNA_GO_MEASURE(sizeof_CNA_SamplerState, sizeof(CNA_SamplerState))
+CNA_GO_MEASURE(alignof_CNA_SamplerState, _Alignof(CNA_SamplerState))
+CNA_GO_MEASURE(offsetof_CNA_SamplerState_address_u, offsetof(CNA_SamplerState, address_u))
+CNA_GO_MEASURE(offsetof_CNA_SamplerState_address_v, offsetof(CNA_SamplerState, address_v))
+CNA_GO_MEASURE(offsetof_CNA_SamplerState_address_w, offsetof(CNA_SamplerState, address_w))
+CNA_GO_MEASURE(offsetof_CNA_SamplerState_filter, offsetof(CNA_SamplerState, filter))
+CNA_GO_MEASURE(offsetof_CNA_SamplerState_max_anisotropy, offsetof(CNA_SamplerState, max_anisotropy))
+CNA_GO_MEASURE(offsetof_CNA_SamplerState_max_mip_level, offsetof(CNA_SamplerState, max_mip_level))
+CNA_GO_MEASURE(offsetof_CNA_SamplerState_mip_map_level_of_detail_bias, offsetof(CNA_SamplerState, mip_map_level_of_detail_bias))

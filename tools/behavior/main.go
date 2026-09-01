@@ -3426,6 +3426,35 @@ func runCorpus() corpusReport {
 			stateDisposal.GraphicsDevice() == nil, stateRaises, stateDisposal.IsDisposed()))
 
 	// ------------------------------------------------------------------
+	// Foundation 60. The device's three state-object properties and the two
+	// state-carrying Begin overloads.
+	// ------------------------------------------------------------------
+
+	// InitializeDeviceState stores NULL into all three cached state fields, so
+	// a device answers nil until something sets one. The getter answers with
+	// the OBJECT, which is why the projection caches on the facade rather than
+	// reading CNA back: CNA holds the values, not the identity.
+	var stateDevice *graphics.GraphicsDevice
+	stateNilBlend, stateNilErr := stateDevice.BlendState()
+	check("graphics-device.state-objects-start-null", "GRAPHICS_STATE",
+		"true,true", fmt.Sprintf("%t,%t", stateNilBlend == nil, stateNilErr != nil))
+
+	// A null argument is the reference's ArgumentNullException with the
+	// parameter name "value", not a default.
+	stateNullRefusal := stateDevice.SetBlendState(nil)
+	check("graphics-device.a-null-state-is-the-references-argument-null", "GRAPHICS_STATE",
+		"true", fmt.Sprintf("%t", stateNullRefusal != nil))
+
+	// SetRenderState's null substitutions, read off its IL. They are asserted
+	// as the identities the projection selects rather than through a device,
+	// which needs a native run.
+	check("sprite-batch.begin-substitutes-the-references-four-defaults", "GRAPHICS_STATE",
+		"BlendState.AlphaBlend,SamplerState.LinearClamp,DepthStencilState.None,RasterizerState.CullCounterClockwise",
+		fmt.Sprintf("%s,%s,%s,%s",
+			graphics.BlendStateAlphaBlend().Name(), graphics.SamplerStateLinearClamp().Name(),
+			graphics.DepthStencilStateNone().Name(), graphics.RasterizerStateCullCounterClockwise().Name()))
+
+	// ------------------------------------------------------------------
 	// Foundation 45. GameWindow, whose behaviour is XNA-derived throughout:
 	// every row below comes from Microsoft.Xna.Framework.Game.dll's IL, and
 	// none of it comes from what CNA does.

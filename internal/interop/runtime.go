@@ -274,6 +274,83 @@ type TextureInfo struct {
 	Format        uint32
 }
 
+// The four state descriptors, flattened. Every field is the value CNA's POD
+// carries, in CNA's own order, and the bridge builds the versioned structure on
+// the C side so no CNA structure crosses cgo.
+type BlendStateValue struct {
+	AlphaBlendFunction, AlphaDestinationBlend, AlphaSourceBlend uint32
+	ColorBlendFunction, ColorDestinationBlend, ColorSourceBlend uint32
+	ColorWriteChannels, ColorWriteChannels1                     uint32
+	ColorWriteChannels2, ColorWriteChannels3                    uint32
+	BlendFactorR, BlendFactorG, BlendFactorB, BlendFactorA      uint8
+	MultiSampleMask                                             int32
+}
+
+type DepthStencilStateValue struct {
+	DepthBufferEnable, DepthBufferWriteEnable        bool
+	StencilEnable, TwoSidedStencilMode               bool
+	DepthBufferFunction, StencilFunction             uint32
+	StencilFail, StencilDepthBufferFail, StencilPass uint32
+	CounterClockwiseStencilFunction                  uint32
+	CounterClockwiseStencilFail                      uint32
+	CounterClockwiseStencilDepthBufferFail           uint32
+	CounterClockwiseStencilPass                      uint32
+	StencilMask, StencilWriteMask, ReferenceStencil  int32
+}
+
+type RasterizerStateValue struct {
+	CullMode, FillMode                      uint32
+	DepthBias, SlopeScaleDepthBias          float32
+	MultiSampleAntiAlias, ScissorTestEnable bool
+}
+
+type SamplerStateValue struct {
+	AddressU, AddressV, AddressW, Filter uint32
+	MaxAnisotropy, MaxMipLevel           int32
+	MipMapLevelOfDetailBias              float32
+}
+
+// SetBlendState is cna_graphics_device_set_blend_state.
+func (d *Device) SetBlendState(value BlendStateValue) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceSetBlendState(handle, value)
+}
+
+// SetDepthStencilState is cna_graphics_device_set_depth_stencil_state.
+func (d *Device) SetDepthStencilState(value DepthStencilStateValue) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceSetDepthStencilState(handle, value)
+}
+
+// SetRasterizerState is cna_graphics_device_set_rasterizer_state.
+func (d *Device) SetRasterizerState(value RasterizerStateValue) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeGraphicsDeviceSetRasterizerState(handle, value)
+}
+
+// BeginSpriteBatchWithStates is cna_sprite_batch_begin_with_states, which takes
+// all four descriptors at once. CNA requires every one of them, so the caller
+// resolves the reference's null defaults before it gets here.
+func (resource *Resource) BeginSpriteBatchWithStates(
+	sortMode uint32, blend BlendStateValue, sampler SamplerStateValue,
+	depth DepthStencilStateValue, rasterizer RasterizerStateValue,
+) error {
+	handle, err := resource.liveHandle(resourceSpriteBatch)
+	if err != nil {
+		return err
+	}
+	return nativeSpriteBatchBeginWithStates(handle, sortMode, blend, sampler, depth, rasterizer)
+}
+
 // RenderTargetInfo is CNA_RenderTargetInfo, flattened.
 //
 // Every field is what CNA APPLIED, not what was asked for. That is the same
@@ -1401,6 +1478,21 @@ func DeviceForManager(manager *Resource) (*Device, error) {
 		return nil, err
 	}
 	return &Device{runtime: manager.runtime, manager: manager, generation: manager.generation, ownership: borrowed}, nil
+}
+
+// Live reports whether the facade still names the device generation it was made
+// for. It is the check a member that answers from MANAGED state still needs: a
+// CNA-Go GraphicsDevice facade can outlive the native device, which the
+// reference's device object cannot, so a cached state object could otherwise be
+// handed back for a device that is gone.
+func (d *Device) Live() error {
+	if d == nil || d.runtime == nil {
+		return ErrDisposed
+	}
+	if _, err := d.runtime.activeGame(true); err != nil {
+		return err
+	}
+	return d.runtime.validateGeneration(d.generation, true)
 }
 
 func (d *Device) nativeHandle() (uint64, error) {

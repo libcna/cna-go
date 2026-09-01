@@ -325,6 +325,86 @@ func nativeTextureInfo(texture uint64) (TextureInfo, error) {
 	return TextureInfo{Width: uint32(width), Height: uint32(height), Levels: uint32(levels), Format: uint32(format)}, resultError("cna_texture2d_get_info", code)
 }
 
+// The four state routes. Each flattens its descriptor into scalars; the bridge
+// builds CNA's versioned POD on the C side.
+
+func nativeGraphicsDeviceSetBlendState(device uint64, value BlendStateValue) error {
+	return resultError("cna_graphics_device_set_blend_state", uint32(C.cna_go_graphics_device_set_blend_state(
+		C.CnaGoHandle(device),
+		C.uint32_t(value.AlphaBlendFunction), C.uint32_t(value.AlphaDestinationBlend), C.uint32_t(value.AlphaSourceBlend),
+		C.uint32_t(value.ColorBlendFunction), C.uint32_t(value.ColorDestinationBlend), C.uint32_t(value.ColorSourceBlend),
+		C.uint32_t(value.ColorWriteChannels), C.uint32_t(value.ColorWriteChannels1),
+		C.uint32_t(value.ColorWriteChannels2), C.uint32_t(value.ColorWriteChannels3),
+		C.uint8_t(value.BlendFactorR), C.uint8_t(value.BlendFactorG),
+		C.uint8_t(value.BlendFactorB), C.uint8_t(value.BlendFactorA),
+		C.int32_t(value.MultiSampleMask))))
+}
+
+func nativeGraphicsDeviceSetDepthStencilState(device uint64, value DepthStencilStateValue) error {
+	return resultError("cna_graphics_device_set_depth_stencil_state", uint32(C.cna_go_graphics_device_set_depth_stencil_state(
+		C.CnaGoHandle(device),
+		cnaBool(value.DepthBufferEnable), cnaBool(value.DepthBufferWriteEnable),
+		cnaBool(value.StencilEnable), cnaBool(value.TwoSidedStencilMode),
+		C.uint32_t(value.DepthBufferFunction), C.uint32_t(value.StencilFunction),
+		C.int32_t(value.StencilMask), C.int32_t(value.StencilWriteMask), C.int32_t(value.ReferenceStencil),
+		C.uint32_t(value.StencilFail), C.uint32_t(value.StencilDepthBufferFail), C.uint32_t(value.StencilPass),
+		C.uint32_t(value.CounterClockwiseStencilFunction), C.uint32_t(value.CounterClockwiseStencilFail),
+		C.uint32_t(value.CounterClockwiseStencilDepthBufferFail), C.uint32_t(value.CounterClockwiseStencilPass))))
+}
+
+func nativeGraphicsDeviceSetRasterizerState(device uint64, value RasterizerStateValue) error {
+	return resultError("cna_graphics_device_set_rasterizer_state", uint32(C.cna_go_graphics_device_set_rasterizer_state(
+		C.CnaGoHandle(device), C.uint32_t(value.CullMode), C.uint32_t(value.FillMode),
+		C.float(value.DepthBias), C.float(value.SlopeScaleDepthBias),
+		cnaBool(value.MultiSampleAntiAlias), cnaBool(value.ScissorTestEnable))))
+}
+
+func nativeSpriteBatchBeginWithStates(
+	batch uint64, sortMode uint32, blend BlendStateValue, sampler SamplerStateValue,
+	depth DepthStencilStateValue, rasterizer RasterizerStateValue,
+) error {
+	blendWords := [10]C.uint32_t{
+		C.uint32_t(blend.AlphaBlendFunction), C.uint32_t(blend.AlphaDestinationBlend), C.uint32_t(blend.AlphaSourceBlend),
+		C.uint32_t(blend.ColorBlendFunction), C.uint32_t(blend.ColorDestinationBlend), C.uint32_t(blend.ColorSourceBlend),
+		C.uint32_t(blend.ColorWriteChannels), C.uint32_t(blend.ColorWriteChannels1),
+		C.uint32_t(blend.ColorWriteChannels2), C.uint32_t(blend.ColorWriteChannels3)}
+	blendMask := [1]C.int32_t{C.int32_t(blend.MultiSampleMask)}
+	blendFactor := [4]C.uint8_t{
+		C.uint8_t(blend.BlendFactorR), C.uint8_t(blend.BlendFactorG),
+		C.uint8_t(blend.BlendFactorB), C.uint8_t(blend.BlendFactorA)}
+	samplerWords := [4]C.uint32_t{
+		C.uint32_t(sampler.AddressU), C.uint32_t(sampler.AddressV),
+		C.uint32_t(sampler.AddressW), C.uint32_t(sampler.Filter)}
+	samplerInts := [2]C.int32_t{C.int32_t(sampler.MaxAnisotropy), C.int32_t(sampler.MaxMipLevel)}
+	depthFlags := [4]C.uint8_t{
+		cnaBool(depth.DepthBufferEnable), cnaBool(depth.DepthBufferWriteEnable),
+		cnaBool(depth.StencilEnable), cnaBool(depth.TwoSidedStencilMode)}
+	depthWords := [9]C.uint32_t{
+		C.uint32_t(depth.DepthBufferFunction), C.uint32_t(depth.StencilFunction),
+		C.uint32_t(depth.StencilFail), C.uint32_t(depth.StencilDepthBufferFail), C.uint32_t(depth.StencilPass),
+		C.uint32_t(depth.CounterClockwiseStencilFunction), C.uint32_t(depth.CounterClockwiseStencilFail),
+		C.uint32_t(depth.CounterClockwiseStencilDepthBufferFail), C.uint32_t(depth.CounterClockwiseStencilPass)}
+	depthInts := [3]C.int32_t{
+		C.int32_t(depth.StencilMask), C.int32_t(depth.StencilWriteMask), C.int32_t(depth.ReferenceStencil)}
+	return resultError("cna_sprite_batch_begin_with_states", uint32(C.cna_go_sprite_batch_begin_with_states(
+		C.CnaGoHandle(batch), C.uint32_t(sortMode),
+		&blendWords[0], &blendMask[0], &blendFactor[0],
+		&samplerWords[0], &samplerInts[0], C.float(sampler.MipMapLevelOfDetailBias),
+		&depthFlags[0], &depthWords[0], &depthInts[0],
+		C.uint32_t(rasterizer.CullMode), C.uint32_t(rasterizer.FillMode),
+		C.float(rasterizer.DepthBias), C.float(rasterizer.SlopeScaleDepthBias),
+		cnaBool(rasterizer.MultiSampleAntiAlias), cnaBool(rasterizer.ScissorTestEnable))))
+}
+
+// cnaBool is CNA_Bool's one-byte convention, written once so seventeen call
+// sites cannot disagree about it.
+func cnaBool(value bool) C.uint8_t {
+	if value {
+		return 1
+	}
+	return 0
+}
+
 // The four render-target routes. CNA's create and info structures are
 // VERSIONED, so the bridge fills struct_size and struct_version on the C side
 // and flattens every other field into scalars: no CNA structure crosses cgo,
