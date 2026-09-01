@@ -1084,6 +1084,37 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|Indices":    true,
 		"method|GetVertexBuffers": true,
 	},
+	// Foundation 68. GraphicsAdapter's eleven readers. Every one is one `ldfld`
+	// in the reference over a value D3D9 enumeration filled once, and CNA-Go
+	// takes the same snapshot once -- at enumeration, in readAdapter -- so a
+	// getter here reaches nothing either.
+	//
+	// The three members that ASK the adapter again are deliberately absent:
+	// IsProfileSupported and the two Query... members reach CNA per call and
+	// carry its error, which is where this projection genuinely differs from
+	// the reference's cached capability bits.
+	"Microsoft.Xna.Framework.Graphics.GraphicsAdapter": {
+		"property-get|Description":           true,
+		"property-get|DeviceName":            true,
+		"property-get|VendorId":              true,
+		"property-get|DeviceId":              true,
+		"property-get|SubSystemId":           true,
+		"property-get|Revision":              true,
+		"property-get|IsDefaultAdapter":      true,
+		"property-get|IsWideScreen":          true,
+		"property-get|CurrentDisplayMode":    true,
+		"property-get|SupportedDisplayModes": true,
+		"property-get|MonitorHandle":         true,
+	},
+	// DisplayModeCollection's two members are a managed list walk and a
+	// managed filter over it. Its constructor is `assembly`, so every
+	// collection a consumer can hold was built from a snapshot that is never
+	// mutated afterwards -- there is no version check to fail and no
+	// enumeration error to report.
+	"Microsoft.Xna.Framework.Graphics.DisplayModeCollection": {
+		"property-get|Item":    true,
+		"method|GetEnumerator": true,
+	},
 	// Texture2D's three geometry members, on the same evidence, and correcting
 	// a claim CNA-Go made without it. Their bodies are:
 	//
@@ -2744,6 +2775,12 @@ var bclSignatureAdapters = map[string]bclBaseAdapter{
 // still an unexpected member.
 var bclSignatureAdapterConstructors = map[string]string{
 	"NewReadOnlyCollectionOverSingles": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+	// Foundation 68. The reference-element counterpart, for
+	// GraphicsAdapter::get_Adapters. It is a SECOND constructor over the same
+	// adapter rather than a generalisation of the first because the element
+	// comparers differ and the difference is observable: Single's comparer
+	// finds a NaN, and a reference comparer is identity.
+	"NewReadOnlyCollectionOverReferences": "System.Collections.ObjectModel.ReadOnlyCollection`1",
 }
 
 // bclSignatureAdapterGoName is the Go type name of one signature adapter,

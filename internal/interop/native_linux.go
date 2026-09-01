@@ -1321,3 +1321,171 @@ func nativeDeviceDrawInstancedPrimitives(device uint64, primitiveType uint32, ba
 			C.CnaGoHandle(device), C.uint32_t(primitiveType), C.int32_t(baseVertex), C.int32_t(minVertexIndex),
 			C.int32_t(numVertices), C.int32_t(startIndex), C.int32_t(primitiveCount), C.int32_t(instanceCount))))
 }
+
+// The twelve adapter routes. Every one takes the callback-scoped device handle
+// CNA requires, so none is reachable outside a lifecycle callback.
+
+func nativeAdapterCount(device uint64) (uint64, error) {
+	var count C.uint64_t
+	code := uint32(C.cna_go_graphics_adapter_get_count(C.CnaGoHandle(device), &count))
+	return uint64(count), resultError("cna_graphics_adapter_get_count", code)
+}
+
+func nativeAdapterInfo(device uint64, index uint32) (AdapterInfo, error) {
+	var reported C.uint32_t
+	var isDefault, wide, nullDevice, referenceDevice C.uint8_t
+	var vendor, deviceID, revision, subsystem C.int32_t
+	var descriptionBytes, deviceNameBytes C.uint64_t
+	code := uint32(C.cna_go_graphics_adapter_get_info(
+		C.CnaGoHandle(device), C.uint32_t(index), &reported, &isDefault, &wide,
+		&nullDevice, &referenceDevice, &vendor, &deviceID, &revision, &subsystem,
+		&descriptionBytes, &deviceNameBytes))
+	if err := resultError("cna_graphics_adapter_get_info", code); err != nil {
+		return AdapterInfo{}, err
+	}
+	return AdapterInfo{
+		Index:              uint32(reported),
+		IsDefaultAdapter:   isDefault != 0,
+		IsWideScreen:       wide != 0,
+		UseNullDevice:      nullDevice != 0,
+		UseReferenceDevice: referenceDevice != 0,
+		VendorID:           int32(vendor),
+		DeviceID:           int32(deviceID),
+		Revision:           int32(revision),
+		SubSystemID:        int32(subsystem),
+	}, nil
+}
+
+func nativeAdapterDescription(device uint64, index uint32, byteCount uint64) (string, error) {
+	return nativeAdapterString(device, index, true, byteCount)
+}
+
+func nativeAdapterDeviceName(device uint64, index uint32, byteCount uint64) (string, error) {
+	return nativeAdapterString(device, index, false, byteCount)
+}
+
+// nativeAdapterString takes the byte count from CNA_GraphicsAdapterInfo rather
+// than asking the copy route with a zero capacity: that route answers a zero
+// capacity with CNA_RESULT 14 rather than with the required count, which is
+// what the info structure's two length fields are for.
+func nativeAdapterString(device uint64, index uint32, description bool, byteCount uint64) (string, error) {
+	name := "cna_graphics_adapter_copy_device_name"
+	copyOne := func(buffer *C.char, capacity C.uint64_t, out *C.uint64_t) C.CnaGoResult {
+		return C.cna_go_graphics_adapter_copy_device_name(
+			C.CnaGoHandle(device), C.uint32_t(index), buffer, capacity, out)
+	}
+	if description {
+		name = "cna_graphics_adapter_copy_description"
+		copyOne = func(buffer *C.char, capacity C.uint64_t, out *C.uint64_t) C.CnaGoResult {
+			return C.cna_go_graphics_adapter_copy_description(
+				C.CnaGoHandle(device), C.uint32_t(index), buffer, capacity, out)
+		}
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	required := C.uint64_t(byteCount)
+	buffer := make([]byte, int(required))
+	code := uint32(copyOne((*C.char)(unsafe.Pointer(&buffer[0])), required, &required))
+	if err := resultError(name, code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(required)]), nil
+}
+
+func nativeAdapterCurrentDisplayMode(device uint64, index uint32) (DisplayModeValue, error) {
+	var width, height C.int32_t
+	var format C.uint32_t
+	code := uint32(C.cna_go_graphics_adapter_get_current_display_mode(
+		C.CnaGoHandle(device), C.uint32_t(index), &width, &height, &format))
+	if err := resultError("cna_graphics_adapter_get_current_display_mode", code); err != nil {
+		return DisplayModeValue{}, err
+	}
+	return DisplayModeValue{Width: int32(width), Height: int32(height), Format: uint32(format)}, nil
+}
+
+func nativeAdapterDisplayModes(device uint64, index uint32) ([]DisplayModeValue, error) {
+	var count C.uint64_t
+	code := uint32(C.cna_go_graphics_adapter_get_display_mode_count(
+		C.CnaGoHandle(device), C.uint32_t(index), &count))
+	if err := resultError("cna_graphics_adapter_get_display_mode_count", code); err != nil {
+		return nil, err
+	}
+	if count == 0 {
+		return nil, nil
+	}
+	flattened := make([]int32, int(count)*3)
+	var reported C.uint64_t
+	code = uint32(C.cna_go_graphics_adapter_copy_display_modes(
+		C.CnaGoHandle(device), C.uint32_t(index),
+		(*C.int32_t)(unsafe.Pointer(&flattened[0])), count, &reported))
+	if err := resultError("cna_graphics_adapter_copy_display_modes", code); err != nil {
+		return nil, err
+	}
+	modes := make([]DisplayModeValue, 0, int(reported))
+	for at := 0; at < int(reported) && at*3+2 < len(flattened); at++ {
+		modes = append(modes, DisplayModeValue{
+			Width:  flattened[at*3+0],
+			Height: flattened[at*3+1],
+			Format: uint32(flattened[at*3+2]),
+		})
+	}
+	runtime.KeepAlive(flattened)
+	return modes, nil
+}
+
+func nativeAdapterSetDevicePreferences(device uint64, index uint32, nullDevice, referenceDevice bool) error {
+	nullFlag, referenceFlag := C.uint8_t(0), C.uint8_t(0)
+	if nullDevice {
+		nullFlag = 1
+	}
+	if referenceDevice {
+		referenceFlag = 1
+	}
+	return resultError("cna_graphics_adapter_set_device_preferences",
+		uint32(C.cna_go_graphics_adapter_set_device_preferences(
+			C.CnaGoHandle(device), C.uint32_t(index), nullFlag, referenceFlag)))
+}
+
+func nativeAdapterIsProfileSupported(device uint64, index, profile uint32) (bool, error) {
+	var supported C.uint8_t
+	code := uint32(C.cna_go_graphics_adapter_is_profile_supported(
+		C.CnaGoHandle(device), C.uint32_t(index), C.uint32_t(profile), &supported))
+	return supported != 0, resultError("cna_graphics_adapter_is_profile_supported", code)
+}
+
+func nativeAdapterQueryFormat(device uint64, index uint32, renderTarget bool, profile, format, depthFormat uint32, multiSampleCount int32) (FormatSelection, error) {
+	target := C.uint8_t(0)
+	if renderTarget {
+		target = 1
+	}
+	var exact C.uint8_t
+	var selectedFormat, selectedDepth C.uint32_t
+	var selectedSamples C.int32_t
+	code := uint32(C.cna_go_graphics_adapter_query_format(
+		C.CnaGoHandle(device), C.uint32_t(index), target, C.uint32_t(profile), C.uint32_t(format),
+		C.uint32_t(depthFormat), C.int32_t(multiSampleCount),
+		&exact, &selectedFormat, &selectedDepth, &selectedSamples))
+	if err := resultError("cna_graphics_adapter_query_format", code); err != nil {
+		return FormatSelection{}, err
+	}
+	return FormatSelection{
+		ExactMatch:       exact != 0,
+		Format:           uint32(selectedFormat),
+		DepthFormat:      uint32(selectedDepth),
+		MultiSampleCount: int32(selectedSamples),
+	}, nil
+}
+
+func nativeAdapterMonitorHandle(device uint64, index uint32) (uint64, error) {
+	var value C.uint64_t
+	code := uint32(C.cna_go_graphics_adapter_get_native_monitor_handle(
+		C.CnaGoHandle(device), C.uint32_t(index), &value))
+	return uint64(value), resultError("cna_graphics_adapter_get_native_monitor_handle", code)
+}
+
+func nativeDeviceAdapterIndex(device uint64) (uint32, error) {
+	var index C.uint32_t
+	code := uint32(C.cna_go_graphics_device_get_adapter_index(C.CnaGoHandle(device), &index))
+	return uint32(index), resultError("cna_graphics_device_get_adapter_index", code)
+}

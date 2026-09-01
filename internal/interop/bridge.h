@@ -621,3 +621,49 @@ CnaGoResult cna_go_graphics_device_draw_indexed_primitives(
 CnaGoResult cna_go_graphics_device_draw_instanced_primitives(
     CnaGoHandle device, uint32_t primitive_type, int32_t base_vertex, int32_t min_vertex_index,
     int32_t num_vertices, int32_t start_index, int32_t primitive_count, int32_t instance_count);
+
+CnaGoResult cna_go_graphics_adapter_get_count(CnaGoHandle device, uint64_t* out_count);
+CnaGoResult cna_go_graphics_adapter_get_info(
+    CnaGoHandle device,
+    uint32_t adapter_index,
+    uint32_t* out_index,
+    uint8_t* out_is_default,
+    uint8_t* out_is_wide_screen,
+    uint8_t* out_use_null_device,
+    uint8_t* out_use_reference_device,
+    int32_t* out_vendor_id,
+    int32_t* out_device_id,
+    int32_t* out_revision,
+    int32_t* out_subsystem_id,
+    uint64_t* out_description_bytes,
+    uint64_t* out_device_name_bytes);
+CnaGoResult cna_go_graphics_adapter_copy_description(
+    CnaGoHandle device, uint32_t adapter_index, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_graphics_adapter_copy_device_name(
+    CnaGoHandle device, uint32_t adapter_index, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_graphics_adapter_get_current_display_mode(
+    CnaGoHandle device, uint32_t adapter_index, int32_t* out_width, int32_t* out_height, uint32_t* out_format);
+CnaGoResult cna_go_graphics_adapter_get_display_mode_count(
+    CnaGoHandle device, uint32_t adapter_index, uint64_t* out_count);
+CnaGoResult cna_go_graphics_adapter_copy_display_modes(
+    CnaGoHandle device, uint32_t adapter_index, int32_t* out_modes, uint64_t capacity, uint64_t* out_count);
+CnaGoResult cna_go_graphics_adapter_set_device_preferences(
+    CnaGoHandle device, uint32_t adapter_index, uint8_t use_null_device, uint8_t use_reference_device);
+CnaGoResult cna_go_graphics_adapter_is_profile_supported(
+    CnaGoHandle device, uint32_t adapter_index, uint32_t profile, uint8_t* out_supported);
+CnaGoResult cna_go_graphics_adapter_query_format(
+    CnaGoHandle device,
+    uint32_t adapter_index,
+    uint8_t render_target,
+    uint32_t profile,
+    uint32_t format,
+    uint32_t depth_format,
+    int32_t multi_sample_count,
+    uint8_t* out_exact_match,
+    uint32_t* out_format,
+    uint32_t* out_depth_format,
+    int32_t* out_multi_sample_count);
+CnaGoResult cna_go_graphics_adapter_get_native_monitor_handle(
+    CnaGoHandle device, uint32_t adapter_index, uint64_t* out_value);
+
+CnaGoResult cna_go_graphics_device_get_adapter_index(CnaGoHandle device, uint32_t* out_index);

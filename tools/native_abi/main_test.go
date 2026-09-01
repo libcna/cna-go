@@ -489,6 +489,25 @@ var probeMutations = []sourceMutation{
 	// Foundation 66. The declaration route takes an ELEMENT ARRAY and a count.
 	// Dropping the count leaves a prototype whose remaining arguments still
 	// line up by type, so only the bridge's own three-argument call catches it.
+	// Foundation 68. The two display-mode routes carry a FILTER pair -- a flag
+	// and a format -- between the adapter index and the output. Dropping it
+	// leaves a prototype whose remaining arguments still line up by type, and
+	// it is exactly the pair this projection had wrong until the verifier
+	// caught it.
+	{
+		name: "adapter-display-mode-count-drops-its-format-filter",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_adapter_get_display_mode_count_fn)(CNA_Handle, uint32_t, CNA_Bool, CNA_SurfaceFormat, uint64_t*);",
+		new:  "typedef CNA_Result (*cna_graphics_adapter_get_display_mode_count_fn)(CNA_Handle, uint32_t, uint64_t*);",
+	},
+	// The two query routes take the selection BY POINTER; a by-value struct
+	// parameter does not accept the address the bridge passes.
+	{
+		name: "adapter-query-takes-the-selection-by-value",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_adapter_query_backbuffer_format_fn)(CNA_Handle, uint32_t, CNA_GraphicsProfile, CNA_SurfaceFormat, CNA_DepthFormat, int32_t, CNA_GraphicsFormatSelection*);",
+		new:  "typedef CNA_Result (*cna_graphics_adapter_query_backbuffer_format_fn)(CNA_Handle, uint32_t, CNA_GraphicsProfile, CNA_SurfaceFormat, CNA_DepthFormat, int32_t, CNA_GraphicsFormatSelection);",
+	},
 	{
 		name: "vertex-declaration-create-drops-its-element-count",
 		file: "abi_manifest.h",
@@ -1133,6 +1152,32 @@ var layoutMutations = []sourceMutation{
 	// handle and two int32s -- so moving the handle behind them is
 	// byte-identical to C and makes CNA read a buffer token out of the offset
 	// and frequency words.
+	// Foundation 68. The adapter info's four CNA_Bools are one byte each and
+	// adjacent, so swapping the two a consumer actually reads is invisible to C
+	// and makes every adapter report the other's answer.
+	{
+		name: "adapter-info-default-and-widescreen-flags-swapped",
+		file: "abi_manifest.h",
+		old:  "    CNA_Bool is_default_adapter;\n    CNA_Bool is_wide_screen;\n    CNA_Bool use_null_device;",
+		new:  "    CNA_Bool is_wide_screen;\n    CNA_Bool is_default_adapter;\n    CNA_Bool use_null_device;",
+	},
+	// The two trailing byte lengths are adjacent uint64s, and they are what the
+	// string reads size their buffers from -- so swapping them reads a
+	// description at the device name's length.
+	{
+		name: "adapter-info-description-and-device-name-lengths-swapped",
+		file: "abi_manifest.h",
+		old:  "    uint64_t description_byte_length;\n    uint64_t device_name_byte_length;",
+		new:  "    uint64_t device_name_byte_length;\n    uint64_t description_byte_length;",
+	},
+	// The format selection's reserved run sits between a flag and two format
+	// words, so its WIDTH decides where the selected format is read from.
+	{
+		name: "format-selection-reserved-run-widened",
+		file: "abi_manifest.h",
+		old:  "    CNA_Bool exact_match;\n    uint8_t reserved[3];\n    CNA_SurfaceFormat format;",
+		new:  "    CNA_Bool exact_match;\n    uint8_t reserved[7];\n    CNA_SurfaceFormat format;",
+	},
 	{
 		name: "vertex-binding-handle-moved-behind-the-offsets",
 		file: "abi_manifest.h",

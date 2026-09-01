@@ -1851,3 +1851,170 @@ CnaGoResult cna_go_graphics_device_draw_instanced_primitives(
         device, primitive_type, base_vertex, min_vertex_index, num_vertices, start_index,
         primitive_count, instance_count);
 }
+
+// The twelve adapter routes, flattened. Every one takes a callback-scoped
+// device handle, which is CNA's own requirement and is why GraphicsAdapter's
+// two STATIC members are reachable only inside a lifecycle callback.
+CnaGoResult cna_go_graphics_adapter_get_count(CnaGoHandle device, uint64_t* out_count) {
+    return api.cna_graphics_adapter_get_count(device, out_count);
+}
+
+CnaGoResult cna_go_graphics_adapter_get_info(
+    CnaGoHandle device,
+    uint32_t adapter_index,
+    uint32_t* out_index,
+    uint8_t* out_is_default,
+    uint8_t* out_is_wide_screen,
+    uint8_t* out_use_null_device,
+    uint8_t* out_use_reference_device,
+    int32_t* out_vendor_id,
+    int32_t* out_device_id,
+    int32_t* out_revision,
+    int32_t* out_subsystem_id,
+    uint64_t* out_description_bytes,
+    uint64_t* out_device_name_bytes) {
+    CNA_GraphicsAdapterInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_graphics_adapter_get_info(device, adapter_index, &info);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_index = info.adapter_index;
+    *out_is_default = info.is_default_adapter ? 1u : 0u;
+    *out_is_wide_screen = info.is_wide_screen ? 1u : 0u;
+    *out_use_null_device = info.use_null_device ? 1u : 0u;
+    *out_use_reference_device = info.use_reference_device ? 1u : 0u;
+    *out_vendor_id = info.vendor_id;
+    *out_device_id = info.device_id;
+    *out_revision = info.revision;
+    *out_subsystem_id = info.subsystem_id;
+    *out_description_bytes = info.description_byte_length;
+    *out_device_name_bytes = info.device_name_byte_length;
+    return result;
+}
+
+CnaGoResult cna_go_graphics_adapter_copy_description(
+    CnaGoHandle device, uint32_t adapter_index, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_graphics_adapter_copy_description(device, adapter_index, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_graphics_adapter_copy_device_name(
+    CnaGoHandle device, uint32_t adapter_index, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_graphics_adapter_copy_device_name(device, adapter_index, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_graphics_adapter_get_current_display_mode(
+    CnaGoHandle device, uint32_t adapter_index, int32_t* out_width, int32_t* out_height, uint32_t* out_format) {
+    CNA_DisplayMode mode;
+    CnaGoResult result;
+    memset(&mode, 0, sizeof(mode));
+    mode.struct_size = (uint32_t)sizeof(mode);
+    mode.struct_version = 1;
+    result = api.cna_graphics_adapter_get_current_display_mode(device, adapter_index, &mode);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_width = mode.width;
+    *out_height = mode.height;
+    *out_format = mode.format;
+    return result;
+}
+
+CnaGoResult cna_go_graphics_adapter_get_display_mode_count(
+    CnaGoHandle device, uint32_t adapter_index, uint64_t* out_count) {
+    // The filter is never applied here: DisplayModeCollection's indexer does
+    // the filtering in managed code, exactly as the reference's does, so
+    // asking CNA to filter as well would be a second answer that could differ.
+    return api.cna_graphics_adapter_get_display_mode_count(device, adapter_index, 0, 0, out_count);
+}
+
+// Display modes cross as a FLAT int32 triple each -- width, height, format --
+// for the same reason every other array does: no CNA struct crosses cgo.
+CnaGoResult cna_go_graphics_adapter_copy_display_modes(
+    CnaGoHandle device, uint32_t adapter_index, int32_t* out_modes, uint64_t capacity, uint64_t* out_count) {
+    CNA_DisplayMode* modes;
+    CnaGoResult result;
+    uint64_t at;
+    if (capacity == 0) {
+        return api.cna_graphics_adapter_copy_display_modes(device, adapter_index, 0, 0, NULL, 0, out_count);
+    }
+    modes = (CNA_DisplayMode*)calloc((size_t)capacity, sizeof(CNA_DisplayMode));
+    if (modes == NULL) {
+        return CNA_GO_RESULT_OUT_OF_MEMORY;
+    }
+    for (at = 0; at < capacity; at++) {
+        modes[at].struct_size = (uint32_t)sizeof(CNA_DisplayMode);
+        modes[at].struct_version = 1;
+    }
+    result = api.cna_graphics_adapter_copy_display_modes(device, adapter_index, 0, 0, modes, capacity, out_count);
+    if (result == CNA_GO_RESULT_SUCCESS) {
+        for (at = 0; at < *out_count && at < capacity; at++) {
+            out_modes[at * 3 + 0] = modes[at].width;
+            out_modes[at * 3 + 1] = modes[at].height;
+            out_modes[at * 3 + 2] = (int32_t)modes[at].format;
+        }
+    }
+    free(modes);
+    return result;
+}
+
+CnaGoResult cna_go_graphics_adapter_set_device_preferences(
+    CnaGoHandle device, uint32_t adapter_index, uint8_t use_null_device, uint8_t use_reference_device) {
+    return api.cna_graphics_adapter_set_device_preferences(
+        device, adapter_index, (CNA_Bool)(use_null_device != 0), (CNA_Bool)(use_reference_device != 0));
+}
+
+CnaGoResult cna_go_graphics_adapter_is_profile_supported(
+    CnaGoHandle device, uint32_t adapter_index, uint32_t profile, uint8_t* out_supported) {
+    CNA_Bool supported = 0;
+    CnaGoResult result = api.cna_graphics_adapter_is_profile_supported(
+        device, adapter_index, profile, &supported);
+    *out_supported = supported ? 1u : 0u;
+    return result;
+}
+
+CnaGoResult cna_go_graphics_adapter_query_format(
+    CnaGoHandle device,
+    uint32_t adapter_index,
+    uint8_t render_target,
+    uint32_t profile,
+    uint32_t format,
+    uint32_t depth_format,
+    int32_t multi_sample_count,
+    uint8_t* out_exact_match,
+    uint32_t* out_format,
+    uint32_t* out_depth_format,
+    int32_t* out_multi_sample_count) {
+    CNA_GraphicsFormatSelection selection;
+    CnaGoResult result;
+    memset(&selection, 0, sizeof(selection));
+    selection.struct_size = (uint32_t)sizeof(selection);
+    selection.struct_version = 1;
+    if (render_target) {
+        result = api.cna_graphics_adapter_query_render_target_format(
+            device, adapter_index, profile, format, depth_format, multi_sample_count, &selection);
+    } else {
+        result = api.cna_graphics_adapter_query_backbuffer_format(
+            device, adapter_index, profile, format, depth_format, multi_sample_count, &selection);
+    }
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_exact_match = selection.exact_match ? 1u : 0u;
+    *out_format = selection.format;
+    *out_depth_format = selection.depth_format;
+    *out_multi_sample_count = selection.multi_sample_count;
+    return result;
+}
+
+CnaGoResult cna_go_graphics_adapter_get_native_monitor_handle(
+    CnaGoHandle device, uint32_t adapter_index, uint64_t* out_value) {
+    return api.cna_graphics_adapter_get_native_monitor_handle(device, adapter_index, out_value);
+}
+
+CnaGoResult cna_go_graphics_device_get_adapter_index(CnaGoHandle device, uint32_t* out_index) {
+    return api.cna_graphics_device_get_adapter_index(device, out_index);
+}

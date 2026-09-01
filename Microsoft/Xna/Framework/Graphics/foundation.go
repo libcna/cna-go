@@ -169,6 +169,7 @@ func GraphicsDeviceManagerGraphicsDevice(manager *framework.GraphicsDeviceManage
 	generation := runtime.Generation()
 	if cached, cachedGeneration, present := servicebridge.ReadManagerDeviceFacade(manager); present && cachedGeneration == generation {
 		if facade, typed := cached.(*GraphicsDevice); typed {
+			setAdapterEnumerationDevice(facade)
 			return facade, nil
 		}
 	}
@@ -178,6 +179,11 @@ func GraphicsDeviceManagerGraphicsDevice(manager *framework.GraphicsDeviceManage
 	}
 	facade := &GraphicsDevice{device: device}
 	servicebridge.WriteManagerDeviceFacade(manager, facade, generation)
+	// GraphicsAdapter's two STATIC members enumerate through a live device,
+	// because every CNA adapter route takes one. This is where the device
+	// they use becomes available; outside a callback `live()` refuses and the
+	// static members report CNA's requirement rather than inventing a list.
+	setAdapterEnumerationDevice(facade)
 	return facade, nil
 }
 

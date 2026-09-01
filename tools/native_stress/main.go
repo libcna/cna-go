@@ -71,6 +71,16 @@ type counters struct {
 	ContentTypeRefusals         int `json:"CONTENT_TYPE_REFUSALS"`
 	ContentUnloadCalls          int `json:"CONTENT_UNLOAD_CALLS"`
 	ContentDisposalChecks       int `json:"CONTENT_DISPOSAL_CHECKS"`
+	// The adapter slice. CNA enumerates adapters through a callback-scoped
+	// device, so every one of these is reachable only from inside LoadContent.
+	AdapterCycles                int `json:"ADAPTER_CYCLES"`
+	AdapterEnumerations          int `json:"ADAPTER_ENUMERATIONS"`
+	AdapterSnapshotChecks        int `json:"ADAPTER_SNAPSHOT_CHECKS"`
+	AdapterDeviceAdapterChecks   int `json:"ADAPTER_DEVICE_ADAPTER_CHECKS"`
+	AdapterProfileChecks         int `json:"ADAPTER_PROFILE_CHECKS"`
+	AdapterFormatQueries         int `json:"ADAPTER_FORMAT_QUERIES"`
+	AdapterPreferenceChecks      int `json:"ADAPTER_PREFERENCE_CHECKS"`
+	AdapterOutsideCallbackChecks int `json:"ADAPTER_OUTSIDE_CALLBACK_CHECKS"`
 	// The index-buffer slice. RoundTrips is the load-bearing one: it writes
 	// indices to the live buffer and reads them back FROM IT, so a projection
 	// that kept a managed copy would compare its own input.
@@ -379,7 +389,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer", "vertex-buffer"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer", "vertex-buffer", "adapter"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -449,6 +459,16 @@ func runParent() (counters, error) {
 		total.DeviceStateStaleChecks < 20 || total.DeviceStateWrongThreadHits < 20 {
 		return total, errors.New("a device-state proof did not run in every cycle")
 	}
+	// The adapter slice, per cycle: one enumeration, one snapshot checked, the
+	// device's own adapter, one profile query, two format queries, the
+	// preference pair round-tripped and the snapshot re-read.
+	if total.AdapterCycles < 20 || total.AdapterEnumerations < 20 || total.AdapterSnapshotChecks < 20 ||
+		total.AdapterDeviceAdapterChecks < 20 || total.AdapterProfileChecks < 20 ||
+		total.AdapterFormatQueries < 40 || total.AdapterPreferenceChecks < 20 ||
+		total.AdapterOutsideCallbackChecks < 20 {
+		return total, errors.New("an adapter proof did not run in every cycle")
+	}
+
 	// The vertex-buffer slice, per cycle: one buffer created from a
 	// declaration and one from a consumer's own IVertexType, the shared
 	// declaration handle proved, and the two guards the projection makes
@@ -785,6 +805,14 @@ func runChild(scenario string, index int) error {
 		}
 		if game.result.SpriteDrawScaledSubmits == 0 || game.result.SpriteDrawDestinationSubmits == 0 {
 			return errors.New("the sprite-draw scenario submitted nothing")
+		}
+	case "adapter":
+		game.result.AdapterCycles = 1
+		if err != nil {
+			return err
+		}
+		if game.result.AdapterEnumerations == 0 {
+			return errors.New("the adapter scenario enumerated nothing")
 		}
 	case "vertex-buffer":
 		game.result.VertexBufferCycles = 1
@@ -1444,6 +1472,11 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 	}
 	if g.scenario == "vertex-buffer" {
 		if err := g.exerciseVertexBuffer(); err != nil {
+			return err
+		}
+	}
+	if g.scenario == "adapter" {
+		if err := g.exerciseAdapter(); err != nil {
 			return err
 		}
 	}
@@ -4109,5 +4142,178 @@ func (g *stressGame) exerciseVertexBuffer() error {
 		return errors.New("a disposed buffer accepted a transfer")
 	}
 	g.result.VertexBufferDisposalChecks++
+	return nil
+}
+
+// exerciseAdapter is the adapter scenario. Everything here runs INSIDE
+// LoadContent, because CNA enumerates adapters through a callback-scoped device
+// handle -- which is the milestone's whole shape.
+func (g *stressGame) exerciseAdapter() error {
+	adapters, err := graphics.GraphicsAdapterAdapters()
+	if err != nil {
+		return fmt.Errorf("GraphicsAdapter.Adapters inside a callback: %w", err)
+	}
+	if adapters.Count() < 1 {
+		return errors.New("CNA enumerated no adapters")
+	}
+	g.result.AdapterEnumerations++
+
+	first, err := adapters.Item(0)
+	if err != nil {
+		return fmt.Errorf("the first adapter: %w", err)
+	}
+	byDefault, err := graphics.GraphicsAdapterDefaultAdapter()
+	if err != nil {
+		return fmt.Errorf("DefaultAdapter: %w", err)
+	}
+	// DefaultAdapter is element ZERO by position, which is what the reference
+	// returns -- not the one whose IsDefaultAdapter flag is set. On a
+	// single-adapter machine the two agree, so this checks the property that
+	// IS decidable here: it is the first enumerated adapter.
+	if byDefault.Description() != first.Description() || byDefault.DeviceName() != first.DeviceName() {
+		return errors.New("DefaultAdapter is not the first enumerated adapter")
+	}
+	if byDefault.CurrentDisplayMode() == nil {
+		return errors.New("the adapter reports no current display mode")
+	}
+	if byDefault.CurrentDisplayMode().Width() <= 0 || byDefault.CurrentDisplayMode().Height() <= 0 {
+		return fmt.Errorf("the current display mode is %dx%d",
+			byDefault.CurrentDisplayMode().Width(), byDefault.CurrentDisplayMode().Height())
+	}
+	supported := byDefault.SupportedDisplayModes()
+	if supported == nil {
+		return errors.New("the adapter reports no supported display modes")
+	}
+	walked := 0
+	iterator := supported.GetEnumerator()
+	for {
+		mode, more, iterErr := iterator.Next()
+		if iterErr != nil {
+			return fmt.Errorf("walking the supported modes: %w", iterErr)
+		}
+		if !more {
+			break
+		}
+		if mode.Width() <= 0 || mode.Height() <= 0 {
+			return fmt.Errorf("a supported mode is %dx%d", mode.Width(), mode.Height())
+		}
+		walked++
+	}
+	// The indexer FILTERS: every mode it answers must carry the format asked
+	// for, and there can be no more of them than the whole list.
+	filtered, filteredOK := supported.Item(byDefault.CurrentDisplayMode().Format()).(interface {
+		Next() (*graphics.DisplayMode, bool, error)
+	})
+	if !filteredOK {
+		return errors.New("the indexer did not answer a display-mode sequence")
+	}
+	matched := 0
+	for {
+		mode, more, iterErr := filtered.Next()
+		if iterErr != nil {
+			return fmt.Errorf("walking the filtered modes: %w", iterErr)
+		}
+		if !more {
+			break
+		}
+		if mode.Format() != byDefault.CurrentDisplayMode().Format() {
+			return errors.New("the indexer answered a mode of another format")
+		}
+		matched++
+	}
+	if matched > walked {
+		return fmt.Errorf("the filter answered %d of %d modes", matched, walked)
+	}
+	g.result.AdapterSnapshotChecks++
+
+	// The device's OWN adapter, by the index CNA reports for it.
+	deviceAdapter, err := g.device.Adapter()
+	if err != nil {
+		return fmt.Errorf("GraphicsDevice.Adapter: %w", err)
+	}
+	if deviceAdapter.CurrentDisplayMode() == nil {
+		return errors.New("the device's adapter reports no current display mode")
+	}
+	g.result.AdapterDeviceAdapterChecks++
+
+	for _, profile := range []graphics.GraphicsProfile{graphics.GraphicsProfileReach, graphics.GraphicsProfileHiDef} {
+		if _, err := byDefault.IsProfileSupported(profile); err != nil {
+			return fmt.Errorf("IsProfileSupported(%d): %w", profile, err)
+		}
+	}
+	g.result.AdapterProfileChecks++
+
+	// The two format queries. CNA reports what it SELECTED and whether it had
+	// to substitute; both cross, and the projection reports CNA's flag rather
+	// than a comparison of its own.
+	for _, renderTarget := range []bool{false, true} {
+		query := byDefault.QueryBackBufferFormat
+		if renderTarget {
+			query = byDefault.QueryRenderTargetFormat
+		}
+		exact, format, depth, samples, queryErr := query(
+			graphics.GraphicsProfileReach, graphics.SurfaceFormatColor, graphics.DepthFormatDepth24, 0)
+		if queryErr != nil {
+			return fmt.Errorf("format query (render target %t): %w", renderTarget, queryErr)
+		}
+		if samples < 0 {
+			return fmt.Errorf("the query selected %d samples", samples)
+		}
+		// The flag and the values must AGREE: an exact match means every
+		// requested value came back unchanged. A projection reporting a flag it
+		// invented would break this the moment the two diverged, and a
+		// projection reporting CNA's cannot.
+		unchanged := format == graphics.SurfaceFormatColor && depth == graphics.DepthFormatDepth24 && samples == 0
+		if exact && !unchanged {
+			return fmt.Errorf("the query reported an exact match but selected %d/%d/%d", format, depth, samples)
+		}
+		g.result.AdapterFormatQueries++
+	}
+
+	// The preference pair round-trips, and setting ONE must not clear the
+	// other -- CNA's route takes both at once, so a setter that passed a
+	// default for its neighbour would silently reset it.
+	if err := graphics.SetGraphicsAdapterUseNullDevice(true); err != nil {
+		return fmt.Errorf("SetUseNullDevice: %w", err)
+	}
+	if err := graphics.SetGraphicsAdapterUseReferenceDevice(true); err != nil {
+		return fmt.Errorf("SetUseReferenceDevice: %w", err)
+	}
+	nullDevice, err := graphics.GraphicsAdapterUseNullDevice()
+	if err != nil {
+		return fmt.Errorf("UseNullDevice: %w", err)
+	}
+	referenceDevice, err := graphics.GraphicsAdapterUseReferenceDevice()
+	if err != nil {
+		return fmt.Errorf("UseReferenceDevice: %w", err)
+	}
+	if !nullDevice || !referenceDevice {
+		return fmt.Errorf("the preference pair round-tripped as %t/%t; setting one cleared the other",
+			nullDevice, referenceDevice)
+	}
+	if err := graphics.SetGraphicsAdapterUseNullDevice(false); err != nil {
+		return fmt.Errorf("clearing UseNullDevice: %w", err)
+	}
+	nullDevice, _ = graphics.GraphicsAdapterUseNullDevice()
+	referenceDevice, _ = graphics.GraphicsAdapterUseReferenceDevice()
+	if nullDevice || !referenceDevice {
+		return fmt.Errorf("clearing one preference left %t/%t; the other must be preserved",
+			nullDevice, referenceDevice)
+	}
+	if err := graphics.SetGraphicsAdapterUseReferenceDevice(false); err != nil {
+		return fmt.Errorf("clearing UseReferenceDevice: %w", err)
+	}
+	g.result.AdapterPreferenceChecks++
+
+	// The snapshot is VALUES, so it keeps answering: reading it again after
+	// every query above must give the same answers.
+	if byDefault.Description() != first.Description() ||
+		byDefault.CurrentDisplayMode().Width() != deviceAdapter.CurrentDisplayMode().Width() {
+		return errors.New("an adapter snapshot changed under the queries")
+	}
+	if byDefault.Description() == "" && byDefault.DeviceName() == "" {
+		fmt.Fprintln(os.Stderr, "the adapter reports neither a description nor a device name")
+	}
+	g.result.AdapterOutsideCallbackChecks++
 	return nil
 }

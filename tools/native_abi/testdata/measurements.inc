@@ -401,3 +401,35 @@ CNA_GO_MEASURE(alignof_CNA_VertexBufferBinding, _Alignof(CNA_VertexBufferBinding
 CNA_GO_MEASURE(offsetof_CNA_VertexBufferBinding_vertex_buffer, offsetof(CNA_VertexBufferBinding, vertex_buffer))
 CNA_GO_MEASURE(offsetof_CNA_VertexBufferBinding_vertex_offset, offsetof(CNA_VertexBufferBinding, vertex_offset))
 CNA_GO_MEASURE(offsetof_CNA_VertexBufferBinding_instance_frequency, offsetof(CNA_VertexBufferBinding, instance_frequency))
+
+// Foundation 68. The two adapter structures.
+//
+// CNA_GraphicsAdapterInfo carries FOUR adjacent CNA_Bools between two uint32s
+// and four int32s, so any permutation among them is byte-identical to C and
+// changes which flag a caller reads -- is_default_adapter and is_wide_screen
+// are the pair that decides what DefaultAdapter and IsWideScreen answer. Its
+// two trailing uint64 byte lengths are the ones the string reads depend on:
+// swapping them makes a description be read at the device name's length.
+//
+// CNA_GraphicsFormatSelection puts a CNA_Bool and three reserved bytes before
+// two format words, so the reserved run's WIDTH decides where the selected
+// format is read from.
+CNA_GO_MEASURE(sizeof_CNA_GraphicsAdapterInfo, sizeof(CNA_GraphicsAdapterInfo))
+CNA_GO_MEASURE(alignof_CNA_GraphicsAdapterInfo, _Alignof(CNA_GraphicsAdapterInfo))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_adapter_index, offsetof(CNA_GraphicsAdapterInfo, adapter_index))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_is_default_adapter, offsetof(CNA_GraphicsAdapterInfo, is_default_adapter))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_is_wide_screen, offsetof(CNA_GraphicsAdapterInfo, is_wide_screen))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_use_null_device, offsetof(CNA_GraphicsAdapterInfo, use_null_device))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_use_reference_device, offsetof(CNA_GraphicsAdapterInfo, use_reference_device))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_vendor_id, offsetof(CNA_GraphicsAdapterInfo, vendor_id))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_device_id, offsetof(CNA_GraphicsAdapterInfo, device_id))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_revision, offsetof(CNA_GraphicsAdapterInfo, revision))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_subsystem_id, offsetof(CNA_GraphicsAdapterInfo, subsystem_id))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_description_byte_length, offsetof(CNA_GraphicsAdapterInfo, description_byte_length))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsAdapterInfo_device_name_byte_length, offsetof(CNA_GraphicsAdapterInfo, device_name_byte_length))
+CNA_GO_MEASURE(sizeof_CNA_GraphicsFormatSelection, sizeof(CNA_GraphicsFormatSelection))
+CNA_GO_MEASURE(alignof_CNA_GraphicsFormatSelection, _Alignof(CNA_GraphicsFormatSelection))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsFormatSelection_exact_match, offsetof(CNA_GraphicsFormatSelection, exact_match))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsFormatSelection_format, offsetof(CNA_GraphicsFormatSelection, format))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsFormatSelection_depth_format, offsetof(CNA_GraphicsFormatSelection, depth_format))
+CNA_GO_MEASURE(offsetof_CNA_GraphicsFormatSelection_multi_sample_count, offsetof(CNA_GraphicsFormatSelection, multi_sample_count))

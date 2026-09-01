@@ -3705,6 +3705,35 @@ func runCorpus() corpusReport {
 			clonedDeclaration.IsDisposed(), clonedDeclaration.VertexStride()))
 
 	// ------------------------------------------------------------------
+	// Foundation 68. GraphicsAdapter's two STATIC members, whose refusal is
+	// the milestone's recorded narrowing: every CNA adapter route takes a
+	// callback-scoped device, and XNA's statics answer before one exists. The
+	// snapshot itself needs a live device and is proved in tools/native_stress.
+	// ------------------------------------------------------------------
+
+	_, adaptersOutside := graphics.GraphicsAdapterAdapters()
+	_, defaultOutside := graphics.GraphicsAdapterDefaultAdapter()
+	_, nullDeviceOutside := graphics.GraphicsAdapterUseNullDevice()
+	referenceOutside := graphics.SetGraphicsAdapterUseReferenceDevice(true)
+	checkGoProjection("graphics-adapter.the-static-members-report-cnas-callback-requirement", "GRAPHICS_ADAPTER",
+		"true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t",
+			strings.Contains(fmt.Sprint(adaptersOutside), "callback"),
+			strings.Contains(fmt.Sprint(defaultOutside), "callback"),
+			strings.Contains(fmt.Sprint(nullDeviceOutside), "callback"),
+			strings.Contains(fmt.Sprint(referenceOutside), "callback")))
+
+	// The eleven readers answer from a snapshot, so a zero adapter answers
+	// zeros rather than failing -- and MonitorHandle answers IntPtr.Zero,
+	// which is what the reference reports with no monitor.
+	var absentAdapter *graphics.GraphicsAdapter
+	check("graphics-adapter.a-snapshot-reader-never-fails", "GRAPHICS_ADAPTER",
+		",0,0,true",
+		fmt.Sprintf("%s,%d,%d,%t",
+			absentAdapter.Description(), absentAdapter.VendorId(),
+			absentAdapter.MonitorHandle(), absentAdapter.CurrentDisplayMode() == nil))
+
+	// ------------------------------------------------------------------
 	// Foundation 67. VertexBufferBinding, whose whole surface is managed: it
 	// validates against VertexBuffer's managed vertex count and stores three
 	// values. Binding and drawing need a live device and are proved in

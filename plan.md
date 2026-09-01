@@ -1580,6 +1580,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 65 | IndexBuffer, and the shared copy validator | `foundation-65-index-buffer-evidence.md` |
 | 66 | VertexBuffer, IVertexType, and two narrowings | `foundation-66-vertex-buffer-evidence.md` |
 | 67 | binding buffers to the device, and the draw calls | `foundation-67-device-buffer-binding-evidence.md` |
+| 68 | GraphicsAdapter, and a narrowing that belongs to CNA | `foundation-68-graphics-adapter-evidence.md` |
 
 ### The rules these milestones settled
 

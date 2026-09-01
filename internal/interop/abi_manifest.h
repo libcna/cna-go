@@ -394,6 +394,38 @@ typedef struct CNA_RenderTargetInfo {
 } CNA_RenderTargetInfo;
 #endif
 
+/* The display block's second half. It sits AFTER the render-target block
+   because CNA_GraphicsFormatSelection names CNA_DepthFormat, which that block
+   is where this manifest declares. The canonical header has the same dependency
+   and satisfies it by including CNA/C/graphics.h. */
+#ifndef CNA_C_DISPLAY_H
+typedef uint64_t CNA_NativeHandleValue;
+typedef struct CNA_GraphicsAdapterInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t adapter_index;
+    CNA_Bool is_default_adapter;
+    CNA_Bool is_wide_screen;
+    CNA_Bool use_null_device;
+    CNA_Bool use_reference_device;
+    int32_t vendor_id;
+    int32_t device_id;
+    int32_t revision;
+    int32_t subsystem_id;
+    uint64_t description_byte_length;
+    uint64_t device_name_byte_length;
+} CNA_GraphicsAdapterInfo;
+typedef struct CNA_GraphicsFormatSelection {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Bool exact_match;
+    uint8_t reserved[3];
+    CNA_SurfaceFormat format;
+    CNA_DepthFormat depth_format;
+    int32_t multi_sample_count;
+} CNA_GraphicsFormatSelection;
+#endif
+
 #ifndef CNA_C_GRAPHICS3D_H
 typedef uint32_t CNA_BufferUsage;
 typedef uint32_t CNA_IndexElementSize;
@@ -535,6 +567,19 @@ typedef CNA_Result (*cna_vertex_buffer_destroy_fn)(CNA_VertexBufferHandle);
 typedef CNA_Result (*cna_vertex_buffer_get_info_fn)(CNA_VertexBufferHandle, CNA_VertexBufferInfo*);
 typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t, uint32_t);
 typedef CNA_Result (*cna_vertex_buffer_get_data_raw_fn)(CNA_VertexBufferHandle, uint64_t, void*, uint64_t, uint64_t, uint32_t);
+typedef CNA_Result (*cna_graphics_device_get_adapter_index_fn)(CNA_Handle, uint32_t*);
+typedef CNA_Result (*cna_graphics_adapter_get_count_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_graphics_adapter_get_info_fn)(CNA_Handle, uint32_t, CNA_GraphicsAdapterInfo*);
+typedef CNA_Result (*cna_graphics_adapter_copy_description_fn)(CNA_Handle, uint32_t, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_graphics_adapter_copy_device_name_fn)(CNA_Handle, uint32_t, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_graphics_adapter_get_current_display_mode_fn)(CNA_Handle, uint32_t, CNA_DisplayMode*);
+typedef CNA_Result (*cna_graphics_adapter_get_display_mode_count_fn)(CNA_Handle, uint32_t, CNA_Bool, CNA_SurfaceFormat, uint64_t*);
+typedef CNA_Result (*cna_graphics_adapter_copy_display_modes_fn)(CNA_Handle, uint32_t, CNA_Bool, CNA_SurfaceFormat, CNA_DisplayMode*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_graphics_adapter_set_device_preferences_fn)(CNA_Handle, uint32_t, CNA_Bool, CNA_Bool);
+typedef CNA_Result (*cna_graphics_adapter_is_profile_supported_fn)(CNA_Handle, uint32_t, CNA_GraphicsProfile, CNA_Bool*);
+typedef CNA_Result (*cna_graphics_adapter_query_render_target_format_fn)(CNA_Handle, uint32_t, CNA_GraphicsProfile, CNA_SurfaceFormat, CNA_DepthFormat, int32_t, CNA_GraphicsFormatSelection*);
+typedef CNA_Result (*cna_graphics_adapter_query_backbuffer_format_fn)(CNA_Handle, uint32_t, CNA_GraphicsProfile, CNA_SurfaceFormat, CNA_DepthFormat, int32_t, CNA_GraphicsFormatSelection*);
+typedef CNA_Result (*cna_graphics_adapter_get_native_monitor_handle_fn)(CNA_Handle, uint32_t, CNA_NativeHandleValue*);
 typedef CNA_Result (*cna_graphics_device_set_vertex_buffers_fn)(CNA_Handle, const CNA_VertexBufferBinding*, uint64_t);
 typedef CNA_Result (*cna_graphics_device_set_index_buffer_fn)(CNA_Handle, CNA_IndexBufferHandle);
 typedef CNA_Result (*cna_graphics_device_draw_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t);
@@ -668,6 +713,19 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \
+    X(cna_graphics_device_get_adapter_index) \
+    X(cna_graphics_adapter_get_count) \
+    X(cna_graphics_adapter_get_info) \
+    X(cna_graphics_adapter_copy_description) \
+    X(cna_graphics_adapter_copy_device_name) \
+    X(cna_graphics_adapter_get_current_display_mode) \
+    X(cna_graphics_adapter_get_display_mode_count) \
+    X(cna_graphics_adapter_copy_display_modes) \
+    X(cna_graphics_adapter_set_device_preferences) \
+    X(cna_graphics_adapter_is_profile_supported) \
+    X(cna_graphics_adapter_query_render_target_format) \
+    X(cna_graphics_adapter_query_backbuffer_format) \
+    X(cna_graphics_adapter_get_native_monitor_handle) \
     X(cna_graphics_device_set_vertex_buffers) \
     X(cna_graphics_device_set_index_buffer) \
     X(cna_graphics_device_draw_primitives) \

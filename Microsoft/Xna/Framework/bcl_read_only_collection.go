@@ -205,3 +205,17 @@ var _ readOnlyListSource[int] = (*collectionBase[int])(nil)
 func NewReadOnlyCollectionOverSingles(items []float32) *ReadOnlyCollection[float32] {
 	return newReadOnlyCollectionOverSlice(items, singleEquals)
 }
+
+// NewReadOnlyCollectionOverReferences is the same language-adapter constructor
+// for a collection of CLR REFERENCES, and it exists for the same reason: the
+// XNA type that owns one -- Microsoft.Xna.Framework.Graphics.GraphicsAdapter,
+// whose static Adapters property returns
+// ReadOnlyCollection<GraphicsAdapter> -- lives in a different Go package and
+// must be able to build the view its projected member returns.
+//
+// The element comparer is Go's `==`, which for a pointer is identity. That is
+// EqualityComparer<T>.Default for a CLR class that overrides no Equals, which
+// GraphicsAdapter does not.
+func NewReadOnlyCollectionOverReferences[T comparable](items []T) *ReadOnlyCollection[T] {
+	return newReadOnlyCollectionOverSlice(items, func(a, b T) bool { return a == b })
+}

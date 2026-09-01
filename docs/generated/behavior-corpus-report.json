@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 735,
-    "ASSERTIONS": 735,
+    "OBSERVATIONS": 737,
+    "ASSERTIONS": 737,
     "FAILURES": 0
   },
   "observations": [
@@ -5757,6 +5757,22 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,Microsoft.Xna.Framework.Graphics.VertexDeclaration,1,true,12",
       "actual": "true,Microsoft.Xna.Framework.Graphics.VertexDeclaration,1,true,12",
+      "passed": true
+    },
+    {
+      "id": "graphics-adapter.the-static-members-report-cnas-callback-requirement",
+      "group": "GRAPHICS_ADAPTER",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,true,true,true",
+      "actual": "true,true,true,true",
+      "passed": true
+    },
+    {
+      "id": "graphics-adapter.a-snapshot-reader-never-fails",
+      "group": "GRAPHICS_ADAPTER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": ",0,0,true",
+      "actual": ",0,0,true",
       "passed": true
     },
     {

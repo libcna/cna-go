@@ -3255,3 +3255,53 @@ func TestVertexBufferBindingAndDeviceDrawSurfaceIsReachableFromOutside(t *testin
 		t.Fatal("an unconstructed device reports bound buffers")
 	}
 }
+
+// TestGraphicsAdapterIsReachableFromOutside compiles the adapter surface at its
+// exact shapes and proves the split a consumer will notice first: eleven
+// readers that never fail, and three query members plus two statics that do.
+func TestGraphicsAdapterIsReachableFromOutside(t *testing.T) {
+	var _ func() (*framework.ReadOnlyCollection[*graphics.GraphicsAdapter], error) = graphics.GraphicsAdapterAdapters
+	var _ func() (*graphics.GraphicsAdapter, error) = graphics.GraphicsAdapterDefaultAdapter
+	var _ func() (bool, error) = graphics.GraphicsAdapterUseNullDevice
+	var _ func(bool) error = graphics.SetGraphicsAdapterUseNullDevice
+	var _ func() (bool, error) = graphics.GraphicsAdapterUseReferenceDevice
+	var _ func(bool) error = graphics.SetGraphicsAdapterUseReferenceDevice
+
+	adapter := &graphics.GraphicsAdapter{}
+	var _ func() string = adapter.Description
+	var _ func() string = adapter.DeviceName
+	var _ func() int32 = adapter.VendorId
+	var _ func() int32 = adapter.DeviceId
+	var _ func() int32 = adapter.SubSystemId
+	var _ func() int32 = adapter.Revision
+	var _ func() bool = adapter.IsDefaultAdapter
+	var _ func() bool = adapter.IsWideScreen
+	var _ func() *graphics.DisplayMode = adapter.CurrentDisplayMode
+	var _ func() *graphics.DisplayModeCollection = adapter.SupportedDisplayModes
+	// MonitorHandle is one of the six positions the raw-handle rule admits a
+	// public uintptr on, because the XNA metadata declares System.IntPtr here.
+	var _ func() uintptr = adapter.MonitorHandle
+	var _ func(graphics.GraphicsProfile) (bool, error) = adapter.IsProfileSupported
+	var _ func(graphics.GraphicsProfile, graphics.SurfaceFormat, graphics.DepthFormat, int32) (bool, graphics.SurfaceFormat, graphics.DepthFormat, int32, error) = adapter.QueryBackBufferFormat
+	var _ func(graphics.GraphicsProfile, graphics.SurfaceFormat, graphics.DepthFormat, int32) (bool, graphics.SurfaceFormat, graphics.DepthFormat, int32, error) = adapter.QueryRenderTargetFormat
+
+	collection := &graphics.DisplayModeCollection{}
+	var _ func(graphics.SurfaceFormat) any = collection.Item
+	var _ func() framework.Iterator[*graphics.DisplayMode] = collection.GetEnumerator
+
+	// The statics refuse outside a callback, and the refusal names CNA's
+	// requirement rather than being a bare nil.
+	if _, err := graphics.GraphicsAdapterAdapters(); err == nil {
+		t.Fatal("Adapters answered outside a lifecycle callback")
+	} else if !strings.Contains(err.Error(), "callback") {
+		t.Fatalf("%v, want the refusal to name CNA's callback requirement", err)
+	}
+	// A snapshot reader never fails, even on a zero adapter.
+	if adapter.Description() != "" || adapter.MonitorHandle() != 0 {
+		t.Fatal("a zero adapter answered with values")
+	}
+	// And the indexer answers a sequence, not a mode: its argument is a FORMAT.
+	if _, ok := collection.Item(graphics.SurfaceFormatColor).(framework.Iterator[*graphics.DisplayMode]); !ok {
+		t.Fatal("the indexer did not answer a display-mode sequence")
+	}
+}

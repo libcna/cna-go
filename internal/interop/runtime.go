@@ -446,6 +446,141 @@ func (d *Device) DrawInstancedPrimitives(primitiveType uint32, baseVertex, minVe
 	return nativeDeviceDrawInstancedPrimitives(handle, primitiveType, baseVertex, minVertexIndex, numVertices, startIndex, primitiveCount, instanceCount)
 }
 
+// AdapterInfo is CNA_GraphicsAdapterInfo, flattened.
+//
+// The two BYTE-LENGTH fields are carried, and the reason is measured rather
+// than assumed. CNA-Go's usual string shape is a two-call length-then-copy, but
+// `cna_graphics_adapter_copy_description` answers a zero capacity with
+// CNA_RESULT 14 -- "the graphics-adapter string output buffer is too small" --
+// rather than with SUCCESS and a required count. These fields ARE the length
+// call for this family, which is why the info structure carries them.
+type AdapterInfo struct {
+	Index              uint32
+	IsDefaultAdapter   bool
+	IsWideScreen       bool
+	UseNullDevice      bool
+	UseReferenceDevice bool
+	VendorID           int32
+	DeviceID           int32
+	Revision           int32
+	SubSystemID        int32
+	DescriptionBytes   uint64
+	DeviceNameBytes    uint64
+}
+
+// DisplayModeValue is CNA_DisplayMode without its aspect ratio. XNA computes
+// that from the two dimensions in 38 bytes of managed arithmetic, and trusting
+// CNA's would be a second computation that could disagree.
+type DisplayModeValue struct {
+	Width  int32
+	Height int32
+	Format uint32
+}
+
+// FormatSelection is CNA_GraphicsFormatSelection: what the adapter chose when
+// asked for a format, and whether it had to substitute anything.
+type FormatSelection struct {
+	ExactMatch       bool
+	Format           uint32
+	DepthFormat      uint32
+	MultiSampleCount int32
+}
+
+// The twelve adapter queries. Every one takes this device's callback-scoped
+// handle, which is CNA's own requirement.
+// AdapterIndex is cna_graphics_device_get_adapter_index: which adapter this
+// device was created with, as an index into the same enumeration the
+// cna_graphics_adapter_* routes take. CNA warns that indices are point-in-time
+// values a later adapter change may renumber, which is why the projection reads
+// the index and the adapter TOGETHER rather than caching one.
+func (d *Device) AdapterIndex() (uint32, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeDeviceAdapterIndex(handle)
+}
+
+func (d *Device) AdapterCount() (uint64, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeAdapterCount(handle)
+}
+
+func (d *Device) AdapterInfo(index uint32) (AdapterInfo, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return AdapterInfo{}, err
+	}
+	return nativeAdapterInfo(handle, index)
+}
+
+func (d *Device) AdapterDescription(index uint32, byteCount uint64) (string, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return "", err
+	}
+	return nativeAdapterDescription(handle, index, byteCount)
+}
+
+func (d *Device) AdapterDeviceName(index uint32, byteCount uint64) (string, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return "", err
+	}
+	return nativeAdapterDeviceName(handle, index, byteCount)
+}
+
+func (d *Device) AdapterCurrentDisplayMode(index uint32) (DisplayModeValue, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return DisplayModeValue{}, err
+	}
+	return nativeAdapterCurrentDisplayMode(handle, index)
+}
+
+func (d *Device) AdapterDisplayModes(index uint32) ([]DisplayModeValue, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	return nativeAdapterDisplayModes(handle, index)
+}
+
+func (d *Device) SetAdapterDevicePreferences(index uint32, nullDevice, referenceDevice bool) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeAdapterSetDevicePreferences(handle, index, nullDevice, referenceDevice)
+}
+
+func (d *Device) AdapterIsProfileSupported(index, profile uint32) (bool, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return false, err
+	}
+	return nativeAdapterIsProfileSupported(handle, index, profile)
+}
+
+func (d *Device) AdapterQueryFormat(index uint32, renderTarget bool, profile, format, depthFormat uint32, multiSampleCount int32) (FormatSelection, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return FormatSelection{}, err
+	}
+	return nativeAdapterQueryFormat(handle, index, renderTarget, profile, format, depthFormat, multiSampleCount)
+}
+
+func (d *Device) AdapterMonitorHandle(index uint32) (uint64, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return 0, err
+	}
+	return nativeAdapterMonitorHandle(handle, index)
+}
+
 // VertexBufferInfo is CNA_VertexBufferInfo, flattened.
 type VertexBufferInfo struct {
 	VertexCount        int32
