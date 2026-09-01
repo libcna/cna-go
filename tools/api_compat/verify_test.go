@@ -52,10 +52,21 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	if surface.BCLInheritedCLRMembers != 11 || surface.BCLInheritedProjections != 12 {
 		t.Fatalf("BCL inherited counts = %d CLR members/%d projections", surface.BCLInheritedCLRMembers, surface.BCLInheritedProjections)
 	}
-	if surface.XNAInheritedCLRMembers != 14 || surface.XNAInheritedProjections != 24 {
+	// 15, not 14: Milestone 55 replaced the name-keyed inheritance exclusion
+	// with a CLR-signature one, and GameComponent::Dispose() -- a public slot
+	// DrawableGameComponent never occupies, because what it overrides is the
+	// PROTECTED Dispose(bool) -- stopped being dropped.
+	if surface.XNAInheritedCLRMembers != 15 || surface.XNAInheritedProjections != 25 {
 		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
 	}
-	if surface.ExpectedGoMembers != 3279 {
+	// The subtraction the exclusion performs is measured rather than implied:
+	// three public base members are occupied by a derived declaration --
+	// DrawableGameComponent::Initialize, and GamerServicesComponent's
+	// Initialize and Update.
+	if surface.XNAInheritedOverriddenMembers != 3 {
+		t.Fatalf("XNA inherited overridden count = %d", surface.XNAInheritedOverriddenMembers)
+	}
+	if surface.ExpectedGoMembers != 3280 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -7995,14 +8006,17 @@ func TestGameComponentIsTheFirstComposedRelationship(t *testing.T) {
 				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
 		}
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 14 {
-		t.Fatalf("%d inherited public CLR members, want 14", got)
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 15 {
+		t.Fatalf("%d inherited public CLR members, want 15", got)
 	}
-	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 24 {
-		t.Fatalf("%d inherited Go projections, want 24", got)
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 25 {
+		t.Fatalf("%d inherited Go projections, want 25", got)
 	}
-	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 24 {
-		t.Fatalf("%d attributed inherited members, want every one of the 24", got)
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 25 {
+		t.Fatalf("%d attributed inherited members, want every one of the 25", got)
+	}
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"]; got != 3 {
+		t.Fatalf("%d overridden inherited members, want 3", got)
 	}
 }
 
@@ -8078,6 +8092,27 @@ func TestAnOverriddenMemberIsNotAlsoInherited(t *testing.T) {
 	// Update is not redeclared, so it is inherited and forwarded.
 	if got := seen["Update"]; got != "XNA_INHERITED" {
 		t.Fatalf("DrawableGameComponent::Update has provenance %q, want XNA_INHERITED", got)
+	}
+	// # The exclusion is by CLR SIGNATURE, not by name
+	//
+	// DrawableGameComponent declares `protected Dispose(bool)`, which overrides
+	// the base's protected overload -- not public surface, never inherited. The
+	// base's PUBLIC Dispose() is a different slot the derived class does not
+	// touch, so it IS inherited. A name-keyed exclusion dropped it, and the Go
+	// projection lost the one member Game's disposal loop looks for.
+	if got := seen["DisposeByBoolean"]; got != "XNA_DECLARED" {
+		t.Fatalf("DrawableGameComponent::Dispose(Boolean) has provenance %q, want XNA_DECLARED", got)
+	}
+	if got := seen["DisposeByNone"]; got != "XNA_INHERITED" {
+		t.Fatalf("DrawableGameComponent::Dispose() has provenance %q, want XNA_INHERITED: the derived class overrides the PROTECTED overload, not this one", got)
+	}
+	// And both take the two-overload spelling, because an inherited member and
+	// a declared one of the same name are ONE overload group. A rule that named
+	// the declared member `Dispose` and the inherited one `DisposeByNone` would
+	// spell one CLR member two different ways depending on where it was
+	// declared.
+	if seen["Dispose"] != "" {
+		t.Fatal("DrawableGameComponent projects a bare Dispose; the inherited Dispose() makes its declared Dispose(bool) one of two overloads")
 	}
 }
 

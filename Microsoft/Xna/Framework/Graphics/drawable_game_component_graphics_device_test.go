@@ -110,7 +110,7 @@ func TestDrawableInitializeSubscribesToAConsumersRealService(t *testing.T) {
 			t.Fatalf("%s: %v", name, err)
 		}
 	}
-	if err := component.Dispose(true); err != nil {
+	if err := component.DisposeByBoolean(true); err != nil {
 		t.Fatalf("Dispose: %v", err)
 	}
 	// After disposal the registrations are gone, so a raise reaches nothing.

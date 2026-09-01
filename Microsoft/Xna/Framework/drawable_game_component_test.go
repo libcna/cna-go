@@ -292,7 +292,7 @@ func TestDrawableDisposeReleasesEverythingAndCallsTheBase(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := component.Dispose(true); err != nil {
+	if err := component.DisposeByBoolean(true); err != nil {
 		t.Fatalf("Dispose(true): %v", err)
 	}
 	want := "DeviceCreated,DeviceResetting,DeviceReset,DeviceDisposing"
@@ -304,7 +304,7 @@ func TestDrawableDisposeReleasesEverythingAndCallsTheBase(t *testing.T) {
 	}
 	// Dispose is NOT idempotent, in either class: there is no disposed flag
 	// anywhere, so a second call disposes and raises again.
-	if err := component.Dispose(true); err != nil {
+	if err := component.DisposeByBoolean(true); err != nil {
 		t.Fatalf("second Dispose(true): %v", err)
 	}
 	if disposed != 2 {
@@ -337,7 +337,7 @@ func TestDrawableDisposeFalseSkipsTheDerivedBodyAndDefersToTheBase(t *testing.T)
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := component.Dispose(false); err != nil {
+	if err := component.DisposeByBoolean(false); err != nil {
 		t.Fatalf("Dispose(false): %v", err)
 	}
 	if len(service.removeCalls) != 0 {
@@ -348,7 +348,7 @@ func TestDrawableDisposeFalseSkipsTheDerivedBodyAndDefersToTheBase(t *testing.T)
 	}
 	// And the same component, disposed with true, does everything -- which is
 	// what proves the flag reached the base rather than being swallowed.
-	if err := component.Dispose(true); err != nil {
+	if err := component.DisposeByBoolean(true); err != nil {
 		t.Fatalf("Dispose(true): %v", err)
 	}
 	if len(service.removeCalls) != 4 || disposed != 1 {
@@ -462,5 +462,146 @@ func TestDrawableComponentServiceReaderIsInstalled(t *testing.T) {
 	// Something that is not a component reports nothing rather than panicking.
 	if _, ok := servicebridge.ComponentService("not a component"); ok {
 		t.Fatal("the reader accepted a non-component")
+	}
+}
+
+// TestDrawableDisposeByNoneRunsTheDerivedBody pins the inherited public
+// Dispose() and the `callvirt` it carries.
+//
+// GameComponent::Dispose() is `newslot virtual final` and its body is
+//
+//	callvirt instance void GameComponent::Dispose(bool)   // ldc.i4.1
+//
+// `callvirt` on a virtual slot dispatches to the DERIVED override. A Go
+// forwarding that called the composed base's DisposeByBoolean would reproduce
+// the base's slot instead, and would skip UnloadContent and the four device
+// removals -- observably, `service.removeCalls` would be empty.
+func TestDrawableDisposeByNoneRunsTheDerivedBody(t *testing.T) {
+	_, component := newDrawableFixture(t)
+	service := &stubDeviceService{}
+	installResolver(t, service, false)
+	if err := component.Initialize(); err != nil {
+		t.Fatalf("Initialize: %v", err)
+	}
+	disposed := 0
+	if _, err := component.AddDisposedHandler(func(sender any, args *EventArgs) error {
+		disposed++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := component.DisposeByNone(); err != nil {
+		t.Fatalf("Dispose(): %v", err)
+	}
+	want := "DeviceCreated,DeviceResetting,DeviceReset,DeviceDisposing"
+	if got := strings.Join(service.removeCalls, ","); got != want {
+		t.Fatalf("Dispose() removed %q, want %q; the inherited Dispose() dispatches to the DERIVED Dispose(bool)", got, want)
+	}
+	if disposed != 1 {
+		t.Fatalf("Dispose() raised Disposed %d times, want one", disposed)
+	}
+}
+
+// TestGameDisposeReachesADrawableGameComponent is the end of the chain the
+// missing Dispose() broke.
+//
+// Game::Dispose(true) walks a snapshot of Components and calls
+// IDisposable::Dispose() on every element that has one. For Microsoft's own two
+// components that member is Dispose(), which GameComponent::Dispose(bool)
+// implements by removing the component from Game.Components and raising
+// Disposed. CNA-Go's loop looks for the projected spelling of that member, so a
+// DrawableGameComponent without DisposeByNone matched neither disposable shape
+// and was skipped in silence -- still in the collection afterwards.
+func TestGameDisposeReachesADrawableGameComponent(t *testing.T) {
+	game, component := newDrawableFixture(t)
+	service := &stubDeviceService{}
+	installResolver(t, service, false)
+	if err := component.Initialize(); err != nil {
+		t.Fatalf("Initialize: %v", err)
+	}
+	if err := game.Components().Add(component); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	disposed := 0
+	if _, err := component.AddDisposedHandler(func(sender any, args *EventArgs) error {
+		disposed++
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := game.DisposeByNone(); err != nil {
+		t.Fatalf("Game.Dispose: %v", err)
+	}
+	if disposed != 1 {
+		t.Fatalf("Game.Dispose raised the component's Disposed %d times, want one", disposed)
+	}
+	if got := game.Components().Count(); got != 0 {
+		t.Fatalf("Game.Dispose left %d components; GameComponent::Dispose(bool) removes the component from Game.Components", got)
+	}
+	if len(service.removeCalls) != 4 {
+		t.Fatalf("Game.Dispose unhooked %d device events, want the derived body's four", len(service.removeCalls))
+	}
+}
+
+// TestDrawableInheritedEventsAnnounceTheDerivedObject pins CLR object identity
+// under composition.
+//
+// GameComponent's three raise sites all push `ldarg.0`, and under CLR
+// inheritance `ldarg.0` is the WHOLE object -- the DrawableGameComponent. Private
+// named composition splits that object in two, and a base that announced its own
+// half would hand every consumer a sender it cannot match against the component
+// it registered the handler on.
+func TestDrawableInheritedEventsAnnounceTheDerivedObject(t *testing.T) {
+	_, component := newDrawableFixture(t)
+	var senders []any
+	record := func(sender any, args *EventArgs) error {
+		senders = append(senders, sender)
+		return nil
+	}
+	for name, add := range map[string]func(EventHandler[*EventArgs]) (EventSubscription, error){
+		"EnabledChanged":     component.AddEnabledChangedHandler,
+		"UpdateOrderChanged": component.AddUpdateOrderChangedHandler,
+		"Disposed":           component.AddDisposedHandler,
+	} {
+		if _, err := add(record); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+	}
+	if err := component.SetEnabled(false); err != nil {
+		t.Fatalf("SetEnabled: %v", err)
+	}
+	if err := component.SetUpdateOrder(7); err != nil {
+		t.Fatalf("SetUpdateOrder: %v", err)
+	}
+	if err := component.DisposeByBoolean(true); err != nil {
+		t.Fatalf("Dispose(true): %v", err)
+	}
+	if len(senders) != 3 {
+		t.Fatalf("%d announcements, want three", len(senders))
+	}
+	for index, sender := range senders {
+		if sender != any(component) {
+			t.Fatalf("announcement %d announced %T, want the DrawableGameComponent: the reference pushes `ldarg.0`, which is the whole object", index, sender)
+		}
+	}
+}
+
+// TestDrawableDisposeRemovesTheDerivedObjectFromComponents is the collection
+// half of the same identity.
+//
+// GameComponent::Dispose(bool) calls Game.Components.Remove(this). The
+// collection holds the DrawableGameComponent, so a base that removed its own
+// half would find nothing, discard the false Remove returned -- the reference
+// `pop`s it too -- and leave the component in the collection.
+func TestDrawableDisposeRemovesTheDerivedObjectFromComponents(t *testing.T) {
+	game, component := newDrawableFixture(t)
+	if err := game.Components().Add(component); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if err := component.DisposeByBoolean(true); err != nil {
+		t.Fatalf("Dispose(true): %v", err)
+	}
+	if got := game.Components().Count(); got != 0 {
+		t.Fatalf("Components holds %d after the component disposed itself, want none", got)
 	}
 }

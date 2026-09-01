@@ -159,6 +159,9 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"] = 0
 	result.Summary["XNA_BASE_SUBSTITUTABILITY_LIVE"] = 0
 	result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"] = 0
+	result.Summary["XNA_COMPOSED_IDENTITY_SITES"] = 0
+	result.Summary["XNA_COMPOSED_IDENTITY_USES"] = 0
+	result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"] = 0
 	result.Summary["XNA_COMPOSED_DERIVED_TYPES"] = 0
 	result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"] = 0
 	result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"] = 0
@@ -182,6 +185,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["BCL_INHERITED_MEMBER_PROJECTIONS"] = expected.BCLInheritedProjections
 	result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"] = expected.XNAInheritedCLRMembers
 	result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"] = expected.XNAInheritedProjections
+	result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"] = expected.XNAInheritedOverriddenMembers
 	result.Summary["EXPECTED_GO_TYPES"] = expected.ExpectedGoTypes
 	result.Summary["EXPECTED_GO_MEMBERS"] = expected.ExpectedGoMembers
 	result.Summary["INTERFACE_WITNESS_PROJECTIONS"] = len(expected.InterfaceWitnesses)
@@ -198,6 +202,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.GameFrameHooks = measureGameFrameHooks(&result, expected, actual)
 	result.XNABaseSubstitutability = measureXNABaseSubstitutability(&result, expected, actual)
 	result.XNAComposition = measureXNAComposition(&result, expected, actual)
+	result.XNACompositionIdentity = measureXNACompositionIdentity(&result, expected, actual)
 	result.Summary["GAME_FRAME_HOOKS"] = len(result.GameFrameHooks)
 	result.Summary["BCL_BASE_ADAPTERS"] = len(result.BCLBaseAdapters)
 	for _, adapter := range result.BCLBaseAdapters {

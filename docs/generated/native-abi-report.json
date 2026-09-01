@@ -1,7 +1,9 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "status": "PASS",
-  "header_root": "canonical-cna/modules/c-api/include",
+  "header_root": "/home/robertvokac/deps/cna-c-abi-0.21.0/include",
+  "canonical_header_sha256": "62c3f6e4bec6d8396ec576986b4ec5b158af28cfe52aa7e2ede1e4c26c90bff6",
+  "canonical_header_files": 61,
   "native_library": "libcna_c_api.so",
   "native_library_sha256": "c32bfbd307d695664f906ccf2834ec3f9ebc240fa388d544ac21ee3ebaeb731b",
   "ADMITTED_ABI": "major 0 with minor 21 or newer (qualified at 0.21.0)",

@@ -959,7 +959,12 @@ func buildExpected(c contract) (*expectedSurface, error) {
 	for i := range c.Types {
 		t := &c.Types[i]
 		owner := s.typeForXNA(t.Name)
-		groups := overloadGroups(*t)
+		// The XNA-inherited members are resolved BEFORE anything is mapped,
+		// because they share the derived type's overload namespace: a derived
+		// class that declares one overload of an inherited name does not
+		// privilege it, and both spellings have to agree about that.
+		xnaInheritedSource := inheritedXNAPublicMembers(byIdentity, *t)
+		groups := overloadGroupsWithXNAInherited(*t, xnaInheritedSource)
 		for j := range t.Members {
 			m := &t.Members[j]
 			mapped := mapMember(s, byIdentity, owner, *t, *m, groups)
@@ -971,11 +976,13 @@ func buildExpected(c contract) (*expectedSurface, error) {
 		s.BCLInheritedCLRMembers += owner.BCLInheritedCLRMembers
 		s.BCLInheritedProjections += owner.BCLInheritedProjections
 		allMembers = append(allMembers, inherited...)
-		xnaInherited := mapInheritedXNABaseMembers(s, byIdentity, owner, *t)
-		owner.XNAInheritedCLRMembers = xnaInheritedCLRMemberCount(byIdentity, *t)
+		xnaInherited := mapInheritedXNABaseMembers(s, byIdentity, owner, *t, xnaInheritedSource, groups)
+		owner.XNAInheritedCLRMembers = len(xnaInheritedSource)
 		owner.XNAInheritedProjections = len(xnaInherited)
+		owner.XNAInheritedOverriddenMembers = xnaOverriddenInheritedCount(byIdentity, *t)
 		s.XNAInheritedCLRMembers += owner.XNAInheritedCLRMembers
 		s.XNAInheritedProjections += owner.XNAInheritedProjections
+		s.XNAInheritedOverriddenMembers += owner.XNAInheritedOverriddenMembers
 		allMembers = append(allMembers, xnaInherited...)
 	}
 	resolveMemberCollisions(allMembers)
@@ -3230,10 +3237,40 @@ func clrTypeIdentities(raw string) []string {
 // A derived class that redeclares an inherited member is overriding or hiding
 // it, and the projected member is then the DERIVED one -- its own body, its own
 // provenance, its own fallibility. Counting it twice would inflate the member
-// accounting and would claim a forwarding that must not exist. The exclusion is
-// by CLR member name and kind, which is exactly what the CLR slot rules use for
-// the members in this profile: no derived type in the contract overloads an
-// inherited name.
+// accounting and would claim a forwarding that must not exist.
+//
+// # The exclusion is by CLR SIGNATURE, not by name
+//
+// It used to be by name and kind, on the recorded claim that "no derived type
+// in the contract overloads an inherited name". Milestone 55 measured that
+// claim and it is false, on the one composed family that already existed:
+//
+//	GameComponent        declares public Dispose() and protected Dispose(bool)
+//	DrawableGameComponent declares          protected Dispose(bool)  -- an OVERRIDE
+//
+// The derived declaration is an override of the PROTECTED overload, which is
+// not public surface and is never inherited. The PUBLIC Dispose() is a
+// different slot that the derived class does not touch, so it is inherited --
+// and a name-keyed exclusion dropped it, silently deleting a public member from
+// DrawableGameComponent's projected surface. The same shape recurs on every
+// GraphicsResource descendant, each of which overrides Dispose(bool) and
+// inherits Dispose().
+//
+// The key is therefore the CLR slot identity: kind, name, and for methods the
+// parameter type list. That is exactly what the runtime uses to decide whether
+// a derived declaration occupies an inherited member's slot.
+//
+// # The overload namespace is shared with the derived type's own members
+//
+// Once an inherited public member can share a name with a declared one, the two
+// are one overload group and the settled overload rule applies to the group as
+// a whole: every member of a group of more than one carries By<ParameterShape>.
+// DrawableGameComponent's pair therefore spells DisposeByNone and
+// DisposeByBoolean -- the same two names GameComponent itself takes, which is
+// the point: an inherited member must not be renamed by being inherited.
+//
+// That is why the caller resolves the inherited set first and passes ONE
+// overload-group map through both mappings.
 //
 // # Transitivity
 //
@@ -3241,36 +3278,91 @@ func clrTypeIdentities(raw string) []string {
 // three-deep family projects the whole inherited surface rather than one level
 // of it. It stops at the first base that is not an XNA class in the profile,
 // which is where the BCL-inherited provenance class takes over.
-func mapInheritedXNABaseMembers(s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType, t contractType) []*expectedMember {
-	declared := make(map[string]bool, len(t.Members))
-	for _, m := range t.Members {
-		declared[m.Kind+"|"+m.Name] = true
+func mapInheritedXNABaseMembers(
+	s *expectedSurface, byIdentity map[string]*contractType, owner *expectedType,
+	t contractType, inherited []inheritedXNAMember, groups map[string]int,
+) []*expectedMember {
+	if len(inherited) == 0 {
+		return nil
 	}
-
+	// The inherited members form the derived type's own overload namespace
+	// together with what it declares, so they are mapped through a synthetic
+	// type carrying both -- otherwise an inherited overload group would be
+	// renamed differently from the way the base named it.
+	synthetic := contractType{Name: t.Name, Kind: t.Kind, Sealed: t.Sealed, BaseType: t.BaseType}
+	synthetic.Members = append(synthetic.Members, t.Members...)
+	for _, entry := range inherited {
+		synthetic.Members = append(synthetic.Members, entry.Member)
+	}
 	var mapped []*expectedMember
+	for _, entry := range inherited {
+		for _, member := range mapMember(s, byIdentity, owner, synthetic, entry.Member, groups) {
+			member.XNABase = entry.Base
+			member.XNABaseMember = entry.Member.Name
+			member.XNA = entry.Base + "::" + strings.TrimPrefix(member.XNA, t.Name+"::")
+			mapped = append(mapped, member)
+		}
+	}
+	return mapped
+}
+
+// inheritedXNAMember is one public CLR member a derived class inherits from a
+// COMPOSED XNA base, paired with the base identity that declares it.
+type inheritedXNAMember struct {
+	Base   string
+	Member contractMember
+}
+
+// clrMemberSignature is the CLR slot identity of one contract member: the tuple
+// the runtime uses to decide whether a derived declaration occupies an
+// inherited member's slot rather than merely sharing its name.
+//
+// Methods and constructors carry their parameter type list, with ref and out
+// marked, because two methods of one name and different parameters are two
+// slots. Properties, events and fields cannot be overloaded in this profile --
+// no type in the pinned contract declares two of one kind with one name -- so
+// kind and name are their whole identity, and inheritedXNAPublicMembers asserts
+// that rather than assuming it.
+func clrMemberSignature(m contractMember) string {
+	if m.Kind != "method" && m.Kind != "constructor" {
+		return m.Kind + "|" + m.Name
+	}
+	shapes := make([]string, 0, len(m.Parameters))
+	for _, p := range m.Parameters {
+		shape := p.Type
+		if p.Ref || p.Out {
+			shape += "&"
+		}
+		shapes = append(shapes, shape)
+	}
+	return fmt.Sprintf("%s|%s|%d(%s)", m.Kind, m.Name, len(m.GenericParameters), strings.Join(shapes, ","))
+}
+
+// inheritedXNAPublicMembers is the public CLR members a derived class inherits
+// from its COMPOSED XNA base chain, transitively, minus every slot the derived
+// class -- or a nearer base -- already occupies.
+func inheritedXNAPublicMembers(byIdentity map[string]*contractType, t contractType) []inheritedXNAMember {
+	occupied := make(map[string]bool, len(t.Members))
+	for _, m := range t.Members {
+		occupied[clrMemberSignature(m)] = true
+	}
+	var inherited []inheritedXNAMember
 	current := t
 	seen := map[string]bool{t.Name: true}
 	for {
 		if current.BaseType == nil {
-			return mapped
+			return inherited
 		}
 		identity := baseIdentityWithoutArguments(*current.BaseType)
 		relationship, isXNABase := xnaBaseRelationships[identity]
 		if !isXNABase || relationship.Status != "COMPOSED" {
-			return mapped
+			return inherited
 		}
 		base, inProfile := byIdentity[identity]
 		if !inProfile || seen[identity] {
-			return mapped
+			return inherited
 		}
 		seen[identity] = true
-
-		// The inherited members form the derived type's own overload namespace
-		// together with what it declares, so they are mapped through a
-		// synthetic type carrying both -- otherwise an inherited overload group
-		// would be renamed differently from the way the base named it.
-		synthetic := contractType{Name: t.Name, Kind: t.Kind, Sealed: t.Sealed, BaseType: current.BaseType}
-		var inheritedSource []contractMember
 		for _, m := range base.Members {
 			if m.Kind == "constructor" {
 				// Constructors are not inherited. CLR requires a derived class
@@ -3281,24 +3373,74 @@ func mapInheritedXNABaseMembers(s *expectedSurface, byIdentity map[string]*contr
 			if !inheritedMemberIsPublic(m) {
 				continue
 			}
-			if declared[m.Kind+"|"+m.Name] {
+			signature := clrMemberSignature(m)
+			if occupied[signature] {
 				continue
 			}
-			declared[m.Kind+"|"+m.Name] = true
-			inheritedSource = append(inheritedSource, m)
+			occupied[signature] = true
+			inherited = append(inherited, inheritedXNAMember{Base: identity, Member: m})
 		}
-		synthetic.Members = append(synthetic.Members, inheritedSource...)
-		groups := overloadGroups(synthetic)
-		for _, instance := range inheritedSource {
-			for _, member := range mapMember(s, byIdentity, owner, synthetic, instance, groups) {
-				member.XNABase = identity
-				member.XNABaseMember = instance.Name
-				member.XNA = identity + "::" + strings.TrimPrefix(member.XNA, t.Name+"::")
-				mapped = append(mapped, member)
+		current = *base
+	}
+}
+
+// xnaOverriddenInheritedCount is how many PUBLIC members of a COMPOSED XNA base
+// chain the derived class occupies with a declaration of its own. It is the
+// other half of inheritedXNAPublicMembers and is measured so an exclusion is a
+// reported number rather than a silent subtraction: a rule that drops a member
+// it should have projected shows up here as a count that moved.
+func xnaOverriddenInheritedCount(byIdentity map[string]*contractType, t contractType) int {
+	declared := make(map[string]bool, len(t.Members))
+	for _, m := range t.Members {
+		declared[clrMemberSignature(m)] = true
+	}
+	overridden := 0
+	current := t
+	seen := map[string]bool{t.Name: true}
+	counted := make(map[string]bool)
+	for {
+		if current.BaseType == nil {
+			return overridden
+		}
+		identity := baseIdentityWithoutArguments(*current.BaseType)
+		relationship, isXNABase := xnaBaseRelationships[identity]
+		if !isXNABase || relationship.Status != "COMPOSED" {
+			return overridden
+		}
+		base, inProfile := byIdentity[identity]
+		if !inProfile || seen[identity] {
+			return overridden
+		}
+		seen[identity] = true
+		for _, m := range base.Members {
+			if m.Kind == "constructor" || !inheritedMemberIsPublic(m) {
+				continue
+			}
+			signature := clrMemberSignature(m)
+			if declared[signature] && !counted[signature] {
+				counted[signature] = true
+				overridden++
 			}
 		}
 		current = *base
 	}
+}
+
+// overloadGroupsWithXNAInherited is overloadGroups over the derived type's
+// EFFECTIVE method set: what it declares plus what it inherits from a COMPOSED
+// XNA base. A derived class that declares one overload of an inherited name
+// does not thereby own the name, and both spellings must agree about the group
+// size or the inherited member and the declared one would be named by two
+// different rules.
+func overloadGroupsWithXNAInherited(t contractType, inherited []inheritedXNAMember) map[string]int {
+	groups := overloadGroups(t)
+	for _, entry := range inherited {
+		if entry.Member.Kind != "method" {
+			continue
+		}
+		groups[fmt.Sprintf("%t|%s", entry.Member.Static, entry.Member.Name)]++
+	}
+	return groups
 }
 
 // inheritedMemberIsPublic is the same accessibility test publicCLRMemberCount
@@ -3314,43 +3456,5 @@ func inheritedMemberIsPublic(m contractMember) bool {
 		return true
 	default:
 		return m.Access == "public"
-	}
-}
-
-// xnaInheritedCLRMemberCount is how many public CLR members one derived type
-// inherits from its COMPOSED XNA base chain, before any of them is projected.
-// It is the third provenance class of the identity accounting, kept separate
-// from both the XNA-declared reference members and the BCL-inherited ones so no
-// member is ever counted twice.
-func xnaInheritedCLRMemberCount(byIdentity map[string]*contractType, t contractType) int {
-	declared := make(map[string]bool, len(t.Members))
-	for _, m := range t.Members {
-		declared[m.Kind+"|"+m.Name] = true
-	}
-	total := 0
-	current := t
-	seen := map[string]bool{t.Name: true}
-	for {
-		if current.BaseType == nil {
-			return total
-		}
-		identity := baseIdentityWithoutArguments(*current.BaseType)
-		relationship, isXNABase := xnaBaseRelationships[identity]
-		if !isXNABase || relationship.Status != "COMPOSED" {
-			return total
-		}
-		base, inProfile := byIdentity[identity]
-		if !inProfile || seen[identity] {
-			return total
-		}
-		seen[identity] = true
-		for _, m := range base.Members {
-			if m.Kind == "constructor" || !inheritedMemberIsPublic(m) || declared[m.Kind+"|"+m.Name] {
-				continue
-			}
-			declared[m.Kind+"|"+m.Name] = true
-			total++
-		}
-		current = *base
 	}
 }

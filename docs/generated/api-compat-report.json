@@ -17,7 +17,7 @@
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3279,
+    "EXPECTED_GO_MEMBERS": 3280,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
@@ -56,7 +56,7 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1937,
+    "TARGET_MEMBERS": 1938,
     "TARGET_TYPES": 125,
     "TOTAL_DIAGNOSTICS": 208,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
@@ -73,10 +73,14 @@
     "XNA_COMPOSED_BASE_RELATIONSHIPS": 1,
     "XNA_COMPOSED_DERIVED_TYPES": 2,
     "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 1,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 1,
+    "XNA_COMPOSED_IDENTITY_SITES": 5,
+    "XNA_COMPOSED_IDENTITY_USES": 6,
     "XNA_DEFERRED_BASE_BLOCKERS": 23,
-    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 24,
-    "XNA_INHERITED_MEMBER_PROJECTIONS": 24,
-    "XNA_INHERITED_PUBLIC_MEMBERS": 14,
+    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 25,
+    "XNA_INHERITED_MEMBER_PROJECTIONS": 25,
+    "XNA_INHERITED_PUBLIC_MEMBERS": 15,
+    "XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN": 3,
     "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 227
   },
   "diagnostics": [
@@ -9501,8 +9505,8 @@
           "derived": "Microsoft.Xna.Framework.DrawableGameComponent",
           "goDerived": "DrawableGameComponent",
           "baseField": "component",
-          "inheritedCLRMembers": 7,
-          "inheritedProjections": 12,
+          "inheritedCLRMembers": 8,
+          "inheritedProjections": 13,
           "composition": "PRIVATE_NAMED"
         },
         {
@@ -9511,6 +9515,54 @@
           "inheritedCLRMembers": 7,
           "inheritedProjections": 12,
           "composition": "NOT_PROJECTED"
+        }
+      ],
+      "verdict": "PASS"
+    }
+  ],
+  "xnaCompositionIdentity": [
+    {
+      "clrBase": "Microsoft.Xna.Framework.GameComponent",
+      "goBase": "GameComponent",
+      "derivedField": "derived",
+      "sites": [
+        {
+          "goMember": "SetEnabled",
+          "reference": "set_Enabled: ldarg.0; ldarg.0; ldsfld EventArgs::Empty; callvirt OnEnabledChanged(object, EventArgs) -- the SECOND ldarg.0 is the sender argument",
+          "uses": 1,
+          "reaches": 1
+        },
+        {
+          "goMember": "SetUpdateOrder",
+          "reference": "set_UpdateOrder: ldarg.0; ldarg.0; ldsfld EventArgs::Empty; callvirt OnUpdateOrderChanged(object, EventArgs)",
+          "uses": 1,
+          "reaches": 1
+        },
+        {
+          "goMember": "OnEnabledChanged",
+          "reference": "OnEnabledChanged: ldfld EnabledChanged; ldarg.0; ldarg.2; callvirt EventHandler`1::Invoke(object, !0) -- the raise ignores its own sender parameter and pushes `this`",
+          "uses": 1,
+          "reaches": 1
+        },
+        {
+          "goMember": "OnUpdateOrderChanged",
+          "reference": "OnUpdateOrderChanged: ldfld UpdateOrderChanged; ldarg.0; ldarg.2; callvirt EventHandler`1::Invoke(object, !0)",
+          "uses": 1,
+          "reaches": 1
+        },
+        {
+          "goMember": "DisposeByBoolean",
+          "reference": "Dispose(bool): ldarg.0; callvirt Collection`1::Remove(!0) -- AND -- ldfld Disposed; ldarg.0; ldsfld EventArgs::Empty; callvirt Invoke(object, !0)",
+          "uses": 2,
+          "reaches": 2
+        }
+      ],
+      "bindings": [
+        {
+          "derived": "Microsoft.Xna.Framework.DrawableGameComponent",
+          "goDerived": "DrawableGameComponent",
+          "constructor": "NewDrawableGameComponent",
+          "binds": true
         }
       ],
       "verdict": "PASS"

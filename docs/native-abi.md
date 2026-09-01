@@ -64,10 +64,42 @@ configuration             CNA_GRAPHICS_RENDERER=HEADLESS, CNA_PLATFORM=SDL3,
                           CNA_ENABLE_VIDEO=AUTO, CMAKE_BUILD_TYPE=Debug
 artifact                  libcna_c_api.so, 166,420,656 bytes
 sha256                    c32bfbd307d695664f906ccf2834ec3f9ebc240fa388d544ac21ee3ebaeb731b
+canonical headers         ~/deps/cna-c-abi-0.21.0/include, 61 .h files
+header tree sha256        62c3f6e4bec6d8396ec576986b4ec5b158af28cfe52aa7e2ede1e4c26c90bff6
 reported ABI              0.21.0
 canonical declarations    4054
 exported cna_* routes     4054 (exact correspondence, both directions)
 symbol-version node       CNA_C_API_0.1
+```
+
+### The header tree is pinned by content, and the live checkout has moved
+
+The header root used to be recorded as a path. Milestone 55 measured why that is
+not enough: `tools/native_abi`'s default `-headers ../../cnanext/modules/c-api/include`
+reads the LIVE `cnanext` checkout, and that checkout has advanced past the
+revision the pinned library was built from. The two trees differ:
+
+```text
+pinned  ~/deps/cna-c-abi-0.21.0/include   62c3f6e4bec6d8396ec576986b4ec5b158af28cfe52aa7e2ede1e4c26c90bff6
+live    ../../cnanext/modules/c-api/include  2d7445e7b2c0c74d3b32fab6067ef701662076b9445a73243cdf9639f36698ed
+```
+
+Both produce identical measurements at this revision -- the divergence is
+documentation comments in `CNA/C/devices.h`, from cnanext's browser
+device-type change -- so nothing was wrong. But nothing would have SAID so
+either, and a declaration change would have been read against a library that
+does not have it.
+
+The report therefore records `canonical_header_sha256` and
+`canonical_header_files` beside the existing `native_library_sha256`, on the
+principle the library already followed: reports retain content identity, not an
+ephemeral qualification path. The qualification invocation names the pinned
+tree explicitly:
+
+```sh
+go run ./tools/native_abi \
+  -headers ~/deps/cna-c-abi-0.21.0/include \
+  -library ~/deps/cna-c-abi-0.21.0/libcna_c_api.so
 ```
 
 Header/library correspondence is measured rather than assumed: the canonical

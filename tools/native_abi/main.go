@@ -27,6 +27,8 @@ type report struct {
 	SchemaVersion              int            `json:"schema_version"`
 	Status                     string         `json:"status"`
 	HeaderRoot                 string         `json:"header_root"`
+	CanonicalHeaderSHA256      string         `json:"canonical_header_sha256"`
+	CanonicalHeaderFiles       int            `json:"canonical_header_files"`
 	NativeLibrary              string         `json:"native_library"`
 	NativeLibrarySHA256        string         `json:"native_library_sha256"`
 	AdmittedABI                string         `json:"ADMITTED_ABI"`
@@ -128,15 +130,65 @@ func parseParameters(list string) []string {
 	return result
 }
 
+// hashHeaderTree is the canonical header tree's content identity: a SHA-256 over
+// every `.h` file under the root, ordered by relative slash-separated path, with
+// each path and each file length fed into the digest so a rename or a truncation
+// cannot collide with an edit.
+func hashHeaderTree(root string) (string, int, error) {
+	var paths []string
+	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".h") {
+			return nil
+		}
+		rel, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			return relErr
+		}
+		paths = append(paths, filepath.ToSlash(rel))
+		return nil
+	})
+	if err != nil {
+		return "", 0, err
+	}
+	sort.Strings(paths)
+	digest := sha256.New()
+	for _, rel := range paths {
+		content, readErr := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
+		if readErr != nil {
+			return "", 0, readErr
+		}
+		fmt.Fprintf(digest, "%s\n%d\n", rel, len(content))
+		digest.Write(content)
+	}
+	return hex.EncodeToString(digest.Sum(nil)), len(paths), nil
+}
+
 func verify(headerRoot, library string) (report, error) {
 	result := report{
-		SchemaVersion: 2, Status: "FAIL", HeaderRoot: headerRoot, NativeLibrary: library,
+		SchemaVersion: 3, Status: "FAIL", HeaderRoot: headerRoot, NativeLibrary: library,
 		AdmittedABI:  interop.ABIAdmissionPolicy(),
 		Measurements: map[string]int{}, ManifestMeasurements: map[string]int{},
 		FunctionParameterPositions: map[string]int{},
 		MissingHeaderSymbols:       []string{}, MissingLibrarySymbols: []string{},
 		ABIMismatches: []string{}, Findings: []string{},
 	}
+	// The header tree is pinned by CONTENT, for the reason the library already
+	// is: a path is ephemeral and unverifiable, and this one is now actively
+	// misleading. The default `-headers ../../cnanext/modules/c-api/include`
+	// reads a LIVE checkout, and that checkout has moved past the artifact the
+	// qualification library was built from -- Milestone 55 measured the two
+	// trees differing. A digest makes "which headers were these" a fact rather
+	// than a claim about a directory that may since have changed.
+	headerDigest, headerFiles, err := hashHeaderTree(headerRoot)
+	if err != nil {
+		return result, err
+	}
+	result.CanonicalHeaderSHA256 = headerDigest
+	result.CanonicalHeaderFiles = headerFiles
+
 	manifestSource, err := os.ReadFile(filepath.Join("internal", "interop", "abi_manifest.h"))
 	if err != nil {
 		return result, err

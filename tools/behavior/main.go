@@ -3178,15 +3178,71 @@ func runCorpus() corpusReport {
 		drawableDisposals++
 		return nil
 	})
-	drawableDisposeFalse := drawable.Dispose(false)
+	drawableDisposeFalse := drawable.DisposeByBoolean(false)
 	drawableDisposeAfterFalse := drawableDisposals
-	drawableDisposeTrue := drawable.Dispose(true)
-	_ = drawable.Dispose(true)
+	drawableDisposeTrue := drawable.DisposeByBoolean(true)
+	_ = drawable.DisposeByBoolean(true)
 	check("drawable-game-component.dispose-defers-the-flag-to-the-base", "DRAWABLE_GAME_COMPONENT",
 		"true,true,0,2",
 		fmt.Sprintf("%t,%t,%d,%d",
 			drawableDisposeFalse == nil, drawableDisposeTrue == nil,
 			drawableDisposeAfterFalse, drawableDisposals))
+
+	// ------------------------------------------------------------------
+	// Milestone 55. CLR inheritance under private named composition: which
+	// slots a derived class actually occupies, and what `ldarg.0` means inside
+	// a base body. Every row is read from Microsoft.Xna.Framework.Game.dll.
+	// ------------------------------------------------------------------
+
+	// GameComponent declares TWO Dispose members and DrawableGameComponent
+	// declares one:
+	//
+	//	GameComponent::Dispose()          public  newslot virtual FINAL
+	//	GameComponent::Dispose(bool)      family  newslot virtual
+	//	DrawableGameComponent::Dispose(bool) family virtual        -- override
+	//
+	// The derived declaration occupies the PROTECTED slot. The public one is
+	// inherited untouched, which is why both spell the two-overload projection.
+	identityGame, _ := framework.NewGame(corpusCallbacks{})
+	identityComponent := framework.NewDrawableGameComponent(identityGame)
+	var identityDisposable interface{ DisposeByNone() error } = identityComponent
+	check("drawable-game-component.inherits-the-public-dispose", "XNA_COMPOSITION_IDENTITY",
+		"true", fmt.Sprintf("%t", identityDisposable != nil))
+
+	// GameComponent::Dispose() is `ldarg.0; ldc.i4.1; callvirt Dispose(bool)`.
+	// `callvirt` on a virtual slot dispatches to the DERIVED override, so the
+	// inherited Dispose() runs DrawableGameComponent's body -- UnloadContent
+	// and the four device removals -- not the base's.
+	identityDisposals := 0
+	var identitySenders []any
+	_, _ = identityComponent.AddDisposedHandler(func(sender any, args *framework.EventArgs) error {
+		identityDisposals++
+		identitySenders = append(identitySenders, sender)
+		return nil
+	})
+	_, _ = identityComponent.AddEnabledChangedHandler(func(sender any, args *framework.EventArgs) error {
+		identitySenders = append(identitySenders, sender)
+		return nil
+	})
+	_ = identityComponent.SetEnabled(false)
+	_ = identityGame.Components().Add(identityComponent)
+	identityBefore := identityGame.Components().Count()
+	_ = identityDisposable.DisposeByNone()
+	identityAfter := identityGame.Components().Count()
+	check("game-component.dispose-removes-the-whole-object-from-components", "XNA_COMPOSITION_IDENTITY",
+		"1,0,1", fmt.Sprintf("%d,%d,%d", identityBefore, identityAfter, identityDisposals))
+
+	// Every raise site in GameComponent pushes `ldarg.0`, which under CLR
+	// inheritance is the WHOLE object. Both announcements name the
+	// DrawableGameComponent, never the composed base half.
+	identityWholeObject := len(identitySenders) == 2
+	for _, sender := range identitySenders {
+		if sender != any(identityComponent) {
+			identityWholeObject = false
+		}
+	}
+	check("game-component.raise-sites-announce-the-whole-object", "XNA_COMPOSITION_IDENTITY",
+		"true", fmt.Sprintf("%t", identityWholeObject))
 
 	// ------------------------------------------------------------------
 	// Foundation 45. GameWindow, whose behaviour is XNA-derived throughout:

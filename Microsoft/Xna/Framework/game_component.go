@@ -76,6 +76,45 @@ type GameComponent struct {
 	// Dispose(bool). See DisposeByBoolean for the exact concurrency
 	// projection and its one deliberate divergence.
 	disposeLock sync.Mutex
+
+	// derived is the CLR `this`: the outermost object this component is the
+	// base of, or nil when the component IS the outermost object.
+	//
+	// # Why a composed base needs it
+	//
+	// In CLR, `ldarg.0` inside GameComponent's body is the WHOLE object -- a
+	// DrawableGameComponent when that is what was constructed. Private named
+	// composition splits that object in two, and the base half has no way back
+	// to the whole one, so every reference site that uses `ldarg.0` as an
+	// OBJECT rather than as a path to a field silently means the wrong thing:
+	//
+	//	Game.Components.Remove(this)     removes the base, which is not in the
+	//	                                 collection -- the derived object is
+	//	Disposed(this, EventArgs.Empty)  hands a consumer the base object as
+	//	                                 the sender of the derived one's event
+	//
+	// Both were live: Milestone 55 measured a DrawableGameComponent surviving
+	// Game.Dispose in Game.Components, and its three events announcing a sender
+	// no consumer can match against the component it registered on.
+	//
+	// The reference is installed by the derived constructor through
+	// bindDerived, is never exported, and is read only through self(). It is
+	// the settled projection of CLR object identity under composition and the
+	// GraphicsResource chain uses the same one.
+	derived IGameComponent
+}
+
+// bindDerived installs the CLR `this` for a composed base. It is called by the
+// constructor of every type that composes a GameComponent, and by nothing else.
+func (c *GameComponent) bindDerived(derived IGameComponent) { c.derived = derived }
+
+// self is the CLR `ldarg.0` as an OBJECT: the outermost object of the
+// composition chain, which is the component itself when nothing composes it.
+func (c *GameComponent) self() IGameComponent {
+	if c.derived != nil {
+		return c.derived
+	}
+	return c
 }
 
 // NewGameComponent projects the one public constructor. It validates nothing
@@ -103,7 +142,7 @@ func (c *GameComponent) SetEnabled(value bool) error {
 		return nil
 	}
 	c.enabled = value
-	return c.OnEnabledChanged(c, EventArgsEmpty())
+	return c.OnEnabledChanged(c.self(), EventArgsEmpty())
 }
 
 // UpdateOrder is get_UpdateOrder, one `ldfld`.
@@ -119,7 +158,7 @@ func (c *GameComponent) SetUpdateOrder(value int32) error {
 		return nil
 	}
 	c.updateOrder = value
-	return c.OnUpdateOrderChanged(c, EventArgsEmpty())
+	return c.OnUpdateOrderChanged(c.self(), EventArgsEmpty())
 }
 
 // Initialize is GameComponent::Initialize, whose body is
@@ -147,13 +186,13 @@ func (c *GameComponent) Update(gameTime GameTime) {}
 // Game's engine reads. Both parameters are still projected because the pinned
 // contract declares them.
 func (c *GameComponent) OnEnabledChanged(sender any, args *EventArgs) error {
-	return c.enabledChanged.Raise(c, args)
+	return c.enabledChanged.Raise(c.self(), args)
 }
 
 // OnUpdateOrderChanged is the same shape over UpdateOrderChanged, and ignores
 // its sender argument the same way.
 func (c *GameComponent) OnUpdateOrderChanged(sender any, args *EventArgs) error {
-	return c.updateOrderChanged.Raise(c, args)
+	return c.updateOrderChanged.Raise(c.self(), args)
 }
 
 // DisposeByNone is Dispose(), the sealed IDisposable member:
@@ -248,11 +287,11 @@ func (c *GameComponent) DisposeByBoolean(disposing bool) error {
 		defer c.disposeLock.Unlock()
 	}
 	if gameManagedState(c.game) {
-		if _, err := c.game.Components().Remove(c); err != nil {
+		if _, err := c.game.Components().Remove(c.self()); err != nil {
 			return err
 		}
 	}
-	return c.disposed.Raise(c, EventArgsEmpty())
+	return c.disposed.Raise(c.self(), EventArgsEmpty())
 }
 
 // ---------------------------------------------------------------------------

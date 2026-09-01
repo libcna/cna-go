@@ -2733,7 +2733,7 @@ func (g *graphicsManagerGame) Initialize(host *framework.Game) error {
 	if componentDevice != service.GraphicsDevice() {
 		return errors.New("the component resolved a different device from the published service's")
 	}
-	if err := component.Dispose(true); err != nil {
+	if err := component.DisposeByBoolean(true); err != nil {
 		return fmt.Errorf("component Dispose: %w", err)
 	}
 	g.result.ManagerDrawableChecks++

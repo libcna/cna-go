@@ -500,7 +500,7 @@ go run ./tools/api_compat --mode leak-only
 go run ./tools/behavior
 go run ./tools/packed_vector_qualify
 go run ./tools/capabilities --check
-go run ./tools/native_abi -library /absolute/path/to/libcna_c_api.so
+go run ./tools/native_abi -headers ~/deps/cna-c-abi-0.21.0/include -library ~/deps/cna-c-abi-0.21.0/libcna_c_api.so
 go run ./tools/native_stress
 ```
 

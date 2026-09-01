@@ -79,6 +79,13 @@ type expectedSurface struct {
 	// project to.
 	XNAInheritedCLRMembers  int
 	XNAInheritedProjections int
+	// XNAInheritedOverriddenMembers is how many PUBLIC members of a COMPOSED
+	// XNA base chain the derived types occupy with a declaration of their own,
+	// and therefore do NOT inherit. It is measured because it is the exact
+	// quantity the inheritance rule subtracts: an exclusion that is reported
+	// cannot silently delete a member the way a name-keyed one did before
+	// Milestone 55.
+	XNAInheritedOverriddenMembers int
 
 	// XNABaseSubstitutability is the complete inventory of PUBLIC signature
 	// positions in the profile whose CLR type names a class another class in
@@ -124,6 +131,9 @@ type expectedType struct {
 	// is not an XNA class or whose base relationship is still DEFERRED.
 	XNAInheritedCLRMembers  int
 	XNAInheritedProjections int
+	// XNAInheritedOverriddenMembers is how many public members of that chain
+	// this type occupies with a declaration of its own.
+	XNAInheritedOverriddenMembers int
 }
 
 type mappedInterface struct {
@@ -254,6 +264,37 @@ type xnaCompositionRow struct {
 	Composition          string `json:"composition"`
 }
 
+// xnaCompositionIdentityMeasurement is one COMPOSED XNA base's object-identity
+// projection: the private mechanism that gives the composed base back the CLR
+// `this`, the reference sites that need it, and the derived constructors that
+// install it.
+type xnaCompositionIdentityMeasurement struct {
+	CLRBase      string                             `json:"clrBase"`
+	GoBase       string                             `json:"goBase,omitempty"`
+	DerivedField string                             `json:"derivedField,omitempty"`
+	Sites        []xnaCompositionIdentitySiteRow    `json:"sites,omitempty"`
+	Bindings     []xnaCompositionIdentityBindingRow `json:"bindings,omitempty"`
+	Verdict      string                             `json:"verdict"`
+}
+
+// xnaCompositionIdentitySiteRow is one base member whose reference IL pushes
+// `ldarg.0` as an OBJECT, and whether the Go body reaches the self accessor.
+type xnaCompositionIdentitySiteRow struct {
+	GoMember  string `json:"goMember"`
+	Reference string `json:"reference"`
+	Uses      int    `json:"uses"`
+	Reaches   int    `json:"reaches"`
+}
+
+// xnaCompositionIdentityBindingRow is one projected derived type's installation
+// of the CLR `this` into its composed base.
+type xnaCompositionIdentityBindingRow struct {
+	Derived     string `json:"derived"`
+	GoDerived   string `json:"goDerived"`
+	Constructor string `json:"constructor,omitempty"`
+	Binds       bool   `json:"binds"`
+}
+
 type actualSurface struct {
 	Types       map[symbolKey]*actualType
 	Members     map[symbolKey]*actualMember
@@ -357,6 +398,7 @@ type report struct {
 	GameFrameHooks               []gameFrameHookMeasurement           `json:"gameFrameHooks"`
 	XNABaseSubstitutability      []xnaBaseSubstitutabilityMeasurement `json:"xnaBaseSubstitutability"`
 	XNAComposition               []xnaCompositionMeasurement          `json:"xnaComposition"`
+	XNACompositionIdentity       []xnaCompositionIdentityMeasurement  `json:"xnaCompositionIdentity"`
 	Metadata                     reportMetadata                       `json:"metadata"`
 }
 

@@ -1151,3 +1151,63 @@ func canonicalHeaderRoot(t *testing.T) string {
 	t.Skip("canonical CNA C headers are not available; set CNA_C_API_INCLUDE")
 	return ""
 }
+
+// TestCanonicalHeaderTreeDigestIsDeterministicAndOrderIndependent holds the
+// content identity the header root is now recorded by.
+//
+// The digest exists because the default header root is a LIVE checkout that has
+// already moved past the pinned library, and a path cannot say which headers a
+// report was produced against. Two properties make it evidence: it is stable
+// across runs, and it changes when any header changes -- including a change
+// that only moves bytes between two files, which the per-file path and length
+// prefixes are there to catch.
+func TestCanonicalHeaderTreeDigestIsDeterministicAndOrderIndependent(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "CNA", "C"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(rel, content string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(rel)), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("CNA/C/a.h", "void cna_one(void);\n")
+	write("CNA/C/b.h", "void cna_two(void);\n")
+	write("CNA/C/notes.txt", "ignored: not a header\n")
+
+	first, files, err := hashHeaderTree(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if files != 2 {
+		t.Fatalf("digest covered %d files, want the two .h files", files)
+	}
+	second, _, err := hashHeaderTree(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first != second {
+		t.Fatal("the header digest is not deterministic")
+	}
+	// A byte moved from one header to another. Without the per-file path and
+	// length prefixes the concatenation would be identical.
+	write("CNA/C/a.h", "void cna_one(void);")
+	write("CNA/C/b.h", "\nvoid cna_two(void);\n")
+	moved, _, err := hashHeaderTree(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if moved == first {
+		t.Fatal("moving a byte between two headers left the digest unchanged")
+	}
+	// A new header changes it too, and so does the file count.
+	write("CNA/C/c.h", "void cna_three(void);\n")
+	added, addedFiles, err := hashHeaderTree(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if added == moved || addedFiles != 3 {
+		t.Fatalf("adding a header produced digest-equal=%t files=%d", added == moved, addedFiles)
+	}
+}

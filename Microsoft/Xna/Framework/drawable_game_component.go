@@ -172,7 +172,14 @@ func init() {
 // `ldarg.0; ldarg.1; stfld; ret` with no check, and inventing one here would be
 // a failure mode the reference does not have.
 func NewDrawableGameComponent(game *Game) *DrawableGameComponent {
-	return &DrawableGameComponent{visible: true, component: NewGameComponent(game)}
+	component := &DrawableGameComponent{visible: true, component: NewGameComponent(game)}
+	// The composed base's CLR `this`. Without it, GameComponent's own body uses
+	// the base half of the object wherever the reference IL uses `ldarg.0` as
+	// an object -- so Dispose(true) would remove the base from Game.Components
+	// instead of this component, and all three inherited events would announce
+	// a sender no consumer registered on. See GameComponent.derived.
+	component.component.bindDerived(component)
+	return component
 }
 
 // Initialize is DrawableGameComponent::Initialize, reproduced statement for
@@ -326,7 +333,39 @@ func (c *DrawableGameComponent) deviceDisposing(sender any, args *EventArgs) err
 	return nil
 }
 
-// Dispose is DrawableGameComponent::Dispose(bool):
+// DisposeByNone is GameComponent::Dispose(), inherited. It is one of the two
+// members of this type's Dispose overload group, and the reason there are two
+// is the whole of Milestone 55:
+//
+//	GameComponent          public Dispose()      family Dispose(bool)
+//	DrawableGameComponent                        family Dispose(bool)  -- override
+//
+// The derived class overrides the PROTECTED overload. The PUBLIC one is a
+// different CLR slot it never touches, so it is inherited -- and it is the
+// member `Game.Dispose(true)` reaches through `isinst IDisposable`. CNA-Go did
+// not project it, so a DrawableGameComponent added to Game.Components was
+// skipped by that loop entirely: never unhooked from the device service, never
+// removed from the collection, and its Disposed never raised.
+//
+// The body is the base's, and the base's body is `callvirt Dispose(bool)` with
+// `ldc.i4.1`:
+//
+//	Dispose(true);
+//
+// `callvirt` dispatches to the DERIVED override, which is why this forwards to
+// this type's own DisposeByBoolean rather than to the composed base's. Writing
+// `c.component.DisposeByNone()` would reproduce the base's slot and skip
+// UnloadContent and the four event removals -- the exact bug Go's lack of
+// virtual dispatch invites, and the reason composition forwards explicitly.
+//
+// GameComponent::Dispose() is `newslot virtual final`, so no CLR subclass can
+// change it and this forwarding is the only behaviour it can have. It does not
+// call GC.SuppressFinalize; GameComponent::Dispose() does not either.
+func (c *DrawableGameComponent) DisposeByNone() error {
+	return c.DisposeByBoolean(true)
+}
+
+// DisposeByBoolean is DrawableGameComponent::Dispose(bool):
 //
 //	if (disposing)
 //	{
@@ -345,7 +384,7 @@ func (c *DrawableGameComponent) deviceDisposing(sender any, args *EventArgs) err
 // Dispose(false) still remove the component from Game.Components and raise
 // Disposed. And like every Dispose in this profile, it is not idempotent --
 // there is no disposed flag anywhere in either class.
-func (c *DrawableGameComponent) Dispose(disposing bool) error {
+func (c *DrawableGameComponent) DisposeByBoolean(disposing bool) error {
 	if c == nil {
 		return errors.New("DrawableGameComponent is nil")
 	}
