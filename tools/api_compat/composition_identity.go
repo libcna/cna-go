@@ -134,6 +134,13 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 		DerivedConstructors: map[string]string{
 			"Microsoft.Xna.Framework.Graphics.Texture":     "newTexture",
 			"Microsoft.Xna.Framework.Graphics.SpriteBatch": "NewSpriteBatch",
+			// The four state objects. Each has ONE public constructor, and the
+			// private preset constructor the static instances use forwards to
+			// it, so binding once in the public one covers every instance.
+			"Microsoft.Xna.Framework.Graphics.BlendState":        "NewBlendState",
+			"Microsoft.Xna.Framework.Graphics.DepthStencilState": "NewDepthStencilState",
+			"Microsoft.Xna.Framework.Graphics.RasterizerState":   "NewRasterizerState",
+			"Microsoft.Xna.Framework.Graphics.SamplerState":      "NewSamplerState",
 		},
 	},
 

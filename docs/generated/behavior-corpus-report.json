@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 698,
-    "ASSERTIONS": 698,
+    "OBSERVATIONS": 704,
+    "ASSERTIONS": 704,
     "FAILURES": 0
   },
   "observations": [
@@ -5517,6 +5517,54 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": ",0,0,true,{0 0 0 0}",
       "actual": ",0,0,true,{0 0 0 0}",
+      "passed": true
+    },
+    {
+      "id": "state-objects.the-defaults-are-the-ils-own-constants",
+      "group": "GRAPHICS_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "2,true,3,4,-1",
+      "actual": "2,true,3,4,-1",
+      "passed": true
+    },
+    {
+      "id": "state-objects.presets-are-frozen-and-fresh-instances-are-not",
+      "group": "GRAPHICS_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "state-objects.the-freeze-carries-the-references-formatted-sentence",
+      "group": "GRAPHICS_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true",
+      "actual": "true",
+      "passed": true
+    },
+    {
+      "id": "state-objects.presets-have-stable-identity-and-the-references-names",
+      "group": "GRAPHICS_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,BlendState.Additive,SamplerState.AnisotropicClamp",
+      "actual": "true,BlendState.Additive,SamplerState.AnisotropicClamp",
+      "passed": true
+    },
+    {
+      "id": "state-objects.preset-values-are-the-class-initializers-arguments",
+      "group": "GRAPHICS_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "4,0,4,0,1,1,1",
+      "actual": "4,0,4,0,1,1,1",
+      "passed": true
+    },
+    {
+      "id": "state-objects.are-graphics-resources-with-no-native-handle",
+      "group": "GRAPHICS_STATE",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,1,true",
+      "actual": "true,1,true",
       "passed": true
     },
     {

@@ -986,6 +986,78 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|Height": true,
 		"property-get|Bounds": true,
 	},
+	// Foundation 59. BlendState's twelve value getters. Every one is
+	//
+	//	get_ColorSourceBlend  ldarg.0; ldfld cachedColorSourceBlend; ret
+	//
+	// seven bytes over a managed field, with no device and no throw site. Their
+	// SETTERS are deliberately absent: each begins with ThrowIfBound(), which
+	// raises a real InvalidOperationException once the state object is bound,
+	// so a setter's error channel carries the reference's own refusal rather
+	// than an invented one.
+	//
+	// The CONSTRUCTOR is here too, which no other entry in this table is. Its
+	// whole body is `SetDefaults(); isBound = false;` under a try/fault that
+	// disposes a half-built object -- and SetDefaults is thirteen stores each
+	// preceded by a ThrowIfBound that cannot fire, because isBound is still
+	// false on an object nothing has seen. Nothing in it can fail, and Go has no
+	// half-built object for the fault handler to clean up.
+	"Microsoft.Xna.Framework.Graphics.BlendState": {
+		"constructor|.ctor":                  true,
+		"property-get|ColorSourceBlend":      true,
+		"property-get|ColorDestinationBlend": true,
+		"property-get|ColorBlendFunction":    true,
+		"property-get|AlphaSourceBlend":      true,
+		"property-get|AlphaDestinationBlend": true,
+		"property-get|AlphaBlendFunction":    true,
+		"property-get|ColorWriteChannels":    true,
+		"property-get|ColorWriteChannels1":   true,
+		"property-get|ColorWriteChannels2":   true,
+		"property-get|ColorWriteChannels3":   true,
+		"property-get|BlendFactor":           true,
+		"property-get|MultiSampleMask":       true,
+	},
+	// The other three state objects, on identical evidence: every getter is one
+	// `ldfld`, every constructor is `SetDefaults(); isBound = false`, and every
+	// SETTER is absent from this table because ThrowIfBound is a real refusal.
+	"Microsoft.Xna.Framework.Graphics.DepthStencilState": {
+		"constructor|.ctor":                                   true,
+		"property-get|DepthBufferEnable":                      true,
+		"property-get|DepthBufferWriteEnable":                 true,
+		"property-get|DepthBufferFunction":                    true,
+		"property-get|StencilEnable":                          true,
+		"property-get|StencilFunction":                        true,
+		"property-get|StencilPass":                            true,
+		"property-get|StencilFail":                            true,
+		"property-get|StencilDepthBufferFail":                 true,
+		"property-get|TwoSidedStencilMode":                    true,
+		"property-get|CounterClockwiseStencilFunction":        true,
+		"property-get|CounterClockwiseStencilPass":            true,
+		"property-get|CounterClockwiseStencilFail":            true,
+		"property-get|CounterClockwiseStencilDepthBufferFail": true,
+		"property-get|StencilMask":                            true,
+		"property-get|StencilWriteMask":                       true,
+		"property-get|ReferenceStencil":                       true,
+	},
+	"Microsoft.Xna.Framework.Graphics.RasterizerState": {
+		"constructor|.ctor":                 true,
+		"property-get|CullMode":             true,
+		"property-get|FillMode":             true,
+		"property-get|ScissorTestEnable":    true,
+		"property-get|MultiSampleAntiAlias": true,
+		"property-get|DepthBias":            true,
+		"property-get|SlopeScaleDepthBias":  true,
+	},
+	"Microsoft.Xna.Framework.Graphics.SamplerState": {
+		"constructor|.ctor":                    true,
+		"property-get|Filter":                  true,
+		"property-get|AddressU":                true,
+		"property-get|AddressV":                true,
+		"property-get|AddressW":                true,
+		"property-get|MaxAnisotropy":           true,
+		"property-get|MaxMipLevel":             true,
+		"property-get|MipMapLevelOfDetailBias": true,
+	},
 	// Foundation 58. RenderTarget2D's three description properties are each two
 	// field reads through the helper the constructor built:
 	//

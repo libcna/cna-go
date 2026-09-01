@@ -12,7 +12,7 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 124,
+    "COMPLETE_TYPES": 128,
     "DECLARED_INTERFACE_CONFORMANCE": 3,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
@@ -41,8 +41,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 73,
-    "MISSING_TYPE": 129,
-    "MISSING_TYPES": 129,
+    "MISSING_TYPE": 125,
+    "MISSING_TYPES": 125,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2012,
-    "TARGET_TYPES": 128,
-    "TOTAL_DIAGNOSTICS": 202,
+    "TARGET_MEMBERS": 2158,
+    "TARGET_TYPES": 132,
+    "TOTAL_DIAGNOSTICS": 198,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -73,8 +73,8 @@
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
     "XNA_COMPOSED_BASE_RELATIONSHIPS": 4,
     "XNA_COMPOSED_DERIVED_TYPES": 17,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 5,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 5,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 9,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 9,
     "XNA_COMPOSED_IDENTITY_FORWARDS": 2,
     "XNA_COMPOSED_IDENTITY_SITES": 7,
     "XNA_COMPOSED_IDENTITY_USES": 8,
@@ -360,18 +360,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.BasicEffect",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:BasicEffect",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.BlendState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:BlendState",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.DepthStencilState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DepthStencilState",
       "message": "mapped Go type is absent"
     },
     {
@@ -910,12 +898,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.RasterizerState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:RasterizerState",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.RenderTargetBinding",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:RenderTargetBinding",
       "message": "mapped Go type is absent"
@@ -924,12 +906,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.RenderTargetCube",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:RenderTargetCube",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.SamplerState",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SamplerState",
       "message": "mapped Go type is absent"
     },
     {
@@ -1327,6 +1303,7 @@
     "Microsoft.Xna.Framework.GameWindow",
     "Microsoft.Xna.Framework.Graphics.Blend",
     "Microsoft.Xna.Framework.Graphics.BlendFunction",
+    "Microsoft.Xna.Framework.Graphics.BlendState",
     "Microsoft.Xna.Framework.Graphics.BufferUsage",
     "Microsoft.Xna.Framework.Graphics.ClearOptions",
     "Microsoft.Xna.Framework.Graphics.ColorWriteChannels",
@@ -1334,6 +1311,7 @@
     "Microsoft.Xna.Framework.Graphics.CubeMapFace",
     "Microsoft.Xna.Framework.Graphics.CullMode",
     "Microsoft.Xna.Framework.Graphics.DepthFormat",
+    "Microsoft.Xna.Framework.Graphics.DepthStencilState",
     "Microsoft.Xna.Framework.Graphics.DisplayMode",
     "Microsoft.Xna.Framework.Graphics.EffectParameterClass",
     "Microsoft.Xna.Framework.Graphics.EffectParameterType",
@@ -1367,10 +1345,12 @@
     "Microsoft.Xna.Framework.Graphics.PresentInterval",
     "Microsoft.Xna.Framework.Graphics.PresentationParameters",
     "Microsoft.Xna.Framework.Graphics.PrimitiveType",
+    "Microsoft.Xna.Framework.Graphics.RasterizerState",
     "Microsoft.Xna.Framework.Graphics.RenderTarget2D",
     "Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
     "Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
     "Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
+    "Microsoft.Xna.Framework.Graphics.SamplerState",
     "Microsoft.Xna.Framework.Graphics.SetDataOptions",
     "Microsoft.Xna.Framework.Graphics.SpriteEffects",
     "Microsoft.Xna.Framework.Graphics.SpriteSortMode",
@@ -1567,8 +1547,6 @@
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
     "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
     "Microsoft.Xna.Framework.Graphics.BasicEffect",
-    "Microsoft.Xna.Framework.Graphics.BlendState",
-    "Microsoft.Xna.Framework.Graphics.DepthStencilState",
     "Microsoft.Xna.Framework.Graphics.DeviceLostException",
     "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
     "Microsoft.Xna.Framework.Graphics.DirectionalLight",
@@ -1605,10 +1583,8 @@
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
     "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
     "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
-    "Microsoft.Xna.Framework.Graphics.RasterizerState",
     "Microsoft.Xna.Framework.Graphics.RenderTargetBinding",
     "Microsoft.Xna.Framework.Graphics.RenderTargetCube",
-    "Microsoft.Xna.Framework.Graphics.SamplerState",
     "Microsoft.Xna.Framework.Graphics.SamplerStateCollection",
     "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
     "Microsoft.Xna.Framework.Graphics.SpriteFont",
@@ -9105,7 +9081,7 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.GraphicsResource",
       "derivedTypes": 11,
-      "projectedDerivedTypes": 2,
+      "projectedDerivedTypes": 6,
       "positions": 0,
       "positionsOnProjectedCarriers": 0,
       "requirement": "NONE",
@@ -9454,16 +9430,18 @@
         {
           "derived": "Microsoft.Xna.Framework.Graphics.BlendState",
           "goDerived": "BlendState",
+          "baseField": "resource",
           "inheritedCLRMembers": 7,
           "inheritedProjections": 10,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.Graphics.DepthStencilState",
           "goDerived": "DepthStencilState",
+          "baseField": "resource",
           "inheritedCLRMembers": 7,
           "inheritedProjections": 10,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.Graphics.Effect",
@@ -9489,16 +9467,18 @@
         {
           "derived": "Microsoft.Xna.Framework.Graphics.RasterizerState",
           "goDerived": "RasterizerState",
+          "baseField": "resource",
           "inheritedCLRMembers": 7,
           "inheritedProjections": 10,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.Graphics.SamplerState",
           "goDerived": "SamplerState",
+          "baseField": "resource",
           "inheritedCLRMembers": 7,
           "inheritedProjections": 10,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
@@ -9645,6 +9625,30 @@
       ],
       "bindings": [
         {
+          "derived": "Microsoft.Xna.Framework.Graphics.BlendState",
+          "goDerived": "BlendState",
+          "constructor": "NewBlendState",
+          "binds": true
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.DepthStencilState",
+          "goDerived": "DepthStencilState",
+          "constructor": "NewDepthStencilState",
+          "binds": true
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.RasterizerState",
+          "goDerived": "RasterizerState",
+          "constructor": "NewRasterizerState",
+          "binds": true
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.SamplerState",
+          "goDerived": "SamplerState",
+          "constructor": "NewSamplerState",
+          "binds": true
+        },
+        {
           "derived": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
           "goDerived": "SpriteBatch",
           "constructor": "NewSpriteBatch",
@@ -9690,7 +9694,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "309ee4b84c96926d3847c9b34d1164566e4479a4a991186f69279199a5e88d6a",
+    "mappingSha256": "7b1bdf987878a5ef7115ba330f270ddcfaf73a0ae56cb272839680b12a272312",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

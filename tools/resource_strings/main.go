@@ -103,6 +103,14 @@ var registry = []claimedString{
 	// they reach CNA; everything after it is CNA's own refusal, because
 	// reproducing D3D9's format-capability messages would mean asserting a
 	// support decision CNA-Go did not make.
+	// The state-object freeze. Its value carries `{0}` TWICE and Placeholders is
+	// deliberately NOT set: that flag converts Go's `%s` into `{0}`, `{1}`, and
+	// this message substitutes the SAME argument at both positions. CNA-Go
+	// therefore keeps the CLR's own spelling in the source constant and formats
+	// it with strings.ReplaceAll, so the registry compares the exact bytes the
+	// assembly holds.
+	{Key: "BoundStateObject", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Cannot change read-only {0}. State objects become read-only the first time they are bound to a GraphicsDevice. To change property values, create a new {0} instance."},
 	{Key: "DeviceCannotBeNullOnResourceCreate", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "The GraphicsDevice must not be null when creating new resources."},
 	// Foundation 50 corrected this KEY. The value was right and its key was

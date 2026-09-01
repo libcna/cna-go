@@ -3360,6 +3360,72 @@ func runCorpus() corpusReport {
 			zeroTarget.IsDisposed(), zeroTarget.Bounds()))
 
 	// ------------------------------------------------------------------
+	// Foundation 59. The four graphics state objects. Every row is read from
+	// Microsoft.Xna.Framework.Graphics.dll's SetDefaults and class initializers.
+	// ------------------------------------------------------------------
+
+	// The defaults a reader is most likely to get wrong: culling is
+	// COUNTER-CLOCKWISE rather than none, multisample antialiasing is ON, depth
+	// comparison is LessEqual, and MaxAnisotropy is four.
+	stateRaster := graphics.NewRasterizerState()
+	stateDepth := graphics.NewDepthStencilState()
+	stateSampler := graphics.NewSamplerState()
+	stateBlend := graphics.NewBlendState()
+	check("state-objects.the-defaults-are-the-ils-own-constants", "GRAPHICS_STATE",
+		"2,true,3,4,-1", fmt.Sprintf("%d,%t,%d,%d,%d",
+			stateRaster.CullMode(), stateRaster.MultiSampleAntiAlias(),
+			stateDepth.DepthBufferFunction(), stateSampler.MaxAnisotropy(),
+			stateBlend.MultiSampleMask()))
+
+	// The static presets are frozen FROM CONSTRUCTION. The documented sentence
+	// says they become read-only when first bound to a GraphicsDevice; the
+	// private constructor that builds them ends with `isBound = true`, so they
+	// are read-only on an object no device has ever seen.
+	presetRefusal := graphics.BlendStateAlphaBlend().SetColorSourceBlend(graphics.BlendZero)
+	ownAccepted := graphics.NewBlendState().SetColorSourceBlend(graphics.BlendZero)
+	check("state-objects.presets-are-frozen-and-fresh-instances-are-not", "GRAPHICS_STATE",
+		"true,true", fmt.Sprintf("%t,%t", presetRefusal != nil, ownAccepted == nil))
+
+	// The refusal is FrameworkResources.BoundStateObject with the state
+	// object's own type name substituted at both placeholders.
+	check("state-objects.the-freeze-carries-the-references-formatted-sentence", "GRAPHICS_STATE",
+		"true", fmt.Sprintf("%t", presetRefusal != nil && strings.Contains(presetRefusal.Error(),
+			"Cannot change read-only BlendState. State objects become read-only the first time "+
+				"they are bound to a GraphicsDevice. To change property values, create a new BlendState instance.")))
+
+	// A `public static initonly` field is ONE object for the life of the
+	// process, and it carries the name the class initializer gave it.
+	check("state-objects.presets-have-stable-identity-and-the-references-names", "GRAPHICS_STATE",
+		"true,BlendState.Additive,SamplerState.AnisotropicClamp", fmt.Sprintf("%t,%s,%s",
+			graphics.BlendStateAdditive() == graphics.BlendStateAdditive(),
+			graphics.BlendStateAdditive().Name(), graphics.SamplerStateAnisotropicClamp().Name()))
+
+	// The preset VALUES, which a wrong pair would leave valid and silently
+	// different. The private constructors apply their arguments to both
+	// channels, and the sampler's one address mode to all three coordinates.
+	check("state-objects.preset-values-are-the-class-initializers-arguments", "GRAPHICS_STATE",
+		"4,0,4,0,1,1,1", fmt.Sprintf("%d,%d,%d,%d,%d,%d,%d",
+			graphics.BlendStateAdditive().ColorSourceBlend(), graphics.BlendStateAdditive().ColorDestinationBlend(),
+			graphics.BlendStateAdditive().AlphaSourceBlend(), graphics.BlendStateAdditive().AlphaDestinationBlend(),
+			graphics.SamplerStatePointClamp().AddressU(), graphics.SamplerStatePointClamp().AddressV(),
+			graphics.SamplerStatePointClamp().AddressW()))
+
+	// A state object is a GraphicsResource with NO native handle, so its Name
+	// and Tag are the reference's `_internalHandle == 0` branch and its
+	// disposal releases nothing while still raising Disposing exactly once.
+	stateDisposal := graphics.NewSamplerState()
+	stateRaises := 0
+	_, _ = stateDisposal.AddDisposingHandler(func(sender any, args *framework.EventArgs) error {
+		stateRaises++
+		return nil
+	})
+	_ = stateDisposal.DisposeByNone()
+	_ = stateDisposal.DisposeByNone()
+	check("state-objects.are-graphics-resources-with-no-native-handle", "GRAPHICS_STATE",
+		"true,1,true", fmt.Sprintf("%t,%d,%t",
+			stateDisposal.GraphicsDevice() == nil, stateRaises, stateDisposal.IsDisposed()))
+
+	// ------------------------------------------------------------------
 	// Foundation 45. GameWindow, whose behaviour is XNA-derived throughout:
 	// every row below comes from Microsoft.Xna.Framework.Game.dll's IL, and
 	// none of it comes from what CNA does.
