@@ -127,7 +127,7 @@ func resolveTextureElement[T any]() (uint32, uintptr, error) {
 // The null branch is the reference's own and is preserved: a null array is
 // forwarded with an element count of zero rather than refused here, because the
 // refusal the reference makes happens further in, inside CopyData.
-func Texture2DSetDataBySliceOfT[T any](texture *Texture2D, data []T) error {
+func Texture2DSetDataBySliceOfT[T any](texture Texture2DReference, data []T) error {
 	return Texture2DSetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
 		texture, 0, nil, data, 0, int32(len(data)))
 }
@@ -137,7 +137,7 @@ func Texture2DSetDataBySliceOfT[T any](texture *Texture2D, data []T) error {
 //
 //	SetData(0, null, data, startIndex, elementCount)
 func Texture2DSetDataBySliceOfTAndInt32AndInt32[T any](
-	texture *Texture2D, data []T, startIndex, elementCount int32,
+	texture Texture2DReference, data []T, startIndex, elementCount int32,
 ) error {
 	return Texture2DSetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
 		texture, 0, nil, data, startIndex, elementCount)
@@ -147,7 +147,7 @@ func Texture2DSetDataBySliceOfTAndInt32AndInt32[T any](
 // Texture2D::SetData<T>(Int32, Nullable<Rectangle>, T[], Int32, Int32) -- the
 // overload the other two funnel into, and the one that reaches CNA.
 func Texture2DSetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[T any](
-	texture *Texture2D, level int32, rect *framework.Rectangle, data []T, startIndex, elementCount int32,
+	texture Texture2DReference, level int32, rect *framework.Rectangle, data []T, startIndex, elementCount int32,
 ) error {
 	resource, transfer, identity, err := prepareTransfer[T](texture, level, rect, len(data), startIndex, elementCount)
 	if err != nil {
@@ -162,7 +162,7 @@ func Texture2DSetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[T 
 
 // Texture2DGetDataBySliceOfT is Texture2D::GetData<T>(T[]), the mirror of the
 // first SetData overload with the same null-array shape.
-func Texture2DGetDataBySliceOfT[T any](texture *Texture2D, data []T) error {
+func Texture2DGetDataBySliceOfT[T any](texture Texture2DReference, data []T) error {
 	return Texture2DGetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
 		texture, 0, nil, data, 0, int32(len(data)))
 }
@@ -170,7 +170,7 @@ func Texture2DGetDataBySliceOfT[T any](texture *Texture2D, data []T) error {
 // Texture2DGetDataBySliceOfTAndInt32AndInt32 is
 // Texture2D::GetData<T>(T[], Int32, Int32).
 func Texture2DGetDataBySliceOfTAndInt32AndInt32[T any](
-	texture *Texture2D, data []T, startIndex, elementCount int32,
+	texture Texture2DReference, data []T, startIndex, elementCount int32,
 ) error {
 	return Texture2DGetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
 		texture, 0, nil, data, startIndex, elementCount)
@@ -184,7 +184,7 @@ func Texture2DGetDataBySliceOfTAndInt32AndInt32[T any](
 // own documented behaviour, and the reason this member reports rather than
 // silently truncating.
 func Texture2DGetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[T any](
-	texture *Texture2D, level int32, rect *framework.Rectangle, data []T, startIndex, elementCount int32,
+	texture Texture2DReference, level int32, rect *framework.Rectangle, data []T, startIndex, elementCount int32,
 ) error {
 	resource, transfer, identity, err := prepareTransfer[T](texture, level, rect, len(data), startIndex, elementCount)
 	if err != nil {
@@ -208,8 +208,9 @@ func Texture2DGetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[T 
 // prepareTransfer resolves the element identity and builds the transfer both
 // directions share.
 func prepareTransfer[T any](
-	texture *Texture2D, level int32, rect *framework.Rectangle, length int, startIndex, elementCount int32,
+	reference Texture2DReference, level int32, rect *framework.Rectangle, length int, startIndex, elementCount int32,
 ) (*interop.Resource, interop.TextureTransfer, uint32, error) {
+	texture := resolveTexture2D(reference)
 	if texture == nil || texture.nativeResource() == nil {
 		return nil, interop.TextureTransfer{}, 0, interop.ErrDisposed
 	}

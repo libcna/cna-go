@@ -12,12 +12,12 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 123,
+    "COMPLETE_TYPES": 124,
     "DECLARED_INTERFACE_CONFORMANCE": 3,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3426,
+    "EXPECTED_GO_MEMBERS": 3443,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
@@ -40,9 +40,9 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 74,
-    "MISSING_TYPE": 130,
-    "MISSING_TYPES": 130,
+    "MISSING_MEMBER": 73,
+    "MISSING_TYPE": 129,
+    "MISSING_TYPES": 129,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 1984,
-    "TARGET_TYPES": 127,
-    "TOTAL_DIAGNOSTICS": 204,
+    "TARGET_MEMBERS": 2012,
+    "TARGET_TYPES": 128,
+    "TOTAL_DIAGNOSTICS": 202,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -66,23 +66,24 @@
     "UNMEASURED_STRUCTURAL_CATEGORY": 0,
     "XNA_BASE_DERIVED_TYPES": 41,
     "XNA_BASE_RELATIONSHIPS": 12,
-    "XNA_BASE_SUBSTITUTABILITY_LATENT": 9,
-    "XNA_BASE_SUBSTITUTABILITY_LIVE": 0,
+    "XNA_BASE_SUBSTITUTABILITY_LATENT": 8,
+    "XNA_BASE_SUBSTITUTABILITY_LIVE": 1,
     "XNA_BASE_SUBSTITUTABILITY_NONE": 3,
+    "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 1,
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
-    "XNA_COMPOSED_BASE_RELATIONSHIPS": 3,
-    "XNA_COMPOSED_DERIVED_TYPES": 16,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 4,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 4,
-    "XNA_COMPOSED_IDENTITY_FORWARDS": 1,
+    "XNA_COMPOSED_BASE_RELATIONSHIPS": 4,
+    "XNA_COMPOSED_DERIVED_TYPES": 17,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 5,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 5,
+    "XNA_COMPOSED_IDENTITY_FORWARDS": 2,
     "XNA_COMPOSED_IDENTITY_SITES": 7,
     "XNA_COMPOSED_IDENTITY_USES": 8,
-    "XNA_DEFERRED_BASE_BLOCKERS": 19,
-    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 171,
-    "XNA_INHERITED_MEMBER_PROJECTIONS": 171,
-    "XNA_INHERITED_PUBLIC_MEMBERS": 119,
+    "XNA_DEFERRED_BASE_BLOCKERS": 17,
+    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 188,
+    "XNA_INHERITED_MEMBER_PROJECTIONS": 188,
+    "XNA_INHERITED_PUBLIC_MEMBERS": 133,
     "XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN": 3,
-    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 144
+    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 131
   },
   "diagnostics": [
     {
@@ -585,12 +586,6 @@
     },
     {
       "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetRenderTarget(Microsoft.Xna.Framework.Graphics.RenderTarget2D)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetRenderTargetByRenderTarget2D",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetRenderTargets()",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetRenderTargets",
       "message": "mapped Go member is absent"
@@ -917,12 +912,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.RasterizerState",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:RasterizerState",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.RenderTarget2D",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:RenderTarget2D",
       "message": "mapped Go type is absent"
     },
     {
@@ -1378,6 +1367,7 @@
     "Microsoft.Xna.Framework.Graphics.PresentInterval",
     "Microsoft.Xna.Framework.Graphics.PresentationParameters",
     "Microsoft.Xna.Framework.Graphics.PrimitiveType",
+    "Microsoft.Xna.Framework.Graphics.RenderTarget2D",
     "Microsoft.Xna.Framework.Graphics.RenderTargetUsage",
     "Microsoft.Xna.Framework.Graphics.ResourceCreatedEventArgs",
     "Microsoft.Xna.Framework.Graphics.ResourceDestroyedEventArgs",
@@ -1494,7 +1484,6 @@
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceDestroyed() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.AddResourceDestroyedHandler",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::ResourceDestroyed() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.RemoveResourceDestroyedHandler",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SamplerStates() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SamplerStates",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetRenderTarget(Microsoft.Xna.Framework.Graphics.RenderTarget2D) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetRenderTargetByRenderTarget2D",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetRenderTarget(Microsoft.Xna.Framework.Graphics.RenderTargetCube,Microsoft.Xna.Framework.Graphics.CubeMapFace) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetRenderTargetByRenderTargetCubeAndCubeMapFace",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetRenderTargets(Microsoft.Xna.Framework.Graphics.RenderTargetBinding[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetRenderTargets",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffer(Microsoft.Xna.Framework.Graphics.VertexBuffer) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBufferByVertexBuffer",
@@ -1504,7 +1493,7 @@
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::VertexSamplerStates() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.VertexSamplerStates",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::VertexTextures() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.VertexTextures"
       ],
-      "diagnostics": 54
+      "diagnostics": 53
     },
     {
       "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
@@ -1617,7 +1606,6 @@
     "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
     "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
     "Microsoft.Xna.Framework.Graphics.RasterizerState",
-    "Microsoft.Xna.Framework.Graphics.RenderTarget2D",
     "Microsoft.Xna.Framework.Graphics.RenderTargetBinding",
     "Microsoft.Xna.Framework.Graphics.RenderTargetCube",
     "Microsoft.Xna.Framework.Graphics.SamplerState",
@@ -8169,7 +8157,7 @@
       "clrMembers": 3,
       "projectedMembers": 0,
       "declaringTypes": 4,
-      "projectedTypes": 0,
+      "projectedTypes": 1,
       "rationale": "assembly-visible content-loss plumbing declared by four public graphics types; the public ContentLost event those types expose is their own declared member, not this interface's",
       "verdict": "PASS"
     },
@@ -8626,21 +8614,11 @@
     },
     {
       "clrBase": "Microsoft.Xna.Framework.Graphics.Texture2D",
-      "status": "DEFERRED",
+      "status": "COMPOSED",
       "derived": [
         "Microsoft.Xna.Framework.Graphics.RenderTarget2D"
       ],
       "inheritedPublicMembers": 13,
-      "blockers": [
-        {
-          "class": "ARCHITECTURE",
-          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
-        },
-        {
-          "class": "SUBSYSTEM",
-          "detail": "Texture2D's own base chain is composed and its surface is complete, so inheritance no longer blocks RenderTarget2D. What does is CNA: a render target needs creation, binding and unbinding routes, and the substitutability question a derived texture raises where the profile names Texture2D in a public signature"
-        }
-      ],
       "verdict": "PASS"
     },
     {
@@ -9199,10 +9177,10 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
       "derivedTypes": 1,
-      "projectedDerivedTypes": 0,
+      "projectedDerivedTypes": 1,
       "positions": 17,
       "positionsOnProjectedCarriers": 9,
-      "requirement": "LATENT",
+      "requirement": "LIVE",
       "rows": [
         {
           "base": "Microsoft.Xna.Framework.Graphics.Texture2D",
@@ -9583,6 +9561,21 @@
         }
       ],
       "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.Texture2D",
+      "goBase": "Texture2D",
+      "rows": [
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.RenderTarget2D",
+          "goDerived": "RenderTarget2D",
+          "baseField": "texture",
+          "inheritedCLRMembers": 14,
+          "inheritedProjections": 17,
+          "composition": "PRIVATE_NAMED"
+        }
+      ],
+      "verdict": "PASS"
     }
   ],
   "xnaCompositionIdentity": [
@@ -9679,11 +9672,25 @@
         }
       ],
       "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.Texture2D",
+      "goBase": "Texture2D",
+      "forwardsTo": "Texture",
+      "bindings": [
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.RenderTarget2D",
+          "goDerived": "RenderTarget2D",
+          "constructor": "NewRenderTarget2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormatAndDepthFormatAndInt32AndRenderTargetUsage",
+          "binds": true
+        }
+      ],
+      "verdict": "PASS"
     }
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "aa37bb97b24f538540254a257eaf44f3b5f9b226eb51bc7a7b93ee71592c9f8c",
+    "mappingSha256": "309ee4b84c96926d3847c9b34d1164566e4479a4a991186f69279199a5e88d6a",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

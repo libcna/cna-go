@@ -93,6 +93,7 @@ const (
 	resourceGraphicsDeviceManager resourceKind = iota + 1
 	resourceTexture2D
 	resourceSpriteBatch
+	resourceRenderTarget2D
 )
 
 // FrameTime is the private tick-exact lifecycle value passed into the public
@@ -271,6 +272,33 @@ type TextureInfo struct {
 	Width, Height uint32
 	Levels        uint32
 	Format        uint32
+}
+
+// RenderTargetInfo is CNA_RenderTargetInfo, flattened.
+//
+// Every field is what CNA APPLIED, not what was asked for. That is the same
+// split the reference has: RenderTarget2D::CreateRenderTarget passes its
+// arguments to GraphicsAdapter::QueryFormat, which SELECTS a format, a depth
+// format and a sample count, and the RenderTargetHelper stores the selected
+// ones -- so DepthStencilFormat and MultiSampleCount report the selection, not
+// the preference. `preferredFormat` and `preferredDepthFormat` are the
+// reference's own parameter names.
+//
+// RendererAvailable is CNA's and has no XNA counterpart. CNA permits
+// construction on a backend with no real off-screen storage: creation succeeds,
+// this reports false, and binding reports NOT_SUPPORTED. It is carried so the
+// projection can say which of those it is looking at rather than reporting a
+// bind failure with no explanation.
+type RenderTargetInfo struct {
+	Kind              uint32
+	Width, Height     uint32
+	LevelCount        uint32
+	Format            uint32
+	DepthFormat       uint32
+	MultiSampleCount  int32
+	Usage             uint32
+	IsContentLost     bool
+	RendererAvailable bool
 }
 
 // SpriteDestinationCommand is CNA_SpriteCommand: a sprite placed by a
@@ -1593,6 +1621,58 @@ func (d *Device) CreateTexture(width, height uint32, mipMap bool, format uint32)
 	return resource, info, nil
 }
 
+// CreateRenderTarget2D creates an owned game-child render target.
+//
+// CNA permits creation on a backend with no real off-screen storage, so the
+// returned info's RendererAvailable is part of the answer rather than an error:
+// creation succeeded and binding will not.
+func (d *Device) CreateRenderTarget2D(width, height uint32, mipMap bool, format, depthFormat uint32, multiSampleCount int32, usage uint32) (*Resource, RenderTargetInfo, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, RenderTargetInfo{}, err
+	}
+	target, err := nativeRenderTarget2DCreate(handle, width, height, mipMap, format, depthFormat, multiSampleCount, usage)
+	if err != nil {
+		return nil, RenderTargetInfo{}, err
+	}
+	resource := d.runtime.registerResource(target, resourceRenderTarget2D, d.manager)
+	info, infoErr := nativeRenderTargetInfo(target)
+	if infoErr != nil {
+		_ = resource.Dispose()
+		return nil, RenderTargetInfo{}, infoErr
+	}
+	return resource, info, nil
+}
+
+// RenderTargetInfo re-reads the target's applied description. IsContentLost is
+// the one field that changes over a target's life, which is why the projection
+// re-reads rather than caching the whole structure.
+func (resource *Resource) RenderTargetInfo() (RenderTargetInfo, error) {
+	handle, err := resource.liveHandle(resourceRenderTarget2D)
+	if err != nil {
+		return RenderTargetInfo{}, err
+	}
+	return nativeRenderTargetInfo(handle)
+}
+
+// SetRenderTarget2D binds one target, or restores the back buffer when the
+// target is nil. It is the device's operation, not the target's, exactly as
+// GraphicsDevice::SetRenderTarget is.
+func (d *Device) SetRenderTarget2D(target *Resource) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	var targetHandle uint64
+	if target != nil {
+		targetHandle, err = target.liveHandle(resourceRenderTarget2D)
+		if err != nil {
+			return err
+		}
+	}
+	return nativeGraphicsDeviceSetRenderTarget2D(handle, targetHandle)
+}
+
 // TextureImageFormat is CNA_TextureImageFormat: PNG is 0 and JPEG is 1.
 //
 // XNA numbers its own SharedConstants.XnaImageFormat differently -- SaveAsJpeg
@@ -1647,7 +1727,7 @@ const (
 // element size is checked against what the identity means -- interop copies
 // bytes and validates nothing about their shape.
 func (resource *Resource) SetTextureData(dataType uint32, transfer TextureTransfer, data unsafe.Pointer, capacity uint64) error {
-	handle, err := resource.liveHandle(resourceTexture2D)
+	handle, err := resource.liveTextureHandle()
 	if err != nil {
 		return err
 	}
@@ -1655,7 +1735,7 @@ func (resource *Resource) SetTextureData(dataType uint32, transfer TextureTransf
 }
 
 func (resource *Resource) GetTextureData(dataType uint32, transfer TextureTransfer, destination unsafe.Pointer, capacity uint64) (uint64, error) {
-	handle, err := resource.liveHandle(resourceTexture2D)
+	handle, err := resource.liveTextureHandle()
 	if err != nil {
 		return 0, err
 	}
@@ -1698,7 +1778,7 @@ func (d *Device) CreateTextureFromEncodedSized(data []byte, width, height uint32
 // produce fewer bytes than the first measured, and trusting the first count
 // would return trailing zeros as image data.
 func (resource *Resource) EncodeTexture(imageFormat, width, height uint32) ([]byte, error) {
-	handle, err := resource.liveHandle(resourceTexture2D)
+	handle, err := resource.liveTextureHandle()
 	if err != nil {
 		return nil, err
 	}
@@ -1919,6 +1999,11 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeTextureDestroy(handle)
 	case resourceSpriteBatch:
 		return nativeSpriteBatchDestroy(handle)
+	case resourceRenderTarget2D:
+		// A render target is a distinct CNA kind with its own destroy, and
+		// cna_texture2d_destroy is documented as destroying a Texture2D but NOT
+		// a render target. Routing it through the texture destroy would leak.
+		return nativeRenderTargetDestroy(handle)
 	default:
 		return errors.New("unknown owned CNA resource kind")
 	}
@@ -1968,7 +2053,7 @@ func (resource *Resource) DrawSprite(texture *Resource, command SpriteCommand) e
 	if err != nil {
 		return err
 	}
-	textureHandle, err := texture.liveHandle(resourceTexture2D)
+	textureHandle, err := texture.liveTextureHandle()
 	if err != nil {
 		return err
 	}
@@ -1986,7 +2071,7 @@ func (resource *Resource) DrawSpriteToDestination(texture *Resource, command Spr
 	if err != nil {
 		return err
 	}
-	textureHandle, err := texture.liveHandle(resourceTexture2D)
+	textureHandle, err := texture.liveTextureHandle()
 	if err != nil {
 		return err
 	}
@@ -2002,6 +2087,27 @@ func (resource *Resource) EndSpriteBatch() error {
 		return err
 	}
 	return nativeSpriteBatchEnd(handle)
+}
+
+// liveTextureHandle is liveHandle over the kinds CNA accepts where a TEXTURE
+// handle is required.
+//
+// CNA's texture routes are documented as taking a "Texture2D or matching
+// render-target handle", and that is the native fact the whole Go
+// substitutability question rests on: to CNA a render target IS a texture. A
+// kind check that admitted only resourceTexture2D would refuse at the binding
+// what CNA accepts at the ABI.
+func (resource *Resource) liveTextureHandle() (uint64, error) {
+	if resource == nil {
+		return 0, ErrDisposed
+	}
+	resource.mu.Lock()
+	kind := resource.kind
+	resource.mu.Unlock()
+	if kind != resourceTexture2D && kind != resourceRenderTarget2D {
+		return 0, ErrDisposed
+	}
+	return resource.liveHandle(kind)
 }
 
 func (resource *Resource) liveHandle(kind resourceKind) (uint64, error) {

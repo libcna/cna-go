@@ -73,7 +73,7 @@ const (
 // and takes the destination as four floats plus the scaleDestination flag,
 // which is the Vector4-and-bool the reference passes by reference.
 func (b *SpriteBatch) spriteDraw(
-	texture *Texture2D,
+	reference Texture2DReference,
 	destinationX, destinationY, destinationZ, destinationW float32,
 	scaleDestination bool,
 	sourceRectangle *framework.Rectangle,
@@ -99,6 +99,7 @@ func (b *SpriteBatch) spriteDraw(
 	if b == nil {
 		return interop.ErrDisposed
 	}
+	texture := resolveTexture2D(reference)
 	if texture == nil {
 		return fmt.Errorf("%w: texture: %s", errSpriteArgumentNull, nullNotAllowed)
 	}
@@ -149,7 +150,7 @@ func (b *SpriteBatch) spriteDraw(
 //	source = nullRectangle, rotation = 0, origin = Vector2.Zero,
 //	effects = 0, depth = 0
 func (b *SpriteBatch) DrawByTexture2DAndVector2AndColor(
-	texture *Texture2D, position framework.Vector2, color framework.Color,
+	texture Texture2DReference, position framework.Vector2, color framework.Color,
 ) error {
 	return b.spriteDraw(texture, position.X, position.Y, 1, 1, true,
 		nil, color, 0, framework.Vector2{}, 0, 0)
@@ -161,7 +162,7 @@ func (b *SpriteBatch) DrawByTexture2DAndVector2AndColor(
 // It differs from the overload above by one IL instruction: the source
 // rectangle is the caller's argument instead of the static nullRectangle.
 func (b *SpriteBatch) DrawByTexture2DAndVector2AndNullableOfRectangleAndColor(
-	texture *Texture2D, position framework.Vector2,
+	texture Texture2DReference, position framework.Vector2,
 	sourceRectangle *framework.Rectangle, color framework.Color,
 ) error {
 	return b.spriteDraw(texture, position.X, position.Y, 1, 1, true,
@@ -176,7 +177,7 @@ func (b *SpriteBatch) DrawByTexture2DAndVector2AndNullableOfRectangleAndColor(
 // sibling stores the one float into both Z and W, which is what makes them the
 // same route and different members.
 func (b *SpriteBatch) DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle(
-	texture *Texture2D, position framework.Vector2,
+	texture Texture2DReference, position framework.Vector2,
 	sourceRectangle *framework.Rectangle, color framework.Color,
 	rotation float32, origin framework.Vector2, scale framework.Vector2,
 	effects SpriteEffects, layerDepth float32,
@@ -197,7 +198,7 @@ func (b *SpriteBatch) DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAnd
 // 2^24 loses precision as a float32, and that is the reference's own loss, not
 // a projection artefact -- XNA's own SpriteInfo is a Vector4.
 func (b *SpriteBatch) DrawByTexture2DAndRectangleAndColor(
-	texture *Texture2D, destinationRectangle framework.Rectangle, color framework.Color,
+	texture Texture2DReference, destinationRectangle framework.Rectangle, color framework.Color,
 ) error {
 	return b.spriteDraw(texture,
 		float32(destinationRectangle.X), float32(destinationRectangle.Y),
@@ -208,7 +209,7 @@ func (b *SpriteBatch) DrawByTexture2DAndRectangleAndColor(
 // DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor is
 // SpriteBatch::Draw(Texture2D, Rectangle, Nullable<Rectangle>, Color).
 func (b *SpriteBatch) DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor(
-	texture *Texture2D, destinationRectangle framework.Rectangle,
+	texture Texture2DReference, destinationRectangle framework.Rectangle,
 	sourceRectangle *framework.Rectangle, color framework.Color,
 ) error {
 	return b.spriteDraw(texture,
@@ -225,7 +226,7 @@ func (b *SpriteBatch) DrawByTexture2DAndRectangleAndNullableOfRectangleAndColor(
 // already states the size, so the reference's parameter list has eight
 // arguments where its position-based sibling has nine.
 func (b *SpriteBatch) DrawByTexture2DAndRectangleAndNullableOfRectangleAndColorAndSingleAndVector2AndSpriteEffectsAndSingle(
-	texture *Texture2D, destinationRectangle framework.Rectangle,
+	texture Texture2DReference, destinationRectangle framework.Rectangle,
 	sourceRectangle *framework.Rectangle, color framework.Color,
 	rotation float32, origin framework.Vector2,
 	effects SpriteEffects, layerDepth float32,

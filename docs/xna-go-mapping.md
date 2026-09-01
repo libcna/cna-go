@@ -690,6 +690,35 @@ the reference uses `callvirt`. `GraphicsResource::Dispose()` is
 base's slot and leak the native texture. No managed observable distinguishes the
 two, so that one is proved natively.
 
+### CLR base substitutability at a parameter position
+
+A **parameter** position whose CLR type is a class with a **LIVE**
+substitutability requirement projects to an exported interface named
+`<GoName>Reference` with an **unexported** method. Nameable by a consumer,
+satisfiable only inside the module.
+
+A requirement is LIVE when both ends exist: a projected carrier names the base
+in a public signature, and at least one derived type is projected. Foundation 40
+measured every family LATENT or NONE; Foundation 58 projected `RenderTarget2D`
+and `Texture2D` became the first LIVE one, at seven positions — all
+`SpriteBatch.Draw`'s `texture`. The registry and the measurement are
+cross-checked in both directions.
+
+Returns and property getters keep the concrete pointer.
+`Texture2D::FromStream` returns a Texture2D and a caller uses every Texture2D
+member on it; an interface there would take those members away to solve a
+problem returns do not have.
+
+An inherited member whose Go projection is already a **package function** — a
+static, or a generic instance method under the generic-method rule — is not
+re-projected on the derived type. Its Go identity names its declaring type, and
+its receiver-first parameter is itself a parameter position carrying the
+interface, so `Texture2DSetDataBySliceOfT(renderTarget, pixels)` already works.
+
+Go has two nil shapes at an interface position — a nil interface, and a non-nil
+interface holding a typed nil — and the CLR has one null. Both reach the same
+`ArgumentNullException`.
+
 ## Structural counts
 
 The 257 reference types map one-to-one to 257 expected Go XNA types. Member

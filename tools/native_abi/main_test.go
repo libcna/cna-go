@@ -845,6 +845,48 @@ var layoutMutations = []sourceMutation{
 		new:  "    CNA_Bool mip_map;\n    uint8_t reserved[4];\n    CNA_SurfaceFormat format;",
 	},
 	{
+		// Foundation 58. CNA_RenderTarget2DCreateInfo's trailing `reserved1` is
+		// a full uint32 and holds the structure at 40 bytes; dropping it makes
+		// it 36, and struct_size is a value CNA VALIDATES, so this is the one
+		// reserved field in the family whose removal is observable.
+		//
+		// The other two reserved fields in these structures -- `reserved0[3]`
+		// after the mip flag and `reserved[2]` after the two booleans -- are
+		// deliberately NOT mutated. The compiler inserts exactly those bytes as
+		// padding, so declaring them and omitting them produce identical
+		// layouts, and a control that cannot fail is not evidence. That is the
+		// rule the texture create info's own comment settled and it is applied
+		// here rather than re-argued.
+		name: "render-target-create-info-trailing-reserved-dropped",
+		file: "abi_manifest.h",
+		old:  "    CNA_RenderTargetUsage usage;\n    uint32_t reserved1;\n} CNA_RenderTarget2DCreateInfo;",
+		new:  "    CNA_RenderTargetUsage usage;\n} CNA_RenderTarget2DCreateInfo;",
+	},
+	{
+		// The create info's format and depth format are adjacent uint32s of
+		// different MEANING. Swapping them moves no size and no later offset,
+		// and the bridge's assignments convert silently in both directions: a
+		// requested SurfaceFormat.Color would arrive as DepthFormat.None and a
+		// requested Depth24Stencil8 would arrive as SurfaceFormat.Bgra4444.
+		// Only the two offsets move, and only the comparison catches it.
+		name: "render-target-create-info-format-and-depth-format-swapped",
+		file: "abi_manifest.h",
+		old:  "    CNA_SurfaceFormat format;\n    CNA_DepthFormat depth_format;\n    int32_t multi_sample_count;\n    CNA_RenderTargetUsage usage;\n    uint32_t reserved1;",
+		new:  "    CNA_DepthFormat depth_format;\n    CNA_SurfaceFormat format;\n    int32_t multi_sample_count;\n    CNA_RenderTargetUsage usage;\n    uint32_t reserved1;",
+	},
+	{
+		// CNA_RenderTargetInfo's two trailing booleans are one byte each and
+		// adjacent. Swapping them is the most dangerous mutation in this file
+		// and the least visible: the bridge would report a render target as
+		// having no renderer storage exactly when its contents were lost, and
+		// as having lost contents exactly when the renderer had none. Both
+		// values are valid booleans either way.
+		name: "render-target-info-content-lost-and-renderer-available-swapped",
+		file: "abi_manifest.h",
+		old:  "    CNA_Bool is_content_lost;\n    CNA_Bool renderer_available;",
+		new:  "    CNA_Bool renderer_available;\n    CNA_Bool is_content_lost;",
+	},
+	{
 		// The decode info's seven reserved bytes hold the structure at 24
 		// bytes after a one-byte zoom flag. An eighth grows it to 32, which is
 		// what CNA would read past.

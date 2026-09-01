@@ -76,8 +76,8 @@ const gameComponentIdentity = "Microsoft.Xna.Framework.GameComponent"
 // to pass unmutated, or every mutation below would "fail" for the wrong reason.
 func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	result, measurements := identityMeasurement(t, "")
-	if len(measurements) != 3 {
-		t.Fatalf("%d identity measurements, want three composed bases", len(measurements))
+	if len(measurements) != 4 {
+		t.Fatalf("%d identity measurements, want four composed bases", len(measurements))
 	}
 	for base, measurement := range measurements {
 		if measurement.Verdict != "PASS" {
@@ -93,12 +93,13 @@ func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 8 {
 		t.Fatalf("%d identity uses, want eight: GameComponent's Dispose(bool) has two and the other six sites have one each", got)
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]; got != 1 {
-		t.Fatalf("%d forwarding links, want the one Texture is", got)
+	// Texture and Texture2D are both middle links in a four-deep chain.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]; got != 2 {
+		t.Fatalf("%d forwarding links, want the two middle links", got)
 	}
-	// DrawableGameComponent, Texture, SpriteBatch and Texture2D.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 4 {
-		t.Fatalf("%d identity bindings, want the four projected derived types", got)
+	// DrawableGameComponent, Texture, SpriteBatch, Texture2D and RenderTarget2D.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 5 {
+		t.Fatalf("%d identity bindings, want the five projected derived types", got)
 	}
 	for _, category := range []string{"BASE_MAPPING_MISMATCH"} {
 		if result.Summary[category] != 0 {

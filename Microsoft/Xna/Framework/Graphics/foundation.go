@@ -448,7 +448,7 @@ func (b *SpriteBatch) BeginByNone() error {
 // reported ErrDisposed for a nil texture and did not check the begin/end pair
 // at all, so it reported neither of the reference's two messages.
 func (b *SpriteBatch) DrawByTexture2DAndVector2AndNullableOfRectangleAndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle(
-	texture *Texture2D,
+	texture Texture2DReference,
 	position framework.Vector2,
 	sourceRectangle *framework.Rectangle,
 	color framework.Color,

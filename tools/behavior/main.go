@@ -3312,6 +3312,54 @@ func runCorpus() corpusReport {
 			zeroChain.IsDisposed(), zeroChain.ToString(), zeroChain.LevelCount()))
 
 	// ------------------------------------------------------------------
+	// Foundation 58. RenderTarget2D and CLR base substitutability. Every row
+	// is read from Microsoft.Xna.Framework.Graphics.dll.
+	// ------------------------------------------------------------------
+
+	// The three-argument constructor passes five `ldc.i4.0` to
+	// CreateRenderTarget, so every default is read off the IL rather than
+	// chosen: no mip chain, SurfaceFormat.Color, DepthFormat.None, no
+	// multisampling and RenderTargetUsage.DiscardContents.
+	var zeroTarget *graphics.RenderTarget2D
+	check("render-target2d.constructor-defaults-are-the-ils-five-zeroes", "RENDER_TARGET2D",
+		"0,0,0", fmt.Sprintf("%d,%d,%d",
+			zeroTarget.DepthStencilFormat(), zeroTarget.MultiSampleCount(), zeroTarget.RenderTargetUsage()))
+
+	// RenderTarget2D IS-A Texture2D, and in Go that is a parameter position's
+	// type rather than a relation between types. Both satisfy the interface the
+	// seven live positions take.
+	var textureReference graphics.Texture2DReference = &graphics.Texture2D{}
+	var targetReference graphics.Texture2DReference = &graphics.RenderTarget2D{}
+	check("render-target2d.substitutes-for-a-texture2d-parameter", "RENDER_TARGET2D",
+		"true,true", fmt.Sprintf("%t,%t", textureReference != nil, targetReference != nil))
+
+	// The reference sees ONE null and reports one ArgumentNullException. Go has
+	// two nil shapes at an interface position and both must reach it.
+	nullBatch := &graphics.SpriteBatch{}
+	nilInterfaceErr := nullBatch.DrawByTexture2DAndVector2AndColor(nil, framework.Vector2{},
+		framework.NewColorByInt32AndInt32AndInt32AndInt32(0, 0, 0, 255))
+	typedNilErr := nullBatch.DrawByTexture2DAndVector2AndColor(zeroTarget, framework.Vector2{},
+		framework.NewColorByInt32AndInt32AndInt32AndInt32(0, 0, 0, 255))
+	check("render-target2d.both-nil-shapes-report-the-references-one-message", "RENDER_TARGET2D",
+		"true,true", fmt.Sprintf("%t,%t",
+			nilInterfaceErr != nil && strings.Contains(nilInterfaceErr.Error(),
+				"This method does not accept null for this parameter."),
+			typedNilErr != nil && strings.Contains(typedNilErr.Error(),
+				"This method does not accept null for this parameter.")))
+
+	// The zero-value rule over the deepest chain in the profile. A CLR object
+	// is never half-constructed, so a RenderTarget2D whose composed Texture2D is
+	// absent has no reference counterpart; every inherited member answers with
+	// the zero value the field would hold rather than panicking through three
+	// forwarding links. That ToString answers with the RUNTIME type for a
+	// CONSTRUCTED render target needs a device and is measured in the Graphics
+	// package tests and in tools/native_stress instead.
+	check("render-target2d.a-zero-value-answers-through-three-links", "RENDER_TARGET2D",
+		",0,0,true,{0 0 0 0}", fmt.Sprintf("%s,%d,%d,%t,%v",
+			zeroTarget.ToString(), zeroTarget.Width(), zeroTarget.LevelCount(),
+			zeroTarget.IsDisposed(), zeroTarget.Bounds()))
+
+	// ------------------------------------------------------------------
 	// Foundation 45. GameWindow, whose behaviour is XNA-derived throughout:
 	// every row below comes from Microsoft.Xna.Framework.Game.dll's IL, and
 	// none of it comes from what CNA does.

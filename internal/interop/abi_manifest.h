@@ -244,6 +244,40 @@ typedef struct CNA_Texture2DDecodeInfo {
 } CNA_Texture2DDecodeInfo;
 #endif
 
+#ifndef CNA_C_RENDER_TARGET_H
+typedef uint32_t CNA_DepthFormat;
+typedef uint32_t CNA_RenderTargetUsage;
+typedef uint32_t CNA_RenderTargetKind;
+typedef struct CNA_RenderTarget2DCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t width;
+    uint32_t height;
+    CNA_Bool mip_map;
+    uint8_t reserved0[3];
+    CNA_SurfaceFormat format;
+    CNA_DepthFormat depth_format;
+    int32_t multi_sample_count;
+    CNA_RenderTargetUsage usage;
+    uint32_t reserved1;
+} CNA_RenderTarget2DCreateInfo;
+typedef struct CNA_RenderTargetInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_RenderTargetKind kind;
+    uint32_t width;
+    uint32_t height;
+    uint32_t level_count;
+    CNA_SurfaceFormat format;
+    CNA_DepthFormat depth_format;
+    int32_t multi_sample_count;
+    CNA_RenderTargetUsage usage;
+    CNA_Bool is_content_lost;
+    CNA_Bool renderer_available;
+    uint8_t reserved[2];
+} CNA_RenderTargetInfo;
+#endif
+
 #ifndef CNA_C_INPUT_H
 typedef struct CNA_KeyboardState {
     uint32_t struct_size;
@@ -298,6 +332,10 @@ typedef CNA_Result (*cna_graphics_device_manager_end_draw_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_get_viewport_fn)(CNA_Handle, CNA_Viewport*);
 typedef CNA_Result (*cna_graphics_device_clear_rgba_fn)(CNA_Handle, float, float, float, float);
+typedef CNA_Result (*cna_render_target2d_create_fn)(CNA_Handle, const CNA_RenderTarget2DCreateInfo*, CNA_Handle*);
+typedef CNA_Result (*cna_render_target_get_info_fn)(CNA_Handle, CNA_RenderTargetInfo*);
+typedef CNA_Result (*cna_render_target_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_graphics_device_set_render_target2d_fn)(CNA_Handle, CNA_Handle);
 typedef CNA_Result (*cna_texture2d_create_from_encoded_memory_fn)(CNA_Handle, const uint8_t*, uint64_t, const CNA_Texture2DDecodeInfo*, CNA_Handle*);
 typedef CNA_Result (*cna_texture2d_get_info_fn)(CNA_Handle, CNA_Texture2DInfo*);
 typedef CNA_Result (*cna_texture2d_destroy_fn)(CNA_Handle);
@@ -394,6 +432,10 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \
+    X(cna_render_target2d_create) \
+    X(cna_render_target_get_info) \
+    X(cna_render_target_destroy) \
+    X(cna_graphics_device_set_render_target2d) \
     X(cna_texture2d_create_from_encoded_memory) \
     X(cna_texture2d_get_info) \
     X(cna_texture2d_destroy) \

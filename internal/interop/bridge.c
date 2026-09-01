@@ -680,6 +680,71 @@ CnaGoResult cna_go_graphics_device_get_status(CnaGoHandle device, uint32_t* out_
     return api.cna_graphics_device_get_status(device, out_status);
 }
 
+CnaGoResult cna_go_render_target2d_create(
+    CnaGoHandle device,
+    uint32_t width,
+    uint32_t height,
+    uint8_t mip_map,
+    uint32_t format,
+    uint32_t depth_format,
+    int32_t multi_sample_count,
+    uint32_t usage,
+    CnaGoHandle* out_render_target) {
+    CNA_RenderTarget2DCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.width = width;
+    info.height = height;
+    info.mip_map = (CNA_Bool)(mip_map != 0);
+    info.format = format;
+    info.depth_format = depth_format;
+    info.multi_sample_count = multi_sample_count;
+    info.usage = usage;
+    return api.cna_render_target2d_create(device, &info, out_render_target);
+}
+
+CnaGoResult cna_go_render_target_get_info(
+    CnaGoHandle render_target,
+    uint32_t* out_kind,
+    uint32_t* out_width,
+    uint32_t* out_height,
+    uint32_t* out_level_count,
+    uint32_t* out_format,
+    uint32_t* out_depth_format,
+    int32_t* out_multi_sample_count,
+    uint32_t* out_usage,
+    uint8_t* out_is_content_lost,
+    uint8_t* out_renderer_available) {
+    CNA_RenderTargetInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    const CNA_Result result = api.cna_render_target_get_info(render_target, &info);
+    if (result != 0) {
+        return result;
+    }
+    *out_kind = info.kind;
+    *out_width = info.width;
+    *out_height = info.height;
+    *out_level_count = info.level_count;
+    *out_format = info.format;
+    *out_depth_format = info.depth_format;
+    *out_multi_sample_count = info.multi_sample_count;
+    *out_usage = info.usage;
+    *out_is_content_lost = (uint8_t)(info.is_content_lost != 0);
+    *out_renderer_available = (uint8_t)(info.renderer_available != 0);
+    return result;
+}
+
+CnaGoResult cna_go_render_target_destroy(CnaGoHandle render_target) {
+    return api.cna_render_target_destroy(render_target);
+}
+
+CnaGoResult cna_go_graphics_device_set_render_target2d(CnaGoHandle device, CnaGoHandle render_target) {
+    return api.cna_graphics_device_set_render_target2d(device, render_target);
+}
+
 CnaGoResult cna_go_graphics_device_get_is_disposed(CnaGoHandle device, uint8_t* out_is_disposed) {
     return api.cna_graphics_device_get_is_disposed(device, out_is_disposed);
 }

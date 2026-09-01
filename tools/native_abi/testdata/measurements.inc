@@ -198,3 +198,35 @@ CNA_GO_MEASURE(width_CNA_KeyboardState_pressed_key_words, CNA_GO_FIELD_WIDTH(CNA
 CNA_GO_MEASURE(width_CNA_KeyboardState_pressed_key_word, CNA_GO_FIELD_WIDTH(CNA_KeyboardState, pressed_key_words[0]))
 
 #undef CNA_GO_FIELD_WIDTH
+
+// Foundation 58. The two render-target structures. bridge.c FILLS the create
+// info field by field and READS every field of the info structure out, so every
+// offset below is load-bearing: a field that moved would be written to or read
+// from the wrong bytes with nothing on either side reporting it.
+//
+// The reserved arrays are measured through their neighbours' offsets rather
+// than directly, which is what makes them evidence: `reserved0[3]` sits between
+// a CNA_Bool and a CNA_SurfaceFormat, so dropping it would move `format` and
+// dropping `reserved1` would change the size.
+CNA_GO_MEASURE(sizeof_CNA_RenderTarget2DCreateInfo, sizeof(CNA_RenderTarget2DCreateInfo))
+CNA_GO_MEASURE(alignof_CNA_RenderTarget2DCreateInfo, _Alignof(CNA_RenderTarget2DCreateInfo))
+CNA_GO_MEASURE(offsetof_CNA_RenderTarget2DCreateInfo_width, offsetof(CNA_RenderTarget2DCreateInfo, width))
+CNA_GO_MEASURE(offsetof_CNA_RenderTarget2DCreateInfo_height, offsetof(CNA_RenderTarget2DCreateInfo, height))
+CNA_GO_MEASURE(offsetof_CNA_RenderTarget2DCreateInfo_mip_map, offsetof(CNA_RenderTarget2DCreateInfo, mip_map))
+CNA_GO_MEASURE(offsetof_CNA_RenderTarget2DCreateInfo_format, offsetof(CNA_RenderTarget2DCreateInfo, format))
+CNA_GO_MEASURE(offsetof_CNA_RenderTarget2DCreateInfo_depth_format, offsetof(CNA_RenderTarget2DCreateInfo, depth_format))
+CNA_GO_MEASURE(offsetof_CNA_RenderTarget2DCreateInfo_multi_sample_count, offsetof(CNA_RenderTarget2DCreateInfo, multi_sample_count))
+CNA_GO_MEASURE(offsetof_CNA_RenderTarget2DCreateInfo_usage, offsetof(CNA_RenderTarget2DCreateInfo, usage))
+
+CNA_GO_MEASURE(sizeof_CNA_RenderTargetInfo, sizeof(CNA_RenderTargetInfo))
+CNA_GO_MEASURE(alignof_CNA_RenderTargetInfo, _Alignof(CNA_RenderTargetInfo))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_kind, offsetof(CNA_RenderTargetInfo, kind))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_width, offsetof(CNA_RenderTargetInfo, width))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_height, offsetof(CNA_RenderTargetInfo, height))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_level_count, offsetof(CNA_RenderTargetInfo, level_count))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_format, offsetof(CNA_RenderTargetInfo, format))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_depth_format, offsetof(CNA_RenderTargetInfo, depth_format))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_multi_sample_count, offsetof(CNA_RenderTargetInfo, multi_sample_count))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_usage, offsetof(CNA_RenderTargetInfo, usage))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_is_content_lost, offsetof(CNA_RenderTargetInfo, is_content_lost))
+CNA_GO_MEASURE(offsetof_CNA_RenderTargetInfo_renderer_available, offsetof(CNA_RenderTargetInfo, renderer_available))

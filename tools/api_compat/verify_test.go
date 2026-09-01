@@ -56,7 +56,7 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// with a CLR-signature one, and GameComponent::Dispose() -- a public slot
 	// DrawableGameComponent never occupies, because what it overrides is the
 	// PROTECTED Dispose(bool) -- stopped being dropped.
-	if surface.XNAInheritedCLRMembers != 119 || surface.XNAInheritedProjections != 171 {
+	if surface.XNAInheritedCLRMembers != 133 || surface.XNAInheritedProjections != 188 {
 		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
 	}
 	// The subtraction the exclusion performs is measured rather than implied:
@@ -66,7 +66,7 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	if surface.XNAInheritedOverriddenMembers != 3 {
 		t.Fatalf("XNA inherited overridden count = %d", surface.XNAInheritedOverriddenMembers)
 	}
-	if surface.ExpectedGoMembers != 3426 {
+	if surface.ExpectedGoMembers != 3443 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -4507,8 +4507,8 @@ func TestEventProjectionIsMeasuredExactly(t *testing.T) {
 	if declaredEvents != 49 || declaredAccessors != 98 {
 		t.Fatalf("XNA-declared events = %d producing %d accessors, want 49 and 98", declaredEvents, declaredAccessors)
 	}
-	if inheritedEvents != 20 || inheritedAccessors != 40 {
-		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 20 and 40", inheritedEvents, inheritedAccessors)
+	if inheritedEvents != 21 || inheritedAccessors != 42 {
+		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 21 and 42", inheritedEvents, inheritedAccessors)
 	}
 	if events != declaredEvents+inheritedEvents || accessors != declaredAccessors+inheritedAccessors {
 		t.Fatalf("event partition = %d/%d, walk found %d/%d", events, accessors,
@@ -7863,33 +7863,39 @@ func TestTheThreeFamiliesWithNoSubstitutabilityRequirement(t *testing.T) {
 	}
 }
 
-// TestNoBaseFamilyHasALiveSubstitutabilityRequirementYet records the state the
-// whole profile is in, so the day it changes is the day this test says so.
+// TestTexture2DIsTheOneLiveSubstitutabilityRequirement records the state the
+// profile reached, and the day it changed.
 //
-// A LIVE requirement needs both ends: a projected carrier naming the base, and
-// a projected derived type. Texture2D is the closest -- 17 positions, nine of
-// them on SpriteBatch, which CNA-Go projects -- and it is still LATENT only
-// because its one derived type, RenderTarget2D, is not projected. Projecting
-// RenderTarget2D while SpriteBatch.Draw takes a Texture2D is exactly what would
-// make it live.
-func TestNoBaseFamilyHasALiveSubstitutabilityRequirementYet(t *testing.T) {
+// Foundation 40 measured every family LATENT or NONE and concluded that private
+// composition was exactly sufficient, because no derived type was projected.
+// Foundation 58 projected RenderTarget2D, and Texture2D went LIVE: seventeen
+// public positions name it, nine on carriers CNA-Go projects, seven of which
+// are SpriteBatch.Draw's `texture`. That is the whole justification for
+// Texture2DReference, and it is asserted rather than described.
+//
+// Every other family is still LATENT or NONE, and the registry must agree with
+// the measurement in both directions -- which measureXNABaseSubstitutability
+// itself now checks.
+func TestTexture2DIsTheOneLiveSubstitutabilityRequirement(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LIVE"]; got != 0 {
-		var live []string
-		for _, measurement := range result.XNABaseSubstitutability {
-			if measurement.Requirement == "LIVE" {
-				live = append(live, measurement.Base)
-			}
+	var live []string
+	for _, measurement := range result.XNABaseSubstitutability {
+		if measurement.Requirement == "LIVE" {
+			live = append(live, measurement.Base)
 		}
-		t.Fatalf("%d base families have a live substitutability requirement: %v. Private composition is no longer "+
-			"sufficient for them, and the public reference abstraction that has been deferred must now be decided", got, live)
+	}
+	if len(live) != 1 || live[0] != "Microsoft.Xna.Framework.Graphics.Texture2D" {
+		t.Fatalf("live substitutability families = %v, want exactly Texture2D", live)
+	}
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 1 {
+		t.Fatalf("%d registered substitutable bases, want the one live family", got)
 	}
 	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_NONE"]; got != 3 {
 		t.Fatalf("%d families have no substitutability requirement, want 3", got)
 	}
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 9 {
-		t.Fatalf("%d families have a latent requirement, want 9", got)
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 8 {
+		t.Fatalf("%d families have a latent requirement, want 8", got)
 	}
 	if got := result.Summary["XNA_BASE_TYPED_SIGNATURE_POSITIONS"]; got != 51 {
 		t.Fatalf("%d base-typed public signature positions, want 51", got)
@@ -8004,19 +8010,20 @@ func xnaCompositionFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 // followed in Foundation 56, and their substitutability requirement is asserted
 // separately: GraphicsResource is also NONE, and Texture's derived types are
 // what the RenderTarget2D question will turn on.
-func TestTheComposedRelationshipsAreTheThreeMeasuredFamilies(t *testing.T) {
+func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 3 {
-		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 3", got)
+	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 4 {
+		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 4", got)
 	}
-	// Two for GameComponent, eleven for GraphicsResource, three for Texture.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 16 {
-		t.Fatalf("the composed relationships cover %d derived types, want 16", got)
+	// Two for GameComponent, eleven for GraphicsResource, three for Texture and
+	// one for Texture2D.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 17 {
+		t.Fatalf("the composed relationships cover %d derived types, want 17", got)
 	}
-	// DrawableGameComponent, SpriteBatch, Texture and Texture2D.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 4 {
-		t.Fatalf("%d projected derived types, want 4", got)
+	// DrawableGameComponent, SpriteBatch, Texture, Texture2D and RenderTarget2D.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 5 {
+		t.Fatalf("%d projected derived types, want 5", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.
@@ -8029,14 +8036,14 @@ func TestTheComposedRelationshipsAreTheThreeMeasuredFamilies(t *testing.T) {
 				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
 		}
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 119 {
-		t.Fatalf("%d inherited public CLR members, want 119", got)
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 133 {
+		t.Fatalf("%d inherited public CLR members, want 133", got)
 	}
-	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 171 {
-		t.Fatalf("%d inherited Go projections, want 171", got)
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 188 {
+		t.Fatalf("%d inherited Go projections, want 188", got)
 	}
-	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 171 {
-		t.Fatalf("%d attributed inherited members, want every one of the 171", got)
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 188 {
+		t.Fatalf("%d attributed inherited members, want every one of the 188", got)
 	}
 	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"]; got != 3 {
 		t.Fatalf("%d overridden inherited members, want 3", got)
@@ -8425,7 +8432,11 @@ func TestAGenericInstanceMethodProjectsAsAPackageLevelFunction(t *testing.T) {
 	if member.GoKind != "func" || member.Receiver != "" {
 		t.Fatalf("kind %q receiver %q, want a package-level func", member.GoKind, member.Receiver)
 	}
-	if len(member.Parameters) == 0 || member.Parameters[0] != "*Texture2D" {
+	// The receiver-first parameter is a PARAMETER POSITION whose CLR type is
+	// Texture2D, so Foundation 58's substitutable-base rule widens it: a CLR
+	// `renderTarget.SetData(...)` is legal and the function that stands in for
+	// that call must accept a RenderTarget2D.
+	if len(member.Parameters) == 0 || member.Parameters[0] != "Texture2DReference" {
 		t.Fatalf("parameters %v, want the receiver first", member.Parameters)
 	}
 	if member.Parameters[1] != "[]T" {

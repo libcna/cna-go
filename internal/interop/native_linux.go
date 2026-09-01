@@ -325,6 +325,48 @@ func nativeTextureInfo(texture uint64) (TextureInfo, error) {
 	return TextureInfo{Width: uint32(width), Height: uint32(height), Levels: uint32(levels), Format: uint32(format)}, resultError("cna_texture2d_get_info", code)
 }
 
+// The four render-target routes. CNA's create and info structures are
+// VERSIONED, so the bridge fills struct_size and struct_version on the C side
+// and flattens every other field into scalars: no CNA structure crosses cgo,
+// which is the same rule the texture and sprite families already follow.
+
+func nativeRenderTarget2DCreate(device uint64, width, height uint32, mipMap bool, format, depthFormat uint32, multiSampleCount int32, usage uint32) (uint64, error) {
+	var handle C.CnaGoHandle
+	var mip C.uint8_t
+	if mipMap {
+		mip = 1
+	}
+	code := uint32(C.cna_go_render_target2d_create(
+		C.CnaGoHandle(device), C.uint32_t(width), C.uint32_t(height), mip,
+		C.uint32_t(format), C.uint32_t(depthFormat), C.int32_t(multiSampleCount), C.uint32_t(usage), &handle))
+	return uint64(handle), resultError("cna_render_target2d_create", code)
+}
+
+func nativeRenderTargetInfo(renderTarget uint64) (RenderTargetInfo, error) {
+	var kind, width, height, levelCount, format, depthFormat, usage C.uint32_t
+	var multiSampleCount C.int32_t
+	var contentLost, rendererAvailable C.uint8_t
+	code := uint32(C.cna_go_render_target_get_info(
+		C.CnaGoHandle(renderTarget), &kind, &width, &height, &levelCount,
+		&format, &depthFormat, &multiSampleCount, &usage, &contentLost, &rendererAvailable))
+	return RenderTargetInfo{
+		Kind: uint32(kind), Width: uint32(width), Height: uint32(height),
+		LevelCount: uint32(levelCount), Format: uint32(format), DepthFormat: uint32(depthFormat),
+		MultiSampleCount: int32(multiSampleCount), Usage: uint32(usage),
+		IsContentLost: contentLost != 0, RendererAvailable: rendererAvailable != 0,
+	}, resultError("cna_render_target_get_info", code)
+}
+
+func nativeRenderTargetDestroy(renderTarget uint64) error {
+	return resultError("cna_render_target_destroy",
+		uint32(C.cna_go_render_target_destroy(C.CnaGoHandle(renderTarget))))
+}
+
+func nativeGraphicsDeviceSetRenderTarget2D(device, renderTarget uint64) error {
+	return resultError("cna_graphics_device_set_render_target2d",
+		uint32(C.cna_go_graphics_device_set_render_target2d(C.CnaGoHandle(device), C.CnaGoHandle(renderTarget))))
+}
+
 func nativeTextureDestroy(texture uint64) error {
 	return resultError("cna_texture2d_destroy", uint32(C.cna_go_texture2d_destroy(C.CnaGoHandle(texture))))
 }

@@ -149,6 +149,20 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 			"Microsoft.Xna.Framework.Graphics.Texture2D": "newTexture2D",
 		},
 	},
+
+	// Texture2D is the second middle link, and the chain is now four deep:
+	// RenderTarget2D -> Texture2D -> Texture -> GraphicsResource. Every link but
+	// the root forwards, so a RenderTarget2D's ToString answers with ITS name
+	// after three hops.
+	"Microsoft.Xna.Framework.Graphics.Texture2D": {
+		Package:    modulePath + "/Microsoft/Xna/Framework/Graphics",
+		GoBase:     "Texture2D",
+		BindMember: "bindDerived",
+		ForwardsTo: "Texture",
+		DerivedConstructors: map[string]string{
+			"Microsoft.Xna.Framework.Graphics.RenderTarget2D": "NewRenderTarget2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormatAndDepthFormatAndInt32AndRenderTargetUsage",
+		},
+	},
 }
 
 // measureXNACompositionIdentity holds the five claims above. It parses the

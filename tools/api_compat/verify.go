@@ -122,6 +122,7 @@ func init() {
 }
 
 func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries int, mode string, contractHash, mappingHash string) report {
+	buildSubstitutionAdapterKeys(expected)
 	result := report{
 		SchemaVersion: 1,
 		Profile:       "XNA 4.0 Windows runtime",
@@ -162,6 +163,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["XNA_COMPOSED_IDENTITY_SITES"] = 0
 	result.Summary["XNA_COMPOSED_IDENTITY_USES"] = 0
 	result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"] = 0
+	result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"] = 0
 	result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"] = 0
 	result.Summary["XNA_COMPOSED_DERIVED_TYPES"] = 0
 	result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"] = 0
@@ -2102,10 +2104,19 @@ func inspectLeakText(result *report, goIdentity, text string) {
 }
 
 func isAdapterType(key symbolKey, actual *actualType) bool {
-	return key.Package == modulePath+"/Microsoft/Xna/Framework" && adapterTypes[key.Name] && actual != nil
+	if actual == nil {
+		return false
+	}
+	if key.Package == modulePath+"/Microsoft/Xna/Framework" && adapterTypes[key.Name] {
+		return true
+	}
+	return substitutionAdapterKeys[key]
 }
 
 func isAdapterMember(key symbolKey) bool {
+	if substitutionAdapterKeys[symbolKey{Package: key.Package, Name: key.Receiver}] {
+		return true
+	}
 	if key.Package != modulePath+"/Microsoft/Xna/Framework" {
 		return false
 	}
@@ -2113,6 +2124,29 @@ func isAdapterMember(key symbolKey) bool {
 		return true
 	}
 	return key.Receiver == "" && adapterFunctions[key.Name]
+}
+
+// substitutionAdapterKeys are the reference interfaces the substitutable-base
+// rule projects, keyed by the exact package and name they must live in.
+//
+// They are DERIVED from substitutableBases rather than listed, so the interface
+// a parameter position is projected to and the interface admitted as a type are
+// the same fact stated once. The package is the base's own, because that is
+// where the base and every derived type already live.
+//
+// The interface has no exported member -- its only method is unexported, which
+// is what stops a consumer implementing it -- so admitting it admits no surface.
+var substitutionAdapterKeys = map[symbolKey]bool{}
+
+func buildSubstitutionAdapterKeys(expected *expectedSurface) {
+	substitutionAdapterKeys = map[symbolKey]bool{}
+	for identity, name := range substitutableBases {
+		base := expected.typeForXNA(identity)
+		if base == nil {
+			continue
+		}
+		substitutionAdapterKeys[symbolKey{Package: base.PackagePath, Name: name}] = true
+	}
 }
 
 func addDiagnostic(result *report, item diagnostic) {
@@ -4590,6 +4624,32 @@ func measureXNABaseSubstitutability(result *report, expected *expectedSurface, a
 		}
 		result.Summary["XNA_BASE_SUBSTITUTABILITY_"+measurement.Requirement]++
 
+		// # The substitutable-parameter registry and the measurement must agree
+		//
+		// substitutableBases decides whether a PARAMETER position typed as this
+		// base projects to the reference interface or to the concrete pointer.
+		// It is hand-written; this measurement is derived from the pinned
+		// contract and the projected surface. A base that becomes LIVE and is
+		// not registered would leave seven parameter positions no derived value
+		// can reach; one that is registered and is not LIVE would widen a
+		// signature for a substitution nothing can perform.
+		_, registered := substitutableBases[base]
+		switch {
+		case measurement.Requirement == "LIVE" && !registered:
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: base,
+				Message: "substitutability is LIVE and the base is not in substitutableBases, so its parameter positions still take the concrete pointer and no derived value can reach them",
+			})
+			measurement.Verdict = "FAIL"
+		case measurement.Requirement != "LIVE" && registered:
+			addDiagnostic(result, diagnostic{
+				Category: "BASE_MAPPING_MISMATCH", XNA: base,
+				Message: fmt.Sprintf("the base is in substitutableBases and its measured requirement is %s, so a parameter position is widened for a substitution nothing can perform", measurement.Requirement),
+			})
+			measurement.Verdict = "FAIL"
+		}
+		result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"] += boolToInt(registered)
+
 		// The registry and the contract must agree about which relationships
 		// exist. The registry is hand-written and the inventory is derived, so
 		// comparing them is what stops one from quietly going stale.
@@ -4827,4 +4887,14 @@ func uniqueStrings(values []string) []string {
 		out = append(out, value)
 	}
 	return out
+}
+
+// boolToInt is the one-line counter helper the substitutability cross-check
+// uses, so a registered base is a number in the report rather than a fact only
+// the source states.
+func boolToInt(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
 }

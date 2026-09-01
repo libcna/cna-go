@@ -23,6 +23,15 @@ import (
 // identity the CLR reads off the object header.
 func (t *Texture2D) clrTypeName() string { return "Microsoft.Xna.Framework.Graphics.Texture2D" }
 
+// bindDerived forwards the CLR `this` up the chain. Texture2D holds no copy of
+// its own: there is one outermost object, and one place that answers with it.
+func (t *Texture2D) bindDerived(derived graphicsResourceObject) {
+	if t == nil || t.texture == nil {
+		return
+	}
+	t.texture.bindDerived(derived)
+}
+
 // nativeResource is the one owned CNA handle, reached through the chain. It is
 // unexported and never escapes the package.
 func (t *Texture2D) nativeResource() *interop.Resource {

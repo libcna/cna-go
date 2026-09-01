@@ -238,6 +238,34 @@ CnaGoResult cna_go_graphics_device_set_viewport(CnaGoHandle device, int32_t x, i
 CnaGoResult cna_go_graphics_device_get_graphics_profile(CnaGoHandle device, uint32_t* out_profile);
 CnaGoResult cna_go_graphics_device_get_status(CnaGoHandle device, uint32_t* out_status);
 CnaGoResult cna_go_graphics_device_get_is_disposed(CnaGoHandle device, uint8_t* out_is_disposed);
+
+CnaGoResult cna_go_render_target2d_create(
+    CnaGoHandle device,
+    uint32_t width,
+    uint32_t height,
+    uint8_t mip_map,
+    uint32_t format,
+    uint32_t depth_format,
+    int32_t multi_sample_count,
+    uint32_t usage,
+    CnaGoHandle* out_render_target);
+
+CnaGoResult cna_go_render_target_get_info(
+    CnaGoHandle render_target,
+    uint32_t* out_kind,
+    uint32_t* out_width,
+    uint32_t* out_height,
+    uint32_t* out_level_count,
+    uint32_t* out_format,
+    uint32_t* out_depth_format,
+    int32_t* out_multi_sample_count,
+    uint32_t* out_usage,
+    uint8_t* out_is_content_lost,
+    uint8_t* out_renderer_available);
+
+CnaGoResult cna_go_render_target_destroy(CnaGoHandle render_target);
+
+CnaGoResult cna_go_graphics_device_set_render_target2d(CnaGoHandle device, CnaGoHandle render_target);
 CnaGoResult cna_go_graphics_device_clear_options(CnaGoHandle device, uint32_t options, uint8_t r, uint8_t g, uint8_t b, uint8_t a, float depth, int32_t stencil);
 CnaGoResult cna_go_graphics_device_present(CnaGoHandle device);
 CnaGoResult cna_go_graphics_device_get_display_mode(CnaGoHandle device, int32_t* out_width, int32_t* out_height, float* out_aspect_ratio, uint32_t* out_format);

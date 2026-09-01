@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 694,
-    "ASSERTIONS": 694,
+    "OBSERVATIONS": 698,
+    "ASSERTIONS": 698,
     "FAILURES": 0
   },
   "observations": [
@@ -5485,6 +5485,38 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": ",\u003cnil\u003e,\u003cnil\u003e,true,,0",
       "actual": ",\u003cnil\u003e,\u003cnil\u003e,true,,0",
+      "passed": true
+    },
+    {
+      "id": "render-target2d.constructor-defaults-are-the-ils-five-zeroes",
+      "group": "RENDER_TARGET2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "0,0,0",
+      "actual": "0,0,0",
+      "passed": true
+    },
+    {
+      "id": "render-target2d.substitutes-for-a-texture2d-parameter",
+      "group": "RENDER_TARGET2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "render-target2d.both-nil-shapes-report-the-references-one-message",
+      "group": "RENDER_TARGET2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "render-target2d.a-zero-value-answers-through-three-links",
+      "group": "RENDER_TARGET2D",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": ",0,0,true,{0 0 0 0}",
+      "actual": ",0,0,true,{0 0 0 0}",
       "passed": true
     },
     {

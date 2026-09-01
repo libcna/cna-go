@@ -986,6 +986,28 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|Height": true,
 		"property-get|Bounds": true,
 	},
+	// Foundation 58. RenderTarget2D's three description properties are each two
+	// field reads through the helper the constructor built:
+	//
+	//	get_DepthStencilFormat  ldfld helper; ldfld RenderTargetHelper::depthFormat
+	//	get_MultiSampleCount    ldfld helper; ldfld RenderTargetHelper::multiSampleCount
+	//	get_RenderTargetUsage   ldfld helper; ldfld RenderTargetHelper::usage
+	//
+	// Twelve bytes each, no validation, no device and no throw site. The values
+	// are what GraphicsAdapter::QueryFormat SELECTED, stored once at
+	// construction, so a synthetic error would be an invented failure mode.
+	//
+	// IsContentLost is deliberately NOT here. Its body is
+	//
+	//	if (!_contentLost) _contentLost = _parent.IsDeviceLost;
+	//
+	// and GraphicsDevice::get_IsDeviceLost reaches D3D. CNA-Go asks CNA the
+	// same question, and that call can be refused.
+	"Microsoft.Xna.Framework.Graphics.RenderTarget2D": {
+		"property-get|DepthStencilFormat": true,
+		"property-get|MultiSampleCount":   true,
+		"property-get|RenderTargetUsage":  true,
+	},
 }
 
 func buildExpected(c contract) (*expectedSurface, error) {
@@ -1162,7 +1184,12 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 	xna := memberIdentity(t.Name, m)
 	base := &expectedMember{XNA: xna, Owner: t.Name, SourceKind: m.Kind, SourceAccess: m.Access, PackagePath: owner.PackagePath, Receiver: owner.GoName}
 	parameters, outResults, hasDirection := mapParametersWithGenerics(s, byIdentity, owner, m.GenericParameters, m.Parameters)
-	base.Parameters = applyStreamDirection(xna, parameters)
+	// The direction registry is keyed by the DECLARING member's identity, for
+	// the same reason fallibility is: which way a stream is used is a property
+	// of the body, and an inherited SaveAsPng writes exactly as the declared one
+	// does. Keying it by the derived identity would silently hand a
+	// RenderTarget2D an io.Reader it cannot write to.
+	base.Parameters = applyStreamDirection(memberIdentity(declaring.Name, m), parameters)
 	base.Results = mapReturn(s, byIdentity, owner, m.ReturnType)
 	base.Results = append(base.Results, outResults...)
 	if isFallible(declaring, m, "") {
@@ -1302,10 +1329,21 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 		// in genericParameters. Before Foundation 54 nothing resolved it and
 		// the suffix builder produced `SliceOf0`, a name for a position rather
 		// than a type.
+		//
+		// The receiver-first parameter is a PARAMETER POSITION whose CLR type is
+		// the owner, so the substitutable-base rule applies to it: a CLR
+		// `renderTarget.SetData(...)` is legal, and the Go function that stands
+		// in for that call must accept a RenderTarget2D. Foundation 58 is what
+		// made that reachable -- before it, no derived type was projected and
+		// the concrete pointer was exactly sufficient.
 		if len(m.GenericParameters) > 0 && !m.Static {
 			base.Receiver = ""
 			base.GoKind = "func"
-			base.Parameters = append([]string{"*" + owner.GoName}, base.Parameters...)
+			receiver := "*" + owner.GoName
+			if name, substitutable := substitutableBases[declaring.Name]; substitutable {
+				receiver = name
+			}
+			base.Parameters = append([]string{receiver}, base.Parameters...)
 			base.GenericMethod = true
 		}
 		if op, ok := operatorNames[m.Name]; ok {
@@ -1416,9 +1454,69 @@ func mapParametersWithGenerics(s *expectedSurface, byIdentity map[string]*contra
 			mapped = "*" + strings.TrimPrefix(mapped, "*")
 			hasDirection = true
 		}
-		inputs = append(inputs, mapped)
+		inputs = append(inputs, applySubstitutableParameter(s, owner, p.Type, mapped))
 	}
 	return inputs, outputs, hasDirection
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 58 — CLR base substitutability at a Go parameter position.
+// ---------------------------------------------------------------------------
+
+// substitutableBases are the CLR classes whose PARAMETER positions accept a
+// derived value, and therefore project to a reference interface rather than to
+// the concrete pointer.
+//
+// # Why a parameter position and nothing else
+//
+// In C# a parameter typed `Texture2D` accepts a `RenderTarget2D`, because
+// RenderTarget2D IS-A Texture2D. Go has no such relation and CNA-Go refuses to
+// fake one with embedding, so a `*Texture2D` parameter would be a position no
+// derived value can reach -- and there are SEVEN of them, all
+// SpriteBatch.Draw's `texture`.
+//
+// A RETURN keeps the concrete type. `Texture2D::FromStream` returns a Texture2D
+// and a caller uses every Texture2D member on it; returning an interface would
+// take those members away to solve a problem returns do not have. The same
+// holds for a property getter, whose value is read rather than supplied.
+//
+// # The mechanism
+//
+// One exported interface per base, `<GoName>Reference`, with an UNEXPORTED
+// method. Exported so a consumer can name the parameter type; unexported method
+// so only this module can satisfy it -- a consumer cannot hand SpriteBatch an
+// object CNA never made.
+//
+// The forbidden-accessor rule is untouched. There is still no public Base,
+// Parent or AsTexture2D: the interface is a position's type, not a conversion a
+// consumer performs, and a call site reads exactly as the C# one does.
+//
+// # It is registered, not inferred
+//
+// A base enters this table only when the substitutability measurement reports
+// its requirement as LIVE -- positions on projected carriers AND at least one
+// projected derived type. measureXNABaseSubstitutability cross-checks the two,
+// so a base that stops being live, or one that becomes live and is not
+// recorded, is a diagnostic rather than a silent signature.
+var substitutableBases = map[string]string{
+	"Microsoft.Xna.Framework.Graphics.Texture2D": "Texture2DReference",
+}
+
+// applySubstitutableParameter rewrites one mapped parameter type when its CLR
+// type is a registered substitutable base.
+func applySubstitutableParameter(s *expectedSurface, owner *expectedType, clrType, mapped string) string {
+	name, registered := substitutableBases[clrType]
+	if !registered {
+		return mapped
+	}
+	base := s.typeForXNA(clrType)
+	if base == nil {
+		return mapped
+	}
+	if base.PackagePath == owner.PackagePath {
+		return name
+	}
+	return canonicalPackageQualifier(base.PackagePath) + "." + name
 }
 
 // writtenStreamParameters names every CLR member whose System.IO.Stream
@@ -2712,9 +2810,12 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	"Microsoft.Xna.Framework.Graphics.Texture": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
 		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and ONE of the three derived types is complete. Texture3D and TextureCube need CNA volume and cube texture routes, which the pinned 0.21.0 ABI does not expose to this binding yet"},
 	}},
-	"Microsoft.Xna.Framework.Graphics.Texture2D": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "SUBSYSTEM", Detail: "Texture2D's own base chain is composed and its surface is complete, so inheritance no longer blocks RenderTarget2D. What does is CNA: a render target needs creation, binding and unbinding routes, and the substitutability question a derived texture raises where the profile names Texture2D in a public signature"},
+	// Foundation 58 composed it, and it is the one composed base whose
+	// substitutability requirement is LIVE: seven public positions name
+	// Texture2D and a projected type now derives from it, so the parameter
+	// positions project to Texture2DReference rather than to *Texture2D.
+	"Microsoft.Xna.Framework.Graphics.Texture2D": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
+		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and its one derived type, RenderTarget2D, is complete. Binding a render target needs a renderer with real off-screen storage, which the qualified HEADLESS artifact does not have and the qualified SOFTWARE artifact does"},
 	}},
 	"Microsoft.Xna.Framework.Graphics.TextureCube": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,
@@ -3462,6 +3563,9 @@ func inheritedXNAPublicMembers(byIdentity map[string]*contractType, t contractTy
 			if !inheritedMemberIsPublic(m) {
 				continue
 			}
+			if inheritedMemberProjectsToPackageFunction(m) {
+				continue
+			}
 			signature := clrMemberSignature(m)
 			if occupied[signature] {
 				continue
@@ -3471,6 +3575,33 @@ func inheritedXNAPublicMembers(byIdentity map[string]*contractType, t contractTy
 		}
 		current = *base
 	}
+}
+
+// inheritedMemberProjectsToPackageFunction reports whether an inherited member's
+// Go projection is a PACKAGE-LEVEL FUNCTION rather than a method on the derived
+// type -- and is therefore already reachable from a derived value without being
+// projected a second time.
+//
+// Two shapes qualify, and both name their DECLARING type in the Go identity:
+//
+//	a static method       Texture2DFromStreamByGraphicsDeviceAndStream
+//	a generic instance    Texture2DSetDataBySliceOfT(Texture2DReference, []T)
+//
+// In CLR, `RenderTarget2D.FromStream(...)` and `Texture2D.FromStream(...)` are
+// the SAME member reached through two names, and the settled static rule spells
+// a static by its declaring type -- so there is no second Go identity to
+// project. `renderTarget.SetData(...)` is likewise the same member, and the
+// generic-method rule already turned it into a function whose first parameter
+// is the receiver; the substitutable-base rule widens that parameter, so one
+// function serves every derived value.
+//
+// Projecting them again would be duplication with a different name for the same
+// member, which the overload and static rules exist to prevent.
+func inheritedMemberProjectsToPackageFunction(m contractMember) bool {
+	if m.Kind != "method" {
+		return false
+	}
+	return m.Static || len(m.GenericParameters) > 0
 }
 
 // xnaOverriddenInheritedCount is how many PUBLIC members of a COMPOSED XNA base

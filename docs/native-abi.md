@@ -114,6 +114,27 @@ native graphics execution but not visible output. Its audio backend is SDL3
 rather than the NULL backend Foundation 1 used, so audio is no longer blocked
 by the artifact — only by CNA-Go's own missing audio surface.
 
+### The second qualified artifact: a real renderer
+
+The HEADLESS artifact proves native graphics EXECUTION but cannot copy a colour
+attachment back to the CPU, which is the one step a render-target semantic test
+turns on. Foundation 58 retained a second artifact of the same ABI, built with
+CNA's SOFTWARE renderer:
+
+```text
+artifact                  ~/deps/cna-c-abi-0.21.0-software/libcna_c_api.so
+sha256                    fe353c3b900ec2169a1e7f9c0639cda086ea0114d700cb4fd6140e3d9ac13f3c
+reported ABI              0.21.0
+bound symbols resolved    82 of 82, 0 ABI mismatches
+display required          none; no X server and no Xvfb
+```
+
+It is the SAME binding under both: `tools/native_stress` runs the full scenario
+set against each, and the reports now record `native_library_sha256` because
+their counters legitimately differ. Only one step differs -- the render-target
+readback -- and the headless refusal is CNA's documented
+`CNA_RESULT_NOT_SUPPORTED` rather than a defect.
+
 ### The retired Foundation 1 artifact
 
 Foundation 1 through 43 were qualified against a separate 16,799,760-byte

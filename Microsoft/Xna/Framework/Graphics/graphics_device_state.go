@@ -290,3 +290,39 @@ var (
 // load, read by tools/resource_strings out of the retained
 // Microsoft.Xna.Framework.dll under the key the IL names.
 const deviceCannotBeNullOnResourceCreate = "The GraphicsDevice must not be null when creating new resources."
+
+// SetRenderTargetByRenderTarget2D is
+// GraphicsDevice::SetRenderTarget(RenderTarget2D):
+//
+//	if (renderTarget != null) {
+//	    RenderTargetBinding binding = new RenderTargetBinding(renderTarget);
+//	    SetRenderTargets(&binding, 1);
+//	} else {
+//	    SetRenderTargets(null, 0);
+//	}
+//
+// A null target is not a refusal: it is how the back buffer is restored, and
+// the reference expresses that as a zero-length binding array. CNA says the
+// same thing with `CNA_INVALID_HANDLE`, and interop passes a nil resource
+// through as exactly that.
+//
+// # What a failure here means
+//
+// CNA permits a render target to be CREATED on a backend with no real
+// off-screen storage: creation succeeds, CNA_RenderTargetInfo::renderer_available
+// is false, and binding reports CNA_RESULT_NOT_SUPPORTED. That is a renderer
+// capability rather than a caller mistake, and it is reported as CNA states it
+// rather than translated into one of D3D9's messages.
+func (d *GraphicsDevice) SetRenderTargetByRenderTarget2D(renderTarget *RenderTarget2D) error {
+	if d == nil || d.device == nil {
+		return errors.New("GraphicsDevice is nil")
+	}
+	if renderTarget == nil {
+		return d.device.SetRenderTarget2D(nil)
+	}
+	resource := renderTarget.texture.nativeResource()
+	if resource == nil {
+		return interop.ErrDisposed
+	}
+	return d.device.SetRenderTarget2D(resource)
+}

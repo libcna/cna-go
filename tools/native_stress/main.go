@@ -4,6 +4,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -30,6 +32,21 @@ type counters struct {
 	GameCycles           int `json:"GAME_CYCLES"`
 	GameRecreationCycles int `json:"GAME_RECREATION_CYCLES"`
 	TextureCycles        int `json:"TEXTURE_CYCLES"`
+	// The render-target semantic slice. Binds and BindRefusals are mutually
+	// exclusive per cycle and are counted separately on purpose: a refusal is
+	// CNA's documented answer on a backend with no off-screen storage, and a
+	// run that only ever refused must not read as a run that only ever bound.
+	RenderTargetCycles             int `json:"RENDER_TARGET_CYCLES"`
+	RenderTargetCreations          int `json:"RENDER_TARGET_CREATIONS"`
+	RenderTargetDescriptionChecks  int `json:"RENDER_TARGET_DESCRIPTION_CHECKS"`
+	RenderTargetSubstitutionChecks int `json:"RENDER_TARGET_SUBSTITUTION_CHECKS"`
+	RenderTargetBinds              int `json:"RENDER_TARGET_BINDS"`
+	RenderTargetBindRefusals       int `json:"RENDER_TARGET_BIND_REFUSALS"`
+	RenderTargetUnbinds            int `json:"RENDER_TARGET_UNBINDS"`
+	RenderTargetPixelChecks        int `json:"RENDER_TARGET_PIXEL_CHECKS"`
+	RenderTargetReadbackRefusals   int `json:"RENDER_TARGET_READBACK_REFUSALS"`
+	RenderTargetSpriteDraws        int `json:"RENDER_TARGET_SPRITE_DRAWS"`
+	RenderTargetDisposalChecks     int `json:"RENDER_TARGET_DISPOSAL_CHECKS"`
 	// InheritedDisposeVirtualChecks counts the runs of the one control that can
 	// tell the inherited Dispose() reaching the DERIVED override from it
 	// reaching the composed base's slot. Every managed observable agrees for
@@ -189,6 +206,7 @@ type stressReport struct {
 	Isolation             string   `json:"isolation"`
 	GoRaceStatus          string   `json:"GO_RACE_STATUS"`
 	NativeSanitizerStatus string   `json:"NATIVE_SANITIZER_STATUS"`
+	NativeLibrarySHA256   string   `json:"native_library_sha256,omitempty"`
 	Counters              counters `json:"counters"`
 }
 
@@ -256,11 +274,17 @@ func writeStressReport(path, raceStatus string, result counters) error {
 	if raceStatus != "PASS" && raceStatus != "NOT_RUN" {
 		return fmt.Errorf("invalid race status %q", raceStatus)
 	}
+	// The artifact identity, by CONTENT. Foundation 58 runs this against TWO
+	// qualified artifacts -- a HEADLESS one and a SOFTWARE one -- and their
+	// counters legitimately differ: only the software renderer can read a
+	// render target's colour attachment back to the CPU. A report that did not
+	// say which artifact produced it could not be read at all.
 	report := stressReport{
 		SchemaVersion:         1,
 		Isolation:             "one native Game generation per subprocess",
 		GoRaceStatus:          raceStatus,
 		NativeSanitizerStatus: "NOT_RUN",
+		NativeLibrarySHA256:   nativeLibraryDigest(),
 		Counters:              result,
 	}
 	data, err := json.MarshalIndent(report, "", "  ")
@@ -274,13 +298,29 @@ func writeStressReport(path, raceStatus string, result counters) error {
 	return os.WriteFile(path, data, 0o644)
 }
 
+// nativeLibraryDigest is the SHA-256 of the artifact CNA_NATIVE_LIBRARY names.
+// It is empty when the variable is unset, which is the case where the platform
+// loader chose the library and CNA-Go cannot say which one it found.
+func nativeLibraryDigest() string {
+	path := os.Getenv("CNA_NATIVE_LIBRARY")
+	if path == "" {
+		return ""
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
 func runParent() (counters, error) {
 	executable, err := os.Executable()
 	if err != nil {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -631,6 +671,37 @@ func runChild(scenario string, index int) error {
 		}
 		if game.result.SpriteDrawScaledSubmits == 0 || game.result.SpriteDrawDestinationSubmits == 0 {
 			return errors.New("the sprite-draw scenario submitted nothing")
+		}
+	case "render-target":
+		game.result.RenderTargetCycles = 1
+		if err != nil {
+			return err
+		}
+		if game.result.RenderTargetCreations == 0 {
+			return errors.New("the render-target scenario created nothing")
+		}
+		// Exactly one of the two outcomes, every cycle. A run reporting neither
+		// never reached the bind, and one reporting both would mean the
+		// scenario ran twice in a process that should host one cycle.
+		if game.result.RenderTargetBinds+game.result.RenderTargetBindRefusals != game.result.RenderTargetCreations {
+			return fmt.Errorf("render-target binds %d and refusals %d do not account for %d creations",
+				game.result.RenderTargetBinds, game.result.RenderTargetBindRefusals, game.result.RenderTargetCreations)
+		}
+		// A renderer that BOUND must have produced the pixels, drawn them
+		// through the Texture2D position and disposed cleanly. A renderer that
+		// refused proves the description and the substitution and nothing more,
+		// which is what BLOCKED_RENDERER means here.
+		if game.result.RenderTargetBinds > 0 {
+			if game.result.RenderTargetSpriteDraws == 0 || game.result.RenderTargetDisposalChecks == 0 {
+				return errors.New("the render target bound and the semantic slice did not complete")
+			}
+			// The pixel check is the one step a renderer may be unable to
+			// perform, so it is required to be accounted for rather than
+			// required to have happened.
+			if game.result.RenderTargetPixelChecks+game.result.RenderTargetReadbackRefusals != game.result.RenderTargetBinds {
+				return fmt.Errorf("render-target pixel checks %d and readback refusals %d do not account for %d binds",
+					game.result.RenderTargetPixelChecks, game.result.RenderTargetReadbackRefusals, game.result.RenderTargetBinds)
+			}
 		}
 	case "callback-error":
 		game.result.CallbackErrorCycles = 1
@@ -1185,7 +1256,178 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 			return err
 		}
 	}
+	if g.scenario == "render-target" {
+		if err := g.exerciseRenderTarget(); err != nil {
+			return err
+		}
+	}
 	return host.Exit()
+}
+
+// isNativeRefusal reports whether an error is CNA answering "this renderer
+// cannot do that" rather than the binding getting something wrong.
+//
+// It matches on the CNA result code, not on the message: the message is
+// documentation and may be reworded, while CNA_RESULT_NOT_SUPPORTED is part of
+// the ABI. A refusal is recorded as a renderer limitation; anything else is a
+// defect and fails the scenario.
+func isNativeRefusal(err error) bool {
+	var native *interop.NativeError
+	return errors.As(err, &native) && native.Code == 6
+}
+
+// renderTargetClearColor is the deterministic content the render-target
+// semantic test writes and reads back. It is a colour no other value in the
+// scenario produces, so a readback that matched by accident would have to
+// produce these exact four bytes.
+var renderTargetClearColor = framework.NewColorByInt32AndInt32AndInt32AndInt32(203, 67, 21, 255)
+
+// exerciseRenderTarget is the render-target semantic slice, end to end, inside
+// a draw callback -- the only moment CNA lends a device handle out.
+//
+//	create -> bind -> clear -> unbind -> read back THROUGH THE Texture2D SURFACE
+//
+// The last step is the point. `Texture2DGetDataBySliceOfT` takes a
+// Texture2DReference, and passing a *RenderTarget2D to it is the Go spelling of
+// C#'s `renderTarget` flowing into a Texture2D position. It proves the
+// substitution and the render-target contents with one call, because the pixels
+// come back through the base's member.
+//
+// # Two renderers, two outcomes, both recorded
+//
+// CNA permits a render target to be CREATED on a backend with no real
+// off-screen storage: creation succeeds, RendererAvailable is false, and
+// binding reports NOT_SUPPORTED. The HEADLESS artifact is such a backend and the
+// SOFTWARE one is not, so this scenario asserts what each can actually do and
+// counts them separately. A binding that failed on a renderer that HAS storage
+// is a defect; one that failed on a renderer that does not is the documented
+// contract.
+func (g *stressGame) exerciseRenderTarget() error {
+	device := g.device
+	const size = 8
+
+	target, err := graphics.NewRenderTarget2DByGraphicsDeviceAndInt32AndInt32(device, size, size)
+	if err != nil {
+		return fmt.Errorf("NewRenderTarget2D: %w", err)
+	}
+	g.result.RenderTargetCreations++
+
+	// The Texture2D half of its surface answers before anything is bound, from
+	// the description CNA applied.
+	if target.Width() != size || target.Height() != size {
+		return fmt.Errorf("render target is %dx%d, want %dx%d", target.Width(), target.Height(), size, size)
+	}
+	if target.Bounds() != framework.NewRectangle(0, 0, size, size) {
+		return fmt.Errorf("render target Bounds = %+v", target.Bounds())
+	}
+	if target.LevelCount() < 1 {
+		return fmt.Errorf("render target LevelCount = %d", target.LevelCount())
+	}
+	if got := target.ToString(); got != "Microsoft.Xna.Framework.Graphics.RenderTarget2D" {
+		return fmt.Errorf("render target ToString = %q; the CLR `this` must reach the outermost object across three composition links", got)
+	}
+	if target.RenderTargetUsage() != graphics.RenderTargetUsageDiscardContents {
+		return fmt.Errorf("render target usage = %v, want the constructor's DiscardContents default", target.RenderTargetUsage())
+	}
+	g.result.RenderTargetDescriptionChecks++
+
+	// It satisfies the Texture2D parameter position, which is the substitution
+	// under test. The assignment is the proof; it does not compile otherwise.
+	var asTexture graphics.Texture2DReference = target
+	if asTexture == nil {
+		return errors.New("a RenderTarget2D does not satisfy Texture2DReference")
+	}
+	g.result.RenderTargetSubstitutionChecks++
+
+	bindErr := device.SetRenderTargetByRenderTarget2D(target)
+	if bindErr != nil {
+		// The documented refusal on a backend with no off-screen storage. It is
+		// recorded rather than treated as a pass or a failure.
+		g.result.RenderTargetBindRefusals++
+		fmt.Fprintf(os.Stderr, "render-target bind refused: %v\n", bindErr)
+		return target.DisposeByNone()
+	}
+	g.result.RenderTargetBinds++
+
+	if err := device.ClearByColor(renderTargetClearColor); err != nil {
+		return fmt.Errorf("Clear into the render target: %w", err)
+	}
+	if err := device.SetRenderTargetByRenderTarget2D(nil); err != nil {
+		return fmt.Errorf("restore the back buffer: %w", err)
+	}
+	g.result.RenderTargetUnbinds++
+
+	// The readback, through the BASE's member. It is the only step that needs
+	// the renderer to be able to copy a colour attachment back to the CPU, and
+	// that is a per-renderer capability rather than a per-binding one: the
+	// HEADLESS artifact binds and clears and then refuses this with
+	//
+	//	Texture2D::GetData: this graphics renderer cannot read a render
+	//	target's colour attachment back to the CPU
+	//
+	// so the refusal is counted and the slice continues. A pixel check is
+	// evidence only where the renderer can produce one.
+	pixels := make([]framework.Color, size*size)
+	readErr := graphics.Texture2DGetDataBySliceOfT(target, pixels)
+	switch {
+	case readErr == nil:
+		for index, pixel := range pixels {
+			if pixel != renderTargetClearColor {
+				return fmt.Errorf("render target pixel %d = %+v, want the cleared %+v", index, pixel, renderTargetClearColor)
+			}
+		}
+		g.result.RenderTargetPixelChecks++
+	case isNativeRefusal(readErr):
+		g.result.RenderTargetReadbackRefusals++
+		fmt.Fprintf(os.Stderr, "render-target readback refused: %v\n", readErr)
+	default:
+		return fmt.Errorf("GetData through the Texture2D surface: %w", readErr)
+	}
+
+	// And a SpriteBatch draws it, which is the seven live substitutability
+	// positions exercised rather than only asserted.
+	batch, batchErr := graphics.NewSpriteBatch(device)
+	if batchErr != nil {
+		return fmt.Errorf("NewSpriteBatch: %w", batchErr)
+	}
+	if err := batch.BeginByNone(); err != nil {
+		return fmt.Errorf("Begin: %w", err)
+	}
+	if err := batch.DrawByTexture2DAndVector2AndColor(target, framework.Vector2{X: 1, Y: 1},
+		framework.NewColorByInt32AndInt32AndInt32AndInt32(255, 255, 255, 255)); err != nil {
+		return fmt.Errorf("Draw a render target as a texture: %w", err)
+	}
+	if err := batch.End(); err != nil {
+		return fmt.Errorf("End: %w", err)
+	}
+	g.result.RenderTargetSpriteDraws++
+	if err := batch.DisposeByNone(); err != nil {
+		return fmt.Errorf("SpriteBatch disposal: %w", err)
+	}
+
+	// Disposal through the INHERITED member, and the idempotence the
+	// GraphicsResource flag gives it.
+	disposals := 0
+	if _, err := target.AddDisposingHandler(func(sender any, args *framework.EventArgs) error {
+		disposals++
+		if sender != any(target) {
+			return errors.New("Disposing announced something other than the render target")
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("AddDisposingHandler: %w", err)
+	}
+	if err := target.DisposeByNone(); err != nil {
+		return fmt.Errorf("render target disposal: %w", err)
+	}
+	if err := target.DisposeByNone(); err != nil {
+		return fmt.Errorf("second render target disposal: %w", err)
+	}
+	if disposals != 1 || !target.IsDisposed() {
+		return fmt.Errorf("Disposing raised %d times, IsDisposed=%t", disposals, target.IsDisposed())
+	}
+	g.result.RenderTargetDisposalChecks++
+	return nil
 }
 
 // exerciseDeviceState round-trips GraphicsDevice's render state through the
