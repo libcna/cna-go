@@ -145,6 +145,8 @@
       "Microsoft.Xna.Framework.Graphics.Texture2D|property-get|Width",
       "Microsoft.Xna.Framework.Graphics.Texture|property-get|Format",
       "Microsoft.Xna.Framework.Graphics.Texture|property-get|LevelCount",
+      "Microsoft.Xna.Framework.Graphics.VertexDeclaration|method|GetVertexElements",
+      "Microsoft.Xna.Framework.Graphics.VertexDeclaration|property-get|VertexStride",
       "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|GraphicsProfile",
       "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|IsFullScreen",
       "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|PreferMultiSampling",

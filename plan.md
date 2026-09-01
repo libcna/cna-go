@@ -1576,6 +1576,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 61 | the device's texture and sampler collections | `foundation-61-device-collections-evidence.md` |
 | 62 | GraphicsDevice's six events, and its disposal | `foundation-62-device-events-evidence.md` |
 | 63 | the Content subsystem, and Game::Content | `foundation-63-content-manager-evidence.md` |
+| 64 | VertexDeclaration and its element validator | `foundation-64-vertex-declaration-evidence.md` |
 
 ### The rules these milestones settled
 

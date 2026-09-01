@@ -4,7 +4,7 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 
 - Profile: CNA-Go Foundations 1-13 / XNA 4.0 Windows runtime mapping
 - Qualified platform: linux/amd64 (HEADLESS renderer, SDL3 audio, CNA C ABI 0.21.0)
-- Capability rows: 63
+- Capability rows: 64
 
 | Status | Capability | Evidence | Notes |
 |---|---|---|---|
@@ -39,6 +39,7 @@ Generated from `docs/runtime-capabilities.json`; do not edit by hand.
 | `VERIFIED_MANAGED` | PackedVector family | docs/packed-vector-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete 19-type managed closure; no CNA ABI route or runtime/hardware claim. |
 | `VERIFIED_MANAGED` | Managed Foundation closures | API compatibility, behavior corpus, and family evidence reports | Geometry/transform, Color, Viewport, Curve, PackedVector, VertexElement, PlayerIndex, DisplayOrientation, BufferUsage, ClearOptions, SurfaceFormat, DepthFormat, GraphicsProfile, and ButtonState closures are locally strict-zero; five native/runtime types remain explicitly partial. |
 | `VERIFIED_MANAGED` | SurfaceFormat enum metadata | docs/surface-format-evidence.md, API compatibility report, and behavior corpus | Only the 20-literal non-flags named-int32 enum is verified; no pixel/texture/render-target format support, compression, HDR, GPU mapping, consumer API, or CNA ABI expansion is claimed. |
+| `VERIFIED_MANAGED` | VertexDeclaration and its element validator | 13 in-package tests including the validator's seven refusals, 7 behavior-corpus observations, 1 external-consumer test and 12 planted mutations proved to fail | The whole type is managed, and that is the reference's own shape rather than a deferral: the constructors clone the element array, store a stride and call VertexElementValidator, and GraphicsResource::_parent is assigned only by the internal Bind -- so a constructed declaration reports a NULL GraphicsDevice, as it does in XNA. VertexElementValidator is reproduced check for check and IN ORDER, because the order decides which of two simultaneous defects a caller is told about; its five FrameworkResources sentences are registered and validated key-to-value against the retained assembly. CNA publishes cna_vertex_declaration_create, _create_with_stride, _get_stride, _copy_elements and _destroy and NONE is bound: each would answer a question this type already answers from the fields the reference itself reads, so binding them would add routes with no real consumer. They become necessary when a VertexBuffer is created from a declaration, and will be bound there. |
 | `VERIFIED_MANAGED` | VertexElement descriptor values | docs/vertex-element-evidence.md, API compatibility report, and PURE_XNA_DERIVED corpus | Complete three-type managed descriptor closure; no VertexDeclaration, buffer, draw, GPU, CNA ABI, or hardware capability claim. |
 | `VERIFIED_MANAGED` | XNA namespace/package mapping | tools/api_compat and docs/xna-go-mapping.md | Case-preserving import paths; consumer aliases are not API. |
 | `VERIFIED_NATIVE` | Go callback error/panic containment | 20 returned-error and 20 panic subprocess cycles | No panic or Go error crosses C; Run returns the stored Go failure. |

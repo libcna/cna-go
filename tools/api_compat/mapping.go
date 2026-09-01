@@ -979,6 +979,21 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|Format":     true,
 		"property-get|LevelCount": true,
 	},
+	// Foundation 64. VertexDeclaration's two declared members. Neither reaches
+	// anything, and the type as a whole reaches nothing native:
+	//
+	//	get_VertexStride   ldarg.0; ldfld _vertexStride; ret
+	//	GetVertexElements  ldarg.0; ldfld _elements; Array.Clone(); castclass; ret
+	//
+	// The second is listed even though it is not a bare field read, because the
+	// rule is about reaching a runtime boundary rather than about instruction
+	// count: `Array.Clone` is a managed allocation with no throw site a caller
+	// can provoke. The CONSTRUCTORS are of course fallible and are not listed;
+	// VertexElementValidator is their whole failure surface.
+	"Microsoft.Xna.Framework.Graphics.VertexDeclaration": {
+		"property-get|VertexStride": true,
+		"method|GetVertexElements":  true,
+	},
 	// Texture2D's three geometry members, on the same evidence, and correcting
 	// a claim CNA-Go made without it. Their bodies are:
 	//

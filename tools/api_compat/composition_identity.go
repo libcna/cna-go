@@ -141,6 +141,12 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 			"Microsoft.Xna.Framework.Graphics.DepthStencilState": "NewDepthStencilState",
 			"Microsoft.Xna.Framework.Graphics.RasterizerState":   "NewRasterizerState",
 			"Microsoft.Xna.Framework.Graphics.SamplerState":      "NewSamplerState",
+			// Foundation 64. VertexDeclaration has TWO public constructors and
+			// the registry names the shared unexported one both delegate to,
+			// which is the same shape the state objects' preset constructor
+			// has: binding once where the object is actually built covers
+			// every path that builds one.
+			"Microsoft.Xna.Framework.Graphics.VertexDeclaration": "newVertexDeclaration",
 		},
 	},
 

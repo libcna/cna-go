@@ -3612,6 +3612,99 @@ func runCorpus() corpusReport {
 			refusedDraw))
 
 	// ------------------------------------------------------------------
+	// Foundation 64. VertexDeclaration, whose whole surface is managed: the
+	// constructors clone, store and validate, and the two declared members are
+	// a field read and a clone. Nothing here reaches CNA, and nothing can:
+	// GraphicsResource::_parent is assigned only by the internal Bind.
+	// ------------------------------------------------------------------
+
+	declarationElements := []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(12, graphics.VertexElementFormatColor, graphics.VertexElementUsageColor, 0),
+	}
+	explicitStride, explicitError := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, declarationElements)
+	computedStride, computedError := graphics.NewVertexDeclarationBySliceOfVertexElement(declarationElements)
+	check("vertex-declaration.the-computed-stride-is-the-largest-end-offset", "VERTEX_DECLARATION",
+		"16,16,true,true",
+		fmt.Sprintf("%d,%d,%t,%t",
+			explicitStride.VertexStride(), computedStride.VertexStride(),
+			explicitError == nil, computedError == nil))
+
+	// A gap is strided over rather than closed: GetVertexStride is a maximum,
+	// not a sum.
+	gappedDeclaration, _ := graphics.NewVertexDeclarationBySliceOfVertexElement([]graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(28, graphics.VertexElementFormatSingle, graphics.VertexElementUsageFog, 0),
+	})
+	check("vertex-declaration.a-gapped-layout-strides-over-the-gap", "VERTEX_DECLARATION",
+		"32", fmt.Sprint(gappedDeclaration.VertexStride()))
+
+	// Both constructors take the SAME branch for a null and an empty array.
+	_, emptyExplicit := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, nil)
+	_, emptyComputed := graphics.NewVertexDeclarationBySliceOfVertexElement([]graphics.VertexElement{})
+	check("vertex-declaration.an-empty-element-array-is-refused-like-a-null-one", "VERTEX_DECLARATION",
+		"true,true",
+		fmt.Sprintf("%t,%t",
+			strings.Contains(fmt.Sprint(emptyExplicit), "This method does not accept null for this parameter."),
+			strings.Contains(fmt.Sprint(emptyComputed), "This method does not accept null for this parameter.")))
+
+	// The five validator refusals, each with the FrameworkResources sentence
+	// its throw site loads.
+	_, badStride := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(18, declarationElements)
+	_, badUsage := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsage(13), 0)})
+	_, outsideStride := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(8, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0)})
+	_, duplicateElement := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatSingle, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(4, graphics.VertexElementFormatSingle, graphics.VertexElementUsagePosition, 0)})
+	_, overlapping := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector2, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(4, graphics.VertexElementFormatSingle, graphics.VertexElementUsageFog, 0)})
+	check("vertex-declaration.each-validator-refusal-carries-its-own-reference-message", "VERTEX_DECLARATION",
+		"true,true,true,true,true",
+		fmt.Sprintf("%t,%t,%t,%t,%t",
+			strings.Contains(fmt.Sprint(badStride), "Vertex stride and VertexElement.Offset must be multiples of four."),
+			strings.Contains(fmt.Sprint(badUsage), "Usage 13 is out of range."),
+			strings.Contains(fmt.Sprint(outsideStride), "Element Position0 does not fit within the specified vertex stride."),
+			strings.Contains(fmt.Sprint(duplicateElement), "Duplicate element Position0."),
+			strings.Contains(fmt.Sprint(overlapping), "Elements Position0 and Fog0 are overlapping.")))
+
+	// An unknown format occupies NO bytes, which is GetTypeSize's default and
+	// is not a failure.
+	unknownFormat, unknownFormatError := graphics.NewVertexDeclarationBySliceOfVertexElement([]graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormat(99), graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(0, graphics.VertexElementFormatSingle, graphics.VertexElementUsageFog, 0)})
+	check("vertex-declaration.an-unknown-element-format-occupies-no-bytes", "VERTEX_DECLARATION",
+		"4,true", fmt.Sprintf("%d,%t", unknownFormat.VertexStride(), unknownFormatError == nil))
+
+	// Both clones, and the inherited surface's two type-specific answers.
+	callerElements := []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0)}
+	clonedDeclaration, _ := graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(12, callerElements)
+	callerElements[0].SetOffset(4)
+	returnedElements := clonedDeclaration.GetVertexElements()
+	returnedElements[0].SetUsageIndex(7)
+	check("vertex-declaration.the-element-array-is-cloned-in-and-out", "VERTEX_DECLARATION",
+		"0,0", fmt.Sprintf("%d,%d",
+			clonedDeclaration.GetVertexElements()[0].Offset(),
+			clonedDeclaration.GetVertexElements()[0].UsageIndex()))
+
+	declarationRaises := 0
+	_, _ = clonedDeclaration.AddDisposingHandler(func(any, *framework.EventArgs) error {
+		declarationRaises++
+		return nil
+	})
+	beforeDisposeName := clonedDeclaration.ToString()
+	_ = clonedDeclaration.DisposeByNone()
+	_ = clonedDeclaration.DisposeByNone()
+	check("vertex-declaration.the-inherited-graphics-resource-surface-answers", "VERTEX_DECLARATION",
+		"true,Microsoft.Xna.Framework.Graphics.VertexDeclaration,1,true,12",
+		fmt.Sprintf("%t,%s,%d,%t,%d",
+			clonedDeclaration.GraphicsDevice() == nil, beforeDisposeName, declarationRaises,
+			clonedDeclaration.IsDisposed(), clonedDeclaration.VertexStride()))
+
+	// ------------------------------------------------------------------
 	// Foundation 63. ContentManager's managed surface, and Game::Content.
 	//
 	// Everything below reaches no runtime. The reference's constructors,

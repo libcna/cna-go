@@ -3044,3 +3044,51 @@ func TestGameContentIsTheCrossPackageProjection(t *testing.T) {
 		t.Fatal("GameContent did not answer the assigned manager")
 	}
 }
+
+// TestVertexDeclarationIsReachableFromOutside compiles VertexDeclaration's
+// whole projected surface and proves the two facts a consumer will hit first:
+// the elements array is a SLICE rather than a Go variadic, and an invalid
+// layout is refused with Microsoft's own sentence.
+func TestVertexDeclarationIsReachableFromOutside(t *testing.T) {
+	var _ func(int32, []graphics.VertexElement) (*graphics.VertexDeclaration, error) = graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement
+	var _ func([]graphics.VertexElement) (*graphics.VertexDeclaration, error) = graphics.NewVertexDeclarationBySliceOfVertexElement
+
+	declaration := &graphics.VertexDeclaration{}
+	var _ func() int32 = declaration.VertexStride
+	var _ func() []graphics.VertexElement = declaration.GetVertexElements
+	var _ func() *graphics.GraphicsDevice = declaration.GraphicsDevice
+	var _ func() bool = declaration.IsDisposed
+	var _ func() string = declaration.ToString
+	var _ func() error = declaration.DisposeByNone
+	var _ func(bool) error = declaration.DisposeByBoolean
+
+	elements := []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector3, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(12, graphics.VertexElementFormatColor, graphics.VertexElementUsageColor, 0),
+	}
+	built, err := graphics.NewVertexDeclarationBySliceOfVertexElement(elements)
+	if err != nil {
+		t.Fatalf("NewVertexDeclarationBySliceOfVertexElement: %v", err)
+	}
+	if built.VertexStride() != 16 {
+		t.Fatalf("VertexStride = %d, want 16", built.VertexStride())
+	}
+	// A declaration a consumer constructed has NO device, which is the
+	// reference's answer and not a gap.
+	if built.GraphicsDevice() != nil {
+		t.Fatal("a constructed VertexDeclaration reports a GraphicsDevice")
+	}
+	if got := built.ToString(); got != "Microsoft.Xna.Framework.Graphics.VertexDeclaration" {
+		t.Fatalf("ToString = %q", got)
+	}
+	_, err = graphics.NewVertexDeclarationByInt32AndSliceOfVertexElement(16, []graphics.VertexElement{
+		graphics.NewVertexElement(0, graphics.VertexElementFormatVector2, graphics.VertexElementUsagePosition, 0),
+		graphics.NewVertexElement(4, graphics.VertexElementFormatSingle, graphics.VertexElementUsageFog, 0),
+	})
+	if err == nil {
+		t.Fatal("overlapping vertex elements were accepted")
+	}
+	if !strings.Contains(err.Error(), "Elements Position0 and Fog0 are overlapping.") {
+		t.Fatalf("%v, want the reference's overlap message", err)
+	}
+}

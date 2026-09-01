@@ -113,6 +113,29 @@ var registry = []claimedString{
 		Value: "Cannot change read-only {0}. State objects become read-only the first time they are bound to a GraphicsDevice. To change property values, create a new {0} instance."},
 	{Key: "DeviceCannotBeNullOnResourceCreate", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "The GraphicsDevice must not be null when creating new resources."},
+	// Foundation 64. VertexElementValidator's five messages, which are the
+	// whole failure surface of VertexDeclaration's two constructors.
+	//
+	// Placeholders is deliberately NOT set on the four formatted ones, for the
+	// reason BoundStateObject's is not: each substitutes a usage and a usage
+	// index with NO separator between them, and the overlap message names two
+	// elements with four placeholders. CNA-Go keeps the CLR spelling in the
+	// source constant and substitutes positionally, so the registry compares
+	// the exact bytes the assembly holds.
+	//
+	// The first is thrown at TWO sites for TWO quantities -- the stride and one
+	// element's offset -- and the sentence names both, which is why one message
+	// covers both throws rather than the projection inventing a second.
+	{Key: "VertexElementOffsetNotMultipleFour", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid VertexDeclaration. Vertex stride and VertexElement.Offset must be multiples of four."},
+	{Key: "VertexElementBadUsage", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid VertexDeclaration. Usage {0}{1} is out of range."},
+	{Key: "VertexElementOutsideStride", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid VertexDeclaration. Element {0}{1} does not fit within the specified vertex stride."},
+	{Key: "DuplicateVertexElement", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid VertexDeclaration. Duplicate element {0}{1}."},
+	{Key: "VertexElementsOverlap", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid VertexDeclaration. Elements {0}{1} and {2}{3} are overlapping."},
 	// Foundation 50 corrected this KEY. The value was right and its key was
 	// invented from the sentence; the resource-set reader found no
 	// DopplerScaleMustBeGreaterThanOrEqualToZero anywhere, and the real key is
