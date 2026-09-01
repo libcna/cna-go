@@ -164,10 +164,14 @@ for an absent key. No D3D call, no throw site. It is per-resource storage
 reached indirectly — which is exactly why both accessors are listed here while
 the `GraphicsDeviceManager` setters, which really do push to a device, are not.
 
-CNA has no counterpart cache and no route to one, so CNA-Go stores both values
-on the resource. That difference makes the members more clearly managed, never
-less, and it is recorded rather than hidden: a CNA-Go resource's `Name` does not
-travel through its device.
+**This paragraph originally said CNA has no counterpart and no route to one.
+That was wrong, and Foundation 57 measured it.** CNA has twelve
+`cna_graphics_resource_*` routes, including `set_name`, `copy_name`, `get_tag`,
+`set_tag` and `get_is_disposed`. The classification above is unchanged, because
+it is read off the REFERENCE's body — but the reason it stands is now measured
+rather than assumed, and every unused route carries a recorded reason in
+`tools/native_abi`'s `deliberatelyUnboundRoutes`. See
+[foundation-57](foundation-57-unbound-routes-evidence.md).
 
 The three `Texture2D` corrections removed an error channel nothing could ever
 put a value in. The comment that justified it claimed the getters "read a

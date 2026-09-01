@@ -36,6 +36,7 @@ type report struct {
 	LoadedABI                  string         `json:"LOADED_ABI"`
 	BoundFunctions             int            `json:"BOUND_FUNCTIONS"`
 	CanonicalDeclarations      int            `json:"CANONICAL_DECLARATIONS"`
+	DeliberatelyUnboundRoutes  int            `json:"DELIBERATELY_UNBOUND_ROUTES"`
 	LibraryExports             int            `json:"LIBRARY_EXPORTS"`
 	PrototypeTypePositions     int            `json:"PROTOTYPE_TYPE_POSITIONS"`
 	RouteTypePairings          int            `json:"ROUTE_TYPE_PAIRINGS"`
@@ -229,10 +230,16 @@ func verify(headerRoot, library string) (report, error) {
 	if err != nil {
 		return result, err
 	}
-	result.CanonicalDeclarations, err = countCanonicalDeclarations(root)
+	declared, err := canonicalDeclarations(root)
 	if err != nil {
 		return result, err
 	}
+	result.CanonicalDeclarations = len(declared)
+	boundNames := make(map[string]struct{}, len(routes))
+	for _, entry := range routes {
+		boundNames[entry.name] = struct{}{}
+	}
+	result.DeliberatelyUnboundRoutes = verifyUnboundRoutes(&result, declared, boundNames)
 	temporary, err := os.MkdirTemp("", "cna-go-native-abi-")
 	if err != nil {
 		return result, err
@@ -412,11 +419,202 @@ func decodeMeasuredABI(measurements map[string]int) string {
 // countCanonicalDeclarations counts the distinct cna_* routes the canonical
 // headers declare, so the report can state whether the selected library and the
 // headers describe the same surface.
+// ---------------------------------------------------------------------------
+// Foundation 57 — the deliberately unbound routes.
+// ---------------------------------------------------------------------------
+
+// unboundRoute records a canonical CNA route CNA-Go does NOT bind even though
+// the XNA member it could back IS projected.
+//
+// # Why this registry exists
+//
+// The pinned artifact declares 4,054 routes and CNA-Go binds 78. Almost all of
+// the difference is uninteresting: the XNA surface those routes would back is
+// not projected yet, which the missing-type inventory already says.
+//
+// A route is interesting when the member IS projected and CNA-Go answers it
+// managed-side anyway. That is a real decision with a real alternative, and
+// until Foundation 57 nothing recorded any of them. Foundation 56 shipped one
+// stated backwards -- GraphicsResource's Name was justified with "CNA has no
+// such cache and no route that could reach one", and CNA has five.
+//
+// A recorded entry is checked, not merely written down: the route must exist in
+// the canonical headers, and it must NOT also be bound. A registry that could
+// name a route CNA never declared, or one the manifest already resolves, would
+// be prose with a struct around it.
+type unboundRoute struct {
+	// Route is the canonical cna_* identifier.
+	Route string
+	// Member is the projected XNA member the route could back.
+	Member string
+	// Class is one of unboundRouteClasses.
+	Class string
+	// Detail is the measured reason, including what was measured and when.
+	Detail string
+}
+
+// unboundRouteClasses are the only reasons a projected member may answer
+// managed-side while CNA offers a route for it.
+var unboundRouteClasses = map[string]string{
+	// Binding it would change the projected member's observable behaviour away
+	// from the reference's.
+	"CONTRACT_DIVERGENCE": "binding the route would diverge from the reference contract",
+	// The route does not accept every resource kind the projected member covers,
+	// so binding it would make one XNA member behave per-kind.
+	"KIND_PARTIAL": "the route accepts only some of the kinds the member covers",
+	// The route's C type cannot represent the CLR type the member declares.
+	"REPRESENTATION": "the C type cannot represent the CLR type",
+	// The reference's own implementation reaches no runtime at all, so there is
+	// nothing for a native route to be more faithful than.
+	"MANAGED_REFERENCE": "the reference implementation is managed and reaches no runtime",
+}
+
+// deliberatelyUnboundRoutes is the closed registry.
+//
+// # The graphics-resource family, measured against the pinned 0.21.0 artifact
+//
+// Every row below comes from one probe run against
+// `~/deps/cna-c-abi-0.21.0/libcna_c_api.so`, on a live device inside a
+// lifecycle callback, over a real Texture2D handle and a real SpriteBatch
+// handle:
+//
+//	fresh texture   get_is_disposed -> false           set_name -> ok
+//	                copy_name -> ""                    copy_name -> "probe-name"
+//	                set_name("a\0b") -> CNA result 11, "not valid UTF-8"
+//	SpriteBatch     get_is_disposed -> CNA result 2, "The handle does not refer
+//	                                   to a supported graphics resource"
+//	                set_name, copy_name -> the same refusal
+//	after cna_graphics_resource_dispose:
+//	                get_is_disposed -> true            copy_name -> "probe-name"
+//	                the texture STILL ENCODES: cna_texture2d_copy_encoded
+//	                returned 70 bytes, so CNA's "dispose" is a flag and a
+//	                notification, NOT a release
+//	                a repeated dispose -> success, as documented
+//
+// Two facts decide the whole family. CNA's graphics-resource routes accept a
+// texture and REFUSE a SpriteBatch, and XNA's GraphicsResource members are
+// uniform across every derived type. And CNA's set_name validates UTF-8 while
+// a Go string may hold arbitrary bytes and `set_Name` in the reference accepts
+// anything, including null.
+var deliberatelyUnboundRoutes = []unboundRoute{
+	{
+		Route:  "cna_graphics_resource_get_name_byte_count",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Name()",
+		Class:  "KIND_PARTIAL",
+		Detail: "the route refuses a SpriteBatch handle with CNA result 2, and SpriteBatch is a GraphicsResource in the pinned contract, so binding it would make one XNA member answer for textures and fail for sprite batches",
+	},
+	{
+		Route:  "cna_graphics_resource_copy_name",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Name()",
+		Class:  "KIND_PARTIAL",
+		Detail: "the second half of the same read; it refuses the same handles",
+	},
+	{
+		Route:  "cna_graphics_resource_set_name",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Name()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "CNA validates the name as UTF-8 and refused an embedded NUL with CNA result 11. GraphicsResource::set_Name is `ldarg.1; stfld` -- or one DeviceResourceManager store -- and validates nothing at all, including null. Binding it would refuse names the reference accepts, and would make an infallible member fallible",
+	},
+	{
+		Route:  "cna_graphics_resource_get_is_disposed",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::IsDisposed()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_IsDisposed is `ldarg.0; ldfld isDisposed; ret` over a managed field the managed ~GraphicsResource sets, so the projection's own flag IS the reference's. The route also refuses a SpriteBatch handle",
+	},
+	{
+		Route:  "cna_graphics_resource_get_tag",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Tag()",
+		Class:  "REPRESENTATION",
+		Detail: "CNA_GraphicsResourceTag is a uint64 opaque token and GraphicsResource::Tag is System.Object, which projects to Go `any`. A uint64 cannot carry an arbitrary Go value without a side registry, and a registry keyed by a token CNA owns would be a second lifetime to get wrong",
+	},
+	{
+		Route:  "cna_graphics_resource_set_tag",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Tag()",
+		Class:  "REPRESENTATION",
+		Detail: "the write half of the same token",
+	},
+	{
+		Route:  "cna_graphics_resource_get_string_byte_count",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::ToString()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "GraphicsResource::ToString has an exactly specified managed body -- the resource's Name when non-empty, and otherwise System.Object::ToString, which is the RUNTIME type's full CLR name. CNA's string representation is CNA's own and is not required to be either",
+	},
+	{
+		Route:  "cna_graphics_resource_copy_string",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::ToString()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the second half of the same read",
+	},
+	{
+		Route:  "cna_graphics_resource_dispose",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Dispose()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "measured to be a FLAG AND A NOTIFICATION rather than a release: after it, cna_texture2d_copy_encoded still produced 70 bytes from the same texture. The reference's Dispose(true) releases the native object and then sets the flag, which is what CNA-Go's per-kind destroy does; calling this one as well would set a CNA flag on a resource CNA-Go is about to destroy anyway",
+	},
+	{
+		Route:  "cna_graphics_resource_subscribe_disposing",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Disposing()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the settled event rule requires a projected XNA event to have its AUTHORITATIVE raise path, and Disposing's is managed: ~GraphicsResource invokes the delegate field directly. CNA's notification fires from cna_graphics_resource_dispose, a different moment CNA-Go does not reach -- the same shape as Game::Disposed, whose native signal is bound LIFECYCLE_ONLY and raises nothing public",
+	},
+	{
+		Route:  "cna_graphics_resource_unsubscribe_disposing",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Disposing()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the removal half of a subscription CNA-Go does not make",
+	},
+	{
+		Route:  "cna_graphics_resource_get_graphics_device",
+		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::GraphicsDevice()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_GraphicsDevice is `ldarg.0; ldfld _parent; ret`, a stored reference with no disposal check, and it must answer with the SAME GraphicsDevice object the resource was created on. CNA's route returns a fresh callback-scoped handle, which is only valid inside a lifecycle callback and would not be the identity the reference returns",
+	},
+}
+
+// verifyUnboundRoutes checks the registry against the canonical headers and the
+// manifest. It returns the number of recorded routes.
+func verifyUnboundRoutes(result *report, declared map[string]struct{}, bound map[string]struct{}) int {
+	seen := make(map[string]bool, len(deliberatelyUnboundRoutes))
+	for _, entry := range deliberatelyUnboundRoutes {
+		if seen[entry.Route] {
+			result.Findings = append(result.Findings,
+				fmt.Sprintf("deliberately unbound route %s is recorded twice", entry.Route))
+			continue
+		}
+		seen[entry.Route] = true
+		if _, known := unboundRouteClasses[entry.Class]; !known {
+			result.Findings = append(result.Findings,
+				fmt.Sprintf("deliberately unbound route %s has unrecorded class %q", entry.Route, entry.Class))
+		}
+		if strings.TrimSpace(entry.Detail) == "" || strings.TrimSpace(entry.Member) == "" {
+			result.Findings = append(result.Findings,
+				fmt.Sprintf("deliberately unbound route %s records no member or no detail", entry.Route))
+		}
+		if len(declared) > 0 {
+			if _, exists := declared[entry.Route]; !exists {
+				result.Findings = append(result.Findings,
+					fmt.Sprintf("deliberately unbound route %s is not declared by the canonical headers", entry.Route))
+			}
+		}
+		if _, isBound := bound[entry.Route]; isBound {
+			result.Findings = append(result.Findings,
+				fmt.Sprintf("route %s is recorded as deliberately unbound and the manifest binds it", entry.Route))
+		}
+	}
+	return len(deliberatelyUnboundRoutes)
+}
+
 func countCanonicalDeclarations(root string) (int, error) {
+	names, err := canonicalDeclarations(root)
+	return len(names), err
+}
+
+// canonicalDeclarations is every cna_* route the canonical headers declare.
+func canonicalDeclarations(root string) (map[string]struct{}, error) {
 	directory := filepath.Join(root, "CNA", "C")
 	entries, err := os.ReadDir(directory)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	names := map[string]struct{}{}
 	for _, entry := range entries {
@@ -425,13 +623,13 @@ func countCanonicalDeclarations(root string) (int, error) {
 		}
 		data, err := os.ReadFile(filepath.Join(directory, entry.Name()))
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 		for _, match := range declarationPattern.FindAllString(string(data), -1) {
 			names[strings.TrimRight(strings.TrimSuffix(strings.TrimSpace(match), "("), " \t")] = struct{}{}
 		}
 	}
-	return len(names), nil
+	return names, nil
 }
 
 // countLibraryExports reads the dynamic symbol table. It reports zero when the

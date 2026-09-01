@@ -939,9 +939,13 @@ var managedStoredMembers = map[string]map[string]bool{
 	// nothing to a device and cannot be refused -- which is exactly why the
 	// GraphicsDeviceManager setters above are NOT listed and these are.
 	//
-	// CNA has no counterpart cache and no route to one, so CNA-Go stores both
-	// values on the resource. That difference makes the members MORE clearly
-	// managed, never less.
+	// CNA has counterpart routes -- cna_graphics_resource_set_name, copy_name,
+	// get_tag and set_tag -- and Foundation 56 wrongly said it did not.
+	// Foundation 57 measured them and left them unbound, per route, in
+	// tools/native_abi's deliberatelyUnboundRoutes: they refuse a SpriteBatch
+	// handle, which is a GraphicsResource in this contract, and set_name
+	// validates UTF-8 where set_Name validates nothing. Neither changes this
+	// classification, which is read off the REFERENCE's body.
 	"Microsoft.Xna.Framework.Graphics.GraphicsResource": {
 		"property-get|GraphicsDevice": true,
 		"property-get|IsDisposed":     true,

@@ -50,7 +50,7 @@ import (
 // `Resource.Dispose`. That is why CNA-Go needs no per-derived-type release
 // hook: the one CNA resource knows how to destroy itself.
 //
-// # Name and Tag are managed here, and the reference's are not
+// # Name and Tag are managed here, and CNA's own routes are deliberately unused
 //
 // The reference's accessors are conditional:
 //
@@ -58,15 +58,27 @@ import (
 //	              return _parent.Resources.GetCachedName(_internalHandle);
 //	          return _localName;
 //
-// `DeviceResourceManager` is a D3D9-era per-device cache keyed by native
-// handle. CNA has no such cache and no route that could reach one, so CNA-Go
-// stores both values on the resource. Get/set is observationally identical --
-// the reference's cache is per-resource storage too, reached indirectly -- and
-// the divergence is recorded rather than hidden: a CNA-Go resource's Name does
-// not travel through its device.
+// `DeviceResourceManager::GetCachedName` is 79 bytes of
+// `Dictionary<ulong, ResourceData>` under a `Monitor`, answering `String.Empty`
+// for an absent key. It is managed storage reached indirectly, with no D3D call
+// and no throw site, which is why both accessors are infallible.
+//
+// CNA DOES have a counterpart -- `cna_graphics_resource_set_name`,
+// `copy_name`, `get_tag`, `set_tag`, `get_is_disposed` and six more -- and
+// Foundation 56 said it did not. Foundation 57 measured them against the pinned
+// artifact and left them unbound for reasons that are now recorded per route in
+// tools/native_abi's `deliberatelyUnboundRoutes`. Two decide this member:
+//
+//	the routes REFUSE a SpriteBatch handle (CNA result 2), and SpriteBatch is a
+//	GraphicsResource in the pinned contract, so binding them would make one XNA
+//	member answer for textures and fail for sprite batches; and
+//
+//	cna_graphics_resource_set_name validates UTF-8 and refused an embedded NUL,
+//	while set_Name validates nothing at all -- so binding it would refuse names
+//	the reference accepts and make an infallible member fallible.
 //
 // Both are therefore MANAGED STORED members and neither is fallible, which is
-// the settled per-operation fallibility rule, not a shortcut.
+// the settled per-operation fallibility rule applied to the reference's body.
 type GraphicsResource struct {
 	// resource is the one native owner. It is nil for a resource whose
 	// construction is still in progress and for the abstract base itself.

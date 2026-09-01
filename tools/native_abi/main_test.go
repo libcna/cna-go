@@ -1211,3 +1211,87 @@ func TestCanonicalHeaderTreeDigestIsDeterministicAndOrderIndependent(t *testing.
 		t.Fatalf("adding a header produced digest-equal=%t files=%d", added == moved, addedFiles)
 	}
 }
+
+// TestDeliberatelyUnboundRoutesAreChecked holds the four claims the registry
+// makes about itself. A registry that could name a route CNA never declared, or
+// one the manifest already resolves, would be prose with a struct around it.
+func TestDeliberatelyUnboundRoutesAreChecked(t *testing.T) {
+	declared := map[string]struct{}{}
+	for _, entry := range deliberatelyUnboundRoutes {
+		declared[entry.Route] = struct{}{}
+	}
+	// The control: the real registry against a header set that declares exactly
+	// it, and a manifest that binds none of it.
+	control := report{}
+	if got := verifyUnboundRoutes(&control, declared, map[string]struct{}{}); got != len(deliberatelyUnboundRoutes) {
+		t.Fatalf("verifyUnboundRoutes counted %d of %d", got, len(deliberatelyUnboundRoutes))
+	}
+	if len(control.Findings) != 0 {
+		t.Fatalf("the unmutated registry produced findings: %v", control.Findings)
+	}
+
+	// A route the canonical headers do not declare. This is the stale-entry
+	// case: CNA renames or removes a route and the registry keeps explaining
+	// why CNA-Go does not bind something that no longer exists.
+	missing := report{}
+	shrunk := map[string]struct{}{}
+	for name := range declared {
+		shrunk[name] = struct{}{}
+	}
+	delete(shrunk, deliberatelyUnboundRoutes[0].Route)
+	verifyUnboundRoutes(&missing, shrunk, map[string]struct{}{})
+	if len(missing.Findings) == 0 {
+		t.Fatal("a route the canonical headers do not declare produced no finding")
+	}
+
+	// A route that is BOTH recorded as unbound and bound by the manifest. That
+	// is the contradiction the registry exists to make impossible: a route
+	// cannot be deliberately unbound and resolved at the same time.
+	both := report{}
+	verifyUnboundRoutes(&both, declared, map[string]struct{}{deliberatelyUnboundRoutes[0].Route: {}})
+	if len(both.Findings) == 0 {
+		t.Fatal("a route recorded as unbound AND bound produced no finding")
+	}
+
+	// Every real entry carries a recorded class, a member and a detail, and no
+	// route is recorded twice.
+	seen := map[string]bool{}
+	for _, entry := range deliberatelyUnboundRoutes {
+		if seen[entry.Route] {
+			t.Fatalf("%s is recorded twice", entry.Route)
+		}
+		seen[entry.Route] = true
+		if _, known := unboundRouteClasses[entry.Class]; !known {
+			t.Fatalf("%s has unrecorded class %q", entry.Route, entry.Class)
+		}
+		if strings.TrimSpace(entry.Member) == "" || strings.TrimSpace(entry.Detail) == "" {
+			t.Fatalf("%s records no member or no detail", entry.Route)
+		}
+		if !strings.HasPrefix(entry.Route, "cna_") {
+			t.Fatalf("%s is not a canonical CNA route name", entry.Route)
+		}
+	}
+}
+
+// TestEveryUnboundRouteIsDeclaredByThePinnedHeaders is the same closure against
+// the REAL canonical headers, so a registry entry cannot be a name nobody
+// checked. It skips rather than fails when the pinned header tree is absent,
+// which is the same rule the probe mutations already follow.
+func TestEveryUnboundRouteIsDeclaredByThePinnedHeaders(t *testing.T) {
+	root := os.Getenv("CNA_GO_CANONICAL_HEADERS")
+	if root == "" {
+		root = filepath.Join(os.Getenv("HOME"), "deps", "cna-c-abi-0.21.0", "include")
+	}
+	if _, err := os.Stat(filepath.Join(root, "CNA", "C")); err != nil {
+		t.Skipf("pinned canonical headers are not present at %s", root)
+	}
+	declared, err := canonicalDeclarations(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range deliberatelyUnboundRoutes {
+		if _, exists := declared[entry.Route]; !exists {
+			t.Errorf("%s is recorded as deliberately unbound and the pinned headers do not declare it", entry.Route)
+		}
+	}
+}
