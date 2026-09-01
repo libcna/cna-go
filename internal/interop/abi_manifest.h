@@ -394,6 +394,44 @@ typedef struct CNA_RenderTargetInfo {
 } CNA_RenderTargetInfo;
 #endif
 
+#ifndef CNA_C_GRAPHICS3D_H
+typedef uint32_t CNA_BufferUsage;
+typedef uint32_t CNA_IndexElementSize;
+typedef uint32_t CNA_SetDataOptions;
+#endif
+
+#ifndef CNA_C_INDEX_RESOURCES_H
+typedef CNA_Handle CNA_IndexBufferHandle;
+typedef struct CNA_IndexBufferCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    int32_t index_count;
+    CNA_IndexElementSize index_element_size;
+    CNA_BufferUsage buffer_usage;
+    CNA_Bool dynamic;
+    uint8_t reserved[3];
+} CNA_IndexBufferCreateInfo;
+typedef struct CNA_IndexBufferInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    int32_t index_count;
+    CNA_IndexElementSize index_element_size;
+    CNA_BufferUsage buffer_usage;
+    CNA_Bool dynamic;
+    CNA_Bool is_content_lost;
+    CNA_Bool has_renderer;
+    uint8_t reserved;
+} CNA_IndexBufferInfo;
+typedef struct CNA_IndexBufferTransfer {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_IndexElementSize index_element_size;
+    CNA_SetDataOptions options;
+    uint64_t start_index;
+    uint64_t element_count;
+} CNA_IndexBufferTransfer;
+#endif
+
 #ifndef CNA_C_INPUT_H
 typedef struct CNA_KeyboardState {
     uint32_t struct_size;
@@ -448,6 +486,12 @@ typedef CNA_Result (*cna_graphics_device_manager_end_draw_fn)(CNA_Handle);
 typedef CNA_Result (*cna_game_get_graphics_device_fn)(CNA_Handle, CNA_Handle*);
 typedef CNA_Result (*cna_graphics_device_get_viewport_fn)(CNA_Handle, CNA_Viewport*);
 typedef CNA_Result (*cna_graphics_device_clear_rgba_fn)(CNA_Handle, float, float, float, float);
+typedef CNA_Result (*cna_index_buffer_create_fn)(CNA_Handle, const CNA_IndexBufferCreateInfo*, CNA_IndexBufferHandle*);
+typedef CNA_Result (*cna_index_buffer_destroy_fn)(CNA_IndexBufferHandle);
+typedef CNA_Result (*cna_index_buffer_get_info_fn)(CNA_IndexBufferHandle, CNA_IndexBufferInfo*);
+typedef CNA_Result (*cna_index_buffer_set_data_fn)(CNA_IndexBufferHandle, const CNA_IndexBufferTransfer*, const void*, uint64_t);
+typedef CNA_Result (*cna_index_buffer_set_data_at_fn)(CNA_IndexBufferHandle, uint64_t, const CNA_IndexBufferTransfer*, const void*, uint64_t);
+typedef CNA_Result (*cna_index_buffer_get_data_fn)(CNA_IndexBufferHandle, const CNA_IndexBufferTransfer*, void*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_content_manager_create_fn)(CNA_Handle, const CNA_ContentManagerCreateInfo*, CNA_Handle*);
 typedef CNA_Result (*cna_content_manager_destroy_fn)(CNA_Handle);
 typedef CNA_Result (*cna_content_manager_get_root_directory_size_fn)(CNA_Handle, uint64_t*);
@@ -570,6 +614,12 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \
+    X(cna_index_buffer_create) \
+    X(cna_index_buffer_destroy) \
+    X(cna_index_buffer_get_info) \
+    X(cna_index_buffer_set_data) \
+    X(cna_index_buffer_set_data_at) \
+    X(cna_index_buffer_get_data) \
     X(cna_content_manager_create) \
     X(cna_content_manager_destroy) \
     X(cna_content_manager_get_root_directory_size) \

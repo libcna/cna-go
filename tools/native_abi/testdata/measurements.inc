@@ -328,3 +328,33 @@ CNA_GO_MEASURE(offsetof_CNA_ContentManagerCreateInfo_struct_size, offsetof(CNA_C
 CNA_GO_MEASURE(offsetof_CNA_ContentManagerCreateInfo_struct_version, offsetof(CNA_ContentManagerCreateInfo, struct_version))
 CNA_GO_MEASURE(offsetof_CNA_ContentManagerCreateInfo_root_directory, offsetof(CNA_ContentManagerCreateInfo, root_directory))
 CNA_GO_MEASURE(offsetof_CNA_ContentManagerCreateInfo_reserved, offsetof(CNA_ContentManagerCreateInfo, reserved))
+
+// Foundation 65. The three index-buffer structures.
+//
+// The create-info's `index_element_size` and `buffer_usage` are ADJACENT
+// uint32s, so swapping them is byte-identical to C and turns a 16-bit read-write
+// buffer into a 32-bit write-only one. The info struct repeats the pair and adds
+// three CNA_Bools whose offsets decide which flag a caller reads. The transfer's
+// `start_index` and `element_count` are adjacent uint64s, the same shape the
+// texture transfer's are, and swapping them turns "six indices from zero" into
+// "zero indices from six" -- a transfer that succeeds and moves nothing.
+CNA_GO_MEASURE(sizeof_CNA_IndexBufferCreateInfo, sizeof(CNA_IndexBufferCreateInfo))
+CNA_GO_MEASURE(alignof_CNA_IndexBufferCreateInfo, _Alignof(CNA_IndexBufferCreateInfo))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferCreateInfo_index_count, offsetof(CNA_IndexBufferCreateInfo, index_count))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferCreateInfo_index_element_size, offsetof(CNA_IndexBufferCreateInfo, index_element_size))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferCreateInfo_buffer_usage, offsetof(CNA_IndexBufferCreateInfo, buffer_usage))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferCreateInfo_dynamic, offsetof(CNA_IndexBufferCreateInfo, dynamic))
+CNA_GO_MEASURE(sizeof_CNA_IndexBufferInfo, sizeof(CNA_IndexBufferInfo))
+CNA_GO_MEASURE(alignof_CNA_IndexBufferInfo, _Alignof(CNA_IndexBufferInfo))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferInfo_index_count, offsetof(CNA_IndexBufferInfo, index_count))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferInfo_index_element_size, offsetof(CNA_IndexBufferInfo, index_element_size))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferInfo_buffer_usage, offsetof(CNA_IndexBufferInfo, buffer_usage))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferInfo_dynamic, offsetof(CNA_IndexBufferInfo, dynamic))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferInfo_is_content_lost, offsetof(CNA_IndexBufferInfo, is_content_lost))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferInfo_has_renderer, offsetof(CNA_IndexBufferInfo, has_renderer))
+CNA_GO_MEASURE(sizeof_CNA_IndexBufferTransfer, sizeof(CNA_IndexBufferTransfer))
+CNA_GO_MEASURE(alignof_CNA_IndexBufferTransfer, _Alignof(CNA_IndexBufferTransfer))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferTransfer_index_element_size, offsetof(CNA_IndexBufferTransfer, index_element_size))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferTransfer_options, offsetof(CNA_IndexBufferTransfer, options))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferTransfer_start_index, offsetof(CNA_IndexBufferTransfer, start_index))
+CNA_GO_MEASURE(offsetof_CNA_IndexBufferTransfer_element_count, offsetof(CNA_IndexBufferTransfer, element_count))

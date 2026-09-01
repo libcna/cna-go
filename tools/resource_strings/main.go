@@ -136,6 +136,18 @@ var registry = []claimedString{
 		Value: "Invalid VertexDeclaration. Duplicate element {0}{1}."},
 	{Key: "VertexElementsOverlap", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "Invalid VertexDeclaration. Elements {0}{1} and {2}{3} are overlapping."},
+	// Foundation 65. IndexBuffer's four. MustBeValidIndex is the shared one:
+	// Helpers::ValidateCopyParameters throws it three times with three
+	// different PARAMETER names and one sentence, and every buffer transfer in
+	// the reference goes through that helper.
+	{Key: "ResourcesMustBeGreaterThanZeroSize", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Resource size must be greater than zero."},
+	{Key: "WriteOnlyGetNotSupported", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Calling GetData on a resource that was created with BufferUsage.WriteOnly is not supported."},
+	{Key: "ResourceDataMustBeCorrectSize", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "The array is not the correct size for the amount of data requested."},
+	{Key: "MustBeValidIndex", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "This parameter must be a valid index within the array."},
 	// Foundation 50 corrected this KEY. The value was right and its key was
 	// invented from the sentence; the resource-set reader found no
 	// DopplerScaleMustBeGreaterThanOrEqualToZero anywhere, and the real key is

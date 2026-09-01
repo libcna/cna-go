@@ -241,6 +241,48 @@ CnaGoResult cna_go_graphics_device_subscribe_events(
 CnaGoResult cna_go_graphics_device_unsubscribe_events(CnaGoHandle* registrations);
 CnaGoResult cna_go_graphics_device_dispose(CnaGoHandle device);
 
+CnaGoResult cna_go_index_buffer_create(
+    CnaGoHandle device,
+    int32_t index_count,
+    uint32_t index_element_size,
+    uint32_t buffer_usage,
+    uint8_t dynamic,
+    CnaGoHandle* out_index_buffer);
+CnaGoResult cna_go_index_buffer_destroy(CnaGoHandle index_buffer);
+CnaGoResult cna_go_index_buffer_get_info(
+    CnaGoHandle index_buffer,
+    int32_t* out_index_count,
+    uint32_t* out_index_element_size,
+    uint32_t* out_buffer_usage,
+    uint8_t* out_dynamic,
+    uint8_t* out_is_content_lost,
+    uint8_t* out_has_renderer);
+CnaGoResult cna_go_index_buffer_set_data(
+    CnaGoHandle index_buffer,
+    uint32_t index_element_size,
+    uint32_t options,
+    uint64_t start_index,
+    uint64_t element_count,
+    const void* data,
+    uint64_t capacity);
+CnaGoResult cna_go_index_buffer_set_data_at(
+    CnaGoHandle index_buffer,
+    uint64_t buffer_offset_in_bytes,
+    uint32_t index_element_size,
+    uint32_t options,
+    uint64_t start_index,
+    uint64_t element_count,
+    const void* data,
+    uint64_t capacity);
+CnaGoResult cna_go_index_buffer_get_data(
+    CnaGoHandle index_buffer,
+    uint32_t index_element_size,
+    uint64_t start_index,
+    uint64_t element_count,
+    void* destination,
+    uint64_t capacity,
+    uint64_t* out_element_count);
+
 CnaGoResult cna_go_content_manager_create(
     CnaGoHandle device,
     const char* root_directory,

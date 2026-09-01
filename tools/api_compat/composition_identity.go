@@ -147,6 +147,11 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 			// has: binding once where the object is actually built covers
 			// every path that builds one.
 			"Microsoft.Xna.Framework.Graphics.VertexDeclaration": "newVertexDeclaration",
+			// Foundation 65. IndexBuffer's two public constructors both reach
+			// the same unexported builder, because the Type-keyed one is
+			// literally `call .ctor(device, sizeForType(type), count, usage)`
+			// in the reference too.
+			"Microsoft.Xna.Framework.Graphics.IndexBuffer": "newIndexBuffer",
 		},
 	},
 

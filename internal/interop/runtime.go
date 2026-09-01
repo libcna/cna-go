@@ -95,6 +95,7 @@ const (
 	resourceSpriteBatch
 	resourceRenderTarget2D
 	resourceContentManager
+	resourceIndexBuffer
 )
 
 // FrameTime is the private tick-exact lifecycle value passed into the public
@@ -368,6 +369,90 @@ func (d *Device) CreateContentManager(rootDirectory string) (*Resource, error) {
 		return nil, err
 	}
 	return d.runtime.registerResource(manager, resourceContentManager, d.manager), nil
+}
+
+// IndexBufferInfo is CNA_IndexBufferInfo, flattened. Everything CNA reports
+// about a created index buffer, including the two renderer-state flags the
+// projection does not publish and the dynamic flag that decides whether a
+// streaming option is legal.
+type IndexBufferInfo struct {
+	IndexCount       int32
+	IndexElementSize uint32
+	BufferUsage      uint32
+	Dynamic          bool
+	IsContentLost    bool
+	HasRenderer      bool
+}
+
+// The two CNA_INDEX_ELEMENT_SIZE_* identities, in CNA's own order. They happen
+// to match XNA's IndexElementSize literals, and the Graphics package maps them
+// explicitly anyway rather than casting: a shared numbering is a coincidence to
+// be checked, not a rule to rely on.
+const (
+	IndexElementSizeSixteenBits   uint32 = 0
+	IndexElementSizeThirtyTwoBits uint32 = 1
+)
+
+// The three CNA_SET_DATA_* identities.
+const (
+	SetDataNone        uint32 = 0
+	SetDataDiscard     uint32 = 1
+	SetDataNoOverwrite uint32 = 2
+)
+
+// CreateIndexBuffer is cna_index_buffer_create. The device handle is
+// callback-scoped, so this is reachable only from inside a lifecycle callback.
+func (d *Device) CreateIndexBuffer(indexCount int32, elementSize, usage uint32, dynamic bool) (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	buffer, err := nativeIndexBufferCreate(handle, indexCount, elementSize, usage, dynamic)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(buffer, resourceIndexBuffer, d.manager), nil
+}
+
+// IndexBufferInfo is cna_index_buffer_get_info.
+func (resource *Resource) IndexBufferInfo() (IndexBufferInfo, error) {
+	handle, err := resource.liveHandle(resourceIndexBuffer)
+	if err != nil {
+		return IndexBufferInfo{}, err
+	}
+	return nativeIndexBufferInfo(handle)
+}
+
+// SetIndexData, SetIndexDataAt and GetIndexData are the three typed transfers.
+//
+// Each takes an unsafe.Pointer to the caller's array and its element count,
+// because the element TYPE is decided by the caller and CNA identifies it by an
+// index-element-size identity rather than by a Go type. The Graphics package is
+// where a Go type is turned into that identity, and where the element width is
+// checked against what the identity means -- interop copies bytes and validates
+// nothing about their shape.
+func (resource *Resource) SetIndexData(elementSize, options uint32, startIndex, elementCount uint64, data unsafe.Pointer, capacity uint64) error {
+	handle, err := resource.liveHandle(resourceIndexBuffer)
+	if err != nil {
+		return err
+	}
+	return nativeIndexBufferSetData(handle, elementSize, options, startIndex, elementCount, data, capacity)
+}
+
+func (resource *Resource) SetIndexDataAt(bufferOffsetInBytes uint64, elementSize, options uint32, startIndex, elementCount uint64, data unsafe.Pointer, capacity uint64) error {
+	handle, err := resource.liveHandle(resourceIndexBuffer)
+	if err != nil {
+		return err
+	}
+	return nativeIndexBufferSetDataAt(handle, bufferOffsetInBytes, elementSize, options, startIndex, elementCount, data, capacity)
+}
+
+func (resource *Resource) GetIndexData(elementSize uint32, startIndex, elementCount uint64, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	handle, err := resource.liveHandle(resourceIndexBuffer)
+	if err != nil {
+		return 0, err
+	}
+	return nativeIndexBufferGetData(handle, elementSize, startIndex, elementCount, destination, capacity)
 }
 
 // ContentRootDirectory is cna_content_manager_copy_root_directory.
@@ -2361,6 +2446,8 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeSpriteBatchDestroy(handle)
 	case resourceContentManager:
 		return nativeContentManagerDestroy(handle)
+	case resourceIndexBuffer:
+		return nativeIndexBufferDestroy(handle)
 	case resourceRenderTarget2D:
 		// A render target is a distinct CNA kind with its own destroy, and
 		// cna_texture2d_destroy is documented as destroying a Texture2D but NOT

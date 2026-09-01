@@ -484,6 +484,32 @@ var probeMutations = []sourceMutation{
 	// line up by type -- handle, view, pointer, pointer -- so a caller that
 	// passed capacity where the count belongs would be writing the resolved
 	// path into the caller's byte count.
+	// Foundation 65. The index-buffer routes. Creation takes the create-info BY
+	// POINTER; a by-value prototype is refused at the call, which passes `&info`.
+	{
+		name: "index-buffer-create-takes-the-info-by-value",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_index_buffer_create_fn)(CNA_Handle, const CNA_IndexBufferCreateInfo*, CNA_IndexBufferHandle*);",
+		new:  "typedef CNA_Result (*cna_index_buffer_create_fn)(CNA_Handle, CNA_IndexBufferCreateInfo, CNA_IndexBufferHandle*);",
+	},
+	// The windowed upload's BUFFER offset comes before the transfer descriptor.
+	// Dropping it leaves a prototype whose remaining arguments still line up by
+	// type, so only the bridge's own call -- which passes six arguments -- can
+	// catch it.
+	{
+		name: "index-buffer-set-data-at-drops-its-buffer-offset",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_index_buffer_set_data_at_fn)(CNA_IndexBufferHandle, uint64_t, const CNA_IndexBufferTransfer*, const void*, uint64_t);",
+		new:  "typedef CNA_Result (*cna_index_buffer_set_data_at_fn)(CNA_IndexBufferHandle, const CNA_IndexBufferTransfer*, const void*, uint64_t);",
+	},
+	// The read route reports how many elements it needs. Dropping that output
+	// makes an undersized destination unreportable.
+	{
+		name: "index-buffer-get-data-drops-its-required-element-count",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_index_buffer_get_data_fn)(CNA_IndexBufferHandle, const CNA_IndexBufferTransfer*, void*, uint64_t, uint64_t*);",
+		new:  "typedef CNA_Result (*cna_index_buffer_get_data_fn)(CNA_IndexBufferHandle, const CNA_IndexBufferTransfer*, void*, uint64_t);",
+	},
 	{
 		name: "content-asset-path-copy-drops-its-capacity",
 		file: "abi_manifest.h",
@@ -1036,6 +1062,34 @@ var layoutMutations = []sourceMutation{
 	// handed a struct of size 1 and version 24. A versioned create-info exists
 	// precisely to be checked, and this is the mutation that proves the check
 	// is being fed the right two words.
+	// Foundation 65. The index-buffer create-info's two identity words are
+	// adjacent uint32s, so this swap is byte-identical to C and turns a 16-bit
+	// read-write buffer into a 32-bit write-only one -- a buffer that creates
+	// successfully, strides twice as far, and refuses every GetData.
+	{
+		name: "index-create-info-element-size-and-usage-swapped",
+		file: "abi_manifest.h",
+		old:  "    int32_t index_count;\n    CNA_IndexElementSize index_element_size;\n    CNA_BufferUsage buffer_usage;\n    CNA_Bool dynamic;\n    uint8_t reserved[3];",
+		new:  "    int32_t index_count;\n    CNA_BufferUsage buffer_usage;\n    CNA_IndexElementSize index_element_size;\n    CNA_Bool dynamic;\n    uint8_t reserved[3];",
+	},
+	// The info struct's three CNA_Bools are one byte each and adjacent, so
+	// swapping two of them is invisible to C and makes a live buffer report
+	// itself as content-lost.
+	{
+		name: "index-info-content-lost-and-has-renderer-swapped",
+		file: "abi_manifest.h",
+		old:  "    CNA_Bool dynamic;\n    CNA_Bool is_content_lost;\n    CNA_Bool has_renderer;\n    uint8_t reserved;",
+		new:  "    CNA_Bool dynamic;\n    CNA_Bool has_renderer;\n    CNA_Bool is_content_lost;\n    uint8_t reserved;",
+	},
+	// The transfer's window pair, the same shape the texture transfer's has:
+	// two adjacent uint64s whose swap turns "six indices from zero" into "zero
+	// indices from six" -- a transfer that succeeds and moves nothing.
+	{
+		name: "index-transfer-start-and-count-swapped",
+		file: "abi_manifest.h",
+		old:  "    CNA_SetDataOptions options;\n    uint64_t start_index;\n    uint64_t element_count;\n} CNA_IndexBufferTransfer;",
+		new:  "    CNA_SetDataOptions options;\n    uint64_t element_count;\n    uint64_t start_index;\n} CNA_IndexBufferTransfer;",
+	},
 	{
 		name: "content-create-info-size-and-version-swapped",
 		file: "abi_manifest.h",

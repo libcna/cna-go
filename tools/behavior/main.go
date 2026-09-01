@@ -3705,6 +3705,66 @@ func runCorpus() corpusReport {
 			clonedDeclaration.IsDisposed(), clonedDeclaration.VertexStride()))
 
 	// ------------------------------------------------------------------
+	// Foundation 65. IndexBuffer's managed guards. Creation itself needs a
+	// callback-scoped CNA device, which this corpus creates none of, so what
+	// is proved here is everything that runs BEFORE the device -- which is the
+	// whole of the reference's own argument validation. The native half, and
+	// the round trip through CNA's buffer, is proved in tools/native_stress.
+	// ------------------------------------------------------------------
+
+	_, indexZeroCount := graphics.NewIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage(
+		nil, graphics.IndexElementSizeSixteenBits, 0, graphics.BufferUsageNone)
+	_, indexNegativeCount := graphics.NewIndexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(uint16(0)), -1, graphics.BufferUsageNone)
+	check("index-buffer.both-constructors-refuse-a-non-positive-count-before-the-device", "INDEX_BUFFER",
+		"true,true",
+		fmt.Sprintf("%t,%t",
+			strings.Contains(fmt.Sprint(indexZeroCount), "Resource size must be greater than zero."),
+			strings.Contains(fmt.Sprint(indexNegativeCount), "Resource size must be greater than zero.")))
+
+	// The Type constructor's closed element set, which is NARROWER than
+	// Marshal.SizeOf's -- recorded as a Go projection rather than as reference
+	// behaviour.
+	indexTypeAccepted := 0
+	for _, accepted := range []reflect.Type{
+		reflect.TypeOf(int16(0)), reflect.TypeOf(uint16(0)),
+		reflect.TypeOf(int32(0)), reflect.TypeOf(uint32(0)),
+	} {
+		if _, err := graphics.NewIndexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+			nil, accepted, 4, graphics.BufferUsageNone); err != nil &&
+			strings.Contains(err.Error(), "16-bit or 32-bit") {
+			indexTypeAccepted--
+		} else {
+			indexTypeAccepted++
+		}
+	}
+	_, indexTypeRefused := graphics.NewIndexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(int64(0)), 4, graphics.BufferUsageNone)
+	checkGoProjection("index-buffer.the-type-constructor-closes-the-element-set", "INDEX_BUFFER",
+		"4,true",
+		fmt.Sprintf("%d,%t", indexTypeAccepted,
+			strings.Contains(fmt.Sprint(indexTypeRefused), "int64")))
+
+	// A nil device is refused in GO'S OWN WORDS, and the reason is measured:
+	// IndexBuffer's constructors have NO device check -- they store the
+	// argument and dereference it two statements later, so C# gets a
+	// NullReferenceException. Borrowing the message Texture2D's constructor
+	// really does throw would attribute it to a throw site that has none.
+	_, indexNilDevice := graphics.NewIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage(
+		nil, graphics.IndexElementSizeSixteenBits, 4, graphics.BufferUsageNone)
+	checkGoProjection("index-buffer.a-nil-device-is-refused-without-borrowing-another-members-message", "INDEX_BUFFER",
+		"true,false",
+		fmt.Sprintf("%t,%t",
+			indexNilDevice != nil,
+			strings.Contains(fmt.Sprint(indexNilDevice),
+				"The GraphicsDevice must not be null when creating new resources.")))
+
+	// The transfer guards need a buffer with a native half, so they are proved
+	// in the in-package tests and in tools/native_stress rather than here.
+	// This corpus creates no native game, and a PUBLIC constructor that made
+	// one without a device would be a test helper on the shipped surface.
+
+	// ------------------------------------------------------------------
 	// Foundation 63. ContentManager's managed surface, and Game::Content.
 	//
 	// Everything below reaches no runtime. The reference's constructors,

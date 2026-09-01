@@ -3092,3 +3092,50 @@ func TestVertexDeclarationIsReachableFromOutside(t *testing.T) {
 		t.Fatalf("%v, want the reference's overlap message", err)
 	}
 }
+
+// TestIndexBufferIsReachableFromOutside compiles IndexBuffer's whole projected
+// surface, including the six transfer members whose method-shaped names do NOT
+// exist -- Go methods cannot declare type parameters, so a consumer writes the
+// package function with the receiver first.
+func TestIndexBufferIsReachableFromOutside(t *testing.T) {
+	var _ func(*graphics.GraphicsDevice, graphics.IndexElementSize, int32, graphics.BufferUsage) (*graphics.IndexBuffer, error) = graphics.NewIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage
+	var _ func(*graphics.GraphicsDevice, reflect.Type, int32, graphics.BufferUsage) (*graphics.IndexBuffer, error) = graphics.NewIndexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage
+
+	buffer := &graphics.IndexBuffer{}
+	var _ func() int32 = buffer.IndexCount
+	var _ func() graphics.IndexElementSize = buffer.IndexElementSize
+	var _ func() graphics.BufferUsage = buffer.BufferUsage
+	var _ func() *graphics.GraphicsDevice = buffer.GraphicsDevice
+	var _ func() bool = buffer.IsDisposed
+	var _ func() error = buffer.DisposeByNone
+	var _ func(bool) error = buffer.DisposeByBoolean
+
+	var _ func(*graphics.IndexBuffer, []uint16) error = graphics.IndexBufferSetDataBySliceOfT[uint16]
+	var _ func(*graphics.IndexBuffer, []uint16, int32, int32) error = graphics.IndexBufferSetDataBySliceOfTAndInt32AndInt32[uint16]
+	var _ func(*graphics.IndexBuffer, int32, []uint16, int32, int32) error = graphics.IndexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32[uint16]
+	var _ func(*graphics.IndexBuffer, []uint32) error = graphics.IndexBufferGetDataBySliceOfT[uint32]
+	var _ func(*graphics.IndexBuffer, []uint32, int32, int32) error = graphics.IndexBufferGetDataBySliceOfTAndInt32AndInt32[uint32]
+	var _ func(*graphics.IndexBuffer, int32, []uint32, int32, int32) error = graphics.IndexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32[uint32]
+
+	for _, name := range []string{"SetData", "GetData"} {
+		if _, present := reflect.TypeOf(buffer).MethodByName(name); present {
+			t.Fatalf("IndexBuffer has a %s method; Go cannot declare one with a type parameter", name)
+		}
+	}
+
+	// The count guard runs before the device, so it is reachable with a nil
+	// one -- and it carries Microsoft's own sentence.
+	if _, err := graphics.NewIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage(
+		nil, graphics.IndexElementSizeSixteenBits, 0, graphics.BufferUsageNone); err == nil {
+		t.Fatal("a zero index count was accepted")
+	} else if !strings.Contains(err.Error(), "Resource size must be greater than zero.") {
+		t.Fatalf("%v, want the reference's message", err)
+	}
+	// And the Type constructor's closed element set is visible from outside.
+	if _, err := graphics.NewIndexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, reflect.TypeOf(float64(0)), 4, graphics.BufferUsageNone); err == nil {
+		t.Fatal("a float64 was accepted as an index element type")
+	} else if !strings.Contains(err.Error(), "float64") {
+		t.Fatalf("%v, want the refusal to name the type", err)
+	}
+}

@@ -12,7 +12,7 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 132,
+    "COMPLETE_TYPES": 133,
     "DECLARED_INTERFACE_CONFORMANCE": 3,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
@@ -41,8 +41,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 44,
-    "MISSING_TYPE": 121,
-    "MISSING_TYPES": 121,
+    "MISSING_TYPE": 120,
+    "MISSING_TYPES": 120,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2217,
-    "TARGET_TYPES": 136,
-    "TOTAL_DIAGNOSTICS": 165,
+    "TARGET_MEMBERS": 2239,
+    "TARGET_TYPES": 137,
+    "TOTAL_DIAGNOSTICS": 164,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -73,8 +73,8 @@
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
     "XNA_COMPOSED_BASE_RELATIONSHIPS": 4,
     "XNA_COMPOSED_DERIVED_TYPES": 17,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 10,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 10,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 11,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 11,
     "XNA_COMPOSED_IDENTITY_FORWARDS": 2,
     "XNA_COMPOSED_IDENTITY_SITES": 7,
     "XNA_COMPOSED_IDENTITY_USES": 8,
@@ -640,12 +640,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IndexBuffer",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.Model",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Model",
       "message": "mapped Go type is absent"
@@ -1125,6 +1119,7 @@
     "Microsoft.Xna.Framework.Graphics.IEffectFog",
     "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
     "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
+    "Microsoft.Xna.Framework.Graphics.IndexBuffer",
     "Microsoft.Xna.Framework.Graphics.IndexElementSize",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
@@ -1344,7 +1339,6 @@
     "Microsoft.Xna.Framework.Graphics.GraphicsAdapter",
     "Microsoft.Xna.Framework.Graphics.IEffectLights",
     "Microsoft.Xna.Framework.Graphics.IVertexType",
-    "Microsoft.Xna.Framework.Graphics.IndexBuffer",
     "Microsoft.Xna.Framework.Graphics.Model",
     "Microsoft.Xna.Framework.Graphics.ModelBone",
     "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
@@ -7916,7 +7910,7 @@
       "clrMembers": 3,
       "projectedMembers": 0,
       "declaringTypes": 7,
-      "projectedTypes": 1,
+      "projectedTypes": 2,
       "rationale": "assembly-visible device-loss plumbing declared by seven public graphics types; none of its three members appears in any public contract, and projecting one would expose CNA-internal recreation machinery",
       "verdict": "PASS"
     },
@@ -8854,7 +8848,7 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.GraphicsResource",
       "derivedTypes": 11,
-      "projectedDerivedTypes": 7,
+      "projectedDerivedTypes": 8,
       "positions": 0,
       "positionsOnProjectedCarriers": 0,
       "requirement": "NONE",
@@ -9226,9 +9220,10 @@
         {
           "derived": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
           "goDerived": "IndexBuffer",
+          "baseField": "resource",
           "inheritedCLRMembers": 7,
           "inheritedProjections": 10,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
@@ -9411,6 +9406,12 @@
           "binds": true
         },
         {
+          "derived": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
+          "goDerived": "IndexBuffer",
+          "constructor": "newIndexBuffer",
+          "binds": true
+        },
+        {
           "derived": "Microsoft.Xna.Framework.Graphics.RasterizerState",
           "goDerived": "RasterizerState",
           "constructor": "NewRasterizerState",
@@ -9474,7 +9475,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "aec3bc262c59a1905687fe9536f671592215928eddda7e6bb8360dad4d03977d",
+    "mappingSha256": "1e81774cb3e12a300baf213fbbb45366777e12c93d214d08903076a0b64c2329",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

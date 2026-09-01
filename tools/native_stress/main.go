@@ -71,14 +71,26 @@ type counters struct {
 	ContentTypeRefusals         int `json:"CONTENT_TYPE_REFUSALS"`
 	ContentUnloadCalls          int `json:"CONTENT_UNLOAD_CALLS"`
 	ContentDisposalChecks       int `json:"CONTENT_DISPOSAL_CHECKS"`
-	CallbackErrorCycles         int `json:"CALLBACK_ERROR_CYCLES"`
-	CallbackPanicCycles         int `json:"CALLBACK_PANIC_CYCLES"`
-	WrongThreadChecks           int `json:"WRONG_THREAD_CHECKS"`
-	OwnerThreadRetries          int `json:"OWNER_THREAD_RETRIES"`
-	GCStressPoints              int `json:"GC_STRESS_POINTS"`
-	NativeCrashes               int `json:"NATIVE_CRASHES"`
-	ObservedUAF                 int `json:"OBSERVED_UAF"`
-	ObservedDoubleFree          int `json:"OBSERVED_DOUBLE_FREE"`
+	// The index-buffer slice. RoundTrips is the load-bearing one: it writes
+	// indices to the live buffer and reads them back FROM IT, so a projection
+	// that kept a managed copy would compare its own input.
+	IndexBufferCycles            int `json:"INDEX_BUFFER_CYCLES"`
+	IndexBufferCreations         int `json:"INDEX_BUFFER_CREATIONS"`
+	IndexBufferDescriptionChecks int `json:"INDEX_BUFFER_DESCRIPTION_CHECKS"`
+	IndexBufferRoundTrips        int `json:"INDEX_BUFFER_ROUND_TRIPS"`
+	IndexBufferReadbackRefusals  int `json:"INDEX_BUFFER_READBACK_REFUSALS"`
+	IndexBufferWindowRoundTrips  int `json:"INDEX_BUFFER_WINDOW_ROUND_TRIPS"`
+	IndexBufferRefusals          int `json:"INDEX_BUFFER_REFUSALS"`
+	IndexBufferWriteOnlyChecks   int `json:"INDEX_BUFFER_WRITE_ONLY_CHECKS"`
+	IndexBufferDisposalChecks    int `json:"INDEX_BUFFER_DISPOSAL_CHECKS"`
+	CallbackErrorCycles          int `json:"CALLBACK_ERROR_CYCLES"`
+	CallbackPanicCycles          int `json:"CALLBACK_PANIC_CYCLES"`
+	WrongThreadChecks            int `json:"WRONG_THREAD_CHECKS"`
+	OwnerThreadRetries           int `json:"OWNER_THREAD_RETRIES"`
+	GCStressPoints               int `json:"GC_STRESS_POINTS"`
+	NativeCrashes                int `json:"NATIVE_CRASHES"`
+	ObservedUAF                  int `json:"OBSERVED_UAF"`
+	ObservedDoubleFree           int `json:"OBSERVED_DOUBLE_FREE"`
 
 	GameEventActivated   int `json:"GAME_EVENT_ACTIVATED_DELIVERIES"`
 	GameEventDeactivated int `json:"GAME_EVENT_DEACTIVATED_DELIVERIES"`
@@ -347,7 +359,7 @@ func runParent() (counters, error) {
 		return counters{}, err
 	}
 	var total counters
-	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content"} {
+	for _, scenario := range []string{"success", "callback-error", "callback-panic", "event-rerun", "frame-hook-override", "frame-hook-subset", "timing", "window", "frame-step", "frame-step-run", "graphics-manager", "sprite-draw", "device-state", "render-target", "content", "index-buffer"} {
 		for index := 0; index < 20; index++ {
 			command := exec.Command(executable, "--child", scenario, "--index", fmt.Sprint(index))
 			command.Env = os.Environ()
@@ -417,6 +429,20 @@ func runParent() (counters, error) {
 		total.DeviceStateStaleChecks < 20 || total.DeviceStateWrongThreadHits < 20 {
 		return total, errors.New("a device-state proof did not run in every cycle")
 	}
+	// The index-buffer slice, per cycle: two buffers created, the description
+	// CNA applied checked on one, the projection's own refusals exercised, the
+	// WriteOnly read refused and disposal proved.
+	if total.IndexBufferCycles < 20 || total.IndexBufferCreations < 20 ||
+		total.IndexBufferDescriptionChecks < 20 || total.IndexBufferRefusals < 20 ||
+		total.IndexBufferWriteOnlyChecks < 20 || total.IndexBufferDisposalChecks < 20 {
+		return total, errors.New("an index-buffer proof did not run in every cycle")
+	}
+	// A cycle that READ BACK must also have proved the windowed overload.
+	if total.IndexBufferWindowRoundTrips != total.IndexBufferRoundTrips {
+		return total, fmt.Errorf("%d index round trips produced %d windowed ones",
+			total.IndexBufferRoundTrips, total.IndexBufferWindowRoundTrips)
+	}
+
 	// The content slice, per cycle: one manager created, its identity proved,
 	// one root round trip through CNA, one resolved path, one type refusal the
 	// projection makes itself, one unload and one disposal.
@@ -717,6 +743,20 @@ func runChild(scenario string, index int) error {
 		}
 		if game.result.SpriteDrawScaledSubmits == 0 || game.result.SpriteDrawDestinationSubmits == 0 {
 			return errors.New("the sprite-draw scenario submitted nothing")
+		}
+	case "index-buffer":
+		game.result.IndexBufferCycles = 1
+		if err != nil {
+			return err
+		}
+		if game.result.IndexBufferCreations == 0 {
+			return errors.New("the index-buffer scenario created nothing")
+		}
+		// Exactly one of the two outcomes per creation, for the same reason
+		// the render-target readback has one.
+		if game.result.IndexBufferRoundTrips+game.result.IndexBufferReadbackRefusals != game.result.IndexBufferCreations {
+			return fmt.Errorf("index-buffer round trips %d and refusals %d do not account for %d creations",
+				game.result.IndexBufferRoundTrips, game.result.IndexBufferReadbackRefusals, game.result.IndexBufferCreations)
 		}
 	case "content":
 		game.result.ContentCycles = 1
@@ -1340,6 +1380,11 @@ func (g *stressGame) Draw(host *framework.Game, _ framework.GameTime) error {
 	}
 	if g.scenario == "content" {
 		if err := g.exerciseContent(host); err != nil {
+			return err
+		}
+	}
+	if g.scenario == "index-buffer" {
+		if err := g.exerciseIndexBuffer(); err != nil {
 			return err
 		}
 	}
@@ -3590,5 +3635,140 @@ func (g *stressGame) exerciseContent(host *framework.Game) error {
 		return errors.New("Unload succeeded after Dispose")
 	}
 	g.result.ContentDisposalChecks++
+	return nil
+}
+
+// exerciseIndexBuffer is the index-buffer scenario. One 16-bit and one 32-bit
+// buffer per cycle, created on the live device inside LoadContent -- which CNA
+// requires, because cna_index_buffer_create takes a callback-scoped device
+// handle.
+//
+// What it proves, and what it cannot:
+//
+//   - CNA reports the count, width and usage it APPLIED, and the projection
+//     records those rather than the request. A renderer that widened an index
+//     would be visible instead of hidden.
+//   - Indices written through the projection come back FROM CNA'S BUFFER
+//     unchanged, whole-array and through a window. A projection keeping a
+//     managed copy would pass a test that compared its own input.
+//   - The three refusals the projection makes ITSELF, before CNA is reached:
+//     an oversized transfer, a 32-bit transfer into a 16-bit buffer, and a
+//     GetData on a WriteOnly buffer.
+//   - Disposal destroys the CNA buffer and every later transfer is refused.
+func (g *stressGame) exerciseIndexBuffer() error {
+	device := g.device
+
+	sixteen, err := graphics.NewIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage(
+		device, graphics.IndexElementSizeSixteenBits, 6, graphics.BufferUsageNone)
+	if err != nil {
+		return fmt.Errorf("NewIndexBuffer(SixteenBits): %w", err)
+	}
+	g.result.IndexBufferCreations++
+
+	if sixteen.IndexCount() != 6 {
+		return fmt.Errorf("IndexCount = %d, want 6", sixteen.IndexCount())
+	}
+	if sixteen.IndexElementSize() != graphics.IndexElementSizeSixteenBits {
+		return fmt.Errorf("IndexElementSize = %d, want SixteenBits", sixteen.IndexElementSize())
+	}
+	if sixteen.BufferUsage() != graphics.BufferUsageNone {
+		return fmt.Errorf("BufferUsage = %d, want None", sixteen.BufferUsage())
+	}
+	if sixteen.GraphicsDevice() != device {
+		return errors.New("the buffer does not report the device it was created on")
+	}
+	if got := sixteen.ToString(); got != "Microsoft.Xna.Framework.Graphics.IndexBuffer" {
+		return fmt.Errorf("ToString = %q; the CLR `this` must reach the outermost object", got)
+	}
+	g.result.IndexBufferDescriptionChecks++
+
+	written := []uint16{0, 1, 2, 2, 3, 0}
+	if err := graphics.IndexBufferSetDataBySliceOfT(sixteen, written); err != nil {
+		return fmt.Errorf("SetData: %w", err)
+	}
+	readBack := make([]uint16, len(written))
+	if err := graphics.IndexBufferGetDataBySliceOfT(sixteen, readBack); err != nil {
+		// A renderer with no index readback path. Recorded, not passed.
+		g.result.IndexBufferReadbackRefusals++
+		fmt.Fprintf(os.Stderr, "index-buffer readback refused: %v\n", err)
+	} else {
+		for at := range written {
+			if readBack[at] != written[at] {
+				return fmt.Errorf("index %d read back as %d, want %d", at, readBack[at], written[at])
+			}
+		}
+		g.result.IndexBufferRoundTrips++
+
+		// The windowed overload, which indexes the CALLER'S array. CNA reads
+		// back from buffer index zero and writes into the window, so the first
+		// two indices land at positions 2 and 3 of the destination.
+		windowed := make([]uint16, 6)
+		if err := graphics.IndexBufferGetDataBySliceOfTAndInt32AndInt32(sixteen, windowed, 2, 2); err != nil {
+			return fmt.Errorf("windowed GetData: %w", err)
+		}
+		if windowed[2] != written[0] || windowed[3] != written[1] {
+			return fmt.Errorf("windowed read back %v, want %d and %d at positions 2 and 3",
+				windowed, written[0], written[1])
+		}
+		if windowed[0] != 0 || windowed[1] != 0 || windowed[4] != 0 || windowed[5] != 0 {
+			return fmt.Errorf("windowed GetData wrote outside its window: %v", windowed)
+		}
+		g.result.IndexBufferWindowRoundTrips++
+	}
+
+	// The three refusals the projection makes before CNA is reached.
+	if err := graphics.IndexBufferSetDataBySliceOfT(sixteen, make([]uint16, 7)); err == nil {
+		return errors.New("a transfer larger than the buffer was accepted")
+	}
+	if err := graphics.IndexBufferSetDataBySliceOfT(sixteen, make([]uint32, 6)); err == nil {
+		return errors.New("a 32-bit transfer into a 16-bit buffer was accepted")
+	}
+	g.result.IndexBufferRefusals++
+
+	// A 32-bit buffer, created from a Go type rather than the enum, and a
+	// WriteOnly one whose GetData must be refused by the projection.
+	thirtyTwo, err := graphics.NewIndexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		device, reflect.TypeOf(uint32(0)), 4, graphics.BufferUsageWriteOnly)
+	if err != nil {
+		return fmt.Errorf("NewIndexBuffer(typeof(uint32), WriteOnly): %w", err)
+	}
+	if thirtyTwo.IndexElementSize() != graphics.IndexElementSizeThirtyTwoBits {
+		return fmt.Errorf("the Type constructor produced %d, want ThirtyTwoBits", thirtyTwo.IndexElementSize())
+	}
+	if thirtyTwo.BufferUsage() != graphics.BufferUsageWriteOnly {
+		return fmt.Errorf("BufferUsage = %d, want WriteOnly as CNA applied it", thirtyTwo.BufferUsage())
+	}
+	if err := graphics.IndexBufferSetDataBySliceOfT(thirtyTwo, []uint32{9, 8, 7, 6}); err != nil {
+		return fmt.Errorf("SetData on a WriteOnly buffer: %w", err)
+	}
+	if err := graphics.IndexBufferGetDataBySliceOfT(thirtyTwo, make([]uint32, 4)); err == nil {
+		return errors.New("GetData on a WriteOnly buffer was accepted")
+	} else if !strings.Contains(err.Error(),
+		"Calling GetData on a resource that was created with BufferUsage.WriteOnly is not supported.") {
+		return fmt.Errorf("WriteOnly GetData = %v, want the reference's message", err)
+	}
+	g.result.IndexBufferWriteOnlyChecks++
+
+	// Disposal destroys the CNA buffer, is idempotent, and closes every
+	// transfer while leaving the three properties answering.
+	if err := thirtyTwo.DisposeByNone(); err != nil {
+		return fmt.Errorf("DisposeByNone: %w", err)
+	}
+	if err := thirtyTwo.DisposeByNone(); err != nil {
+		return fmt.Errorf("a second DisposeByNone: %w", err)
+	}
+	if !thirtyTwo.IsDisposed() {
+		return errors.New("a disposed buffer reports not disposed")
+	}
+	if err := graphics.IndexBufferSetDataBySliceOfT(thirtyTwo, []uint32{1}); err == nil {
+		return errors.New("a disposed buffer accepted a transfer")
+	}
+	if thirtyTwo.IndexCount() != 4 {
+		return errors.New("a disposed buffer stopped answering IndexCount")
+	}
+	if err := sixteen.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the 16-bit buffer: %w", err)
+	}
+	g.result.IndexBufferDisposalChecks++
 	return nil
 }

@@ -1135,3 +1135,64 @@ func cnaGoLifecycle(kind C.uint32_t, game C.uint64_t, totalTicks C.int64_t, elap
 	}
 	return C.uint32_t(resultSuccess)
 }
+
+// The six index-buffer routes. Every string is absent here: an index buffer
+// carries only numbers, so nothing crosses but scalars and one caller pointer.
+
+func nativeIndexBufferCreate(device uint64, indexCount int32, elementSize, usage uint32, dynamic bool) (uint64, error) {
+	var handle C.CnaGoHandle
+	flag := C.uint8_t(0)
+	if dynamic {
+		flag = 1
+	}
+	code := uint32(C.cna_go_index_buffer_create(
+		C.CnaGoHandle(device), C.int32_t(indexCount), C.uint32_t(elementSize), C.uint32_t(usage), flag, &handle))
+	if err := resultError("cna_index_buffer_create", code); err != nil {
+		return 0, err
+	}
+	return uint64(handle), nil
+}
+
+func nativeIndexBufferDestroy(buffer uint64) error {
+	return resultError("cna_index_buffer_destroy",
+		uint32(C.cna_go_index_buffer_destroy(C.CnaGoHandle(buffer))))
+}
+
+func nativeIndexBufferInfo(buffer uint64) (IndexBufferInfo, error) {
+	var count C.int32_t
+	var elementSize, usage C.uint32_t
+	var dynamic, contentLost, hasRenderer C.uint8_t
+	code := uint32(C.cna_go_index_buffer_get_info(
+		C.CnaGoHandle(buffer), &count, &elementSize, &usage, &dynamic, &contentLost, &hasRenderer))
+	if err := resultError("cna_index_buffer_get_info", code); err != nil {
+		return IndexBufferInfo{}, err
+	}
+	return IndexBufferInfo{
+		IndexCount:       int32(count),
+		IndexElementSize: uint32(elementSize),
+		BufferUsage:      uint32(usage),
+		Dynamic:          dynamic != 0,
+		IsContentLost:    contentLost != 0,
+		HasRenderer:      hasRenderer != 0,
+	}, nil
+}
+
+func nativeIndexBufferSetData(buffer uint64, elementSize, options uint32, startIndex, elementCount uint64, data unsafe.Pointer, capacity uint64) error {
+	return resultError("cna_index_buffer_set_data", uint32(C.cna_go_index_buffer_set_data(
+		C.CnaGoHandle(buffer), C.uint32_t(elementSize), C.uint32_t(options),
+		C.uint64_t(startIndex), C.uint64_t(elementCount), data, C.uint64_t(capacity))))
+}
+
+func nativeIndexBufferSetDataAt(buffer uint64, bufferOffsetInBytes uint64, elementSize, options uint32, startIndex, elementCount uint64, data unsafe.Pointer, capacity uint64) error {
+	return resultError("cna_index_buffer_set_data_at", uint32(C.cna_go_index_buffer_set_data_at(
+		C.CnaGoHandle(buffer), C.uint64_t(bufferOffsetInBytes), C.uint32_t(elementSize), C.uint32_t(options),
+		C.uint64_t(startIndex), C.uint64_t(elementCount), data, C.uint64_t(capacity))))
+}
+
+func nativeIndexBufferGetData(buffer uint64, elementSize uint32, startIndex, elementCount uint64, destination unsafe.Pointer, capacity uint64) (uint64, error) {
+	var required C.uint64_t
+	code := uint32(C.cna_go_index_buffer_get_data(
+		C.CnaGoHandle(buffer), C.uint32_t(elementSize),
+		C.uint64_t(startIndex), C.uint64_t(elementCount), destination, C.uint64_t(capacity), &required))
+	return uint64(required), resultError("cna_index_buffer_get_data", code)
+}

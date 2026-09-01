@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 727,
-    "ASSERTIONS": 727,
+    "OBSERVATIONS": 730,
+    "ASSERTIONS": 730,
     "FAILURES": 0
   },
   "observations": [
@@ -5757,6 +5757,30 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,Microsoft.Xna.Framework.Graphics.VertexDeclaration,1,true,12",
       "actual": "true,Microsoft.Xna.Framework.Graphics.VertexDeclaration,1,true,12",
+      "passed": true
+    },
+    {
+      "id": "index-buffer.both-constructors-refuse-a-non-positive-count-before-the-device",
+      "group": "INDEX_BUFFER",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "index-buffer.the-type-constructor-closes-the-element-set",
+      "group": "INDEX_BUFFER",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "4,true",
+      "actual": "4,true",
+      "passed": true
+    },
+    {
+      "id": "index-buffer.a-nil-device-is-refused-without-borrowing-another-members-message",
+      "group": "INDEX_BUFFER",
+      "provenance": "GO_LANGUAGE_PROJECTION",
+      "expected": "true,false",
+      "actual": "true,false",
       "passed": true
     },
     {

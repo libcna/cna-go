@@ -1356,6 +1356,110 @@ static CNA_StringView cna_go_view(const char* data, uint64_t length) {
     return view;
 }
 
+static void cna_go_fill_index_transfer(
+    CNA_IndexBufferTransfer* transfer,
+    uint32_t index_element_size,
+    uint32_t options,
+    uint64_t start_index,
+    uint64_t element_count) {
+    memset(transfer, 0, sizeof(*transfer));
+    transfer->struct_size = (uint32_t)sizeof(*transfer);
+    transfer->struct_version = 1;
+    transfer->index_element_size = index_element_size;
+    transfer->options = options;
+    transfer->start_index = start_index;
+    transfer->element_count = element_count;
+}
+
+CnaGoResult cna_go_index_buffer_create(
+    CnaGoHandle device,
+    int32_t index_count,
+    uint32_t index_element_size,
+    uint32_t buffer_usage,
+    uint8_t dynamic,
+    CnaGoHandle* out_index_buffer) {
+    CNA_IndexBufferCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.index_count = index_count;
+    info.index_element_size = index_element_size;
+    info.buffer_usage = buffer_usage;
+    info.dynamic = (CNA_Bool)(dynamic != 0);
+    return api.cna_index_buffer_create(device, &info, out_index_buffer);
+}
+
+CnaGoResult cna_go_index_buffer_destroy(CnaGoHandle index_buffer) {
+    return api.cna_index_buffer_destroy(index_buffer);
+}
+
+CnaGoResult cna_go_index_buffer_get_info(
+    CnaGoHandle index_buffer,
+    int32_t* out_index_count,
+    uint32_t* out_index_element_size,
+    uint32_t* out_buffer_usage,
+    uint8_t* out_dynamic,
+    uint8_t* out_is_content_lost,
+    uint8_t* out_has_renderer) {
+    CNA_IndexBufferInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_index_buffer_get_info(index_buffer, &info);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_index_count = info.index_count;
+    *out_index_element_size = info.index_element_size;
+    *out_buffer_usage = info.buffer_usage;
+    *out_dynamic = info.dynamic ? 1u : 0u;
+    *out_is_content_lost = info.is_content_lost ? 1u : 0u;
+    *out_has_renderer = info.has_renderer ? 1u : 0u;
+    return result;
+}
+
+CnaGoResult cna_go_index_buffer_set_data(
+    CnaGoHandle index_buffer,
+    uint32_t index_element_size,
+    uint32_t options,
+    uint64_t start_index,
+    uint64_t element_count,
+    const void* data,
+    uint64_t capacity) {
+    CNA_IndexBufferTransfer transfer;
+    cna_go_fill_index_transfer(&transfer, index_element_size, options, start_index, element_count);
+    return api.cna_index_buffer_set_data(index_buffer, &transfer, data, capacity);
+}
+
+CnaGoResult cna_go_index_buffer_set_data_at(
+    CnaGoHandle index_buffer,
+    uint64_t buffer_offset_in_bytes,
+    uint32_t index_element_size,
+    uint32_t options,
+    uint64_t start_index,
+    uint64_t element_count,
+    const void* data,
+    uint64_t capacity) {
+    CNA_IndexBufferTransfer transfer;
+    cna_go_fill_index_transfer(&transfer, index_element_size, options, start_index, element_count);
+    return api.cna_index_buffer_set_data_at(index_buffer, buffer_offset_in_bytes, &transfer, data, capacity);
+}
+
+CnaGoResult cna_go_index_buffer_get_data(
+    CnaGoHandle index_buffer,
+    uint32_t index_element_size,
+    uint64_t start_index,
+    uint64_t element_count,
+    void* destination,
+    uint64_t capacity,
+    uint64_t* out_element_count) {
+    CNA_IndexBufferTransfer transfer;
+    // GetData's options must be None; CNA rejects any other value here.
+    cna_go_fill_index_transfer(&transfer, index_element_size, 0u, start_index, element_count);
+    return api.cna_index_buffer_get_data(index_buffer, &transfer, destination, capacity, out_element_count);
+}
+
 CnaGoResult cna_go_content_manager_create(
     CnaGoHandle device,
     const char* root_directory,

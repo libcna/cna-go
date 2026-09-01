@@ -994,6 +994,23 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|VertexStride": true,
 		"method|GetVertexElements":  true,
 	},
+	// Foundation 65. IndexBuffer's three properties. Two are field reads and
+	// the third is a comparison over one:
+	//
+	//	get_IndexCount        ldarg.0; ldfld _indexCount; ret
+	//	get_IndexElementSize  _indexSize == 2 ? SixteenBits : ThirtyTwoBits
+	//	get_BufferUsage       ConvertDxBufferUsageToXna(_usage) -- a switch
+	//
+	// None reaches D3D and none checks disposal, so all three answer after
+	// Dispose in the reference and here. The two CONVERSIONS are the reason
+	// CNA-Go records what CNA applied at construction rather than asking CNA
+	// per call: a getter that asked would be fallible, and the reference's is
+	// not.
+	"Microsoft.Xna.Framework.Graphics.IndexBuffer": {
+		"property-get|IndexCount":       true,
+		"property-get|IndexElementSize": true,
+		"property-get|BufferUsage":      true,
+	},
 	// Texture2D's three geometry members, on the same evidence, and correcting
 	// a claim CNA-Go made without it. Their bodies are:
 	//
