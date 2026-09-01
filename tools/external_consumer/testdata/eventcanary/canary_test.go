@@ -3212,3 +3212,46 @@ func TestVertexBufferIsReachableFromOutside(t *testing.T) {
 		t.Fatalf("%v, want the reference's message", err)
 	}
 }
+
+// TestVertexBufferBindingAndDeviceDrawSurfaceIsReachableFromOutside compiles
+// the binding type and the device's nine buffer members at their exact shapes.
+// Two of them are INFALLIBLE and that is the point: the reference reads managed
+// fields the setters maintain, so a consumer writes a plain call where every
+// other device getter needs `value, err :=`.
+func TestVertexBufferBindingAndDeviceDrawSurfaceIsReachableFromOutside(t *testing.T) {
+	var _ func(*graphics.VertexBuffer, int32, int32) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBufferAndInt32AndInt32
+	var _ func(*graphics.VertexBuffer, int32) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBufferAndInt32
+	var _ func(*graphics.VertexBuffer) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBuffer
+	var _ func(*graphics.VertexBuffer) (graphics.VertexBufferBinding, error) = graphics.VertexBufferBindingOperatorImplicitByVertexBuffer
+
+	var binding graphics.VertexBufferBinding
+	var _ func() *graphics.VertexBuffer = binding.VertexBuffer
+	var _ func() int32 = binding.VertexOffset
+	var _ func() int32 = binding.InstanceFrequency
+
+	device := &graphics.GraphicsDevice{}
+	var _ func(*graphics.VertexBuffer) error = device.SetVertexBufferByVertexBuffer
+	var _ func(*graphics.VertexBuffer, int32) error = device.SetVertexBufferByVertexBufferAndInt32
+	var _ func([]graphics.VertexBufferBinding) error = device.SetVertexBuffers
+	var _ func() []graphics.VertexBufferBinding = device.GetVertexBuffers
+	var _ func() *graphics.IndexBuffer = device.Indices
+	var _ func(*graphics.IndexBuffer) error = device.SetIndices
+	var _ func(graphics.PrimitiveType, int32, int32) error = device.DrawPrimitives
+	var _ func(graphics.PrimitiveType, int32, int32, int32, int32, int32) error = device.DrawIndexedPrimitives
+	var _ func(graphics.PrimitiveType, int32, int32, int32, int32, int32, int32) error = device.DrawInstancedPrimitives
+
+	// The zero binding is an empty slot, and its three getters answer.
+	if binding.VertexBuffer() != nil || binding.VertexOffset() != 0 || binding.InstanceFrequency() != 0 {
+		t.Fatal("the zero VertexBufferBinding is not empty")
+	}
+	// A null buffer is refused with Microsoft's own sentence.
+	if _, err := graphics.NewVertexBufferBindingByVertexBuffer(nil); err == nil {
+		t.Fatal("a nil vertex buffer was accepted")
+	} else if !strings.Contains(err.Error(), "This method does not accept null for this parameter.") {
+		t.Fatalf("%v, want the reference's message", err)
+	}
+	// And an unconstructed device answers both readers without failing.
+	if device.Indices() != nil || device.GetVertexBuffers() != nil {
+		t.Fatal("an unconstructed device reports bound buffers")
+	}
+}

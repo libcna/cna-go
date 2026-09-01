@@ -1283,3 +1283,41 @@ func nativeVertexBufferGetDataRaw(buffer, offset uint64, destination unsafe.Poin
 		C.CnaGoHandle(buffer), C.uint64_t(offset), destination,
 		C.uint64_t(byteCount), C.uint64_t(vertexCount), C.uint32_t(stride))))
 }
+
+// The six device binding and draw routes.
+
+func nativeDeviceSetVertexBuffers(device uint64, bindings []int64) error {
+	var first *C.int64_t
+	if len(bindings) > 0 {
+		first = (*C.int64_t)(unsafe.Pointer(&bindings[0]))
+	}
+	code := uint32(C.cna_go_graphics_device_set_vertex_buffers(
+		C.CnaGoHandle(device), first, C.uint64_t(len(bindings)/3)))
+	runtime.KeepAlive(bindings)
+	return resultError("cna_graphics_device_set_vertex_buffers", code)
+}
+
+func nativeDeviceSetIndexBuffer(device, buffer uint64) error {
+	return resultError("cna_graphics_device_set_index_buffer",
+		uint32(C.cna_go_graphics_device_set_index_buffer(C.CnaGoHandle(device), C.CnaGoHandle(buffer))))
+}
+
+func nativeDeviceDrawPrimitives(device uint64, primitiveType uint32, vertexStart, primitiveCount int32) error {
+	return resultError("cna_graphics_device_draw_primitives",
+		uint32(C.cna_go_graphics_device_draw_primitives(
+			C.CnaGoHandle(device), C.uint32_t(primitiveType), C.int32_t(vertexStart), C.int32_t(primitiveCount))))
+}
+
+func nativeDeviceDrawIndexedPrimitives(device uint64, primitiveType uint32, baseVertex, minVertexIndex, numVertices, startIndex, primitiveCount int32) error {
+	return resultError("cna_graphics_device_draw_indexed_primitives",
+		uint32(C.cna_go_graphics_device_draw_indexed_primitives(
+			C.CnaGoHandle(device), C.uint32_t(primitiveType), C.int32_t(baseVertex), C.int32_t(minVertexIndex),
+			C.int32_t(numVertices), C.int32_t(startIndex), C.int32_t(primitiveCount))))
+}
+
+func nativeDeviceDrawInstancedPrimitives(device uint64, primitiveType uint32, baseVertex, minVertexIndex, numVertices, startIndex, primitiveCount, instanceCount int32) error {
+	return resultError("cna_graphics_device_draw_instanced_primitives",
+		uint32(C.cna_go_graphics_device_draw_instanced_primitives(
+			C.CnaGoHandle(device), C.uint32_t(primitiveType), C.int32_t(baseVertex), C.int32_t(minVertexIndex),
+			C.int32_t(numVertices), C.int32_t(startIndex), C.int32_t(primitiveCount), C.int32_t(instanceCount))))
+}

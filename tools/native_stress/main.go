@@ -96,6 +96,12 @@ type counters struct {
 	VertexBufferFromTypeChecks    int `json:"VERTEX_BUFFER_FROM_TYPE_CHECKS"`
 	VertexBufferRefusals          int `json:"VERTEX_BUFFER_REFUSALS"`
 	VertexBufferStrideChecks      int `json:"VERTEX_BUFFER_STRIDE_CHECKS"`
+	VertexBufferBindChecks        int `json:"VERTEX_BUFFER_BIND_CHECKS"`
+	VertexBufferIndexBindChecks   int `json:"VERTEX_BUFFER_INDEX_BIND_CHECKS"`
+	VertexBufferDraws             int `json:"VERTEX_BUFFER_DRAWS"`
+	VertexBufferDrawRefusals      int `json:"VERTEX_BUFFER_DRAW_REFUSALS"`
+	VertexBufferDrawGuardChecks   int `json:"VERTEX_BUFFER_DRAW_GUARD_CHECKS"`
+	VertexBufferUnbindChecks      int `json:"VERTEX_BUFFER_UNBIND_CHECKS"`
 	VertexBufferDisposalChecks    int `json:"VERTEX_BUFFER_DISPOSAL_CHECKS"`
 	CallbackErrorCycles           int `json:"CALLBACK_ERROR_CYCLES"`
 	CallbackPanicCycles           int `json:"CALLBACK_PANIC_CYCLES"`
@@ -450,8 +456,15 @@ func runParent() (counters, error) {
 	if total.VertexBufferCycles < 20 || total.VertexBufferCreations < 20 ||
 		total.VertexBufferDeclarationShares < 20 || total.VertexBufferDescriptionChecks < 20 ||
 		total.VertexBufferFromTypeChecks < 20 || total.VertexBufferRefusals < 20 ||
-		total.VertexBufferStrideChecks < 20 || total.VertexBufferDisposalChecks < 20 {
+		total.VertexBufferStrideChecks < 20 || total.VertexBufferDisposalChecks < 20 ||
+		total.VertexBufferBindChecks < 20 || total.VertexBufferIndexBindChecks < 20 ||
+		total.VertexBufferDrawGuardChecks < 20 || total.VertexBufferUnbindChecks < 20 {
 		return total, errors.New("a vertex-buffer proof did not run in every cycle")
+	}
+	// Exactly one of the two draw outcomes per cycle.
+	if total.VertexBufferDraws+total.VertexBufferDrawRefusals != total.VertexBufferCycles {
+		return total, fmt.Errorf("vertex-buffer draws %d and refusals %d do not account for %d cycles",
+			total.VertexBufferDraws, total.VertexBufferDrawRefusals, total.VertexBufferCycles)
 	}
 	if total.VertexBufferOffsetRoundTrips != total.VertexBufferRoundTrips {
 		return total, fmt.Errorf("%d vertex round trips produced %d offset ones",
@@ -3984,6 +3997,100 @@ func (g *stressGame) exerciseVertexBuffer() error {
 		return errors.New("a vertex stride below sizeof(T) was accepted")
 	}
 	g.result.VertexBufferRefusals++
+
+	// Foundation 67: BINDING and DRAWING. The buffers are bound to the live
+	// device, the bound objects are read back and must be THE SAME Go objects,
+	// and three draw calls are submitted.
+	if err := device.SetVertexBufferByVertexBuffer(buffer); err != nil {
+		return fmt.Errorf("SetVertexBuffer: %w", err)
+	}
+	bound := device.GetVertexBuffers()
+	if len(bound) != 1 || bound[0].VertexBuffer() != buffer {
+		return errors.New("GetVertexBuffers did not answer the object that was bound")
+	}
+	if bound[0].VertexOffset() != 0 || bound[0].InstanceFrequency() != 0 {
+		return fmt.Errorf("the bound binding is %d/%d, want zeros",
+			bound[0].VertexOffset(), bound[0].InstanceFrequency())
+	}
+	g.result.VertexBufferBindChecks++
+
+	indices, err := graphics.NewIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage(
+		device, graphics.IndexElementSizeSixteenBits, 6, graphics.BufferUsageNone)
+	if err != nil {
+		return fmt.Errorf("an index buffer to bind: %w", err)
+	}
+	if err := graphics.IndexBufferSetDataBySliceOfT(indices, []uint16{0, 1, 2, 2, 3, 0}); err != nil {
+		return fmt.Errorf("filling the index buffer: %w", err)
+	}
+	if err := device.SetIndices(indices); err != nil {
+		return fmt.Errorf("SetIndices: %w", err)
+	}
+	if device.Indices() != indices {
+		return errors.New("Indices did not answer the object that was bound")
+	}
+	g.result.VertexBufferIndexBindChecks++
+
+	// Three draws. CNA answers for whether the backend can execute them; what
+	// the projection owns is that they are submitted with the right arguments
+	// and that its own guards ran first.
+	drawErr := device.DrawPrimitives(graphics.PrimitiveTypeTriangleList, 0, 1)
+	indexedErr := device.DrawIndexedPrimitives(graphics.PrimitiveTypeTriangleList, 0, 0, 4, 0, 2)
+	instancedErr := device.DrawInstancedPrimitives(graphics.PrimitiveTypeTriangleList, 0, 0, 4, 0, 2, 2)
+	switch {
+	case drawErr == nil && indexedErr == nil && instancedErr == nil:
+		g.result.VertexBufferDraws++
+	default:
+		// A backend that cannot draw without a shader. Recorded, not passed.
+		g.result.VertexBufferDrawRefusals++
+		fmt.Fprintf(os.Stderr, "draw refused: %v / %v / %v\n", drawErr, indexedErr, instancedErr)
+	}
+
+	// The one draw guard the projection makes ITSELF, and the member that must
+	// NOT make it.
+	instanced, err := graphics.NewVertexBufferBindingByVertexBufferAndInt32AndInt32(buffer, 0, 1)
+	if err != nil {
+		return fmt.Errorf("an instanced binding: %w", err)
+	}
+	if err := device.SetVertexBuffers([]graphics.VertexBufferBinding{instanced}); err != nil {
+		return fmt.Errorf("SetVertexBuffers with a frequency: %w", err)
+	}
+	if err := device.DrawPrimitives(graphics.PrimitiveTypeTriangleList, 0, 1); err == nil {
+		return errors.New("a non-instanced draw was accepted with a non-zero instance frequency")
+	} else if !strings.Contains(err.Error(),
+		"Non-instanced draw calls are not valid when a vertex buffer is bound with a non-zero instance frequency.") {
+		return fmt.Errorf("the non-instanced refusal = %v, want the reference's message", err)
+	}
+	if err := device.DrawPrimitives(graphics.PrimitiveTypeTriangleList, 0, 0); err == nil {
+		return errors.New("a zero primitive count was accepted")
+	}
+	// The INSTANCED member must NOT carry that refusal -- an instanced draw is
+	// exactly the call a non-zero frequency is for. With the same instanced
+	// binding still applied it must reach CNA, whose own answer (no effect
+	// applied, on these artifacts) is a different failure entirely.
+	if err := device.DrawInstancedPrimitives(graphics.PrimitiveTypeTriangleList, 0, 0, 4, 0, 2, 2); err != nil &&
+		strings.Contains(err.Error(),
+			"Non-instanced draw calls are not valid when a vertex buffer is bound with a non-zero instance frequency.") {
+		return errors.New("DrawInstancedPrimitives carried the non-instanced refusal")
+	}
+	g.result.VertexBufferDrawGuardChecks++
+
+	// Unbinding is a nil buffer, not an error.
+	if err := device.SetVertexBufferByVertexBuffer(nil); err != nil {
+		return fmt.Errorf("unbinding: %w", err)
+	}
+	if len(device.GetVertexBuffers()) != 0 {
+		return errors.New("unbinding left a binding in the table")
+	}
+	if err := device.SetIndices(nil); err != nil {
+		return fmt.Errorf("unbinding the index buffer: %w", err)
+	}
+	if device.Indices() != nil {
+		return errors.New("unbinding left an index buffer bound")
+	}
+	if err := indices.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the bound index buffer: %w", err)
+	}
+	g.result.VertexBufferUnbindChecks++
 
 	// Disposal destroys the CNA buffer, is idempotent, and leaves the shared
 	// declaration alive -- the buffer does not own it.

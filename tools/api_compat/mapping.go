@@ -113,6 +113,18 @@ var pureManagedTypes = map[string]bool{
 	// getter over them has no failure mode to report.
 	"Microsoft.Xna.Framework.Graphics.DisplayMode": true,
 
+	// Foundation 67. VertexBufferBinding is three private fields and eight
+	// members over them: three constructors that validate and store, one
+	// op_Implicit that calls the shortest of them, three one-`ldfld` getters,
+	// and nothing else. Its constructors READ VertexBuffer::_vertexCount --
+	// a managed field on a native-backed type -- which is a managed read, not
+	// a device query, so the binding owns no native object and needs no FFI.
+	//
+	// This is the same native-SOURCED / pure-managed split DisplayMode has,
+	// and it is why the entry is admissible: the BUFFER carries the native
+	// error, and a struct describing where in it to start does not.
+	"Microsoft.Xna.Framework.Graphics.VertexBufferBinding": true,
+
 	// Foundation 32. Microsoft.Xna.Framework.Game.dll IL
 	// (sha256 b5dffdd8125abef2a4507ba4e1d2f11062143f0a63d48fe4f298b95ad746a1f0)
 	// shows GameComponent as managed field work throughout. The constructor is
@@ -610,6 +622,23 @@ var managedFallibleMembers = map[string]map[string]bool{
 	"Microsoft.Xna.Framework.Curve": {
 		"method|ComputeTangent": true,
 	},
+	// Foundation 67. VertexBufferBinding is a pure value struct and therefore
+	// starts infallible, and all four of its constructing members genuinely
+	// throw:
+	//
+	//	.ctor(VertexBuffer, int32, int32)
+	//	  vertexBuffer == null            ArgumentNullException(NullNotAllowed)
+	//	  vertexOffset < 0 || >= count    ArgumentOutOfRangeException
+	//	  instanceFrequency < 0           ArgumentOutOfRangeException
+	//
+	// The two shorter constructors drop checks and keep the null one, and
+	// op_Implicit is `newobj .ctor(VertexBuffer); ret` -- so it carries exactly
+	// that constructor's failure and nothing else. The three GETTERS are field
+	// reads and are deliberately absent from this entry.
+	"Microsoft.Xna.Framework.Graphics.VertexBufferBinding": {
+		"constructor|.ctor":  true,
+		"method|op_Implicit": true,
+	},
 	"Microsoft.Xna.Framework.CurveKey": {
 		"method|CompareTo": true,
 	},
@@ -1033,6 +1062,27 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|VertexCount":       true,
 		"property-get|VertexDeclaration": true,
 		"property-get|BufferUsage":       true,
+	},
+	// Foundation 67. GraphicsDevice's two BOUND-BUFFER readers, and they are
+	// the first entries this native-backed type gets that are not about a value
+	// it asked CNA for:
+	//
+	//	get_Indices       ldarg.0; ldfld _currentIB; ret
+	//	GetVertexBuffers  new VertexBufferBinding[currentVertexBufferCount];
+	//	                  Array.Copy(currentVertexBuffers, copy, count); ret
+	//
+	// Both answer from managed fields the SETTERS maintain. That is not a
+	// convenience: CNA hands back a handle, and a handle cannot be turned into
+	// the Go object a consumer is holding without a registry that would retain
+	// every buffer for the life of the process. The reference keeps the same
+	// two fields for the same reason -- it must give back the object the caller
+	// bound, not an equivalent one.
+	//
+	// The SETTERS are not listed and stay fallible: binding is what actually
+	// changes the device, and it reaches CNA.
+	"Microsoft.Xna.Framework.Graphics.GraphicsDevice": {
+		"property-get|Indices":    true,
+		"method|GetVertexBuffers": true,
 	},
 	// Texture2D's three geometry members, on the same evidence, and correcting
 	// a claim CNA-Go made without it. Their bodies are:

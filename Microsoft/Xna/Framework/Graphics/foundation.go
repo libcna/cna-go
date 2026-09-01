@@ -114,6 +114,13 @@ func withinViewportEpsilon(value1, value2 float32) bool {
 // GraphicsDevice is a borrowed facade over the Game-owned device. It never
 // retains CNA's callback-scoped device handle.
 type GraphicsDevice struct {
+	// vertexBuffers is GraphicsDevice::currentVertexBuffers, and indices is
+	// _currentIB. Both are MANAGED fields the setters maintain and the getters
+	// read, exactly as the reference keeps them: CNA hands back a handle, and a
+	// handle cannot be turned into the Go object a consumer is holding.
+	vertexBuffers []VertexBufferBinding
+	indices       *IndexBuffer
+
 	device *interop.Device
 	// The three state objects the reference caches on the device itself.
 	// InitializeDeviceState stores null into all three, so a device answers nil

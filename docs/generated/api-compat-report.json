@@ -12,7 +12,7 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 11,
     "BCL_SIGNATURE_ADAPTERS": 1,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 135,
+    "COMPLETE_TYPES": 136,
     "DECLARED_INTERFACE_CONFORMANCE": 3,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
@@ -40,9 +40,9 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 44,
-    "MISSING_TYPE": 118,
-    "MISSING_TYPES": 118,
+    "MISSING_MEMBER": 35,
+    "MISSING_TYPE": 117,
+    "MISSING_TYPES": 117,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -56,9 +56,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2262,
-    "TARGET_TYPES": 139,
-    "TOTAL_DIAGNOSTICS": 162,
+    "TARGET_MEMBERS": 2278,
+    "TARGET_TYPES": 140,
+    "TOTAL_DIAGNOSTICS": 152,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -490,24 +490,6 @@
     },
     {
       "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawPrimitives",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawIndexedPrimitives",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawInstancedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawInstancedPrimitives",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int32[],System.Int32,System.Int32)",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32",
       "message": "mapped Go member is absent"
@@ -576,42 +558,6 @@
       "category": "MISSING_MEMBER",
       "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[])",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataBySliceOfT",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetVertexBuffers()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetVertexBuffers",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffer(Microsoft.Xna.Framework.Graphics.VertexBuffer,System.Int32)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBufferByVertexBufferAndInt32",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffer(Microsoft.Xna.Framework.Graphics.VertexBuffer)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBufferByVertexBuffer",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffers(Microsoft.Xna.Framework.Graphics.VertexBufferBinding[])",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBuffers",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Indices()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.Indices",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Indices()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetIndices",
       "message": "mapped Go member is absent"
     },
     {
@@ -798,12 +744,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.TextureCube",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:TextureCube",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:VertexBufferBinding",
       "message": "mapped Go type is absent"
     },
     {
@@ -1150,6 +1090,7 @@
     "Microsoft.Xna.Framework.Graphics.TextureCollection",
     "Microsoft.Xna.Framework.Graphics.TextureFilter",
     "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+    "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
     "Microsoft.Xna.Framework.Graphics.VertexDeclaration",
     "Microsoft.Xna.Framework.Graphics.VertexElement",
     "Microsoft.Xna.Framework.Graphics.VertexElementFormat",
@@ -1210,9 +1151,6 @@
       "missingMembers": [
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::.ctor(Microsoft.Xna.Framework.Graphics.GraphicsAdapter,Microsoft.Xna.Framework.Graphics.GraphicsProfile,Microsoft.Xna.Framework.Graphics.PresentationParameters) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NewGraphicsDevice",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Adapter() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.Adapter",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawIndexedPrimitives",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawInstancedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawInstancedPrimitives",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.DrawPrimitives",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int16[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int16[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.VertexDeclaration) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt16AndInt32AndInt32AndVertexDeclaration",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::DrawUserIndexedPrimitives(Microsoft.Xna.Framework.Graphics.PrimitiveType,!!0[],System.Int32,System.Int32,System.Int32[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32",
@@ -1223,21 +1161,15 @@
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataBySliceOfTAndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetBackBufferData(System.Nullable`1[Microsoft.Xna.Framework.Rectangle],!!0[],System.Int32,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDeviceGetBackBufferDataByNullableOfRectangleAndSliceOfTAndInt32AndInt32",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetRenderTargets() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetRenderTargets",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::GetVertexBuffers() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.GetVertexBuffers",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Indices() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.Indices",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Indices() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetIndices",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Present(System.Nullable`1[Microsoft.Xna.Framework.Rectangle],System.Nullable`1[Microsoft.Xna.Framework.Rectangle],System.IntPtr) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.PresentByNullableOfRectangleAndNullableOfRectangleAndIntPtr",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::PresentationParameters() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.PresentationParameters",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Reset() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.ResetByNone",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Reset(Microsoft.Xna.Framework.Graphics.PresentationParameters) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.ResetByPresentationParameters",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::Reset(Microsoft.Xna.Framework.Graphics.PresentationParameters,Microsoft.Xna.Framework.Graphics.GraphicsAdapter) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.ResetByPresentationParametersAndGraphicsAdapter",
         "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetRenderTarget(Microsoft.Xna.Framework.Graphics.RenderTargetCube,Microsoft.Xna.Framework.Graphics.CubeMapFace) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetRenderTargetByRenderTargetCubeAndCubeMapFace",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetRenderTargets(Microsoft.Xna.Framework.Graphics.RenderTargetBinding[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetRenderTargets",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffer(Microsoft.Xna.Framework.Graphics.VertexBuffer) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBufferByVertexBuffer",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffer(Microsoft.Xna.Framework.Graphics.VertexBuffer,System.Int32) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBufferByVertexBufferAndInt32",
-        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetVertexBuffers(Microsoft.Xna.Framework.Graphics.VertexBufferBinding[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetVertexBuffers"
+        "Microsoft.Xna.Framework.Graphics.GraphicsDevice::SetRenderTargets(Microsoft.Xna.Framework.Graphics.RenderTargetBinding[]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:GraphicsDevice.SetRenderTargets"
       ],
-      "diagnostics": 28
+      "diagnostics": 19
     },
     {
       "xna": "Microsoft.Xna.Framework.Graphics.SpriteBatch",
@@ -1348,7 +1280,6 @@
     "Microsoft.Xna.Framework.Graphics.SpriteFont",
     "Microsoft.Xna.Framework.Graphics.Texture3D",
     "Microsoft.Xna.Framework.Graphics.TextureCube",
-    "Microsoft.Xna.Framework.Graphics.VertexBufferBinding",
     "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
     "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
     "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
@@ -7449,7 +7380,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 56,
-      "projectedTypes": 42,
+      "projectedTypes": 43,
       "exportedEmbeddings": 0,
       "rationale": "the CLR value root; the struct projection already carries value semantics",
       "verdict": "PASS"
@@ -9084,7 +9015,7 @@
       "derivedTypes": 1,
       "projectedDerivedTypes": 0,
       "positions": 8,
-      "positionsOnProjectedCarriers": 2,
+      "positionsOnProjectedCarriers": 7,
       "requirement": "LATENT",
       "rows": [
         {
@@ -9470,7 +9401,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "3e70e303eb05fa460c903c2def90d40c4a4f675ec2a02fba9b0fa7703eafe999",
+    "mappingSha256": "dff4b419ba0881a2c1f3a4d28f5d87067159a2a332fb1547de42a2011574d771",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

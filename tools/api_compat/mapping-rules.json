@@ -116,6 +116,8 @@
       "Microsoft.Xna.Framework.Graphics.DepthStencilState|property-get|StencilPass",
       "Microsoft.Xna.Framework.Graphics.DepthStencilState|property-get|StencilWriteMask",
       "Microsoft.Xna.Framework.Graphics.DepthStencilState|property-get|TwoSidedStencilMode",
+      "Microsoft.Xna.Framework.Graphics.GraphicsDevice|method|GetVertexBuffers",
+      "Microsoft.Xna.Framework.Graphics.GraphicsDevice|property-get|Indices",
       "Microsoft.Xna.Framework.Graphics.GraphicsResource|property-get|GraphicsDevice",
       "Microsoft.Xna.Framework.Graphics.GraphicsResource|property-get|IsDisposed",
       "Microsoft.Xna.Framework.Graphics.GraphicsResource|property-get|Name",

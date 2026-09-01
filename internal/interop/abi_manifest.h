@@ -400,6 +400,7 @@ typedef uint32_t CNA_IndexElementSize;
 typedef uint32_t CNA_SetDataOptions;
 typedef uint32_t CNA_VertexElementFormat;
 typedef uint32_t CNA_VertexElementUsage;
+typedef uint32_t CNA_PrimitiveType;
 typedef struct CNA_VertexElement {
     int32_t offset;
     CNA_VertexElementFormat format;
@@ -432,6 +433,11 @@ typedef struct CNA_VertexBufferInfo {
     int32_t vertex_stride;
     uint64_t vertex_element_count;
 } CNA_VertexBufferInfo;
+typedef struct CNA_VertexBufferBinding {
+    CNA_VertexBufferHandle vertex_buffer;
+    int32_t vertex_offset;
+    int32_t instance_frequency;
+} CNA_VertexBufferBinding;
 #endif
 
 #ifndef CNA_C_INDEX_RESOURCES_H
@@ -529,6 +535,11 @@ typedef CNA_Result (*cna_vertex_buffer_destroy_fn)(CNA_VertexBufferHandle);
 typedef CNA_Result (*cna_vertex_buffer_get_info_fn)(CNA_VertexBufferHandle, CNA_VertexBufferInfo*);
 typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t, uint32_t);
 typedef CNA_Result (*cna_vertex_buffer_get_data_raw_fn)(CNA_VertexBufferHandle, uint64_t, void*, uint64_t, uint64_t, uint32_t);
+typedef CNA_Result (*cna_graphics_device_set_vertex_buffers_fn)(CNA_Handle, const CNA_VertexBufferBinding*, uint64_t);
+typedef CNA_Result (*cna_graphics_device_set_index_buffer_fn)(CNA_Handle, CNA_IndexBufferHandle);
+typedef CNA_Result (*cna_graphics_device_draw_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t);
+typedef CNA_Result (*cna_graphics_device_draw_indexed_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t, int32_t, int32_t, int32_t);
+typedef CNA_Result (*cna_graphics_device_draw_instanced_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
 typedef CNA_Result (*cna_index_buffer_create_fn)(CNA_Handle, const CNA_IndexBufferCreateInfo*, CNA_IndexBufferHandle*);
 typedef CNA_Result (*cna_index_buffer_destroy_fn)(CNA_IndexBufferHandle);
 typedef CNA_Result (*cna_index_buffer_get_info_fn)(CNA_IndexBufferHandle, CNA_IndexBufferInfo*);
@@ -657,6 +668,11 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_game_get_graphics_device) \
     X(cna_graphics_device_get_viewport) \
     X(cna_graphics_device_clear_rgba) \
+    X(cna_graphics_device_set_vertex_buffers) \
+    X(cna_graphics_device_set_index_buffer) \
+    X(cna_graphics_device_draw_primitives) \
+    X(cna_graphics_device_draw_indexed_primitives) \
+    X(cna_graphics_device_draw_instanced_primitives) \
     X(cna_vertex_declaration_create) \
     X(cna_vertex_declaration_create_with_stride) \
     X(cna_vertex_declaration_destroy) \

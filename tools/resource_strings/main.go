@@ -161,6 +161,13 @@ var registry = []claimedString{
 		Value: "Invalid vertex type. {0} returned a null VertexDeclaration."},
 	{Key: "VertexTypeWrongSize", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "Invalid vertex type. The size of {0} does not match the stride of its vertex declaration."},
+	// Foundation 67. The two the draw members throw. The second is the one a
+	// consumer can trip without a shader: it refuses a NON-instanced draw while
+	// any bound stream carries a non-zero instance frequency.
+	{Key: "MustDrawSomething", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "When drawing, at least one primitive must be drawn."},
+	{Key: "NonZeroInstanceFrequency", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Non-instanced draw calls are not valid when a vertex buffer is bound with a non-zero instance frequency."},
 	// Foundation 50 corrected this KEY. The value was right and its key was
 	// invented from the sentence; the resource-set reader found no
 	// DopplerScaleMustBeGreaterThanOrEqualToZero anywhere, and the real key is

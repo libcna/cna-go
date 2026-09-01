@@ -1799,3 +1799,55 @@ CnaGoResult cna_go_vertex_buffer_get_data_raw(
     return api.cna_vertex_buffer_get_data_raw(
         vertex_buffer, buffer_offset_in_bytes, destination, destination_byte_count, vertex_count, vertex_stride);
 }
+
+// Bindings cross as a FLAT int64 triple per binding -- handle, offset,
+// frequency -- for the same reason vertex elements cross flat: no CNA struct
+// crosses cgo, and this translation unit is where the triples become
+// CNA_VertexBufferBinding values.
+CnaGoResult cna_go_graphics_device_set_vertex_buffers(
+    CnaGoHandle device,
+    const int64_t* bindings,
+    uint64_t binding_count) {
+    CNA_VertexBufferBinding* converted;
+    CnaGoResult result;
+    uint64_t at;
+    if (binding_count == 0) {
+        return api.cna_graphics_device_set_vertex_buffers(device, NULL, 0);
+    }
+    converted = (CNA_VertexBufferBinding*)calloc((size_t)binding_count, sizeof(CNA_VertexBufferBinding));
+    if (converted == NULL) {
+        return CNA_GO_RESULT_OUT_OF_MEMORY;
+    }
+    for (at = 0; at < binding_count; at++) {
+        converted[at].vertex_buffer = (CNA_VertexBufferHandle)bindings[at * 3 + 0];
+        converted[at].vertex_offset = (int32_t)bindings[at * 3 + 1];
+        converted[at].instance_frequency = (int32_t)bindings[at * 3 + 2];
+    }
+    result = api.cna_graphics_device_set_vertex_buffers(device, converted, binding_count);
+    free(converted);
+    return result;
+}
+
+CnaGoResult cna_go_graphics_device_set_index_buffer(CnaGoHandle device, CnaGoHandle index_buffer) {
+    return api.cna_graphics_device_set_index_buffer(device, index_buffer);
+}
+
+CnaGoResult cna_go_graphics_device_draw_primitives(
+    CnaGoHandle device, uint32_t primitive_type, int32_t vertex_start, int32_t primitive_count) {
+    return api.cna_graphics_device_draw_primitives(device, primitive_type, vertex_start, primitive_count);
+}
+
+CnaGoResult cna_go_graphics_device_draw_indexed_primitives(
+    CnaGoHandle device, uint32_t primitive_type, int32_t base_vertex, int32_t min_vertex_index,
+    int32_t num_vertices, int32_t start_index, int32_t primitive_count) {
+    return api.cna_graphics_device_draw_indexed_primitives(
+        device, primitive_type, base_vertex, min_vertex_index, num_vertices, start_index, primitive_count);
+}
+
+CnaGoResult cna_go_graphics_device_draw_instanced_primitives(
+    CnaGoHandle device, uint32_t primitive_type, int32_t base_vertex, int32_t min_vertex_index,
+    int32_t num_vertices, int32_t start_index, int32_t primitive_count, int32_t instance_count) {
+    return api.cna_graphics_device_draw_instanced_primitives(
+        device, primitive_type, base_vertex, min_vertex_index, num_vertices, start_index,
+        primitive_count, instance_count);
+}

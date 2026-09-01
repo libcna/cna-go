@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "authority": "PURE_XNA_DERIVED retained XNA 4.0 reference observations; GO_LANGUAGE_PROJECTION observations are labeled individually",
   "summary": {
-    "OBSERVATIONS": 733,
-    "ASSERTIONS": 733,
+    "OBSERVATIONS": 735,
+    "ASSERTIONS": 735,
     "FAILURES": 0
   },
   "observations": [
@@ -5757,6 +5757,22 @@
       "provenance": "PURE_XNA_DERIVED",
       "expected": "true,Microsoft.Xna.Framework.Graphics.VertexDeclaration,1,true,12",
       "actual": "true,Microsoft.Xna.Framework.Graphics.VertexDeclaration,1,true,12",
+      "passed": true
+    },
+    {
+      "id": "vertex-buffer-binding.every-constructing-member-refuses-a-null-buffer",
+      "group": "VERTEX_BUFFER_BINDING",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,true",
+      "actual": "true,true",
+      "passed": true
+    },
+    {
+      "id": "vertex-buffer-binding.the-zero-value-is-an-empty-slot",
+      "group": "VERTEX_BUFFER_BINDING",
+      "provenance": "PURE_XNA_DERIVED",
+      "expected": "true,0,0",
+      "actual": "true,0,0",
       "passed": true
     },
     {

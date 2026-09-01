@@ -391,3 +391,13 @@ CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_is_content_lost, offsetof(CNA_Verte
 CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_has_renderer, offsetof(CNA_VertexBufferInfo, has_renderer))
 CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_vertex_stride, offsetof(CNA_VertexBufferInfo, vertex_stride))
 CNA_GO_MEASURE(offsetof_CNA_VertexBufferInfo_vertex_element_count, offsetof(CNA_VertexBufferInfo, vertex_element_count))
+
+// Foundation 67. CNA_VertexBufferBinding, the one CNA struct ARRAY that crosses
+// on the device's own surface. A 64-bit handle followed by two int32s: moving
+// the handle behind them is byte-identical to C and makes CNA read a buffer
+// token out of the offset and frequency words.
+CNA_GO_MEASURE(sizeof_CNA_VertexBufferBinding, sizeof(CNA_VertexBufferBinding))
+CNA_GO_MEASURE(alignof_CNA_VertexBufferBinding, _Alignof(CNA_VertexBufferBinding))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferBinding_vertex_buffer, offsetof(CNA_VertexBufferBinding, vertex_buffer))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferBinding_vertex_offset, offsetof(CNA_VertexBufferBinding, vertex_offset))
+CNA_GO_MEASURE(offsetof_CNA_VertexBufferBinding_instance_frequency, offsetof(CNA_VertexBufferBinding, instance_frequency))

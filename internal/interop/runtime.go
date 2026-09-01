@@ -383,6 +383,69 @@ func (d *Device) Runtime() *Runtime {
 	return d.runtime
 }
 
+// HandleOf reports the live CNA handle a resource owns, for the ONE thing that
+// needs it: binding a buffer to this device. It is on Device rather than on
+// Resource so that the generation and kind are checked against a device that is
+// itself live, and it stays unexported outside this package by the raw-handle
+// rule -- the Graphics package passes what it gets straight back in.
+func (d *Device) HandleOf(resource *Resource) (uint64, error) {
+	if d == nil || resource == nil {
+		return 0, ErrDisposed
+	}
+	if _, err := d.nativeHandle(); err != nil {
+		return 0, err
+	}
+	return resource.anyLiveHandle()
+}
+
+// SetVertexBuffers is cna_graphics_device_set_vertex_buffers. The bindings
+// arrive as a flat int64 triple each -- handle, offset, frequency -- because no
+// CNA struct crosses cgo.
+func (d *Device) SetVertexBuffers(bindings []int64) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeDeviceSetVertexBuffers(handle, bindings)
+}
+
+// SetIndexBuffer is cna_graphics_device_set_index_buffer. A zero handle is
+// CNA_INVALID_HANDLE and unbinds.
+func (d *Device) SetIndexBuffer(buffer uint64) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeDeviceSetIndexBuffer(handle, buffer)
+}
+
+// DrawPrimitives is cna_graphics_device_draw_primitives.
+func (d *Device) DrawPrimitives(primitiveType uint32, vertexStart, primitiveCount int32) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeDeviceDrawPrimitives(handle, primitiveType, vertexStart, primitiveCount)
+}
+
+// DrawIndexedPrimitives is cna_graphics_device_draw_indexed_primitives.
+func (d *Device) DrawIndexedPrimitives(primitiveType uint32, baseVertex, minVertexIndex, numVertices, startIndex, primitiveCount int32) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeDeviceDrawIndexedPrimitives(handle, primitiveType, baseVertex, minVertexIndex, numVertices, startIndex, primitiveCount)
+}
+
+// DrawInstancedPrimitives is cna_graphics_device_draw_instanced_primitives.
+func (d *Device) DrawInstancedPrimitives(primitiveType uint32, baseVertex, minVertexIndex, numVertices, startIndex, primitiveCount, instanceCount int32) error {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return err
+	}
+	return nativeDeviceDrawInstancedPrimitives(handle, primitiveType, baseVertex, minVertexIndex, numVertices, startIndex, primitiveCount, instanceCount)
+}
+
 // VertexBufferInfo is CNA_VertexBufferInfo, flattened.
 type VertexBufferInfo struct {
 	VertexCount        int32
@@ -2668,6 +2731,25 @@ func (resource *Resource) liveHandle(kind resourceKind) (uint64, error) {
 	resource.mu.Lock()
 	defer resource.mu.Unlock()
 	if resource.kind != kind || resource.handle == 0 {
+		return 0, ErrDisposed
+	}
+	if err := resource.runtime.validateGeneration(resource.generation, true); err != nil {
+		return 0, err
+	}
+	return resource.handle, nil
+}
+
+// anyLiveHandle is liveHandle without the kind test, for the one caller that
+// legitimately does not care which buffer kind it is binding: Device.HandleOf,
+// whose caller already holds a typed Go object. The GENERATION check is not
+// relaxed, so a stale handle is still refused.
+func (resource *Resource) anyLiveHandle() (uint64, error) {
+	if resource == nil {
+		return 0, ErrDisposed
+	}
+	resource.mu.Lock()
+	defer resource.mu.Unlock()
+	if resource.handle == 0 {
 		return 0, ErrDisposed
 	}
 	if err := resource.runtime.validateGeneration(resource.generation, true); err != nil {

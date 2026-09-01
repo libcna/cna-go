@@ -505,6 +505,22 @@ var probeMutations = []sourceMutation{
 		old:  "typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t, uint32_t);",
 		new:  "typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t);",
 	},
+	// The indexed draw's six int32 arguments are all the same type, so dropping
+	// one is caught only by the bridge's own call, which passes seven.
+	{
+		name: "device-draw-indexed-drops-its-start-index",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_draw_indexed_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t, int32_t, int32_t, int32_t);",
+		new:  "typedef CNA_Result (*cna_graphics_device_draw_indexed_primitives_fn)(CNA_Handle, CNA_PrimitiveType, int32_t, int32_t, int32_t, int32_t);",
+	},
+	// The binding route takes the array BY POINTER and a count; a by-value
+	// struct parameter does not accept the address the bridge passes.
+	{
+		name: "device-set-vertex-buffers-takes-one-binding-by-value",
+		file: "abi_manifest.h",
+		old:  "typedef CNA_Result (*cna_graphics_device_set_vertex_buffers_fn)(CNA_Handle, const CNA_VertexBufferBinding*, uint64_t);",
+		new:  "typedef CNA_Result (*cna_graphics_device_set_vertex_buffers_fn)(CNA_Handle, CNA_VertexBufferBinding, uint64_t);",
+	},
 	{
 		name: "vertex-buffer-create-takes-the-info-by-value",
 		file: "abi_manifest.h",
@@ -1112,6 +1128,17 @@ var layoutMutations = []sourceMutation{
 	// The info struct's stride moved ahead of the three flags, which changes
 	// which bytes a stride is read from -- and the stride is what every
 	// transfer's fit check is measured in.
+	// Foundation 67. The binding array is the one place a CNA STRUCT ARRAY
+	// crosses on the device's own surface, and its three fields are a 64-bit
+	// handle and two int32s -- so moving the handle behind them is
+	// byte-identical to C and makes CNA read a buffer token out of the offset
+	// and frequency words.
+	{
+		name: "vertex-binding-handle-moved-behind-the-offsets",
+		file: "abi_manifest.h",
+		old:  "    CNA_VertexBufferHandle vertex_buffer;\n    int32_t vertex_offset;\n    int32_t instance_frequency;\n} CNA_VertexBufferBinding;",
+		new:  "    int32_t vertex_offset;\n    int32_t instance_frequency;\n    CNA_VertexBufferHandle vertex_buffer;\n} CNA_VertexBufferBinding;",
+	},
 	{
 		name: "vertex-info-stride-moved-ahead-of-the-flags",
 		file: "abi_manifest.h",

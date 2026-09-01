@@ -3705,6 +3705,27 @@ func runCorpus() corpusReport {
 			clonedDeclaration.IsDisposed(), clonedDeclaration.VertexStride()))
 
 	// ------------------------------------------------------------------
+	// Foundation 67. VertexBufferBinding, whose whole surface is managed: it
+	// validates against VertexBuffer's managed vertex count and stores three
+	// values. Binding and drawing need a live device and are proved in
+	// tools/native_stress.
+	// ------------------------------------------------------------------
+
+	_, bindingNilBuffer := graphics.NewVertexBufferBindingByVertexBufferAndInt32AndInt32(nil, 0, 0)
+	_, bindingImplicitNil := graphics.VertexBufferBindingOperatorImplicitByVertexBuffer(nil)
+	check("vertex-buffer-binding.every-constructing-member-refuses-a-null-buffer", "VERTEX_BUFFER_BINDING",
+		"true,true",
+		fmt.Sprintf("%t,%t",
+			strings.Contains(fmt.Sprint(bindingNilBuffer), "This method does not accept null for this parameter."),
+			strings.Contains(fmt.Sprint(bindingImplicitNil), "This method does not accept null for this parameter.")))
+
+	var emptyBinding graphics.VertexBufferBinding
+	check("vertex-buffer-binding.the-zero-value-is-an-empty-slot", "VERTEX_BUFFER_BINDING",
+		"true,0,0",
+		fmt.Sprintf("%t,%d,%d",
+			emptyBinding.VertexBuffer() == nil, emptyBinding.VertexOffset(), emptyBinding.InstanceFrequency()))
+
+	// ------------------------------------------------------------------
 	// Foundation 66. VertexDeclaration::FromType, which is `assembly` in the
 	// reference and is the whole failure surface of VertexBuffer's Type-keyed
 	// constructor. Every check is managed and reachable with a nil device.

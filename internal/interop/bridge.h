@@ -607,3 +607,17 @@ CnaGoResult cna_go_vertex_buffer_get_data_raw(
     uint64_t destination_byte_count,
     uint64_t vertex_count,
     uint32_t vertex_stride);
+
+CnaGoResult cna_go_graphics_device_set_vertex_buffers(
+    CnaGoHandle device,
+    const int64_t* bindings,
+    uint64_t binding_count);
+CnaGoResult cna_go_graphics_device_set_index_buffer(CnaGoHandle device, CnaGoHandle index_buffer);
+CnaGoResult cna_go_graphics_device_draw_primitives(
+    CnaGoHandle device, uint32_t primitive_type, int32_t vertex_start, int32_t primitive_count);
+CnaGoResult cna_go_graphics_device_draw_indexed_primitives(
+    CnaGoHandle device, uint32_t primitive_type, int32_t base_vertex, int32_t min_vertex_index,
+    int32_t num_vertices, int32_t start_index, int32_t primitive_count);
+CnaGoResult cna_go_graphics_device_draw_instanced_primitives(
+    CnaGoHandle device, uint32_t primitive_type, int32_t base_vertex, int32_t min_vertex_index,
+    int32_t num_vertices, int32_t start_index, int32_t primitive_count, int32_t instance_count);
