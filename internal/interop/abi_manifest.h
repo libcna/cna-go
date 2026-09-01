@@ -196,6 +196,19 @@ typedef struct CNA_SpriteCommand {
     uint32_t effects;
     float layer_depth;
 } CNA_SpriteCommand;
+typedef struct CNA_SpriteTextCommand {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Handle sprite_font;
+    CNA_StringView text;
+    CNA_Vector2 position;
+    CNA_Color color;
+    float rotation;
+    CNA_Vector2 origin;
+    CNA_Vector2 scale;
+    uint32_t effects;
+    float layer_depth;
+} CNA_SpriteTextCommand;
 typedef struct CNA_SpriteScaledCommand {
     uint32_t struct_size;
     uint32_t struct_version;
@@ -626,6 +639,7 @@ typedef CNA_Result (*cna_content_manager_get_asset_path_size_fn)(CNA_Handle, CNA
 typedef CNA_Result (*cna_content_manager_copy_asset_path_fn)(CNA_Handle, CNA_StringView, char*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_content_manager_load_sprite_font_fn)(CNA_Handle, CNA_StringView, CNA_Handle*, CNA_Handle*);
 typedef CNA_Result (*cna_sprite_font_get_info_fn)(CNA_Handle, CNA_SpriteFontInfo*);
+typedef CNA_Result (*cna_sprite_batch_draw_string_fn)(CNA_Handle, const CNA_SpriteTextCommand*);
 typedef CNA_Result (*cna_sprite_font_copy_glyphs_fn)(CNA_Handle, CNA_SpriteFontGlyph*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_sprite_font_set_default_character_fn)(CNA_Handle, CNA_Bool, CNA_Char16);
 typedef CNA_Result (*cna_sprite_font_set_line_spacing_fn)(CNA_Handle, int32_t);
@@ -788,6 +802,7 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_content_manager_copy_asset_path) \
     X(cna_content_manager_load_sprite_font) \
     X(cna_sprite_font_get_info) \
+    X(cna_sprite_batch_draw_string) \
     X(cna_sprite_font_copy_glyphs) \
     X(cna_sprite_font_set_default_character) \
     X(cna_sprite_font_set_line_spacing) \

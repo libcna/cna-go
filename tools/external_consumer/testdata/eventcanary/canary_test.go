@@ -3362,6 +3362,35 @@ func TestSpriteFontIsReachableFromOutside(t *testing.T) {
 	if err := font.SetDefaultCharacter(&missing); err == nil {
 		t.Fatal("a character outside the font was accepted as the default")
 	}
+	// All six DrawString overloads compile at their exact shapes, and each is
+	// guarded before it reaches a resource. Three take *strings.Builder, which
+	// is what keeps the CLR's two-member overload set two Go members.
+	batch := &graphics.SpriteBatch{}
+	var _ func(*graphics.SpriteFont, string, framework.Vector2, framework.Color) error = batch.DrawStringBySpriteFontAndStringAndVector2AndColor
+	var _ func(*graphics.SpriteFont, *strings.Builder, framework.Vector2, framework.Color) error = batch.DrawStringBySpriteFontAndStringBuilderAndVector2AndColor
+	var _ func(*graphics.SpriteFont, string, framework.Vector2, framework.Color, float32, framework.Vector2, float32, graphics.SpriteEffects, float32) error = batch.DrawStringBySpriteFontAndStringAndVector2AndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle
+	var _ func(*graphics.SpriteFont, *strings.Builder, framework.Vector2, framework.Color, float32, framework.Vector2, float32, graphics.SpriteEffects, float32) error = batch.DrawStringBySpriteFontAndStringBuilderAndVector2AndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle
+	var _ func(*graphics.SpriteFont, string, framework.Vector2, framework.Color, float32, framework.Vector2, framework.Vector2, graphics.SpriteEffects, float32) error = batch.DrawStringBySpriteFontAndStringAndVector2AndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle
+	var _ func(*graphics.SpriteFont, *strings.Builder, framework.Vector2, framework.Color, float32, framework.Vector2, framework.Vector2, graphics.SpriteEffects, float32) error = batch.DrawStringBySpriteFontAndStringBuilderAndVector2AndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle
+
+	// A nil font names its parameter and carries NO resource string, which is
+	// the one-argument ArgumentNullException constructor DrawString uses where
+	// Draw uses the two-argument one.
+	if err := batch.DrawStringBySpriteFontAndStringAndVector2AndColor(
+		nil, "A", framework.Vector2{}, framework.Color{}); err == nil {
+		t.Fatal("a nil SpriteFont was accepted")
+	} else if !strings.Contains(err.Error(), "spriteFont") ||
+		strings.Contains(err.Error(), "This method does not accept null for this parameter.") {
+		t.Fatalf("%v, want ArgumentNullException(\"spriteFont\") with no resource string", err)
+	}
+	// A valid font outside a begin/end pair reports the state.
+	if err := batch.DrawStringBySpriteFontAndStringAndVector2AndColor(
+		font, "A", framework.Vector2{}, framework.Color{}); err == nil {
+		t.Fatal("DrawString outside a begin/end pair was accepted")
+	} else if !strings.Contains(err.Error(), "Begin must be called successfully before a Draw can be called.") {
+		t.Fatalf("%v, want the InvalidOperationException message", err)
+	}
+
 	// And Load<SpriteFont> is in the closed set: it is refused for a reason
 	// other than the type, which is what an unprojected asset gets.
 	manager, err := content.NewContentManagerByIServiceProviderAndString(&struct{}{}, "Content")

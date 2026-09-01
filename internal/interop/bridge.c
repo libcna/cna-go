@@ -1611,6 +1611,50 @@ CnaGoResult cna_go_sprite_font_destroy(CnaGoHandle sprite_font) {
     return api.cna_sprite_font_destroy(sprite_font);
 }
 
+/* One string per call rather than an array, because the canonical
+   DrawString has no batched form: cna_sprite_batch_draw_string takes one
+   command, exactly as the reference's six overloads each produce one
+   InternalDraw. */
+CnaGoResult cna_go_sprite_batch_draw_string(
+    CnaGoHandle sprite_batch,
+    CnaGoHandle sprite_font,
+    const char* text,
+    uint64_t text_length,
+    float position_x,
+    float position_y,
+    uint8_t red,
+    uint8_t green,
+    uint8_t blue,
+    uint8_t alpha,
+    float rotation,
+    float origin_x,
+    float origin_y,
+    float scale_x,
+    float scale_y,
+    uint32_t effects,
+    float layer_depth) {
+    CNA_SpriteTextCommand command;
+    memset(&command, 0, sizeof(command));
+    command.struct_size = (uint32_t)sizeof(command);
+    command.struct_version = 1;
+    command.sprite_font = sprite_font;
+    command.text = cna_go_view(text, text_length);
+    command.position.x = position_x;
+    command.position.y = position_y;
+    command.color.r = red;
+    command.color.g = green;
+    command.color.b = blue;
+    command.color.a = alpha;
+    command.rotation = rotation;
+    command.origin.x = origin_x;
+    command.origin.y = origin_y;
+    command.scale.x = scale_x;
+    command.scale.y = scale_y;
+    command.effects = effects;
+    command.layer_depth = layer_depth;
+    return api.cna_sprite_batch_draw_string(sprite_batch, &command);
+}
+
 CnaGoResult cna_go_graphics_device_manager_set_graphics_profile(CnaGoHandle manager, uint32_t profile) {
     return api.cna_graphics_device_manager_set_graphics_profile(manager, profile);
 }

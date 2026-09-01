@@ -335,6 +335,24 @@ CnaGoResult cna_go_sprite_font_set_default_character(
 CnaGoResult cna_go_sprite_font_set_line_spacing(CnaGoHandle sprite_font, int32_t line_spacing);
 CnaGoResult cna_go_sprite_font_set_spacing(CnaGoHandle sprite_font, float spacing);
 CnaGoResult cna_go_sprite_font_destroy(CnaGoHandle sprite_font);
+CnaGoResult cna_go_sprite_batch_draw_string(
+    CnaGoHandle sprite_batch,
+    CnaGoHandle sprite_font,
+    const char* text,
+    uint64_t text_length,
+    float position_x,
+    float position_y,
+    uint8_t red,
+    uint8_t green,
+    uint8_t blue,
+    uint8_t alpha,
+    float rotation,
+    float origin_x,
+    float origin_y,
+    float scale_x,
+    float scale_y,
+    uint32_t effects,
+    float layer_depth);
 CnaGoResult cna_go_game_get_graphics_device(CnaGoHandle game, CnaGoHandle* out_device);
 CnaGoResult cna_go_graphics_device_get_viewport(
     CnaGoHandle device,

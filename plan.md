@@ -1582,6 +1582,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 67 | binding buffers to the device, and the draw calls | `foundation-67-device-buffer-binding-evidence.md` |
 | 68 | GraphicsAdapter, and a narrowing that belongs to CNA | `foundation-68-graphics-adapter-evidence.md` |
 | 69 | SpriteFont, and a measurement that is the reference's | `foundation-69-sprite-font-evidence.md` |
+| 70 | SpriteBatch's six DrawString overloads | `foundation-70-draw-string-evidence.md` |
 
 ### The rules these milestones settled
 

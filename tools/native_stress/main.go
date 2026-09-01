@@ -75,15 +75,18 @@ type counters struct {
 	// apart for the reason the texture load's are: a refusal is CNA answering
 	// "this asset is not there", and a run that only ever refused must not read
 	// as a run that loaded a font.
-	SpriteFontCycles           int `json:"SPRITE_FONT_CYCLES"`
-	SpriteFontLoads            int `json:"SPRITE_FONT_LOADS"`
-	SpriteFontLoadRefusals     int `json:"SPRITE_FONT_LOAD_REFUSALS"`
-	SpriteFontGlyphChecks      int `json:"SPRITE_FONT_GLYPH_CHECKS"`
-	SpriteFontMeasureChecks    int `json:"SPRITE_FONT_MEASURE_CHECKS"`
-	SpriteFontDivergenceChecks int `json:"SPRITE_FONT_DIVERGENCE_CHECKS"`
-	SpriteFontSetterRoundTrips int `json:"SPRITE_FONT_SETTER_ROUND_TRIPS"`
-	SpriteFontRefusals         int `json:"SPRITE_FONT_REFUSALS"`
-	SpriteFontCacheChecks      int `json:"SPRITE_FONT_CACHE_CHECKS"`
+	SpriteFontCycles             int `json:"SPRITE_FONT_CYCLES"`
+	SpriteFontLoads              int `json:"SPRITE_FONT_LOADS"`
+	SpriteFontLoadRefusals       int `json:"SPRITE_FONT_LOAD_REFUSALS"`
+	SpriteFontGlyphChecks        int `json:"SPRITE_FONT_GLYPH_CHECKS"`
+	SpriteFontMeasureChecks      int `json:"SPRITE_FONT_MEASURE_CHECKS"`
+	SpriteFontDivergenceChecks   int `json:"SPRITE_FONT_DIVERGENCE_CHECKS"`
+	SpriteFontSetterRoundTrips   int `json:"SPRITE_FONT_SETTER_ROUND_TRIPS"`
+	SpriteFontRefusals           int `json:"SPRITE_FONT_REFUSALS"`
+	SpriteFontCacheChecks        int `json:"SPRITE_FONT_CACHE_CHECKS"`
+	SpriteFontDrawStringSubmits  int `json:"SPRITE_FONT_DRAW_STRING_SUBMITS"`
+	SpriteFontDrawStringGuards   int `json:"SPRITE_FONT_DRAW_STRING_GUARDS"`
+	SpriteFontDrawStringRefusals int `json:"SPRITE_FONT_DRAW_STRING_REFUSALS"`
 	// The adapter slice. CNA enumerates adapters through a callback-scoped
 	// device, so every one of these is reachable only from inside LoadContent.
 	AdapterCycles                int `json:"ADAPTER_CYCLES"`
@@ -548,6 +551,14 @@ func runParent() (counters, error) {
 		return total, fmt.Errorf("sprite-font loads %d and refusals %d do not account for %d cycles",
 			total.SpriteFontLoads, total.SpriteFontLoadRefusals, total.SpriteFontCycles)
 	}
+	if total.SpriteFontDrawStringGuards != total.SpriteFontLoads {
+		return total, fmt.Errorf("%d font loads produced %d DrawString guard proofs",
+			total.SpriteFontLoads, total.SpriteFontDrawStringGuards)
+	}
+	if total.SpriteFontDrawStringSubmits+total.SpriteFontDrawStringRefusals != total.SpriteFontLoads*6 {
+		return total, fmt.Errorf("DrawString submits %d and refusals %d do not account for six overloads across %d loads",
+			total.SpriteFontDrawStringSubmits, total.SpriteFontDrawStringRefusals, total.SpriteFontLoads)
+	}
 	if total.SpriteFontGlyphChecks != total.SpriteFontLoads ||
 		total.SpriteFontMeasureChecks != total.SpriteFontLoads ||
 		total.SpriteFontDivergenceChecks != total.SpriteFontLoads ||
@@ -936,8 +947,16 @@ func runChild(scenario string, index int) error {
 		if game.result.SpriteFontLoads > 0 &&
 			(game.result.SpriteFontGlyphChecks == 0 || game.result.SpriteFontMeasureChecks == 0 ||
 				game.result.SpriteFontDivergenceChecks == 0 || game.result.SpriteFontSetterRoundTrips == 0 ||
-				game.result.SpriteFontCacheChecks == 0) {
+				game.result.SpriteFontCacheChecks == 0 || game.result.SpriteFontDrawStringGuards == 0) {
 			return errors.New("a font loaded and the semantic slice did not complete")
+		}
+		// Six overloads, and exactly one outcome each: CNA submitted it, or
+		// CNA refused it because this renderer cannot draw text. A run
+		// reporting neither never reached the begin/end pair.
+		if game.result.SpriteFontLoads > 0 &&
+			game.result.SpriteFontDrawStringSubmits+game.result.SpriteFontDrawStringRefusals != 6 {
+			return fmt.Errorf("DrawString submits %d and refusals %d do not account for six overloads",
+				game.result.SpriteFontDrawStringSubmits, game.result.SpriteFontDrawStringRefusals)
 		}
 	case "callback-error":
 		game.result.CallbackErrorCycles = 1
@@ -4622,6 +4641,86 @@ func (g *stressGame) exerciseSpriteFont(host *framework.Game) error {
 		return fmt.Errorf("the cached font's LineSpacing = %d, want the descriptor's 10 on a fresh facade", cached.LineSpacing())
 	}
 	g.result.SpriteFontCacheChecks++
+
+	// All six DrawString overloads, through a live SpriteBatch. The two
+	// argument guards come BEFORE the begin/end check, exactly as Draw's null
+	// texture does, so they are exercised outside a pair.
+	batch, batchErr := graphics.NewSpriteBatch(g.device)
+	if batchErr != nil {
+		return fmt.Errorf("NewSpriteBatch for DrawString: %w", batchErr)
+	}
+	white := framework.NewColorByInt32AndInt32AndInt32AndInt32(255, 255, 255, 255)
+	nilFontErr := batch.DrawStringBySpriteFontAndStringAndVector2AndColor(
+		nil, "A", framework.Vector2{}, white)
+	if nilFontErr == nil || !strings.Contains(nilFontErr.Error(), "spriteFont") {
+		return fmt.Errorf("a nil SpriteFont outside a pair = %v, want ArgumentNullException(\"spriteFont\")", nilFontErr)
+	}
+	nilTextErr := batch.DrawStringBySpriteFontAndStringBuilderAndVector2AndColor(
+		font, nil, framework.Vector2{}, white)
+	if nilTextErr == nil || !strings.Contains(nilTextErr.Error(), "text") {
+		return fmt.Errorf("a nil StringBuilder outside a pair = %v, want ArgumentNullException(\"text\")", nilTextErr)
+	}
+	outsideErr := batch.DrawStringBySpriteFontAndStringAndVector2AndColor(
+		font, "A", framework.Vector2{}, white)
+	if outsideErr == nil || !strings.Contains(outsideErr.Error(), "Begin must be called successfully before a Draw can be called.") {
+		return fmt.Errorf("DrawString outside a pair = %v, want the InvalidOperationException message", outsideErr)
+	}
+	g.result.SpriteFontDrawStringGuards++
+
+	if err := batch.BeginByNone(); err != nil {
+		return fmt.Errorf("Begin before DrawString: %w", err)
+	}
+	var builder strings.Builder
+	builder.WriteString("AB")
+	origin := framework.NewVector2BySingleAndSingle(1, 2)
+	scale := framework.NewVector2BySingleAndSingle(2, 3)
+	for _, submit := range []func() error{
+		func() error {
+			return batch.DrawStringBySpriteFontAndStringAndVector2AndColor(
+				font, "AB", framework.NewVector2BySingleAndSingle(4, 5), white)
+		},
+		func() error {
+			return batch.DrawStringBySpriteFontAndStringBuilderAndVector2AndColor(
+				font, &builder, framework.NewVector2BySingleAndSingle(4, 5), white)
+		},
+		func() error {
+			return batch.DrawStringBySpriteFontAndStringAndVector2AndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle(
+				font, "AB", framework.NewVector2BySingleAndSingle(4, 5), white,
+				0.25, origin, 2, graphics.SpriteEffectsFlipHorizontally, 0.5)
+		},
+		func() error {
+			return batch.DrawStringBySpriteFontAndStringBuilderAndVector2AndColorAndSingleAndVector2AndSingleAndSpriteEffectsAndSingle(
+				font, &builder, framework.NewVector2BySingleAndSingle(4, 5), white,
+				0.25, origin, 2, graphics.SpriteEffectsFlipVertically, 0.5)
+		},
+		func() error {
+			return batch.DrawStringBySpriteFontAndStringAndVector2AndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle(
+				font, "AB", framework.NewVector2BySingleAndSingle(4, 5), white,
+				0.25, origin, scale, graphics.SpriteEffectsNone, 0.5)
+		},
+		func() error {
+			return batch.DrawStringBySpriteFontAndStringBuilderAndVector2AndColorAndSingleAndVector2AndVector2AndSpriteEffectsAndSingle(
+				font, &builder, framework.NewVector2BySingleAndSingle(4, 5), white,
+				0.25, origin, scale, graphics.SpriteEffectsNone, 0.5)
+		},
+	} {
+		if err := submit(); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("DrawString: %w", err)
+			}
+			// A renderer that cannot draw text. Recorded, not passed.
+			g.result.SpriteFontDrawStringRefusals++
+			fmt.Fprintf(os.Stderr, "DrawString refused: %v\n", err)
+			continue
+		}
+		g.result.SpriteFontDrawStringSubmits++
+	}
+	if err := batch.End(); err != nil {
+		return fmt.Errorf("End after DrawString: %w", err)
+	}
+	if err := batch.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the DrawString batch: %w", err)
+	}
 
 	// Nothing disposes either font. XNA's SpriteFont is not IDisposable, so the
 	// two owned CNA handles per load are released by the game's own teardown --

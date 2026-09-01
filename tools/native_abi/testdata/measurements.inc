@@ -465,3 +465,19 @@ CNA_GO_MEASURE(offsetof_CNA_SpriteFontInfo_spacing, offsetof(CNA_SpriteFontInfo,
 CNA_GO_MEASURE(offsetof_CNA_SpriteFontInfo_default_character, offsetof(CNA_SpriteFontInfo, default_character))
 CNA_GO_MEASURE(offsetof_CNA_SpriteFontInfo_has_default_character, offsetof(CNA_SpriteFontInfo, has_default_character))
 CNA_GO_MEASURE(width_CNA_SpriteFontInfo_default_character, sizeof(((CNA_SpriteFontInfo*)0)->default_character))
+
+// CNA_SpriteTextCommand. A handle and a two-word CNA_StringView sit between the
+// two version words and the first vector, so the text view's WIDTH decides
+// where every geometry field after it is read from; a manifest that made the
+// view one word would put the position where the byte length is.
+CNA_GO_MEASURE(sizeof_CNA_SpriteTextCommand, sizeof(CNA_SpriteTextCommand))
+CNA_GO_MEASURE(alignof_CNA_SpriteTextCommand, _Alignof(CNA_SpriteTextCommand))
+CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_sprite_font, offsetof(CNA_SpriteTextCommand, sprite_font))
+CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_text, offsetof(CNA_SpriteTextCommand, text))
+CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_position, offsetof(CNA_SpriteTextCommand, position))
+CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_color, offsetof(CNA_SpriteTextCommand, color))
+CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_rotation, offsetof(CNA_SpriteTextCommand, rotation))
+CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_origin, offsetof(CNA_SpriteTextCommand, origin))
+CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_scale, offsetof(CNA_SpriteTextCommand, scale))
+CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_effects, offsetof(CNA_SpriteTextCommand, effects))
+CNA_GO_MEASURE(offsetof_CNA_SpriteTextCommand_layer_depth, offsetof(CNA_SpriteTextCommand, layer_depth))

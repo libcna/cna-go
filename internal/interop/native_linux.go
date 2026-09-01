@@ -921,6 +921,22 @@ func nativeSpriteFontDestroy(font uint64) error {
 		uint32(C.cna_go_sprite_font_destroy(C.CnaGoHandle(font))))
 }
 
+func nativeSpriteBatchDrawString(batch, font uint64, text string, command SpriteTextCommand) error {
+	var data *C.char
+	if len(text) > 0 {
+		data = (*C.char)(unsafe.Pointer(unsafe.StringData(text)))
+	}
+	code := uint32(C.cna_go_sprite_batch_draw_string(
+		C.CnaGoHandle(batch), C.CnaGoHandle(font), data, C.uint64_t(len(text)),
+		C.float(command.PositionX), C.float(command.PositionY),
+		C.uint8_t(command.Red), C.uint8_t(command.Green), C.uint8_t(command.Blue), C.uint8_t(command.Alpha),
+		C.float(command.Rotation), C.float(command.OriginX), C.float(command.OriginY),
+		C.float(command.ScaleX), C.float(command.ScaleY),
+		C.uint32_t(command.Effects), C.float(command.LayerDepth)))
+	runtime.KeepAlive(text)
+	return resultError("cna_sprite_batch_draw_string", code)
+}
+
 func nativeContentManagerAssetPath(manager uint64, assetName string) (string, error) {
 	var data *C.char
 	if len(assetName) > 0 {

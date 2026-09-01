@@ -922,6 +922,38 @@ func (resource *Resource) SetSpriteFontLineSpacing(lineSpacing int32) error {
 	return nativeSpriteFontSetLineSpacing(handle, lineSpacing)
 }
 
+// SpriteTextCommand is CNA_SpriteTextCommand without its text, which crosses
+// as a Go string beside it. Every field is one of the nine arguments
+// SpriteFont::InternalDraw takes, in the same meaning.
+type SpriteTextCommand struct {
+	PositionX, PositionY float32
+	Red, Green, Blue     uint8
+	Alpha                uint8
+	Rotation             float32
+	OriginX, OriginY     float32
+	ScaleX, ScaleY       float32
+	Effects              uint32
+	LayerDepth           float32
+}
+
+// DrawString is cna_sprite_batch_draw_string. The receiver is the SpriteBatch;
+// the font must belong to the same game and is retained by CNA until a
+// successful End, exactly as a drawn texture is.
+func (resource *Resource) DrawString(font *Resource, text string, command SpriteTextCommand) error {
+	batch, err := resource.liveHandle(resourceSpriteBatch)
+	if err != nil {
+		return err
+	}
+	fontHandle, err := font.liveHandle(resourceSpriteFont)
+	if err != nil {
+		return err
+	}
+	if resource.runtime != font.runtime || resource.generation != font.generation {
+		return ErrStaleGeneration
+	}
+	return nativeSpriteBatchDrawString(batch, fontHandle, text, command)
+}
+
 // SetSpriteFontSpacing is cna_sprite_font_set_spacing.
 func (resource *Resource) SetSpriteFontSpacing(spacing float32) error {
 	handle, err := resource.liveHandle(resourceSpriteFont)
