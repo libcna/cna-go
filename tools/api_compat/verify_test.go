@@ -68,14 +68,19 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// PROTECTED Dispose(bool) -- stopped being dropped.
 	// 143/201, not 133/188: Foundation 73 composed TextureCube, so
 	// RenderTargetCube's inherited surface joined the enumeration.
-	if surface.XNAInheritedCLRMembers != 143 || surface.XNAInheritedProjections != 201 {
+	// 204/286, not 143/201: Foundation 79 composed Effect, which put the
+	// inherited surface of all SIX of its derived types into the enumeration --
+	// five of them still unprojected, which is what
+	// XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED counts.
+	if surface.XNAInheritedCLRMembers != 204 || surface.XNAInheritedProjections != 286 {
 		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
 	}
 	// The subtraction the exclusion performs is measured rather than implied:
 	// three public base members are occupied by a derived declaration --
 	// DrawableGameComponent::Initialize, and GamerServicesComponent's
-	// Initialize and Update.
-	if surface.XNAInheritedOverriddenMembers != 3 {
+	// Initialize and Update. Foundation 79 added five more, one per stock
+	// effect: each declares its own Clone, which occupies Effect's slot.
+	if surface.XNAInheritedOverriddenMembers != 8 {
 		t.Fatalf("XNA inherited overridden count = %d", surface.XNAInheritedOverriddenMembers)
 	}
 	// 3456, not 3443: Foundation 73's newly composed TextureCube adds
@@ -83,8 +88,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// Foundation 74's newly composed Dictionary`2 adds LaunchParameters'
 	// fourteen. 3551, not 3470: Foundation 78 composed System.Exception and
 	// ExternalException, adding the eight derived exception types' inherited
-	// surface, and removed two blocked declared constructors.
-	if surface.ExpectedGoMembers != 3551 {
+	// surface, and removed two blocked declared constructors. 3636, not 3551:
+	// Foundation 79 composed Effect, whose six derived types contribute
+	// eighty-five inherited projections between them.
+	if surface.ExpectedGoMembers != 3636 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -4529,9 +4536,11 @@ func TestEventProjectionIsMeasuredExactly(t *testing.T) {
 		t.Fatalf("XNA-declared events = %d producing %d accessors, want 49 and 98", declaredEvents, declaredAccessors)
 	}
 	// 22, not 21: Foundation 73's RenderTargetCube inherits GraphicsResource's
-	// Disposing through the newly composed TextureCube.
-	if inheritedEvents != 22 || inheritedAccessors != 44 {
-		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 22 and 44", inheritedEvents, inheritedAccessors)
+	// Disposing through the newly composed TextureCube. 28, not 22: Foundation
+	// 79 composed Effect, and each of its six derived types inherits the same
+	// Disposing event two links up.
+	if inheritedEvents != 28 || inheritedAccessors != 56 {
+		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 28 and 56", inheritedEvents, inheritedAccessors)
 	}
 	if events != declaredEvents+inheritedEvents || accessors != declaredAccessors+inheritedAccessors {
 		t.Fatalf("event partition = %d/%d, walk found %d/%d", events, accessors,
@@ -6592,11 +6601,14 @@ func withXNABaseRelationships(t *testing.T, mutate func(), fn func()) {
 // to the blocker rules, which is the whole point of the status.
 // deferredBaseFixtureName is the DEFERRED base the mutations below act on.
 //
-// It used to be GraphicsResource, which Foundation 56 composed. Effect took its
-// place because it is deferred for reasons that are not inheritance -- it
-// reaches a shader subsystem CNA-Go maps no part of -- so it is the entry least
-// likely to be composed next and least likely to make this fixture stale again.
-const deferredBaseFixtureName = "Microsoft.Xna.Framework.Graphics.Effect"
+// It used to be GraphicsResource, which Foundation 56 composed, and then
+// Effect, which Foundation 79 composed. MathTypeConverter took its place on the
+// same reasoning applied harder: it is the one deferred XNA base whose blocker
+// is not an XNA decision at all. It extends System.ComponentModel
+// .ExpandableObjectConverter, itself a DEFERRED BCL base with three recorded
+// blockers, so composing it needs a BCL closure before an XNA one -- which
+// makes it the entry least likely to be composed next.
+const deferredBaseFixtureName = "Microsoft.Xna.Framework.Design.MathTypeConverter"
 
 const gameComponentBase = "Microsoft.Xna.Framework.GameComponent"
 
@@ -6641,16 +6653,17 @@ var xnaBaseDefects = map[string]func(complete *[]string){
 			Status: "DEFERRED", Blockers: []xnaBaseBlocker{{Class: "ARCHITECTURE", Detail: "invented"}},
 		}
 	},
-	// The substantive rule. BasicEffect inherits four public members from the
-	// DEFERRED Effect that CNA-Go does not project, so calling it COMPLETE
-	// asserts something false.
+	// The substantive rule. Vector3Converter inherits five public members from
+	// the DEFERRED MathTypeConverter that CNA-Go does not project, so calling
+	// it COMPLETE asserts something false.
 	//
-	// It used to be Texture2D over the deferred Texture. Foundation 56 composed
-	// that chain and Texture2D became genuinely complete -- inherited surface
-	// included -- so the fixture moved to a relationship that is still deferred
-	// rather than being weakened to keep passing.
+	// It used to be Texture2D over the deferred Texture, then BasicEffect over
+	// the deferred Effect. Foundation 56 and Foundation 79 composed those two
+	// chains and both derived types became genuinely complete -- inherited
+	// surface included -- so the fixture has twice moved to a relationship that
+	// is still deferred rather than being weakened to keep passing.
 	"derived_type_of_a_deferred_base_reported_complete": func(complete *[]string) {
-		*complete = append(*complete, "Microsoft.Xna.Framework.Graphics.BasicEffect")
+		*complete = append(*complete, "Microsoft.Xna.Framework.Design.Vector3Converter")
 	},
 }
 
@@ -7977,22 +7990,32 @@ func TestTheLiveSubstitutabilityFamiliesAreTextureAndTexture2D(t *testing.T) {
 	sort.Strings(live)
 	// Texture2D went live in Foundation 58, when RenderTarget2D was projected.
 	// Texture went live in Foundation 61, when TextureCollection put a
-	// Texture-typed position on a carrier CNA-Go projects.
+	// Texture-typed position on a carrier CNA-Go projects. Effect went live in
+	// Foundation 79, when BasicEffect became the first projected type deriving
+	// from it.
 	want := []string{
+		"Microsoft.Xna.Framework.Graphics.Effect",
 		"Microsoft.Xna.Framework.Graphics.Texture",
 		"Microsoft.Xna.Framework.Graphics.Texture2D",
 	}
-	if len(live) != len(want) || live[0] != want[0] || live[1] != want[1] {
+	if len(live) != len(want) {
 		t.Fatalf("live substitutability families = %v, want %v", live, want)
 	}
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 2 {
-		t.Fatalf("%d registered substitutable bases, want the two live families", got)
+	for index := range want {
+		if live[index] != want[index] {
+			t.Fatalf("live substitutability families = %v, want %v", live, want)
+		}
+	}
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 3 {
+		t.Fatalf("%d registered substitutable bases, want the three live families", got)
 	}
 	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_NONE"]; got != 3 {
 		t.Fatalf("%d families have no substitutability requirement, want 3", got)
 	}
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 7 {
-		t.Fatalf("%d families have a latent requirement, want 7", got)
+	// Six, not seven: Effect's requirement went from latent to live in
+	// Foundation 79, when BasicEffect became a projected derived type.
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 6 {
+		t.Fatalf("%d families have a latent requirement, want 6", got)
 	}
 	if got := result.Summary["XNA_BASE_TYPED_SIGNATURE_POSITIONS"]; got != 51 {
 		t.Fatalf("%d base-typed public signature positions, want 51", got)
@@ -8110,21 +8133,21 @@ func xnaCompositionFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	// Five since Foundation 73 composed TextureCube.
-	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 5 {
-		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 5", got)
+	// Six since Foundation 79 composed Effect.
+	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 6 {
+		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 6", got)
 	}
 	// Two for GameComponent, eleven for GraphicsResource, three for Texture,
-	// one for Texture2D and one for TextureCube.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 18 {
-		t.Fatalf("the composed relationships cover %d derived types, want 18", got)
+	// one for Texture2D, one for TextureCube and six for Effect.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 24 {
+		t.Fatalf("the composed relationships cover %d derived types, want 24", got)
 	}
 	// DrawableGameComponent, SpriteBatch, Texture, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
-	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect and
-	// Foundation 73's RenderTargetCube.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 16 {
-		t.Fatalf("%d projected derived types, want 16", got)
+	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect,
+	// Foundation 73's RenderTargetCube and Foundation 79's BasicEffect.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 17 {
+		t.Fatalf("%d projected derived types, want 17", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.
@@ -8137,17 +8160,19 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
 		}
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 143 {
-		t.Fatalf("%d inherited public CLR members, want 143", got)
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 204 {
+		t.Fatalf("%d inherited public CLR members, want 204", got)
 	}
-	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 201 {
-		t.Fatalf("%d inherited Go projections, want 201", got)
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 286 {
+		t.Fatalf("%d inherited Go projections, want 286", got)
 	}
-	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 201 {
-		t.Fatalf("%d attributed inherited members, want every one of the 201", got)
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 286 {
+		t.Fatalf("%d attributed inherited members, want every one of the 286", got)
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"]; got != 3 {
-		t.Fatalf("%d overridden inherited members, want 3", got)
+	// Eight, not three: each of Effect's five stock derived types declares its
+	// own Clone, which occupies the slot Effect's Clone would have filled.
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"]; got != 8 {
+		t.Fatalf("%d overridden inherited members, want 8", got)
 	}
 }
 
@@ -8579,26 +8604,27 @@ func TestAMethodTypeParameterTokenResolvesToItsDeclaredName(t *testing.T) {
 // absent.
 //
 // Foundation 54 found the rule by tripping over Texture2D, whose Texture base
-// was deferred. Foundation 56 composed that chain, so the fixture moved to a
-// family that is still deferred rather than being weakened to keep passing:
-// BasicEffect over Effect, whose four inherited public members CNA-Go projects
-// nowhere.
+// was deferred. Foundation 56 composed that chain and the fixture moved to
+// BasicEffect over Effect; Foundation 79 composed that one too, so it moved
+// again -- to Vector3Converter over MathTypeConverter, whose five inherited
+// public members CNA-Go projects nowhere and whose own base is a deferred BCL
+// type.
 func TestATypeWithUnprojectedInheritedMembersIsNotComplete(t *testing.T) {
 	surface, err := buildExpected(loadPinnedContract(t))
 	if err != nil {
 		t.Fatal(err)
 	}
-	basicEffect := surface.typeForXNA("Microsoft.Xna.Framework.Graphics.BasicEffect")
-	if basicEffect == nil {
-		t.Fatal("BasicEffect is not in the expected surface")
+	converter := surface.typeForXNA("Microsoft.Xna.Framework.Design.Vector3Converter")
+	if converter == nil {
+		t.Fatal("Vector3Converter is not in the expected surface")
 	}
-	inherited := unprojectedInheritedPublicMembers(surface, basicEffect)
+	inherited := unprojectedInheritedPublicMembers(surface, converter)
 	if len(inherited) == 0 {
-		t.Fatal("BasicEffect inherits nothing from Effect, so this test measures nothing")
+		t.Fatal("Vector3Converter inherits nothing from MathTypeConverter, so this test measures nothing")
 	}
 	for _, want := range []string{
-		"Microsoft.Xna.Framework.Graphics.Effect::Parameters()",
-		"Microsoft.Xna.Framework.Graphics.Effect::Techniques()",
+		"Microsoft.Xna.Framework.Design.MathTypeConverter::CanConvertFrom(System.ComponentModel.ITypeDescriptorContext,System.Type)",
+		"Microsoft.Xna.Framework.Design.MathTypeConverter::GetPropertiesSupported(System.ComponentModel.ITypeDescriptorContext)",
 	} {
 		found := false
 		for _, got := range inherited {

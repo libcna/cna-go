@@ -2286,3 +2286,189 @@ func nativeDeviceAdapterIndex(device uint64) (uint32, error) {
 	code := uint32(C.cna_go_graphics_device_get_adapter_index(C.CnaGoHandle(device), &index))
 	return uint32(index), resultError("cna_graphics_device_get_adapter_index", code)
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 79 -- the stock-effect routes.
+//
+// Every one of these is a single CNA call over an effect handle or a
+// directional-light handle. A Vector3 crosses as three floats and a Matrix as
+// sixteen, which is the same flat-array marshalling the effect annotation
+// readers already use: the Go side never depends on a C struct layout, and the
+// bridge does the one memcpy.
+// ---------------------------------------------------------------------------
+
+func nativeBasicEffectSetVertexColorEnabled(handle uint64, value bool) error {
+	var raw C.uint8_t
+	if value {
+		raw = 1
+	}
+	return resultError("cna_basic_effect_set_vertex_color_enabled", uint32(C.cna_go_basic_effect_set_vertex_color_enabled(C.CnaGoHandle(handle), raw)))
+}
+
+func nativeBasicEffectSetPreferPerPixelLighting(handle uint64, value bool) error {
+	var raw C.uint8_t
+	if value {
+		raw = 1
+	}
+	return resultError("cna_basic_effect_set_prefer_per_pixel_lighting", uint32(C.cna_go_basic_effect_set_prefer_per_pixel_lighting(C.CnaGoHandle(handle), raw)))
+}
+
+func nativeBasicEffectSetDiffuseColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_basic_effect_set_diffuse_color", uint32(C.cna_go_basic_effect_set_diffuse_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeBasicEffectSetEmissiveColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_basic_effect_set_emissive_color", uint32(C.cna_go_basic_effect_set_emissive_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeBasicEffectSpecularColor(handle uint64) ([3]float32, error) {
+	var values [3]C.float
+	code := uint32(C.cna_go_basic_effect_get_specular_color(C.CnaGoHandle(handle), &values[0]))
+	var result [3]float32
+	for index := range values {
+		result[index] = float32(values[index])
+	}
+	return result, resultError("cna_basic_effect_get_specular_color", code)
+}
+
+func nativeBasicEffectSetSpecularColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_basic_effect_set_specular_color", uint32(C.cna_go_basic_effect_set_specular_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeBasicEffectSpecularPower(handle uint64) (float32, error) {
+	var value C.float
+	code := uint32(C.cna_go_basic_effect_get_specular_power(C.CnaGoHandle(handle), &value))
+	return float32(value), resultError("cna_basic_effect_get_specular_power", code)
+}
+
+func nativeBasicEffectSetSpecularPower(handle uint64, value float32) error {
+	return resultError("cna_basic_effect_set_specular_power", uint32(C.cna_go_basic_effect_set_specular_power(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeBasicEffectSetAlpha(handle uint64, value float32) error {
+	return resultError("cna_basic_effect_set_alpha", uint32(C.cna_go_basic_effect_set_alpha(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeBasicEffectSetTextureEnabled(handle uint64, value bool) error {
+	var raw C.uint8_t
+	if value {
+		raw = 1
+	}
+	return resultError("cna_basic_effect_set_texture_enabled", uint32(C.cna_go_basic_effect_set_texture_enabled(C.CnaGoHandle(handle), raw)))
+}
+
+func nativeEffectMatricesSetWorld(handle uint64, value [16]float32) error {
+	var values [16]C.float
+	for index := range value {
+		values[index] = C.float(value[index])
+	}
+	return resultError("cna_effect_matrices_set_world", uint32(C.cna_go_effect_matrices_set_world(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeEffectMatricesSetView(handle uint64, value [16]float32) error {
+	var values [16]C.float
+	for index := range value {
+		values[index] = C.float(value[index])
+	}
+	return resultError("cna_effect_matrices_set_view", uint32(C.cna_go_effect_matrices_set_view(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeEffectMatricesSetProjection(handle uint64, value [16]float32) error {
+	var values [16]C.float
+	for index := range value {
+		values[index] = C.float(value[index])
+	}
+	return resultError("cna_effect_matrices_set_projection", uint32(C.cna_go_effect_matrices_set_projection(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeEffectFogColor(handle uint64) ([3]float32, error) {
+	var values [3]C.float
+	code := uint32(C.cna_go_effect_fog_get_color(C.CnaGoHandle(handle), &values[0]))
+	var result [3]float32
+	for index := range values {
+		result[index] = float32(values[index])
+	}
+	return result, resultError("cna_effect_fog_get_color", code)
+}
+
+func nativeEffectFogSetColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_effect_fog_set_color", uint32(C.cna_go_effect_fog_set_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeEffectFogSetEnabled(handle uint64, value bool) error {
+	var raw C.uint8_t
+	if value {
+		raw = 1
+	}
+	return resultError("cna_effect_fog_set_enabled", uint32(C.cna_go_effect_fog_set_enabled(C.CnaGoHandle(handle), raw)))
+}
+
+func nativeEffectFogSetStart(handle uint64, value float32) error {
+	return resultError("cna_effect_fog_set_start", uint32(C.cna_go_effect_fog_set_start(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeEffectFogSetEnd(handle uint64, value float32) error {
+	return resultError("cna_effect_fog_set_end", uint32(C.cna_go_effect_fog_set_end(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeEffectLightsSetAmbientColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_effect_lights_set_ambient_color", uint32(C.cna_go_effect_lights_set_ambient_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeEffectLightsSetEnabled(handle uint64, value bool) error {
+	var raw C.uint8_t
+	if value {
+		raw = 1
+	}
+	return resultError("cna_effect_lights_set_enabled", uint32(C.cna_go_effect_lights_set_enabled(C.CnaGoHandle(handle), raw)))
+}
+
+func nativeDirectionalLightSetDiffuseColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_directional_light_set_diffuse_color", uint32(C.cna_go_directional_light_set_diffuse_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeDirectionalLightSetDirection(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_directional_light_set_direction", uint32(C.cna_go_directional_light_set_direction(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeDirectionalLightSetSpecularColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_directional_light_set_specular_color", uint32(C.cna_go_directional_light_set_specular_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeDirectionalLightSetEnabled(handle uint64, value bool) error {
+	var raw C.uint8_t
+	if value {
+		raw = 1
+	}
+	return resultError("cna_directional_light_set_enabled", uint32(C.cna_go_directional_light_set_enabled(C.CnaGoHandle(handle), raw)))
+}
+
+func nativeBasicEffectCreate(device uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_basic_effect_create", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_basic_effect_create(C.CnaGoHandle(device), out)
+	})
+}
+
+func nativeBasicEffectSetTexture(effect, texture uint64) error {
+	return resultError("cna_basic_effect_set_texture",
+		uint32(C.cna_go_basic_effect_set_texture(C.CnaGoHandle(effect), C.CnaGoHandle(texture))))
+}
+
+func nativeEffectLightsDirectionalLight(effect uint64, index uint32) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_lights_get_directional_light", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_lights_get_directional_light(C.CnaGoHandle(effect), C.uint32_t(index), out)
+	})
+}
+
+func nativeDirectionalLightDestroy(light uint64) error {
+	return resultError("cna_directional_light_destroy",
+		uint32(C.cna_go_directional_light_destroy(C.CnaGoHandle(light))))
+}

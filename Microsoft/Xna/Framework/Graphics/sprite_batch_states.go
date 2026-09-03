@@ -75,7 +75,7 @@ func (b *SpriteBatch) BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthS
 // mine" rather than between drawing and refusing.
 func (b *SpriteBatch) BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffect(
 	sortMode SpriteSortMode, blendState *BlendState, samplerState *SamplerState,
-	depthStencilState *DepthStencilState, rasterizerState *RasterizerState, effect *Effect,
+	depthStencilState *DepthStencilState, rasterizerState *RasterizerState, effect EffectReference,
 ) error {
 	return b.beginWithEffect(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, nil)
 }
@@ -89,7 +89,7 @@ func (b *SpriteBatch) BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthS
 // the two paths agree by construction rather than by coincidence.
 func (b *SpriteBatch) BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffectAndMatrix(
 	sortMode SpriteSortMode, blendState *BlendState, samplerState *SamplerState,
-	depthStencilState *DepthStencilState, rasterizerState *RasterizerState, effect *Effect,
+	depthStencilState *DepthStencilState, rasterizerState *RasterizerState, effect EffectReference,
 	transformMatrix framework.Matrix,
 ) error {
 	transform := matrixToRowMajor(transformMatrix)
@@ -127,8 +127,12 @@ func (b *SpriteBatch) beginWithStates(
 func (b *SpriteBatch) beginWithEffect(
 	sortMode SpriteSortMode, blendState *BlendState, samplerState *SamplerState,
 	depthStencilState *DepthStencilState, rasterizerState *RasterizerState,
-	effect *Effect, transform *[16]float32,
+	effectReference EffectReference, transform *[16]float32,
 ) error {
+	// The substitutable-base rule's `ldarg`: a BasicEffect reaching this
+	// position is its composed Effect half, and a nil interface and an interface
+	// holding a typed nil are the one null the reference sees.
+	effect := resolveEffect(effectReference)
 	if b == nil {
 		return interop.ErrDisposed
 	}

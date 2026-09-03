@@ -76,33 +76,37 @@ const gameComponentIdentity = "Microsoft.Xna.Framework.GameComponent"
 // to pass unmutated, or every mutation below would "fail" for the wrong reason.
 func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	result, measurements := identityMeasurement(t, "")
-	if len(measurements) != 5 {
-		t.Fatalf("%d identity measurements, want five composed bases", len(measurements))
+	if len(measurements) != 6 {
+		t.Fatalf("%d identity measurements, want six composed bases", len(measurements))
 	}
 	for base, measurement := range measurements {
 		if measurement.Verdict != "PASS" {
 			t.Fatalf("%s identity measurement = %+v", base, measurement)
 		}
 	}
-	// Five GameComponent sites and two GraphicsResource ones. Texture has none:
-	// it is a middle link that forwards, and its entry is checked by the
-	// forwarding claim instead.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_SITES"]; got != 7 {
-		t.Fatalf("%d identity sites, want seven", got)
+	// Five GameComponent sites, two GraphicsResource ones and Foundation 79's
+	// two on Effect. Texture, Texture2D and TextureCube have none: they are
+	// middle links that forward and hold nothing, and their entries are checked
+	// by the forwarding claim instead. Effect is a middle link too, and the
+	// first with sites of its own -- it forwards its binding AND reports a
+	// runtime type in two members.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_SITES"]; got != 9 {
+		t.Fatalf("%d identity sites, want nine", got)
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 8 {
-		t.Fatalf("%d identity uses, want eight: GameComponent's Dispose(bool) has two and the other six sites have one each", got)
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 10 {
+		t.Fatalf("%d identity uses, want ten: GameComponent's Dispose(bool) has two and the other eight sites have one each", got)
 	}
-	// Texture, Texture2D and Foundation 73's TextureCube are middle links.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]; got != 3 {
-		t.Fatalf("%d forwarding links, want the three middle links", got)
+	// Texture, Texture2D, Foundation 73's TextureCube and Foundation 79's
+	// Effect are middle links.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]; got != 4 {
+		t.Fatalf("%d forwarding links, want the four middle links", got)
 	}
 	// DrawableGameComponent, Texture, SpriteBatch, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
-	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect and
-	// Foundation 73's RenderTargetCube.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 16 {
-		t.Fatalf("%d identity bindings, want the sixteen projected derived types", got)
+	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect,
+	// Foundation 73's RenderTargetCube and Foundation 79's BasicEffect.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 17 {
+		t.Fatalf("%d identity bindings, want the seventeen projected derived types", got)
 	}
 	for _, category := range []string{"BASE_MAPPING_MISMATCH"} {
 		if result.Summary[category] != 0 {
@@ -194,7 +198,7 @@ func TestSelfIgnoringMutationIsNotCaughtStructurally(t *testing.T) {
 	if result.Summary["BASE_MAPPING_MISMATCH"] != 0 {
 		t.Fatalf("the structural gate rejected a body it cannot actually distinguish: %+v", measurements)
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 8 {
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 10 {
 		t.Fatalf("identity uses = %d", got)
 	}
 }
@@ -217,7 +221,7 @@ func TestGraphicsChainIdentityMutationsAreRejected(t *testing.T) {
 		},
 		"self_never_reads_the_installed_object": {
 			"graphics_resource.go",
-			"\tif r.derived != nil {\n\t\treturn r.derived\n\t}\n\treturn r", "\treturn r", graphicsResourceIdentity,
+			"\tif r != nil && r.derived != nil {\n\t\treturn r.derived\n\t}\n\treturn r", "\treturn r", graphicsResourceIdentity,
 		},
 		"sprite_batch_does_not_install_the_clr_this": {
 			"foundation.go", "batch.graphicsResource.bindDerived(batch)", "_ = batch", graphicsResourceIdentity,

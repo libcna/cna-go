@@ -3496,14 +3496,16 @@ func TestTheCubeAndVolumeTexturesAreReachableFromOutside(t *testing.T) {
 // constructor is the type's only public door.
 func TestTheEffectClusterIsReachableFromOutside(t *testing.T) {
 	var _ func(*graphics.GraphicsDevice, []uint8) (*graphics.Effect, error) = graphics.NewEffectByGraphicsDeviceAndSliceOfByte
-	var _ func(*graphics.Effect) (*graphics.Effect, error) = graphics.NewEffectByEffect
+	// Foundation 79 widened Effect at both ends: the clone-source PARAMETER
+	// takes any effect, and Clone's RETURN carries the derived identity back.
+	var _ func(graphics.EffectReference) (*graphics.Effect, error) = graphics.NewEffectByEffect
 
 	effect := &graphics.Effect{}
 	var _ func() *graphics.EffectParameterCollection = effect.Parameters
 	var _ func() *graphics.EffectTechniqueCollection = effect.Techniques
 	var _ func() *graphics.EffectTechnique = effect.CurrentTechnique
 	var _ func(*graphics.EffectTechnique) error = effect.SetCurrentTechnique
-	var _ func() (*graphics.Effect, error) = effect.Clone
+	var _ func() (graphics.EffectReference, error) = effect.Clone
 	var _ func() error = effect.OnApply
 	var _ func() error = effect.DisposeByNone
 
@@ -3559,8 +3561,8 @@ func TestTheEffectClusterIsReachableFromOutside(t *testing.T) {
 	}
 	// The last two SpriteBatch.Begin overloads exist and take an Effect.
 	batch := &graphics.SpriteBatch{}
-	var _ func(graphics.SpriteSortMode, *graphics.BlendState, *graphics.SamplerState, *graphics.DepthStencilState, *graphics.RasterizerState, *graphics.Effect) error = batch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffect
-	var _ func(graphics.SpriteSortMode, *graphics.BlendState, *graphics.SamplerState, *graphics.DepthStencilState, *graphics.RasterizerState, *graphics.Effect, framework.Matrix) error = batch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffectAndMatrix
+	var _ func(graphics.SpriteSortMode, *graphics.BlendState, *graphics.SamplerState, *graphics.DepthStencilState, *graphics.RasterizerState, graphics.EffectReference) error = batch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffect
+	var _ func(graphics.SpriteSortMode, *graphics.BlendState, *graphics.SamplerState, *graphics.DepthStencilState, *graphics.RasterizerState, graphics.EffectReference, framework.Matrix) error = batch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffectAndMatrix
 
 	// And Load<Effect> is in the closed set: it is refused for a reason other
 	// than the type.
@@ -4113,5 +4115,134 @@ func TestXNAExceptionTypesAreUsableFromOutsideTheModule(t *testing.T) {
 		if game.ShowMissingRequirementMessage(exception) {
 			t.Fatalf("ShowMissingRequirementMessage answered true for %s", exception.GetType())
 		}
+	}
+}
+
+// TestTheStockEffectFamilyIsReachableFromOutside is Foundation 79's canary. It
+// compiles BasicEffect, DirectionalLight and IEffectLights at their exact
+// shapes and exercises the half that needs no device, which is most of it: the
+// reference keeps this state managed and pushes it in OnApply.
+func TestTheStockEffectFamilyIsReachableFromOutside(t *testing.T) {
+	// The two constructors, at the shapes the contract declares. The public one
+	// takes a device; the protected clone constructor is exported because Go
+	// has no protected and a consumer deriving from BasicEffect needs it.
+	var _ func(*graphics.GraphicsDevice) (*graphics.BasicEffect, error) = graphics.NewBasicEffectByGraphicsDevice
+	var _ func(*graphics.BasicEffect) (*graphics.BasicEffect, error) = graphics.NewBasicEffectByBasicEffect
+
+	// DirectionalLight's constructor takes three EffectParameters and a clone
+	// source, and it is fallible because the reference's reaches its parameters.
+	light, err := graphics.NewDirectionalLight(nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("NewDirectionalLight: %v", err)
+	}
+	// A fresh light is DISABLED with Down/One/Zero -- the constructor's setter
+	// arm, and the one default that is a field's zero value rather than a
+	// stored constant.
+	if light.Enabled() {
+		t.Fatal("a fresh light is enabled")
+	}
+	if light.Direction() != framework.Vector3Down() ||
+		light.DiffuseColor() != framework.Vector3One() ||
+		light.SpecularColor() != framework.Vector3Zero() {
+		t.Fatalf("light defaults = %v/%v/%v", light.Direction(), light.DiffuseColor(), light.SpecularColor())
+	}
+	// The four getters are infallible and the four setters are not, which is
+	// the split the whole type turns on and the one a consumer meets first.
+	var _ func() bool = light.Enabled
+	var _ func() framework.Vector3 = light.Direction
+	var _ func(bool) error = light.SetEnabled
+	var _ func(framework.Vector3) error = light.SetDirection
+	if err := light.SetEnabled(true); err != nil {
+		t.Fatalf("SetEnabled on a light with no effect behind it: %v", err)
+	}
+	colour := framework.NewVector3BySingleAndSingleAndSingle(0.25, 0.5, 0.75)
+	if err := light.SetDiffuseColor(colour); err != nil {
+		t.Fatal(err)
+	}
+	if err := light.SetEnabled(false); err != nil {
+		t.Fatal(err)
+	}
+	// Disabling writes zero into the PARAMETER and leaves the cache, so the
+	// property still reports the colour it was given.
+	if got := light.DiffuseColor(); got != colour {
+		t.Fatalf("a disabled light reports %v", got)
+	}
+	// The clone arm copies fields and writes nothing through, which is how a
+	// disabled light with a non-zero colour survives a clone.
+	clone, err := graphics.NewDirectionalLight(nil, nil, nil, light)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if clone.Enabled() || clone.DiffuseColor() != colour {
+		t.Fatalf("the cloned light = %v/%v", clone.Enabled(), clone.DiffuseColor())
+	}
+
+	// BasicEffect's three interfaces, each named from outside. A consumer who
+	// cannot name them cannot write a function that takes any stock effect.
+	var _ graphics.IEffectMatrices = (*graphics.BasicEffect)(nil)
+	var _ graphics.IEffectFog = (*graphics.BasicEffect)(nil)
+	var _ graphics.IEffectLights = (*graphics.BasicEffect)(nil)
+
+	// The fallibility split, at the exact shapes. Fourteen properties are
+	// managed on both sides of the boundary and carry no error; the four the
+	// reference backs with an EffectParameter do.
+	var effect *graphics.BasicEffect
+	var _ func() framework.Matrix = effect.World
+	var _ func(framework.Matrix) = effect.SetWorld
+	var _ func() bool = effect.LightingEnabled
+	var _ func(bool) = effect.SetLightingEnabled
+	var _ func() *graphics.DirectionalLight = effect.DirectionalLight0
+	var _ func() (framework.Vector3, error) = effect.SpecularColor
+	var _ func(framework.Vector3) error = effect.SetSpecularColor
+	var _ func() (float32, error) = effect.SpecularPower
+	var _ func() (framework.Vector3, error) = effect.FogColor
+	var _ func() (*graphics.Texture2D, error) = effect.Texture
+	// The texture SETTER widens, because a property setter is a parameter
+	// position and RenderTarget2D is a Texture2D.
+	var _ func(graphics.Texture2DReference) error = effect.SetTexture
+	var _ func() error = effect.EnableDefaultLighting
+	// Clone returns the reference interface, which is what carries the derived
+	// identity back.
+	var _ func() (graphics.EffectReference, error) = effect.Clone
+	var _ func() error = effect.OnApply
+	// BasicEffect declares no Dispose, so its inherited surface has exactly one
+	// and it takes no argument -- unlike Effect, which declares the protected
+	// overload and projects both.
+	var _ func() error = effect.Dispose
+
+	// Effect's inherited public surface, re-exposed. A consumer reaching
+	// Parameters through a BasicEffect is the whole point of composing the base.
+	var _ func() *graphics.EffectParameterCollection = effect.Parameters
+	var _ func() *graphics.EffectTechniqueCollection = effect.Techniques
+	var _ func() *graphics.EffectTechnique = effect.CurrentTechnique
+	var _ func(*graphics.EffectTechnique) error = effect.SetCurrentTechnique
+	var _ func() *graphics.GraphicsDevice = effect.GraphicsDevice
+	var _ func() string = effect.Name
+	var _ func(string) = effect.SetName
+	var _ func() any = effect.Tag
+	var _ func(any) = effect.SetTag
+	var _ func() bool = effect.IsDisposed
+	var _ func() string = effect.ToString
+
+	// The widened Effect positions, from outside: a BasicEffect must reach
+	// every one of them.
+	var _ graphics.EffectReference = (*graphics.BasicEffect)(nil)
+	var _ graphics.EffectReference = (*graphics.Effect)(nil)
+	batch := &graphics.SpriteBatch{}
+	var _ func(graphics.SpriteSortMode, *graphics.BlendState, *graphics.SamplerState,
+		*graphics.DepthStencilState, *graphics.RasterizerState, graphics.EffectReference) error = batch.BeginBySpriteSortModeAndBlendStateAndSamplerStateAndDepthStencilStateAndRasterizerStateAndEffect
+
+	// The device-backed members refuse rather than panicking on an effect with
+	// no native half, which is what a consumer meets if a creation failed and
+	// they carried on.
+	unbuilt := &graphics.BasicEffect{}
+	if _, err := unbuilt.SpecularColor(); err == nil {
+		t.Fatal("SpecularColor answered on an effect with no native half")
+	}
+	if err := unbuilt.OnApply(); err == nil {
+		t.Fatal("OnApply answered on an effect with no native half")
+	}
+	if unbuilt.DirectionalLight0() != nil {
+		t.Fatal("an unbuilt effect published a light")
 	}
 }

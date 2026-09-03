@@ -1884,6 +1884,166 @@ CnaGoResult cna_go_effect_annotation_get_value_matrix(CnaGoHandle annotation, fl
     return result;
 }
 
+
+/* ---------------------------------------------------------------------------
+ * Foundation 79 -- the stock-effect routes.
+ *
+ * BasicEffect's own nineteen, plus the three interface families every stock
+ * effect shares: six matrices, eight fog and six lights, and DirectionalLight's
+ * ten. Each is generated from the canonical header's own prototype, and a
+ * CNA_Vector3 or CNA_Matrix crosses as a flat float array the way the effect
+ * annotation readers already do, so the Go side never depends on a C struct
+ * layout.
+ * ------------------------------------------------------------------------- */
+
+CnaGoResult cna_go_basic_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect) {
+    return api.cna_basic_effect_create(graphics_device, out_effect);
+}
+
+CnaGoResult cna_go_basic_effect_set_vertex_color_enabled(CnaGoHandle effect, uint8_t value) {
+    return api.cna_basic_effect_set_vertex_color_enabled(effect, value);
+}
+
+CnaGoResult cna_go_basic_effect_set_prefer_per_pixel_lighting(CnaGoHandle effect, uint8_t value) {
+    return api.cna_basic_effect_set_prefer_per_pixel_lighting(effect, value);
+}
+
+CnaGoResult cna_go_basic_effect_set_diffuse_color(CnaGoHandle effect, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_basic_effect_set_diffuse_color(effect, value_value);
+}
+
+CnaGoResult cna_go_basic_effect_set_emissive_color(CnaGoHandle effect, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_basic_effect_set_emissive_color(effect, value_value);
+}
+
+CnaGoResult cna_go_basic_effect_get_specular_color(CnaGoHandle effect, float* out_value) {
+    CnaGoResult result;
+    CNA_Vector3 value_out_value;
+    memset(&value_out_value, 0, sizeof(value_out_value));
+    result = api.cna_basic_effect_get_specular_color(effect, &value_out_value);
+    if (result == CNA_GO_RESULT_SUCCESS) {
+        memcpy(out_value, &value_out_value, sizeof(value_out_value));
+    }
+    return result;
+}
+
+CnaGoResult cna_go_basic_effect_set_specular_color(CnaGoHandle effect, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_basic_effect_set_specular_color(effect, value_value);
+}
+
+CnaGoResult cna_go_basic_effect_get_specular_power(CnaGoHandle effect, float* out_value) {
+    return api.cna_basic_effect_get_specular_power(effect, out_value);
+}
+
+CnaGoResult cna_go_basic_effect_set_specular_power(CnaGoHandle effect, float value) {
+    return api.cna_basic_effect_set_specular_power(effect, value);
+}
+
+CnaGoResult cna_go_basic_effect_set_alpha(CnaGoHandle effect, float value) {
+    return api.cna_basic_effect_set_alpha(effect, value);
+}
+
+CnaGoResult cna_go_basic_effect_set_texture_enabled(CnaGoHandle effect, uint8_t value) {
+    return api.cna_basic_effect_set_texture_enabled(effect, value);
+}
+
+CnaGoResult cna_go_basic_effect_set_texture(CnaGoHandle effect, CnaGoHandle texture) {
+    return api.cna_basic_effect_set_texture(effect, texture);
+}
+
+CnaGoResult cna_go_effect_matrices_set_world(CnaGoHandle effect, const float* value) {
+    CNA_Matrix value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_effect_matrices_set_world(effect, value_value);
+}
+
+CnaGoResult cna_go_effect_matrices_set_view(CnaGoHandle effect, const float* value) {
+    CNA_Matrix value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_effect_matrices_set_view(effect, value_value);
+}
+
+CnaGoResult cna_go_effect_matrices_set_projection(CnaGoHandle effect, const float* value) {
+    CNA_Matrix value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_effect_matrices_set_projection(effect, value_value);
+}
+
+CnaGoResult cna_go_effect_fog_get_color(CnaGoHandle effect, float* out_value) {
+    CnaGoResult result;
+    CNA_Vector3 value_out_value;
+    memset(&value_out_value, 0, sizeof(value_out_value));
+    result = api.cna_effect_fog_get_color(effect, &value_out_value);
+    if (result == CNA_GO_RESULT_SUCCESS) {
+        memcpy(out_value, &value_out_value, sizeof(value_out_value));
+    }
+    return result;
+}
+
+CnaGoResult cna_go_effect_fog_set_color(CnaGoHandle effect, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_effect_fog_set_color(effect, value_value);
+}
+
+CnaGoResult cna_go_effect_fog_set_enabled(CnaGoHandle effect, uint8_t value) {
+    return api.cna_effect_fog_set_enabled(effect, value);
+}
+
+CnaGoResult cna_go_effect_fog_set_start(CnaGoHandle effect, float value) {
+    return api.cna_effect_fog_set_start(effect, value);
+}
+
+CnaGoResult cna_go_effect_fog_set_end(CnaGoHandle effect, float value) {
+    return api.cna_effect_fog_set_end(effect, value);
+}
+
+CnaGoResult cna_go_effect_lights_set_ambient_color(CnaGoHandle effect, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_effect_lights_set_ambient_color(effect, value_value);
+}
+
+CnaGoResult cna_go_effect_lights_get_directional_light(CnaGoHandle effect, uint32_t index, CnaGoHandle* out_light) {
+    return api.cna_effect_lights_get_directional_light(effect, index, out_light);
+}
+
+CnaGoResult cna_go_effect_lights_set_enabled(CnaGoHandle effect, uint8_t value) {
+    return api.cna_effect_lights_set_enabled(effect, value);
+}
+
+CnaGoResult cna_go_directional_light_destroy(CnaGoHandle light) {
+    return api.cna_directional_light_destroy(light);
+}
+
+CnaGoResult cna_go_directional_light_set_diffuse_color(CnaGoHandle light, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_directional_light_set_diffuse_color(light, value_value);
+}
+
+CnaGoResult cna_go_directional_light_set_direction(CnaGoHandle light, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_directional_light_set_direction(light, value_value);
+}
+
+CnaGoResult cna_go_directional_light_set_specular_color(CnaGoHandle light, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_directional_light_set_specular_color(light, value_value);
+}
+
+CnaGoResult cna_go_directional_light_set_enabled(CnaGoHandle light, uint8_t value) {
+    return api.cna_directional_light_set_enabled(light, value);
+}
+
 CnaGoResult cna_go_effect_apply(CnaGoHandle effect) {
     return api.cna_effect_apply(effect);
 }

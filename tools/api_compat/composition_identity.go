@@ -73,7 +73,16 @@ type xnaCompositionIdentity struct {
 	// `this` and one place that answers with it; a middle link that kept a copy
 	// would be a second answer that could disagree. Texture is such a link: it
 	// takes a bind and passes it to GraphicsResource, and holds no derived
-	// field, self accessor or identity site of its own.
+	// field or self accessor of its own.
+	//
+	// Foundation 79 separated the two halves of that claim. A middle link must
+	// hold no derived field and must declare no self accessor -- one holder per
+	// chain -- but it may still have SITES, because a middle link is a class
+	// with members of its own and one of those members can use the object.
+	// Effect is the first: set_CurrentTechnique reports the runtime type in an
+	// ObjectDisposedException, and on a BasicEffect that type is BasicEffect.
+	// Such a link names in SelfMember the accessor it reaches THROUGH the link
+	// it forwards to, and the verifier checks that it does not declare one.
 	ForwardsTo string
 	// Sites are the Go members of GoBase whose reference IL pushes `ldarg.0`
 	// as an OBJECT. Every one must reach SelfMember.
@@ -87,11 +96,16 @@ type xnaCompositionIdentity struct {
 type xnaCompositionIdentitySite struct {
 	// GoMember is the method on the Go base.
 	GoMember string
-	// Uses is how many times the reference body pushes `ldarg.0` as an OBJECT
-	// inside that member. The Go body must reach the self accessor exactly that
-	// many times: a member with two identity uses that reaches self once has
-	// one site still spelled with the base half, which is a defect a
-	// "reaches it at all" test cannot see.
+	// Uses is how many times the reference body pushes an OBJECT whose runtime
+	// identity or TYPE the member then uses. That is `ldarg.0` in every site
+	// but one: a clone constructor checks its SOURCE with `ldarg.1`, and the
+	// projection turns that argument into the receiver, so the same resolution
+	// is needed and the same count applies. Each site's Reference names which.
+	//
+	// The Go body must reach the self accessor exactly that many times: a
+	// member with two identity uses that reaches self once has one site still
+	// spelled with the base half, which is a defect a "reaches it at all" test
+	// cannot see.
 	Uses int
 	// Reference is the exact IL the site reproduces.
 	Reference string
@@ -197,6 +211,29 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 		},
 	},
 
+	// Foundation 79. Effect is the first middle link with SITES of its own, and
+	// the chain it heads is three deep: BasicEffect -> Effect ->
+	// GraphicsResource.
+	//
+	// It holds no derived field and declares no self accessor -- it passes its
+	// binding on -- but two of its members report a CLR TYPE, and on a
+	// BasicEffect that type is BasicEffect. Both reach GraphicsResource's self
+	// accessor through the composed base.
+	"Microsoft.Xna.Framework.Graphics.Effect": {
+		Package:    modulePath + "/Microsoft/Xna/Framework/Graphics",
+		GoBase:     "Effect",
+		SelfMember: "self",
+		BindMember: "bindDerived",
+		ForwardsTo: "GraphicsResource",
+		Sites: []xnaCompositionIdentitySite{
+			{GoMember: "SetCurrentTechnique", Uses: 1, Reference: "set_CurrentTechnique: ldarg.0; ldfld pComPtr; ... ldarg.0; call Helpers::CheckDisposed(object, native int) -- the object decides the ObjectDisposedException's type name"},
+			{GoMember: "cloneBase", Uses: 1, Reference: ".ctor(Effect cloneSource): ldarg.1; ldfld pComPtr; ... ldarg.1; call Helpers::CheckDisposed(object, native int) -- the object is the clone SOURCE, which the projection's cloneBase takes as its receiver, so the same resolution applies through it"},
+		},
+		DerivedConstructors: map[string]string{
+			"Microsoft.Xna.Framework.Graphics.BasicEffect": "NewBasicEffectByGraphicsDevice",
+		},
+	},
+
 	// Texture2D is the second middle link, and the chain is now four deep:
 	// RenderTarget2D -> Texture2D -> Texture -> GraphicsResource. Every link but
 	// the root forwards, so a RenderTarget2D's ToString answers with ITS name
@@ -266,9 +303,24 @@ func measureXNACompositionIdentity(result *report, expected *expectedSurface, ac
 		if identity.ForwardsTo != "" {
 			// A middle link. It holds nothing of its own and must not: one CLR
 			// `this`, one place that answers with it.
-			if identity.DerivedField != "" || identity.SelfMember != "" || len(identity.Sites) != 0 {
-				fail(fmt.Sprintf("%s forwards its binding to %s and also records state or sites of its own; a middle link keeps neither",
+			if identity.DerivedField != "" {
+				fail(fmt.Sprintf("%s forwards its binding to %s and also holds a derived field; one chain has one holder of the CLR `this`",
 					identity.GoBase, identity.ForwardsTo))
+			}
+			// A middle link with sites names the accessor it reaches through
+			// the link it forwards to, and must not declare one itself.
+			switch {
+			case len(identity.Sites) == 0 && identity.SelfMember != "":
+				fail(fmt.Sprintf("%s records no identity site and still names a self accessor; a link with nothing to resolve names nothing",
+					identity.GoBase))
+			case len(identity.Sites) > 0 && identity.SelfMember == "":
+				fail(fmt.Sprintf("%s records identity sites and names no self accessor, so nothing says what those sites must reach",
+					identity.GoBase))
+			case identity.SelfMember != "":
+				if _, declared := bodies[identity.GoBase+"."+identity.SelfMember]; declared {
+					fail(fmt.Sprintf("%s forwards its binding to %s and declares its own %s; that is a second answer to the one question the chain has",
+						identity.GoBase, identity.ForwardsTo, identity.SelfMember))
+				}
 			}
 			body, present := bodies[identity.GoBase+"."+identity.BindMember]
 			switch {

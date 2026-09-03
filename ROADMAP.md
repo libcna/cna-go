@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               86
-MISSING_TYPE                    86
+TOTAL_DIAGNOSTICS               83
+MISSING_TYPE                    83
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 171
+COMPLETE_TYPES                 174
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         86
+GLOBAL_ACTIONABLE_LOCAL         83
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                230
+BOUND_FUNCTIONS                258
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -69,10 +69,20 @@ four to CNA on both the HEADLESS and SOFTWARE artifacts, 220 user-primitive
 draws with no refusal. Foundation 78 composed `System.Exception` and
 `ExternalException` and projected all eight XNA exception types.
 
+Foundation 79 composed **`Effect`** — the sixth composed XNA base and the second
+whose RETURNS widen — and projected `BasicEffect`, `DirectionalLight` and
+`IEffectLights`. The design turned on one measurement: CNA's stock BasicEffect
+publishes **no EffectParameters** on either qualified artifact, so the
+reference's push target does not exist and the push goes into CNA's own
+stock-effect state instead. The reference's managed state and dirty flags are
+kept, because forwarding every property to CNA would have made fourteen
+infallible members fallible and contradicted interface signatures Foundation 18
+measured from the same assembly.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 98 types it does not project
+projects, it projects completely; what remains is 83 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -88,10 +98,14 @@ and it is zero.
 The suggested order is dependency order, which is the order the families appear
 in that registry:
 
-1. **The stock effects**, which compose the already complete `Effect` and give
-   `DrawUser*` an independently predictable output colour — the one thing
-   standing between the vertex structs and `VERIFIED_PIXEL` evidence for a
-   drawn triangle.
+1. **The remaining four stock effects and `EffectMaterial`.** Foundation 79
+   closed `BasicEffect` and settled the shape: managed state with the
+   reference's dirty flags, a push in `OnApply`, and only the properties the
+   reference backs with an `EffectParameter` reaching CNA directly. The four
+   that remain are the same shape over ~13/9/17/21 routes, and `EffectMaterial`
+   needs none. Upgrading `DrawUser*` from `VERIFIED_NATIVE_DRAW` to
+   `VERIFIED_PIXEL` is now possible and not yet done: it needs the SOFTWARE
+   back-buffer readback taken with a known material.
 2. **`SoundEffect` / `SoundEffectInstance`**, which also grow
    `ContentManager.Load<T>`'s closed set.
 3. **The Model family**, then **Input**, **Storage**, **Media/XACT**, the

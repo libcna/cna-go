@@ -18,13 +18,13 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 171,
+    "COMPLETE_TYPES": 174,
     "DECLARED_INTERFACE_CARRIERS": 1,
-    "DECLARED_INTERFACE_CONFORMANCE": 5,
+    "DECLARED_INTERFACE_CONFORMANCE": 8,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3551,
+    "EXPECTED_GO_MEMBERS": 3636,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 86,
+    "GLOBAL_ACTIONABLE_LOCAL": 83,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 86,
-    "MISSING_TYPES": 86,
+    "MISSING_TYPE": 83,
+    "MISSING_TYPES": 83,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2694,
-    "TARGET_TYPES": 171,
-    "TOTAL_DIAGNOSTICS": 86,
+    "TARGET_MEMBERS": 2769,
+    "TARGET_TYPES": 174,
+    "TOTAL_DIAGNOSTICS": 83,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -84,24 +84,24 @@
     "UNMEASURED_STRUCTURAL_CATEGORY": 0,
     "XNA_BASE_DERIVED_TYPES": 41,
     "XNA_BASE_RELATIONSHIPS": 12,
-    "XNA_BASE_SUBSTITUTABILITY_LATENT": 7,
-    "XNA_BASE_SUBSTITUTABILITY_LIVE": 2,
+    "XNA_BASE_SUBSTITUTABILITY_LATENT": 6,
+    "XNA_BASE_SUBSTITUTABILITY_LIVE": 3,
     "XNA_BASE_SUBSTITUTABILITY_NONE": 3,
-    "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 2,
+    "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 3,
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
-    "XNA_COMPOSED_BASE_RELATIONSHIPS": 5,
-    "XNA_COMPOSED_DERIVED_TYPES": 18,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 16,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 16,
-    "XNA_COMPOSED_IDENTITY_FORWARDS": 3,
-    "XNA_COMPOSED_IDENTITY_SITES": 7,
-    "XNA_COMPOSED_IDENTITY_USES": 8,
-    "XNA_DEFERRED_BASE_BLOCKERS": 15,
-    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 201,
-    "XNA_INHERITED_MEMBER_PROJECTIONS": 201,
-    "XNA_INHERITED_PUBLIC_MEMBERS": 143,
-    "XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN": 3,
-    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 124
+    "XNA_COMPOSED_BASE_RELATIONSHIPS": 6,
+    "XNA_COMPOSED_DERIVED_TYPES": 24,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 17,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 17,
+    "XNA_COMPOSED_IDENTITY_FORWARDS": 4,
+    "XNA_COMPOSED_IDENTITY_SITES": 9,
+    "XNA_COMPOSED_IDENTITY_USES": 10,
+    "XNA_DEFERRED_BASE_BLOCKERS": 12,
+    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 286,
+    "XNA_INHERITED_MEMBER_PROJECTIONS": 286,
+    "XNA_INHERITED_PUBLIC_MEMBERS": 204,
+    "XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN": 8,
+    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 100
   },
   "diagnostics": [
     {
@@ -322,18 +322,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.BasicEffect",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:BasicEffect",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.DirectionalLight",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DirectionalLight",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DualTextureEffect",
       "message": "mapped Go type is absent"
@@ -360,12 +348,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:EnvironmentMapEffect",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.IEffectLights",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:IEffectLights",
       "message": "mapped Go type is absent"
     },
     {
@@ -653,6 +635,7 @@
     "Microsoft.Xna.Framework.GameServiceContainer",
     "Microsoft.Xna.Framework.GameTime",
     "Microsoft.Xna.Framework.GameWindow",
+    "Microsoft.Xna.Framework.Graphics.BasicEffect",
     "Microsoft.Xna.Framework.Graphics.Blend",
     "Microsoft.Xna.Framework.Graphics.BlendFunction",
     "Microsoft.Xna.Framework.Graphics.BlendState",
@@ -666,6 +649,7 @@
     "Microsoft.Xna.Framework.Graphics.DepthStencilState",
     "Microsoft.Xna.Framework.Graphics.DeviceLostException",
     "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+    "Microsoft.Xna.Framework.Graphics.DirectionalLight",
     "Microsoft.Xna.Framework.Graphics.DisplayMode",
     "Microsoft.Xna.Framework.Graphics.DisplayModeCollection",
     "Microsoft.Xna.Framework.Graphics.Effect",
@@ -686,6 +670,7 @@
     "Microsoft.Xna.Framework.Graphics.GraphicsProfile",
     "Microsoft.Xna.Framework.Graphics.GraphicsResource",
     "Microsoft.Xna.Framework.Graphics.IEffectFog",
+    "Microsoft.Xna.Framework.Graphics.IEffectLights",
     "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
     "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
     "Microsoft.Xna.Framework.Graphics.IVertexType",
@@ -832,14 +817,11 @@
     "Microsoft.Xna.Framework.FrameworkDispatcher",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
     "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
-    "Microsoft.Xna.Framework.Graphics.BasicEffect",
-    "Microsoft.Xna.Framework.Graphics.DirectionalLight",
     "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
     "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
     "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
     "Microsoft.Xna.Framework.Graphics.EffectMaterial",
     "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
-    "Microsoft.Xna.Framework.Graphics.IEffectLights",
     "Microsoft.Xna.Framework.Graphics.Model",
     "Microsoft.Xna.Framework.Graphics.ModelBone",
     "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
@@ -6889,7 +6871,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 34,
+      "projectedTypes": 35,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6943,18 +6925,15 @@
     {
       "family": "Stock effects",
       "classification": "ACTIONABLE_LOCAL",
-      "note": "the Effect cluster is complete and every one of these composes it; CNA carries ~19/13/9/17/21/13 routes for the five effects and DirectionalLight, and EffectMaterial and IEffectLights need none",
+      "note": "Foundation 79 closed BasicEffect, DirectionalLight and IEffectLights, which composed the Effect base and settled the shape: managed state with the reference's dirty flags, a push in OnApply, and only the four properties the reference backs with an EffectParameter reaching CNA directly. The four that remain are the same shape over ~13/9/17/21 routes, and EffectMaterial needs none",
       "types": [
         "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
-        "Microsoft.Xna.Framework.Graphics.BasicEffect",
-        "Microsoft.Xna.Framework.Graphics.DirectionalLight",
         "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
         "Microsoft.Xna.Framework.Graphics.EffectMaterial",
         "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
-        "Microsoft.Xna.Framework.Graphics.IEffectLights",
         "Microsoft.Xna.Framework.Graphics.SkinnedEffect"
       ],
-      "remaining": 8,
+      "remaining": 5,
       "verdict": "PASS"
     },
     {
@@ -9931,6 +9910,30 @@
       "verdict": "PASS"
     },
     {
+      "owner": "Microsoft.Xna.Framework.Graphics.BasicEffect",
+      "goOwner": "*BasicEffect",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IEffectFog",
+      "goInterface": "IEffectFog",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.BasicEffect",
+      "goOwner": "*BasicEffect",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IEffectLights",
+      "goInterface": "IEffectLights",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.BasicEffect",
+      "goOwner": "*BasicEffect",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+      "goInterface": "IEffectMatrices",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
       "owner": "Microsoft.Xna.Framework.GraphicsDeviceManager",
       "goOwner": "*GraphicsDeviceManager",
       "clrInterface": "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
@@ -10050,7 +10053,7 @@
     },
     {
       "clrBase": "Microsoft.Xna.Framework.Graphics.Effect",
-      "status": "DEFERRED",
+      "status": "COMPOSED",
       "derived": [
         "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
         "Microsoft.Xna.Framework.Graphics.BasicEffect",
@@ -10060,20 +10063,6 @@
         "Microsoft.Xna.Framework.Graphics.SkinnedEffect"
       ],
       "inheritedPublicMembers": 4,
-      "blockers": [
-        {
-          "class": "ARCHITECTURE",
-          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
-        },
-        {
-          "class": "TRANSITIVE",
-          "detail": "Effect extends GraphicsResource and is itself a missing type"
-        },
-        {
-          "class": "SUBSYSTEM",
-          "detail": "the six derived effects reach EffectParameter, which calls unmanaged D3DX; CNA-Go maps no effect or shader subsystem"
-        }
-      ],
       "verdict": "PASS"
     },
     {
@@ -10509,10 +10498,10 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.Effect",
       "derivedTypes": 6,
-      "projectedDerivedTypes": 0,
+      "projectedDerivedTypes": 1,
       "positions": 11,
-      "positionsOnProjectedCarriers": 3,
-      "requirement": "LATENT",
+      "positionsOnProjectedCarriers": 4,
+      "requirement": "LIVE",
       "rows": [
         {
           "base": "Microsoft.Xna.Framework.Graphics.Effect",
@@ -10682,7 +10671,7 @@
       "derivedTypes": 1,
       "projectedDerivedTypes": 1,
       "positions": 17,
-      "positionsOnProjectedCarriers": 10,
+      "positionsOnProjectedCarriers": 11,
       "requirement": "LIVE",
       "rows": [
         {
@@ -10951,6 +10940,56 @@
       "verdict": "PASS"
     },
     {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.Effect",
+      "goBase": "Effect",
+      "rows": [
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
+          "goDerived": "AlphaTestEffect",
+          "inheritedCLRMembers": 10,
+          "inheritedProjections": 14,
+          "composition": "NOT_PROJECTED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.BasicEffect",
+          "goDerived": "BasicEffect",
+          "baseField": "effect",
+          "inheritedCLRMembers": 10,
+          "inheritedProjections": 14,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
+          "goDerived": "DualTextureEffect",
+          "inheritedCLRMembers": 10,
+          "inheritedProjections": 14,
+          "composition": "NOT_PROJECTED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.EffectMaterial",
+          "goDerived": "EffectMaterial",
+          "inheritedCLRMembers": 11,
+          "inheritedProjections": 15,
+          "composition": "NOT_PROJECTED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+          "goDerived": "EnvironmentMapEffect",
+          "inheritedCLRMembers": 10,
+          "inheritedProjections": 14,
+          "composition": "NOT_PROJECTED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
+          "goDerived": "SkinnedEffect",
+          "inheritedCLRMembers": 10,
+          "inheritedProjections": 14,
+          "composition": "NOT_PROJECTED"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
       "clrBase": "Microsoft.Xna.Framework.Graphics.GraphicsResource",
       "goBase": "GraphicsResource",
       "rows": [
@@ -11154,6 +11193,34 @@
       "verdict": "PASS"
     },
     {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.Effect",
+      "goBase": "Effect",
+      "forwardsTo": "GraphicsResource",
+      "sites": [
+        {
+          "goMember": "SetCurrentTechnique",
+          "reference": "set_CurrentTechnique: ldarg.0; ldfld pComPtr; ... ldarg.0; call Helpers::CheckDisposed(object, native int) -- the object decides the ObjectDisposedException's type name",
+          "uses": 1,
+          "reaches": 1
+        },
+        {
+          "goMember": "cloneBase",
+          "reference": ".ctor(Effect cloneSource): ldarg.1; ldfld pComPtr; ... ldarg.1; call Helpers::CheckDisposed(object, native int) -- the object is the clone SOURCE, which the projection's cloneBase takes as its receiver, so the same resolution applies through it",
+          "uses": 1,
+          "reaches": 1
+        }
+      ],
+      "bindings": [
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.BasicEffect",
+          "goDerived": "BasicEffect",
+          "constructor": "NewBasicEffectByGraphicsDevice",
+          "binds": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
       "clrBase": "Microsoft.Xna.Framework.Graphics.GraphicsResource",
       "goBase": "GraphicsResource",
       "derivedField": "derived",
@@ -11292,7 +11359,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "df8e16f9548c404c09603e065a326e8506f5b513bfd45d7c285d51f0dff4e648",
+    "mappingSha256": "91127e2563058acffa00bc649bbd7db1e96e2ca0e7cc0e41ff36b639d2adc352",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

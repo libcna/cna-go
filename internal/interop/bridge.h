@@ -448,6 +448,36 @@ CnaGoResult cna_go_effect_parameter_set_value_string(
 CnaGoResult cna_go_effect_annotation_get_value_vector(
     CnaGoHandle annotation, uint32_t width, float* out_values);
 CnaGoResult cna_go_effect_annotation_get_value_matrix(CnaGoHandle annotation, float* out_values);
+/* Foundation 79 -- the stock-effect routes. */
+CnaGoResult cna_go_basic_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect);
+CnaGoResult cna_go_basic_effect_set_vertex_color_enabled(CnaGoHandle effect, uint8_t value);
+CnaGoResult cna_go_basic_effect_set_prefer_per_pixel_lighting(CnaGoHandle effect, uint8_t value);
+CnaGoResult cna_go_basic_effect_set_diffuse_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_basic_effect_set_emissive_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_basic_effect_get_specular_color(CnaGoHandle effect, float* out_value);
+CnaGoResult cna_go_basic_effect_set_specular_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_basic_effect_get_specular_power(CnaGoHandle effect, float* out_value);
+CnaGoResult cna_go_basic_effect_set_specular_power(CnaGoHandle effect, float value);
+CnaGoResult cna_go_basic_effect_set_alpha(CnaGoHandle effect, float value);
+CnaGoResult cna_go_basic_effect_set_texture_enabled(CnaGoHandle effect, uint8_t value);
+CnaGoResult cna_go_basic_effect_set_texture(CnaGoHandle effect, CnaGoHandle texture);
+CnaGoResult cna_go_effect_matrices_set_world(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_effect_matrices_set_view(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_effect_matrices_set_projection(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_effect_fog_get_color(CnaGoHandle effect, float* out_value);
+CnaGoResult cna_go_effect_fog_set_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_effect_fog_set_enabled(CnaGoHandle effect, uint8_t value);
+CnaGoResult cna_go_effect_fog_set_start(CnaGoHandle effect, float value);
+CnaGoResult cna_go_effect_fog_set_end(CnaGoHandle effect, float value);
+CnaGoResult cna_go_effect_lights_set_ambient_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_effect_lights_get_directional_light(CnaGoHandle effect, uint32_t index, CnaGoHandle* out_light);
+CnaGoResult cna_go_effect_lights_set_enabled(CnaGoHandle effect, uint8_t value);
+CnaGoResult cna_go_directional_light_destroy(CnaGoHandle light);
+CnaGoResult cna_go_directional_light_set_diffuse_color(CnaGoHandle light, const float* value);
+CnaGoResult cna_go_directional_light_set_direction(CnaGoHandle light, const float* value);
+CnaGoResult cna_go_directional_light_set_specular_color(CnaGoHandle light, const float* value);
+CnaGoResult cna_go_directional_light_set_enabled(CnaGoHandle light, uint8_t value);
+
 CnaGoResult cna_go_effect_apply(CnaGoHandle effect);
 CnaGoResult cna_go_effect_destroy(CnaGoHandle effect);
 CnaGoResult cna_go_effect_clone(CnaGoHandle effect, CnaGoHandle* out_clone);

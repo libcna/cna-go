@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -100,16 +101,25 @@ func TestRoadmapStalenessGuardRejectsAStaleNumber(t *testing.T) {
 		t.Fatalf("the unmutated scoreboard already disagrees: %s", disagreement)
 	}
 
-	mutations := map[string]func(string) string{
-		"stale MISSING_TYPE": func(s string) string {
-			return strings.Replace(s, "MISSING_TYPE                    86", "MISSING_TYPE                    85", 1)
-		},
-		"stale BOUND_FUNCTIONS": func(s string) string {
-			return strings.Replace(s, "BOUND_FUNCTIONS                230", "BOUND_FUNCTIONS                229", 1)
-		},
-		"stale GLOBAL_UNREVIEWED": func(s string) string {
-			return strings.Replace(s, "GLOBAL_UNREVIEWED                0", "GLOBAL_UNREVIEWED                4", 1)
-		},
+	// The mutations are COMPUTED from the value the block currently carries,
+	// not spelled out. A literal "MISSING_TYPE 86 -> 85" was the first shape of
+	// this test and it went stale the next time the number moved: the
+	// replacement stopped matching, the mutation became a no-op, and a test
+	// that proves nothing is worse than no test. Bumping whatever number is
+	// there by one cannot go stale.
+	mutations := make(map[string]func(string) string, 3)
+	for _, key := range []string{"MISSING_TYPE", "BOUND_FUNCTIONS", "GLOBAL_UNREVIEWED"} {
+		pattern := regexp.MustCompile(`(?m)^(` + key + `\s+)(\d+)$`)
+		mutations["stale "+key] = func(s string) string {
+			return pattern.ReplaceAllStringFunc(s, func(line string) string {
+				groups := pattern.FindStringSubmatch(line)
+				value, convErr := strconv.Atoi(groups[2])
+				if convErr != nil {
+					return line
+				}
+				return groups[1] + strconv.Itoa(value+1)
+			})
+		}
 	}
 	for name, mutate := range mutations {
 		t.Run(name, func(t *testing.T) {

@@ -612,6 +612,8 @@ typedef uint32_t CNA_EffectValueType;
 typedef uint32_t CNA_EffectTextureType;
 typedef CNA_Handle CNA_EffectHandle;
 typedef CNA_Handle CNA_EffectParameterHandle;
+/* Foundation 79. The stock-effect family's own handle alias. */
+typedef CNA_Handle CNA_DirectionalLightHandle;
 typedef CNA_Handle CNA_EffectParameterCollectionHandle;
 typedef CNA_Handle CNA_EffectAnnotationHandle;
 typedef CNA_Handle CNA_EffectAnnotationCollectionHandle;
@@ -849,6 +851,35 @@ typedef CNA_Result (*cna_texturecube_get_data_fn)(CNA_Handle, const CNA_TextureC
 typedef CNA_Result (*cna_sprite_font_get_info_fn)(CNA_Handle, CNA_SpriteFontInfo*);
 typedef CNA_Result (*cna_sprite_batch_draw_string_fn)(CNA_Handle, const CNA_SpriteTextCommand*);
 typedef CNA_Result (*cna_sprite_batch_begin_with_effect_fn)(CNA_Handle, CNA_SpriteSortMode, const CNA_BlendState*, const CNA_SamplerState*, const CNA_DepthStencilState*, const CNA_RasterizerState*, CNA_Handle, const CNA_Matrix*);
+/* Foundation 79 -- the stock-effect routes. */
+typedef CNA_Result (*cna_basic_effect_create_fn)(CNA_Handle, CNA_EffectHandle*);
+typedef CNA_Result (*cna_basic_effect_set_vertex_color_enabled_fn)(CNA_EffectHandle, CNA_Bool);
+typedef CNA_Result (*cna_basic_effect_set_prefer_per_pixel_lighting_fn)(CNA_EffectHandle, CNA_Bool);
+typedef CNA_Result (*cna_basic_effect_set_diffuse_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_basic_effect_set_emissive_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_basic_effect_get_specular_color_fn)(CNA_EffectHandle, CNA_Vector3*);
+typedef CNA_Result (*cna_basic_effect_set_specular_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_basic_effect_get_specular_power_fn)(CNA_EffectHandle, float*);
+typedef CNA_Result (*cna_basic_effect_set_specular_power_fn)(CNA_EffectHandle, float);
+typedef CNA_Result (*cna_basic_effect_set_alpha_fn)(CNA_EffectHandle, float);
+typedef CNA_Result (*cna_basic_effect_set_texture_enabled_fn)(CNA_EffectHandle, CNA_Bool);
+typedef CNA_Result (*cna_basic_effect_set_texture_fn)(CNA_EffectHandle, CNA_Handle);
+typedef CNA_Result (*cna_effect_matrices_set_world_fn)(CNA_EffectHandle, CNA_Matrix);
+typedef CNA_Result (*cna_effect_matrices_set_view_fn)(CNA_EffectHandle, CNA_Matrix);
+typedef CNA_Result (*cna_effect_matrices_set_projection_fn)(CNA_EffectHandle, CNA_Matrix);
+typedef CNA_Result (*cna_effect_fog_get_color_fn)(CNA_EffectHandle, CNA_Vector3*);
+typedef CNA_Result (*cna_effect_fog_set_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_effect_fog_set_enabled_fn)(CNA_EffectHandle, CNA_Bool);
+typedef CNA_Result (*cna_effect_fog_set_start_fn)(CNA_EffectHandle, float);
+typedef CNA_Result (*cna_effect_fog_set_end_fn)(CNA_EffectHandle, float);
+typedef CNA_Result (*cna_effect_lights_set_ambient_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_effect_lights_get_directional_light_fn)(CNA_EffectHandle, uint32_t, CNA_DirectionalLightHandle*);
+typedef CNA_Result (*cna_effect_lights_set_enabled_fn)(CNA_EffectHandle, CNA_Bool);
+typedef CNA_Result (*cna_directional_light_destroy_fn)(CNA_DirectionalLightHandle);
+typedef CNA_Result (*cna_directional_light_set_diffuse_color_fn)(CNA_DirectionalLightHandle, CNA_Vector3);
+typedef CNA_Result (*cna_directional_light_set_direction_fn)(CNA_DirectionalLightHandle, CNA_Vector3);
+typedef CNA_Result (*cna_directional_light_set_specular_color_fn)(CNA_DirectionalLightHandle, CNA_Vector3);
+typedef CNA_Result (*cna_directional_light_set_enabled_fn)(CNA_DirectionalLightHandle, CNA_Bool);
 typedef CNA_Result (*cna_effect_create_compiled_fn)(CNA_Handle, const uint8_t*, uint64_t, CNA_EffectHandle*);
 typedef CNA_Result (*cna_content_manager_load_effect_fn)(CNA_Handle, CNA_StringView, CNA_EffectHandle*);
 typedef CNA_Result (*cna_effect_clone_fn)(CNA_EffectHandle, CNA_EffectHandle*);
@@ -1097,6 +1128,34 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_sprite_font_get_info) \
     X(cna_sprite_batch_draw_string) \
     X(cna_sprite_batch_begin_with_effect) \
+    X(cna_basic_effect_create) \
+    X(cna_basic_effect_set_vertex_color_enabled) \
+    X(cna_basic_effect_set_prefer_per_pixel_lighting) \
+    X(cna_basic_effect_set_diffuse_color) \
+    X(cna_basic_effect_set_emissive_color) \
+    X(cna_basic_effect_get_specular_color) \
+    X(cna_basic_effect_set_specular_color) \
+    X(cna_basic_effect_get_specular_power) \
+    X(cna_basic_effect_set_specular_power) \
+    X(cna_basic_effect_set_alpha) \
+    X(cna_basic_effect_set_texture_enabled) \
+    X(cna_basic_effect_set_texture) \
+    X(cna_effect_matrices_set_world) \
+    X(cna_effect_matrices_set_view) \
+    X(cna_effect_matrices_set_projection) \
+    X(cna_effect_fog_get_color) \
+    X(cna_effect_fog_set_color) \
+    X(cna_effect_fog_set_enabled) \
+    X(cna_effect_fog_set_start) \
+    X(cna_effect_fog_set_end) \
+    X(cna_effect_lights_set_ambient_color) \
+    X(cna_effect_lights_get_directional_light) \
+    X(cna_effect_lights_set_enabled) \
+    X(cna_directional_light_destroy) \
+    X(cna_directional_light_set_diffuse_color) \
+    X(cna_directional_light_set_direction) \
+    X(cna_directional_light_set_specular_color) \
+    X(cna_directional_light_set_enabled) \
     X(cna_effect_create_compiled) \
     X(cna_content_manager_load_effect) \
     X(cna_effect_clone) \

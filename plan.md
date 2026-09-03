@@ -1591,6 +1591,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 76 | System.Exception, and the profile's last missing member | `foundation-76-exception-projection-evidence.md` |
 | 77 | the four stock vertex structs | `foundation-77-vertex-structs-evidence.md` |
 | 78 | the eight XNA exception types | `foundation-78-exception-family-evidence.md` |
+| 79 | BasicEffect, DirectionalLight and IEffectLights | `foundation-79-stock-effect-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1812,6 +1813,48 @@ that keeps the two facts above from drifting apart: CNA has native loaders for
 `SoundEffect`, `TextureCube` and `Effect` today, and each is absent from the
 set because CNA-Go projects no Go type for it. Each is a missing TYPE, not a
 missing loader, and each becomes actionable the milestone its type does.
+
+**A base whose derived types override a RETURNING member widens at returns**
+(79). Foundation 76 made the first exception to "a base-typed return keeps the
+concrete pointer", for the exception hierarchy. Effect is the second, and its
+case is stronger: `Clone` is declared to return `Effect` and all five stock
+effects override it to return their own class, and the composed base half is
+unreachable from outside its package — so the downcast is not lost, it is
+impossible. `returnWideningBases` records the closed set, and a name in it that
+is not also in `substitutableBases` is a verifier failure: a return cannot widen
+to an interface no parameter position declares.
+
+**A composition hook is installed only for a virtual Go cannot already
+dispatch** (79). `Effect` declares `Clone` and `OnApply` virtual and only
+`OnApply` gets one. `Clone` is a member of the widened reference interface, so a
+consumer holding a derived value reaches the derived body through Go's own
+method set; `OnApply` is reached through the base object `EffectPass` holds in a
+field, where nothing in the language recovers it. The first draft hooked both,
+and the planted-defect run is what found the second hook unkillable — a branch
+no production path executes.
+
+**A COMPOSED middle link holds no state and may still have SITES** (79). The
+object-identity registry used to require a link that forwards its binding to
+record no derived field, no self accessor AND no identity site. Those are two
+claims, not one: `Effect` forwards and holds nothing, and two of its own members
+still report a CLR runtime type. A middle link with sites names the accessor it
+reaches through the link it forwards to, and the verifier checks that it does
+not declare one of its own.
+
+**A projection keeps the reference's MANAGED state even when the runtime offers
+to hold it** (79). CNA models a whole stock effect natively, and forwarding every
+property to it would have been shorter. It would also have made fourteen
+infallible members fallible, contradicting interface signatures measured three
+years of milestones earlier, and would have let CNA's clamping answer getters
+whose reference bodies are one `ldfld`. The managed state stays, the reference's
+dirty flags stay, and `OnApply` pushes — which is the reference's own shape with
+a different push target.
+
+**A control is what turns a native success into evidence** (79). The BasicEffect
+draw succeeds on both artifacts, and the control taken immediately before it
+also succeeds — so the success is NOT evidence that applying the effect unblocked
+the draw. Without the control the twenty successes would have read as a result
+they are not.
 
 ## Next milestone selection rule
 

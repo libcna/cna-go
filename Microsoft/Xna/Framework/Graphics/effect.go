@@ -76,7 +76,11 @@ func (p *EffectPass) Apply() error {
 	}
 	effect := p.technique.effect
 	if effect.IsDisposed() {
-		return fmt.Errorf("%w: %s", errObjectDisposed, effect.clrTypeName())
+		// Helpers::CheckDisposed(effect, effect.pComPtr) names the effect
+		// object's RUNTIME type, which for a stock effect is the stock
+		// effect's. The field holds the composed base half, so the name comes
+		// through the CLR `this` rather than from it.
+		return fmt.Errorf("%w: %s", errObjectDisposed, effect.resource.self().clrTypeName())
 	}
 	if effect.currentTechnique != p.technique {
 		return fmt.Errorf("%w: %s", errSpriteInvalidOperation, notCurrentTechnique)
@@ -342,6 +346,42 @@ type Effect struct {
 	parameters       *EffectParameterCollection
 	techniques       *EffectTechniqueCollection
 	currentTechnique *EffectTechnique
+	// derived is the CLR `this` for Effect's TWO virtual members. Foundation 79
+	// needed it: EffectPass::Apply calls OnApply through the virtual slot, and
+	// on a BasicEffect that slot holds BasicEffect's override, not the empty
+	// base body. Composition has no vtable, so the derived object installs
+	// itself here and the base's virtual entry points dispatch through it --
+	// the same shape graphicsResourceObject already has for ToString's
+	// GetType() call, one level up and with two members instead of one.
+	derived effectVirtuals
+}
+
+// effectVirtuals is the pair of members Effect declares `virtual` and every
+// stock effect overrides. A type that composes an Effect installs itself with
+// bindDerivedEffect, and the base's Clone and OnApply then resolve to the
+// override exactly as `callvirt` would.
+type effectVirtuals interface {
+	// OnApply is the derived body EffectPass::Apply reaches.
+	//
+	// Clone is deliberately NOT here, although the reference declares both
+	// virtual. Go's interface dispatch already supplies Clone's virtual
+	// behaviour: Clone is a member of EffectReference, so a consumer holding
+	// one calls the DERIVED method directly, and the composed *Effect half is
+	// unexported -- effectBase is lowercase -- so no consumer can obtain it and
+	// reach the base's Clone at all. A dispatch here would be a branch nothing
+	// executes, which is the shape this project refuses everywhere else.
+	//
+	// OnApply is different, and that difference is the whole reason this
+	// interface exists: EffectPass holds the base object in a field, calls
+	// OnApply on it, and Go dispatches to the base's method. Nothing in the
+	// language recovers the derived body there.
+	OnApply() error
+	// releaseDerivedNativeObjects is not a CLR member. It exists because a
+	// derived effect can own CNA handles the reference's derived class has no
+	// counterpart for -- BasicEffect's three light views are the first -- and
+	// those must go when the effect does. It is unexported, so nothing outside
+	// this package can install or observe it.
+	releaseDerivedNativeObjects() error
 }
 
 // errObjectDisposed projects System.ObjectDisposedException, which
@@ -376,12 +416,18 @@ func NewEffectByGraphicsDeviceAndSliceOfByte(graphicsDevice *GraphicsDevice, eff
 // protected", and it is exported for the reason every projected protected
 // member is: Go has no protected, and a consumer deriving from Effect -- which
 // is what this constructor is for -- must be able to name it.
-func NewEffectByEffect(cloneSource *Effect) (*Effect, error) {
-	if cloneSource == nil {
+func NewEffectByEffect(cloneSource EffectReference) (*Effect, error) {
+	source := resolveEffect(cloneSource)
+	if source == nil {
 		return nil, fmt.Errorf("%w: cloneSource: %s",
 			errGraphicsResourceArgumentNull, nullNotAllowed)
 	}
-	return cloneSource.Clone()
+	// cloneBase, not Clone: the reference's constructor clones the D3DX effect
+	// itself rather than calling the virtual, so a BasicEffect passed here
+	// produces an Effect and not a second BasicEffect. That is the reference's
+	// behaviour and it is why the derived classes each declare their OWN clone
+	// constructor rather than reusing this one.
+	return source.cloneBase()
 }
 
 // newEffect materialises the whole reflected graph, which is what the
@@ -496,7 +542,11 @@ func (e *Effect) SetCurrentTechnique(value *EffectTechnique) error {
 		return errEffectNil
 	}
 	if e.IsDisposed() {
-		return fmt.Errorf("%w: %s", errObjectDisposed, e.clrTypeName())
+		// self(), not clrTypeName(): the reference pushes `ldarg.0` into
+		// Helpers::CheckDisposed, which names the RUNTIME type, and on a
+		// BasicEffect that is BasicEffect. The bare receiver here is the base
+		// half of a composed object and would always say Effect.
+		return fmt.Errorf("%w: %s", errObjectDisposed, e.resource.self().clrTypeName())
 	}
 	if value == nil {
 		return fmt.Errorf("%w: value: %s", errGraphicsResourceArgumentNull, nullNotAllowed)
@@ -522,12 +572,28 @@ func (e *Effect) SetCurrentTechnique(value *EffectTechnique) error {
 // and gives it its own reflected graph. CNA's cna_effect_clone does the same
 // and the probe measured it answering an independent handle whose techniques
 // and apply both work.
-func (e *Effect) Clone() (*Effect, error) {
+func (e *Effect) Clone() (EffectReference, error) {
+	if e == nil {
+		return nil, errEffectNil
+	}
+	// No dispatch to the derived half, for the reason recorded on
+	// effectVirtuals: a consumer holding a BasicEffect calls BasicEffect::Clone
+	// through Go's own method set, and the composed base is unreachable from
+	// outside this package.
+	return e.cloneBase()
+}
+
+// cloneBase is Effect::Clone's OWN body, reached non-virtually. It is what the
+// protected clone constructor runs and what an Effect with no derived half
+// answers.
+func (e *Effect) cloneBase() (*Effect, error) {
 	if e == nil {
 		return nil, errEffectNil
 	}
 	if e.IsDisposed() {
-		return nil, fmt.Errorf("%w: %s", errObjectDisposed, e.clrTypeName())
+		// The reference checks `ldarg.1`, the clone SOURCE, and the source is
+		// this receiver -- so the type it names is the source's runtime type.
+		return nil, fmt.Errorf("%w: %s", errObjectDisposed, e.resource.self().clrTypeName())
 	}
 	resource, err := e.resource.nativeResource().CloneEffect()
 	if err != nil {
@@ -547,11 +613,24 @@ func (e *Effect) OnApply() error {
 	if e == nil {
 		return errEffectNil
 	}
+	if e.derived != nil {
+		return e.derived.OnApply()
+	}
 	return nil
 }
 
 // clrTypeName is System.Object::ToString's answer for an Effect.
 func (e *Effect) clrTypeName() string { return "Microsoft.Xna.Framework.Graphics.Effect" }
+
+// bindDerivedEffect installs the CLR `this` for Effect's two virtual members.
+// Every constructor of a type that composes an Effect calls it, and nothing
+// else does.
+func (e *Effect) bindDerivedEffect(derived effectVirtuals) {
+	if e == nil {
+		return
+	}
+	e.derived = derived
+}
 
 // bindDerived forwards the CLR `this` to the composed base.
 func (e *Effect) bindDerived(derived graphicsResourceObject) {
@@ -660,7 +739,12 @@ func (e *Effect) DisposeByBoolean(disposing bool) error {
 	}
 	var released error
 	if !e.resource.IsDisposed() {
+		var derived error
+		if e.derived != nil {
+			derived = e.derived.releaseDerivedNativeObjects()
+		}
 		released = errors.Join(
+			derived,
 			e.parameters.dispose(),
 			e.techniques.dispose(),
 			e.resource.releaseNativeObject(),

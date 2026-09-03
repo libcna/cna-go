@@ -624,6 +624,146 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Class:  "REDUNDANT_READ",
 		Detail: "measured to report exactly the character column of cna_sprite_font_copy_glyphs, in the same order and the same count, which CNA's own documentation states and the probe confirmed. The reference's characterMap is ONE list that get_Characters views and GetIndexForCharacter binary-searches, and reading it from two routes could produce two lists whose indices no longer correspond -- which is the invariant every other member depends on",
 	},
+	// Foundation 79 -- the stock-effect family. It bound 28 of the 49 routes the
+	// BasicEffect cluster declares and records the other 21 here, and they fall
+	// into one pattern with two exceptions.
+	//
+	// The pattern is that BasicEffect and DirectionalLight are MANAGED STATE in
+	// the reference. Almost every getter is `ldarg.0; ldfld <field>; ret`, and
+	// the state reaches the effect only when OnApply pushes it -- so the
+	// SETTERS have native counterparts worth binding and the GETTERS do not.
+	// Reading a value back from CNA where the reference reads a field would let
+	// CNA's clamping, or CNA's derived quantity, answer an XNA getter.
+	//
+	// The two exceptions are get_texture, which is the object-identity obstacle
+	// the effect-parameter texture getter already carries, and
+	// enable_default_lighting, which is a preset CNA owns and XNA specifies.
+	{
+		Route:  "cna_effect_matrices_get_world",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::World()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_World is `ldarg.0; ldfld world; ret`, seven bytes over a managed field the setter stored, and set_World is a store plus a dirty-flag `or`. The reference reads nothing back: it PUSHES in OnApply, and what it pushes is world*view*projection rather than the world. Binding this getter would let CNA's stored or clamped matrix answer a getter the reference answers from its own field. The SETTER is bound and is what OnApply pushes through",
+	},
+	{
+		Route:  "cna_effect_matrices_get_view",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::View()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "the same measurement one field over; set_View additionally raises the eye-position and fog flags because both are computed from the view",
+	},
+	{
+		Route:  "cna_effect_matrices_get_projection",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::Projection()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "the same measurement; set_Projection is 22 bytes against the other two setters' 23 because it ORs one flag fewer",
+	},
+	{
+		Route:  "cna_basic_effect_get_diffuse_color",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::DiffuseColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_DiffuseColor is `ldarg.0; ldfld diffuseColor; ret`. What OnApply writes is not this value but this value multiplied by alpha, so the reference's own getter and its own push already disagree -- binding the read would answer with the PUSHED value where the reference answers with the STORED one",
+	},
+	{
+		Route:  "cna_basic_effect_get_emissive_color",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::EmissiveColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "the same measurement and the same alpha divergence",
+	},
+	{
+		Route:  "cna_basic_effect_get_alpha",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::Alpha()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_Alpha is `ldarg.0; ldfld alpha; ret`, and the reference never reads it back from the effect",
+	},
+	{
+		Route:  "cna_basic_effect_get_prefer_per_pixel_lighting",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::PreferPerPixelLighting()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_PreferPerPixelLighting is one `ldfld`, and the property is a PREFERENCE: the reference reports what it stored, never what the device could do. Binding the read would make it report the renderer's answer, which is the one thing the member is documented not to do",
+	},
+	{
+		Route:  "cna_basic_effect_get_vertex_color_enabled",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::VertexColorEnabled()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`; the setter selects a shader permutation and raises ShaderIndex, and nothing reads the flag back",
+	},
+	{
+		Route:  "cna_basic_effect_get_texture_enabled",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::TextureEnabled()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`, the same permutation shape",
+	},
+	{
+		Route:  "cna_effect_lights_get_enabled",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::LightingEnabled()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_LightingEnabled is one `ldfld` in all five shipped implementors, which is what Foundation 18 measured when it declared IEffectLights' accessors infallible",
+	},
+	{
+		Route:  "cna_effect_lights_get_ambient_color",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::AmbientLightColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld` in the three implementors that declare it -- BasicEffect, SkinnedEffect and EnvironmentMapEffect",
+	},
+	{
+		Route:  "cna_effect_fog_get_enabled",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::FogEnabled()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`; Foundation 18 already recorded that FogEnabled, FogStart and FogEnd are the managed three of IEffectFog's four properties and FogColor the one that crosses",
+	},
+	{
+		Route:  "cna_effect_fog_get_start",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::FogStart()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`; the reference pushes a computed fog VECTOR rather than the start, so the route and the getter do not carry the same quantity",
+	},
+	{
+		Route:  "cna_effect_fog_get_end",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::FogEnd()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`, the same divergence",
+	},
+	{
+		Route:  "cna_basic_effect_get_texture",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::Texture()",
+		Class:  "REPRESENTATION",
+		Detail: "the route reports presence plus a HANDLE and the property's value is a Texture2D OBJECT -- the same obstacle cna_effect_parameter_get_value_texture is recorded for, answered differently because the position is different. An EffectParameter is a view anything holding another view can write, so a cache in the view could go stale; BasicEffect::Texture is a property of the effect and the Foundation 79 probe measured CNA publishing no parameters at all, so the object the setter was given IS the current value and holding it reproduces the reference's observable exactly where refusing would not. The SETTER is bound",
+	},
+	{
+		Route:  "cna_effect_lights_enable_default",
+		Member: "Microsoft.Xna.Framework.Graphics.BasicEffect::EnableDefaultLighting()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the route applies CNA's own three-point preset and EffectHelpers::EnableDefaultLighting applies a MEASURED one: thirteen calls with `ldc.r4` operands giving light 0 direction (-0.5265408, -0.5735765, -0.6275069) and colour (1, 0.9607844, 0.8078432), light 1 direction (0.7198464, 0.3420201, 0.6040227) with zero specular, light 2 direction (0.4545195, -0.7660444, 0.4545195), and an ambient return of (0.05333332, 0.09882354, 0.1819608). Those vectors are the contract, and calling CNA's preset would make a native default answer for an XNA behaviour -- nothing learned from CNA may become an XNA behaviour golden",
+	},
+	{
+		Route:  "cna_directional_light_get_direction",
+		Member: "Microsoft.Xna.Framework.Graphics.DirectionalLight::Direction()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_Direction is `ldarg.0; ldfld cachedDirection; ret`. All four of DirectionalLight's getters read a CACHE and all four of its setters write through an EffectParameter, so the type reads managed and writes native -- the setters are bound and the getters are not",
+	},
+	{
+		Route:  "cna_directional_light_get_diffuse_color",
+		Member: "Microsoft.Xna.Framework.Graphics.DirectionalLight::DiffuseColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_DiffuseColor reads cachedDiffuseColor, and the divergence is observable rather than theoretical: set_Enabled(false) writes Vector3.Zero into the PARAMETER and leaves the cache alone, so a disabled light's property still reports the colour it was given while the light itself holds zero",
+	},
+	{
+		Route:  "cna_directional_light_get_specular_color",
+		Member: "Microsoft.Xna.Framework.Graphics.DirectionalLight::SpecularColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "the same measurement and the same disabled-light divergence",
+	},
+	{
+		Route:  "cna_directional_light_get_enabled",
+		Member: "Microsoft.Xna.Framework.Graphics.DirectionalLight::Enabled()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_Enabled is `ldarg.0; ldfld enabled; ret`, and the flag exists only managed-side in the reference: the shader has no enable, which is why set_Enabled expresses disabling as two zero colours",
+	},
+	{
+		Route:  "cna_directional_light_create",
+		Member: "Microsoft.Xna.Framework.Graphics.DirectionalLight::.ctor(Microsoft.Xna.Framework.Graphics.EffectParameter,Microsoft.Xna.Framework.Graphics.EffectParameter,Microsoft.Xna.Framework.Graphics.EffectParameter,Microsoft.Xna.Framework.Graphics.DirectionalLight)",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "the route makes a free-standing native light, and a free-standing light is exactly the case in which the reference's constructor reaches nothing: every setter it calls is guarded by `brfalse` on its EffectParameter, and a publicly constructed light's parameters are whatever the caller passed. The Foundation 79 probe measured CNA's stock BasicEffect publishing PARAMETER_COUNT 0 on both qualified artifacts, so a caller has none to pass and the object is a pure cache -- which the projection already is. A native light no effect reads would change nothing observable",
+	},
 	{
 		Route:  "cna_graphics_resource_get_graphics_device",
 		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::GraphicsDevice()",

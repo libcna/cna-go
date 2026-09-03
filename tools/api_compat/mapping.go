@@ -599,6 +599,16 @@ var classifiedInterfaces = map[string]bool{
 	// operation is therefore fallible and the other six are not; see
 	// managedFallibleMembers.
 	"Microsoft.Xna.Framework.Graphics.IEffectFog": true,
+	// Foundation 79. The third of the three interfaces the stock effects
+	// share, and the least uniform. In the same assembly, the three light
+	// accessors and both LightingEnabled accessors are one `ldfld` or one
+	// `stfld` plus a dirty-flag OR in every shipped implementor, and
+	// AmbientLightColor is the same in the three that declare it -- BasicEffect,
+	// SkinnedEffect and EnvironmentMapEffect. EnableDefaultLighting is the one
+	// that is not: it routes through EffectHelpers::EnableDefaultLighting,
+	// twelve DirectionalLight setters, each `callvirt EffectParameter::SetValue`
+	// ending in `calli unmanaged stdcall`. See managedFallibleMembers.
+	"Microsoft.Xna.Framework.Graphics.IEffectLights": true,
 
 	// Foundation 23. Microsoft.Xna.Framework.Game.dll declares both contracts
 	// and ships exactly one implementor of each: GameComponent for IUpdateable
@@ -763,6 +773,12 @@ var managedFallibleMembers = map[string]map[string]bool{
 	"Microsoft.Xna.Framework.Graphics.IEffectFog": {
 		"property-get|FogColor": true,
 		"property-set|FogColor": true,
+	},
+	// IEffectLights::EnableDefaultLighting, the same measurement one level out:
+	// the operation itself does no runtime work, and every one of the twelve
+	// DirectionalLight writes it makes does.
+	"Microsoft.Xna.Framework.Graphics.IEffectLights": {
+		"method|EnableDefaultLighting": true,
 	},
 	// TouchCollection is a read-only view: every IList<T> mutator is an
 	// unconditional `newobj NotSupportedException; throw`, and the indexer
@@ -1362,6 +1378,62 @@ var managedStoredMembers = map[string]map[string]bool{
 	"Microsoft.Xna.Framework.Graphics.DisplayModeCollection": {
 		"property-get|Item":    true,
 		"method|GetEnumerator": true,
+	},
+	// Foundation 79. BasicEffect's managed state, which is nearly all of it.
+	//
+	// Every property listed below is one `ldfld` to read and one `stfld` plus a
+	// dirty-flag `or` to write, seven bytes and twenty-two or twenty-three
+	// respectively, with five of the setters carrying a `beq` early return
+	// instead. None reaches a device, a parameter or a throw site: the push
+	// happens later, in OnApply, which is fallible and is deliberately absent
+	// from this list.
+	//
+	// The FOUR that are absent are absent because the reference really does
+	// reach the effect for them -- SpecularColor and SpecularPower through
+	// specularColorParam/specularPowerParam, FogColor through fogColorParam and
+	// Texture through textureParam, each `callvirt EffectParameter::SetValue`
+	// or a GetValue counterpart ending in `calli unmanaged stdcall`. So is
+	// EnableDefaultLighting, for the same reason one level out, and so are both
+	// constructors, whose tails call SpecularColor and SpecularPower.
+	//
+	// The three DirectionalLight properties are get-only in the contract and
+	// their getters are `ldfld` of a field CacheEffectParameters filled once.
+	"Microsoft.Xna.Framework.Graphics.BasicEffect": {
+		"property|World":                  true,
+		"property|View":                   true,
+		"property|Projection":             true,
+		"property|DiffuseColor":           true,
+		"property|EmissiveColor":          true,
+		"property|Alpha":                  true,
+		"property|LightingEnabled":        true,
+		"property|PreferPerPixelLighting": true,
+		"property|AmbientLightColor":      true,
+		"property|FogEnabled":             true,
+		"property|FogStart":               true,
+		"property|FogEnd":                 true,
+		"property|TextureEnabled":         true,
+		"property|VertexColorEnabled":     true,
+		"property-get|DirectionalLight0":  true,
+		"property-get|DirectionalLight1":  true,
+		"property-get|DirectionalLight2":  true,
+	},
+	// DirectionalLight is the mirror image, and it is the reason the entries
+	// below are accessor-level rather than whole-property.
+	//
+	//	get_Enabled        ldarg.0; ldfld enabled;             ret
+	//	get_Direction      ldarg.0; ldfld cachedDirection;     ret
+	//	get_DiffuseColor   ldarg.0; ldfld cachedDiffuseColor;  ret
+	//	get_SpecularColor  ldarg.0; ldfld cachedSpecularColor; ret
+	//
+	// All four getters are seven bytes over a cache. All four SETTERS write
+	// through an EffectParameter -- set_Enabled writes two of them -- so all
+	// four are fallible and none is listed. The CONSTRUCTOR is not listed
+	// either: its no-clone arm calls three of those setters.
+	"Microsoft.Xna.Framework.Graphics.DirectionalLight": {
+		"property-get|Enabled":       true,
+		"property-get|Direction":     true,
+		"property-get|DiffuseColor":  true,
+		"property-get|SpecularColor": true,
 	},
 	// Texture2D's three geometry members, on the same evidence, and correcting
 	// a claim CNA-Go made without it. Their bodies are:
@@ -1994,6 +2066,37 @@ var substitutableBases = map[string]string{
 	// projects; Texture already had a projected derived type, so its
 	// requirement went LIVE for exactly the reason Texture2D's did.
 	"Microsoft.Xna.Framework.Graphics.Texture": "TextureReference",
+	// Foundation 79. BasicEffect is the first projected type deriving from
+	// Effect, so Effect's requirement went LIVE the way the other two did:
+	// SpriteBatch::Begin declares two `Effect effect` parameters and
+	// Effect::.ctor declares a `cloneSource`, and a BasicEffect must reach all
+	// three.
+	//
+	// Effect is also the second base -- after System.Exception in Foundation 76
+	// -- whose RETURNS widen, and it is recorded in returnWideningBases for
+	// that. The reason is measured rather than stylistic: Clone is declared to
+	// return Effect and every stock effect OVERRIDES it to return an instance
+	// of its own class, so a concrete *Effect return would hand back the base
+	// HALF of a BasicEffect with no path to the object that owns it. The
+	// downcast would not be lost, it would be impossible.
+	"Microsoft.Xna.Framework.Graphics.Effect": "EffectReference",
+}
+
+// returnWideningBases are the substitutable bases whose RETURN positions widen
+// as well, which is the exception the rule above describes rather than its
+// default.
+//
+// A base qualifies only when its derived types are the POINT of the returning
+// member -- when returning the base would erase an identity the consumer must
+// have back. Foundation 76 established it for the exception hierarchy, where
+// the eight kinds a consumer catches are the whole contract; Foundation 79 adds
+// Effect, where Clone's five overrides each construct their own class.
+//
+// The registry is closed and it is checked: a name here that is not in
+// substitutableBases is a verifier failure, because a return cannot widen to an
+// interface that no parameter position declares.
+var returnWideningBases = map[string]struct{}{
+	"Microsoft.Xna.Framework.Graphics.Effect": {},
 }
 
 // applySubstitutableParameter rewrites one mapped parameter type when its CLR
@@ -2086,7 +2189,23 @@ func mapResultTypeWithGenerics(s *expectedSurface, byIdentity map[string]*contra
 	if inner, ok := nullableInner(raw); ok {
 		return []string{strings.TrimPrefix(mapTypeWithGenerics(s, byIdentity, owner, generics, inner), "*"), "bool"}
 	}
-	return []string{mapTypeWithGenerics(s, byIdentity, owner, generics, raw)}
+	return []string{applyWidenedReturn(s, owner, raw, mapTypeWithGenerics(s, byIdentity, owner, generics, raw))}
+}
+
+// applyWidenedReturn rewrites one mapped RESULT type when its CLR type is a
+// base recorded in returnWideningBases.
+//
+// It is deliberately the same shape as applySubstitutableParameter and reads
+// from the same table of interface names, because a widened return and a
+// widened parameter are the same interface seen from the two ends of a call.
+// What differs is only which table decides: substitutableBases governs
+// parameters, and returnWideningBases is the narrower set whose returns widen
+// too.
+func applyWidenedReturn(s *expectedSurface, owner *expectedType, clrType, mapped string) string {
+	if _, widens := returnWideningBases[clrType]; !widens {
+		return mapped
+	}
+	return applySubstitutableParameter(s, owner, clrType, mapped)
 }
 
 // mapTypeWithGenerics is mapType plus the method's own type parameters, which
@@ -3965,10 +4084,21 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	// type, so this relationship joins the composed set with an empty blocker
 	// list -- the second one in the registry to have nothing left to record.
 	"Microsoft.Xna.Framework.Graphics.TextureCube": {Status: "COMPOSED"},
-	"Microsoft.Xna.Framework.Graphics.Effect": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "TRANSITIVE", Detail: "Effect extends GraphicsResource and is itself a missing type"},
-		{Class: "SUBSYSTEM", Detail: "the six derived effects reach EffectParameter, which calls unmanaged D3DX; CNA-Go maps no effect or shader subsystem"},
+	// Foundation 79 composed it, and every blocker it carried is now false
+	// rather than merely deferred. The TRANSITIVE one died in Foundation 72,
+	// which projected Effect. The SUBSYSTEM one said the derived effects "reach
+	// EffectParameter, which calls unmanaged D3DX": that is what the REFERENCE
+	// does, and the projection reaches CNA's own stock-effect state instead --
+	// the Foundation 79 probe measured CNA's BasicEffect reporting
+	// PARAMETER_COUNT 0 on both qualified artifacts, so there is no parameter
+	// path to map and none is needed.
+	//
+	// It is also the second base whose RETURNS widen. Clone is declared to
+	// return Effect and all five stock effects override it to return their own
+	// class, so the concrete pointer would hand back a base half with no way to
+	// reach the object that owns it.
+	"Microsoft.Xna.Framework.Graphics.Effect": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
+		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and ONE of the six derived types is complete, BasicEffect. The five that remain -- AlphaTestEffect, DualTextureEffect, EnvironmentMapEffect, SkinnedEffect and EffectMaterial -- are the same shape and are blocked by nothing but the work"},
 	}},
 	"Microsoft.Xna.Framework.Graphics.IndexBuffer": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,

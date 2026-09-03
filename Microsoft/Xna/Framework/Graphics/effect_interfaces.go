@@ -10,10 +10,10 @@ import framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 // None of them touches a device, so none of them can fail, and no operation
 // here carries an error result.
 //
-// Declaring the contract implements no effect. CNA-Go has no effect runtime
-// and no implementor of this interface; the type exists so that a consumer can
-// name the contract and so that a future effect implementation has an exact
-// signature to satisfy.
+// Foundation 79 gave the interface its first implementor: BasicEffect satisfies
+// it with exactly these six infallible operations, and the compiler checks that
+// in basic_effect.go. What the doc above says about the five shipped
+// implementors is unchanged and is what made the signatures infallible.
 type IEffectMatrices interface {
 	World() framework.Matrix
 	SetWorld(value framework.Matrix)
@@ -36,7 +36,8 @@ type IEffectMatrices interface {
 // accessors therefore cross a qualified runtime boundary and both carry an
 // error result, while their six siblings do not.
 //
-// As with IEffectMatrices, declaring the contract implements no effect.
+// As with IEffectMatrices, BasicEffect is the first implementor, and the split
+// is what its projection has: six field accesses and one pair that crosses.
 type IEffectFog interface {
 	FogEnabled() bool
 	SetFogEnabled(value bool)
@@ -46,4 +47,43 @@ type IEffectFog interface {
 	SetFogEnd(value float32)
 	FogColor() (framework.Vector3, error)
 	SetFogColor(value framework.Vector3) error
+}
+
+// IEffectLights is XNA's lighting contract for a built-in effect, and the third
+// of the three the stock effects share.
+//
+//	.class interface public abstract auto ansi IEffectLights
+//	  DirectionalLight0/1/2   get only
+//	  AmbientLightColor       get and set
+//	  LightingEnabled         get and set
+//	  EnableDefaultLighting()
+//
+// Its fallibility split is measured the same way the other two were, and it is
+// the least uniform of the three.
+//
+// The three light accessors and both LightingEnabled accessors are one `ldfld`
+// or one `stfld` plus a dirty-flag OR in all five shipped implementors, so
+// none can fail. AmbientLightColor is the same in BasicEffect, SkinnedEffect
+// and EnvironmentMapEffect -- the only three that declare it.
+//
+// EnableDefaultLighting is not. Every implementor routes it through
+// EffectHelpers::EnableDefaultLighting, which calls twelve DirectionalLight
+// setters, and each of those writes through an EffectParameter with
+// `callvirt EffectParameter::SetValue`, ending in `calli unmanaged stdcall`.
+// It therefore crosses a qualified runtime boundary and carries an error
+// result, alone among the eight operations.
+//
+// DirectionalLight's OWN accessors are the mirror image and are declared on the
+// class rather than here: all four getters are `ldfld` of a cached field and
+// all four setters write through a parameter, so the type reads infallibly and
+// writes fallibly.
+type IEffectLights interface {
+	DirectionalLight0() *DirectionalLight
+	DirectionalLight1() *DirectionalLight
+	DirectionalLight2() *DirectionalLight
+	AmbientLightColor() framework.Vector3
+	SetAmbientLightColor(value framework.Vector3)
+	LightingEnabled() bool
+	SetLightingEnabled(value bool)
+	EnableDefaultLighting() error
 }

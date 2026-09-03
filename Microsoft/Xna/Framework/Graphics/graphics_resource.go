@@ -126,7 +126,13 @@ func (r *GraphicsResource) bindDerived(derived graphicsResourceObject) { r.deriv
 // self is `ldarg.0` as an OBJECT: the outermost object of the composition
 // chain, which is the resource itself when nothing composes it.
 func (r *GraphicsResource) self() graphicsResourceObject {
-	if r.derived != nil {
+	// The nil receiver is a zero-value composed object -- `&Effect{}` -- whose
+	// base half was never built. It has no derived object to answer with, and
+	// the base's own clrTypeName reads no field, so answering with it gives the
+	// base's name rather than a panic. That is what the reference gives too:
+	// there is no such half-built object in CLR, and the projection's refusal
+	// for one has to name SOMETHING.
+	if r != nil && r.derived != nil {
 		return r.derived
 	}
 	return r

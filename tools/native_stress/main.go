@@ -174,6 +174,35 @@ type counters struct {
 	VertexBufferEffectApplies           int `json:"VERTEX_BUFFER_EFFECT_APPLIES"`
 	VertexBufferEffectApplyRefusals     int `json:"VERTEX_BUFFER_EFFECT_APPLY_REFUSALS"`
 	VertexBufferEffectDisposalChecks    int `json:"VERTEX_BUFFER_EFFECT_DISPOSAL_CHECKS"`
+	// Foundation 79. The BasicEffect slice. Creations and creation refusals are
+	// counted apart for the reason every other native creation's are: a run
+	// that only ever refused must not read as a run that made an effect.
+	//
+	// The four ROUND TRIPS are the four properties the reference backs with an
+	// EffectParameter and this projection backs with CNA -- SpecularColor,
+	// SpecularPower, FogColor and Texture -- and they are the only members whose
+	// value crosses in both directions. LIGHT_CHECKS covers the three published
+	// lights: their object identity, their write-through, and the disabled-light
+	// divergence. APPLIES counts a pass applied through the effect's OWN
+	// technique, which is the only path that reaches BasicEffect's OnApply.
+	BasicEffectCreations         int `json:"BASIC_EFFECT_CREATIONS"`
+	BasicEffectCreationRefusals  int `json:"BASIC_EFFECT_CREATION_REFUSALS"`
+	BasicEffectRoundTrips        int `json:"BASIC_EFFECT_ROUND_TRIPS"`
+	BasicEffectRoundTripRefusals int `json:"BASIC_EFFECT_ROUND_TRIP_REFUSALS"`
+	BasicEffectLightChecks       int `json:"BASIC_EFFECT_LIGHT_CHECKS"`
+	BasicEffectApplies           int `json:"BASIC_EFFECT_APPLIES"`
+	BasicEffectApplyRefusals     int `json:"BASIC_EFFECT_APPLY_REFUSALS"`
+	BasicEffectDraws             int `json:"BASIC_EFFECT_DRAWS"`
+	BasicEffectDrawRefusals      int `json:"BASIC_EFFECT_DRAW_REFUSALS"`
+	// The control for the draw above, taken immediately before the BasicEffect
+	// exists and after everything else in the scenario has run. Without it, a
+	// draw that succeeded after the apply would not be evidence that the apply
+	// is what made it succeed -- the six user-primitive draws sit between the
+	// scenario's own control and this point.
+	BasicEffectControlDraws        int `json:"BASIC_EFFECT_CONTROL_DRAWS"`
+	BasicEffectControlDrawRefusals int `json:"BASIC_EFFECT_CONTROL_DRAW_REFUSALS"`
+	BasicEffectCloneChecks         int `json:"BASIC_EFFECT_CLONE_CHECKS"`
+	BasicEffectDisposalChecks      int `json:"BASIC_EFFECT_DISPOSAL_CHECKS"`
 	// The six user-primitive draws, and the four guards the projection makes
 	// before CNA is reached.
 	UserPrimitiveDraws          int `json:"USER_PRIMITIVE_DRAWS"`
@@ -593,6 +622,34 @@ func runParent() (counters, error) {
 		return total, fmt.Errorf("%d effect loads produced %d applies, %d apply refusals and %d disposal checks",
 			total.VertexBufferEffectLoads, total.VertexBufferEffectApplies,
 			total.VertexBufferEffectApplyRefusals, total.VertexBufferEffectDisposalChecks)
+	}
+	// Foundation 79. The BasicEffect slice is accounted for the same way: one
+	// outcome per cycle for the creation, and every check downstream of a
+	// creation counted against the number of creations rather than reported as
+	// a bare total. A run in which the constructor refused every time is a run
+	// with no BasicEffect evidence, and it must read as one.
+	if total.BasicEffectCreations+total.BasicEffectCreationRefusals != total.VertexBufferCycles {
+		return total, fmt.Errorf("BasicEffect creations %d and refusals %d do not account for %d cycles",
+			total.BasicEffectCreations, total.BasicEffectCreationRefusals, total.VertexBufferCycles)
+	}
+	if total.BasicEffectLightChecks != 3*total.BasicEffectCreations {
+		return total, fmt.Errorf("%d light checks over %d BasicEffect creations, want three each",
+			total.BasicEffectLightChecks, total.BasicEffectCreations)
+	}
+	if total.BasicEffectControlDraws+total.BasicEffectControlDrawRefusals != total.VertexBufferCycles {
+		return total, fmt.Errorf("BasicEffect control draws %d and refusals %d do not account for %d cycles",
+			total.BasicEffectControlDraws, total.BasicEffectControlDrawRefusals, total.VertexBufferCycles)
+	}
+	if total.BasicEffectDraws+total.BasicEffectDrawRefusals != total.BasicEffectApplies {
+		return total, fmt.Errorf("%d BasicEffect applies produced %d draws and %d draw refusals",
+			total.BasicEffectApplies, total.BasicEffectDraws, total.BasicEffectDrawRefusals)
+	}
+	if total.BasicEffectRoundTrips+total.BasicEffectRoundTripRefusals != total.BasicEffectCreations ||
+		total.BasicEffectApplies+total.BasicEffectApplyRefusals != total.BasicEffectCreations ||
+		total.BasicEffectDisposalChecks != total.BasicEffectCreations {
+		return total, fmt.Errorf("%d BasicEffect creations produced %d round trips, %d round-trip refusals, %d applies, %d apply refusals and %d disposal checks",
+			total.BasicEffectCreations, total.BasicEffectRoundTrips, total.BasicEffectRoundTripRefusals,
+			total.BasicEffectApplies, total.BasicEffectApplyRefusals, total.BasicEffectDisposalChecks)
 	}
 
 	// A cycle that READ BACK must also have proved the windowed overload.
@@ -4553,6 +4610,27 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 	}
 	g.result.UserPrimitiveGuardChecks++
 
+	// Foundation 79. A BasicEffect through its own public constructor, which is
+	// a different door from the `.cnj` load above: cna_basic_effect_create
+	// rather than cna_content_manager_load_effect.
+	//
+	// It runs LAST in this scenario, and that placement is deliberate. The
+	// slice disposes the effects it makes, and CNA treats disposing the applied
+	// effect as un-applying it -- the first arrangement put this ahead of the
+	// draws and turned every one of them back into "no effect has been
+	// applied". Running it after the draws leaves the evidence above intact and
+	// costs nothing, because the slice applies its own effect before the one
+	// draw it makes.
+	//
+	// Everything in it is the half the managed tests cannot reach. The managed
+	// state, the dirty flags and the default-lighting rig are measured without
+	// a device in basic_effect_test.go; what needs one is the four properties
+	// that cross, the three lights CNA publishes, OnApply's push and the
+	// disposal of the light views.
+	if err := g.exerciseBasicEffect(device); err != nil {
+		return err
+	}
+
 	if effect != nil {
 		if err := effect.DisposeByNone(); err != nil {
 			return fmt.Errorf("disposing the stock effect: %w", err)
@@ -5311,6 +5389,302 @@ func (g *stressGame) loadStockEffect(host *framework.Game) (*graphics.Effect, er
 		return nil, errors.New("OpenStream opened a stream for an asset with no .xnb")
 	}
 	return content.ContentManagerLoad[*graphics.Effect](manager, "cna-go-stock-effect")
+}
+
+// exerciseBasicEffect is Foundation 79's slice. It runs inside the vertex-buffer
+// scenario because that is where a live device and a bound buffer already are,
+// and because the draw it ends with is the same draw the effect above feeds.
+func (g *stressGame) exerciseBasicEffect(device *graphics.GraphicsDevice) error {
+	// The control, taken before anything in this slice exists. On an artifact
+	// where the draw already works it succeeds and says so; on one where it
+	// does not, a success after the apply below is attributable to the apply.
+	if err := device.DrawPrimitives(graphics.PrimitiveTypeTriangleList, 0, 1); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("the BasicEffect control draw: %w", err)
+		}
+		g.result.BasicEffectControlDrawRefusals++
+	} else {
+		g.result.BasicEffectControlDraws++
+	}
+
+	effect, err := graphics.NewBasicEffectByGraphicsDevice(device)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewBasicEffectByGraphicsDevice: %w", err)
+		}
+		g.result.BasicEffectCreationRefusals++
+		fmt.Fprintf(os.Stderr, "BasicEffect creation refused: %v\n", err)
+		return nil
+	}
+	g.result.BasicEffectCreations++
+
+	// The constructor's tail: DirectionalLight0.Enabled = true, SpecularColor =
+	// Vector3.One, SpecularPower = 16. The first is managed and is asserted
+	// here because it is the ONE default the field initialisers do not set;
+	// the other two crossed into CNA and are read back below.
+	if light := effect.DirectionalLight0(); light == nil || !light.Enabled() {
+		return errors.New("the constructor did not enable DirectionalLight0")
+	}
+
+	// The constructor's other two tail statements crossed into CNA, so they are
+	// read BACK out of it -- which is the only way the two writes are evidence
+	// of anything. SpecularColor is Vector3.One and SpecularPower is 16, and
+	// both are read before this slice writes anything of its own.
+	if specular, err := effect.SpecularColor(); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("the constructed SpecularColor: %w", err)
+		}
+	} else if specular != framework.Vector3One() {
+		return fmt.Errorf("a constructed BasicEffect's SpecularColor = %v, want Vector3.One", specular)
+	}
+	if power, err := effect.SpecularPower(); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("the constructed SpecularPower: %w", err)
+		}
+	} else if power != 16 {
+		return fmt.Errorf("a constructed BasicEffect's SpecularPower = %v, want 16", power)
+	}
+
+	// The three lights are FIELDS in the reference, so every read answers the
+	// same object -- an identity a projection that rebuilt a wrapper per call
+	// would break.
+	for index, pair := range [][2]*graphics.DirectionalLight{
+		{effect.DirectionalLight0(), effect.DirectionalLight0()},
+		{effect.DirectionalLight1(), effect.DirectionalLight1()},
+		{effect.DirectionalLight2(), effect.DirectionalLight2()},
+	} {
+		if pair[0] == nil || pair[0] != pair[1] {
+			return fmt.Errorf("DirectionalLight%d is not the same object on two reads", index)
+		}
+	}
+	if effect.DirectionalLight0() == effect.DirectionalLight1() {
+		return errors.New("two of the three published lights are the same object")
+	}
+	g.result.BasicEffectLightChecks++
+
+	// The write-through, and the divergence disabling creates. Light 1 starts
+	// DISABLED, so the colour write reaches the cache and not CNA; enabling it
+	// afterwards is what publishes it, and the getter reports the cache
+	// throughout.
+	light1 := effect.DirectionalLight1()
+	colour := framework.NewVector3BySingleAndSingleAndSingle(0.25, 0.5, 0.75)
+	if err := light1.SetDiffuseColor(colour); err != nil {
+		return fmt.Errorf("DirectionalLight1.SetDiffuseColor: %w", err)
+	}
+	if got := light1.DiffuseColor(); got != colour {
+		return fmt.Errorf("a disabled light's DiffuseColor = %v, want the cached %v", got, colour)
+	}
+	if err := light1.SetEnabled(true); err != nil {
+		return fmt.Errorf("DirectionalLight1.SetEnabled: %w", err)
+	}
+	direction := framework.NewVector3BySingleAndSingleAndSingle(0, -1, 0)
+	if err := light1.SetDirection(direction); err != nil {
+		return fmt.Errorf("DirectionalLight1.SetDirection: %w", err)
+	}
+	if got := light1.Direction(); got != direction {
+		return fmt.Errorf("Direction = %v after a native write", got)
+	}
+	if err := light1.SetEnabled(false); err != nil {
+		return fmt.Errorf("DirectionalLight1.SetEnabled(false): %w", err)
+	}
+	if got := light1.DiffuseColor(); got != colour {
+		return fmt.Errorf("disabling a light changed its reported DiffuseColor to %v", got)
+	}
+	g.result.BasicEffectLightChecks++
+
+	// The default-lighting rig, over lights that DO have a native half, which
+	// is the only place its twelve writes actually cross.
+	if err := effect.EnableDefaultLighting(); err != nil {
+		return fmt.Errorf("EnableDefaultLighting: %w", err)
+	}
+	if !effect.LightingEnabled() {
+		return errors.New("EnableDefaultLighting left LightingEnabled false")
+	}
+	g.result.BasicEffectLightChecks++
+
+	// The four properties that cross. Each is written and read back through
+	// CNA, so a value that did not survive the round trip is a real
+	// disagreement rather than a managed field answering itself.
+	specular := framework.NewVector3BySingleAndSingleAndSingle(0.5, 0.25, 0.125)
+	fogColour := framework.NewVector3BySingleAndSingleAndSingle(0.75, 0.5, 0.25)
+	roundTripped := true
+	for _, step := range []struct {
+		name  string
+		write func() error
+		check func() (bool, string, error)
+	}{
+		{"SpecularColor",
+			func() error { return effect.SetSpecularColor(specular) },
+			func() (bool, string, error) {
+				got, err := effect.SpecularColor()
+				return got == specular, fmt.Sprintf("%v", got), err
+			}},
+		{"SpecularPower",
+			func() error { return effect.SetSpecularPower(24) },
+			func() (bool, string, error) {
+				got, err := effect.SpecularPower()
+				return got == 24, fmt.Sprintf("%v", got), err
+			}},
+		{"FogColor",
+			func() error { return effect.SetFogColor(fogColour) },
+			func() (bool, string, error) {
+				got, err := effect.FogColor()
+				return got == fogColour, fmt.Sprintf("%v", got), err
+			}},
+	} {
+		if err := step.write(); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("Set%s: %w", step.name, err)
+			}
+			roundTripped = false
+			fmt.Fprintf(os.Stderr, "BasicEffect Set%s refused: %v\n", step.name, err)
+			continue
+		}
+		agreed, got, err := step.check()
+		if err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("%s: %w", step.name, err)
+			}
+			roundTripped = false
+			fmt.Fprintf(os.Stderr, "BasicEffect %s refused: %v\n", step.name, err)
+			continue
+		}
+		if !agreed {
+			return fmt.Errorf("%s round-tripped as %s", step.name, got)
+		}
+	}
+	// Texture is the fourth, and it is the one whose getter answers a managed
+	// field: CNA reports a handle and the property's value is an object, so the
+	// setter crosses and the getter does not.
+	//
+	// The claim that makes that projection right rather than merely convenient
+	// is OBJECT IDENTITY -- the getter answers the same Texture2D the setter
+	// was given, which is what the reference answers and what a handle cannot
+	// carry. It is checked with a real texture, and then a null assignment is
+	// checked too, because that is the reference's own null.
+	surface, err := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(device, 4, 4)
+	if err != nil {
+		return fmt.Errorf("a texture for the effect: %w", err)
+	}
+	if err := effect.SetTexture(surface); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("SetTexture: %w", err)
+		}
+		roundTripped = false
+		fmt.Fprintf(os.Stderr, "BasicEffect SetTexture refused: %v\n", err)
+	} else {
+		texture, err := effect.Texture()
+		if err != nil {
+			return fmt.Errorf("Texture: %w", err)
+		}
+		if texture != surface {
+			return errors.New("Texture did not answer the SAME object the setter was given")
+		}
+		if err := effect.SetTexture(nil); err != nil {
+			return fmt.Errorf("SetTexture(nil): %w", err)
+		}
+		if texture, err := effect.Texture(); err != nil || texture != nil {
+			return fmt.Errorf("Texture after a null assignment = %v, %v", texture, err)
+		}
+	}
+	if err := surface.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the effect's texture: %w", err)
+	}
+	if roundTripped {
+		g.result.BasicEffectRoundTrips++
+	} else {
+		g.result.BasicEffectRoundTripRefusals++
+	}
+
+	// The managed state, pushed. Applying the effect's own pass is what calls
+	// OnApply, and OnApply is the only place the fourteen managed properties
+	// reach CNA.
+	effect.SetWorld(framework.MatrixIdentity())
+	effect.SetView(framework.MatrixIdentity())
+	effect.SetProjection(framework.MatrixIdentity())
+	effect.SetDiffuseColor(framework.NewVector3BySingleAndSingleAndSingle(1, 0, 0))
+	effect.SetAlpha(1)
+	effect.SetVertexColorEnabled(true)
+	effect.SetFogEnabled(false)
+	technique := effect.CurrentTechnique()
+	if technique == nil {
+		return errors.New("a constructed BasicEffect has no current technique")
+	}
+	pass := technique.Passes().ItemPropertySignatureCA1DC5FC(0)
+	if pass == nil {
+		return errors.New("a constructed BasicEffect's technique has no first pass")
+	}
+	if err := pass.Apply(); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("BasicEffect pass Apply: %w", err)
+		}
+		g.result.BasicEffectApplyRefusals++
+		fmt.Fprintf(os.Stderr, "BasicEffect Apply refused: %v\n", err)
+	} else {
+		g.result.BasicEffectApplies++
+		// The claim that applying a BasicEffect satisfies CNA's
+		// "no effect has been applied" requirement, made falsifiable: the
+		// control at the top of this scenario measured the same draw refusing
+		// with exactly that message before anything was applied.
+		if err := device.DrawPrimitives(graphics.PrimitiveTypeTriangleList, 0, 1); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("a draw after a BasicEffect pass: %w", err)
+			}
+			g.result.BasicEffectDrawRefusals++
+			fmt.Fprintf(os.Stderr, "draw after a BasicEffect apply refused: %v\n", err)
+		} else {
+			g.result.BasicEffectDraws++
+		}
+	}
+
+	// Clone, and the downcast that is the whole reason Effect widens at
+	// returns. The clone must be a BasicEffect, must be a DIFFERENT object, and
+	// must carry the thirteen values the clone constructor copies.
+	cloned, err := effect.Clone()
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("BasicEffect.Clone: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "BasicEffect Clone refused: %v\n", err)
+	} else {
+		clone, ok := cloned.(*graphics.BasicEffect)
+		if !ok {
+			return errors.New("Clone did not hand back a BasicEffect")
+		}
+		if clone == effect {
+			return errors.New("Clone answered the same object")
+		}
+		if clone.DiffuseColor() != effect.DiffuseColor() ||
+			clone.Alpha() != effect.Alpha() ||
+			clone.VertexColorEnabled() != effect.VertexColorEnabled() ||
+			clone.LightingEnabled() != effect.LightingEnabled() {
+			return errors.New("the clone constructor did not copy the thirteen managed values")
+		}
+		// The clone has its OWN lights, which is what
+		// CacheEffectParameters(cloneSource) builds.
+		if clone.DirectionalLight0() == effect.DirectionalLight0() {
+			return errors.New("the clone shares a light object with its source")
+		}
+		g.result.BasicEffectCloneChecks++
+		if err := clone.Dispose(); err != nil {
+			return fmt.Errorf("disposing the cloned BasicEffect: %w", err)
+		}
+	}
+
+	// Disposal releases the three light views before the effect behind them.
+	if err := effect.Dispose(); err != nil {
+		return fmt.Errorf("disposing the BasicEffect: %w", err)
+	}
+	if !effect.IsDisposed() {
+		return errors.New("the BasicEffect is not disposed after Dispose")
+	}
+	// A disposed effect's members refuse rather than reaching a released
+	// handle, which is what the generation check is for.
+	if _, err := effect.SpecularColor(); err == nil {
+		return errors.New("SpecularColor answered on a disposed BasicEffect")
+	}
+	g.result.BasicEffectDisposalChecks++
+	return nil
 }
 
 // exercisePresentation is Foundation 73's scenario: the rest of GraphicsDevice

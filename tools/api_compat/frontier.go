@@ -126,15 +126,12 @@ var frontierFamilies = []frontierFamily{
 	{
 		Name:           "Stock effects",
 		Classification: frontierActionableLocal,
-		Note:           "the Effect cluster is complete and every one of these composes it; CNA carries ~19/13/9/17/21/13 routes for the five effects and DirectionalLight, and EffectMaterial and IEffectLights need none",
+		Note:           "Foundation 79 closed BasicEffect, DirectionalLight and IEffectLights, which composed the Effect base and settled the shape: managed state with the reference's dirty flags, a push in OnApply, and only the four properties the reference backs with an EffectParameter reaching CNA directly. The four that remain are the same shape over ~13/9/17/21 routes, and EffectMaterial needs none",
 		Types: []string{
 			"Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
-			"Microsoft.Xna.Framework.Graphics.BasicEffect",
-			"Microsoft.Xna.Framework.Graphics.DirectionalLight",
 			"Microsoft.Xna.Framework.Graphics.DualTextureEffect",
 			"Microsoft.Xna.Framework.Graphics.EffectMaterial",
 			"Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
-			"Microsoft.Xna.Framework.Graphics.IEffectLights",
 			"Microsoft.Xna.Framework.Graphics.SkinnedEffect",
 		},
 	},

@@ -114,6 +114,10 @@ const (
 	resourceEffectParameter
 	resourceEffectAnnotationCollection
 	resourceEffectAnnotation
+	// Foundation 79. A DirectionalLight handle. It is its own kind for the
+	// reason every other kind is: destruction is per-kind, and this one has its
+	// own destroy route.
+	resourceDirectionalLight
 )
 
 // effectViewResourceKinds maps a view kind onto its resource kind, in the order
@@ -3723,6 +3727,8 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeTexture3DDestroy(handle)
 	case resourceEffect:
 		return nativeEffectDestroy(handle)
+	case resourceDirectionalLight:
+		return nativeDirectionalLightDestroy(handle)
 	case resourceEffectTechniqueCollection:
 		return nativeEffectViewDestroy(effectViewTechniqueCollection, handle)
 	case resourceEffectTechnique:
@@ -3911,4 +3917,285 @@ func BindingForOwner(owner any) (*Runtime, *Resource, bool) {
 
 func ownerPointer(owner any) uintptr {
 	return reflectPointer(owner)
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 79 -- the stock-effect accessors.
+//
+// Each pair is one CNA route over the handle this resource holds, and every one
+// of them checks liveHandle first: a disposed effect or light answers the
+// projection's own refusal rather than reaching CNA with a dead handle.
+// ---------------------------------------------------------------------------
+
+// BasicEffectSetVertexColorEnabled is BasicEffect::VertexColorEnabled's setter.
+func (resource *Resource) BasicEffectSetVertexColorEnabled(value bool) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeBasicEffectSetVertexColorEnabled(handle, value)
+}
+
+// BasicEffectSetPreferPerPixelLighting is BasicEffect::PreferPerPixelLighting's setter.
+func (resource *Resource) BasicEffectSetPreferPerPixelLighting(value bool) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeBasicEffectSetPreferPerPixelLighting(handle, value)
+}
+
+// BasicEffectSetDiffuseColor is BasicEffect::DiffuseColor's setter.
+func (resource *Resource) BasicEffectSetDiffuseColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeBasicEffectSetDiffuseColor(handle, value)
+}
+
+// BasicEffectSetEmissiveColor is BasicEffect::EmissiveColor's setter.
+func (resource *Resource) BasicEffectSetEmissiveColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeBasicEffectSetEmissiveColor(handle, value)
+}
+
+// BasicEffectSpecularColor is BasicEffect::SpecularColor's getter.
+func (resource *Resource) BasicEffectSpecularColor() ([3]float32, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		var zero [3]float32
+		return zero, err
+	}
+	return nativeBasicEffectSpecularColor(handle)
+}
+
+// BasicEffectSetSpecularColor is BasicEffect::SpecularColor's setter.
+func (resource *Resource) BasicEffectSetSpecularColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeBasicEffectSetSpecularColor(handle, value)
+}
+
+// BasicEffectSpecularPower is BasicEffect::SpecularPower's getter.
+func (resource *Resource) BasicEffectSpecularPower() (float32, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		var zero float32
+		return zero, err
+	}
+	return nativeBasicEffectSpecularPower(handle)
+}
+
+// BasicEffectSetSpecularPower is BasicEffect::SpecularPower's setter.
+func (resource *Resource) BasicEffectSetSpecularPower(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeBasicEffectSetSpecularPower(handle, value)
+}
+
+// BasicEffectSetAlpha is BasicEffect::Alpha's setter.
+func (resource *Resource) BasicEffectSetAlpha(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeBasicEffectSetAlpha(handle, value)
+}
+
+// BasicEffectSetTextureEnabled is BasicEffect::TextureEnabled's setter.
+func (resource *Resource) BasicEffectSetTextureEnabled(value bool) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeBasicEffectSetTextureEnabled(handle, value)
+}
+
+// EffectMatricesSetWorld is IEffectMatrices::World's setter.
+func (resource *Resource) EffectMatricesSetWorld(value [16]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectMatricesSetWorld(handle, value)
+}
+
+// EffectMatricesSetView is IEffectMatrices::View's setter.
+func (resource *Resource) EffectMatricesSetView(value [16]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectMatricesSetView(handle, value)
+}
+
+// EffectMatricesSetProjection is IEffectMatrices::Projection's setter.
+func (resource *Resource) EffectMatricesSetProjection(value [16]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectMatricesSetProjection(handle, value)
+}
+
+// EffectFogColor is IEffectFog::FogColor's getter.
+func (resource *Resource) EffectFogColor() ([3]float32, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		var zero [3]float32
+		return zero, err
+	}
+	return nativeEffectFogColor(handle)
+}
+
+// EffectFogSetColor is IEffectFog::FogColor's setter.
+func (resource *Resource) EffectFogSetColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectFogSetColor(handle, value)
+}
+
+// EffectFogSetEnabled is IEffectFog::FogEnabled's setter.
+func (resource *Resource) EffectFogSetEnabled(value bool) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectFogSetEnabled(handle, value)
+}
+
+// EffectFogSetStart is IEffectFog::FogStart's setter.
+func (resource *Resource) EffectFogSetStart(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectFogSetStart(handle, value)
+}
+
+// EffectFogSetEnd is IEffectFog::FogEnd's setter.
+func (resource *Resource) EffectFogSetEnd(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectFogSetEnd(handle, value)
+}
+
+// EffectLightsSetAmbientColor is IEffectLights::AmbientLightColor's setter.
+func (resource *Resource) EffectLightsSetAmbientColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectLightsSetAmbientColor(handle, value)
+}
+
+// EffectLightsSetEnabled is IEffectLights::LightingEnabled's setter.
+func (resource *Resource) EffectLightsSetEnabled(value bool) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEffectLightsSetEnabled(handle, value)
+}
+
+// DirectionalLightSetDiffuseColor is DirectionalLight::DiffuseColor's setter.
+func (resource *Resource) DirectionalLightSetDiffuseColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceDirectionalLight)
+	if err != nil {
+		return err
+	}
+	return nativeDirectionalLightSetDiffuseColor(handle, value)
+}
+
+// DirectionalLightSetDirection is DirectionalLight::Direction's setter.
+func (resource *Resource) DirectionalLightSetDirection(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceDirectionalLight)
+	if err != nil {
+		return err
+	}
+	return nativeDirectionalLightSetDirection(handle, value)
+}
+
+// DirectionalLightSetSpecularColor is DirectionalLight::SpecularColor's setter.
+func (resource *Resource) DirectionalLightSetSpecularColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceDirectionalLight)
+	if err != nil {
+		return err
+	}
+	return nativeDirectionalLightSetSpecularColor(handle, value)
+}
+
+// DirectionalLightSetEnabled is DirectionalLight::Enabled's setter.
+func (resource *Resource) DirectionalLightSetEnabled(value bool) error {
+	handle, err := resource.liveHandle(resourceDirectionalLight)
+	if err != nil {
+		return err
+	}
+	return nativeDirectionalLightSetEnabled(handle, value)
+}
+
+// CreateBasicEffect is cna_basic_effect_create. The effect is registered under
+// the device's manager, exactly as a content-loaded effect is, so its lifetime
+// is the generation's rather than the caller's.
+func (d *Device) CreateBasicEffect() (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	effect, err := nativeBasicEffectCreate(handle)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(effect, resourceEffect, d.manager), nil
+}
+
+// BasicEffectSetTexture is BasicEffect::Texture's setter. A nil texture is the
+// reference's null assignment and crosses as the invalid handle, which CNA
+// documents as selecting no texture.
+func (resource *Resource) BasicEffectSetTexture(texture *Resource) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	var textureHandle uint64
+	if texture != nil {
+		// liveTextureHandle, not liveHandle: the property takes a Texture2D and
+		// RenderTarget2D IS one, so both kinds must reach the same route.
+		if textureHandle, err = texture.liveTextureHandle(); err != nil {
+			return err
+		}
+	}
+	return nativeBasicEffectSetTexture(handle, textureHandle)
+}
+
+// EffectLightsDirectionalLight is IEffectLights::DirectionalLight0..2.
+//
+// The canonical header calls the result "an owned stable member-view handle",
+// and cna_directional_light_destroy "destroys a standalone or NESTED
+// DirectionalLight view handle" -- so the caller owns the VIEW while the effect
+// owns the light behind it, which is the ownership split the effect's parameter
+// and technique views already have one level up. The resource is registered
+// OWNED for that reason and its destroy route runs at disposal.
+func (resource *Resource) EffectLightsDirectionalLight(index uint32) (*Resource, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return nil, err
+	}
+	light, err := nativeEffectLightsDirectionalLight(handle, index)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(light, resourceDirectionalLight, resource.parent), nil
 }
