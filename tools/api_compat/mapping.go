@@ -1417,6 +1417,42 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|DirectionalLight1":  true,
 		"property-get|DirectionalLight2":  true,
 	},
+	// Foundation 80. AlphaTestEffect's managed state, which is fourteen of its
+	// sixteen members. The two that are absent are FogColor and Texture, the
+	// only two whose reference bodies reach an EffectParameter -- 12 bytes to
+	// read and 13 to write, against 7 and 22-or-23 for every other accessor.
+	//
+	// AlphaFunction and ReferenceAlpha are listed and are worth naming: both
+	// raise the AlphaTest flag, which no other stock effect uses, and NEITHER
+	// validates. An undeclared CompareFunction and a reference alpha outside
+	// 0..255 are stored and reported back, so there is no refusal to carry.
+	"Microsoft.Xna.Framework.Graphics.AlphaTestEffect": {
+		"property|World":              true,
+		"property|View":               true,
+		"property|Projection":         true,
+		"property|DiffuseColor":       true,
+		"property|Alpha":              true,
+		"property|FogEnabled":         true,
+		"property|FogStart":           true,
+		"property|FogEnd":             true,
+		"property|VertexColorEnabled": true,
+		"property|AlphaFunction":      true,
+		"property|ReferenceAlpha":     true,
+	},
+	// DualTextureEffect's ten, on the same measurement. THREE of its thirteen
+	// cross rather than two, because it has a second texture layer, and all
+	// three are absent from this list.
+	"Microsoft.Xna.Framework.Graphics.DualTextureEffect": {
+		"property|World":              true,
+		"property|View":               true,
+		"property|Projection":         true,
+		"property|DiffuseColor":       true,
+		"property|Alpha":              true,
+		"property|FogEnabled":         true,
+		"property|FogStart":           true,
+		"property|FogEnd":             true,
+		"property|VertexColorEnabled": true,
+	},
 	// DirectionalLight is the mirror image, and it is the reason the entries
 	// below are accessor-level rather than whole-property.
 	//

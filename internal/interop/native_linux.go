@@ -2462,6 +2462,78 @@ func nativeBasicEffectSetTexture(effect, texture uint64) error {
 		uint32(C.cna_go_basic_effect_set_texture(C.CnaGoHandle(effect), C.CnaGoHandle(texture))))
 }
 
+// Foundation 80 -- AlphaTestEffect, DualTextureEffect and EffectMaterial.
+
+func nativeAlphaTestEffectCreate(device uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_alpha_test_effect_create", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_alpha_test_effect_create(C.CnaGoHandle(device), out)
+	})
+}
+
+func nativeAlphaTestEffectSetDiffuseColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_alpha_test_effect_set_diffuse_color", uint32(C.cna_go_alpha_test_effect_set_diffuse_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeAlphaTestEffectSetAlpha(handle uint64, value float32) error {
+	return resultError("cna_alpha_test_effect_set_alpha", uint32(C.cna_go_alpha_test_effect_set_alpha(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeAlphaTestEffectSetTexture(effect, texture uint64) error {
+	return resultError("cna_alpha_test_effect_set_texture",
+		uint32(C.cna_go_alpha_test_effect_set_texture(C.CnaGoHandle(effect), C.CnaGoHandle(texture))))
+}
+
+func nativeAlphaTestEffectSetVertexColorEnabled(handle uint64, value bool) error {
+	var raw C.uint8_t
+	if value {
+		raw = 1
+	}
+	return resultError("cna_alpha_test_effect_set_vertex_color_enabled", uint32(C.cna_go_alpha_test_effect_set_vertex_color_enabled(C.CnaGoHandle(handle), raw)))
+}
+
+func nativeAlphaTestEffectSetAlphaFunction(handle uint64, value uint32) error {
+	return resultError("cna_alpha_test_effect_set_alpha_function", uint32(C.cna_go_alpha_test_effect_set_alpha_function(C.CnaGoHandle(handle), C.uint32_t(value))))
+}
+
+func nativeAlphaTestEffectSetReferenceAlpha(handle uint64, value int32) error {
+	return resultError("cna_alpha_test_effect_set_reference_alpha", uint32(C.cna_go_alpha_test_effect_set_reference_alpha(C.CnaGoHandle(handle), C.int32_t(value))))
+}
+
+func nativeDualTextureEffectCreate(device uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_dual_texture_effect_create", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_dual_texture_effect_create(C.CnaGoHandle(device), out)
+	})
+}
+
+func nativeDualTextureEffectSetDiffuseColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_dual_texture_effect_set_diffuse_color", uint32(C.cna_go_dual_texture_effect_set_diffuse_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeDualTextureEffectSetAlpha(handle uint64, value float32) error {
+	return resultError("cna_dual_texture_effect_set_alpha", uint32(C.cna_go_dual_texture_effect_set_alpha(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeDualTextureEffectSetTexture(effect uint64, index uint32, texture uint64) error {
+	return resultError("cna_dual_texture_effect_set_texture",
+		uint32(C.cna_go_dual_texture_effect_set_texture(C.CnaGoHandle(effect), C.uint32_t(index), C.CnaGoHandle(texture))))
+}
+
+func nativeDualTextureEffectSetVertexColorEnabled(handle uint64, value bool) error {
+	var raw C.uint8_t
+	if value {
+		raw = 1
+	}
+	return resultError("cna_dual_texture_effect_set_vertex_color_enabled", uint32(C.cna_go_dual_texture_effect_set_vertex_color_enabled(C.CnaGoHandle(handle), raw)))
+}
+
+func nativeEffectMaterialCreate(cloneSource uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_effect_material_create", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_effect_material_create(C.CnaGoHandle(cloneSource), out)
+	})
+}
+
 func nativeEffectLightsDirectionalLight(effect uint64, index uint32) (uint64, error) {
 	return nativeEffectHandleOut("cna_effect_lights_get_directional_light", func(out *C.CnaGoHandle) C.CnaGoResult {
 		return C.cna_go_effect_lights_get_directional_light(C.CnaGoHandle(effect), C.uint32_t(index), out)

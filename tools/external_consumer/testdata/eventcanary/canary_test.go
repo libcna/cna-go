@@ -4246,3 +4246,80 @@ func TestTheStockEffectFamilyIsReachableFromOutside(t *testing.T) {
 		t.Fatal("an unbuilt effect published a light")
 	}
 }
+
+// TestTheUnlitStockEffectsAreReachableFromOutside is Foundation 80's canary:
+// AlphaTestEffect, DualTextureEffect and EffectMaterial at their exact shapes.
+func TestTheUnlitStockEffectsAreReachableFromOutside(t *testing.T) {
+	var _ func(*graphics.GraphicsDevice) (*graphics.AlphaTestEffect, error) = graphics.NewAlphaTestEffectByGraphicsDevice
+	var _ func(*graphics.AlphaTestEffect) (*graphics.AlphaTestEffect, error) = graphics.NewAlphaTestEffectByAlphaTestEffect
+	var _ func(*graphics.GraphicsDevice) (*graphics.DualTextureEffect, error) = graphics.NewDualTextureEffectByGraphicsDevice
+	var _ func(*graphics.DualTextureEffect) (*graphics.DualTextureEffect, error) = graphics.NewDualTextureEffectByDualTextureEffect
+	// EffectMaterial's ONE constructor takes a source EFFECT, so it has no
+	// overload suffix and its parameter is the widened reference.
+	var _ func(graphics.EffectReference) (*graphics.EffectMaterial, error) = graphics.NewEffectMaterial
+
+	// The fallibility split, from outside. Fourteen of AlphaTestEffect's
+	// sixteen members are managed on both sides and carry no error.
+	var alphaTest *graphics.AlphaTestEffect
+	var _ func() framework.Matrix = alphaTest.World
+	var _ func(framework.Matrix) = alphaTest.SetWorld
+	var _ func() graphics.CompareFunction = alphaTest.AlphaFunction
+	var _ func(graphics.CompareFunction) = alphaTest.SetAlphaFunction
+	var _ func() int32 = alphaTest.ReferenceAlpha
+	var _ func(int32) = alphaTest.SetReferenceAlpha
+	var _ func() (framework.Vector3, error) = alphaTest.FogColor
+	var _ func() (*graphics.Texture2D, error) = alphaTest.Texture
+	var _ func(graphics.Texture2DReference) error = alphaTest.SetTexture
+	var _ func() (graphics.EffectReference, error) = alphaTest.Clone
+	var _ func() error = alphaTest.OnApply
+	var _ func() error = alphaTest.Dispose
+
+	// DualTextureEffect's second layer is a second PROPERTY from a consumer's
+	// side, whatever CNA does with an index behind it.
+	var dual *graphics.DualTextureEffect
+	var _ func() (*graphics.Texture2D, error) = dual.Texture
+	var _ func() (*graphics.Texture2D, error) = dual.Texture2
+	var _ func(graphics.Texture2DReference) error = dual.SetTexture
+	var _ func(graphics.Texture2DReference) error = dual.SetTexture2
+
+	// Both implement two interfaces and NOT the third.
+	var _ graphics.IEffectMatrices = (*graphics.AlphaTestEffect)(nil)
+	var _ graphics.IEffectFog = (*graphics.AlphaTestEffect)(nil)
+	var _ graphics.IEffectMatrices = (*graphics.DualTextureEffect)(nil)
+	var _ graphics.IEffectFog = (*graphics.DualTextureEffect)(nil)
+	if _, isLights := any(&graphics.AlphaTestEffect{}).(graphics.IEffectLights); isLights {
+		t.Fatal("AlphaTestEffect satisfies IEffectLights from outside")
+	}
+
+	// EffectMaterial is Effect's inherited surface and nothing else -- no
+	// OnApply, because the reference declares none and a `protected internal`
+	// member is not part of an inherited PUBLIC surface.
+	var material *graphics.EffectMaterial
+	var _ func() *graphics.EffectParameterCollection = material.Parameters
+	var _ func() (graphics.EffectReference, error) = material.Clone
+	var _ func() error = material.Dispose
+	if _, hasOnApply := any(&graphics.EffectMaterial{}).(interface{ OnApply() error }); hasOnApply {
+		t.Fatal("EffectMaterial exposes OnApply from outside")
+	}
+
+	// All three reach a widened Effect position.
+	for _, reference := range []graphics.EffectReference{
+		(*graphics.AlphaTestEffect)(nil),
+		(*graphics.DualTextureEffect)(nil),
+		(*graphics.EffectMaterial)(nil),
+	} {
+		if reference == nil {
+			t.Fatal("a typed nil did not satisfy EffectReference")
+		}
+	}
+
+	// The managed half works with no device: the defaults are field
+	// initialisers, and AlphaTestEffect's one stored constant is Greater.
+	built := &graphics.AlphaTestEffect{}
+	if built.AlphaFunction() != graphics.CompareFunctionAlways {
+		t.Fatal("a zero-value AlphaTestEffect is not the Go zero; the constructor is what stores Greater")
+	}
+	if _, err := built.FogColor(); err == nil {
+		t.Fatal("FogColor answered on an effect with no native half")
+	}
+}

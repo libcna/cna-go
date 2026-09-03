@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               83
-MISSING_TYPE                    83
+TOTAL_DIAGNOSTICS               80
+MISSING_TYPE                    80
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 174
+COMPLETE_TYPES                 177
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         83
+GLOBAL_ACTIONABLE_LOCAL         80
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                258
+BOUND_FUNCTIONS                271
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -79,6 +79,12 @@ kept, because forwarding every property to CNA would have made fourteen
 infallible members fallible and contradicted interface signatures Foundation 18
 measured from the same assembly.
 
+Foundation 80 closed **`AlphaTestEffect`**, **`DualTextureEffect`** and
+**`EffectMaterial`** on that shape, and measured the place it does not
+generalise: the two unlit effects' `set_World` and `set_View` raise TWO
+dirty-flag bits where BasicEffect's raise three, so a shared accessor body would
+have been wrong and each type declares its own.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
@@ -98,12 +104,12 @@ and it is zero.
 The suggested order is dependency order, which is the order the families appear
 in that registry:
 
-1. **The remaining four stock effects and `EffectMaterial`.** Foundation 79
-   closed `BasicEffect` and settled the shape: managed state with the
-   reference's dirty flags, a push in `OnApply`, and only the properties the
-   reference backs with an `EffectParameter` reaching CNA directly. The four
-   that remain are the same shape over ~13/9/17/21 routes, and `EffectMaterial`
-   needs none. Upgrading `DrawUser*` from `VERIFIED_NATIVE_DRAW` to
+1. **`EnvironmentMapEffect` and `SkinnedEffect`**, the last two stock effects.
+   Both add `IEffectLights` and both implement `LightingEnabled` EXPLICITLY --
+   a two-byte getter that always answers true and a 51-byte setter -- so they
+   need the interface-witness machinery as well as ~17/21 routes, and
+   `SkinnedEffect` adds a bone-transform array and the profile's only public
+   const field. Upgrading `DrawUser*` from `VERIFIED_NATIVE_DRAW` to
    `VERIFIED_PIXEL` is now possible and not yet done: it needs the SOFTWARE
    back-buffer readback taken with a known material.
 2. **`SoundEffect` / `SoundEffectInstance`**, which also grow

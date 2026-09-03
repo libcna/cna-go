@@ -231,6 +231,15 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 		},
 		DerivedConstructors: map[string]string{
 			"Microsoft.Xna.Framework.Graphics.BasicEffect": "NewBasicEffectByGraphicsDevice",
+			// Foundation 80. Each names its DEVICE constructor; the clone
+			// constructor installs the binding too, and binding once where the
+			// object is built covers every path that builds one -- the same
+			// shape VertexDeclaration's and IndexBuffer's entries have.
+			"Microsoft.Xna.Framework.Graphics.AlphaTestEffect":   "NewAlphaTestEffectByGraphicsDevice",
+			"Microsoft.Xna.Framework.Graphics.DualTextureEffect": "NewDualTextureEffectByGraphicsDevice",
+			// EffectMaterial has ONE constructor and it takes a source effect,
+			// because the reference's whole body is `base(cloneSource)`.
+			"Microsoft.Xna.Framework.Graphics.EffectMaterial": "NewEffectMaterial",
 		},
 	},
 

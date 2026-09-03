@@ -2044,6 +2044,62 @@ CnaGoResult cna_go_directional_light_set_enabled(CnaGoHandle light, uint8_t valu
     return api.cna_directional_light_set_enabled(light, value);
 }
 
+CnaGoResult cna_go_alpha_test_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect) {
+    return api.cna_alpha_test_effect_create(graphics_device, out_effect);
+}
+
+CnaGoResult cna_go_alpha_test_effect_set_diffuse_color(CnaGoHandle effect, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_alpha_test_effect_set_diffuse_color(effect, value_value);
+}
+
+CnaGoResult cna_go_alpha_test_effect_set_alpha(CnaGoHandle effect, float value) {
+    return api.cna_alpha_test_effect_set_alpha(effect, value);
+}
+
+CnaGoResult cna_go_alpha_test_effect_set_texture(CnaGoHandle effect, CnaGoHandle texture) {
+    return api.cna_alpha_test_effect_set_texture(effect, texture);
+}
+
+CnaGoResult cna_go_alpha_test_effect_set_vertex_color_enabled(CnaGoHandle effect, uint8_t value) {
+    return api.cna_alpha_test_effect_set_vertex_color_enabled(effect, value);
+}
+
+CnaGoResult cna_go_alpha_test_effect_set_alpha_function(CnaGoHandle effect, uint32_t value) {
+    return api.cna_alpha_test_effect_set_alpha_function(effect, value);
+}
+
+CnaGoResult cna_go_alpha_test_effect_set_reference_alpha(CnaGoHandle effect, int32_t value) {
+    return api.cna_alpha_test_effect_set_reference_alpha(effect, value);
+}
+
+CnaGoResult cna_go_dual_texture_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect) {
+    return api.cna_dual_texture_effect_create(graphics_device, out_effect);
+}
+
+CnaGoResult cna_go_dual_texture_effect_set_diffuse_color(CnaGoHandle effect, const float* value) {
+    CNA_Vector3 value_value;
+    memcpy(&value_value, value, sizeof(value_value));
+    return api.cna_dual_texture_effect_set_diffuse_color(effect, value_value);
+}
+
+CnaGoResult cna_go_dual_texture_effect_set_alpha(CnaGoHandle effect, float value) {
+    return api.cna_dual_texture_effect_set_alpha(effect, value);
+}
+
+CnaGoResult cna_go_dual_texture_effect_set_texture(CnaGoHandle effect, uint32_t texture_index, CnaGoHandle texture) {
+    return api.cna_dual_texture_effect_set_texture(effect, texture_index, texture);
+}
+
+CnaGoResult cna_go_dual_texture_effect_set_vertex_color_enabled(CnaGoHandle effect, uint8_t value) {
+    return api.cna_dual_texture_effect_set_vertex_color_enabled(effect, value);
+}
+
+CnaGoResult cna_go_effect_material_create(CnaGoHandle clone_source, CnaGoHandle* out_effect) {
+    return api.cna_effect_material_create(clone_source, out_effect);
+}
+
 CnaGoResult cna_go_effect_apply(CnaGoHandle effect) {
     return api.cna_effect_apply(effect);
 }

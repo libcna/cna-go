@@ -49,7 +49,13 @@ type EffectReference interface {
 	CurrentTechnique() *EffectTechnique
 	SetCurrentTechnique(value *EffectTechnique) error
 	Clone() (EffectReference, error)
-	OnApply() error
+
+	// OnApply is deliberately absent. Effect declares it `protected internal`,
+	// so it is projected on the type that DECLARES it and on every derived type
+	// that overrides it -- but a derived type that does not, EffectMaterial,
+	// carries only Effect's inherited PUBLIC surface and has no OnApply at all.
+	// An interface member would have required one, which is a member the pinned
+	// contract does not give that type.
 
 	// GraphicsResource's, inherited by Effect and re-exposed by every type that
 	// composes one.
@@ -88,6 +94,22 @@ func (e *BasicEffect) effectBase() *Effect {
 	return e.effect
 }
 
+// effectBase answers with the AlphaTestEffect's composed base.
+func (e *AlphaTestEffect) effectBase() *Effect {
+	if e == nil {
+		return nil
+	}
+	return e.effect
+}
+
+// effectBase answers with the DualTextureEffect's composed base.
+func (e *DualTextureEffect) effectBase() *Effect {
+	if e == nil {
+		return nil
+	}
+	return e.effect
+}
+
 // resolveEffect is the `ldarg` a CLR call site does for free. It answers nil for
 // a nil interface AND for an interface holding a typed nil, because the
 // reference sees one null either way.
@@ -103,4 +125,7 @@ func resolveEffect(reference EffectReference) *Effect {
 var (
 	_ EffectReference = (*Effect)(nil)
 	_ EffectReference = (*BasicEffect)(nil)
+	_ EffectReference = (*AlphaTestEffect)(nil)
+	_ EffectReference = (*DualTextureEffect)(nil)
+	_ EffectReference = (*EffectMaterial)(nil)
 )

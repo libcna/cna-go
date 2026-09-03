@@ -624,6 +624,75 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Class:  "REDUNDANT_READ",
 		Detail: "measured to report exactly the character column of cna_sprite_font_copy_glyphs, in the same order and the same count, which CNA's own documentation states and the probe confirmed. The reference's characterMap is ONE list that get_Characters views and GetIndexForCharacter binary-searches, and reading it from two routes could produce two lists whose indices no longer correspond -- which is the invariant every other member depends on",
 	},
+	// Foundation 80 -- AlphaTestEffect and DualTextureEffect, the same pattern
+	// Foundation 79 recorded one type over. Every getter CNA declares beside a
+	// bound setter is here, because the reference reads its own field; the two
+	// texture getters are the object-identity obstacle instead.
+	//
+	// EffectMaterial adds no row. Its two `_ext` routes back no member of the
+	// pinned contract -- XNA's EffectMaterial declares one constructor and
+	// nothing else -- so they are not routes a projected member could have
+	// used, which is what this registry is about.
+	{
+		Route:  "cna_alpha_test_effect_get_diffuse_color",
+		Member: "Microsoft.Xna.Framework.Graphics.AlphaTestEffect::DiffuseColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_DiffuseColor is `ldarg.0; ldfld diffuseColor; ret`, and what OnApply pushes is that colour multiplied by alpha -- so the reference's own getter and its own push disagree, and binding the read would answer with the pushed value. The SETTER's push is bound",
+	},
+	{
+		Route:  "cna_alpha_test_effect_get_alpha",
+		Member: "Microsoft.Xna.Framework.Graphics.AlphaTestEffect::Alpha()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`; the reference never reads alpha back from the effect",
+	},
+	{
+		Route:  "cna_alpha_test_effect_get_vertex_color_enabled",
+		Member: "Microsoft.Xna.Framework.Graphics.AlphaTestEffect::VertexColorEnabled()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`; the setter selects a shader permutation and nothing reads the flag back",
+	},
+	{
+		Route:  "cna_alpha_test_effect_get_alpha_function",
+		Member: "Microsoft.Xna.Framework.Graphics.AlphaTestEffect::AlphaFunction()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld` of a CompareFunction the setter stored WITHOUT validating. The reference reports back an undeclared value unchanged, and CNA's own route would report whatever it clamped or substituted -- which is the one thing this getter must not do",
+	},
+	{
+		Route:  "cna_alpha_test_effect_get_reference_alpha",
+		Member: "Microsoft.Xna.Framework.Graphics.AlphaTestEffect::ReferenceAlpha()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`, and the same non-validating store: a reference alpha outside 0..255 is kept and reported back",
+	},
+	{
+		Route:  "cna_alpha_test_effect_get_texture",
+		Member: "Microsoft.Xna.Framework.Graphics.AlphaTestEffect::Texture()",
+		Class:  "REPRESENTATION",
+		Detail: "the handle/object obstacle cna_basic_effect_get_texture is recorded for, on the same terms: the property's value is a Texture2D OBJECT, the effect is its sole writer, and holding the object the setter was given reproduces the reference's observable where a fresh facade over a handle would not",
+	},
+	{
+		Route:  "cna_dual_texture_effect_get_diffuse_color",
+		Member: "Microsoft.Xna.Framework.Graphics.DualTextureEffect::DiffuseColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "the same measurement as AlphaTestEffect's, including the alpha divergence",
+	},
+	{
+		Route:  "cna_dual_texture_effect_get_alpha",
+		Member: "Microsoft.Xna.Framework.Graphics.DualTextureEffect::Alpha()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`",
+	},
+	{
+		Route:  "cna_dual_texture_effect_get_vertex_color_enabled",
+		Member: "Microsoft.Xna.Framework.Graphics.DualTextureEffect::VertexColorEnabled()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`",
+	},
+	{
+		Route:  "cna_dual_texture_effect_get_texture",
+		Member: "Microsoft.Xna.Framework.Graphics.DualTextureEffect::Texture()",
+		Class:  "REPRESENTATION",
+		Detail: "the same obstacle for BOTH layers: the route takes a layer index and reports a handle, and the two properties' values are objects. The indexed SETTER is bound and backs Texture at index 0 and Texture2 at index 1",
+	},
 	// Foundation 79 -- the stock-effect family. It bound 28 of the 49 routes the
 	// BasicEffect cluster declares and records the other 21 here, and they fall
 	// into one pattern with two exceptions.

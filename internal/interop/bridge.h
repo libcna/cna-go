@@ -478,6 +478,21 @@ CnaGoResult cna_go_directional_light_set_direction(CnaGoHandle light, const floa
 CnaGoResult cna_go_directional_light_set_specular_color(CnaGoHandle light, const float* value);
 CnaGoResult cna_go_directional_light_set_enabled(CnaGoHandle light, uint8_t value);
 
+/* Foundation 80. */
+CnaGoResult cna_go_alpha_test_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect);
+CnaGoResult cna_go_alpha_test_effect_set_diffuse_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_alpha_test_effect_set_alpha(CnaGoHandle effect, float value);
+CnaGoResult cna_go_alpha_test_effect_set_texture(CnaGoHandle effect, CnaGoHandle texture);
+CnaGoResult cna_go_alpha_test_effect_set_vertex_color_enabled(CnaGoHandle effect, uint8_t value);
+CnaGoResult cna_go_alpha_test_effect_set_alpha_function(CnaGoHandle effect, uint32_t value);
+CnaGoResult cna_go_alpha_test_effect_set_reference_alpha(CnaGoHandle effect, int32_t value);
+CnaGoResult cna_go_dual_texture_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect);
+CnaGoResult cna_go_dual_texture_effect_set_diffuse_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_dual_texture_effect_set_alpha(CnaGoHandle effect, float value);
+CnaGoResult cna_go_dual_texture_effect_set_texture(CnaGoHandle effect, uint32_t texture_index, CnaGoHandle texture);
+CnaGoResult cna_go_dual_texture_effect_set_vertex_color_enabled(CnaGoHandle effect, uint8_t value);
+CnaGoResult cna_go_effect_material_create(CnaGoHandle clone_source, CnaGoHandle* out_effect);
+
 CnaGoResult cna_go_effect_apply(CnaGoHandle effect);
 CnaGoResult cna_go_effect_destroy(CnaGoHandle effect);
 CnaGoResult cna_go_effect_clone(CnaGoHandle effect, CnaGoHandle* out_clone);

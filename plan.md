@@ -1592,6 +1592,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 77 | the four stock vertex structs | `foundation-77-vertex-structs-evidence.md` |
 | 78 | the eight XNA exception types | `foundation-78-exception-family-evidence.md` |
 | 79 | BasicEffect, DirectionalLight and IEffectLights | `foundation-79-stock-effect-evidence.md` |
+| 80 | AlphaTestEffect, DualTextureEffect and EffectMaterial | `foundation-80-unlit-stock-effects-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1855,6 +1856,30 @@ draw succeeds on both artifacts, and the control taken immediately before it
 also succeeds — so the success is NOT evidence that applying the effect unblocked
 the draw. Without the control the twenty successes would have read as a result
 they are not.
+
+**A shared body across a family needs the family's IL to AGREE, member by
+member** (80). The five stock effects' `set_World` is 23 bytes in every one of
+them, and the flag it ORs is not the same: BasicEffect raises
+WorldViewProj|World|Fog, and the two unlit effects raise WorldViewProj|Fog,
+because they have no world parameter and no eye position. Each type therefore
+declares its own accessors with its own measured word, and only the write that
+carries no flags -- the three-matrix push -- is shared. The test holds both
+halves of that table, so a later collapse into one body fails.
+
+**An inherited surface is the PUBLIC surface, and that decides what an interface
+may require** (80). Effect declares `OnApply` `protected internal`; a derived
+type that OVERRIDES it projects it, and one that does not -- EffectMaterial --
+has no such member at all. `EffectReference` dropped `OnApply` for that reason:
+an interface member would have required a member the pinned contract does not
+give that type. The same rule already decides that a derived effect has one
+`Dispose()` where Effect has two.
+
+**A composition hook is installed only where there is a body to dispatch to**
+(80). EffectMaterial calls `bindDerived`, which carries the CLR `this` for
+ToString, and NOT `bindDerivedEffect`, which installs an override -- it
+overrides nothing. Its Clone answers an Effect, exactly as the reference's does,
+and the native run asserts that positively rather than only asserting it is not
+an EffectMaterial.
 
 ## Next milestone selection rule
 

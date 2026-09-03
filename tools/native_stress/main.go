@@ -203,6 +203,22 @@ type counters struct {
 	BasicEffectControlDrawRefusals int `json:"BASIC_EFFECT_CONTROL_DRAW_REFUSALS"`
 	BasicEffectCloneChecks         int `json:"BASIC_EFFECT_CLONE_CHECKS"`
 	BasicEffectDisposalChecks      int `json:"BASIC_EFFECT_DISPOSAL_CHECKS"`
+	// Foundation 80. AlphaTestEffect, DualTextureEffect and EffectMaterial.
+	// Creations and refusals are counted apart for the reason every other
+	// native creation's are, and the round trips cover the properties the
+	// reference backs with an EffectParameter -- two for AlphaTestEffect and
+	// three for DualTextureEffect, whose second texture layer reaches the same
+	// route at index one.
+	UnlitEffectCreations        int `json:"UNLIT_EFFECT_CREATIONS"`
+	UnlitEffectCreationRefusals int `json:"UNLIT_EFFECT_CREATION_REFUSALS"`
+	UnlitEffectRoundTrips       int `json:"UNLIT_EFFECT_ROUND_TRIPS"`
+	UnlitEffectApplies          int `json:"UNLIT_EFFECT_APPLIES"`
+	UnlitEffectApplyRefusals    int `json:"UNLIT_EFFECT_APPLY_REFUSALS"`
+	UnlitEffectCloneChecks      int `json:"UNLIT_EFFECT_CLONE_CHECKS"`
+	UnlitEffectDisposalChecks   int `json:"UNLIT_EFFECT_DISPOSAL_CHECKS"`
+	EffectMaterialCreations     int `json:"EFFECT_MATERIAL_CREATIONS"`
+	EffectMaterialRefusals      int `json:"EFFECT_MATERIAL_REFUSALS"`
+	EffectMaterialIdentityCheck int `json:"EFFECT_MATERIAL_IDENTITY_CHECKS"`
 	// The six user-primitive draws, and the four guards the projection makes
 	// before CNA is reached.
 	UserPrimitiveDraws          int `json:"USER_PRIMITIVE_DRAWS"`
@@ -643,6 +659,26 @@ func runParent() (counters, error) {
 	if total.BasicEffectDraws+total.BasicEffectDrawRefusals != total.BasicEffectApplies {
 		return total, fmt.Errorf("%d BasicEffect applies produced %d draws and %d draw refusals",
 			total.BasicEffectApplies, total.BasicEffectDraws, total.BasicEffectDrawRefusals)
+	}
+	// Foundation 80. Two creations per cycle -- AlphaTestEffect and
+	// DualTextureEffect -- and every downstream check counted against them.
+	if total.UnlitEffectCreations+total.UnlitEffectCreationRefusals != 2*total.VertexBufferCycles {
+		return total, fmt.Errorf("unlit-effect creations %d and refusals %d do not account for two per %d cycles",
+			total.UnlitEffectCreations, total.UnlitEffectCreationRefusals, total.VertexBufferCycles)
+	}
+	if total.UnlitEffectApplies+total.UnlitEffectApplyRefusals != total.UnlitEffectCreations ||
+		2*total.UnlitEffectRoundTrips != total.UnlitEffectCreations ||
+		2*total.UnlitEffectCloneChecks != total.UnlitEffectCreations ||
+		2*total.UnlitEffectDisposalChecks != total.UnlitEffectCreations {
+		return total, fmt.Errorf("%d unlit-effect creations produced %d applies, %d apply refusals, %d round trips, %d clone checks and %d disposal checks",
+			total.UnlitEffectCreations, total.UnlitEffectApplies, total.UnlitEffectApplyRefusals,
+			total.UnlitEffectRoundTrips, total.UnlitEffectCloneChecks, total.UnlitEffectDisposalChecks)
+	}
+	if total.EffectMaterialCreations+total.EffectMaterialRefusals != total.VertexBufferCycles ||
+		total.EffectMaterialIdentityCheck != total.EffectMaterialCreations {
+		return total, fmt.Errorf("EffectMaterial creations %d, refusals %d and identity checks %d do not account for %d cycles",
+			total.EffectMaterialCreations, total.EffectMaterialRefusals,
+			total.EffectMaterialIdentityCheck, total.VertexBufferCycles)
 	}
 	if total.BasicEffectRoundTrips+total.BasicEffectRoundTripRefusals != total.BasicEffectCreations ||
 		total.BasicEffectApplies+total.BasicEffectApplyRefusals != total.BasicEffectCreations ||
@@ -4631,6 +4667,12 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 80. The two unlit stock effects and EffectMaterial, on the
+	// same live device and after the same draws.
+	if err := g.exerciseUnlitEffects(device); err != nil {
+		return err
+	}
+
 	if effect != nil {
 		if err := effect.DisposeByNone(); err != nil {
 			return fmt.Errorf("disposing the stock effect: %w", err)
@@ -5684,6 +5726,203 @@ func (g *stressGame) exerciseBasicEffect(device *graphics.GraphicsDevice) error 
 		return errors.New("SpecularColor answered on a disposed BasicEffect")
 	}
 	g.result.BasicEffectDisposalChecks++
+	return nil
+}
+
+// exerciseUnlitEffects is Foundation 80's slice: AlphaTestEffect,
+// DualTextureEffect and EffectMaterial against a live device.
+//
+// It covers exactly what the managed tests cannot: the properties whose
+// reference bodies reach an EffectParameter and which therefore reach CNA here,
+// OnApply's push through each effect's own pass, EffectMaterial's construction
+// from a source effect, and disposal.
+func (g *stressGame) exerciseUnlitEffects(device *graphics.GraphicsDevice) error {
+	surface, err := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(device, 4, 4)
+	if err != nil {
+		return fmt.Errorf("a texture for the unlit effects: %w", err)
+	}
+	defer func() { _ = surface.DisposeByNone() }()
+
+	alphaTest, err := graphics.NewAlphaTestEffectByGraphicsDevice(device)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewAlphaTestEffectByGraphicsDevice: %w", err)
+		}
+		g.result.UnlitEffectCreationRefusals += 2
+		fmt.Fprintf(os.Stderr, "AlphaTestEffect creation refused: %v\n", err)
+		return nil
+	}
+	g.result.UnlitEffectCreations++
+
+	dual, err := graphics.NewDualTextureEffectByGraphicsDevice(device)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewDualTextureEffectByGraphicsDevice: %w", err)
+		}
+		g.result.UnlitEffectCreationRefusals++
+		fmt.Fprintf(os.Stderr, "DualTextureEffect creation refused: %v\n", err)
+		return nil
+	}
+	g.result.UnlitEffectCreations++
+
+	// The crossing properties, written and read back through CNA. FogColor is
+	// the shared one; the textures are the per-type ones, and the texture claim
+	// is OBJECT IDENTITY, which a handle cannot carry.
+	fogColour := framework.NewVector3BySingleAndSingleAndSingle(0.25, 0.5, 0.75)
+	for name, effect := range map[string]interface {
+		SetFogColor(framework.Vector3) error
+		FogColor() (framework.Vector3, error)
+	}{"AlphaTestEffect": alphaTest, "DualTextureEffect": dual} {
+		if err := effect.SetFogColor(fogColour); err != nil {
+			return fmt.Errorf("%s.SetFogColor: %w", name, err)
+		}
+		got, err := effect.FogColor()
+		if err != nil {
+			return fmt.Errorf("%s.FogColor: %w", name, err)
+		}
+		if got != fogColour {
+			return fmt.Errorf("%s.FogColor round-tripped as %v", name, got)
+		}
+	}
+	if err := alphaTest.SetTexture(surface); err != nil {
+		return fmt.Errorf("AlphaTestEffect.SetTexture: %w", err)
+	}
+	if texture, err := alphaTest.Texture(); err != nil || texture != surface {
+		return fmt.Errorf("AlphaTestEffect.Texture = %v, %v; the getter answers the object the setter was given", texture, err)
+	}
+	// Both DualTextureEffect layers reach ONE route at two indices, so setting
+	// each and reading both back is what proves the index is honoured.
+	if err := dual.SetTexture(surface); err != nil {
+		return fmt.Errorf("DualTextureEffect.SetTexture: %w", err)
+	}
+	if err := dual.SetTexture2(nil); err != nil {
+		return fmt.Errorf("DualTextureEffect.SetTexture2(nil): %w", err)
+	}
+	first, err := dual.Texture()
+	if err != nil || first != surface {
+		return fmt.Errorf("DualTextureEffect.Texture = %v, %v", first, err)
+	}
+	second, err := dual.Texture2()
+	if err != nil || second != nil {
+		return fmt.Errorf("DualTextureEffect.Texture2 = %v, %v", second, err)
+	}
+	g.result.UnlitEffectRoundTrips++
+
+	// OnApply, through each effect's own pass. AlphaTestEffect's push includes
+	// the pair no other stock effect has.
+	alphaTest.SetWorld(framework.MatrixIdentity())
+	alphaTest.SetAlphaFunction(graphics.CompareFunctionGreaterEqual)
+	alphaTest.SetReferenceAlpha(128)
+	alphaTest.SetVertexColorEnabled(true)
+	dual.SetWorld(framework.MatrixIdentity())
+	dual.SetVertexColorEnabled(true)
+	for name, effect := range map[string]interface {
+		CurrentTechnique() *graphics.EffectTechnique
+	}{"AlphaTestEffect": alphaTest, "DualTextureEffect": dual} {
+		technique := effect.CurrentTechnique()
+		if technique == nil {
+			return fmt.Errorf("a constructed %s has no current technique", name)
+		}
+		pass := technique.Passes().ItemPropertySignatureCA1DC5FC(0)
+		if pass == nil {
+			return fmt.Errorf("a constructed %s's technique has no first pass", name)
+		}
+		if err := pass.Apply(); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("%s pass Apply: %w", name, err)
+			}
+			g.result.UnlitEffectApplyRefusals++
+			fmt.Fprintf(os.Stderr, "%s Apply refused: %v\n", name, err)
+		} else {
+			g.result.UnlitEffectApplies++
+		}
+	}
+
+	// Clone, and the downcast. Each must answer its OWN class.
+	clonedAlphaTest, err := alphaTest.Clone()
+	if err != nil {
+		return fmt.Errorf("AlphaTestEffect.Clone: %w", err)
+	}
+	typedAlphaTest, ok := clonedAlphaTest.(*graphics.AlphaTestEffect)
+	if !ok {
+		return errors.New("AlphaTestEffect.Clone did not hand back an AlphaTestEffect")
+	}
+	if typedAlphaTest.AlphaFunction() != graphics.CompareFunctionGreaterEqual ||
+		typedAlphaTest.ReferenceAlpha() != 128 ||
+		!typedAlphaTest.VertexColorEnabled() {
+		return errors.New("the AlphaTestEffect clone constructor did not copy its eleven values")
+	}
+	clonedDual, err := dual.Clone()
+	if err != nil {
+		return fmt.Errorf("DualTextureEffect.Clone: %w", err)
+	}
+	typedDual, ok := clonedDual.(*graphics.DualTextureEffect)
+	if !ok {
+		return errors.New("DualTextureEffect.Clone did not hand back a DualTextureEffect")
+	}
+	if !typedDual.VertexColorEnabled() {
+		return errors.New("the DualTextureEffect clone constructor did not copy its nine values")
+	}
+	g.result.UnlitEffectCloneChecks++
+
+	// EffectMaterial, from a source effect rather than a device -- which is
+	// what its one constructor takes and what CNA's route takes.
+	material, err := graphics.NewEffectMaterial(alphaTest)
+	switch {
+	case err != nil:
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewEffectMaterial: %w", err)
+		}
+		g.result.EffectMaterialRefusals++
+		fmt.Fprintf(os.Stderr, "EffectMaterial creation refused: %v\n", err)
+	default:
+		g.result.EffectMaterialCreations++
+		// The one thing the type adds is its class name, and ToString is where
+		// a consumer sees it.
+		if got := material.ToString(); got != "Microsoft.Xna.Framework.Graphics.EffectMaterial" {
+			return fmt.Errorf("EffectMaterial.ToString = %q", got)
+		}
+		// Clone is INHERITED and answers an Effect, because the reference
+		// declares no override.
+		clone, cloneErr := material.Clone()
+		if cloneErr != nil {
+			return fmt.Errorf("EffectMaterial.Clone: %w", cloneErr)
+		}
+		// The assertion is POSITIVE as well as negative: the clone must be a
+		// plain Effect, which is also the only way to reach a dispose member --
+		// EffectReference carries none, because Effect and its derived types
+		// spell disposal differently.
+		plain, isPlain := clone.(*graphics.Effect)
+		if !isPlain {
+			return errors.New("EffectMaterial.Clone did not answer a plain Effect; the reference overrides nothing and Effect::Clone builds one")
+		}
+		g.result.EffectMaterialIdentityCheck++
+		if err := plain.DisposeByNone(); err != nil {
+			return fmt.Errorf("disposing the material's clone: %w", err)
+		}
+		if err := material.Dispose(); err != nil {
+			return fmt.Errorf("disposing the EffectMaterial: %w", err)
+		}
+	}
+
+	for name, effect := range map[string]interface {
+		Dispose() error
+		IsDisposed() bool
+	}{
+		"AlphaTestEffect": alphaTest, "DualTextureEffect": dual,
+		"AlphaTestEffect clone": typedAlphaTest, "DualTextureEffect clone": typedDual,
+	} {
+		if err := effect.Dispose(); err != nil {
+			return fmt.Errorf("disposing the %s: %w", name, err)
+		}
+		if !effect.IsDisposed() {
+			return fmt.Errorf("the %s is not disposed after Dispose", name)
+		}
+	}
+	if _, err := alphaTest.FogColor(); err == nil {
+		return errors.New("FogColor answered on a disposed AlphaTestEffect")
+	}
+	g.result.UnlitEffectDisposalChecks++
 	return nil
 }
 

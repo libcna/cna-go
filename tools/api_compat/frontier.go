@@ -126,11 +126,8 @@ var frontierFamilies = []frontierFamily{
 	{
 		Name:           "Stock effects",
 		Classification: frontierActionableLocal,
-		Note:           "Foundation 79 closed BasicEffect, DirectionalLight and IEffectLights, which composed the Effect base and settled the shape: managed state with the reference's dirty flags, a push in OnApply, and only the four properties the reference backs with an EffectParameter reaching CNA directly. The four that remain are the same shape over ~13/9/17/21 routes, and EffectMaterial needs none",
+		Note:           "Foundation 79 composed the Effect base and settled the shape against BasicEffect; Foundation 80 closed AlphaTestEffect, DualTextureEffect and EffectMaterial on it. The two that remain both add IEffectLights and both implement LightingEnabled EXPLICITLY -- a two-byte getter that always answers true and a 51-byte setter -- so they need the interface-witness machinery as well as ~17/21 routes, and SkinnedEffect adds a bone-transform array and the profile's only public const field",
 		Types: []string{
-			"Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
-			"Microsoft.Xna.Framework.Graphics.DualTextureEffect",
-			"Microsoft.Xna.Framework.Graphics.EffectMaterial",
 			"Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
 			"Microsoft.Xna.Framework.Graphics.SkinnedEffect",
 		},

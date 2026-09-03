@@ -4180,6 +4180,164 @@ func (resource *Resource) BasicEffectSetTexture(texture *Resource) error {
 	return nativeBasicEffectSetTexture(handle, textureHandle)
 }
 
+// ---------------------------------------------------------------------------
+// Foundation 80 -- AlphaTestEffect, DualTextureEffect and EffectMaterial.
+//
+// Every route below is a SETTER or a creation. The getters CNA declares beside
+// them are recorded as deliberately unbound: the reference reads its own field,
+// and reading CNA back would let its answer decide a getter whose body is one
+// `ldfld`.
+// ---------------------------------------------------------------------------
+
+// CreateAlphaTestEffect is cna_alpha_test_effect_create.
+func (d *Device) CreateAlphaTestEffect() (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	effect, err := nativeAlphaTestEffectCreate(handle)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(effect, resourceEffect, d.manager), nil
+}
+
+// AlphaTestEffectSetDiffuseColor is the push OnApply makes for DiffuseColor.
+func (resource *Resource) AlphaTestEffectSetDiffuseColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeAlphaTestEffectSetDiffuseColor(handle, value)
+}
+
+// AlphaTestEffectSetAlpha is the push OnApply makes for Alpha.
+func (resource *Resource) AlphaTestEffectSetAlpha(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeAlphaTestEffectSetAlpha(handle, value)
+}
+
+// AlphaTestEffectSetTexture is AlphaTestEffect::Texture's setter. A nil texture
+// is the reference's null and crosses as the invalid handle.
+func (resource *Resource) AlphaTestEffectSetTexture(texture *Resource) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	var textureHandle uint64
+	if texture != nil {
+		if textureHandle, err = texture.liveTextureHandle(); err != nil {
+			return err
+		}
+	}
+	return nativeAlphaTestEffectSetTexture(handle, textureHandle)
+}
+
+// AlphaTestEffectSetVertexColorEnabled is the push OnApply makes for the shader
+// permutation.
+func (resource *Resource) AlphaTestEffectSetVertexColorEnabled(value bool) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeAlphaTestEffectSetVertexColorEnabled(handle, value)
+}
+
+// AlphaTestEffectSetAlphaFunction is the push OnApply makes for the comparison.
+func (resource *Resource) AlphaTestEffectSetAlphaFunction(value uint32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeAlphaTestEffectSetAlphaFunction(handle, value)
+}
+
+// AlphaTestEffectSetReferenceAlpha is the push OnApply makes for the reference
+// alpha.
+func (resource *Resource) AlphaTestEffectSetReferenceAlpha(value int32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeAlphaTestEffectSetReferenceAlpha(handle, value)
+}
+
+// CreateDualTextureEffect is cna_dual_texture_effect_create.
+func (d *Device) CreateDualTextureEffect() (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	effect, err := nativeDualTextureEffectCreate(handle)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(effect, resourceEffect, d.manager), nil
+}
+
+// DualTextureEffectSetDiffuseColor is the push OnApply makes for DiffuseColor.
+func (resource *Resource) DualTextureEffectSetDiffuseColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeDualTextureEffectSetDiffuseColor(handle, value)
+}
+
+// DualTextureEffectSetAlpha is the push OnApply makes for Alpha.
+func (resource *Resource) DualTextureEffectSetAlpha(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeDualTextureEffectSetAlpha(handle, value)
+}
+
+// DualTextureEffectSetTexture is BOTH of the type's texture setters. CNA takes
+// the layer as an index where the contract declares two properties, so one
+// route backs Texture at index 0 and Texture2 at index 1.
+func (resource *Resource) DualTextureEffectSetTexture(index uint32, texture *Resource) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	var textureHandle uint64
+	if texture != nil {
+		if textureHandle, err = texture.liveTextureHandle(); err != nil {
+			return err
+		}
+	}
+	return nativeDualTextureEffectSetTexture(handle, index, textureHandle)
+}
+
+// DualTextureEffectSetVertexColorEnabled is the push OnApply makes for the
+// shader permutation.
+func (resource *Resource) DualTextureEffectSetVertexColorEnabled(value bool) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeDualTextureEffectSetVertexColorEnabled(handle, value)
+}
+
+// CreateEffectMaterial is cna_effect_material_create, which takes a SOURCE
+// effect rather than a device -- exactly as EffectMaterial::.ctor(Effect) does,
+// whose whole body is `base(cloneSource)`.
+func (resource *Resource) CreateEffectMaterial() (*Resource, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return nil, err
+	}
+	material, err := nativeEffectMaterialCreate(handle)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(material, resourceEffect, resource.parent), nil
+}
+
 // EffectLightsDirectionalLight is IEffectLights::DirectionalLight0..2.
 //
 // The canonical header calls the result "an owned stable member-view handle",
