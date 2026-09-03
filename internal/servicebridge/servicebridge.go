@@ -556,3 +556,333 @@ func CreateGameContent(services any) (any, error) {
 	}
 	return current(services)
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 75 — the device-selection bridge.
+//
+// Microsoft.Xna.Framework.GraphicsDeviceInformation and the three
+// GraphicsDeviceManager members that select a device with it are declared in
+// the Microsoft.Xna.Framework namespace, so they project into the framework
+// package -- but everything their reference bodies touch is a Graphics type:
+// GraphicsAdapter, PresentationParameters, DisplayMode, SurfaceFormat. The
+// Graphics package imports framework, so the dependency cannot be inverted, and
+// the settled cross-package rule already puts the three GraphicsDeviceInformation
+// PROPERTIES in the Graphics package.
+//
+// What is left is the BODIES. Each hook below is one reference operation the
+// framework side must perform and cannot spell, installed by the Graphics
+// package's init and reached through `any` on both sides. Nothing here retains
+// a device, an adapter or a manager.
+// ---------------------------------------------------------------------------
+
+// PresentationSnapshot is the ten PresentationParameters values
+// GraphicsDeviceInformation::Equals and ::GetHashCode read, in the order the
+// reference reads them.
+//
+// It exists because those two members' LOGIC is GraphicsDeviceInformation's --
+// which fields, in which order, with which short-circuit -- while the property
+// reads are the Graphics package's. Passing the values across rather than a
+// "are these equal" answer keeps the logic where the reference declares it.
+//
+// The five enum-typed values are carried as the int32 they are, because the
+// framework package cannot name SurfaceFormat, DepthFormat, PresentInterval or
+// RenderTargetUsage.
+type PresentationSnapshot struct {
+	BackBufferWidth      int32
+	BackBufferHeight     int32
+	BackBufferFormat     int32
+	DepthStencilFormat   int32
+	MultiSampleCount     int32
+	DisplayOrientation   int32
+	PresentationInterval int32
+	RenderTargetUsage    int32
+	DeviceWindowHandle   uintptr
+	IsFullScreen         bool
+}
+
+// PresentationParametersFactory is `new PresentationParameters()`, which
+// GraphicsDeviceInformation's constructor calls.
+type PresentationParametersFactory func() any
+
+// PresentationParametersCloner is PresentationParameters::Clone, which
+// GraphicsDeviceInformation::Clone calls on the source's parameters.
+type PresentationParametersCloner func(parameters any) (any, bool)
+
+// PresentationParametersReader takes the snapshot above.
+type PresentationParametersReader func(parameters any) (PresentationSnapshot, bool)
+
+// DefaultAdapterReader is GraphicsAdapter::get_DefaultAdapter, which
+// GraphicsDeviceInformation's constructor calls. It is fallible because
+// CNA-Go's projection of it is: enumerating adapters crosses into CNA.
+type DefaultAdapterReader func() (any, error)
+
+// DeviceGraphicsProfileReader is GraphicsDevice::get_GraphicsProfile, which
+// GraphicsDeviceManager::CanResetDevice compares against the candidate's. The
+// bool is false when the manager has no device, which is the reference's
+// NullReferenceException.
+type DeviceGraphicsProfileReader func(device any) (int32, bool)
+
+// DeviceCandidateCollector is GraphicsDeviceManager::AddDevices, the private
+// enumeration that builds the candidate list FindBestDevice ranks. It returns
+// the candidates in the order the reference appends them.
+type DeviceCandidateCollector func(manager any, anySuitableDevice bool) ([]any, error)
+
+// DeviceCandidateRanker is GraphicsDeviceManager::RankDevicesPlatform, which is
+// `foundDevices.Sort(new GraphicsDeviceInformationComparer(this))`. It sorts in
+// place, which is what List<T>.Sort does.
+type DeviceCandidateRanker func(manager any, candidates []any)
+
+var (
+	presentationParametersFactory PresentationParametersFactory
+	presentationParametersCloner  PresentationParametersCloner
+	presentationParametersReader  PresentationParametersReader
+	defaultAdapterReader          DefaultAdapterReader
+	deviceGraphicsProfileReader   DeviceGraphicsProfileReader
+	deviceCandidateCollector      DeviceCandidateCollector
+	deviceCandidateRanker         DeviceCandidateRanker
+)
+
+// SetDeviceSelectionBridge installs the Graphics package's half, from that
+// package's init.
+func SetDeviceSelectionBridge(
+	factory PresentationParametersFactory,
+	cloner PresentationParametersCloner,
+	reader PresentationParametersReader,
+	adapter DefaultAdapterReader,
+	profile DeviceGraphicsProfileReader,
+	collector DeviceCandidateCollector,
+	ranker DeviceCandidateRanker,
+) {
+	mu.Lock()
+	defer mu.Unlock()
+	presentationParametersFactory = factory
+	presentationParametersCloner = cloner
+	presentationParametersReader = reader
+	defaultAdapterReader = adapter
+	deviceGraphicsProfileReader = profile
+	deviceCandidateCollector = collector
+	deviceCandidateRanker = ranker
+}
+
+// NewPresentationParameters builds the object GraphicsDeviceInformation's
+// constructor assigns. A program that never linked the Graphics package gets
+// nil, and every member that would read the parameters answers as it does for
+// a null one.
+func NewPresentationParameters() any {
+	mu.RLock()
+	current := presentationParametersFactory
+	mu.RUnlock()
+	if current == nil {
+		return nil
+	}
+	return current()
+}
+
+// ClonePresentationParameters is PresentationParameters::Clone.
+func ClonePresentationParameters(parameters any) (any, bool) {
+	mu.RLock()
+	current := presentationParametersCloner
+	mu.RUnlock()
+	if current == nil || parameters == nil {
+		return nil, false
+	}
+	return current(parameters)
+}
+
+// ReadPresentationSnapshot takes the ten values the equality and hash members
+// read.
+func ReadPresentationSnapshot(parameters any) (PresentationSnapshot, bool) {
+	mu.RLock()
+	current := presentationParametersReader
+	mu.RUnlock()
+	if current == nil || parameters == nil {
+		return PresentationSnapshot{}, false
+	}
+	return current(parameters)
+}
+
+// ReadDefaultAdapter is GraphicsAdapter::get_DefaultAdapter.
+func ReadDefaultAdapter() (any, error) {
+	mu.RLock()
+	current := defaultAdapterReader
+	mu.RUnlock()
+	if current == nil {
+		return nil, nil
+	}
+	return current()
+}
+
+// ReadDeviceGraphicsProfile is GraphicsDevice::get_GraphicsProfile.
+func ReadDeviceGraphicsProfile(device any) (int32, bool) {
+	mu.RLock()
+	current := deviceGraphicsProfileReader
+	mu.RUnlock()
+	if current == nil || device == nil {
+		return 0, false
+	}
+	return current(device)
+}
+
+// CollectDeviceCandidates is GraphicsDeviceManager::AddDevices.
+func CollectDeviceCandidates(manager any, anySuitableDevice bool) ([]any, error) {
+	mu.RLock()
+	current := deviceCandidateCollector
+	mu.RUnlock()
+	if current == nil {
+		return nil, nil
+	}
+	return current(manager, anySuitableDevice)
+}
+
+// RankDeviceCandidates is GraphicsDeviceManager::RankDevicesPlatform. It sorts
+// in place and reports nothing, exactly as List<T>.Sort does.
+func RankDeviceCandidates(manager any, candidates []any) {
+	mu.RLock()
+	current := deviceCandidateRanker
+	mu.RUnlock()
+	if current == nil {
+		return
+	}
+	current(manager, candidates)
+}
+
+// ---------------------------------------------------------------------------
+// The GraphicsDeviceInformation field accessors.
+//
+// The three properties live in the Graphics package under the settled
+// cross-package rule; the FIELDS live on the framework type. These six carry
+// one across the other, with the framework package installing its half from its
+// own init exactly as the Game content accessors are installed.
+// ---------------------------------------------------------------------------
+
+// DeviceInformationReferenceReader reads one of the two reference fields.
+type DeviceInformationReferenceReader func(information any) (any, bool)
+
+// DeviceInformationReferenceWriter writes one of them.
+type DeviceInformationReferenceWriter func(information any, value any) error
+
+// DeviceInformationProfileReader reads the raw int32 GraphicsProfile field.
+type DeviceInformationProfileReader func(information any) int32
+
+// DeviceInformationProfileWriter writes it.
+type DeviceInformationProfileWriter func(information any, value int32)
+
+var (
+	deviceInformationAdapterReader    DeviceInformationReferenceReader
+	deviceInformationAdapterWriter    DeviceInformationReferenceWriter
+	deviceInformationParametersReader DeviceInformationReferenceReader
+	deviceInformationParametersWriter DeviceInformationReferenceWriter
+	deviceInformationProfileReader    DeviceInformationProfileReader
+	deviceInformationProfileWriter    DeviceInformationProfileWriter
+)
+
+// SetDeviceInformationAccessors installs the framework package's half.
+func SetDeviceInformationAccessors(
+	readAdapter DeviceInformationReferenceReader, writeAdapter DeviceInformationReferenceWriter,
+	readParameters DeviceInformationReferenceReader, writeParameters DeviceInformationReferenceWriter,
+	readProfile DeviceInformationProfileReader, writeProfile DeviceInformationProfileWriter,
+) {
+	mu.Lock()
+	defer mu.Unlock()
+	deviceInformationAdapterReader, deviceInformationAdapterWriter = readAdapter, writeAdapter
+	deviceInformationParametersReader, deviceInformationParametersWriter = readParameters, writeParameters
+	deviceInformationProfileReader, deviceInformationProfileWriter = readProfile, writeProfile
+}
+
+// ReadDeviceInformationAdapter is GraphicsDeviceInformation::get_Adapter.
+func ReadDeviceInformationAdapter(information any) (any, bool) {
+	mu.RLock()
+	current := deviceInformationAdapterReader
+	mu.RUnlock()
+	if current == nil {
+		return nil, false
+	}
+	return current(information)
+}
+
+// WriteDeviceInformationAdapter is GraphicsDeviceInformation::set_Adapter,
+// including the reference's guard on the EXISTING field.
+func WriteDeviceInformationAdapter(information any, value any) error {
+	mu.RLock()
+	current := deviceInformationAdapterWriter
+	mu.RUnlock()
+	if current == nil {
+		return nil
+	}
+	return current(information, value)
+}
+
+// ReadDeviceInformationPresentationParameters is
+// GraphicsDeviceInformation::get_PresentationParameters.
+func ReadDeviceInformationPresentationParameters(information any) (any, bool) {
+	mu.RLock()
+	current := deviceInformationParametersReader
+	mu.RUnlock()
+	if current == nil {
+		return nil, false
+	}
+	return current(information)
+}
+
+// WriteDeviceInformationPresentationParameters is set_PresentationParameters.
+func WriteDeviceInformationPresentationParameters(information any, value any) {
+	mu.RLock()
+	current := deviceInformationParametersWriter
+	mu.RUnlock()
+	if current == nil {
+		return
+	}
+	_ = current(information, value)
+}
+
+// ReadDeviceInformationGraphicsProfile is get_GraphicsProfile.
+func ReadDeviceInformationGraphicsProfile(information any) int32 {
+	mu.RLock()
+	current := deviceInformationProfileReader
+	mu.RUnlock()
+	if current == nil {
+		return 0
+	}
+	return current(information)
+}
+
+// WriteDeviceInformationGraphicsProfile is set_GraphicsProfile.
+func WriteDeviceInformationGraphicsProfile(information any, value int32) {
+	mu.RLock()
+	current := deviceInformationProfileWriter
+	mu.RUnlock()
+	if current == nil {
+		return
+	}
+	current(information, value)
+}
+
+// ManagerWindowReader reads the GameWindow of the Game a
+// GraphicsDeviceManager was constructed with, which is
+// `this.game.Window` in GraphicsDeviceManager::AddDevices.
+//
+// The field is private in the reference and CNA-Go declares no public Game
+// property on the manager, so a Graphics-package body cannot reach it. The
+// result is `any` only because this package names neither type; the Graphics
+// package asserts it back to *framework.GameWindow, which it CAN name.
+type ManagerWindowReader func(manager any) any
+
+var managerWindowReader ManagerWindowReader
+
+// SetManagerWindowReader installs the framework package's half.
+func SetManagerWindowReader(read ManagerWindowReader) {
+	mu.Lock()
+	defer mu.Unlock()
+	managerWindowReader = read
+}
+
+// ReadManagerWindow is `manager.game.Window`.
+func ReadManagerWindow(manager any) any {
+	mu.RLock()
+	current := managerWindowReader
+	mu.RUnlock()
+	if current == nil {
+		return nil
+	}
+	return current(manager)
+}

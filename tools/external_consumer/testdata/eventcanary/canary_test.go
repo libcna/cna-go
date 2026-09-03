@@ -3876,3 +3876,87 @@ func TestGameLaunchParametersIsTheGamesOwnDictionaryFromOutside(t *testing.T) {
 		t.Fatalf("the Game did not observe the mutation: %q, %v", value, err)
 	}
 }
+
+// TestDeviceSelectionSurfaceIsUsableFromOutsideTheModule is Foundation 75's
+// external gate. GraphicsDeviceInformation is declared in the framework package
+// but three of its properties are Graphics-package functions, so the whole
+// question is whether a consumer can actually reach the type AND its properties
+// AND the five GraphicsDeviceManager members that select with it.
+func TestDeviceSelectionSurfaceIsUsableFromOutsideTheModule(t *testing.T) {
+	// The constructor reads GraphicsAdapter.DefaultAdapter, which needs a live
+	// native device. Without one it reports the failure rather than inventing an
+	// adapter, and THAT is the observable contract from outside.
+	information, err := framework.NewGraphicsDeviceInformation()
+	if err == nil {
+		// A live device is present, so the whole surface must work.
+		if information == nil {
+			t.Fatal("NewGraphicsDeviceInformation returned neither an information nor an error")
+		}
+		if graphics.GraphicsDeviceInformationPresentationParameters(information) == nil {
+			t.Fatal("the information has no PresentationParameters")
+		}
+		clone, cloneErr := information.Clone()
+		if cloneErr != nil || clone == nil {
+			t.Fatalf("Clone from outside = %v", cloneErr)
+		}
+		if !clone.Equals(information) {
+			t.Fatal("a fresh clone is not equal to its source")
+		}
+		return
+	}
+	if information != nil {
+		t.Fatal("a failed construction still produced an information")
+	}
+
+	// Every name below must be reachable and correctly typed regardless.
+	var typed *framework.GraphicsDeviceInformation
+	if graphics.GraphicsDeviceInformationAdapter(typed) != nil {
+		t.Fatal("a nil information reported an adapter")
+	}
+	if graphics.GraphicsDeviceInformationGraphicsProfile(typed) != graphics.GraphicsProfileReach {
+		t.Fatal("a nil information reported a non-zero profile")
+	}
+	graphics.SetGraphicsDeviceInformationGraphicsProfile(typed, graphics.GraphicsProfileHiDef)
+	graphics.SetGraphicsDeviceInformationPresentationParameters(typed, nil)
+	if err := graphics.SetGraphicsDeviceInformationAdapter(typed, nil); err == nil {
+		t.Fatal("setting an adapter on a nil information succeeded")
+	}
+	if typed.Equals(nil) || typed.GetHashCode() != 0 {
+		t.Fatal("a nil information answered as a real one")
+	}
+
+	// PreparingDeviceSettingsEventArgs is a plain carrier and needs no device.
+	args := framework.NewPreparingDeviceSettingsEventArgs(nil)
+	if args == nil || args.GraphicsDeviceInformation() != nil {
+		t.Fatal("the args did not store a nil information as null")
+	}
+
+	// The manager's five new members are reachable, and each refuses without a
+	// device rather than answering.
+	manager := &framework.GraphicsDeviceManager{}
+	subscription, err := manager.AddPreparingDeviceSettingsHandler(
+		func(sender any, received *framework.PreparingDeviceSettingsEventArgs) error { return nil })
+	if err != nil {
+		t.Fatalf("AddPreparingDeviceSettingsHandler: %v", err)
+	}
+	if err := manager.OnPreparingDeviceSettings(manager, args); err != nil {
+		t.Fatalf("OnPreparingDeviceSettings: %v", err)
+	}
+	if err := manager.RemovePreparingDeviceSettingsHandler(subscription); err != nil {
+		t.Fatalf("RemovePreparingDeviceSettingsHandler: %v", err)
+	}
+	if _, err := manager.CanResetDevice(nil); err == nil {
+		t.Fatal("CanResetDevice(nil) succeeded")
+	}
+	if err := manager.RankDevices(nil); err != nil {
+		t.Fatalf("RankDevices over an empty slice = %v", err)
+	}
+	if _, err := manager.FindBestDevice(true); err == nil {
+		t.Fatal("FindBestDevice succeeded with no game and no device")
+	}
+	// The parameter really is a Go slice a consumer can declare.
+	var candidates []*framework.GraphicsDeviceInformation
+	if err := manager.RankDevices(candidates); err != nil {
+		t.Fatalf("RankDevices over a declared slice = %v", err)
+	}
+}

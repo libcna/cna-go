@@ -78,6 +78,10 @@ type GraphicsDeviceManager struct {
 	deviceDisposing EventSource[*EventArgs]
 	disposed        EventSource[*EventArgs]
 
+	// preparingDeviceSettings is the fifth event, and the only one whose args
+	// are not EventArgs. See graphics_device_manager_device_selection.go.
+	preparingDeviceSettings EventSource[*PreparingDeviceSettingsEventArgs]
+
 	// signals owns the five native subscriptions and the per-manager cgo
 	// handle they carry.
 	signals *interop.ManagerSignals

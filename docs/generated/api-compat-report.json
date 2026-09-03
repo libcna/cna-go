@@ -16,8 +16,9 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 24,
     "BCL_SIGNATURE_ADAPTERS": 5,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
-    "COMPLETE_TYPES": 155,
-    "DECLARED_INTERFACE_CONFORMANCE": 3,
+    "COMPLETE_TYPES": 158,
+    "DECLARED_INTERFACE_CARRIERS": 1,
+    "DECLARED_INTERFACE_CONFORMANCE": 5,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -40,7 +41,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 100,
+    "GLOBAL_ACTIONABLE_LOCAL": 98,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -55,14 +56,14 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 7,
-    "MISSING_TYPE": 100,
-    "MISSING_TYPES": 100,
+    "MISSING_MEMBER": 1,
+    "MISSING_TYPE": 98,
+    "MISSING_TYPES": 98,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
     "PARAMETER_MAPPING_MISMATCH": 0,
-    "PARTIAL_TYPES": 2,
+    "PARTIAL_TYPES": 1,
     "PROPERTY_MAPPING_MISMATCH": 0,
     "PUBLIC_NATIVE_FFI_LEAK": 0,
     "RAW_HANDLE_LEAK": 0,
@@ -71,9 +72,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2530,
-    "TARGET_TYPES": 157,
-    "TOTAL_DIAGNOSTICS": 107,
+    "TARGET_MEMBERS": 2548,
+    "TARGET_TYPES": 159,
+    "TOTAL_DIAGNOSTICS": 99,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -523,48 +524,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceInformation",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceInformation",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::FindBestDevice(System.Boolean)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.FindBestDevice",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::CanResetDevice(Microsoft.Xna.Framework.GraphicsDeviceInformation)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.CanResetDevice",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::RankDevices(System.Collections.Generic.List`1[Microsoft.Xna.Framework.GraphicsDeviceInformation])",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RankDevices",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::OnPreparingDeviceSettings(System.Object,Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnPreparingDeviceSettings",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreparingDeviceSettings()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddPreparingDeviceSettingsHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager::PreparingDeviceSettings()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemovePreparingDeviceSettingsHandler",
-      "message": "mapped Go member is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.GamePad",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePad",
       "message": "mapped Go type is absent"
@@ -715,12 +674,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:PreparingDeviceSettingsEventArgs",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Storage.StorageContainer",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageContainer",
       "message": "mapped Go type is absent"
@@ -859,6 +812,8 @@
     "Microsoft.Xna.Framework.Graphics.VertexElementFormat",
     "Microsoft.Xna.Framework.Graphics.VertexElementUsage",
     "Microsoft.Xna.Framework.Graphics.Viewport",
+    "Microsoft.Xna.Framework.GraphicsDeviceInformation",
+    "Microsoft.Xna.Framework.GraphicsDeviceManager",
     "Microsoft.Xna.Framework.IDrawable",
     "Microsoft.Xna.Framework.IGameComponent",
     "Microsoft.Xna.Framework.IGraphicsDeviceManager",
@@ -894,6 +849,7 @@
     "Microsoft.Xna.Framework.PlaneIntersectionType",
     "Microsoft.Xna.Framework.PlayerIndex",
     "Microsoft.Xna.Framework.Point",
+    "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
     "Microsoft.Xna.Framework.Quaternion",
     "Microsoft.Xna.Framework.Ray",
     "Microsoft.Xna.Framework.Rectangle",
@@ -908,18 +864,6 @@
         "Microsoft.Xna.Framework.Game::ShowMissingRequirementMessage(System.Exception) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.ShowMissingRequirementMessage"
       ],
       "diagnostics": 1
-    },
-    {
-      "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager",
-      "missingMembers": [
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::CanResetDevice(Microsoft.Xna.Framework.GraphicsDeviceInformation) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.CanResetDevice",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::FindBestDevice(System.Boolean) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.FindBestDevice",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::OnPreparingDeviceSettings(System.Object,Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.OnPreparingDeviceSettings",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreparingDeviceSettings() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.AddPreparingDeviceSettingsHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::PreparingDeviceSettings() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RemovePreparingDeviceSettingsHandler",
-        "Microsoft.Xna.Framework.GraphicsDeviceManager::RankDevices(System.Collections.Generic.List`1[Microsoft.Xna.Framework.GraphicsDeviceInformation]) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:GraphicsDeviceManager.RankDevices"
-      ],
-      "diagnostics": 6
     }
   ],
   "missingTypes": [
@@ -992,7 +936,6 @@
     "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
     "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
     "Microsoft.Xna.Framework.Graphics.VertexPositionTexture",
-    "Microsoft.Xna.Framework.GraphicsDeviceInformation",
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadCapabilities",
     "Microsoft.Xna.Framework.Input.Mouse",
@@ -1018,7 +961,6 @@
     "Microsoft.Xna.Framework.Media.SongCollection",
     "Microsoft.Xna.Framework.Media.Video",
     "Microsoft.Xna.Framework.Media.VideoPlayer",
-    "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
     "Microsoft.Xna.Framework.Storage.StorageContainer",
     "Microsoft.Xna.Framework.Storage.StorageDevice",
     "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
@@ -1727,7 +1669,7 @@
     "targetGoIdentities": 6,
     "displayOrientationLocalDiagnostics": 0,
     "supportedOrientationsLocalDiagnostics": 0,
-    "graphicsDeviceManagerRemainingMissingMembers": 6,
+    "graphicsDeviceManagerRemainingMissingMembers": 0,
     "status": "PASS",
     "sliceMeasurements": [
       {
@@ -6955,7 +6897,7 @@
       "status": "MAPPED",
       "addsProjectedSurface": false,
       "derivedTypes": 4,
-      "projectedTypes": 3,
+      "projectedTypes": 4,
       "exportedEmbeddings": 0,
       "rationale": "modelled by the framework EventArgs language adapter; a derived XNA class keeps CLR reference semantics and projects as its own pointer type with no exported embedding",
       "verdict": "PASS"
@@ -7023,7 +6965,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 33,
+      "projectedTypes": 34,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -7060,14 +7002,12 @@
     {
       "family": "Root types",
       "classification": "ACTIONABLE_LOCAL",
-      "note": "GraphicsDeviceInformation and PreparingDeviceSettingsEventArgs are the last two blockers of GraphicsDeviceManager's six missing members; TitleContainer and FrameworkDispatcher are small statics that fold into whichever milestone first needs them",
+      "note": "TitleContainer and FrameworkDispatcher are small statics that fold into whichever milestone first needs them; Foundation 75 closed the other two root types, GraphicsDeviceInformation and PreparingDeviceSettingsEventArgs, and with them GraphicsDeviceManager",
       "types": [
         "Microsoft.Xna.Framework.FrameworkDispatcher",
-        "Microsoft.Xna.Framework.GraphicsDeviceInformation",
-        "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
         "Microsoft.Xna.Framework.TitleContainer"
       ],
-      "remaining": 4,
+      "remaining": 2,
       "verdict": "PASS"
     },
     {
@@ -8719,6 +8659,25 @@
       "goOwner": "*GameComponent",
       "clrInterface": "Microsoft.Xna.Framework.IUpdateable",
       "goInterface": "IUpdateable",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.GraphicsDeviceManager",
+      "goOwner": "*GraphicsDeviceManager",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
+      "goInterface": "graphics.IGraphicsDeviceService",
+      "pointerSatisfies": false,
+      "goCarrier": "managerDeviceService",
+      "carrierSatisfies": true,
+      "carrierBlocker": "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService::GraphicsDevice",
+      "verdict": "PASS_VIA_CARRIER"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.GraphicsDeviceManager",
+      "goOwner": "*GraphicsDeviceManager",
+      "clrInterface": "Microsoft.Xna.Framework.IGraphicsDeviceManager",
+      "goInterface": "IGraphicsDeviceManager",
       "pointerSatisfies": true,
       "verdict": "PASS"
     }

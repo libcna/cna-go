@@ -148,6 +148,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["GAME_BASE_CALL_ADAPTERS"] = 0
 	result.Summary["GAME_BASE_CALL_DEFERRED_STEPS"] = 0
 	result.Summary["DECLARED_INTERFACE_CONFORMANCE"] = 0
+	result.Summary["DECLARED_INTERFACE_CARRIERS"] = 0
 	result.Summary["XNA_BASE_RELATIONSHIPS"] = 0
 	result.Summary["XNA_BASE_DERIVED_TYPES"] = 0
 	result.Summary["XNA_DEFERRED_BASE_BLOCKERS"] = 0
@@ -439,6 +440,11 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["XNA_BASE_RELATIONSHIPS"] = len(result.XNABaseRelationships)
 	result.DeclaredInterfaceConformance = measureDeclaredInterfaceConformance(&result, expected, actual, result.CompleteTypes)
 	result.Summary["DECLARED_INTERFACE_CONFORMANCE"] = len(result.DeclaredInterfaceConformance)
+	for _, conformance := range result.DeclaredInterfaceConformance {
+		if conformance.Verdict == "PASS_VIA_CARRIER" {
+			result.Summary["DECLARED_INTERFACE_CARRIERS"]++
+		}
+	}
 
 	result.Summary["TARGET_TYPES"] = presentTypes
 	result.Summary["TARGET_MEMBERS"] = presentMembers
@@ -1364,9 +1370,12 @@ func measureBufferUsageClosure(expected *expectedSurface, actual *actualSurface,
 // It was 40 from Foundation 13 until Foundation 48 projected the type's nine
 // configuration properties, its two static defaults, ApplyChanges and
 // ToggleFullScreen, and Foundation 49 added its five events and four protected
-// raisers. The six that remain need GraphicsDeviceInformation, which needs
-// GraphicsAdapter.
-const graphicsManagerRemainingMissing = 6
+// raisers. Foundation 75 projected the last six -- FindBestDevice,
+// CanResetDevice, RankDevices, OnPreparingDeviceSettings and the
+// PreparingDeviceSettings accessor pair -- by projecting
+// GraphicsDeviceInformation and PreparingDeviceSettingsEventArgs, so the type
+// is closed and the number is zero.
+const graphicsManagerRemainingMissing = 0
 
 func measureDisplayOrientationClosure(expected *expectedSurface, actual *actualSurface, typeDiagnostics map[string]int) displayOrientationClosure {
 	measurement := displayOrientationClosure{SourceTypes: 2, Status: "FAIL"}
@@ -3791,6 +3800,31 @@ func measureDeclaredInterfaceConformance(result *report, expected *expectedSurfa
 				measurement.PointerSatisfies = types.Implements(types.NewPointer(ownerObject), contract)
 				if measurement.PointerSatisfies {
 					measurement.Verdict = "PASS"
+					break
+				}
+				// A class that cannot satisfy its own declared interface may
+				// have a REGISTERED carrier in the interface's package -- see
+				// crossPackageInterfaceCarriers for why Go leaves no
+				// alternative. The registry does not excuse the failure; it
+				// names the object that really carries the contract, and the
+				// carrier is compiler-checked here exactly as the class was.
+				carrier, registered := crossPackageInterfaceCarrierFor(owner.XNA, mapped.XNA)
+				if registered {
+					measurement.GoCarrier = carrier.GoCarrier
+					measurement.CarrierBlocker = carrier.Blocker
+					carrierObject := lookupNamed(actual.Packages[mappedType.PackagePath], carrier.GoCarrier)
+					if carrierObject != nil {
+						measurement.CarrierSatisfies = types.Implements(types.NewPointer(carrierObject), contract)
+					}
+					if measurement.CarrierSatisfies {
+						measurement.Verdict = "PASS_VIA_CARRIER"
+						break
+					}
+					addDiagnostic(result, diagnostic{
+						Category: "INTERFACE_MAPPING_MISMATCH", XNA: owner.XNA, Go: owner.Key.String(),
+						Message: fmt.Sprintf("declared interface %s is registered to carrier %q, which does not satisfy it either",
+							mapped.XNA, carrier.GoCarrier),
+					})
 					break
 				}
 				addDiagnostic(result, diagnostic{

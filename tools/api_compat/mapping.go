@@ -243,6 +243,17 @@ var pureManagedTypes = map[string]bool{
 	// GameComponent's are.
 	"Microsoft.Xna.Framework.DrawableGameComponent": true,
 
+	// Foundation 75. GraphicsDeviceInformation is three private fields, three
+	// one-`ldfld` getters, three one-`stfld` setters, an equality chain, an XOR
+	// hash and a Clone. Nothing in its own IL reaches a device; the constructor
+	// reads GraphicsAdapter.DefaultAdapter, which is another type's member and
+	// is why exactly two of its projected operations are fallible.
+	"Microsoft.Xna.Framework.GraphicsDeviceInformation": true,
+
+	// Foundation 75. PreparingDeviceSettingsEventArgs is one private field, a
+	// constructor that stores it with no validation, and a one-`ldfld` getter.
+	"Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs": true,
+
 	// Foundation 74. LaunchParameters declares one constructor, whose body is
 	// the base Dictionary constructor and a string parse of
 	// Environment.GetCommandLineArgs(). It creates no device, starts no game,
@@ -832,6 +843,29 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"property-set|Enabled":     true,
 		"property-set|UpdateOrder": true,
 	},
+	// Foundation 75. GraphicsDeviceInformation is pure managed, so it starts
+	// from "nothing is fallible", and exactly three of its ten projected
+	// operations earn an error.
+	//
+	// The constructor's second statement is
+	// `adapter = GraphicsAdapter.DefaultAdapter`, and CNA-Go's projection of
+	// that static enumerates CNA's adapters -- so a program with no live native
+	// device cannot answer it, and the reference's own getter is equally free to
+	// throw. Clone inherits that failure because its first instruction is
+	// `newobj GraphicsDeviceInformation::.ctor()`, whose adapter it then throws
+	// away; a Clone that skipped the call would be a different method.
+	//
+	// set_Adapter is the third, and its guard is a REFERENCE BUG that is
+	// reproduced rather than corrected: it tests `this.adapter`, the field it is
+	// about to overwrite, and not the `value` it was given. The other five
+	// accessors are one `ldfld` or one `stfld` each and are deliberately absent,
+	// as are Equals and GetHashCode.
+	"Microsoft.Xna.Framework.GraphicsDeviceInformation": {
+		"constructor|.ctor":    true,
+		"method|Clone":         true,
+		"property-set|Adapter": true,
+	},
+
 	// Foundation 74. LaunchParameters is pure managed, so it starts from
 	// "nothing is fallible", and exactly two of its fifteen projected
 	// operations earn an error.
@@ -2085,6 +2119,26 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 	// has nothing to detect either.
 	if inner, ok := genericTypeArgument(raw, "System.Collections.Generic.List`1+Enumerator["); ok {
 		return frameworkQualified(owner, "Iterator") + "[" + mapType(s, byIdentity, owner, inner) + "]"
+	}
+	// Foundation 75. System.Collections.Generic.List<T> ITSELF, which the
+	// pinned contract carries at exactly ONE public signature position in the
+	// whole profile: GraphicsDeviceManager::RankDevices(List<GraphicsDeviceInformation>).
+	//
+	// The settled rule for a BCL type at a signature position is that it takes
+	// the standard-library Go type whose ROLE it is, chosen from what the
+	// profile's positions MEASURABLY do with it -- the rule that made
+	// System.IO.Stream an io.Reader because every stream position in the
+	// profile is read. RankDevices' body is `foundDevices.Sort(comparer)`, so
+	// the one position sorts the list in place and reads it by index, and a Go
+	// slice does exactly that.
+	//
+	// A slice cannot grow or shrink through the callee and a List<T> can. No
+	// projected member in the profile does: the private AddDevices that appends
+	// is not public surface. That difference is the reason this is a MEASURED
+	// mapping of one position rather than a general claim that List<T> is a
+	// slice.
+	if inner, ok := genericTypeArgument(raw, "System.Collections.Generic.List`1["); ok {
+		return "[]" + mapType(s, byIdentity, owner, inner)
 	}
 	// System.EventHandler<T> is the delegate every one of the 49 public CLR
 	// events in the profile declares. The generic argument is mapped exactly:
@@ -4502,4 +4556,70 @@ func inheritedMemberIsPublic(m contractMember) bool {
 	default:
 		return m.Access == "public"
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 75 — cross-package interface carriers.
+// ---------------------------------------------------------------------------
+
+// crossPackageInterfaceCarrier records one CLR interface a class DECLARES whose
+// Go projection the class itself cannot satisfy, because the settled
+// cross-package cycle rule already relocated one of the interface's members to
+// a descendant package.
+//
+// Go has no way out of this. An interface method's signature is part of the
+// interface, so an interface declared in the descendant package can name a
+// descendant type in a method the ancestor class would have to implement -- and
+// the ancestor package cannot name that type, because the descendant package
+// imports it. The relocation rule handles a CLASS member by moving it; an
+// INTERFACE member has nowhere to move to.
+//
+// The conformance is therefore carried by a named adapter in the interface's
+// own package, which wraps the class. That is not a workaround invented here:
+// it is what the projection already does, and it is what a consumer resolving
+// the service out of the game's service container actually receives. The
+// registry exists so the claim is MEASURED -- the verifier checks that the
+// named carrier really does satisfy the interface -- rather than the class's
+// failure being silently tolerated.
+type crossPackageInterfaceCarrier struct {
+	// Owner is the XNA class that declares the interface.
+	Owner string
+	// CLRInterface is the interface identity.
+	CLRInterface string
+	// GoCarrier is the Go type in the interface's package that satisfies it. It
+	// is unexported, because nothing outside the module needs to name it.
+	GoCarrier string
+	// Blocker is the exact interface member the class cannot declare.
+	Blocker string
+	// Rationale is why the carrier is the honest answer rather than a hole.
+	Rationale string
+}
+
+// crossPackageInterfaceCarriers is the closed list. A class that fails its
+// declared interface without an entry here is INTERFACE_MAPPING_MISMATCH, so
+// the escape hatch cannot be used by accident.
+var crossPackageInterfaceCarriers = []crossPackageInterfaceCarrier{
+	{
+		Owner:        "Microsoft.Xna.Framework.GraphicsDeviceManager",
+		CLRInterface: "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
+		GoCarrier:    "managerDeviceService",
+		Blocker:      "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService::GraphicsDevice",
+		Rationale: "the interface's one non-event member returns Microsoft.Xna.Framework.Graphics.GraphicsDevice, " +
+			"and GraphicsDeviceManager is declared in Microsoft.Xna.Framework, which the Graphics package imports. " +
+			"The cross-package rule relocates such a member of a CLASS to the descendant package; an INTERFACE member " +
+			"has nowhere to go, so the Graphics package carries the conformance in managerDeviceService, which is the " +
+			"object the manager actually publishes into the game's service container and therefore the object a " +
+			"consumer of IGraphicsDeviceService really holds",
+	},
+}
+
+// crossPackageInterfaceCarrierFor finds the registered carrier for one
+// class/interface pair.
+func crossPackageInterfaceCarrierFor(owner, clrInterface string) (crossPackageInterfaceCarrier, bool) {
+	for _, entry := range crossPackageInterfaceCarriers {
+		if entry.Owner == owner && entry.CLRInterface == clrInterface {
+			return entry, true
+		}
+	}
+	return crossPackageInterfaceCarrier{}, false
 }

@@ -1587,6 +1587,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 72 | the Effect cluster, and the draws it unblocked | `foundation-72-effect-cluster-evidence.md` |
 | 73 | the rest of GraphicsDevice, and the profile's first pixels | `foundation-73-presentation-evidence.md` |
 | 74 | the Dictionary base, LaunchParameters, and a generated roadmap | `foundation-74-dictionary-base-evidence.md` |
+| 75 | GraphicsDeviceInformation, and the rest of GraphicsDeviceManager | `foundation-75-device-selection-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1652,6 +1653,29 @@ already written down rather than a new one.
 OWNED from the public constructor -- and a destroyed OWNED device must report
 itself disposed rather than falling back to the borrowed path and answering as
 the running game's device.
+
+**A CLR interface a class declares that Go cannot put on the class has a
+REGISTERED CARRIER, compiler-checked** (75). The cross-package rule relocates a
+class member whose type belongs to a descendant package; an INTERFACE member has
+nowhere to move to, because its signature is part of the interface. The
+conformance is then carried by a named adapter in the interface's own package --
+the object the class really publishes -- and `crossPackageInterfaceCarriers`
+records the pair, names the exact blocking member, and makes the verifier check
+that the carrier satisfies the interface. A class that fails without an entry is
+still `INTERFACE_MAPPING_MISMATCH`.
+
+**A private helper whose every operand is a descendant-package type lives in
+that package** (75). `GraphicsDeviceManager`'s AddDevices and its device
+comparer are `private` in the reference and are projected in the Graphics
+package, reached through `internal/servicebridge`. What stays on the manager is
+what the reference DECLARES there: FindBestDevice, RankDevices, CanResetDevice,
+the raise helper and the event.
+
+**A reference defect is reproduced, not corrected** (75).
+`GraphicsDeviceInformation::set_Adapter` guards on `this.adapter` rather than on
+`value`, so assigning null succeeds and the refusal fires only when the current
+adapter is already null. Correcting it would make CNA-Go refuse an assignment
+the reference accepts, which is a different API.
 
 **An exclusion of a base member states WHICH KIND of exclusion it is** (74).
 `NOT_PUBLIC_SURFACE` -- a constructor, a `family` member, a private explicit

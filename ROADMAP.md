@@ -18,14 +18,14 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS              107
-MISSING_TYPE                   100
-MISSING_MEMBER                   7
-COMPLETE_TYPES                 155
-PARTIAL_TYPES                    2
+TOTAL_DIAGNOSTICS               99
+MISSING_TYPE                    98
+MISSING_MEMBER                   1
+COMPLETE_TYPES                 158
+PARTIAL_TYPES                    1
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL        100
+GLOBAL_ACTIONABLE_LOCAL         98
 GLOBAL_UNREVIEWED                0
 BOUND_FUNCTIONS                230
 MANIFEST_LAYOUT_AGREEMENTS     457
@@ -58,15 +58,19 @@ Foundation 74 composed `System.Collections.Generic.Dictionary<K,V>` and with it
 projected `LaunchParameters` and `Game.LaunchParameters`. It is also the
 milestone that made this file's numbers generated rather than remembered.
 
-## The 7 missing members
+Foundation 75 projected `GraphicsDeviceInformation` and
+`PreparingDeviceSettingsEventArgs` and closed **`GraphicsDeviceManager`**: the
+device enumeration, the eight-step ranking policy, `CanResetDevice` and the
+`PreparingDeviceSettings` event are all projected.
 
-`GraphicsDeviceManager` is now the profile's only partial type besides `Game`,
-and both are blocked on a *type* rather than on CNA.
+## The last missing member
 
-| type | members | what it needs first |
+`Game` is now the profile's ONLY partial type, and its one missing member is
+blocked on a *type* rather than on CNA.
+
+| type | member | what it needs first |
 | --- | --- | --- |
 | `Game` | `ShowMissingRequirementMessage(Exception)` | a minimal public `System.Exception` projection; the method itself is `family` and its reference body forwards to the host |
-| `GraphicsDeviceManager` | `FindBestDevice`, `CanResetDevice`, `RankDevices`, `OnPreparingDeviceSettings`, `PreparingDeviceSettings` add/remove | `GraphicsDeviceInformation` and `PreparingDeviceSettingsEventArgs` |
 
 ## What is left, and why
 
@@ -81,16 +85,14 @@ and it is zero.
 The suggested order is dependency order, which is the order the families appear
 in that registry:
 
-1. **`GraphicsDeviceInformation` + `PreparingDeviceSettingsEventArgs`** →
-   closes `GraphicsDeviceManager`.
-2. **A minimal `System.Exception` signature projection** → closes `Game`, and
+1. **A minimal `System.Exception` signature projection** → closes `Game`, and
    unblocks all eight XNA exception types at once.
-3. **The vertex structs**, which unblock realistic `DrawUser*` and the Model
+2. **The vertex structs**, which unblock realistic `DrawUser*` and the Model
    family.
-4. **The stock effects**, which compose the already complete `Effect`.
-5. **`SoundEffect` / `SoundEffectInstance`**, which also grow
+3. **The stock effects**, which compose the already complete `Effect`.
+4. **`SoundEffect` / `SoundEffectInstance`**, which also grow
    `ContentManager.Load<T>`'s closed set.
-6. **The Model family**, then **Input**, **Storage**, **Media/XACT**, the
+5. **The Model family**, then **Input**, **Storage**, **Media/XACT**, the
    **content plumbing** and the **Design converters**.
 
 **The dynamic-buffer note.** `DynamicVertexBuffer` and `DynamicIndexBuffer`

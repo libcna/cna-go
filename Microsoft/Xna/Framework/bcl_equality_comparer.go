@@ -1,6 +1,9 @@
 package framework
 
-import "unicode/utf16"
+import (
+	"reflect"
+	"unicode/utf16"
+)
 
 // This file is CNA-Go language support, not XNA surface.
 //
@@ -125,4 +128,39 @@ func stringHashCode(value string) int32 {
 		length -= 4
 	}
 	return hash1 + hash2*0x5d588b65
+}
+
+// referenceIdentityHashCode projects System.Object::GetHashCode() for a CLR
+// reference.
+//
+// The CLR derives that value from the object's sync-block index, which is
+// unspecified, differs between runs of the same program, and is documented as
+// such. It is therefore not reproducible by construction -- not by CNA-Go, and
+// not by the reference against itself. What IS part of the contract is the two
+// properties every identity hash has: it is stable for the object's lifetime,
+// and two distinct live objects usually differ. This supplies both from the Go
+// pointer the reference facade already is.
+//
+// A nil reference answers zero. The CLR would throw NullReferenceException
+// there, because `null.GetHashCode()` is a virtual call on nothing; the one
+// caller in the profile -- GraphicsDeviceInformation::GetHashCode -- is
+// infallible in the contract, so zero is the answer rather than a panic from
+// inside a hash.
+func referenceIdentityHashCode(value any) int32 {
+	if value == nil {
+		return 0
+	}
+	reflected := reflect.ValueOf(value)
+	switch reflected.Kind() {
+	case reflect.Pointer, reflect.UnsafePointer, reflect.Map, reflect.Chan, reflect.Func, reflect.Slice:
+		if reflected.IsNil() {
+			return 0
+		}
+		address := uint64(reflected.Pointer())
+		return int32(uint32(address>>4) ^ uint32(address>>32))
+	default:
+		// A value type reached this position, which no CLR reference can be.
+		// Zero is the honest answer: there is no object identity to hash.
+		return 0
+	}
 }

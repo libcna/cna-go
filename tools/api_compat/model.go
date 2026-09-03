@@ -544,7 +544,14 @@ type declaredInterfaceConformance struct {
 	GoInterface  string `json:"goInterface"`
 	// PointerSatisfies is go/types' answer for the pointer method set, which
 	// is the method set of the facade CNA-Go projects a CLR class as.
-	PointerSatisfies bool   `json:"pointerSatisfies"`
+	PointerSatisfies bool `json:"pointerSatisfies"`
+	// GoCarrier is the descendant-package adapter that satisfies the interface
+	// when the class itself cannot, and CarrierSatisfies is go/types' answer for
+	// it. Both are empty for the ordinary case, where the class satisfies its
+	// own declared interface.
+	GoCarrier        string `json:"goCarrier,omitempty"`
+	CarrierSatisfies bool   `json:"carrierSatisfies,omitempty"`
+	CarrierBlocker   string `json:"carrierBlocker,omitempty"`
 	Verdict          string `json:"verdict"`
 }
 

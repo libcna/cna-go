@@ -59,6 +59,20 @@ type claimedString struct {
 // that is not here is a verifier failure, and so is an entry whose value is not
 // in its assembly.
 var registry = []claimedString{
+	// Foundation 75. GraphicsDeviceInformation::set_Adapter, and the two
+	// NoSuitableGraphicsDeviceException messages FindBestPlatformDevice throws.
+	// NoCompatibleDevices carries the GraphicsProfile through String.Format's
+	// {0}, and its line breaks are CRLF.
+	{Key: "NoNullUseDefaultAdapter", Assembly: "Microsoft.Xna.Framework.Game.dll",
+		Value: "Adapter cannot be null.  Try using GraphicsAdapter.DefaultAdapter instead."},
+	{Key: "NoCompatibleDevices", Assembly: "Microsoft.Xna.Framework.Game.dll",
+		Value: "Could not find a Direct3D device that supports the XNA Framework %s profile.\r\n\r\n" +
+			"Verify that a suitable graphics device is installed.\r\n\r\n" +
+			"Make sure the desktop is not locked, and that no other application is running in full screen mode.\r\n\r\n" +
+			"Avoid running under Remote Desktop or as a Windows service.\r\n\r\n" +
+			"Check the display properties to make sure hardware acceleration is set to Full.", Placeholders: true},
+	{Key: "NoCompatibleDevicesAfterRanking", Assembly: "Microsoft.Xna.Framework.Game.dll",
+		Value: "The process of ranking devices removed all compatible devices."},
 	{Key: "MissingGraphicsDeviceService", Assembly: "Microsoft.Xna.Framework.Game.dll",
 		Value: "Drawable components require a graphics device service in the game service container."},
 	{Key: "NoGraphicsDeviceService", Assembly: "Microsoft.Xna.Framework.Game.dll",
@@ -207,6 +221,41 @@ var registry = []claimedString{
 		Value: "Game cannot be null."},
 	{Key: "GraphicsDeviceManagerAlreadyPresent", Assembly: "Microsoft.Xna.Framework.Game.dll",
 		Value: "A graphics device manager is already registered.  The graphics device manager cannot be changed once it is set."},
+}
+
+// constantStringValue folds one constant expression to its string value.
+//
+// It handles a `+` chain of string literals as well as a single one, because a
+// long Microsoft message is spelled across several source lines and would
+// otherwise be invisible to this scan -- which is the one way an unverified
+// claim could get in. The messageShape filter then applies to the WHOLE folded
+// sentence, so a multi-line message is checked exactly as a one-line one is.
+func constantStringValue(expression ast.Expr) (string, bool) {
+	switch typed := expression.(type) {
+	case *ast.BasicLit:
+		if typed.Kind != token.STRING {
+			return "", false
+		}
+		text, err := strconv.Unquote(typed.Value)
+		if err != nil {
+			return "", false
+		}
+		return text, true
+	case *ast.BinaryExpr:
+		if typed.Op != token.ADD {
+			return "", false
+		}
+		left, leftOK := constantStringValue(typed.X)
+		right, rightOK := constantStringValue(typed.Y)
+		if !leftOK || !rightOK {
+			return "", false
+		}
+		return left + right, true
+	case *ast.ParenExpr:
+		return constantStringValue(typed.X)
+	default:
+		return "", false
+	}
 }
 
 // messageShape is what a claimed reference message looks like in the source: a
@@ -364,12 +413,8 @@ func scanMessageConstants(root string) ([]string, error) {
 						continue
 					}
 					for _, expression := range value.Values {
-						literal, ok := expression.(*ast.BasicLit)
-						if !ok || literal.Kind != token.STRING {
-							continue
-						}
-						text, unquoteErr := strconv.Unquote(literal.Value)
-						if unquoteErr != nil {
+						text, ok := constantStringValue(expression)
+						if !ok {
 							continue
 						}
 						if messageShape.MatchString(text) {

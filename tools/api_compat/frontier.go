@@ -107,11 +107,9 @@ var frontierFamilies = []frontierFamily{
 	{
 		Name:           "Root types",
 		Classification: frontierActionableLocal,
-		Note:           "GraphicsDeviceInformation and PreparingDeviceSettingsEventArgs are the last two blockers of GraphicsDeviceManager's six missing members; TitleContainer and FrameworkDispatcher are small statics that fold into whichever milestone first needs them",
+		Note:           "TitleContainer and FrameworkDispatcher are small statics that fold into whichever milestone first needs them; Foundation 75 closed the other two root types, GraphicsDeviceInformation and PreparingDeviceSettingsEventArgs, and with them GraphicsDeviceManager",
 		Types: []string{
 			"Microsoft.Xna.Framework.FrameworkDispatcher",
-			"Microsoft.Xna.Framework.GraphicsDeviceInformation",
-			"Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
 			"Microsoft.Xna.Framework.TitleContainer",
 		},
 	},
