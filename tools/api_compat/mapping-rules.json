@@ -378,6 +378,18 @@
     "registeredOwners": {
       "Microsoft.Xna.Framework.GraphicsDeviceManager": [
         "Microsoft.Xna.Framework.IGraphicsDeviceManager"
+      ],
+      "Microsoft.Xna.Framework.Graphics.VertexPositionColor": [
+        "Microsoft.Xna.Framework.Graphics.IVertexType"
+      ],
+      "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture": [
+        "Microsoft.Xna.Framework.Graphics.IVertexType"
+      ],
+      "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture": [
+        "Microsoft.Xna.Framework.Graphics.IVertexType"
+      ],
+      "Microsoft.Xna.Framework.Graphics.VertexPositionTexture": [
+        "Microsoft.Xna.Framework.Graphics.IVertexType"
       ]
     },
     "deliberatelyUnregistered": {

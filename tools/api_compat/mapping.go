@@ -243,6 +243,16 @@ var pureManagedTypes = map[string]bool{
 	// GameComponent's are.
 	"Microsoft.Xna.Framework.DrawableGameComponent": true,
 
+	// Foundation 77. The four stock vertex structs are public fields, a
+	// storing constructor, a static readonly VertexDeclaration built from a
+	// literal element table, a SmartGetHashCode, a String.Format ToString and
+	// three equality members. Nothing in any of them reaches a device: even the
+	// static declaration is managed validation over a literal array.
+	"Microsoft.Xna.Framework.Graphics.VertexPositionColor":         true,
+	"Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture":  true,
+	"Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture": true,
+	"Microsoft.Xna.Framework.Graphics.VertexPositionTexture":       true,
+
 	// Foundation 75. GraphicsDeviceInformation is three private fields, three
 	// one-`ldfld` getters, three one-`stfld` setters, an equality chain, an XOR
 	// hash and a Clone. Nothing in its own IL reaches a device; the constructor
@@ -2435,6 +2445,24 @@ var explicitInterfaceWitnessOwners = map[string]map[string]bool{
 	// Services and calls all three once per frame.
 	"Microsoft.Xna.Framework.GraphicsDeviceManager": {
 		"Microsoft.Xna.Framework.IGraphicsDeviceManager": true,
+	},
+	// Foundation 77. Each of the four stock vertex structs implements
+	// IVertexType::get_VertexDeclaration `private hidebysig newslot virtual
+	// final` with an `.override`, so the contract's public set has none of them
+	// -- and every one of them CAN declare the method in Go, because
+	// VertexDeclaration is a type in their own package. Both halves of the
+	// witness rule hold, unlike GraphicsDeviceManager's other interface.
+	"Microsoft.Xna.Framework.Graphics.VertexPositionColor": {
+		"Microsoft.Xna.Framework.Graphics.IVertexType": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture": {
+		"Microsoft.Xna.Framework.Graphics.IVertexType": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture": {
+		"Microsoft.Xna.Framework.Graphics.IVertexType": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.VertexPositionTexture": {
+		"Microsoft.Xna.Framework.Graphics.IVertexType": true,
 	},
 }
 

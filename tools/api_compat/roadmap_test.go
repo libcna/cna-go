@@ -102,7 +102,7 @@ func TestRoadmapStalenessGuardRejectsAStaleNumber(t *testing.T) {
 
 	mutations := map[string]func(string) string{
 		"stale MISSING_TYPE": func(s string) string {
-			return strings.Replace(s, "MISSING_TYPE                    98", "MISSING_TYPE                    97", 1)
+			return strings.Replace(s, "MISSING_TYPE                    94", "MISSING_TYPE                    93", 1)
 		},
 		"stale BOUND_FUNCTIONS": func(s string) string {
 			return strings.Replace(s, "BOUND_FUNCTIONS                230", "BOUND_FUNCTIONS                229", 1)

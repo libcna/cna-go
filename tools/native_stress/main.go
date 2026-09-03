@@ -692,7 +692,7 @@ func runParent() (counters, error) {
 			total.OwnedDeviceCreations, total.OwnedDeviceDisposalChecks)
 	}
 
-	if total.UserPrimitiveDraws+total.UserPrimitiveDrawRefusals != total.VertexBufferCycles*6 ||
+	if total.UserPrimitiveDraws+total.UserPrimitiveDrawRefusals != total.VertexBufferCycles*userPrimitiveSubmissions ||
 		total.UserPrimitiveGuardChecks != total.VertexBufferCycles {
 		return total, fmt.Errorf("user-primitive draws %d, refusals %d and guard proofs %d do not account for %d cycles",
 			total.UserPrimitiveDraws, total.UserPrimitiveDrawRefusals,
@@ -1029,9 +1029,13 @@ func runChild(scenario string, index int) error {
 		if game.result.VertexBufferDraws+game.result.VertexBufferDrawRefusals != 1 {
 			return errors.New("the post-apply draw reported neither a success nor a refusal")
 		}
-		if game.result.UserPrimitiveDraws+game.result.UserPrimitiveDrawRefusals != 6 {
-			return fmt.Errorf("user-primitive draws %d and refusals %d do not account for six overloads",
-				game.result.UserPrimitiveDraws, game.result.UserPrimitiveDrawRefusals)
+		// Eleven submissions, each with exactly one outcome: the six overloads
+		// over this file's stressVertex, plus Foundation 77's five over the
+		// profile's own stock vertex types -- one per type, and one with a
+		// non-zero vertexOffset.
+		if game.result.UserPrimitiveDraws+game.result.UserPrimitiveDrawRefusals != userPrimitiveSubmissions {
+			return fmt.Errorf("user-primitive draws %d and refusals %d do not account for the %d submissions",
+				game.result.UserPrimitiveDraws, game.result.UserPrimitiveDrawRefusals, userPrimitiveSubmissions)
 		}
 		if game.result.UserPrimitiveGuardChecks == 0 {
 			return errors.New("the user-primitive guards did not run")
@@ -4482,6 +4486,37 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 			return graphics.GraphicsDeviceDrawUserIndexedPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32AndSliceOfInt32AndInt32AndInt32AndVertexDeclaration(
 				device, graphics.PrimitiveTypeTriangleList, userVertices, 0, 3, userIndices32, 0, 1, userDeclaration)
 		},
+		// Foundation 77. The same six draws again, but over the profile's own
+		// four stock vertex types rather than this file's stressVertex.
+		//
+		// The point is not a second draw. It is that FromType resolves each
+		// type's STATIC VertexDeclaration through its IVertexType witness, and
+		// that CNA accepts the element table the reference's own `.cctor`
+		// builds -- offsets 0/12, 0/12/16 and 0/12/24 -- rather than one this
+		// repository computed from a Go struct layout.
+		"stock VertexPositionColor": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, stockPositionColorTriangle(), 0, 1)
+		},
+		"stock VertexPositionTexture": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, stockPositionTextureTriangle(), 0, 1)
+		},
+		"stock VertexPositionColorTexture": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, stockPositionColorTextureTriangle(), 0, 1)
+		},
+		"stock VertexPositionNormalTexture": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, stockPositionNormalTextureTriangle(), 0, 1)
+		},
+		// A NON-ZERO vertexOffset, which the six above never exercise: four
+		// vertices, one triangle, starting at index one. A projection that
+		// ignored the offset would submit the wrong three.
+		"stock offset triangle": func() error {
+			return graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32(
+				device, graphics.PrimitiveTypeTriangleList, stockPositionColorQuad(), 1, 1)
+		},
 	} {
 		if err := submit(); err != nil {
 			if !isNativeRefusal(err) {
@@ -5413,6 +5448,68 @@ func (g *stressGame) exercisePresentation() error {
 	}
 	return g.exerciseOwnedDevice(device)
 }
+
+// The four stock-vertex fixtures, and the one four-vertex array the non-zero
+// vertexOffset draw windows into. Each is built through the type's projected
+// constructor, so the vertex data CNA receives is what a consumer would send.
+
+func stockPositionColorTriangle() []graphics.VertexPositionColor {
+	return []graphics.VertexPositionColor{
+		graphics.NewVertexPositionColor(framework.NewVector3BySingleAndSingleAndSingle(0, 0, 0),
+			framework.NewColorByInt32AndInt32AndInt32(255, 0, 0)),
+		graphics.NewVertexPositionColor(framework.NewVector3BySingleAndSingleAndSingle(1, 0, 0),
+			framework.NewColorByInt32AndInt32AndInt32(0, 255, 0)),
+		graphics.NewVertexPositionColor(framework.NewVector3BySingleAndSingleAndSingle(0, 1, 0),
+			framework.NewColorByInt32AndInt32AndInt32(0, 0, 255)),
+	}
+}
+
+func stockPositionColorQuad() []graphics.VertexPositionColor {
+	triangle := stockPositionColorTriangle()
+	return append(triangle, graphics.NewVertexPositionColor(
+		framework.NewVector3BySingleAndSingleAndSingle(1, 1, 0),
+		framework.NewColorByInt32AndInt32AndInt32(255, 255, 0)))
+}
+
+func stockPositionTextureTriangle() []graphics.VertexPositionTexture {
+	return []graphics.VertexPositionTexture{
+		graphics.NewVertexPositionTexture(framework.NewVector3BySingleAndSingleAndSingle(0, 0, 0),
+			framework.NewVector2BySingleAndSingle(0, 0)),
+		graphics.NewVertexPositionTexture(framework.NewVector3BySingleAndSingleAndSingle(1, 0, 0),
+			framework.NewVector2BySingleAndSingle(1, 0)),
+		graphics.NewVertexPositionTexture(framework.NewVector3BySingleAndSingleAndSingle(0, 1, 0),
+			framework.NewVector2BySingleAndSingle(0, 1)),
+	}
+}
+
+func stockPositionColorTextureTriangle() []graphics.VertexPositionColorTexture {
+	return []graphics.VertexPositionColorTexture{
+		graphics.NewVertexPositionColorTexture(framework.NewVector3BySingleAndSingleAndSingle(0, 0, 0),
+			framework.NewColorByInt32AndInt32AndInt32(255, 0, 0), framework.NewVector2BySingleAndSingle(0, 0)),
+		graphics.NewVertexPositionColorTexture(framework.NewVector3BySingleAndSingleAndSingle(1, 0, 0),
+			framework.NewColorByInt32AndInt32AndInt32(0, 255, 0), framework.NewVector2BySingleAndSingle(1, 0)),
+		graphics.NewVertexPositionColorTexture(framework.NewVector3BySingleAndSingleAndSingle(0, 1, 0),
+			framework.NewColorByInt32AndInt32AndInt32(0, 0, 255), framework.NewVector2BySingleAndSingle(0, 1)),
+	}
+}
+
+func stockPositionNormalTextureTriangle() []graphics.VertexPositionNormalTexture {
+	up := framework.NewVector3BySingleAndSingleAndSingle(0, 0, 1)
+	return []graphics.VertexPositionNormalTexture{
+		graphics.NewVertexPositionNormalTexture(framework.NewVector3BySingleAndSingleAndSingle(0, 0, 0),
+			up, framework.NewVector2BySingleAndSingle(0, 0)),
+		graphics.NewVertexPositionNormalTexture(framework.NewVector3BySingleAndSingleAndSingle(1, 0, 0),
+			up, framework.NewVector2BySingleAndSingle(1, 0)),
+		graphics.NewVertexPositionNormalTexture(framework.NewVector3BySingleAndSingleAndSingle(0, 1, 0),
+			up, framework.NewVector2BySingleAndSingle(0, 1)),
+	}
+}
+
+// userPrimitiveSubmissions is how many user-primitive draws one vertex-buffer
+// cycle makes: the six overloads over this file's own vertex type, plus one per
+// stock vertex type and one with a non-zero vertexOffset. It is asserted rather
+// than counted so an accidentally deleted submission is a failure.
+const userPrimitiveSubmissions = 11
 
 // checkBackBufferGuardIsReachable proves the one guard GetBackBufferData carries
 // that the reference carries too, without needing a renderer that can read back.

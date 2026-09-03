@@ -114,17 +114,6 @@ var frontierFamilies = []frontierFamily{
 		},
 	},
 	{
-		Name:           "Vertex structs",
-		Classification: frontierActionableLocal,
-		Note:           "four small value types over the already projected IVertexType and VertexDeclaration; they unblock realistic DrawUserPrimitives and the Model family",
-		Types: []string{
-			"Microsoft.Xna.Framework.Graphics.VertexPositionColor",
-			"Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
-			"Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
-			"Microsoft.Xna.Framework.Graphics.VertexPositionTexture",
-		},
-	},
-	{
 		Name:           "Graphics leftovers",
 		Classification: frontierActionableLocal,
 		Note:           "OcclusionQuery has ~12 CNA routes; the two dynamic buffers have NO dedicated routes and the hypothesis that the ordinary buffer routes plus a BufferUsage implement them must be probed before anything is bound",

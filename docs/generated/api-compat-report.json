@@ -16,7 +16,7 @@
     "BCL_INHERITED_PUBLIC_MEMBERS": 24,
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
-    "COMPLETE_TYPES": 159,
+    "COMPLETE_TYPES": 163,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 5,
     "ENUM_VALUE_MISMATCH": 0,
@@ -26,7 +26,7 @@
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 15,
+    "FRONTIER_FAMILIES": 14,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -41,7 +41,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 98,
+    "GLOBAL_ACTIONABLE_LOCAL": 94,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -52,13 +52,13 @@
     "GLOBAL_LANGUAGE_MAPPING_LIMITATION": 0,
     "GLOBAL_UNREVIEWED": 0,
     "INTERFACE_MAPPING_MISMATCH": 0,
-    "INTERFACE_WITNESS_PROJECTIONS": 28,
+    "INTERFACE_WITNESS_PROJECTIONS": 32,
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 98,
-    "MISSING_TYPES": 98,
+    "MISSING_TYPE": 94,
+    "MISSING_TYPES": 94,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -72,9 +72,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2549,
-    "TARGET_TYPES": 159,
-    "TOTAL_DIAGNOSTICS": 98,
+    "TARGET_MEMBERS": 2587,
+    "TARGET_TYPES": 163,
+    "TOTAL_DIAGNOSTICS": 94,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -494,30 +494,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:VertexPositionColor",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:VertexPositionColorTexture",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:VertexPositionNormalTexture",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.VertexPositionTexture",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:VertexPositionTexture",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.GamePad",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePad",
       "message": "mapped Go type is absent"
@@ -806,6 +782,10 @@
     "Microsoft.Xna.Framework.Graphics.VertexElement",
     "Microsoft.Xna.Framework.Graphics.VertexElementFormat",
     "Microsoft.Xna.Framework.Graphics.VertexElementUsage",
+    "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
+    "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
+    "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
+    "Microsoft.Xna.Framework.Graphics.VertexPositionTexture",
     "Microsoft.Xna.Framework.Graphics.Viewport",
     "Microsoft.Xna.Framework.GraphicsDeviceInformation",
     "Microsoft.Xna.Framework.GraphicsDeviceManager",
@@ -919,10 +899,6 @@
     "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
     "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
     "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
-    "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
-    "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
-    "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
-    "Microsoft.Xna.Framework.Graphics.VertexPositionTexture",
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadCapabilities",
     "Microsoft.Xna.Framework.Input.Mouse",
@@ -1177,6 +1153,42 @@
       "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
       "reason": "exported Go method required to witness an explicit CLR interface implementation",
       "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
+      "member": "VertexDeclaration",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.IVertexType",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.IVertexType::VertexDeclaration()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "VertexDeclaration() *VertexDeclaration",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
+      "member": "VertexDeclaration",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.IVertexType",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.IVertexType::VertexDeclaration()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "VertexDeclaration() *VertexDeclaration",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
+      "member": "VertexDeclaration",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.IVertexType",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.IVertexType::VertexDeclaration()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "VertexDeclaration() *VertexDeclaration",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.VertexPositionTexture",
+      "member": "VertexDeclaration",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.IVertexType",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.IVertexType::VertexDeclaration()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "VertexDeclaration() *VertexDeclaration",
       "status": "PASS"
     },
     {
@@ -6979,7 +6991,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 56,
-      "projectedTypes": 44,
+      "projectedTypes": 48,
       "exportedEmbeddings": 0,
       "rationale": "the CLR value root; the struct projection already carries value semantics",
       "verdict": "PASS"
@@ -6995,19 +7007,6 @@
         "Microsoft.Xna.Framework.TitleContainer"
       ],
       "remaining": 2,
-      "verdict": "PASS"
-    },
-    {
-      "family": "Vertex structs",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "four small value types over the already projected IVertexType and VertexDeclaration; they unblock realistic DrawUserPrimitives and the Model family",
-      "types": [
-        "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
-        "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
-        "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
-        "Microsoft.Xna.Framework.Graphics.VertexPositionTexture"
-      ],
-      "remaining": 4,
       "verdict": "PASS"
     },
     {
@@ -10219,7 +10218,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "dec4d2ce14bfb9319e8b35ecb1f20eb824b4ac1ead254e7d6d922c515f509db3",
+    "mappingSha256": "1a1af5ee06df3fb57fec8778f99fcc13f3f3faa419f362059c92267d9287327c",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

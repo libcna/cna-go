@@ -235,11 +235,12 @@ func TestPackedVectorMappedContract(t *testing.T) {
 		sourceTotal += expected.source
 		mappedTotal += expected.mapped
 	}
-	// The witness total is 28 rather than 25 from Foundation 49: the
-	// PackedVector family contributes the same 25, and GraphicsDeviceManager
+	// The witness total is 32 rather than 25 from Foundation 49: the
+	// PackedVector family contributes the same 25, GraphicsDeviceManager
 	// contributes the three IGraphicsDeviceManager operations the reference
-	// implements explicitly.
-	if sourceTotal != 171 || mappedTotal != 189 || len(surface.InterfaceWitnesses) != 28 {
+	// implements explicitly, and Foundation 77's four stock vertex structs
+	// contribute one IVertexType::get_VertexDeclaration each.
+	if sourceTotal != 171 || mappedTotal != 189 || len(surface.InterfaceWitnesses) != 32 {
 		t.Fatalf("PackedVector totals = source %d mapped %d witnesses %d", sourceTotal, mappedTotal, len(surface.InterfaceWitnesses))
 	}
 
@@ -935,7 +936,9 @@ func TestPackedVectorCurrentSurfaceAndConformance(t *testing.T) {
 		t.Fatalf("type errors: %v", actual.TypeErrors)
 	}
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	if result.Summary["INTERFACE_WITNESS_PROJECTIONS"] != 28 || result.Summary["PACKFROMVECTOR4_WITNESS_PROJECTIONS"] != 17 || result.Summary["TOVECTOR4_WITNESS_PROJECTIONS"] != 8 {
+	// 32, not 28: Foundation 77's four vertex structs each witness
+	// IVertexType::get_VertexDeclaration.
+	if result.Summary["INTERFACE_WITNESS_PROJECTIONS"] != 32 || result.Summary["PACKFROMVECTOR4_WITNESS_PROJECTIONS"] != 17 || result.Summary["TOVECTOR4_WITNESS_PROJECTIONS"] != 8 {
 		t.Fatalf("witness counters = %v", result.Summary)
 	}
 	if len(result.PackedInterfaceConformance) != 17 || len(result.PackedVectorTypeMeasurements) != 19 {

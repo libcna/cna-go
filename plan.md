@@ -1589,6 +1589,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 74 | the Dictionary base, LaunchParameters, and a generated roadmap | `foundation-74-dictionary-base-evidence.md` |
 | 75 | GraphicsDeviceInformation, and the rest of GraphicsDeviceManager | `foundation-75-device-selection-evidence.md` |
 | 76 | System.Exception, and the profile's last missing member | `foundation-76-exception-projection-evidence.md` |
+| 77 | the four stock vertex structs | `foundation-77-vertex-structs-evidence.md` |
 
 ### The rules these milestones settled
 

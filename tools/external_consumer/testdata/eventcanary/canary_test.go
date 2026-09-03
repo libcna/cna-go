@@ -4006,3 +4006,60 @@ func TestExceptionSurfaceIsUsableFromOutsideTheModule(t *testing.T) {
 		t.Fatal("the reference interface could not be asserted back")
 	}
 }
+
+// TestStockVertexTypesAreUsableFromOutsideTheModule is Foundation 77's external
+// gate: the four vertex structs, their constructors, their static
+// VertexDeclarations, their equality operators and their IVertexType witnesses.
+func TestStockVertexTypesAreUsableFromOutsideTheModule(t *testing.T) {
+	position := framework.NewVector3BySingleAndSingleAndSingle(1, 2, 3)
+	red := framework.NewColorByInt32AndInt32AndInt32(255, 0, 0)
+	coordinate := framework.NewVector2BySingleAndSingle(0.25, 0.5)
+
+	coloured := graphics.NewVertexPositionColor(position, red)
+	if coloured.Position != position || coloured.Color != red {
+		t.Fatal("the fields are not reachable from outside")
+	}
+	// Every one of the four satisfies IVertexType, which is what a draw call
+	// resolves the declaration through.
+	for name, vertex := range map[string]graphics.IVertexType{
+		"VertexPositionColor":         coloured,
+		"VertexPositionTexture":       graphics.NewVertexPositionTexture(position, coordinate),
+		"VertexPositionColorTexture":  graphics.NewVertexPositionColorTexture(position, red, coordinate),
+		"VertexPositionNormalTexture": graphics.NewVertexPositionNormalTexture(position, position, coordinate),
+	} {
+		declaration := vertex.VertexDeclaration()
+		if declaration == nil {
+			t.Fatalf("%s answered no VertexDeclaration", name)
+		}
+		if declaration.Name() != name+".VertexDeclaration" {
+			t.Fatalf("%s declaration is named %q", name, declaration.Name())
+		}
+	}
+	// The four static readonly fields, by their projected names, with the
+	// strides the reference's element tables produce.
+	strides := map[int32]*graphics.VertexDeclaration{
+		16: graphics.VertexPositionColorVertexDeclaration(),
+		20: graphics.VertexPositionTextureVertexDeclaration(),
+		24: graphics.VertexPositionColorTextureVertexDeclaration(),
+		32: graphics.VertexPositionNormalTextureVertexDeclaration(),
+	}
+	for want, declaration := range strides {
+		if declaration.VertexStride() != want {
+			t.Fatalf("a declaration reports stride %d, want %d", declaration.VertexStride(), want)
+		}
+	}
+	// The operators and Equals.
+	same := graphics.NewVertexPositionColor(position, red)
+	if !graphics.VertexPositionColorOperatorEqualityByVertexPositionColorAndVertexPositionColor(coloured, same) {
+		t.Fatal("two identical vertices are not equal from outside")
+	}
+	if graphics.VertexPositionColorOperatorInequalityByVertexPositionColorAndVertexPositionColor(coloured, same) {
+		t.Fatal("op_Inequality disagrees with op_Equality")
+	}
+	if !coloured.Equals(same) || coloured.Equals(graphics.NewVertexPositionTexture(position, coordinate)) {
+		t.Fatal("Equals is not a type test followed by a field test")
+	}
+	if coloured.GetHashCode() != same.GetHashCode() || coloured.ToString() != same.ToString() {
+		t.Fatal("two equal vertices disagree on hash or rendering")
+	}
+}

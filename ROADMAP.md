@@ -18,14 +18,14 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               98
-MISSING_TYPE                    98
+TOTAL_DIAGNOSTICS               94
+MISSING_TYPE                    94
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 159
+COMPLETE_TYPES                 163
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         98
+GLOBAL_ACTIONABLE_LOCAL         94
 GLOBAL_UNREVIEWED                0
 BOUND_FUNCTIONS                230
 MANIFEST_LAYOUT_AGREEMENTS     457
@@ -63,7 +63,10 @@ Foundation 75 projected `GraphicsDeviceInformation` and
 device enumeration, the eight-step ranking policy, `CanResetDevice` and the
 `PreparingDeviceSettings` event are all projected.
 
-Foundation 76 projected `System.Exception` and closed `Game`.
+Foundation 76 projected `System.Exception` and closed `Game`. Foundation 77
+projected the four stock vertex structs, and the native stress run submits all
+four to CNA on both the HEADLESS and SOFTWARE artifacts, 220 user-primitive
+draws with no refusal.
 
 ## No partial types, and no missing members
 
@@ -88,12 +91,13 @@ in that registry:
    spelling; what the BASE still needs is placement, because a composed base
    adapter must be unexported and the eight derived types live in four other
    packages, so the adapter has to move to an internal package first.
-2. **The vertex structs**, which unblock realistic `DrawUser*` and the Model
-   family.
-3. **The stock effects**, which compose the already complete `Effect`.
-4. **`SoundEffect` / `SoundEffectInstance`**, which also grow
+2. **The stock effects**, which compose the already complete `Effect` and give
+   `DrawUser*` an independently predictable output colour — the one thing
+   standing between the vertex structs and `VERIFIED_PIXEL` evidence for a
+   drawn triangle.
+3. **`SoundEffect` / `SoundEffectInstance`**, which also grow
    `ContentManager.Load<T>`'s closed set.
-5. **The Model family**, then **Input**, **Storage**, **Media/XACT**, the
+4. **The Model family**, then **Input**, **Storage**, **Media/XACT**, the
    **content plumbing** and the **Design converters**.
 
 **The dynamic-buffer note.** `DynamicVertexBuffer` and `DynamicIndexBuffer`
