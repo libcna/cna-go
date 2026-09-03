@@ -58,14 +58,17 @@ type contractParameter struct {
 }
 
 type expectedSurface struct {
-	Types              map[symbolKey]*expectedType
-	Members            map[symbolKey]*expectedMember
-	InterfaceWitnesses map[symbolKey]*expectedInterfaceWitness
-	MappingIssues      []diagnostic
-	ReferenceTypes     int
-	ReferenceMembers   int
-	ExpectedGoTypes    int
-	ExpectedGoMembers  int
+	// BlockedDeclaredMembers is how many members the contract declares that
+	// blockedDeclaredMembers records as blocked by an external BCL closure.
+	BlockedDeclaredMembers int
+	Types                  map[symbolKey]*expectedType
+	Members                map[symbolKey]*expectedMember
+	InterfaceWitnesses     map[symbolKey]*expectedInterfaceWitness
+	MappingIssues          []diagnostic
+	ReferenceTypes         int
+	ReferenceMembers       int
+	ExpectedGoTypes        int
+	ExpectedGoMembers      int
 	// BCLInheritedCLRMembers is how many public CLR members the supported BCL
 	// bases contribute across the profile, counted once per derived type.
 	BCLInheritedCLRMembers int
@@ -101,18 +104,20 @@ type expectedSurface struct {
 }
 
 type expectedType struct {
-	Key              symbolKey
-	XNA              string
-	GoName           string
-	PackagePath      string
-	Kind             string
-	Flags            bool
-	BaseType         string
-	Interfaces       []string
-	AllInterfaces    []string
-	GenericParameter []string
-	MappedInterfaces []mappedInterface
-	Members          []symbolKey
+	// BlockedDeclaredMembers is this type's share of the same count.
+	BlockedDeclaredMembers int
+	Key                    symbolKey
+	XNA                    string
+	GoName                 string
+	PackagePath            string
+	Kind                   string
+	Flags                  bool
+	BaseType               string
+	Interfaces             []string
+	AllInterfaces          []string
+	GenericParameter       []string
+	MappedInterfaces       []mappedInterface
+	Members                []symbolKey
 	// PublicCLRMembers is how many PUBLIC CLR members this type declares:
 	// what a derived type inherits into its own public surface. Constructors
 	// are excluded because they are not inherited. It is carried so the XNA

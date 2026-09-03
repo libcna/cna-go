@@ -188,6 +188,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["GAME_FRAME_HOOK_DEFERRED_STEPS"] = 0
 	result.Summary["BCL_ADAPTER_EXCLUSIONS"] = 0
 	result.Summary["BCL_ADAPTER_EXCLUSIONS_BLOCKED"] = 0
+	result.Summary["BCL_LANGUAGE_ACCESSORS"] = 0
 	typeDiagnostics := make(map[string]int)
 	missingMembers := make(map[string][]string)
 	result.Summary["REFERENCE_TYPES"] = expected.ReferenceTypes
@@ -203,6 +204,7 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"] = expected.XNAInheritedCLRMembers
 	result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"] = expected.XNAInheritedProjections
 	result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"] = expected.XNAInheritedOverriddenMembers
+	result.Summary["BLOCKED_DECLARED_MEMBERS"] = expected.BlockedDeclaredMembers
 	result.Summary["EXPECTED_GO_TYPES"] = expected.ExpectedGoTypes
 	result.Summary["EXPECTED_GO_MEMBERS"] = expected.ExpectedGoMembers
 	result.Summary["INTERFACE_WITNESS_PROJECTIONS"] = len(expected.InterfaceWitnesses)
@@ -324,7 +326,8 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 		addDiagnostic(&result, diagnostic{Category: "UNEXPECTED_TYPE", Go: key.String(), Message: "exported type does not map to the selected XNA profile or a declared language adapter"})
 	}
 	for key, am := range actual.Members {
-		if _, ok := expected.Members[key]; ok || expected.InterfaceWitnesses[key] != nil || isAdapterMember(key) {
+		if _, ok := expected.Members[key]; ok || expected.InterfaceWitnesses[key] != nil || isAdapterMember(key) ||
+			isBCLLanguageAccessor(expected, key) {
 			continue
 		}
 		addDiagnostic(&result, diagnostic{Category: "UNEXPECTED_MEMBER", Go: key.String(), Message: "exported member does not map to the selected XNA profile or a declared language adapter"})
@@ -2164,6 +2167,46 @@ func isAdapterType(key symbolKey, actual *actualType) bool {
 	return substitutionAdapterKeys[key]
 }
 
+// isBCLLanguageAccessor admits one exported member a composed BCL base requires
+// but the CLR type does not declare.
+//
+// It is admitted only on a receiver that ACTUALLY composes that base -- the
+// adapter's own Go type, or an XNA type whose contract base is the one the
+// registry entry belongs to. A member of the same name anywhere else stays an
+// ordinary unexpected member.
+func isBCLLanguageAccessor(expected *expectedSurface, key symbolKey) bool {
+	if key.Receiver == "" {
+		return false
+	}
+	for identity, adapter := range bclBaseAdapters {
+		named := false
+		for _, accessor := range adapter.LanguageAccessors {
+			if accessor.Name == key.Name {
+				named = true
+				break
+			}
+		}
+		if !named {
+			continue
+		}
+		// The signature adapter's own Go type, when the same CLR type has both
+		// roles.
+		if signature, hasSignature := bclSignatureAdapters[identity]; hasSignature &&
+			bclSignatureAdapterGoName(signature) == key.Receiver &&
+			key.Package == modulePath+"/Microsoft/Xna/Framework" {
+			return true
+		}
+		// Any XNA type whose CLR base is this one.
+		for _, et := range expected.Types {
+			if et.Key.Package == key.Package && et.GoName == key.Receiver &&
+				baseIdentityWithoutArguments(et.BaseType) == identity {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func isAdapterMember(key symbolKey) bool {
 	if substitutionAdapterKeys[symbolKey{Package: key.Package, Name: key.Receiver}] {
 		return true
@@ -3435,6 +3478,19 @@ func measureBCLSignatureAdapters(result *report, expected *expectedSurface, actu
 				measurement.Inventory = append(measurement.Inventory, row)
 				measurement.GoMembers++
 			}
+		}
+
+		for _, accessor := range adapter.LanguageAccessors {
+			wanted[accessor.Name] = true
+			key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: accessor.Name}
+			if _, present := actual.Members[key]; !present {
+				addDiagnostic(result, diagnostic{
+					Category: "LANGUAGE_MAPPING_MISMATCH", XNA: identity + "::" + accessor.Name, Go: key.String(),
+					Message: "BCL signature adapter is missing a language accessor its reference interface requires",
+				})
+				measurement.Verdict = "FAIL"
+			}
+			result.Summary["BCL_LANGUAGE_ACCESSORS"]++
 		}
 
 		// Nothing else may be exported on the adapter.

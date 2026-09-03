@@ -243,6 +243,19 @@ var pureManagedTypes = map[string]bool{
 	// GameComponent's are.
 	"Microsoft.Xna.Framework.DrawableGameComponent": true,
 
+	// Foundation 78. The eight XNA exception types. Every one of them declares
+	// ONLY constructors, and each constructor is a `base..ctor(...)` and
+	// nothing else. Nothing in any of them reaches a device, a runtime or a
+	// throw site: the whole family is field stores and string formatting.
+	"Microsoft.Xna.Framework.Audio.InstancePlayLimitException":           true,
+	"Microsoft.Xna.Framework.Audio.NoAudioHardwareException":             true,
+	"Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException":       true,
+	"Microsoft.Xna.Framework.Content.ContentLoadException":               true,
+	"Microsoft.Xna.Framework.Graphics.DeviceLostException":               true,
+	"Microsoft.Xna.Framework.Graphics.DeviceNotResetException":           true,
+	"Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException": true,
+	"Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException": true,
+
 	// Foundation 77. The four stock vertex structs are public fields, a
 	// storing constructor, a static readonly VertexDeclaration built from a
 	// literal element table, a SmartGetHashCode, a String.Format ToString and
@@ -345,28 +358,14 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 		Rationale: "modelled by the framework EventArgs language adapter; a derived XNA class keeps CLR reference semantics and projects as its own pointer type with no exported embedding",
 	},
 	"System.Exception": {
-		Status:    "DEFERRED",
-		Rationale: "CLR exception types as Go types is a separate public-API decision; CNA-Go reports failure through error results and has no exception hierarchy",
-		Blockers: []bclBaseBlocker{
-			{Kind: "ARCHITECTURE", Needs: "the settled error projection",
-				Detail: "whether an XNA exception type is a Go error is cross-cutting, not local. If it is, every fallible projected operation's error contract changes from an opaque error to a possibly typed CLR exception, which reopens every settled per-operation fallibility decision in the binding. If it is not, the eight derived types are inert objects nothing constructs, returns, or catches"},
-			{Kind: "ARCHITECTURE", Needs: "a throw-site model",
-				Detail: "StackTrace is captured by the CLR at throw time; a Go value built by a constructor has no throw site, so the member would be projected with no faithful value to return"},
-			{Kind: "SUBSYSTEM", CLRMember: "Data", Needs: "System.Collections.IDictionary",
-				Detail: "the non-generic dictionary contract, which is also the sole blocker of twelve Design type converters"},
-			{Kind: "SUBSYSTEM", CLRMember: "TargetSite", Needs: "System.Reflection.MethodBase",
-				Detail: "the reflection member model; CNA-Go maps System.Type to reflect.Type but no member metadata"},
-			{Kind: "SUBSYSTEM", CLRMember: "GetObjectData", Needs: "System.Runtime.Serialization",
-				Detail: "SerializationInfo and StreamingContext; the same subsystem that blocks Dictionary`2, and two derived types need it for their own declared protected constructor as well"},
-		},
+		Adapter:   "bclexception.State",
+		Status:    "COMPOSED",
+		Rationale: "modelled by the private internal/bclexception.State adapter; the eight derived XNA exception types hold it in an unexported field and re-expose the eight projected inherited members through measured forwarding. The CLR exception OBJECT and Go's operation-error channel are different contracts, and this base settles the first without touching the second",
 	},
 	"System.Runtime.InteropServices.ExternalException": {
-		Status:    "DEFERRED",
-		Rationale: "derives from System.Exception and inherits the same open decision",
-		Blockers: []bclBaseBlocker{
-			{Kind: "ARCHITECTURE", Needs: "System.Exception",
-				Detail: "it derives from System.Exception, so every blocker of that base applies here first; its own addition is one ErrorCode property over int32"},
-		},
+		Adapter:   "bclexception.State",
+		Status:    "COMPOSED",
+		Rationale: "the same private adapter as System.Exception, with the ErrorCode member and the ToString override its three XNA subclasses inherit",
 	},
 	"System.Attribute": {
 		Status:    "DEFERRED",
@@ -1539,6 +1538,11 @@ func buildExpected(c contract) (*expectedSurface, error) {
 		groups := overloadGroupsWithXNAInherited(*t, xnaInheritedSource)
 		for j := range t.Members {
 			m := &t.Members[j]
+			if _, blocked := blockedDeclaredMembers[memberIdentity(t.Name, *m)]; blocked {
+				owner.BlockedDeclaredMembers++
+				s.BlockedDeclaredMembers++
+				continue
+			}
 			mapped := mapMember(s, byIdentity, owner, *t, *t, *m, groups)
 			allMembers = append(allMembers, mapped...)
 		}
@@ -2787,8 +2791,12 @@ type bclBaseAdapter struct {
 	Members []bclInheritedMember
 	// Excluded records the base members deliberately left unprojected, with
 	// the reason, so an exclusion is measured rather than silent.
-	Excluded  []bclExcludedMember
-	Rationale string
+	Excluded []bclExcludedMember
+	// LanguageAccessors are the exported Go members this base REQUIRES that the
+	// CLR type does not declare. They are admitted on the adapter itself and on
+	// every type that composes the base, and nowhere else.
+	LanguageAccessors []bclLanguageAccessor
+	Rationale         string
 }
 
 // bclInheritedMember is one public CLR member of a BCL base, expressed as the
@@ -2799,6 +2807,25 @@ type bclBaseAdapter struct {
 type bclInheritedMember struct {
 	Member    contractMember
 	Rationale string
+}
+
+// bclLanguageAccessor is one EXPORTED Go member a composed base requires that
+// the CLR type does not declare.
+//
+// Go has no explicit interface implementation and no way for a package to
+// satisfy another package's unexported method, so a reference interface whose
+// implementors live in OTHER packages must expose its distinguishing accessor.
+// The accessor is what keeps the interface unsatisfiable from outside the
+// module, because its result type is declared in an internal package -- but it
+// is still an exported member the contract has no entry for, and it would
+// otherwise be an unexpected one.
+//
+// The registry admits it by NAME, on exactly the types that compose the base,
+// and requires a reason. It is not a general escape: a member on a type that
+// composes no such base is still unexpected.
+type bclLanguageAccessor struct {
+	Name   string
+	Reason string
 }
 
 // bclExcludedMember records one public-looking base member that is not
@@ -3047,6 +3074,138 @@ var bclBaseAdapters = map[string]bclBaseAdapter{
 			{CLRMember: "IDictionary.Contains", Reason: "private explicit implementation"},
 			{CLRMember: "IDictionary.Remove", Reason: "private explicit implementation"},
 			{CLRMember: "IDictionary.GetEnumerator", Reason: "private explicit implementation returning IDictionaryEnumerator"},
+		},
+	},
+
+	// System.Exception, read from the same pinned mscorlib.
+	//
+	// Its eleven public instance members are the whole useful surface of the
+	// profile's eight exception types, every one of which declares only
+	// constructors. Eight are projected; the other three name the exact
+	// external BCL closure that blocks them.
+	//
+	// The adapter lives in internal/bclexception rather than in the framework
+	// package, because those eight derived types are in FOUR other packages and
+	// an unexported framework type is unreachable from any of them. That is the
+	// composition rule's own escape, and `internal/` keeps the adapter
+	// unreachable from outside the module -- the property the unexported field
+	// had.
+	"System.Exception": {
+		GoAdapter:       "bclexception.State",
+		AdapterField:    "base",
+		GenericArity:    0,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "the CLR exception base, composed privately; it is NOT a Go error, and CNA-Go's per-operation error channel is unchanged by its existence",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Message", "System.String", true, false),
+				Rationale: "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"},
+			{Member: bclProperty("InnerException", "System.Exception", true, false),
+				Rationale: "one ldfld of the exception the two-argument constructor stored"},
+			{Member: bclMethod("GetBaseException", "System.Exception"),
+				Rationale: "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"},
+			{Member: bclProperty("StackTrace", "System.String", true, false),
+				Rationale: "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"},
+			{Member: bclProperty("HelpLink", "System.String", true, true),
+				Rationale: "get and set are one ldfld and one stfld over _helpURL, with no validation"},
+			{Member: bclProperty("Source", "System.String", true, true),
+				Rationale: "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"},
+			{Member: bclMethod("ToString", "System.String"),
+				Rationale: "GetClassName(), then \": \" and the message when it is non-empty, then \" ---> \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"},
+			{Member: bclMethod("GetType", "System.Type"),
+				Rationale: "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: "Data", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Collections.IDictionary, the non-generic dictionary contract",
+				Reason: "genuinely public CLR surface that IS absent. The non-generic IDictionary is named nowhere else in the profile except as the same blocker on the thirteen Design converters"},
+			{CLRMember: "TargetSite", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Reflection.MethodBase and the reflection member model",
+				Reason: "genuinely public CLR surface that IS absent; it would also be null for an exception nothing threw, which is every exception this projection can produce"},
+			{CLRMember: "GetObjectData", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Runtime.Serialization.SerializationInfo and StreamingContext",
+				Reason: "the same 238-member closure that blocks Dictionary`2::GetObjectData, measured in Foundation 74"},
+			{CLRMember: ".ctor()", Reason: "the CLR does not inherit constructors; each derived type declares its own three"},
+			{CLRMember: ".ctor(string)", Reason: "as above"},
+			{CLRMember: ".ctor(string,Exception)", Reason: "as above"},
+			{CLRMember: ".ctor(SerializationInfo,StreamingContext)", Reason: "`family`, and not inherited"},
+			{CLRMember: "HResult", Reason: "`family`; it is not public surface. ExternalException's public ErrorCode is its one reader in the profile"},
+			{CLRMember: "SerializeObjectState", Reason: "a `family` event over EventHandler<SafeSerializationEventArgs>; not public surface, and its args type is a serialization type"},
+			{CLRMember: "Init", Reason: "private helper the constructors call"},
+			{CLRMember: "GetClassName", Reason: "private helper Message and ToString call"},
+			{CLRMember: "GetStackTrace", Reason: "private helper StackTrace and ToString call"},
+			{CLRMember: "_Exception.GetType", Reason: "private explicit implementation of the COM _Exception interface"},
+		},
+		LanguageAccessors: []bclLanguageAccessor{
+			{Name: "State", Reason: "Go has no explicit interface implementation and no way for one package to satisfy another package's unexported method, and this base's derived types live in FOUR other packages. The reference interface's distinguishing accessor therefore has to be exported -- and it stays unsatisfiable from outside the module because its result type is declared in internal/bclexception"},
+		},
+	},
+
+	// System.Runtime.InteropServices.ExternalException, which three of the
+	// eight XNA exception types derive from.
+	//
+	// It extends System.SystemException, which adds no public surface of its
+	// own, so the inherited set is System.Exception's plus ONE: a public
+	// ErrorCode over the protected HResult. It also OVERRIDES ToString, and the
+	// override is observably different -- the HResult in parentheses as eight
+	// uppercase hex digits, and no end-of-inner-exception marker.
+	//
+	// All three of its XNA subclasses reach E_FAIL, because the only
+	// constructor that assigns another error code is the one none of them
+	// declares.
+	"System.Runtime.InteropServices.ExternalException": {
+		GoAdapter:       "bclexception.State",
+		AdapterField:    "base",
+		GenericArity:    0,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "System.Exception's surface plus a public ErrorCode and a different ToString; the same private adapter carries both, selected by a flag the derived constructor sets",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Message", "System.String", true, false),
+				Rationale: "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"},
+			{Member: bclProperty("InnerException", "System.Exception", true, false),
+				Rationale: "one ldfld of the exception the two-argument constructor stored"},
+			{Member: bclMethod("GetBaseException", "System.Exception"),
+				Rationale: "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"},
+			{Member: bclProperty("StackTrace", "System.String", true, false),
+				Rationale: "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"},
+			{Member: bclProperty("HelpLink", "System.String", true, true),
+				Rationale: "get and set are one ldfld and one stfld over _helpURL, with no validation"},
+			{Member: bclProperty("Source", "System.String", true, true),
+				Rationale: "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"},
+			{Member: bclMethod("ToString", "System.String"),
+				Rationale: "GetClassName(), then \": \" and the message when it is non-empty, then \" ---> \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"},
+			{Member: bclMethod("GetType", "System.Type"),
+				Rationale: "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"},
+			{Member: bclProperty("ErrorCode", "System.Int32", true, false),
+				Rationale: "get_ErrorCode is one forwarded Exception::get_HResult, which is `family` on the base and public here"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: "Data", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Collections.IDictionary, the non-generic dictionary contract",
+				Reason: "genuinely public CLR surface that IS absent. The non-generic IDictionary is named nowhere else in the profile except as the same blocker on the thirteen Design converters"},
+			{CLRMember: "TargetSite", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Reflection.MethodBase and the reflection member model",
+				Reason: "genuinely public CLR surface that IS absent; it would also be null for an exception nothing threw, which is every exception this projection can produce"},
+			{CLRMember: "GetObjectData", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Runtime.Serialization.SerializationInfo and StreamingContext",
+				Reason: "the same 238-member closure that blocks Dictionary`2::GetObjectData, measured in Foundation 74"},
+			{CLRMember: ".ctor()", Reason: "the CLR does not inherit constructors; each derived type declares its own three"},
+			{CLRMember: ".ctor(string)", Reason: "as above"},
+			{CLRMember: ".ctor(string,Exception)", Reason: "as above"},
+			{CLRMember: ".ctor(SerializationInfo,StreamingContext)", Reason: "`family`, and not inherited"},
+			{CLRMember: "HResult", Reason: "`family` on System.Exception; ErrorCode above is the public projection of it"},
+			{CLRMember: ".ctor(string,int32)", Reason: "the CLR does not inherit constructors, and no XNA subclass declares the errorCode overload"},
+			{CLRMember: "SerializeObjectState", Reason: "a `family` event over EventHandler<SafeSerializationEventArgs>; not public surface, and its args type is a serialization type"},
+			{CLRMember: "Init", Reason: "private helper the constructors call"},
+			{CLRMember: "GetClassName", Reason: "private helper Message and ToString call"},
+			{CLRMember: "GetStackTrace", Reason: "private helper StackTrace and ToString call"},
+			{CLRMember: "_Exception.GetType", Reason: "private explicit implementation of the COM _Exception interface"},
+		},
+		LanguageAccessors: []bclLanguageAccessor{
+			{Name: "State", Reason: "Go has no explicit interface implementation and no way for one package to satisfy another package's unexported method, and this base's derived types live in FOUR other packages. The reference interface's distinguishing accessor therefore has to be exported -- and it stays unsatisfiable from outside the module because its result type is declared in internal/bclexception"},
 		},
 	},
 }
@@ -3306,7 +3465,10 @@ var bclSignatureAdapters = map[string]bclBaseAdapter{
 	// interface reproduces exactly the members below plus one unexported
 	// accessor.
 	"System.Exception": {
-		GoAdapter:       "Exception",
+		GoAdapter: "Exception",
+		LanguageAccessors: []bclLanguageAccessor{
+			{Name: "State", Reason: "the reference interface's distinguishing accessor. Go has no way for one package to satisfy another package's unexported method, and this type's eight siblings live in four other packages, so it has to be exported -- and it stays unsatisfiable from outside the module because its result type is declared in internal/bclexception"},
+		},
 		GenericArity:    0,
 		BehaviorLevel:   "SUPPORTED",
 		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
@@ -4738,4 +4900,57 @@ func crossPackageInterfaceCarrierFor(owner, clrInterface string) (crossPackageIn
 		}
 	}
 	return crossPackageInterfaceCarrier{}, false
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 78 — declared members blocked by an external BCL closure.
+// ---------------------------------------------------------------------------
+
+// blockedDeclaredMember records one member a pinned XNA type DECLARES that
+// CNA-Go does not project, with the exact external closure that blocks it.
+//
+// This is the declared-member counterpart of a base adapter's
+// BCL_PROJECTION_BLOCKED_EXTERNAL exclusion, and it carries the same weight: it
+// is an admission that something the contract declares is absent, not a
+// permission to have gaps. Three things make it measured rather than an
+// allowlist:
+//
+//   - the identity must name a member the pinned contract really declares, or
+//     the entry is a defect;
+//   - the entry must state its kind, what it needs, and why;
+//   - the count is reported as BLOCKED_DECLARED_MEMBERS, separately from
+//     MISSING_MEMBER, so it can never be mistaken for surface that is present.
+//
+// It is deliberately NOT a general escape. Every entry below is one protected
+// serialization constructor, and every one of them needs the same closure.
+type blockedDeclaredMember struct {
+	Kind   string
+	Needs  string
+	Reason string
+}
+
+// blockedDeclaredMembers is the closed registry, keyed by the identity
+// memberIdentity produces.
+var blockedDeclaredMembers = map[string]blockedDeclaredMember{
+	// Foundation 78. Two of the eight XNA exception types declare a protected
+	// deserialization constructor of their own. It is the same closure that
+	// blocks Exception::GetObjectData and Dictionary`2::GetObjectData, measured
+	// in Foundation 74 at 238 public BCL members across System.Decimal,
+	// System.DateTime and System.Runtime.Serialization -- types the XNA 4.0
+	// Windows profile names nowhere else.
+	//
+	// Neither constructor is reachable from CNA-Go for a second reason: the
+	// only caller of a deserialization constructor is a CLR formatter, and
+	// CNA-Go deserialises nothing. Projecting one would hand a consumer a
+	// constructor whose two arguments they could not build.
+	"Microsoft.Xna.Framework.Content.ContentLoadException::.ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)": {
+		Kind:   "BCL_PROJECTION_BLOCKED_EXTERNAL",
+		Needs:  "System.Runtime.Serialization.SerializationInfo and StreamingContext, whose own inventory reaches System.Decimal and System.DateTime",
+		Reason: "a protected deserialization constructor whose two parameter types are the serialization closure Foundation 74 measured; its only CLR caller is a formatter, and CNA-Go deserialises nothing",
+	},
+	"Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException::.ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)": {
+		Kind:   "BCL_PROJECTION_BLOCKED_EXTERNAL",
+		Needs:  "System.Runtime.Serialization.SerializationInfo and StreamingContext",
+		Reason: "the same protected deserialization constructor on the other type that declares one",
+	},
 }

@@ -474,8 +474,6 @@
       "System.EventArgs": "framework.EventArgs"
     },
     "deferred": [
-      "System.Exception",
-      "System.Runtime.InteropServices.ExternalException",
       "System.Attribute",
       "System.IO.BinaryReader",
       "System.ComponentModel.ExpandableObjectConverter",
@@ -484,11 +482,11 @@
     "composedMeaning": "a COMPOSED base is a supported BCL family whose PUBLIC members remain part of the observable public CLR surface of every derived type; the derived Go type holds a PRIVATE generic adapter for the base and re-exposes those members through measured forwarding, so the surface does not disappear merely because the XNA assembly metadata does not declare it",
     "composed": {
       "System.Collections.ObjectModel.Collection`1": "collectionBase[T]",
-      "System.Collections.Generic.Dictionary`2": "dictionaryBase[TKey, TValue]"
+      "System.Collections.Generic.Dictionary`2": "dictionaryBase[TKey, TValue]",
+      "System.Exception": "bclexception.State",
+      "System.Runtime.InteropServices.ExternalException": "bclexception.State"
     },
     "deferredDetail": {
-      "System.Exception": "Foundation 76 projected the SIGNATURE half: System.Exception now has a public Go spelling, eight of its eleven public members, and three measured BCL_PROJECTION_BLOCKED_EXTERNAL exclusions. It remains DEFERRED AS A BASE, and the two roles are independent exactly as ReadOnlyCollection`1's are. What the base still needs is placement: a COMPOSED base adapter must be unexported, and the eight derived exception types live in four OTHER packages, so the adapter has to move to an internal package first. ContentLoadException and StorageDeviceNotConnectedException additionally declare a protected .ctor(SerializationInfo, StreamingContext) of their OWN, which is the same serialization closure that blocks GetObjectData.",
-      "System.Runtime.InteropServices.ExternalException": "derives from System.Exception, so every blocker there applies first; its own addition is one ErrorCode property over int32",
       "System.Attribute": "ARCHITECTURE: Go has no attribute metadata, so a projected attribute type could be constructed and read back but never applied; the five ContentSerializer* types would be inert data objects whose whole purpose is unrepresentable. SUBSYSTEM: the inherited static lookups take System.Reflection Assembly/MemberInfo/Module/ParameterInfo, and whether inherited STATICS are part of a derived type's projected surface is itself undecided, having never arisen before.",
       "System.IO.BinaryReader": "SUBSYSTEM: BaseStream needs a seekable System.IO.Stream; CNA-Go maps that to io.Reader, which carries neither seeking nor the encoding-aware reads the inherited surface depends on",
       "System.ComponentModel.ExpandableObjectConverter": "SUBSYSTEM: ITypeDescriptorContext (the profile's single largest blocker at thirteen types), System.Globalization.CultureInfo, and System.Collections.IDictionary",
@@ -624,6 +622,77 @@
         "consumers": [
           "Microsoft.Xna.Framework.LaunchParameters"
         ]
+      },
+      "System.Exception": {
+        "goAdapter": "bclexception.State",
+        "adapterField": "base",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0, public key token b77a5c561934e089",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "adapterPlacement": "internal/bclexception rather than the framework package, because the eight derived types live in FOUR other packages and an unexported framework type is unreachable from any of them. That is the composition rule's own escape, and internal/ keeps the adapter unreachable from outside the module -- the property the unexported field had",
+        "inheritedPublicMembers": [
+          "Message",
+          "InnerException",
+          "GetBaseException",
+          "StackTrace",
+          "HelpLink",
+          "Source",
+          "ToString",
+          "GetType"
+        ],
+        "projectedGoIdentitiesPerConsumer": 10,
+        "blockedPublicMembers": {
+          "Data": "BCL_PROJECTION_BLOCKED_EXTERNAL: System.Collections.IDictionary",
+          "TargetSite": "BCL_PROJECTION_BLOCKED_EXTERNAL: System.Reflection.MethodBase and the reflection member model",
+          "GetObjectData": "BCL_PROJECTION_BLOCKED_EXTERNAL: the same 238-member System.Runtime.Serialization closure Foundation 74 measured"
+        },
+        "languageAccessors": {
+          "State": "the reference interface's distinguishing accessor. Go has no way for one package to satisfy another package's unexported method, so it has to be exported; it stays unsatisfiable from outside the module because its result type is declared in internal/bclexception"
+        },
+        "classNameIsSuppliedByTheDeriver": "Exception::get_Message renders the pinned Exception_WasThrown sentence from GetClassName(), which for a derived type is the DERIVED name. A composed base cannot see its deriver, so the derived constructor supplies it",
+        "notAGoError": "a projected OPERATION reports failure through a Go error, unchanged since Foundation 1; a CLR exception OBJECT is a value the profile constructs and passes. The type has no Error() method, because the pinned CLR type declares none",
+        "consumers": [
+          "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException"
+        ]
+      },
+      "System.Runtime.InteropServices.ExternalException": {
+        "goAdapter": "bclexception.State",
+        "adapterField": "base",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0, public key token b77a5c561934e089",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "extends": "System.SystemException, which adds no public surface of its own, so the inherited set is System.Exception's plus one",
+        "inheritedPublicMembers": [
+          "Message",
+          "InnerException",
+          "GetBaseException",
+          "StackTrace",
+          "HelpLink",
+          "Source",
+          "ToString",
+          "GetType",
+          "ErrorCode"
+        ],
+        "projectedGoIdentitiesPerConsumer": 11,
+        "toStringOverride": "GetType() + \" (0x\" + HResult:X8 + \")\" then \": \" + Message when non-empty then \" ---> \" + Inner -- with the HResult in parentheses and WITHOUT the end-of-inner-exception marker the base form appends",
+        "errorCode": "E_FAIL (0x80004005) for all three XNA subclasses, because the only constructor that assigns another is the errorCode overload none of them declares",
+        "blockedPublicMembers": {
+          "Data": "BCL_PROJECTION_BLOCKED_EXTERNAL: System.Collections.IDictionary",
+          "TargetSite": "BCL_PROJECTION_BLOCKED_EXTERNAL: System.Reflection.MethodBase and the reflection member model",
+          "GetObjectData": "BCL_PROJECTION_BLOCKED_EXTERNAL: the same 238-member System.Runtime.Serialization closure Foundation 74 measured"
+        },
+        "languageAccessors": {
+          "State": "the reference interface's distinguishing accessor. Go has no way for one package to satisfy another package's unexported method, so it has to be exported; it stays unsatisfiable from outside the module because its result type is declared in internal/bclexception"
+        },
+        "consumers": [
+          "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException"
+        ]
       }
     },
     "identityAccounting": "every projected Go member has exactly one provenance class -- XNA-declared or BCL-inherited -- and every inherited projection is attributable to an exact BCL base, an exact CLR member, and an exact projected Go member",
@@ -632,7 +701,8 @@
       "NOT_PUBLIC_SURFACE": "the default: the member is not part of what a derived CLR caller can reach -- a constructor, a `family` member, or a private explicit interface implementation. Nothing is missing",
       "BCL_PROJECTION_BLOCKED_EXTERNAL": "the member IS public CLR surface and IS absent from the Go projection; the entry must name the exact external BCL closure that would have to be projected first, and the verifier counts it",
       "LANGUAGE_MAPPING_LIMITATION": "the member is public CLR surface whose Go spelling is prevented by a settled CNA-Go rule rather than by a missing type; the entry must name which rule"
-    }
+    },
+    "languageAccessorRule": "an EXPORTED Go member a composed base requires that the CLR type does not declare. Go has no explicit interface implementation and no way for one package to satisfy another package's unexported method, so a reference interface whose implementors live in other packages must expose its distinguishing accessor. It is admitted by NAME, only on the adapter itself and on types that actually compose the base, and it must record a reason"
   },
   "bclSignatureAdapters": {
     "rule": "a BCL type the pinned XNA contract carries at a PUBLIC SIGNATURE POSITION needs a public Go spelling, or the member that returns it cannot be projected at all; this is the footing System.TimeSpan and System.EventHandler<T> already have",
@@ -1018,5 +1088,14 @@
     "baseInvocation": {
       "EXPLICIT_ONLY": "the base body runs only where the override's own source calls the method on the Game, zero, one or many times. It is the only admitted class, and every hook must record how it is known"
     }
+  },
+  "blockedDeclaredMembers": {
+    "rule": "a member a pinned XNA type DECLARES that CNA-Go does not project, with the exact external closure that blocks it. It is the declared-member counterpart of a base adapter's BCL_PROJECTION_BLOCKED_EXTERNAL exclusion and carries the same weight: an admission, not a permission",
+    "measured": "the identity must name a member the pinned contract really declares; the entry must state its kind, what it needs and why; and the count is reported as BLOCKED_DECLARED_MEMBERS, separately from MISSING_MEMBER",
+    "entries": {
+      "Microsoft.Xna.Framework.Content.ContentLoadException::.ctor(SerializationInfo,StreamingContext)": "BCL_PROJECTION_BLOCKED_EXTERNAL: a protected deserialization constructor whose two parameter types are the serialization closure Foundation 74 measured; its only CLR caller is a formatter, and CNA-Go deserialises nothing",
+      "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException::.ctor(SerializationInfo,StreamingContext)": "the same protected deserialization constructor on the other type that declares one"
+    },
+    "allowlist": "forbidden"
   }
 }

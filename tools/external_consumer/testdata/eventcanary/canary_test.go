@@ -9,9 +9,11 @@ import (
 	"testing"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
+	audio "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio"
 	content "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
+	storage "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage"
 )
 
 func TestExternalTypeSatisfiesBothComponentContracts(t *testing.T) {
@@ -4061,5 +4063,55 @@ func TestStockVertexTypesAreUsableFromOutsideTheModule(t *testing.T) {
 	}
 	if coloured.GetHashCode() != same.GetHashCode() || coloured.ToString() != same.ToString() {
 		t.Fatal("two equal vertices disagree on hash or rendering")
+	}
+}
+
+// TestXNAExceptionTypesAreUsableFromOutsideTheModule is Foundation 78's
+// external gate: eight exception types in four packages, one reference
+// interface, and a downcast that works.
+func TestXNAExceptionTypesAreUsableFromOutsideTheModule(t *testing.T) {
+	lost := graphics.NewDeviceLostExceptionByString("the device was lost")
+	notReset := graphics.NewDeviceNotResetExceptionByStringAndException("and could not be reset", lost)
+	load := content.NewContentLoadExceptionByStringAndException("could not load", notReset)
+
+	// One interface, three packages, and the chain survives across all of them.
+	var reference framework.ExceptionReference = load
+	if reference.InnerException() != framework.ExceptionReference(notReset) {
+		t.Fatal("the chain did not survive across packages")
+	}
+	if reference.GetBaseException() != framework.ExceptionReference(lost) {
+		t.Fatal("GetBaseException did not reach the deepest exception")
+	}
+	// The downcast a C# consumer writes as a catch clause.
+	if recovered, ok := reference.InnerException().InnerException().(*graphics.DeviceLostException); !ok || recovered != lost {
+		t.Fatal("the deepest exception could not be asserted back to its concrete type")
+	}
+	// A derived type names ITSELF in the default message, which is what the
+	// composed base has to be told.
+	if got := graphics.NewNoSuitableGraphicsDeviceExceptionByNone().Message(); got !=
+		"Exception of type 'Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException' was thrown." {
+		t.Fatalf("the default message from outside = %q", got)
+	}
+	// The ExternalException half: a public ErrorCode and a different ToString.
+	hardware := audio.NewNoAudioHardwareExceptionByNone()
+	if hardware.ErrorCode() != -2147467259 {
+		t.Fatalf("ErrorCode = %d, want E_FAIL", hardware.ErrorCode())
+	}
+	if got := hardware.ToString(); got !=
+		"Microsoft.Xna.Framework.Audio.NoAudioHardwareException (0x80004005): External component has thrown an exception." {
+		t.Fatalf("ToString from outside = %q", got)
+	}
+	// And every one of them is a System.Exception at a signature position.
+	game, _ := newCanaryGame(t)
+	for _, exception := range []framework.ExceptionReference{
+		lost, notReset, load, hardware,
+		audio.NewInstancePlayLimitExceptionByNone(),
+		audio.NewNoMicrophoneConnectedExceptionByNone(),
+		graphics.NewDeviceNotResetExceptionByNone(),
+		storage.NewStorageDeviceNotConnectedExceptionByNone(),
+	} {
+		if game.ShowMissingRequirementMessage(exception) {
+			t.Fatalf("ShowMissingRequirementMessage answered true for %s", exception.GetType())
+		}
 	}
 }

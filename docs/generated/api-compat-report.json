@@ -5,28 +5,30 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "BCL_ADAPTER_EXCLUSIONS": 115,
-    "BCL_ADAPTER_EXCLUSIONS_BCL_PROJECTION_BLOCKED_EXTERNAL": 4,
-    "BCL_ADAPTER_EXCLUSIONS_BLOCKED": 6,
+    "BCL_ADAPTER_EXCLUSIONS": 142,
+    "BCL_ADAPTER_EXCLUSIONS_BCL_PROJECTION_BLOCKED_EXTERNAL": 10,
+    "BCL_ADAPTER_EXCLUSIONS_BLOCKED": 12,
     "BCL_ADAPTER_EXCLUSIONS_LANGUAGE_MAPPING_LIMITATION": 2,
-    "BCL_BASE_ADAPTERS": 2,
-    "BCL_BASE_ADAPTER_CONSUMERS": 2,
-    "BCL_DEFERRED_BASE_BLOCKERS": 15,
-    "BCL_INHERITED_MEMBER_PROJECTIONS": 26,
-    "BCL_INHERITED_PUBLIC_MEMBERS": 24,
+    "BCL_BASE_ADAPTERS": 4,
+    "BCL_BASE_ADAPTER_CONSUMERS": 10,
+    "BCL_DEFERRED_BASE_BLOCKERS": 9,
+    "BCL_INHERITED_MEMBER_PROJECTIONS": 109,
+    "BCL_INHERITED_PUBLIC_MEMBERS": 91,
+    "BCL_LANGUAGE_ACCESSORS": 1,
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
-    "COMPLETE_TYPES": 163,
+    "BLOCKED_DECLARED_MEMBERS": 2,
+    "COMPLETE_TYPES": 171,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 5,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3470,
+    "EXPECTED_GO_MEMBERS": 3551,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 14,
+    "FRONTIER_FAMILIES": 13,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -41,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 94,
+    "GLOBAL_ACTIONABLE_LOCAL": 86,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -57,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 94,
-    "MISSING_TYPES": 94,
+    "MISSING_TYPE": 86,
+    "MISSING_TYPES": 86,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -72,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2587,
-    "TARGET_TYPES": 163,
-    "TOTAL_DIAGNOSTICS": 94,
+    "TARGET_MEMBERS": 2694,
+    "TARGET_TYPES": 171,
+    "TOTAL_DIAGNOSTICS": 86,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -128,26 +130,8 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.Microphone",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:Microphone",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException",
       "message": "mapped Go type is absent"
     },
     {
@@ -178,12 +162,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.WaveBank",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:WaveBank",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentLoadException",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException",
       "message": "mapped Go type is absent"
     },
     {
@@ -350,18 +328,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.DirectionalLight",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DirectionalLight",
       "message": "mapped Go type is absent"
@@ -472,12 +438,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollectionEnumerator",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException",
       "message": "mapped Go type is absent"
     },
     {
@@ -656,12 +616,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.TitleContainer",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:TitleContainer",
       "message": "mapped Go type is absent"
@@ -672,13 +626,17 @@
     "Microsoft.Xna.Framework.Audio.AudioEmitter",
     "Microsoft.Xna.Framework.Audio.AudioListener",
     "Microsoft.Xna.Framework.Audio.AudioStopOptions",
+    "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
     "Microsoft.Xna.Framework.Audio.MicrophoneState",
+    "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+    "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
     "Microsoft.Xna.Framework.Audio.SoundState",
     "Microsoft.Xna.Framework.BoundingBox",
     "Microsoft.Xna.Framework.BoundingFrustum",
     "Microsoft.Xna.Framework.BoundingSphere",
     "Microsoft.Xna.Framework.Color",
     "Microsoft.Xna.Framework.ContainmentType",
+    "Microsoft.Xna.Framework.Content.ContentLoadException",
     "Microsoft.Xna.Framework.Content.ContentManager",
     "Microsoft.Xna.Framework.Curve",
     "Microsoft.Xna.Framework.CurveContinuity",
@@ -706,6 +664,8 @@
     "Microsoft.Xna.Framework.Graphics.CullMode",
     "Microsoft.Xna.Framework.Graphics.DepthFormat",
     "Microsoft.Xna.Framework.Graphics.DepthStencilState",
+    "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+    "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
     "Microsoft.Xna.Framework.Graphics.DisplayMode",
     "Microsoft.Xna.Framework.Graphics.DisplayModeCollection",
     "Microsoft.Xna.Framework.Graphics.Effect",
@@ -731,6 +691,7 @@
     "Microsoft.Xna.Framework.Graphics.IVertexType",
     "Microsoft.Xna.Framework.Graphics.IndexBuffer",
     "Microsoft.Xna.Framework.Graphics.IndexElementSize",
+    "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
@@ -828,6 +789,7 @@
     "Microsoft.Xna.Framework.Quaternion",
     "Microsoft.Xna.Framework.Ray",
     "Microsoft.Xna.Framework.Rectangle",
+    "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
     "Microsoft.Xna.Framework.Vector2",
     "Microsoft.Xna.Framework.Vector3",
     "Microsoft.Xna.Framework.Vector4"
@@ -838,16 +800,12 @@
     "Microsoft.Xna.Framework.Audio.AudioEngine",
     "Microsoft.Xna.Framework.Audio.Cue",
     "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
-    "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
     "Microsoft.Xna.Framework.Audio.Microphone",
-    "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
-    "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
     "Microsoft.Xna.Framework.Audio.RendererDetail",
     "Microsoft.Xna.Framework.Audio.SoundBank",
     "Microsoft.Xna.Framework.Audio.SoundEffect",
     "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.WaveBank",
-    "Microsoft.Xna.Framework.Content.ContentLoadException",
     "Microsoft.Xna.Framework.Content.ContentReader",
     "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
     "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
@@ -875,8 +833,6 @@
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
     "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
     "Microsoft.Xna.Framework.Graphics.BasicEffect",
-    "Microsoft.Xna.Framework.Graphics.DeviceLostException",
-    "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
     "Microsoft.Xna.Framework.Graphics.DirectionalLight",
     "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
     "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
@@ -896,7 +852,6 @@
     "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
-    "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
     "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
     "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
     "Microsoft.Xna.Framework.Input.GamePad",
@@ -926,7 +881,6 @@
     "Microsoft.Xna.Framework.Media.VideoPlayer",
     "Microsoft.Xna.Framework.Storage.StorageContainer",
     "Microsoft.Xna.Framework.Storage.StorageDevice",
-    "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
     "Microsoft.Xna.Framework.TitleContainer"
   ],
   "interfaceWitnessProjections": [
@@ -6903,42 +6857,13 @@
     },
     {
       "clrBase": "System.Exception",
-      "status": "DEFERRED",
-      "addsProjectedSurface": false,
+      "adapter": "bclexception.State",
+      "status": "COMPOSED",
+      "addsProjectedSurface": true,
       "derivedTypes": 5,
-      "projectedTypes": 0,
+      "projectedTypes": 5,
       "exportedEmbeddings": 0,
-      "blockers": [
-        {
-          "kind": "ARCHITECTURE",
-          "needs": "the settled error projection",
-          "detail": "whether an XNA exception type is a Go error is cross-cutting, not local. If it is, every fallible projected operation's error contract changes from an opaque error to a possibly typed CLR exception, which reopens every settled per-operation fallibility decision in the binding. If it is not, the eight derived types are inert objects nothing constructs, returns, or catches"
-        },
-        {
-          "kind": "ARCHITECTURE",
-          "needs": "a throw-site model",
-          "detail": "StackTrace is captured by the CLR at throw time; a Go value built by a constructor has no throw site, so the member would be projected with no faithful value to return"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "Data",
-          "needs": "System.Collections.IDictionary",
-          "detail": "the non-generic dictionary contract, which is also the sole blocker of twelve Design type converters"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "TargetSite",
-          "needs": "System.Reflection.MethodBase",
-          "detail": "the reflection member model; CNA-Go maps System.Type to reflect.Type but no member metadata"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "GetObjectData",
-          "needs": "System.Runtime.Serialization",
-          "detail": "SerializationInfo and StreamingContext; the same subsystem that blocks Dictionary`2, and two derived types need it for their own declared protected constructor as well"
-        }
-      ],
-      "rationale": "CLR exception types as Go types is a separate public-API decision; CNA-Go reports failure through error results and has no exception hierarchy",
+      "rationale": "modelled by the private internal/bclexception.State adapter; the eight derived XNA exception types hold it in an unexported field and re-expose the eight projected inherited members through measured forwarding. The CLR exception OBJECT and Go's operation-error channel are different contracts, and this base settles the first without touching the second",
       "verdict": "PASS"
     },
     {
@@ -6971,19 +6896,13 @@
     },
     {
       "clrBase": "System.Runtime.InteropServices.ExternalException",
-      "status": "DEFERRED",
-      "addsProjectedSurface": false,
+      "adapter": "bclexception.State",
+      "status": "COMPOSED",
+      "addsProjectedSurface": true,
       "derivedTypes": 3,
-      "projectedTypes": 0,
+      "projectedTypes": 3,
       "exportedEmbeddings": 0,
-      "blockers": [
-        {
-          "kind": "ARCHITECTURE",
-          "needs": "System.Exception",
-          "detail": "it derives from System.Exception, so every blocker of that base applies here first; its own addition is one ErrorCode property over int32"
-        }
-      ],
-      "rationale": "derives from System.Exception and inherits the same open decision",
+      "rationale": "the same private adapter as System.Exception, with the ErrorCode member and the ToString override its three XNA subclasses inherit",
       "verdict": "PASS"
     },
     {
@@ -7149,23 +7068,6 @@
         "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
       ],
       "remaining": 1,
-      "verdict": "PASS"
-    },
-    {
-      "family": "Exception types",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "all eight declare ONLY constructors, so the whole useful surface is inherited from System.Exception; the family becomes implementable the moment that base has a measured minimal projection, and the CLR exception object is a separate decision from Go's operation-error channel",
-      "types": [
-        "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
-        "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
-        "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
-        "Microsoft.Xna.Framework.Content.ContentLoadException",
-        "Microsoft.Xna.Framework.Graphics.DeviceLostException",
-        "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
-        "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
-        "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException"
-      ],
-      "remaining": 8,
       "verdict": "PASS"
     },
     {
@@ -7832,6 +7734,1178 @@
         }
       ],
       "rationale": "a mutable BCL collection base projected as private composition plus measured forwarding; every public mutator routes through the equivalent overridable hook so a subclass override runs",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Exception",
+      "goAdapter": "bclexception.State",
+      "adapterField": "base",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "inheritedClrMembers": 8,
+      "inheritedProjectionsPerConsumer": 10,
+      "excludedMembers": 13,
+      "consumers": [
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "bclexception.State",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 3,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 10,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "bclexception.State",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 4,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 10,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "bclexception.State",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 3,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 10,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "bclexception.State",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 3,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 10,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "bclexception.State",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 3,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 10,
+          "verdict": "PASS"
+        }
+      ],
+      "inheritedMemberInventory": [
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetBaseException",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.GetBaseException",
+          "goResults": "framework.ExceptionReference",
+          "present": true,
+          "rationale": "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetType",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.GetType",
+          "goResults": "reflect.Type",
+          "present": true,
+          "rationale": "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.HelpLink",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.SetHelpLink",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "InnerException",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.InnerException",
+          "goResults": "framework.ExceptionReference",
+          "accessor": "get",
+          "present": true,
+          "rationale": "one ldfld of the exception the two-argument constructor stored"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Message",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.Message",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.Source",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.SetSource",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "StackTrace",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.StackTrace",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoMicrophoneConnectedException.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "GetClassName(), then \": \" and the message when it is non-empty, then \" ---\u003e \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetBaseException",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.GetBaseException",
+          "goResults": "framework.ExceptionReference",
+          "present": true,
+          "rationale": "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetType",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.GetType",
+          "goResults": "reflect.Type",
+          "present": true,
+          "rationale": "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.HelpLink",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.SetHelpLink",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "InnerException",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.InnerException",
+          "goResults": "framework.ExceptionReference",
+          "accessor": "get",
+          "present": true,
+          "rationale": "one ldfld of the exception the two-argument constructor stored"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Message",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.Message",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.Source",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.SetSource",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "StackTrace",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.StackTrace",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentLoadException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentLoadException.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "GetClassName(), then \": \" and the message when it is non-empty, then \" ---\u003e \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetBaseException",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.GetBaseException",
+          "goResults": "framework.ExceptionReference",
+          "present": true,
+          "rationale": "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetType",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.GetType",
+          "goResults": "reflect.Type",
+          "present": true,
+          "rationale": "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.HelpLink",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.SetHelpLink",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "InnerException",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.InnerException",
+          "goResults": "framework.ExceptionReference",
+          "accessor": "get",
+          "present": true,
+          "rationale": "one ldfld of the exception the two-argument constructor stored"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Message",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.Message",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.Source",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.SetSource",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "StackTrace",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.StackTrace",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceLostException.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "GetClassName(), then \": \" and the message when it is non-empty, then \" ---\u003e \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetBaseException",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.GetBaseException",
+          "goResults": "framework.ExceptionReference",
+          "present": true,
+          "rationale": "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetType",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.GetType",
+          "goResults": "reflect.Type",
+          "present": true,
+          "rationale": "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.HelpLink",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.SetHelpLink",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "InnerException",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.InnerException",
+          "goResults": "framework.ExceptionReference",
+          "accessor": "get",
+          "present": true,
+          "rationale": "one ldfld of the exception the two-argument constructor stored"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Message",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.Message",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.Source",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.SetSource",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "StackTrace",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.StackTrace",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DeviceNotResetException.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "GetClassName(), then \": \" and the message when it is non-empty, then \" ---\u003e \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetBaseException",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.GetBaseException",
+          "goResults": "framework.ExceptionReference",
+          "present": true,
+          "rationale": "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "GetType",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.GetType",
+          "goResults": "reflect.Type",
+          "present": true,
+          "rationale": "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.HelpLink",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.SetHelpLink",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "InnerException",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.InnerException",
+          "goResults": "framework.ExceptionReference",
+          "accessor": "get",
+          "present": true,
+          "rationale": "one ldfld of the exception the two-argument constructor stored"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Message",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.Message",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.Source",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.SetSource",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "StackTrace",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.StackTrace",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"
+        },
+        {
+          "clrBase": "System.Exception",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:NoSuitableGraphicsDeviceException.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "GetClassName(), then \": \" and the message when it is non-empty, then \" ---\u003e \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": "Data",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Collections.IDictionary, the non-generic dictionary contract",
+          "reason": "genuinely public CLR surface that IS absent. The non-generic IDictionary is named nowhere else in the profile except as the same blocker on the thirteen Design converters"
+        },
+        {
+          "clrMember": "TargetSite",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Reflection.MethodBase and the reflection member model",
+          "reason": "genuinely public CLR surface that IS absent; it would also be null for an exception nothing threw, which is every exception this projection can produce"
+        },
+        {
+          "clrMember": "GetObjectData",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Runtime.Serialization.SerializationInfo and StreamingContext",
+          "reason": "the same 238-member closure that blocks Dictionary`2::GetObjectData, measured in Foundation 74"
+        },
+        {
+          "clrMember": ".ctor()",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors; each derived type declares its own three"
+        },
+        {
+          "clrMember": ".ctor(string)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "as above"
+        },
+        {
+          "clrMember": ".ctor(string,Exception)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "as above"
+        },
+        {
+          "clrMember": ".ctor(SerializationInfo,StreamingContext)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`family`, and not inherited"
+        },
+        {
+          "clrMember": "HResult",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`family`; it is not public surface. ExternalException's public ErrorCode is its one reader in the profile"
+        },
+        {
+          "clrMember": "SerializeObjectState",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "a `family` event over EventHandler\u003cSafeSerializationEventArgs\u003e; not public surface, and its args type is a serialization type"
+        },
+        {
+          "clrMember": "Init",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper the constructors call"
+        },
+        {
+          "clrMember": "GetClassName",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper Message and ToString call"
+        },
+        {
+          "clrMember": "GetStackTrace",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper StackTrace and ToString call"
+        },
+        {
+          "clrMember": "_Exception.GetType",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation of the COM _Exception interface"
+        }
+      ],
+      "rationale": "the CLR exception base, composed privately; it is NOT a Go error, and CNA-Go's per-operation error channel is unchanged by its existence",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Runtime.InteropServices.ExternalException",
+      "goAdapter": "bclexception.State",
+      "adapterField": "base",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "inheritedClrMembers": 9,
+      "inheritedProjectionsPerConsumer": 11,
+      "excludedMembers": 14,
+      "consumers": [
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "bclexception.State",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 3,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 11,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "bclexception.State",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 3,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 11,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "bclexception.State",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 4,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 11,
+          "verdict": "PASS"
+        }
+      ],
+      "inheritedMemberInventory": [
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "ErrorCode",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.ErrorCode",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_ErrorCode is one forwarded Exception::get_HResult, which is `family` on the base and public here"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "GetBaseException",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.GetBaseException",
+          "goResults": "framework.ExceptionReference",
+          "present": true,
+          "rationale": "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "GetType",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.GetType",
+          "goResults": "reflect.Type",
+          "present": true,
+          "rationale": "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.HelpLink",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.SetHelpLink",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "InnerException",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.InnerException",
+          "goResults": "framework.ExceptionReference",
+          "accessor": "get",
+          "present": true,
+          "rationale": "one ldfld of the exception the two-argument constructor stored"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "Message",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.Message",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.Source",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.SetSource",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "StackTrace",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.StackTrace",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:InstancePlayLimitException.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "GetClassName(), then \": \" and the message when it is non-empty, then \" ---\u003e \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "ErrorCode",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.ErrorCode",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_ErrorCode is one forwarded Exception::get_HResult, which is `family` on the base and public here"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "GetBaseException",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.GetBaseException",
+          "goResults": "framework.ExceptionReference",
+          "present": true,
+          "rationale": "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "GetType",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.GetType",
+          "goResults": "reflect.Type",
+          "present": true,
+          "rationale": "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.HelpLink",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.SetHelpLink",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "InnerException",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.InnerException",
+          "goResults": "framework.ExceptionReference",
+          "accessor": "get",
+          "present": true,
+          "rationale": "one ldfld of the exception the two-argument constructor stored"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "Message",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.Message",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.Source",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.SetSource",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "StackTrace",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.StackTrace",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:NoAudioHardwareException.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "GetClassName(), then \": \" and the message when it is non-empty, then \" ---\u003e \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "ErrorCode",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.ErrorCode",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_ErrorCode is one forwarded Exception::get_HResult, which is `family` on the base and public here"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "GetBaseException",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.GetBaseException",
+          "goResults": "framework.ExceptionReference",
+          "present": true,
+          "rationale": "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "GetType",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.GetType",
+          "goResults": "reflect.Type",
+          "present": true,
+          "rationale": "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this`"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.HelpLink",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.SetHelpLink",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "InnerException",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.InnerException",
+          "goResults": "framework.ExceptionReference",
+          "accessor": "get",
+          "present": true,
+          "rationale": "one ldfld of the exception the two-argument constructor stored"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "Message",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.Message",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null -- and GetClassName is the DERIVED type's name, so a default-constructed DeviceLostException names itself. The null test is not statically dead, which is why the adapter carries the CLR field's null explicitly"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.Source",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.SetSource",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "StackTrace",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.StackTrace",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception, so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty"
+        },
+        {
+          "clrBase": "System.Runtime.InteropServices.ExternalException",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDeviceNotConnectedException.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "GetClassName(), then \": \" and the message when it is non-empty, then \" ---\u003e \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": "Data",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Collections.IDictionary, the non-generic dictionary contract",
+          "reason": "genuinely public CLR surface that IS absent. The non-generic IDictionary is named nowhere else in the profile except as the same blocker on the thirteen Design converters"
+        },
+        {
+          "clrMember": "TargetSite",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Reflection.MethodBase and the reflection member model",
+          "reason": "genuinely public CLR surface that IS absent; it would also be null for an exception nothing threw, which is every exception this projection can produce"
+        },
+        {
+          "clrMember": "GetObjectData",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Runtime.Serialization.SerializationInfo and StreamingContext",
+          "reason": "the same 238-member closure that blocks Dictionary`2::GetObjectData, measured in Foundation 74"
+        },
+        {
+          "clrMember": ".ctor()",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors; each derived type declares its own three"
+        },
+        {
+          "clrMember": ".ctor(string)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "as above"
+        },
+        {
+          "clrMember": ".ctor(string,Exception)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "as above"
+        },
+        {
+          "clrMember": ".ctor(SerializationInfo,StreamingContext)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`family`, and not inherited"
+        },
+        {
+          "clrMember": "HResult",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`family` on System.Exception; ErrorCode above is the public projection of it"
+        },
+        {
+          "clrMember": ".ctor(string,int32)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors, and no XNA subclass declares the errorCode overload"
+        },
+        {
+          "clrMember": "SerializeObjectState",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "a `family` event over EventHandler\u003cSafeSerializationEventArgs\u003e; not public surface, and its args type is a serialization type"
+        },
+        {
+          "clrMember": "Init",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper the constructors call"
+        },
+        {
+          "clrMember": "GetClassName",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper Message and ToString call"
+        },
+        {
+          "clrMember": "GetStackTrace",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper StackTrace and ToString call"
+        },
+        {
+          "clrMember": "_Exception.GetType",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation of the COM _Exception interface"
+        }
+      ],
+      "rationale": "System.Exception's surface plus a public ErrorCode and a different ToString; the same private adapter carries both, selected by a flag the derived constructor sets",
       "verdict": "PASS"
     }
   ],
@@ -10218,7 +11292,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "1a1af5ee06df3fb57fec8778f99fcc13f3f3faa419f362059c92267d9287327c",
+    "mappingSha256": "df8e16f9548c404c09603e065a326e8506f5b513bfd45d7c285d51f0dff4e648",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

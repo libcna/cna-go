@@ -236,21 +236,6 @@ var frontierFamilies = []frontierFamily{
 		Types:          []string{"Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"},
 	},
 	{
-		Name:           "Exception types",
-		Classification: frontierActionableLocal,
-		Note:           "all eight declare ONLY constructors, so the whole useful surface is inherited from System.Exception; the family becomes implementable the moment that base has a measured minimal projection, and the CLR exception object is a separate decision from Go's operation-error channel",
-		Types: []string{
-			"Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
-			"Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
-			"Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
-			"Microsoft.Xna.Framework.Content.ContentLoadException",
-			"Microsoft.Xna.Framework.Graphics.DeviceLostException",
-			"Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
-			"Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
-			"Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
-		},
-	},
-	{
 		Name:           "Content plumbing",
 		Classification: frontierActionableLocal,
 		Note:           "~87 CNA content-reader routes; the question is how much of ContentReader's public state -- stream position, shared resources, external references, type-reader identity -- the C API actually exposes, measured member by member rather than blocked as a family",

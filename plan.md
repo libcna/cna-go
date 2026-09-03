@@ -1590,6 +1590,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 75 | GraphicsDeviceInformation, and the rest of GraphicsDeviceManager | `foundation-75-device-selection-evidence.md` |
 | 76 | System.Exception, and the profile's last missing member | `foundation-76-exception-projection-evidence.md` |
 | 77 | the four stock vertex structs | `foundation-77-vertex-structs-evidence.md` |
+| 78 | the eight XNA exception types | `foundation-78-exception-family-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1655,6 +1656,27 @@ already written down rather than a new one.
 OWNED from the public constructor -- and a destroyed OWNED device must report
 itself disposed rather than falling back to the borrowed path and answering as
 the running game's device.
+
+**A COMPOSED base whose consumers span PACKAGES moves to an internal package**
+(78). The adapter must stay unexported, and eight exception types in four
+packages cannot reach an unexported framework type. `internal/` keeps it
+unreachable from outside the module, which is the property the unexported field
+had.
+
+**A reference interface whose implementors span packages exposes ONE language
+accessor, admitted by name** (78). Go has no way for one package to satisfy
+another package's unexported method. The accessor is registered on the base
+adapter, admitted only on the adapter's own type and on types that compose that
+base, and it must record a reason -- and it keeps the interface closed because
+its result type is declared in an internal package.
+
+**A DECLARED member blocked by an external BCL closure is recorded and COUNTED,
+never dropped** (78). `blockedDeclaredMembers` is the declared-member
+counterpart of a base adapter's `BCL_PROJECTION_BLOCKED_EXTERNAL` exclusion. The
+identity must exist in the pinned contract, the entry must state its kind, needs
+and reason, and `BLOCKED_DECLARED_MEMBERS` is reported separately from
+`MISSING_MEMBER` so it can never read as surface that is present. The pinned
+3243 declared projections is checked as `declared + blocked`.
 
 **A CLR EXCEPTION OBJECT and a Go operation error are DIFFERENT CONTRACTS**
 (76). Foundation 29 framed this as a dilemma -- either every settled

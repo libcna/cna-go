@@ -45,15 +45,21 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// XNA-inherited projections are the surfaces the two composition
 	// projections make representable, and each is pinned separately so a
 	// change in any one class is attributed rather than absorbed.
+	// A member the blocked-declared registry records is subtracted from the
+	// projection and added back here, so 3243 keeps meaning what it meant and a
+	// blocked member is a smaller projection plus an equal, separately counted
+	// admission.
 	declared := surface.ExpectedGoMembers - surface.BCLInheritedProjections - surface.XNAInheritedProjections
-	if surface.ExpectedGoTypes != 257 || declared != 3243 {
-		t.Fatalf("XNA-declared mapped counts = %d/%d", surface.ExpectedGoTypes, declared)
+	if surface.ExpectedGoTypes != 257 || declared+surface.BlockedDeclaredMembers != 3243 {
+		t.Fatalf("XNA-declared mapped counts = %d/%d plus %d blocked",
+			surface.ExpectedGoTypes, declared, surface.BlockedDeclaredMembers)
 	}
-	// 24/26, not 11/12: Foundation 74 composed Dictionary`2, so
-	// LaunchParameters' thirteen inherited CLR members join
-	// GameComponentCollection's eleven, and the fourteen Go identities they
-	// project -- the indexer contributes two -- join the twelve.
-	if surface.BCLInheritedCLRMembers != 24 || surface.BCLInheritedProjections != 26 {
+	// 91/109, not 24/26: Foundation 78 composed System.Exception and
+	// ExternalException, so the five direct subclasses contribute eight
+	// inherited CLR members each and the three ExternalException subclasses
+	// nine, and each inherited property with a setter projects two Go
+	// identities.
+	if surface.BCLInheritedCLRMembers != 91 || surface.BCLInheritedProjections != 109 {
 		t.Fatalf("BCL inherited counts = %d CLR members/%d projections", surface.BCLInheritedCLRMembers, surface.BCLInheritedProjections)
 	}
 	// 15, not 14: Milestone 55 replaced the name-keyed inheritance exclusion
@@ -75,8 +81,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// 3456, not 3443: Foundation 73's newly composed TextureCube adds
 	// RenderTargetCube's thirteen inherited projections. 3470, not 3456:
 	// Foundation 74's newly composed Dictionary`2 adds LaunchParameters'
-	// fourteen.
-	if surface.ExpectedGoMembers != 3470 {
+	// fourteen. 3551, not 3470: Foundation 78 composed System.Exception and
+	// ExternalException, adding the eight derived exception types' inherited
+	// surface, and removed two blocked declared constructors.
+	if surface.ExpectedGoMembers != 3551 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -4703,9 +4711,18 @@ func TestBCLBaseRelationshipsAreExhaustive(t *testing.T) {
 		bclBaseRelationships["System.EventArgs"].Adapter != "EventArgs" {
 		t.Fatalf("System.EventArgs = %+v", bclBaseRelationships["System.EventArgs"])
 	}
-	for _, deferred := range []string{"System.Exception", "System.Attribute", "System.Runtime.InteropServices.ExternalException"} {
+	// System.Exception and ExternalException were DEFERRED until Foundation 78
+	// composed them; System.Attribute is the one that is still open, and the
+	// content-serializer attributes are still missing because of it.
+	for _, deferred := range []string{"System.Attribute"} {
 		if bclBaseRelationships[deferred].Status != "DEFERRED" {
 			t.Fatalf("%s = %+v, want DEFERRED", deferred, bclBaseRelationships[deferred])
+		}
+	}
+	for _, composed := range []string{"System.Exception", "System.Runtime.InteropServices.ExternalException"} {
+		if bclBaseRelationships[composed].Status != "COMPOSED" ||
+			bclBaseRelationships[composed].Adapter != "bclexception.State" {
+			t.Fatalf("%s = %+v, want COMPOSED over bclexception.State", composed, bclBaseRelationships[composed])
 		}
 	}
 }
@@ -4772,6 +4789,15 @@ func seedSignatureAdapters(actual *actualSurface) {
 				if _, present := actual.Members[memberKey]; !present {
 					actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "method"}
 				}
+			}
+		}
+		// The language accessors a reference interface requires are members the
+		// measurement expects too, so a fixture that seeded only the CLR members
+		// would report every one of them missing.
+		for _, accessor := range adapter.LanguageAccessors {
+			memberKey := symbolKey{Package: frameworkPackage, Receiver: goName, Name: accessor.Name}
+			if _, present := actual.Members[memberKey]; !present {
+				actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "method"}
 			}
 		}
 	}
@@ -5800,7 +5826,10 @@ func TestEveryDeferredBaseNamesItsBlockers(t *testing.T) {
 // TestDeferredBaseWithoutBlockersIsRejected is the negative control for the
 // claim above, run through the real measurement rather than the table.
 func TestDeferredBaseWithoutBlockersIsRejected(t *testing.T) {
-	identity := "System.Exception"
+	// System.Attribute rather than System.Exception: Foundation 78 composed the
+	// latter, and a COMPOSED base is not required to carry blockers. The claim
+	// under test is about DEFERRED bases, so it has to be run on one.
+	identity := "System.Attribute"
 	original := bclBaseRelationships[identity]
 	t.Cleanup(func() { bclBaseRelationships[identity] = original })
 
@@ -5824,33 +5853,38 @@ func TestDeferredBaseWithoutBlockersIsRejected(t *testing.T) {
 	}
 }
 
-// TestSystemExceptionAuditIsRecorded pins the specific findings of the
-// directed System.Exception audit, so a later edit cannot quietly soften them.
+// TestSystemExceptionAuditIsRecorded pins the specific findings of the directed
+// System.Exception audit, so a later edit cannot quietly soften them.
+//
+// Foundation 29 recorded five blockers; Foundation 78 composed the base and
+// answered the two architecture ones -- a CLR exception object and a Go
+// operation error are different contracts, and StackTrace's null is the
+// reference's own answer for an exception nothing threw. The three SUBSYSTEM
+// findings survive, as measured BCL_PROJECTION_BLOCKED_EXTERNAL exclusions on
+// the adapter, and this test now checks them THERE.
 func TestSystemExceptionAuditIsRecorded(t *testing.T) {
-	relationship := bclBaseRelationships["System.Exception"]
-	needs := make(map[string]string, len(relationship.Blockers))
-	architecture := 0
-	for _, blocker := range relationship.Blockers {
-		if blocker.Kind == "ARCHITECTURE" {
-			architecture++
-			continue
+	adapter, present := bclBaseAdapters["System.Exception"]
+	if !present {
+		t.Fatal("System.Exception is COMPOSED and declares no base adapter")
+	}
+	needs := make(map[string]string, len(adapter.Excluded))
+	for _, excluded := range adapter.Excluded {
+		if exclusionKind(excluded) == "BCL_PROJECTION_BLOCKED_EXTERNAL" {
+			needs[excluded.CLRMember] = excluded.Needs
 		}
-		needs[blocker.CLRMember] = blocker.Needs
 	}
-	if architecture < 2 {
-		t.Fatalf("the audit found two architecture obstacles, the table records %d", architecture)
-	}
-	for member, subsystem := range map[string]string{
-		"Data":          "System.Collections.IDictionary",
-		"TargetSite":    "System.Reflection.MethodBase",
-		"GetObjectData": "System.Runtime.Serialization",
+	for _, member := range []struct{ name, subsystem string }{
+		{"Data", "System.Collections.IDictionary"},
+		{"TargetSite", "System.Reflection.MethodBase"},
+		{"GetObjectData", "System.Runtime.Serialization"},
 	} {
-		if needs[member] != subsystem {
-			t.Fatalf("System.Exception::%s must be recorded as needing %s, got %q", member, subsystem, needs[member])
+		if !strings.Contains(needs[member.name], member.subsystem) {
+			t.Fatalf("System.Exception::%s must be recorded as blocked on %s, got %q",
+				member.name, member.subsystem, needs[member.name])
 		}
 	}
 	// The eight derived types declare constructors and nothing else, which is
-	// why the whole question is about inherited surface.
+	// why the whole question was about inherited surface.
 	reference := loadPinnedContract(t)
 	derived := 0
 	for _, declared := range reference.Types {
@@ -5870,6 +5904,17 @@ func TestSystemExceptionAuditIsRecorded(t *testing.T) {
 	}
 	if derived != 8 {
 		t.Fatalf("the audit covered 8 derived types, the contract has %d", derived)
+	}
+	// The two protected deserialization constructors are the only declared
+	// members in the whole profile the blocked registry records, and each names
+	// its closure.
+	if len(blockedDeclaredMembers) != 2 {
+		t.Fatalf("the blocked-declared registry holds %d entries", len(blockedDeclaredMembers))
+	}
+	for identity, entry := range blockedDeclaredMembers {
+		if entry.Kind == "" || entry.Needs == "" || entry.Reason == "" {
+			t.Fatalf("%s is an under-specified blocked declared member: %+v", identity, entry)
+		}
 	}
 }
 
@@ -6199,8 +6244,9 @@ func TestGameBaseCallAdaptersAreNotXNAIdentities(t *testing.T) {
 	// XNA-DECLARED part: 3243, which never moves. The two inherited provenance
 	// classes are pinned by their own registries.
 	declared := expected.ExpectedGoMembers - expected.BCLInheritedProjections - expected.XNAInheritedProjections
-	if declared != 3243 {
-		t.Fatalf("XNA-declared member projections moved to %d; the base-call family must not touch them", declared)
+	if declared+expected.BlockedDeclaredMembers != 3243 {
+		t.Fatalf("XNA-declared member projections moved to %d plus %d blocked; the base-call family must not touch them",
+			declared, expected.BlockedDeclaredMembers)
 	}
 }
 
@@ -8131,8 +8177,13 @@ func TestEveryMemberHasExactlyOneProvenanceClass(t *testing.T) {
 		t.Fatalf("the three provenance classes cover %d members, the surface has %d",
 			declared+bclInherited+xnaInherited, expected.ExpectedGoMembers)
 	}
-	if declared != 3243 {
-		t.Fatalf("%d XNA-declared member projections, the pinned count is 3243", declared)
+	// The pinned 3243 is the projection of the 2,964 XNA-declared reference
+	// members. A member the blocked-declared registry records is subtracted
+	// from the projection and counted separately, so the two together still
+	// account for it.
+	if declared+expected.BlockedDeclaredMembers != 3243 {
+		t.Fatalf("%d XNA-declared member projections plus %d blocked, the pinned count is 3243",
+			declared, expected.BlockedDeclaredMembers)
 	}
 	if bclInherited != expected.BCLInheritedProjections || xnaInherited != expected.XNAInheritedProjections {
 		t.Fatalf("provenance walk found %d BCL-inherited and %d XNA-inherited, the surface reports %d and %d",

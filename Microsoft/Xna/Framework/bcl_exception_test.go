@@ -107,9 +107,10 @@ func TestExceptionSatisfiesTheReferenceInterface(t *testing.T) {
 	if reference.Message() != "boom" {
 		t.Fatal("the interface does not carry Message")
 	}
-	// The unexported accessor is what keeps the interface unsatisfiable from
-	// outside the module.
-	if reference.exceptionState() == nil {
+	// The State accessor is what keeps the interface unsatisfiable from outside
+	// the module: its result type is declared in an internal package, so no
+	// consumer can name it or supply one.
+	if reference.State() == nil {
 		t.Fatal("the reference interface exposes no state")
 	}
 	// And the concrete type is recoverable, which is the downcast a C# consumer

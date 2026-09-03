@@ -68,9 +68,15 @@ func run(root, contractFile, mappingFile, reportFile, missingFile, remainingFile
 	// being absorbed. 3243 is the pinned projection of the 2,964 XNA-declared
 	// reference members and never moves; BCL-inherited projections are added
 	// on top and are separately pinned by the adapter registry.
+	// A member the blocked-declared registry records is subtracted from the
+	// projection and added back here, so the pinned 3243 keeps meaning "the
+	// projection of the 2,964 XNA-declared reference members" and a blocked
+	// member shows up as a smaller projection plus an equal, separately counted
+	// admission -- never as a total that quietly stayed the same.
 	declaredProjections := expected.ExpectedGoMembers - expected.BCLInheritedProjections - expected.XNAInheritedProjections
-	if expected.ExpectedGoTypes != 257 || declaredProjections != 3243 {
-		return fmt.Errorf("mapping count admission failed: got %d types/%d XNA-declared member projections", expected.ExpectedGoTypes, declaredProjections)
+	if expected.ExpectedGoTypes != 257 || declaredProjections+expected.BlockedDeclaredMembers != 3243 {
+		return fmt.Errorf("mapping count admission failed: got %d types/%d XNA-declared member projections plus %d blocked",
+			expected.ExpectedGoTypes, declaredProjections, expected.BlockedDeclaredMembers)
 	}
 	if expected.BCLInheritedProjections != expectedBCLInheritedProjections(expected) {
 		return fmt.Errorf("BCL inherited projection admission failed: got %d, registry implies %d", expected.BCLInheritedProjections, expectedBCLInheritedProjections(expected))
@@ -206,6 +212,7 @@ func printSummary(result report) {
 		"XNA_INHERITED_MEMBER_PROJECTIONS",
 		"EXPECTED_GO_TYPES", "EXPECTED_GO_MEMBERS",
 		"TARGET_TYPES", "TARGET_MEMBERS", "TOTAL_DIAGNOSTICS", "MISSING_TYPE", "MISSING_MEMBER",
+		"BLOCKED_DECLARED_MEMBERS",
 		"COMPLETE_TYPES", "PARTIAL_TYPES", "MISSING_TYPES",
 		"FRONTIER_FAMILIES", "GLOBAL_ACTIONABLE_LOCAL", "GLOBAL_UNREVIEWED",
 		"GLOBAL_BLOCKED_UPSTREAM_CNA", "GLOBAL_BLOCKED_PLATFORM", "GLOBAL_BLOCKED_HARDWARE",
