@@ -5,18 +5,18 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "BCL_ADAPTER_EXCLUSIONS": 101,
-    "BCL_ADAPTER_EXCLUSIONS_BCL_PROJECTION_BLOCKED_EXTERNAL": 1,
-    "BCL_ADAPTER_EXCLUSIONS_BLOCKED": 3,
+    "BCL_ADAPTER_EXCLUSIONS": 115,
+    "BCL_ADAPTER_EXCLUSIONS_BCL_PROJECTION_BLOCKED_EXTERNAL": 4,
+    "BCL_ADAPTER_EXCLUSIONS_BLOCKED": 6,
     "BCL_ADAPTER_EXCLUSIONS_LANGUAGE_MAPPING_LIMITATION": 2,
     "BCL_BASE_ADAPTERS": 2,
     "BCL_BASE_ADAPTER_CONSUMERS": 2,
     "BCL_DEFERRED_BASE_BLOCKERS": 15,
     "BCL_INHERITED_MEMBER_PROJECTIONS": 26,
     "BCL_INHERITED_PUBLIC_MEMBERS": 24,
-    "BCL_SIGNATURE_ADAPTERS": 5,
+    "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
-    "COMPLETE_TYPES": 158,
+    "COMPLETE_TYPES": 159,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 5,
     "ENUM_VALUE_MISMATCH": 0,
@@ -56,14 +56,14 @@
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 1,
+    "MISSING_MEMBER": 0,
     "MISSING_TYPE": 98,
     "MISSING_TYPES": 98,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
     "PARAMETER_MAPPING_MISMATCH": 0,
-    "PARTIAL_TYPES": 1,
+    "PARTIAL_TYPES": 0,
     "PROPERTY_MAPPING_MISMATCH": 0,
     "PUBLIC_NATIVE_FFI_LEAK": 0,
     "RAW_HANDLE_LEAK": 0,
@@ -72,9 +72,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2548,
+    "TARGET_MEMBERS": 2549,
     "TARGET_TYPES": 159,
-    "TOTAL_DIAGNOSTICS": 99,
+    "TOTAL_DIAGNOSTICS": 98,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -329,12 +329,6 @@
       "xna": "Microsoft.Xna.Framework.FrameworkDispatcher",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:FrameworkDispatcher",
       "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::ShowMissingRequirementMessage(System.Exception)",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.ShowMissingRequirementMessage",
-      "message": "mapped Go member is absent"
     },
     {
       "category": "MISSING_TYPE",
@@ -718,6 +712,7 @@
     "Microsoft.Xna.Framework.CurveTangent",
     "Microsoft.Xna.Framework.DisplayOrientation",
     "Microsoft.Xna.Framework.DrawableGameComponent",
+    "Microsoft.Xna.Framework.Game",
     "Microsoft.Xna.Framework.GameComponent",
     "Microsoft.Xna.Framework.GameComponentCollection",
     "Microsoft.Xna.Framework.GameComponentCollectionEventArgs",
@@ -857,15 +852,7 @@
     "Microsoft.Xna.Framework.Vector3",
     "Microsoft.Xna.Framework.Vector4"
   ],
-  "partialTypes": [
-    {
-      "xna": "Microsoft.Xna.Framework.Game",
-      "missingMembers": [
-        "Microsoft.Xna.Framework.Game::ShowMissingRequirementMessage(System.Exception) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.ShowMissingRequirementMessage"
-      ],
-      "diagnostics": 1
-    }
-  ],
+  "partialTypes": null,
   "missingTypes": [
     "Microsoft.Xna.Framework.Audio.AudioCategory",
     "Microsoft.Xna.Framework.Audio.AudioEngine",
@@ -8374,6 +8361,214 @@
       ],
       "rationale": "a read-only BCL view the pinned contract returns from projected members; it forwards every read to the list it was given, so enumeration semantics and mutation visibility are the underlying list's rather than the view's",
       "verdict": "PASS"
+    },
+    {
+      "clrType": "System.Exception",
+      "goAdapter": "Exception",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "clrPublicMembers": 8,
+      "goMembers": 10,
+      "excludedMembers": 14,
+      "signaturePositions": 0,
+      "carriers": null,
+      "memberInventory": [
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "Message",
+          "clrKind": "property",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.Message",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null. The null test is NOT statically dead: `new Exception()` renders the default sentence and `new Exception(\"\")` renders the empty string, so the projection carries the CLR field's null explicitly"
+        },
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "InnerException",
+          "clrKind": "property",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.InnerException",
+          "goResults": "ExceptionReference",
+          "accessor": "get",
+          "present": true,
+          "rationale": "one ldfld of the exception the two-argument constructor stored"
+        },
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "GetBaseException",
+          "clrKind": "method",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.GetBaseException",
+          "goResults": "ExceptionReference",
+          "present": true,
+          "rationale": "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"
+        },
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "StackTrace",
+          "clrKind": "property",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.StackTrace",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception -- failure is a Go error -- so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty. A Go stack would be a different thing wearing the same name"
+        },
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.HelpLink",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "HelpLink",
+          "clrKind": "property",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.SetHelpLink",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get and set are one ldfld and one stfld over _helpURL, with no validation"
+        },
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.Source",
+          "goResults": "string",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame, so the field is all a consumer can observe"
+        },
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "Source",
+          "clrKind": "property",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.SetSource",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame, so the field is all a consumer can observe"
+        },
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "GetClassName(), then \": \" and the message when it is non-empty, then \" ---\u003e \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker, then NewLine and the stack trace when there is one"
+        },
+        {
+          "clrType": "System.Exception",
+          "clrBase": "System.Exception",
+          "clrMember": "GetType",
+          "clrKind": "method",
+          "consumer": "Exception",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Exception.GetType",
+          "goResults": "reflect.Type",
+          "present": true,
+          "rationale": "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this` and this member reflects over it"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": "Data",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Collections.IDictionary, the non-generic dictionary contract",
+          "reason": "genuinely public CLR surface that IS absent from the Go projection. The non-generic IDictionary is named nowhere else in the XNA 4.0 Windows profile except as the same blocker on the thirteen Design type converters, and projecting it means projecting DictionaryEntry, IDictionaryEnumerator and the whole non-generic collection family"
+        },
+        {
+          "clrMember": "TargetSite",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Reflection.MethodBase, and the reflection MEMBER model behind it",
+          "reason": "genuinely public CLR surface that IS absent. CNA-Go maps System.Type to reflect.Type and nothing else; MethodBase reaches MethodInfo, ConstructorInfo, ParameterInfo, MemberInfo and Module, none of which the profile names. It would also be null for an exception nothing threw, which is every exception this projection can produce"
+        },
+        {
+          "clrMember": "GetObjectData",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Runtime.Serialization.SerializationInfo (43 public members) and StreamingContext (6), whose own inventory reaches System.Decimal (89) and System.DateTime (91)",
+          "reason": "the same closure that blocks Dictionary\u003cK,V\u003e::GetObjectData, measured in Foundation 74 and unchanged: 238 public BCL members in types the profile names nowhere else"
+        },
+        {
+          "clrMember": ".ctor()",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the adapter's own constructors are the projection of the three public ones; no XNA member is projected from them"
+        },
+        {
+          "clrMember": ".ctor(string)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "as above"
+        },
+        {
+          "clrMember": ".ctor(string,Exception)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "as above"
+        },
+        {
+          "clrMember": ".ctor(SerializationInfo,StreamingContext)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`family`, and the CLR does not inherit constructors"
+        },
+        {
+          "clrMember": "HResult",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`family`; it is not public surface. ExternalException::get_ErrorCode is the one public reader of it in the profile"
+        },
+        {
+          "clrMember": "SerializeObjectState",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "a `family` event over EventHandler\u003cSafeSerializationEventArgs\u003e; not public surface, and its args type is a serialization type"
+        },
+        {
+          "clrMember": "Init",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper the constructors call"
+        },
+        {
+          "clrMember": "GetClassName",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper Message and ToString call"
+        },
+        {
+          "clrMember": "GetStackTrace",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper StackTrace and ToString call"
+        },
+        {
+          "clrMember": "_Exception.GetType",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation of the COM _Exception interface; the settled BCL-interface rule projects nothing for it"
+        },
+        {
+          "clrMember": "ISerializable.GetObjectData",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the public GetObjectData IS the implementation; there is no separate explicit one"
+        }
+      ],
+      "rationale": "the CLR exception object the profile constructs and passes; it is NOT a Go error, and CNA-Go's per-operation error channel is unchanged by its existence",
+      "verdict": "PASS"
     }
   ],
   "bclInterfaceRelationships": [
@@ -10024,7 +10219,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "f352136cbdce4e151e3108d8c4b09d7dc6560a0082ee15206f7b71e8c63033ac",
+    "mappingSha256": "dec4d2ce14bfb9319e8b35ecb1f20eb824b4ac1ead254e7d6d922c515f509db3",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

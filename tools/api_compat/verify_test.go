@@ -4757,9 +4757,18 @@ func seedSignatureAdapters(actual *actualSurface) {
 			actual.Types[key] = &actualType{Key: key, Kind: "struct", TypeParameters: []string{"T"}}
 		}
 		for _, entry := range adapter.Members {
-			memberKey := symbolKey{Package: frameworkPackage, Receiver: goName, Name: entry.Member.Name}
-			if _, present := actual.Members[memberKey]; !present {
-				actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "method"}
+			names := []string{entry.Member.Name}
+			// A settable property is two Go identities, and the measurement
+			// expects both; seeding only the getter would make every fixture
+			// report a missing setter.
+			if entry.Member.Kind == "property" && entry.Member.Set {
+				names = append(names, "Set"+entry.Member.Name)
+			}
+			for _, name := range names {
+				memberKey := symbolKey{Package: frameworkPackage, Receiver: goName, Name: name}
+				if _, present := actual.Members[memberKey]; !present {
+					actual.Members[memberKey] = &actualMember{Key: memberKey, Kind: "method"}
+				}
 			}
 		}
 	}
@@ -5680,6 +5689,15 @@ func TestBCLSignatureAdapterDefectsAreRejected(t *testing.T) {
 	}
 }
 
+// readOnlyViewAdapters names the signature adapters whose CLR type is a
+// read-only VIEW, so a public setter on one of them would be a defect rather
+// than a fact. It is a closed list because the claim is per type, not per role.
+var readOnlyViewAdapters = map[string]bool{
+	"System.Collections.ObjectModel.ReadOnlyCollection`1":     true,
+	"System.Collections.Generic.Dictionary`2+KeyCollection":   true,
+	"System.Collections.Generic.Dictionary`2+ValueCollection": true,
+}
+
 // TestBCLSignatureAdaptersAreMeasuredNotAssumed proves the signature-adapter
 // registry describes the pinned reality, and that the two adapter roles stay
 // distinct.
@@ -5707,7 +5725,12 @@ func TestBCLSignatureAdaptersAreMeasuredNotAssumed(t *testing.T) {
 			if entry.Rationale == "" {
 				t.Fatalf("%s::%s has no recorded rationale", identity, entry.Member.Name)
 			}
-			if entry.Member.Kind == "property" && entry.Member.Set {
+			// A settable property is legitimate on a signature adapter that is
+			// not a read-only VIEW: System.Exception declares public HelpLink
+			// and Source setters. The read-only claim belongs to the adapters
+			// that make it, and is held by their exclusion lists plus the
+			// no-extra-member scan.
+			if entry.Member.Kind == "property" && entry.Member.Set && readOnlyViewAdapters[identity] {
 				t.Fatalf("%s::%s declares a public setter, which no read-only view has", identity, entry.Member.Name)
 			}
 		}

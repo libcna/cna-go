@@ -96,6 +96,13 @@ var adapterTypes = map[string]bool{
 	"GameCallbacks":     true,
 	"Iterator":          true,
 	"TimeSpan":          true,
+	// ExceptionReference is the exported interface every System.Exception
+	// signature position widens to. It is a language adapter rather than a
+	// signature adapter because it carries no state: the CONCRETE projection,
+	// Exception, is the signature adapter whose member set bclSignatureAdapters
+	// pins, and this interface reproduces exactly those members plus the
+	// unexported accessor that keeps it unsatisfiable from outside the module.
+	"ExceptionReference": true,
 }
 
 var adapterFunctions = map[string]bool{
@@ -3382,40 +3389,52 @@ func measureBCLSignatureAdapters(result *report, expected *expectedSurface, actu
 		// Every inventoried CLR member maps to one exported Go member. A
 		// property with both accessors would map to two; none of these has a
 		// public setter, which is the read-only claim itself.
+		// A settable property is TWO Go identities under the settled member
+		// rule -- the getter under the property's name and a Set-prefixed
+		// pointer method -- so the inventory is walked per ACCESSOR rather than
+		// per member. Before Foundation 76 this loop refused a public setter
+		// outright, which was a true statement about the one adapter that then
+		// existed, a read-only VIEW, rather than a rule about signature
+		// adapters: System.Exception genuinely declares public HelpLink and
+		// Source setters. A read-only view is still held read-only, by its own
+		// exclusion list plus the scan below, which is where that claim belongs.
 		wanted := make(map[string]bool)
 		for _, entry := range adapter.Members {
-			goMember := entry.Member.Name
-			if entry.Member.Kind == "property" && entry.Member.Set {
-				addDiagnostic(result, diagnostic{
-					Category: "LANGUAGE_MAPPING_MISMATCH", XNA: identity, Go: goName,
-					Message: fmt.Sprintf("signature adapter inventory declares a public setter for %q, which the read-only projection does not model", entry.Member.Name),
-				})
-				measurement.Verdict = "FAIL"
-			}
-			wanted[goMember] = true
-			key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: goMember}
-			_, present := actual.Members[key]
-			accessor := ""
+			accessors := []struct {
+				GoMember string
+				Accessor string
+			}{{GoMember: entry.Member.Name}}
 			if entry.Member.Kind == "property" {
-				accessor = "get"
+				accessors[0].Accessor = "get"
+				if entry.Member.Set {
+					accessors = append(accessors, struct {
+						GoMember string
+						Accessor string
+					}{GoMember: "Set" + entry.Member.Name, Accessor: "set"})
+				}
 			}
-			row := bclInheritedMemberMeasurement{
-				CLRType: identity, CLRBase: identity, CLRMember: entry.Member.Name, CLRKind: entry.Member.Kind,
-				Consumer: goName, GoMember: key.String(), Accessor: accessor,
-				Present: present, Rationale: entry.Rationale,
+			for _, accessor := range accessors {
+				wanted[accessor.GoMember] = true
+				key := symbolKey{Package: frameworkPackage, Receiver: goName, Name: accessor.GoMember}
+				_, present := actual.Members[key]
+				row := bclInheritedMemberMeasurement{
+					CLRType: identity, CLRBase: identity, CLRMember: entry.Member.Name, CLRKind: entry.Member.Kind,
+					Consumer: goName, GoMember: key.String(), Accessor: accessor.Accessor,
+					Present: present, Rationale: entry.Rationale,
+				}
+				if member := actual.Members[key]; member != nil {
+					row.GoResults = strings.Join(member.Results, ",")
+				}
+				if !present {
+					addDiagnostic(result, diagnostic{
+						Category: "LANGUAGE_MAPPING_MISMATCH", XNA: identity + "::" + entry.Member.Name, Go: key.String(),
+						Message: "BCL signature adapter is missing a public member of the pinned CLR type",
+					})
+					measurement.Verdict = "FAIL"
+				}
+				measurement.Inventory = append(measurement.Inventory, row)
+				measurement.GoMembers++
 			}
-			if member := actual.Members[key]; member != nil {
-				row.GoResults = strings.Join(member.Results, ",")
-			}
-			if !present {
-				addDiagnostic(result, diagnostic{
-					Category: "LANGUAGE_MAPPING_MISMATCH", XNA: identity + "::" + entry.Member.Name, Go: key.String(),
-					Message: "BCL signature adapter is missing a public member of the pinned CLR type",
-				})
-				measurement.Verdict = "FAIL"
-			}
-			measurement.Inventory = append(measurement.Inventory, row)
-			measurement.GoMembers++
 		}
 
 		// Nothing else may be exported on the adapter.

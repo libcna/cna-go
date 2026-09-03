@@ -1588,6 +1588,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 73 | the rest of GraphicsDevice, and the profile's first pixels | `foundation-73-presentation-evidence.md` |
 | 74 | the Dictionary base, LaunchParameters, and a generated roadmap | `foundation-74-dictionary-base-evidence.md` |
 | 75 | GraphicsDeviceInformation, and the rest of GraphicsDeviceManager | `foundation-75-device-selection-evidence.md` |
+| 76 | System.Exception, and the profile's last missing member | `foundation-76-exception-projection-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1653,6 +1654,26 @@ already written down rather than a new one.
 OWNED from the public constructor -- and a destroyed OWNED device must report
 itself disposed rather than falling back to the borrowed path and answering as
 the running game's device.
+
+**A CLR EXCEPTION OBJECT and a Go operation error are DIFFERENT CONTRACTS**
+(76). Foundation 29 framed this as a dilemma -- either every settled
+per-operation fallibility decision reopens, or the eight derived types are
+inert. Neither is what the projection does: an operation reports failure through
+a Go error exactly as before, and System.Exception is a value the profile
+constructs and passes. The type therefore has no Error() method, because the
+pinned CLR type declares none.
+
+**A base whose DERIVED TYPES are the point widens at RETURNS as well as at
+parameters** (76). The substitutable-base rule leaves a base-typed return as the
+concrete pointer and records the lost downcast. For an exception hierarchy that
+would erase which of the eight kinds a consumer chained, so System.Exception
+widens at every position and the downcast is a Go type assertion.
+
+**The pinned .NET Framework 4.0 mscorlib is a retained, hash-admitted message
+authority** (76). Every "read from the pinned mscorlib" claim named its sha256
+and nothing could check one; the binary is now retained at
+`~/deps/bcl-4.0-pinned` and `tools/resource_strings` verifies BCL messages
+against it, refusing a binary whose hash does not match.
 
 **A CLR interface a class declares that Go cannot put on the class has a
 REGISTERED CARRIER, compiler-checked** (75). The cross-package rule relocates a

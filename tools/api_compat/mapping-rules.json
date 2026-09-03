@@ -77,6 +77,7 @@
       "Microsoft.Xna.Framework.GameWindow|method|SetSupportedOrientations",
       "Microsoft.Xna.Framework.GameWindow|property-get|CurrentOrientation",
       "Microsoft.Xna.Framework.GameWindow|property-get|Title",
+      "Microsoft.Xna.Framework.Game|method|ShowMissingRequirementMessage",
       "Microsoft.Xna.Framework.Game|property-get|Components",
       "Microsoft.Xna.Framework.Game|property-get|Content",
       "Microsoft.Xna.Framework.Game|property-get|InactiveSleepTime",
@@ -428,7 +429,8 @@
     "System.Collections.Generic.IEqualityComparer`1": "framework.IEqualityComparer[MappedT]",
     "System.Collections.Generic.KeyValuePair`2": "framework.KeyValuePair[MappedK, MappedV]",
     "System.Collections.Generic.Dictionary`2+KeyCollection": "*framework.DictionaryKeyCollection[MappedK, MappedV]",
-    "System.Collections.Generic.Dictionary`2+ValueCollection": "*framework.DictionaryValueCollection[MappedK, MappedV]"
+    "System.Collections.Generic.Dictionary`2+ValueCollection": "*framework.DictionaryValueCollection[MappedK, MappedV]",
+    "System.Exception": "framework.ExceptionReference"
   },
   "events": {
     "handler": "System.EventHandler<T> -> EventHandler[T]; the generic argument is mapped exactly and never degraded to any, a bare func, a channel, or a callback word",
@@ -473,7 +475,7 @@
       "System.Collections.Generic.Dictionary`2": "dictionaryBase[TKey, TValue]"
     },
     "deferredDetail": {
-      "System.Exception": "ARCHITECTURE: whether an XNA exception type is a Go error is cross-cutting. If it is, every fallible projected operation's error contract changes from an opaque error to a possibly typed CLR exception, reopening every settled per-operation fallibility decision; if it is not, the eight derived types are inert objects nothing constructs, returns, or catches. ARCHITECTURE: StackTrace is captured at throw time and a constructed Go value has no throw site. SUBSYSTEM: Data needs System.Collections.IDictionary, TargetSite needs System.Reflection.MethodBase, GetObjectData needs System.Runtime.Serialization. All eight derived types declare ONLY constructors, so the entire useful surface is inherited, and two of them need System.Runtime.Serialization for their own declared protected constructor as well.",
+      "System.Exception": "Foundation 76 projected the SIGNATURE half: System.Exception now has a public Go spelling, eight of its eleven public members, and three measured BCL_PROJECTION_BLOCKED_EXTERNAL exclusions. It remains DEFERRED AS A BASE, and the two roles are independent exactly as ReadOnlyCollection`1's are. What the base still needs is placement: a COMPOSED base adapter must be unexported, and the eight derived exception types live in four OTHER packages, so the adapter has to move to an internal package first. ContentLoadException and StorageDeviceNotConnectedException additionally declare a protected .ctor(SerializationInfo, StreamingContext) of their OWN, which is the same serialization closure that blocks GetObjectData.",
       "System.Runtime.InteropServices.ExternalException": "derives from System.Exception, so every blocker there applies first; its own addition is one ErrorCode property over int32",
       "System.Attribute": "ARCHITECTURE: Go has no attribute metadata, so a projected attribute type could be constructed and read back but never applied; the five ContentSerializer* types would be inert data objects whose whole purpose is unrepresentable. SUBSYSTEM: the inherited static lookups take System.Reflection Assembly/MemberInfo/Module/ParameterInfo, and whether inherited STATICS are part of a derived type's projected surface is itself undecided, having never arisen before.",
       "System.IO.BinaryReader": "SUBSYSTEM: BaseStream needs a seekable System.IO.Stream; CNA-Go maps that to io.Reader, which carries neither seeking nor the encoding-aware reads the inherited surface depends on",
@@ -511,6 +513,7 @@
     "EventHandler<T>",
     "EventSource<T>",
     "EventSubscription",
+    "ExceptionReference",
     "GameCallbacks",
     "IEqualityComparer<T>",
     "Iterator<T>",
@@ -714,6 +717,39 @@
         "constructorBlocked": "as KeyCollection's",
         "carriers": [
           "Microsoft.Xna.Framework.LaunchParameters::Values"
+        ]
+      },
+      "System.Exception": {
+        "goAdapter": "framework.Exception",
+        "signaturePositionSpelling": "framework.ExceptionReference",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "inheritedPublicMembers": [
+          "Message",
+          "InnerException",
+          "GetBaseException",
+          "StackTrace",
+          "HelpLink",
+          "Source",
+          "ToString",
+          "GetType"
+        ],
+        "widensAtEveryPosition": "the settled substitutable-base rule widens a base-typed PARAMETER and leaves a base-typed RETURN as the concrete pointer. An exception hierarchy exists to be told apart by type, so InnerException returning a concrete *Exception would erase which of the eight kinds a consumer chained. System.Exception therefore widens at every position, and the downcast a C# consumer writes as `catch (DeviceLostException)` is a Go type assertion. The interface carries an unexported accessor, so only this module can satisfy it",
+        "notAGoError": "a projected OPERATION reports failure through a Go error, as it has since Foundation 1, and no settled per-operation fallibility decision is reopened. A CLR exception OBJECT is a value the profile constructs and passes, and it needs a Go spelling or the members that carry it cannot be projected. Giving the type an Error() method would collapse the two and publish a member the pinned CLR type does not declare",
+        "blockedPublicMembers": {
+          "Data": "BCL_PROJECTION_BLOCKED_EXTERNAL: System.Collections.IDictionary, the non-generic dictionary contract, which the profile names nowhere else except as the same blocker on the thirteen Design converters",
+          "TargetSite": "BCL_PROJECTION_BLOCKED_EXTERNAL: System.Reflection.MethodBase and the reflection member model; it is also null for an exception nothing threw, which is every exception this projection can produce",
+          "GetObjectData": "BCL_PROJECTION_BLOCKED_EXTERNAL: the same System.Runtime.Serialization closure that blocks Dictionary`2::GetObjectData, measured at 238 public BCL members in types the profile names nowhere else"
+        },
+        "stackTrace": "the CLR captures the frames AT THROW TIME. CNA-Go throws no CLR exception, so the field is null for every reachable state and the getter answers null, which for a Go string is empty. A Go stack would be a different thing wearing the same name",
+        "constructors": [
+          "NewException",
+          "NewExceptionByString",
+          "NewExceptionByStringAndException"
+        ],
+        "carriers": [
+          "Microsoft.Xna.Framework.Game::ShowMissingRequirementMessage"
         ]
       }
     },

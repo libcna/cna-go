@@ -23,6 +23,25 @@ func retainedAssemblies(t *testing.T) string {
 	return root
 }
 
+// pinnedBCL is the .NET Framework 4.0 mscorlib the retained XNA assemblies bind
+// against, admitted by the sha256 every "read from the pinned mscorlib" claim in
+// this repository already names.
+func pinnedBCL(t *testing.T) string {
+	t.Helper()
+	if explicit := os.Getenv("PINNED_BCL"); explicit != "" {
+		return explicit
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := filepath.Join(home, "deps", "bcl-4.0-pinned")
+	if _, err := os.Stat(filepath.Join(root, "mscorlib.dll")); err != nil {
+		t.Skip("the pinned .NET Framework 4.0 mscorlib is not available; set PINNED_BCL")
+	}
+	return root
+}
+
 func repositoryRoot(t *testing.T) string {
 	t.Helper()
 	directory, err := os.Getwd()
@@ -45,7 +64,7 @@ func repositoryRoot(t *testing.T) string {
 
 // TestEveryClaimedMessageIsInARetainedAssembly is the control.
 func TestEveryClaimedMessageIsInARetainedAssembly(t *testing.T) {
-	result, err := run(retainedAssemblies(t), repositoryRoot(t))
+	result, err := run(retainedAssemblies(t), pinnedBCL(t), repositoryRoot(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +92,7 @@ func TestAnInventedMessageIsRejected(t *testing.T) {
 		Assembly: "Microsoft.Xna.Framework.Game.dll",
 		Value:    "The back buffer dimension must be positive.",
 	})
-	result, err := run(assemblies, repositoryRoot(t))
+	result, err := run(assemblies, pinnedBCL(t), repositoryRoot(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +122,7 @@ func TestARealMessageUnderAnInventedKeyIsRejected(t *testing.T) {
 		Assembly: "Microsoft.Xna.Framework.dll",
 		Value:    "The doppler scale of an audio emitter must be greater than or equal to zero.",
 	}}
-	result, err := run(assemblies, repositoryRoot(t))
+	result, err := run(assemblies, pinnedBCL(t), repositoryRoot(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +183,7 @@ func TestAMessageInTheWrongAssemblyIsRejected(t *testing.T) {
 		Assembly: "Microsoft.Xna.Framework.Graphics.dll",
 		Value:    "Drawable components require a graphics device service in the game service container.",
 	}}
-	result, err := run(assemblies, repositoryRoot(t))
+	result, err := run(assemblies, pinnedBCL(t), repositoryRoot(t))
 	if err != nil {
 		t.Fatal(err)
 	}

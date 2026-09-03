@@ -3960,3 +3960,49 @@ func TestDeviceSelectionSurfaceIsUsableFromOutsideTheModule(t *testing.T) {
 		t.Fatalf("RankDevices over a declared slice = %v", err)
 	}
 }
+
+// TestExceptionSurfaceIsUsableFromOutsideTheModule is Foundation 76's external
+// gate: System.Exception has a public Go spelling, every signature position
+// takes the reference interface, and the interface is NOT satisfiable from
+// outside.
+func TestExceptionSurfaceIsUsableFromOutsideTheModule(t *testing.T) {
+	inner := framework.NewExceptionByString("inner")
+	outer := framework.NewExceptionByStringAndException("outer", inner)
+
+	if outer.Message() != "outer" || outer.InnerException() != framework.ExceptionReference(inner) {
+		t.Fatal("the chain did not survive from outside")
+	}
+	if outer.GetBaseException() != framework.ExceptionReference(inner) {
+		t.Fatal("GetBaseException did not walk to the deepest exception")
+	}
+	if got := framework.NewException().Message(); got != "Exception of type 'System.Exception' was thrown." {
+		t.Fatalf("the default message from outside = %q", got)
+	}
+	if got := outer.ToString(); got != "System.Exception: outer ---> System.Exception: inner"+
+		"\r\n   --- End of inner exception stack trace ---" {
+		t.Fatalf("ToString from outside = %q", got)
+	}
+	outer.SetHelpLink("help")
+	outer.SetSource("source")
+	if outer.HelpLink() != "help" || outer.Source() != "source" {
+		t.Fatal("the two settable properties are not reachable from outside")
+	}
+	if outer.StackTrace() != "" || outer.GetType() == nil {
+		t.Fatal("StackTrace or GetType answered unexpectedly")
+	}
+
+	// Every signature position takes the interface, and a consumer can declare
+	// it.
+	var reference framework.ExceptionReference = outer
+	game, _ := newCanaryGame(t)
+	if game.ShowMissingRequirementMessage(reference) {
+		t.Fatal("ShowMissingRequirementMessage answered true")
+	}
+	if game.ShowMissingRequirementMessage(nil) {
+		t.Fatal("ShowMissingRequirementMessage answered true for a null exception")
+	}
+	// The downcast a C# consumer writes as a catch clause is a type assertion.
+	if typed, ok := reference.(*framework.Exception); !ok || typed != outer {
+		t.Fatal("the reference interface could not be asserted back")
+	}
+}

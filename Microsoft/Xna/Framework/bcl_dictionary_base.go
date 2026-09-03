@@ -53,6 +53,14 @@ import "errors"
 // a nullable key type would reopen this, which is why it is written down here
 // rather than merely omitted.
 
+// The exact .NET Framework 4.0 BCL messages the reference's two reachable throw
+// sites load, read from the pinned mscorlib
+// (sha256 5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63).
+const (
+	argKeyNotFound          = "The given key was not present in the dictionary."
+	argumentAddingDuplicate = "An item with the same key has already been added."
+)
+
 // dictionaryEntry is Dictionary<TKey,TValue>.Entry: the private nested struct
 // the entries array holds.
 //
@@ -123,12 +131,13 @@ type dictionaryBase[TKey any, TValue any] struct {
 var (
 	// errDictionaryKeyNotFound projects System.Collections.Generic
 	// .KeyNotFoundException, thrown by ThrowHelper.ThrowKeyNotFoundException
-	// from get_Item.
-	errDictionaryKeyNotFound = errors.New("the given key was not present in the dictionary")
+	// from get_Item. Its message is the pinned mscorlib's Arg_KeyNotFound,
+	// verified byte for byte by tools/resource_strings.
+	errDictionaryKeyNotFound = errors.New(argKeyNotFound)
 	// errDictionaryDuplicateKey projects the System.ArgumentException
 	// ThrowHelper.ThrowArgumentException(ExceptionResource.Argument_AddingDuplicate)
 	// raises from Insert when add is true.
-	errDictionaryDuplicateKey = errors.New("an item with the same key has already been added")
+	errDictionaryDuplicateKey = errors.New(argumentAddingDuplicate)
 )
 
 func (d *dictionaryBase[TKey, TValue]) init(comparer IEqualityComparer[TKey], valueEqual func(a, b TValue) bool) {

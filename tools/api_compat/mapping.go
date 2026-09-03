@@ -1037,6 +1037,13 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|IsMouseVisible":    true,
 		"property-get|Window":            true,
 		"property-get|IsActive":          true,
+		// Foundation 76. Game::ShowMissingRequirementMessage is
+		// `host == null ? false : host.ShowMissingRequirementMessage(e)`, and
+		// both of WindowsGameHost's dialog branches are selected by an `isinst`
+		// against an exception type no consumer can yet construct. The
+		// reachable body is the base host's `ldc.i4.0; ret` -- a compile-time
+		// constant, which is one of the three shapes this table admits.
+		"method|ShowMissingRequirementMessage": true,
 		// Foundation 74. Game::get_LaunchParameters is
 		// `ldarg.0; ldfld launchParameters; ret` -- one field read of an object
 		// the constructor allocated, reaching no host and no runtime.
@@ -2203,6 +2210,19 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 	if raw == "System.EventArgs" {
 		return "*" + frameworkQualified(owner, "EventArgs")
 	}
+	// Foundation 76. System.Exception widens to the exported reference
+	// interface at EVERY signature position, parameter and return alike.
+	//
+	// The settled substitutable-base rule widens a base-typed PARAMETER and
+	// leaves a base-typed RETURN as the concrete pointer, recording the lost
+	// downcast as a language limitation. This family is where that trade would
+	// cost the type its purpose: an exception hierarchy exists to be told apart
+	// by type, and InnerException returning a concrete *Exception would erase
+	// which of the eight kinds a consumer chained. The interface carries an
+	// unexported method, so only this module can satisfy it.
+	if raw == "System.Exception" {
+		return frameworkQualified(owner, "ExceptionReference")
+	}
 	if mapped, ok := bclTypes[raw]; ok {
 		// TimeSpan is the one primitive BCL entry that maps to a CNA-Go type
 		// rather than a Go builtin or standard-library type, so it obeys the
@@ -3245,6 +3265,67 @@ var bclSignatureAdapters = map[string]bclBaseAdapter{
 		},
 	},
 
+	// Foundation 76. System.Exception.
+	//
+	// Its eleven public instance members are the whole useful surface of the
+	// profile's eight exception types, which declare only constructors. Eight
+	// of the eleven are projected; the other three name the exact external BCL
+	// closure that blocks them.
+	//
+	// The registry pins the CONCRETE type, framework.Exception. Every projected
+	// SIGNATURE takes framework.ExceptionReference instead -- see mapType for
+	// why an exception hierarchy widens at return positions too -- and that
+	// interface reproduces exactly the members below plus one unexported
+	// accessor.
+	"System.Exception": {
+		GoAdapter:       "Exception",
+		GenericArity:    0,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "the CLR exception object the profile constructs and passes; it is NOT a Go error, and CNA-Go's per-operation error channel is unchanged by its existence",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Message", "System.String", true, false),
+				Rationale: "get_Message returns _message, or Environment.GetRuntimeResourceString(\"Exception_WasThrown\", GetClassName()) when the field is null. The null test is NOT statically dead: `new Exception()` renders the default sentence and `new Exception(\"\")` renders the empty string, so the projection carries the CLR field's null explicitly"},
+			{Member: bclProperty("InnerException", "System.Exception", true, false),
+				Rationale: "one ldfld of the exception the two-argument constructor stored"},
+			{Member: bclMethod("GetBaseException", "System.Exception"),
+				Rationale: "walks InnerException to the DEEPEST non-null exception, and answers `this` when there is none"},
+			{Member: bclProperty("StackTrace", "System.String", true, false),
+				Rationale: "the frames the CLR captured AT THROW TIME. CNA-Go throws no CLR exception -- failure is a Go error -- so _stackTraceString is null for every reachable state and the getter answers null, which for a Go string is empty. A Go stack would be a different thing wearing the same name"},
+			{Member: bclProperty("HelpLink", "System.String", true, true),
+				Rationale: "get and set are one ldfld and one stfld over _helpURL, with no validation"},
+			{Member: bclProperty("Source", "System.String", true, true),
+				Rationale: "the reference computes a default from the declaring assembly of the throwing frame when the field is null; an exception nothing threw has no such frame, so the field is all a consumer can observe"},
+			{Member: bclMethod("ToString", "System.String"),
+				Rationale: "GetClassName(), then \": \" and the message when it is non-empty, then \" ---> \" and the inner exception's own ToString followed by NewLine, three spaces and the end-of-inner-exception marker, then NewLine and the stack trace when there is one"},
+			{Member: bclMethod("GetType", "System.Type"),
+				Rationale: "`virtual final`, and it answers the RUNTIME type -- the derived one. A composed base cannot see its deriver, so the derived constructor installs the CLR `this` and this member reflects over it"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: "Data", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Collections.IDictionary, the non-generic dictionary contract",
+				Reason: "genuinely public CLR surface that IS absent from the Go projection. The non-generic IDictionary is named nowhere else in the XNA 4.0 Windows profile except as the same blocker on the thirteen Design type converters, and projecting it means projecting DictionaryEntry, IDictionaryEnumerator and the whole non-generic collection family"},
+			{CLRMember: "TargetSite", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Reflection.MethodBase, and the reflection MEMBER model behind it",
+				Reason: "genuinely public CLR surface that IS absent. CNA-Go maps System.Type to reflect.Type and nothing else; MethodBase reaches MethodInfo, ConstructorInfo, ParameterInfo, MemberInfo and Module, none of which the profile names. It would also be null for an exception nothing threw, which is every exception this projection can produce"},
+			{CLRMember: "GetObjectData", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Runtime.Serialization.SerializationInfo (43 public members) and StreamingContext (6), whose own inventory reaches System.Decimal (89) and System.DateTime (91)",
+				Reason: "the same closure that blocks Dictionary<K,V>::GetObjectData, measured in Foundation 74 and unchanged: 238 public BCL members in types the profile names nowhere else"},
+			{CLRMember: ".ctor()", Reason: "the adapter's own constructors are the projection of the three public ones; no XNA member is projected from them"},
+			{CLRMember: ".ctor(string)", Reason: "as above"},
+			{CLRMember: ".ctor(string,Exception)", Reason: "as above"},
+			{CLRMember: ".ctor(SerializationInfo,StreamingContext)", Reason: "`family`, and the CLR does not inherit constructors"},
+			{CLRMember: "HResult", Reason: "`family`; it is not public surface. ExternalException::get_ErrorCode is the one public reader of it in the profile"},
+			{CLRMember: "SerializeObjectState", Reason: "a `family` event over EventHandler<SafeSerializationEventArgs>; not public surface, and its args type is a serialization type"},
+			{CLRMember: "Init", Reason: "private helper the constructors call"},
+			{CLRMember: "GetClassName", Reason: "private helper Message and ToString call"},
+			{CLRMember: "GetStackTrace", Reason: "private helper StackTrace and ToString call"},
+			{CLRMember: "_Exception.GetType", Reason: "private explicit implementation of the COM _Exception interface; the settled BCL-interface rule projects nothing for it"},
+			{CLRMember: "ISerializable.GetObjectData", Reason: "the public GetObjectData IS the implementation; there is no separate explicit one"},
+		},
+	},
+
 	// Foundation 74. System.Collections.Generic.IEqualityComparer<T>, which
 	// Dictionary<K,V>::get_Comparer returns.
 	//
@@ -3388,6 +3469,13 @@ var bclSignatureAdapterConstructors = map[string]string{
 	// new signature adapter whose CLR constructor is public AND reachable, so
 	// it gets a named Go constructor rather than an exclusion.
 	"NewKeyValuePair": "System.Collections.Generic.KeyValuePair`2",
+	// Foundation 76. System.Exception's three public constructors. They are
+	// named constructors rather than an exclusion because a consumer really
+	// does allocate one: `new Exception(message)` is what the reference writes
+	// when it needs an inner exception to chain.
+	"NewException":                     "System.Exception",
+	"NewExceptionByString":             "System.Exception",
+	"NewExceptionByStringAndException": "System.Exception",
 }
 
 // bclSignatureAdapterGoName is the Go type name of one signature adapter,

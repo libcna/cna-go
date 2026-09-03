@@ -28,6 +28,9 @@
 package main
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -59,6 +62,24 @@ type claimedString struct {
 // that is not here is a verifier failure, and so is an entry whose value is not
 // in its assembly.
 var registry = []claimedString{
+	// Foundation 74 and 76. The four .NET Framework 4.0 BCL messages CNA-Go
+	// reproduces, read from the pinned mscorlib the retained XNA assemblies
+	// bind against -- the same binary every "sha256 5634668d..." claim in this
+	// repository names, and admitted here by that hash.
+	//
+	// Exception_WasThrown carries the exception's class name through
+	// String.Format's {0}, which CNA-Go spells %s.
+	{Key: "Arg_KeyNotFound", Assembly: "mscorlib.dll",
+		Value: "The given key was not present in the dictionary."},
+	{Key: "Argument_AddingDuplicate", Assembly: "mscorlib.dll",
+		Value: "An item with the same key has already been added."},
+	{Key: "Exception_WasThrown", Assembly: "mscorlib.dll",
+		Value: "Exception of type '%s' was thrown.", Placeholders: true},
+	{Key: "Exception_EndOfInnerExceptionStack", Assembly: "mscorlib.dll",
+		Value: "--- End of inner exception stack trace ---"},
+	{Key: "Arg_ExternalException", Assembly: "mscorlib.dll",
+		Value: "External component has thrown an exception."},
+
 	// Foundation 75. GraphicsDeviceInformation::set_Adapter, and the two
 	// NoSuitableGraphicsDeviceException messages FindBestPlatformDevice throws.
 	// NoCompatibleDevices carries the GraphicsProfile through String.Format's
@@ -278,9 +299,11 @@ type report struct {
 func main() {
 	assemblies := flag.String("assemblies", filepath.Join(os.Getenv("HOME"), "deps", "xna40-windows-assemblies"),
 		"directory holding the retained XNA 4.0 Windows assemblies")
+	bcl := flag.String("bcl", filepath.Join(os.Getenv("HOME"), "deps", "bcl-4.0-pinned"),
+		"directory holding the pinned .NET Framework 4.0 BCL the XNA assemblies bind against")
 	root := flag.String("root", ".", "repository root")
 	flag.Parse()
-	result, err := run(*assemblies, *root)
+	result, err := run(*assemblies, *bcl, *root)
 	fmt.Printf("RESOURCE_STRINGS_CLAIMED=%d\n", result.Claimed)
 	fmt.Printf("RESOURCE_STRINGS_VERIFIED=%d\n", result.Verified)
 	fmt.Printf("RESOURCE_STRINGS_SOURCE_CONSTANTS=%d\n", result.Scanned)
@@ -299,13 +322,14 @@ func main() {
 	fmt.Println("RESOURCE_STRINGS_STATUS=PASS")
 }
 
-func run(assemblyRoot, repositoryRoot string) (report, error) {
+func run(assemblyRoot, bclRoot, repositoryRoot string) (report, error) {
 	result := report{Claimed: len(registry)}
-	blobs, err := loadAssemblies(assemblyRoot)
+	blobs, err := loadAssemblies(assemblyRoot, bclRoot)
 	if err != nil {
 		return result, err
 	}
 	result.Assemblies = len(blobs)
+	result.Findings = append(result.Findings, verifyAdmittedHashes(blobs)...)
 	for _, entry := range registry {
 		blob, present := blobs[entry.Assembly]
 		if !present {
@@ -365,23 +389,59 @@ func clrSpelling(entry claimedString) string {
 	return value
 }
 
-func loadAssemblies(root string) (map[string][]byte, error) {
-	entries, err := os.ReadDir(root)
-	if err != nil {
-		return nil, fmt.Errorf("retained assemblies are not available at %s: %w", root, err)
-	}
+func loadAssemblies(roots ...string) (map[string][]byte, error) {
 	blobs := map[string][]byte{}
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".dll") {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(root, entry.Name()))
+	for _, root := range roots {
+		entries, err := os.ReadDir(root)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("retained assemblies are not available at %s: %w", root, err)
 		}
-		blobs[entry.Name()] = data
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".dll") {
+				continue
+			}
+			data, err := os.ReadFile(filepath.Join(root, entry.Name()))
+			if err != nil {
+				return nil, err
+			}
+			if existing, present := blobs[entry.Name()]; present && !bytes.Equal(existing, data) {
+				return nil, fmt.Errorf("two admitted roots carry different %s", entry.Name())
+			}
+			blobs[entry.Name()] = data
+		}
 	}
 	return blobs, nil
+}
+
+// admittedAssemblyHashes pins the identity of every retained binary a claimed
+// message may be read from that is NOT one of the XNA assemblies -- which are
+// pinned by their own provenance file.
+//
+// mscorlib is here because Foundation 76 needs it: the exception family's
+// default message and its inner-exception separator are BCL resource strings,
+// not XNA ones, and every "read from the pinned mscorlib" claim in this
+// repository names this exact sha256. Admitting the binary without checking its
+// hash would make the claim unfalsifiable.
+var admittedAssemblyHashes = map[string]string{
+	"mscorlib.dll": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+}
+
+// verifyAdmittedHashes rejects a retained binary whose identity is pinned and
+// whose content does not match it.
+func verifyAdmittedHashes(blobs map[string][]byte) []string {
+	var findings []string
+	for name, want := range admittedAssemblyHashes {
+		data, present := blobs[name]
+		if !present {
+			findings = append(findings, fmt.Sprintf("%s is admitted by hash but is not retained", name))
+			continue
+		}
+		sum := sha256.Sum256(data)
+		if got := hex.EncodeToString(sum[:]); got != want {
+			findings = append(findings, fmt.Sprintf("%s has sha256 %s, and the admitted identity is %s", name, got, want))
+		}
+	}
+	return findings
 }
 
 // scanMessageConstants finds every message-shaped string constant in the

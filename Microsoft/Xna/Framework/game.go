@@ -447,3 +447,37 @@ func gameTimeFromInterop(value interop.FrameTime) GameTime {
 		value.IsRunningSlowly,
 	)
 }
+
+// ShowMissingRequirementMessage is Game::ShowMissingRequirementMessage,
+// `family virtual`:
+//
+//	return host == null ? false : host.ShowMissingRequirementMessage(exception);
+//
+// so the member itself decides nothing. What it answers is entirely the HOST's,
+// and the reference has two:
+//
+//	GameHost::ShowMissingRequirementMessage          `ldc.i4.0; ret`
+//	WindowsGameHost::ShowMissingRequirementMessage
+//	    exception is NoSuitableGraphicsDeviceException
+//	        -> MessageBox with Resources.NoSuitableGraphicsDevice + "\n\n" + Message
+//	    exception is NoAudioHardwareException
+//	        -> MessageBox with Resources.NoAudioHardware
+//	    otherwise
+//	        -> base.ShowMissingRequirementMessage(exception), which is false
+//
+// Both of WindowsGameHost's dialog branches are selected by an `isinst` against
+// a specific exception TYPE, and neither of those two types is projected yet --
+// so no consumer can construct one, and no argument this member can be given
+// reaches a dialog. The reachable body is therefore the base host's `false`,
+// and that is what this projects: a measured constant rather than a chosen one.
+//
+// The member is infallible because the projected body reaches nothing. It is
+// also the reason CNA's two message-box routes are recorded as deliberately
+// unbound: CNA does offer `cna_message_box_show_simple_ext`, but binding it
+// today would be a route with no production call site, which the settled rule
+// refuses. Both branches become reachable the milestone
+// NoSuitableGraphicsDeviceException and NoAudioHardwareException are projected.
+func (g *Game) ShowMissingRequirementMessage(exception ExceptionReference) bool {
+	_ = exception
+	return false
+}

@@ -18,11 +18,11 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               99
+TOTAL_DIAGNOSTICS               98
 MISSING_TYPE                    98
-MISSING_MEMBER                   1
-COMPLETE_TYPES                 158
-PARTIAL_TYPES                    1
+MISSING_MEMBER                   0
+COMPLETE_TYPES                 159
+PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
 GLOBAL_ACTIONABLE_LOCAL         98
@@ -63,14 +63,13 @@ Foundation 75 projected `GraphicsDeviceInformation` and
 device enumeration, the eight-step ranking policy, `CanResetDevice` and the
 `PreparingDeviceSettings` event are all projected.
 
-## The last missing member
+Foundation 76 projected `System.Exception` and closed `Game`.
 
-`Game` is now the profile's ONLY partial type, and its one missing member is
-blocked on a *type* rather than on CNA.
+## No partial types, and no missing members
 
-| type | member | what it needs first |
-| --- | --- | --- |
-| `Game` | `ShowMissingRequirementMessage(Exception)` | a minimal public `System.Exception` projection; the method itself is `family` and its reference body forwards to the host |
+**`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
+projects, it projects completely; what remains is 98 types it does not project
+at all, and every one of them is classified.
 
 ## What is left, and why
 
@@ -85,8 +84,10 @@ and it is zero.
 The suggested order is dependency order, which is the order the families appear
 in that registry:
 
-1. **A minimal `System.Exception` signature projection** → closes `Game`, and
-   unblocks all eight XNA exception types at once.
+1. **The eight exception types.** `System.Exception` now has a public Go
+   spelling; what the BASE still needs is placement, because a composed base
+   adapter must be unexported and the eight derived types live in four other
+   packages, so the adapter has to move to an internal package first.
 2. **The vertex structs**, which unblock realistic `DrawUser*` and the Model
    family.
 3. **The stock effects**, which compose the already complete `Effect`.
