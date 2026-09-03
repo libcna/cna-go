@@ -5,22 +5,27 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "BCL_BASE_ADAPTERS": 1,
-    "BCL_BASE_ADAPTER_CONSUMERS": 1,
-    "BCL_DEFERRED_BASE_BLOCKERS": 21,
-    "BCL_INHERITED_MEMBER_PROJECTIONS": 12,
-    "BCL_INHERITED_PUBLIC_MEMBERS": 11,
-    "BCL_SIGNATURE_ADAPTERS": 1,
-    "BCL_SIGNATURE_ADAPTER_CARRIERS": 6,
-    "COMPLETE_TYPES": 154,
+    "BCL_ADAPTER_EXCLUSIONS": 101,
+    "BCL_ADAPTER_EXCLUSIONS_BCL_PROJECTION_BLOCKED_EXTERNAL": 1,
+    "BCL_ADAPTER_EXCLUSIONS_BLOCKED": 3,
+    "BCL_ADAPTER_EXCLUSIONS_LANGUAGE_MAPPING_LIMITATION": 2,
+    "BCL_BASE_ADAPTERS": 2,
+    "BCL_BASE_ADAPTER_CONSUMERS": 2,
+    "BCL_DEFERRED_BASE_BLOCKERS": 15,
+    "BCL_INHERITED_MEMBER_PROJECTIONS": 26,
+    "BCL_INHERITED_PUBLIC_MEMBERS": 24,
+    "BCL_SIGNATURE_ADAPTERS": 5,
+    "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
+    "COMPLETE_TYPES": 155,
     "DECLARED_INTERFACE_CONFORMANCE": 3,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3456,
+    "EXPECTED_GO_MEMBERS": 3470,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
+    "FRONTIER_FAMILIES": 15,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -35,14 +40,24 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
+    "GLOBAL_ACTIONABLE_LOCAL": 100,
+    "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
+    "GLOBAL_BLOCKED_FIXTURE": 0,
+    "GLOBAL_BLOCKED_HARDWARE": 0,
+    "GLOBAL_BLOCKED_PLATFORM": 0,
+    "GLOBAL_BLOCKED_REFERENCE_ASSET": 0,
+    "GLOBAL_BLOCKED_UPSTREAM_CNA": 0,
+    "GLOBAL_DELIBERATE_NON_BINDING": 0,
+    "GLOBAL_LANGUAGE_MAPPING_LIMITATION": 0,
+    "GLOBAL_UNREVIEWED": 0,
     "INTERFACE_MAPPING_MISMATCH": 0,
     "INTERFACE_WITNESS_PROJECTIONS": 28,
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
-    "MISSING_MEMBER": 8,
-    "MISSING_TYPE": 101,
-    "MISSING_TYPES": 101,
+    "MISSING_MEMBER": 7,
+    "MISSING_TYPE": 100,
+    "MISSING_TYPES": 100,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -56,9 +71,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2514,
-    "TARGET_TYPES": 156,
-    "TOTAL_DIAGNOSTICS": 109,
+    "TARGET_MEMBERS": 2530,
+    "TARGET_TYPES": 157,
+    "TOTAL_DIAGNOSTICS": 107,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -321,12 +336,6 @@
       "message": "mapped Go member is absent"
     },
     {
-      "category": "MISSING_MEMBER",
-      "xna": "Microsoft.Xna.Framework.Game::LaunchParameters()",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.LaunchParameters",
-      "message": "mapped Go member is absent"
-    },
-    {
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/GamerServices:GamerServicesComponent",
@@ -582,12 +591,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:TouchPanelCapabilities",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.LaunchParameters",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters",
       "message": "mapped Go type is absent"
     },
     {
@@ -880,6 +883,7 @@
     "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
     "Microsoft.Xna.Framework.Input.Touch.TouchLocation",
     "Microsoft.Xna.Framework.Input.Touch.TouchLocationState",
+    "Microsoft.Xna.Framework.LaunchParameters",
     "Microsoft.Xna.Framework.MathHelper",
     "Microsoft.Xna.Framework.Matrix",
     "Microsoft.Xna.Framework.Media.MediaSourceType",
@@ -901,10 +905,9 @@
     {
       "xna": "Microsoft.Xna.Framework.Game",
       "missingMembers": [
-        "Microsoft.Xna.Framework.Game::LaunchParameters() -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.LaunchParameters",
         "Microsoft.Xna.Framework.Game::ShowMissingRequirementMessage(System.Exception) -\u003e github.com/openeggbert/cna-go/Microsoft/Xna/Framework:Game.ShowMissingRequirementMessage"
       ],
-      "diagnostics": 2
+      "diagnostics": 1
     },
     {
       "xna": "Microsoft.Xna.Framework.GraphicsDeviceManager",
@@ -995,7 +998,6 @@
     "Microsoft.Xna.Framework.Input.Mouse",
     "Microsoft.Xna.Framework.Input.Touch.TouchPanel",
     "Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities",
-    "Microsoft.Xna.Framework.LaunchParameters",
     "Microsoft.Xna.Framework.Media.Album",
     "Microsoft.Xna.Framework.Media.AlbumCollection",
     "Microsoft.Xna.Framework.Media.Artist",
@@ -6864,50 +6866,13 @@
     },
     {
       "clrBase": "System.Collections.Generic.Dictionary`2",
-      "status": "DEFERRED",
-      "addsProjectedSurface": false,
+      "adapter": "dictionaryBase[TKey, TValue]",
+      "status": "COMPOSED",
+      "addsProjectedSurface": true,
       "derivedTypes": 1,
-      "projectedTypes": 0,
+      "projectedTypes": 1,
       "exportedEmbeddings": 0,
-      "blockers": [
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "GetObjectData",
-          "needs": "System.Runtime.Serialization",
-          "detail": "declared `public hidebysig newslot virtual`, NOT an explicit implementation, so LaunchParameters genuinely exposes it"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "OnDeserialization",
-          "needs": "System.Runtime.Serialization",
-          "detail": "likewise public, not explicit"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "Keys",
-          "needs": "Dictionary`2/KeyCollection",
-          "detail": "a public nested BCL type with its own surface and its own nested enumerator"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "Values",
-          "needs": "Dictionary`2/ValueCollection",
-          "detail": "likewise"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "Comparer",
-          "needs": "System.Collections.Generic.IEqualityComparer`1",
-          "detail": "a public BCL interface CNA-Go does not map"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "GetEnumerator",
-          "needs": "Dictionary`2/Enumerator over KeyValuePair`2",
-          "detail": "two more public nested or generic BCL types"
-        }
-      ],
-      "rationale": "blocked on the public surface mapping, not on the behavior: the IL is readable, but six public members cannot be projected in already-decided terms",
+      "rationale": "modelled by the private dictionaryBase[TKey, TValue] adapter, which reproduces the reference's buckets/entries/free-list/version structure because enumeration order is public surface; a derived XNA class holds it in an unexported field and re-exposes thirteen of the fourteen inherited public members through measured forwarding, with no exported embedding and emphatically not as a Go map",
       "verdict": "PASS"
     },
     {
@@ -7091,7 +7056,601 @@
       "verdict": "PASS"
     }
   ],
+  "frontier": [
+    {
+      "family": "Root types",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "GraphicsDeviceInformation and PreparingDeviceSettingsEventArgs are the last two blockers of GraphicsDeviceManager's six missing members; TitleContainer and FrameworkDispatcher are small statics that fold into whichever milestone first needs them",
+      "types": [
+        "Microsoft.Xna.Framework.FrameworkDispatcher",
+        "Microsoft.Xna.Framework.GraphicsDeviceInformation",
+        "Microsoft.Xna.Framework.PreparingDeviceSettingsEventArgs",
+        "Microsoft.Xna.Framework.TitleContainer"
+      ],
+      "remaining": 4,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Vertex structs",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "four small value types over the already projected IVertexType and VertexDeclaration; they unblock realistic DrawUserPrimitives and the Model family",
+      "types": [
+        "Microsoft.Xna.Framework.Graphics.VertexPositionColor",
+        "Microsoft.Xna.Framework.Graphics.VertexPositionColorTexture",
+        "Microsoft.Xna.Framework.Graphics.VertexPositionNormalTexture",
+        "Microsoft.Xna.Framework.Graphics.VertexPositionTexture"
+      ],
+      "remaining": 4,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Graphics leftovers",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "OcclusionQuery has ~12 CNA routes; the two dynamic buffers have NO dedicated routes and the hypothesis that the ordinary buffer routes plus a BufferUsage implement them must be probed before anything is bound",
+      "types": [
+        "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
+        "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+        "Microsoft.Xna.Framework.Graphics.OcclusionQuery"
+      ],
+      "remaining": 3,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Stock effects",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "the Effect cluster is complete and every one of these composes it; CNA carries ~19/13/9/17/21/13 routes for the five effects and DirectionalLight, and EffectMaterial and IEffectLights need none",
+      "types": [
+        "Microsoft.Xna.Framework.Graphics.AlphaTestEffect",
+        "Microsoft.Xna.Framework.Graphics.BasicEffect",
+        "Microsoft.Xna.Framework.Graphics.DirectionalLight",
+        "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
+        "Microsoft.Xna.Framework.Graphics.EffectMaterial",
+        "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+        "Microsoft.Xna.Framework.Graphics.IEffectLights",
+        "Microsoft.Xna.Framework.Graphics.SkinnedEffect"
+      ],
+      "remaining": 8,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Model family",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "the largest single family at twelve types and ~233 CNA routes; it depends on the vertex structs and the stock effects, and on ReadOnlyCollection\u003cT\u003e becoming usable as a BASE rather than only as a signature adapter",
+      "types": [
+        "Microsoft.Xna.Framework.Graphics.Model",
+        "Microsoft.Xna.Framework.Graphics.ModelBone",
+        "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
+        "Microsoft.Xna.Framework.Graphics.ModelBoneCollection+Enumerator",
+        "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
+        "Microsoft.Xna.Framework.Graphics.ModelEffectCollection+Enumerator",
+        "Microsoft.Xna.Framework.Graphics.ModelMesh",
+        "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
+        "Microsoft.Xna.Framework.Graphics.ModelMeshCollection+Enumerator",
+        "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
+        "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
+        "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator"
+      ],
+      "remaining": 12,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Audio",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "SDL3 is present in the qualified artifact's lib/; CNA carries ~63/18/10 routes for SoundEffect, SoundEffectInstance and the dynamic instance. Microphone's physical capture is a separate question from its enumeration and state surface",
+      "types": [
+        "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
+        "Microsoft.Xna.Framework.Audio.Microphone",
+        "Microsoft.Xna.Framework.Audio.RendererDetail",
+        "Microsoft.Xna.Framework.Audio.SoundEffect",
+        "Microsoft.Xna.Framework.Audio.SoundEffectInstance"
+      ],
+      "remaining": 5,
+      "verdict": "PASS"
+    },
+    {
+      "family": "XACT",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "~32/12/10/17 CNA routes; needs project-authored legal bank fixtures, and structural state is not audibility",
+      "types": [
+        "Microsoft.Xna.Framework.Audio.AudioCategory",
+        "Microsoft.Xna.Framework.Audio.AudioEngine",
+        "Microsoft.Xna.Framework.Audio.Cue",
+        "Microsoft.Xna.Framework.Audio.SoundBank",
+        "Microsoft.Xna.Framework.Audio.WaveBank"
+      ],
+      "remaining": 5,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Input",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "~68/41/21/59 CNA routes across GamePad, Mouse and Touch; the state structs are already complete, so what is missing is the static readers and the two capability structs",
+      "types": [
+        "Microsoft.Xna.Framework.Input.GamePad",
+        "Microsoft.Xna.Framework.Input.GamePadCapabilities",
+        "Microsoft.Xna.Framework.Input.Mouse",
+        "Microsoft.Xna.Framework.Input.Touch.TouchPanel",
+        "Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities"
+      ],
+      "remaining": 5,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Storage",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "~65/12 CNA routes; the async selector pattern and the container's file surface need a System.IO projection decision, and every test must stay inside a project-controlled temporary root",
+      "types": [
+        "Microsoft.Xna.Framework.Storage.StorageContainer",
+        "Microsoft.Xna.Framework.Storage.StorageDevice"
+      ],
+      "remaining": 2,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Media and video",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "~31/23/53/46/50/55/19 CNA routes; the family splits into pure collection semantics, library enumeration, playback and video decode, and an empty host library is valid evidence for empty collections rather than for unimplementable ones",
+      "types": [
+        "Microsoft.Xna.Framework.Media.Album",
+        "Microsoft.Xna.Framework.Media.AlbumCollection",
+        "Microsoft.Xna.Framework.Media.Artist",
+        "Microsoft.Xna.Framework.Media.ArtistCollection",
+        "Microsoft.Xna.Framework.Media.Genre",
+        "Microsoft.Xna.Framework.Media.GenreCollection",
+        "Microsoft.Xna.Framework.Media.MediaLibrary",
+        "Microsoft.Xna.Framework.Media.MediaPlayer",
+        "Microsoft.Xna.Framework.Media.MediaQueue",
+        "Microsoft.Xna.Framework.Media.MediaSource",
+        "Microsoft.Xna.Framework.Media.Picture",
+        "Microsoft.Xna.Framework.Media.PictureAlbum",
+        "Microsoft.Xna.Framework.Media.PictureAlbumCollection",
+        "Microsoft.Xna.Framework.Media.PictureCollection",
+        "Microsoft.Xna.Framework.Media.Playlist",
+        "Microsoft.Xna.Framework.Media.PlaylistCollection",
+        "Microsoft.Xna.Framework.Media.Song",
+        "Microsoft.Xna.Framework.Media.SongCollection",
+        "Microsoft.Xna.Framework.Media.Video",
+        "Microsoft.Xna.Framework.Media.VideoPlayer"
+      ],
+      "remaining": 20,
+      "verdict": "PASS"
+    },
+    {
+      "family": "GamerServices",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "one type over ~53 guide_* CNA routes; sign-in-dependent behaviour is a separate question from the component's Initialize/Update ordering",
+      "types": [
+        "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
+      ],
+      "remaining": 1,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Exception types",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "all eight declare ONLY constructors, so the whole useful surface is inherited from System.Exception; the family becomes implementable the moment that base has a measured minimal projection, and the CLR exception object is a separate decision from Go's operation-error channel",
+      "types": [
+        "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+        "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
+        "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
+        "Microsoft.Xna.Framework.Content.ContentLoadException",
+        "Microsoft.Xna.Framework.Graphics.DeviceLostException",
+        "Microsoft.Xna.Framework.Graphics.DeviceNotResetException",
+        "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+        "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException"
+      ],
+      "remaining": 8,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Content plumbing",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "~87 CNA content-reader routes; the question is how much of ContentReader's public state -- stream position, shared resources, external references, type-reader identity -- the C API actually exposes, measured member by member rather than blocked as a family",
+      "types": [
+        "Microsoft.Xna.Framework.Content.ContentReader",
+        "Microsoft.Xna.Framework.Content.ContentTypeReader",
+        "Microsoft.Xna.Framework.Content.ContentTypeReader`1",
+        "Microsoft.Xna.Framework.Content.ContentTypeReaderManager",
+        "Microsoft.Xna.Framework.Content.ResourceContentManager"
+      ],
+      "remaining": 5,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Content serializer attributes",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "the five attribute TYPES are ordinary classes with constructors and string/bool properties; whether Go can ATTACH them to declarations is a different question from whether the types can exist, and only the attaching operation is a candidate language limitation",
+      "types": [
+        "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
+        "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
+        "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
+        "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
+        "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute"
+      ],
+      "remaining": 5,
+      "verdict": "PASS"
+    },
+    {
+      "family": "Design converters",
+      "classification": "ACTIONABLE_LOCAL",
+      "note": "thirteen pure-managed types with no native dependency at all; they need the minimal System.ComponentModel closure their IL actually reaches -- TypeConverter, ExpandableObjectConverter, ITypeDescriptorContext, PropertyDescriptor(Collection), InstanceDescriptor and CultureInfo -- and nothing more",
+      "types": [
+        "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
+        "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
+        "Microsoft.Xna.Framework.Design.ColorConverter",
+        "Microsoft.Xna.Framework.Design.MathTypeConverter",
+        "Microsoft.Xna.Framework.Design.MatrixConverter",
+        "Microsoft.Xna.Framework.Design.PlaneConverter",
+        "Microsoft.Xna.Framework.Design.PointConverter",
+        "Microsoft.Xna.Framework.Design.QuaternionConverter",
+        "Microsoft.Xna.Framework.Design.RayConverter",
+        "Microsoft.Xna.Framework.Design.RectangleConverter",
+        "Microsoft.Xna.Framework.Design.Vector2Converter",
+        "Microsoft.Xna.Framework.Design.Vector3Converter",
+        "Microsoft.Xna.Framework.Design.Vector4Converter"
+      ],
+      "remaining": 13,
+      "verdict": "PASS"
+    }
+  ],
   "bclBaseAdapters": [
+    {
+      "clrBase": "System.Collections.Generic.Dictionary`2",
+      "goAdapter": "dictionaryBase[TKey, TValue]",
+      "adapterField": "base",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "inheritedClrMembers": 13,
+      "inheritedProjectionsPerConsumer": 14,
+      "excludedMembers": 35,
+      "consumers": [
+        {
+          "xna": "Microsoft.Xna.Framework.LaunchParameters",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters",
+          "baseArguments": [
+            "System.String",
+            "System.String"
+          ],
+          "projected": true,
+          "adapterFieldType": "dictionaryBase[string, string]",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 1,
+          "xnaDeclaredProjections": 1,
+          "bclInheritedProjections": 14,
+          "verdict": "PASS"
+        }
+      ],
+      "inheritedMemberInventory": [
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "Add",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.Add",
+          "goResults": "error",
+          "present": true,
+          "rationale": "Add is `Insert(key, value, true)`, whose only reachable failure is the ArgumentException a duplicate key raises"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "Clear",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.Clear",
+          "goResults": "",
+          "present": true,
+          "rationale": "Clear's whole body is guarded by `count \u003e 0`, so clearing an already empty dictionary does not even increment the version -- the opposite of List\u003cT\u003e.Clear, and a live enumerator survives it"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "Comparer",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.Comparer",
+          "goResults": "IEqualityComparer[string]",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Comparer is one ldfld of the comparer the constructor stored; for the parameterless constructor that is EqualityComparer\u003cTKey\u003e.Default, a cached CLR static, so two dictionaries answer with the same object"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "ContainsKey",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.ContainsKey",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "ContainsKey is `FindEntry(key) \u003e= 0`, which compares the stored hash before it calls the comparer's Equals"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "ContainsValue",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.ContainsValue",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "ContainsValue is a forward scan of the live entries over EqualityComparer\u003cTValue\u003e.Default; it is the one member whose comparer is the VALUE's rather than the key's"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "Count",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.Count",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Count is `count - freeCount`, not the length of the entries array, so a removal reduces it without shrinking anything"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "GetEnumerator",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.GetEnumerator",
+          "goResults": "Iterator[KeyValuePair[string, string]]",
+          "present": true,
+          "rationale": "GetEnumerator returns the nested Enumerator STRUCT, which IS an IEnumerator\u003cKeyValuePair\u003cK,V\u003e\u003e, so the settled List\u003cT\u003e.Enumerator rule projects it as Iterator\u003cT\u003e; it walks the entries array from 0, skips freed slots, and compares the captured version BEFORE the bounds test"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "Item",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.Item",
+          "goResults": "string,error",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Item is FindEntry then either the stored value or KeyNotFoundException, which is the ONE inherited read that fails; set_Item is `Insert(key, value, false)`, which adds a missing key rather than refusing and cannot fail"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "Item",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.SetItem",
+          "goResults": "",
+          "accessor": "set",
+          "present": true,
+          "rationale": "get_Item is FindEntry then either the stored value or KeyNotFoundException, which is the ONE inherited read that fails; set_Item is `Insert(key, value, false)`, which adds a missing key rather than refusing and cannot fail"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "Keys",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.Keys",
+          "goResults": "*DictionaryKeyCollection[string, string]",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Keys allocates the view once, caches it in a private field and returns the same object forever after; the view reads through to the dictionary rather than copying, so later changes are visible through an already-obtained Keys"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "OnDeserialization",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.OnDeserialization",
+          "goResults": "",
+          "present": true,
+          "rationale": "public and not an explicit implementation, so it is genuinely inherited surface; its body opens `if (m_siInfo == null) return`, and m_siInfo's only non-null writer is the `family` .ctor(SerializationInfo, StreamingContext), which the CLR does not inherit and no consumer declares -- so the empty branch is the only reachable body and the member cannot fail"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "Remove",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.Remove",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "Remove unlinks the entry, clears both halves so neither is retained, and pushes the slot onto the HEAD of the free list, so the next insertion reuses the most recently removed index -- which is observable through enumeration order"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "TryGetValue",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.TryGetValue",
+          "goResults": "bool,string",
+          "present": true,
+          "rationale": "TryGetValue is FindEntry plus an out parameter the settled direction rule turns into a second result; a miss writes default(TValue) explicitly"
+        },
+        {
+          "clrBase": "System.Collections.Generic.Dictionary`2",
+          "clrMember": "Values",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.LaunchParameters",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:LaunchParameters.Values",
+          "goResults": "*DictionaryValueCollection[string, string]",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Values is get_Keys' mirror, cached the same way"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": "GetObjectData",
+          "kind": "BCL_PROJECTION_BLOCKED_EXTERNAL",
+          "needs": "System.Runtime.Serialization.SerializationInfo (43 public members) and StreamingContext (6), whose own inventory reaches System.Decimal (89) and System.DateTime (91), plus SerializationInfoEnumerator (6), SerializationEntry (3), IFormatterConverter and System.TypeCode",
+          "reason": "genuinely public CLR surface that IS absent from the Go projection: the settled signature-adapter rule pins an adapter to the EXACT public member inventory of the CLR type it spells, so projecting the SerializationInfo parameter means projecting all 43 of its members, which drags System.Decimal and System.DateTime -- 180 further public members that the XNA 4.0 Windows profile names nowhere else -- in behind them. That is the mscorlib port the profile is defined to exclude, so the member stays measured-absent rather than approximated"
+        },
+        {
+          "clrMember": ".ctor()",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors; a derived type projects its own"
+        },
+        {
+          "clrMember": ".ctor(int32)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors, and no pinned XNA subclass calls this overload"
+        },
+        {
+          "clrMember": ".ctor(IEqualityComparer`1\u003cTKey\u003e)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors, and no pinned XNA subclass supplies a comparer"
+        },
+        {
+          "clrMember": ".ctor(int32,IEqualityComparer`1\u003cTKey\u003e)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors"
+        },
+        {
+          "clrMember": ".ctor(IDictionary`2\u003cTKey,TValue\u003e)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors"
+        },
+        {
+          "clrMember": ".ctor(IDictionary`2\u003cTKey,TValue\u003e,IEqualityComparer`1\u003cTKey\u003e)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors"
+        },
+        {
+          "clrMember": ".ctor(SerializationInfo,StreamingContext)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`family`, and not inherited; it is also the only writer that could make m_siInfo non-null, which is why OnDeserialization's remaining body is unreachable"
+        },
+        {
+          "clrMember": "Initialize",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper"
+        },
+        {
+          "clrMember": "FindEntry",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper"
+        },
+        {
+          "clrMember": "Insert",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper; Add and set_Item are its two public entry points"
+        },
+        {
+          "clrMember": "Resize",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private helper"
+        },
+        {
+          "clrMember": "CopyTo",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the KeyValuePair-array CopyTo is PRIVATE on Dictionary itself; the two public CopyTo members belong to KeyCollection and ValueCollection"
+        },
+        {
+          "clrMember": "GetValueOrDefault",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`assembly`, so it is not public surface"
+        },
+        {
+          "clrMember": "IDictionary\u003cTKey,TValue\u003e.Keys",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation returning ICollection\u003cTKey\u003e; the public get_Keys carries the view"
+        },
+        {
+          "clrMember": "IDictionary\u003cTKey,TValue\u003e.Values",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation returning ICollection\u003cTValue\u003e"
+        },
+        {
+          "clrMember": "ICollection\u003cKeyValuePair\u003cTKey,TValue\u003e\u003e.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation; the settled BCL-interface rule projects nothing for it"
+        },
+        {
+          "clrMember": "ICollection\u003cKeyValuePair\u003cTKey,TValue\u003e\u003e.Add",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation; the generic Add carries the operation"
+        },
+        {
+          "clrMember": "ICollection\u003cKeyValuePair\u003cTKey,TValue\u003e\u003e.Contains",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection\u003cKeyValuePair\u003cTKey,TValue\u003e\u003e.CopyTo",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection\u003cKeyValuePair\u003cTKey,TValue\u003e\u003e.Remove",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IEnumerable\u003cKeyValuePair\u003cTKey,TValue\u003e\u003e.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation, and the public GetEnumerator already carries enumeration"
+        },
+        {
+          "clrMember": "IEnumerable.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.IsSynchronized",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.SyncRoot",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation, and CNA-Go projects no CLR sync root"
+        },
+        {
+          "clrMember": "ICollection.CopyTo",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IDictionary.Item",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation of the non-generic indexer"
+        },
+        {
+          "clrMember": "IDictionary.Keys",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IDictionary.Values",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IDictionary.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IDictionary.IsFixedSize",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IDictionary.Add",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IDictionary.Contains",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IDictionary.Remove",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IDictionary.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation returning IDictionaryEnumerator"
+        }
+      ],
+      "rationale": "a mutable BCL hash map base projected as private composition plus measured forwarding; the adapter reproduces the entries array, the free list and the version counter rather than wrapping a Go map, because Dictionary's enumeration order is entries-array order and Go's is deliberately randomised",
+      "verdict": "PASS"
+    },
     {
       "clrBase": "System.Collections.ObjectModel.Collection`1",
       "goAdapter": "collectionBase[T]",
@@ -7247,82 +7806,102 @@
       "exclusions": [
         {
           "clrMember": ".ctor()",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "the CLR does not inherit constructors; a derived type projects its own"
         },
         {
           "clrMember": ".ctor(IList`1\u003cT\u003e)",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "the CLR does not inherit constructors, and no pinned XNA subclass calls this overload"
         },
         {
           "clrMember": "Items",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "`family`, so it is not public surface; exposing it would hand out the backing store"
         },
         {
           "clrMember": "InsertItem",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "`family` virtual hook, projected as the private collectionOverrides interface rather than as public Go API"
         },
         {
           "clrMember": "RemoveItem",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "`family` virtual hook, projected as the private collectionOverrides interface"
         },
         {
           "clrMember": "SetItem",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "`family` virtual hook, projected as the private collectionOverrides interface"
         },
         {
           "clrMember": "ClearItems",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "`family` virtual hook, projected as the private collectionOverrides interface"
         },
         {
           "clrMember": "ICollection\u003cT\u003e.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation; the settled BCL-interface rule projects nothing for it"
         },
         {
           "clrMember": "IEnumerable.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation, and the generic GetEnumerator already carries enumeration"
         },
         {
           "clrMember": "ICollection.IsSynchronized",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "ICollection.SyncRoot",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation, and CNA-Go projects no CLR sync root"
         },
         {
           "clrMember": "ICollection.CopyTo",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation; the generic CopyTo carries the operation"
         },
         {
           "clrMember": "IList.Item",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation of the non-generic indexer"
         },
         {
           "clrMember": "IList.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.IsFixedSize",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.Add",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.Contains",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.IndexOf",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.Insert",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.Remove",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         }
       ],
@@ -7331,6 +7910,323 @@
     }
   ],
   "bclSignatureAdapters": [
+    {
+      "clrType": "System.Collections.Generic.Dictionary`2+KeyCollection",
+      "goAdapter": "DictionaryKeyCollection[TKey, TValue]",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "clrPublicMembers": 3,
+      "goMembers": 3,
+      "excludedMembers": 11,
+      "signaturePositions": 1,
+      "carriers": [
+        "System.Collections.Generic.Dictionary`2::Keys()"
+      ],
+      "memberInventory": [
+        {
+          "clrType": "System.Collections.Generic.Dictionary`2+KeyCollection",
+          "clrBase": "System.Collections.Generic.Dictionary`2+KeyCollection",
+          "clrMember": "Count",
+          "clrKind": "property",
+          "consumer": "DictionaryKeyCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:DictionaryKeyCollection.Count",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Count is one forwarded Dictionary::get_Count, so it tracks the dictionary rather than the view"
+        },
+        {
+          "clrType": "System.Collections.Generic.Dictionary`2+KeyCollection",
+          "clrBase": "System.Collections.Generic.Dictionary`2+KeyCollection",
+          "clrMember": "CopyTo",
+          "clrKind": "method",
+          "consumer": "DictionaryKeyCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:DictionaryKeyCollection.CopyTo",
+          "goResults": "error",
+          "present": true,
+          "rationale": "three failures of its own, in order: a null destination, an index outside [0, array.Length], and remaining room smaller than Count; it then copies the live keys in entries-array order"
+        },
+        {
+          "clrType": "System.Collections.Generic.Dictionary`2+KeyCollection",
+          "clrBase": "System.Collections.Generic.Dictionary`2+KeyCollection",
+          "clrMember": "GetEnumerator",
+          "clrKind": "method",
+          "consumer": "DictionaryKeyCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:DictionaryKeyCollection.GetEnumerator",
+          "goResults": "Iterator[TKey]",
+          "present": true,
+          "rationale": "the nested KeyCollection.Enumerator struct, which IS an IEnumerator\u003cTKey\u003e, so the settled List\u003cT\u003e.Enumerator rule projects it as Iterator\u003cT\u003e; it is version-checked against the DICTIONARY, not the view"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": ".ctor(Dictionary`2\u003cTKey,TValue\u003e)",
+          "kind": "LANGUAGE_MAPPING_LIMITATION",
+          "needs": "a public Go spelling of Dictionary`2 itself",
+          "reason": "the constructor is public CLR surface, and its ONLY parameter type is the base the settled composition rule keeps private: bclBaseAdapters projects Dictionary\u003cK,V\u003e as the unexported dictionaryBase adapter precisely so no consumer can name it, so no exported Go function could take one. The profile's only producer of a KeyCollection is get_Keys, which hands back the cached view"
+        },
+        {
+          "clrMember": "ICollection\u003cTKey\u003e.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation; the settled BCL-interface rule projects nothing for it"
+        },
+        {
+          "clrMember": "ICollection\u003cTKey\u003e.Add",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator that throws NotSupportedException; read-only means it is not public surface"
+        },
+        {
+          "clrMember": "ICollection\u003cTKey\u003e.Clear",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "ICollection\u003cTKey\u003e.Contains",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection\u003cTKey\u003e.Remove",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IEnumerable\u003cTKey\u003e.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation; the public GetEnumerator carries enumeration"
+        },
+        {
+          "clrMember": "IEnumerable.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.IsSynchronized",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.SyncRoot",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation, and CNA-Go projects no CLR sync root"
+        },
+        {
+          "clrMember": "ICollection.CopyTo",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        }
+      ],
+      "rationale": "a live view over the dictionary's entries array, not a snapshot; the Go name is the settled nested-name rule, declaring type concatenated with nested type",
+      "verdict": "PASS"
+    },
+    {
+      "clrType": "System.Collections.Generic.Dictionary`2+ValueCollection",
+      "goAdapter": "DictionaryValueCollection[TKey, TValue]",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "clrPublicMembers": 3,
+      "goMembers": 3,
+      "excludedMembers": 11,
+      "signaturePositions": 1,
+      "carriers": [
+        "System.Collections.Generic.Dictionary`2::Values()"
+      ],
+      "memberInventory": [
+        {
+          "clrType": "System.Collections.Generic.Dictionary`2+ValueCollection",
+          "clrBase": "System.Collections.Generic.Dictionary`2+ValueCollection",
+          "clrMember": "Count",
+          "clrKind": "property",
+          "consumer": "DictionaryValueCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:DictionaryValueCollection.Count",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Count is one forwarded Dictionary::get_Count"
+        },
+        {
+          "clrType": "System.Collections.Generic.Dictionary`2+ValueCollection",
+          "clrBase": "System.Collections.Generic.Dictionary`2+ValueCollection",
+          "clrMember": "CopyTo",
+          "clrKind": "method",
+          "consumer": "DictionaryValueCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:DictionaryValueCollection.CopyTo",
+          "goResults": "error",
+          "present": true,
+          "rationale": "KeyCollection::CopyTo's three checks in the same order, over the value half"
+        },
+        {
+          "clrType": "System.Collections.Generic.Dictionary`2+ValueCollection",
+          "clrBase": "System.Collections.Generic.Dictionary`2+ValueCollection",
+          "clrMember": "GetEnumerator",
+          "clrKind": "method",
+          "consumer": "DictionaryValueCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:DictionaryValueCollection.GetEnumerator",
+          "goResults": "Iterator[TValue]",
+          "present": true,
+          "rationale": "the nested ValueCollection.Enumerator struct, projected through the same settled rule"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": ".ctor(Dictionary`2\u003cTKey,TValue\u003e)",
+          "kind": "LANGUAGE_MAPPING_LIMITATION",
+          "needs": "a public Go spelling of Dictionary`2 itself",
+          "reason": "public CLR surface whose only parameter type is the privately composed base; see KeyCollection's entry"
+        },
+        {
+          "clrMember": "ICollection\u003cTValue\u003e.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection\u003cTValue\u003e.Add",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator that throws NotSupportedException"
+        },
+        {
+          "clrMember": "ICollection\u003cTValue\u003e.Clear",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "ICollection\u003cTValue\u003e.Contains",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection\u003cTValue\u003e.Remove",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IEnumerable\u003cTValue\u003e.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IEnumerable.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.IsSynchronized",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.SyncRoot",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.CopyTo",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        }
+      ],
+      "rationale": "a live view over the dictionary's entries array, identical to KeyCollection over the value half",
+      "verdict": "PASS"
+    },
+    {
+      "clrType": "System.Collections.Generic.IEqualityComparer`1",
+      "goAdapter": "IEqualityComparer[T]",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "clrPublicMembers": 2,
+      "goMembers": 2,
+      "excludedMembers": 0,
+      "signaturePositions": 0,
+      "carriers": null,
+      "memberInventory": [
+        {
+          "clrType": "System.Collections.Generic.IEqualityComparer`1",
+          "clrBase": "System.Collections.Generic.IEqualityComparer`1",
+          "clrMember": "Equals",
+          "clrKind": "method",
+          "consumer": "IEqualityComparer",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:IEqualityComparer.Equals",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "abstract; GenericEqualityComparer\u003cstring\u003e implements it as `x != null ? x.Equals(y) : y == null`, which for Go string reduces to =="
+        },
+        {
+          "clrType": "System.Collections.Generic.IEqualityComparer`1",
+          "clrBase": "System.Collections.Generic.IEqualityComparer`1",
+          "clrMember": "GetHashCode",
+          "clrKind": "method",
+          "consumer": "IEqualityComparer",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:IEqualityComparer.GetHashCode",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "abstract; GenericEqualityComparer\u003cstring\u003e forwards to String::GetHashCode, the 0x15051505 two-accumulator loop over UTF-16 code units, which this mscorlib implements with no randomised-hashing branch"
+        }
+      ],
+      "exclusions": null,
+      "rationale": "the equality contract Dictionary\u003cK,V\u003e stores and returns; the profile's only instance is EqualityComparer\u003cstring\u003e.Default, whose Equals is ordinal string equality and whose GetHashCode is the pinned String::GetHashCode",
+      "verdict": "PASS"
+    },
+    {
+      "clrType": "System.Collections.Generic.KeyValuePair`2",
+      "goAdapter": "KeyValuePair[TKey, TValue]",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "clrPublicMembers": 3,
+      "goMembers": 3,
+      "excludedMembers": 1,
+      "signaturePositions": 0,
+      "carriers": null,
+      "memberInventory": [
+        {
+          "clrType": "System.Collections.Generic.KeyValuePair`2",
+          "clrBase": "System.Collections.Generic.KeyValuePair`2",
+          "clrMember": "Key",
+          "clrKind": "property",
+          "consumer": "KeyValuePair",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:KeyValuePair.Key",
+          "goResults": "TKey",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Key is one ldfld"
+        },
+        {
+          "clrType": "System.Collections.Generic.KeyValuePair`2",
+          "clrBase": "System.Collections.Generic.KeyValuePair`2",
+          "clrMember": "Value",
+          "clrKind": "property",
+          "consumer": "KeyValuePair",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:KeyValuePair.Value",
+          "goResults": "TValue",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Value is one ldfld"
+        },
+        {
+          "clrType": "System.Collections.Generic.KeyValuePair`2",
+          "clrBase": "System.Collections.Generic.KeyValuePair`2",
+          "clrMember": "ToString",
+          "clrKind": "method",
+          "consumer": "KeyValuePair",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:KeyValuePair.ToString",
+          "goResults": "string",
+          "present": true,
+          "rationale": "`[` + Key.ToString() + `, ` + Value.ToString() + `]`, where a null half contributes NOTHING rather than a placeholder and the separator is emitted unconditionally, so a pair of nulls renders as `[, ]`"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": ".ctor(TKey,TValue)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the constructor is projected as the NewKeyValuePair function; no XNA member is projected from it"
+        }
+      ],
+      "rationale": "the immutable pair Dictionary\u003cK,V\u003e's enumerator yields; both properties are get-only, which is why the Go fields are unexported rather than public",
+      "verdict": "PASS"
+    },
     {
       "clrType": "System.Collections.ObjectModel.ReadOnlyCollection`1",
       "goAdapter": "ReadOnlyCollection[T]",
@@ -7422,94 +8318,117 @@
       "exclusions": [
         {
           "clrMember": ".ctor(IList`1\u003cT\u003e)",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "the adapter's own constructor is the projection of it; no XNA member is projected from it"
         },
         {
           "clrMember": "Items",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "`family`; exposing it would hand out the wrapped list"
         },
         {
           "clrMember": "ICollection\u003cT\u003e.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation; the settled BCL-interface rule projects nothing for it"
         },
         {
           "clrMember": "IList\u003cT\u003e.Item",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation whose setter throws NotSupportedException; the generic getter is the projected indexer"
         },
         {
           "clrMember": "ICollection\u003cT\u003e.Add",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator; read-only means it is not public surface"
         },
         {
           "clrMember": "ICollection\u003cT\u003e.Clear",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator"
         },
         {
           "clrMember": "ICollection\u003cT\u003e.Remove",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator"
         },
         {
           "clrMember": "IList\u003cT\u003e.Insert",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator"
         },
         {
           "clrMember": "IList\u003cT\u003e.RemoveAt",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator"
         },
         {
           "clrMember": "IEnumerable.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation; the generic GetEnumerator carries enumeration"
         },
         {
           "clrMember": "ICollection.IsSynchronized",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "ICollection.SyncRoot",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation, and CNA-Go projects no CLR sync root"
         },
         {
           "clrMember": "ICollection.CopyTo",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.IsFixedSize",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.Item",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.Add",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator"
         },
         {
           "clrMember": "IList.Clear",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator"
         },
         {
           "clrMember": "IList.Contains",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.IndexOf",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit implementation"
         },
         {
           "clrMember": "IList.Insert",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator"
         },
         {
           "clrMember": "IList.Remove",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator"
         },
         {
           "clrMember": "IList.RemoveAt",
+          "kind": "NOT_PUBLIC_SURFACE",
           "reason": "private explicit mutator"
         }
       ],
@@ -9146,7 +10065,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "f91485601e0541d678ca6d38807c7b673a43f1ee18c4137b9cc43ef1881662b1",
+    "mappingSha256": "f352136cbdce4e151e3108d8c4b09d7dc6560a0082ee15206f7b71e8c63033ac",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

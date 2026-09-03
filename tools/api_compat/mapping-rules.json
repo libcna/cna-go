@@ -83,6 +83,7 @@
       "Microsoft.Xna.Framework.Game|property-get|IsActive",
       "Microsoft.Xna.Framework.Game|property-get|IsFixedTimeStep",
       "Microsoft.Xna.Framework.Game|property-get|IsMouseVisible",
+      "Microsoft.Xna.Framework.Game|property-get|LaunchParameters",
       "Microsoft.Xna.Framework.Game|property-get|Services",
       "Microsoft.Xna.Framework.Game|property-get|TargetElapsedTime",
       "Microsoft.Xna.Framework.Game|property-get|Window",
@@ -398,7 +399,8 @@
     "sliceExposure": "forbidden",
     "concreteEnumeratorRule": "a-collection-that-declares-its-own-public-enumerator-type-projects-that-type-from-GetEnumerator; the Iterator<T> adapter is for collections that declare none",
     "inheritedFromAComposedBase": "a type that acquires ICollection<T>/IList<T> through a COMPOSED BCL base projects what that base makes PUBLIC, not the full interface: Collection<T> implements ICollection<T>.IsReadOnly explicitly, so it is not public surface and is not projected, and every member the adapter records as excluded is verified ABSENT from the Go type",
-    "System.Collections.Generic.List<T>.Enumerator": "Iterator<T>; a collection that returns the BCL list's own enumerator projects the same adapter IEnumerator<T> does, because List<T>.Enumerator IS an IEnumerator<T>. The struct copy semantics a C# caller can use are NOT expressible through a Go interface and are recorded as a language limitation"
+    "System.Collections.Generic.List<T>.Enumerator": "Iterator<T>; a collection that returns the BCL list's own enumerator projects the same adapter IEnumerator<T> does, because List<T>.Enumerator IS an IEnumerator<T>. The struct copy semantics a C# caller can use are NOT expressible through a Go interface and are recorded as a language limitation",
+    "System.Collections.Generic.Dictionary`2.Enumerator": "Iterator<KeyValuePair<K,V>>; the same settled rule List<T>.Enumerator takes, because the nested struct IS an IEnumerator<KeyValuePair<K,V>>. Its KeyCollection and ValueCollection siblings take Iterator<TKey> and Iterator<TValue> for the same reason"
   },
   "bcl": {
     "System.Boolean": "bool",
@@ -422,7 +424,11 @@
     "System.EventArgs": "*framework.EventArgs",
     "System.EventHandler`1": "framework.EventHandler[MappedT]",
     "System.Collections.ObjectModel.ReadOnlyCollection`1": "*framework.ReadOnlyCollection[MappedT]",
-    "System.Text.StringBuilder": "*strings.Builder"
+    "System.Text.StringBuilder": "*strings.Builder",
+    "System.Collections.Generic.IEqualityComparer`1": "framework.IEqualityComparer[MappedT]",
+    "System.Collections.Generic.KeyValuePair`2": "framework.KeyValuePair[MappedK, MappedV]",
+    "System.Collections.Generic.Dictionary`2+KeyCollection": "*framework.DictionaryKeyCollection[MappedK, MappedV]",
+    "System.Collections.Generic.Dictionary`2+ValueCollection": "*framework.DictionaryValueCollection[MappedK, MappedV]"
   },
   "events": {
     "handler": "System.EventHandler<T> -> EventHandler[T]; the generic argument is mapped exactly and never degraded to any, a bare func, a channel, or a callback word",
@@ -459,12 +465,12 @@
       "System.Attribute",
       "System.IO.BinaryReader",
       "System.ComponentModel.ExpandableObjectConverter",
-      "System.Collections.ObjectModel.ReadOnlyCollection`1",
-      "System.Collections.Generic.Dictionary`2"
+      "System.Collections.ObjectModel.ReadOnlyCollection`1"
     ],
     "composedMeaning": "a COMPOSED base is a supported BCL family whose PUBLIC members remain part of the observable public CLR surface of every derived type; the derived Go type holds a PRIVATE generic adapter for the base and re-exposes those members through measured forwarding, so the surface does not disappear merely because the XNA assembly metadata does not declare it",
     "composed": {
-      "System.Collections.ObjectModel.Collection`1": "collectionBase[T]"
+      "System.Collections.ObjectModel.Collection`1": "collectionBase[T]",
+      "System.Collections.Generic.Dictionary`2": "dictionaryBase[TKey, TValue]"
     },
     "deferredDetail": {
       "System.Exception": "ARCHITECTURE: whether an XNA exception type is a Go error is cross-cutting. If it is, every fallible projected operation's error contract changes from an opaque error to a possibly typed CLR exception, reopening every settled per-operation fallibility decision; if it is not, the eight derived types are inert objects nothing constructs, returns, or catches. ARCHITECTURE: StackTrace is captured at throw time and a constructed Go value has no throw site. SUBSYSTEM: Data needs System.Collections.IDictionary, TargetSite needs System.Reflection.MethodBase, GetObjectData needs System.Runtime.Serialization. All eight derived types declare ONLY constructors, so the entire useful surface is inherited, and two of them need System.Runtime.Serialization for their own declared protected constructor as well.",
@@ -472,7 +478,6 @@
       "System.Attribute": "ARCHITECTURE: Go has no attribute metadata, so a projected attribute type could be constructed and read back but never applied; the five ContentSerializer* types would be inert data objects whose whole purpose is unrepresentable. SUBSYSTEM: the inherited static lookups take System.Reflection Assembly/MemberInfo/Module/ParameterInfo, and whether inherited STATICS are part of a derived type's projected surface is itself undecided, having never arisen before.",
       "System.IO.BinaryReader": "SUBSYSTEM: BaseStream needs a seekable System.IO.Stream; CNA-Go maps that to io.Reader, which carries neither seeking nor the encoding-aware reads the inherited surface depends on",
       "System.ComponentModel.ExpandableObjectConverter": "SUBSYSTEM: ITypeDescriptorContext (the profile's single largest blocker at thirteen types), System.Globalization.CultureInfo, and System.Collections.IDictionary",
-      "System.Collections.Generic.Dictionary`2": "BLOCKED on the public surface mapping, not on the behavior. GetObjectData and OnDeserialization are declared `public hidebysig newslot virtual`, NOT explicit implementations, so LaunchParameters genuinely exposes them and they need System.Runtime.Serialization; Keys and Values return the public nested KeyCollection/ValueCollection; Comparer needs IEqualityComparer<TKey>; GetEnumerator needs the nested Enumerator over KeyValuePair<K,V>. Projecting a subset would make LaunchParameters a partial type. LaunchParameters is the only consumer.",
       "System.Collections.ObjectModel.ReadOnlyCollection`1": "DEFERRED AS A BASE ONLY; SUPPORTED as a signature adapter, and the two roles are independent. ARCHITECTURE: all four consumers declare a GetEnumerator that HIDES the inherited one, and the settled collision rule would resolve that into two hashed names; the principled answer -- a hidden inherited member is unreachable because CNA-Go projects no base type to cast to -- is available but untested. SUBSYSTEM: each consumer is blocked on its element type regardless."
     },
     "deferredIsMeasured": "a DEFERRED base must NAME what blocks it, down to the exact inherited member or the exact architecture decision, and the verifier fails a deferred base that records nothing; deferring with no recorded blocker would be an unmeasured structural category wearing a status word",
@@ -500,12 +505,16 @@
     "signatureAdapterCarriers": 6
   },
   "languageAdapters": [
+    "DictionaryKeyCollection<TKey,TValue>",
+    "DictionaryValueCollection<TKey,TValue>",
     "EventArgs",
     "EventHandler<T>",
     "EventSource<T>",
     "EventSubscription",
     "GameCallbacks",
+    "IEqualityComparer<T>",
     "Iterator<T>",
+    "KeyValuePair<TKey,TValue>",
     "ReadOnlyCollection<T>",
     "TimeSpan"
   ],
@@ -558,10 +567,57 @@
         "consumers": [
           "Microsoft.Xna.Framework.GameComponentCollection"
         ]
+      },
+      "System.Collections.Generic.Dictionary`2": {
+        "goAdapter": "dictionaryBase[TKey, TValue]",
+        "adapterField": "base",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0, public key token b77a5c561934e089",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "backingStore": "buckets/entries/count/freeList/freeCount, exactly as the reference keeps them; the parameterless constructor is .ctor(0, null), so buckets starts NULL and the comparer is EqualityComparer<TKey>.Default. This is .NET Framework 4.0 RTM: Insert has no collision counter and no randomised-comparer switch, so the comparer never changes",
+        "notAGoMap": "forbidden: Dictionary enumerates entries-array order, which is insertion order with removed slots reused from the free list, and Go deliberately randomises map iteration order. Enumeration order is public through GetEnumerator, Keys and Values, so `type LaunchParameters map[string]string` would be wrong at the first foreach, not merely unidiomatic",
+        "nullKeyGuard": "the ArgumentNullException that opens Insert, FindEntry and Remove is statically dead for every consumer in the profile: the only consumer's key type is System.String, which projects to Go string, and Go string has no null. It is therefore not projected as a failure mode, the same treatment Collection<T>'s dead items.IsReadOnly guard receives. A future consumer over a nullable key type reopens this",
+        "inheritedPublicMembers": [
+          "Comparer",
+          "Count",
+          "Keys",
+          "Values",
+          "Item",
+          "Add",
+          "Clear",
+          "ContainsKey",
+          "ContainsValue",
+          "GetEnumerator",
+          "OnDeserialization",
+          "Remove",
+          "TryGetValue"
+        ],
+        "projectedGoIdentitiesPerConsumer": 14,
+        "blockedPublicMembers": {
+          "GetObjectData": "BCL_PROJECTION_BLOCKED_EXTERNAL: genuinely public CLR surface that is absent from the Go projection. The signature-adapter rule pins an adapter to the EXACT public inventory of the CLR type it spells, so the SerializationInfo parameter would require all 43 of its public members, which reach System.Decimal (89 public members) and System.DateTime (91), plus StreamingContext, SerializationInfoEnumerator, SerializationEntry, IFormatterConverter and System.TypeCode -- none of which the XNA 4.0 Windows profile names anywhere else"
+        },
+        "excluded": {
+          "constructors": "the CLR does not inherit constructors; six public overloads and one family serialization constructor",
+          "privateHelpers": "Initialize, FindEntry, Insert, Resize and the private KeyValuePair-array CopyTo",
+          "assemblyMembers": "GetValueOrDefault is `assembly`",
+          "explicitInterfaceImplementations": "twenty-one private .override members of IDictionary, IDictionary<K,V>, ICollection, ICollection<KeyValuePair<K,V>> and IEnumerable; the settled BCL-interface rule projects nothing for them"
+        },
+        "enumeration": "entries-array order from index 0 to count-1, skipping slots whose hashCode is negative. MoveNext compares the captured version BEFORE the bounds test, so a dictionary mutated after enumeration ran off the end still fails a further step",
+        "clearAsymmetry": "Clear's whole body is guarded by `count > 0`, so clearing an ALREADY EMPTY dictionary does not increment the version and a live enumerator survives it. List<T>.Clear increments unconditionally. The two disagree and each is projected as it is",
+        "keysAndValuesIdentity": "get_Keys and get_Values allocate their view once, cache it in a private field, and return the same object forever after; the view reads through to the dictionary rather than copying",
+        "onDeserialization": "projected as the empty body it provably is: m_siInfo's only non-null writer is the family .ctor(SerializationInfo, StreamingContext), which the CLR does not inherit and no consumer declares",
+        "consumers": [
+          "Microsoft.Xna.Framework.LaunchParameters"
+        ]
       }
     },
     "identityAccounting": "every projected Go member has exactly one provenance class -- XNA-declared or BCL-inherited -- and every inherited projection is attributable to an exact BCL base, an exact CLR member, and an exact projected Go member",
-    "allowlist": "forbidden"
+    "allowlist": "forbidden",
+    "exclusionKinds": {
+      "NOT_PUBLIC_SURFACE": "the default: the member is not part of what a derived CLR caller can reach -- a constructor, a `family` member, or a private explicit interface implementation. Nothing is missing",
+      "BCL_PROJECTION_BLOCKED_EXTERNAL": "the member IS public CLR surface and IS absent from the Go projection; the entry must name the exact external BCL closure that would have to be projected first, and the verifier counts it",
+      "LANGUAGE_MAPPING_LIMITATION": "the member is public CLR surface whose Go spelling is prevented by a settled CNA-Go rule rather than by a missing type; the entry must name which rule"
+    }
   },
   "bclSignatureAdapters": {
     "rule": "a BCL type the pinned XNA contract carries at a PUBLIC SIGNATURE POSITION needs a public Go spelling, or the member that returns it cannot be projected at all; this is the footing System.TimeSpan and System.EventHandler<T> already have",
@@ -593,6 +649,71 @@
           "Microsoft.Xna.Framework.Graphics.SpriteFont::Characters",
           "Microsoft.Xna.Framework.Media.VisualizationData::Frequencies",
           "Microsoft.Xna.Framework.Media.VisualizationData::Samples"
+        ]
+      },
+      "System.Collections.Generic.IEqualityComparer`1": {
+        "goAdapter": "framework.IEqualityComparer[T]",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "inheritedPublicMembers": [
+          "Equals",
+          "GetHashCode"
+        ],
+        "meaning": "a CLR interface with exactly two abstract members, so it projects as a Go interface with two methods and excludes nothing -- there is nothing else on it to exclude",
+        "defaultComparer": "EqualityComparer<string>.Default is GenericEqualityComparer<string>, chosen by the CLR because System.String implements IEquatable<string>; its Equals is ordinal and its GetHashCode is String::GetHashCode, the 0x15051505 two-accumulator loop over UTF-16 code units, which this mscorlib implements with no randomised-hashing branch",
+        "carriers": [
+          "Microsoft.Xna.Framework.LaunchParameters::Comparer"
+        ]
+      },
+      "System.Collections.Generic.KeyValuePair`2": {
+        "goAdapter": "framework.KeyValuePair[TKey, TValue]",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "inheritedPublicMembers": [
+          "Key",
+          "Value",
+          "ToString"
+        ],
+        "valueSemantics": "a CLR struct, so it projects as a Go struct VALUE with no pointer; both properties are get-only, which is why the Go fields are unexported",
+        "toString": "`[` + Key + `, ` + Value + `]`, where a null half contributes NOTHING rather than a placeholder and the separator is emitted unconditionally, so a pair of nulls renders as `[, ]`",
+        "constructor": "NewKeyValuePair",
+        "carriers": [
+          "Microsoft.Xna.Framework.LaunchParameters::GetEnumerator"
+        ]
+      },
+      "System.Collections.Generic.Dictionary`2+KeyCollection": {
+        "goAdapter": "*framework.DictionaryKeyCollection[TKey, TValue]",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "inheritedPublicMembers": [
+          "Count",
+          "CopyTo",
+          "GetEnumerator"
+        ],
+        "viewMeaning": "a live view over the dictionary's entries array, not a snapshot: Count forwards to Dictionary::get_Count and enumeration is version-checked against the DICTIONARY",
+        "readOnlyIsNotANewDecision": "every mutator is a private explicit implementation of ICollection<TKey> or ICollection, so the settled BCL-interface rule already excludes them",
+        "constructorBlocked": "the public .ctor(Dictionary<K,V>) is LANGUAGE_MAPPING_LIMITATION: its only parameter type is the base the composition rule keeps unexported, so no exported Go function could take one",
+        "carriers": [
+          "Microsoft.Xna.Framework.LaunchParameters::Keys"
+        ]
+      },
+      "System.Collections.Generic.Dictionary`2+ValueCollection": {
+        "goAdapter": "*framework.DictionaryValueCollection[TKey, TValue]",
+        "behaviorLevel": "SUPPORTED",
+        "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+        "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+        "inheritedPublicMembers": [
+          "Count",
+          "CopyTo",
+          "GetEnumerator"
+        ],
+        "viewMeaning": "KeyCollection's mirror over the value half of each entry",
+        "constructorBlocked": "as KeyCollection's",
+        "carriers": [
+          "Microsoft.Xna.Framework.LaunchParameters::Values"
         ]
       }
     },

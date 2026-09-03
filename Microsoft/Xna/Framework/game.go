@@ -46,6 +46,13 @@ type Game struct {
 	gameComponents *GameComponentCollection
 	gameServices   *GameServiceContainer
 
+	// launchParameters is Game::launchParameters, the LaunchParameters the
+	// constructor allocates immediately after EnsureHost() and before the
+	// component collection. Game::get_LaunchParameters is one ldfld of it, so
+	// the identity a caller observes is fixed at construction and the
+	// dictionary a consumer mutates is the one the Game keeps.
+	launchParameters *LaunchParameters
+
 	// The five private derived lists. updateableComponents and
 	// drawableComponents are kept in order incrementally; the two `currently`
 	// lists are the per-frame snapshots base Update and base Draw copy into;
@@ -190,6 +197,12 @@ func NewGame(callbacks GameCallbacks) (*Game, error) {
 	// registration operation to change it.
 	game.captureFrameHookOverrides(callbacks)
 	game.gameServices = NewGameServiceContainer()
+	// `this.launchParameters = new LaunchParameters();` -- the reference's
+	// statement between EnsureHost() and the component collection. Its
+	// position matters only in that the object exists before any consumer can
+	// reach it; the parse it performs reads the process command line and
+	// touches nothing else the constructor has built.
+	game.launchParameters = NewLaunchParameters()
 	game.gameComponents = NewGameComponentCollection()
 	// Neither accessor can fail: EventSource.Add reports no failure of its own
 	// and both handlers are non-nil. The results are discarded because Game
@@ -224,6 +237,18 @@ func NewGame(callbacks GameCallbacks) (*Game, error) {
 	interop.RegisterOwner(game, game.runtime, nil)
 	return game, nil
 }
+
+// LaunchParameters is Game::get_LaunchParameters:
+//
+//	ldarg.0; ldfld class LaunchParameters Game::launchParameters; ret
+//
+// one field read of an object the constructor allocated, so it reaches nothing
+// and cannot fail, and the same *LaunchParameters is returned for the Game's
+// whole life. The dictionary is not a copy: a consumer that adds, removes or
+// overwrites an entry is changing the Game's own launch parameters, which is
+// what the reference does too -- LaunchParameters is an ordinary mutable
+// Dictionary<string,string> and XNA hands the caller the instance, not a view.
+func (g *Game) LaunchParameters() *LaunchParameters { return g.launchParameters }
 
 // Window is Game::get_Window:
 //

@@ -19,16 +19,17 @@ func main() {
 	mappingFile := flag.String("mapping", "tools/api_compat/mapping-rules.json", "mapping rules path relative to root")
 	reportFile := flag.String("report", "docs/generated/api-compat-report.json", "JSON report path relative to root; empty disables writing")
 	missingFile := flag.String("missing", "docs/generated/missing-type-inventory.md", "Markdown inventory path relative to root; empty disables writing")
+	remainingFile := flag.String("remaining", "docs/generated/remaining-work.md", "Markdown remaining-work table path relative to root; empty disables writing")
 	mode := flag.String("mode", "strict", "strict, leak-only, or report")
 	flag.Parse()
 
-	if err := run(*root, *contractFile, *mappingFile, *reportFile, *missingFile, *mode); err != nil {
+	if err := run(*root, *contractFile, *mappingFile, *reportFile, *missingFile, *remainingFile, *mode); err != nil {
 		fmt.Fprintln(os.Stderr, "api-compat:", err)
 		os.Exit(1)
 	}
 }
 
-func run(root, contractFile, mappingFile, reportFile, missingFile, mode string) error {
+func run(root, contractFile, mappingFile, reportFile, missingFile, remainingFile, mode string) error {
 	if mode != "strict" && mode != "leak-only" && mode != "report" {
 		return fmt.Errorf("unsupported mode %q", mode)
 	}
@@ -99,6 +100,15 @@ func run(root, contractFile, mappingFile, reportFile, missingFile, mode string) 
 	}
 	if missingFile != "" {
 		if err := writeMissingInventory(resolvePath(absoluteRoot, missingFile), result); err != nil {
+			return err
+		}
+	}
+	if remainingFile != "" {
+		filename := resolvePath(absoluteRoot, remainingFile)
+		if err := os.MkdirAll(filepath.Dir(filename), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(filename, []byte(renderRemainingWork(result.Frontier, result.Summary)), 0o644); err != nil {
 			return err
 		}
 	}
@@ -197,6 +207,11 @@ func printSummary(result report) {
 		"EXPECTED_GO_TYPES", "EXPECTED_GO_MEMBERS",
 		"TARGET_TYPES", "TARGET_MEMBERS", "TOTAL_DIAGNOSTICS", "MISSING_TYPE", "MISSING_MEMBER",
 		"COMPLETE_TYPES", "PARTIAL_TYPES", "MISSING_TYPES",
+		"FRONTIER_FAMILIES", "GLOBAL_ACTIONABLE_LOCAL", "GLOBAL_UNREVIEWED",
+		"GLOBAL_BLOCKED_UPSTREAM_CNA", "GLOBAL_BLOCKED_PLATFORM", "GLOBAL_BLOCKED_HARDWARE",
+		"GLOBAL_BLOCKED_FIXTURE", "GLOBAL_BLOCKED_REFERENCE_ASSET",
+		"GLOBAL_LANGUAGE_MAPPING_LIMITATION", "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL",
+		"GLOBAL_DELIBERATE_NON_BINDING",
 		"INTERFACE_WITNESS_PROJECTIONS", "PACKFROMVECTOR4_WITNESS_PROJECTIONS", "TOVECTOR4_WITNESS_PROJECTIONS",
 		"BCL_BASE_ADAPTERS", "BCL_BASE_ADAPTER_CONSUMERS",
 		"BCL_SIGNATURE_ADAPTERS", "BCL_SIGNATURE_ADAPTER_CARRIERS", "BCL_DEFERRED_BASE_BLOCKERS",

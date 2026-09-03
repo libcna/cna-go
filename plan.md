@@ -1586,6 +1586,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 71 | TextureCube, Texture3D, and a blocker that was false | `foundation-71-volume-cube-texture-evidence.md` |
 | 72 | the Effect cluster, and the draws it unblocked | `foundation-72-effect-cluster-evidence.md` |
 | 73 | the rest of GraphicsDevice, and the profile's first pixels | `foundation-73-presentation-evidence.md` |
+| 74 | the Dictionary base, LaunchParameters, and a generated roadmap | `foundation-74-dictionary-base-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1652,6 +1653,39 @@ OWNED from the public constructor -- and a destroyed OWNED device must report
 itself disposed rather than falling back to the borrowed path and answering as
 the running game's device.
 
+**An exclusion of a base member states WHICH KIND of exclusion it is** (74).
+`NOT_PUBLIC_SURFACE` -- a constructor, a `family` member, a private explicit
+implementation -- claims nothing is missing. Every other kind claims something
+public IS missing and must name the exact external closure it waits on, which
+the verifier counts separately and enforces. An admission of a hole is not a
+permission to have one.
+
+**A dead guard in a BCL base is not projected as a failure mode, and the death
+is written down** (26, 74). `Collection<T>`'s `items.IsReadOnly` and
+`Dictionary<K,V>`'s null-key `ThrowArgumentNullException` are both unreachable
+for every consumer in the profile, the second because `System.String` projects
+to Go `string`, which has no null. Each is recorded in the adapter registry so
+a future consumer that could reach it reopens the question rather than
+inheriting the omission.
+
+**An `out` parameter is APPENDED to the declared return, not prepended** (74).
+`Dictionary<K,V>::TryGetValue` is the profile's first member with both, so the
+settled `remove-input-and-append-return` rule finally has an observable
+consequence: the projection is `(bool, string)` and is deliberately not
+reshuffled into Go's value-then-ok idiom.
+
+**ROADMAP.md's scoreboard is generated-or-validated, never remembered** (74).
+One marked block of `KEY VALUE` lines, checked against the generated reports by
+a test that is itself proved with planted stale numbers. Historical evidence
+documents quote the scoreboard of the milestone they record and are deliberately
+out of the guard's scope.
+
+**Every missing type belongs to exactly one frontier family, and every family
+names what it is stopped on** (74). `tools/api_compat/frontier.go` partitions
+the live missing-type set; `GLOBAL_UNREVIEWED` is assigned by the exhaustiveness
+check rather than written by hand, so it can only be nonzero because something
+was forgotten.
+
 **A graphics state object freezes** (59). Every setter is fallible because
 `ThrowIfBound` is a refusal the reference really throws; every getter is one
 `ldfld`. The static presets are frozen from construction.
@@ -1662,19 +1696,29 @@ This section is a STATEMENT OF CURRENT STATE, not a permanent list, and it is
 rewritten whenever a milestone makes one of its entries false.
 
 Still deferred: audio/XACT; media/video; storage; touch; design;
-GamerServices; and broad platform work. The 3D family is no longer deferred as
+GamerServices; and broad platform work. Every one of them is now classified in
+`tools/api_compat/frontier.go`, which partitions the live missing-type set and
+generates `docs/generated/remaining-work.md`; that generated table is the
+authority for what each family is stopped on, and this paragraph is its
+summary. The 3D family is no longer deferred as
 a whole: Foundation 71 projected TextureCube and Texture3D and Foundation 72
 the whole Effect cluster, so what remains under it is the six stock effects,
 EffectMaterial and the Model family. Windows, macOS, Android, iOS, and
 Web/Wasm are unqualified even if the Go compiler can target them.
 
-`ROADMAP.md` carries the measured, per-family breakdown of everything still
-missing, with the CNA route counts each family has to work with. It is the file
-to read when selecting the next milestone; this section is the summary.
+`ROADMAP.md` carries the scoreboard -- validated against the generated reports
+rather than typed by hand since Foundation 74 -- and points at
+`docs/generated/remaining-work.md` for the per-family breakdown, with the CNA
+route counts each family has to work with. Those two are the files to read when
+selecting the next milestone; this section is the summary.
 
 No longer deferred, and the milestone that ended each:
 
 ```text
+Dictionary`2   Foundation 74 composed it, which was five missing Go spellings
+               and one measured external blocker rather than the six subsystem
+               blockers Foundation 29 recorded. LaunchParameters and
+               Game::LaunchParameters followed.
 Content/XNB    Foundation 63 projected ContentManager over CNA's own content
                pipeline, and Foundation 69 grew its closed Load<T> set to a
                second asset kind. LZX remains CNA's business, not the

@@ -49,7 +49,11 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	if surface.ExpectedGoTypes != 257 || declared != 3243 {
 		t.Fatalf("XNA-declared mapped counts = %d/%d", surface.ExpectedGoTypes, declared)
 	}
-	if surface.BCLInheritedCLRMembers != 11 || surface.BCLInheritedProjections != 12 {
+	// 24/26, not 11/12: Foundation 74 composed Dictionary`2, so
+	// LaunchParameters' thirteen inherited CLR members join
+	// GameComponentCollection's eleven, and the fourteen Go identities they
+	// project -- the indexer contributes two -- join the twelve.
+	if surface.BCLInheritedCLRMembers != 24 || surface.BCLInheritedProjections != 26 {
 		t.Fatalf("BCL inherited counts = %d CLR members/%d projections", surface.BCLInheritedCLRMembers, surface.BCLInheritedProjections)
 	}
 	// 15, not 14: Milestone 55 replaced the name-keyed inheritance exclusion
@@ -69,8 +73,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 		t.Fatalf("XNA inherited overridden count = %d", surface.XNAInheritedOverriddenMembers)
 	}
 	// 3456, not 3443: Foundation 73's newly composed TextureCube adds
-	// RenderTargetCube's thirteen inherited projections.
-	if surface.ExpectedGoMembers != 3456 {
+	// RenderTargetCube's thirteen inherited projections. 3470, not 3456:
+	// Foundation 74's newly composed Dictionary`2 adds LaunchParameters'
+	// fourteen.
+	if surface.ExpectedGoMembers != 3470 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -5682,7 +5688,12 @@ func TestBCLSignatureAdaptersAreMeasuredNotAssumed(t *testing.T) {
 		if adapter.Authority == "" || adapter.AuthoritySHA256 == "" || adapter.Rationale == "" {
 			t.Fatalf("%s signature adapter is under-specified", identity)
 		}
-		if len(adapter.Members) == 0 || len(adapter.Excluded) == 0 {
+		// The exclusion list must be DECLARED even when it is empty, so
+		// "nothing to exclude" is a stated measurement rather than a field
+		// nobody filled in. IEqualityComparer<T> is the profile's first adapter
+		// for which it is genuinely empty: the CLR interface declares two
+		// abstract members and nothing else at all.
+		if len(adapter.Members) == 0 || adapter.Excluded == nil {
 			t.Fatalf("%s must inventory both its projected and its excluded members", identity)
 		}
 		goName := bclSignatureAdapterGoName(adapter)

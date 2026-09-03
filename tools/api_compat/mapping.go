@@ -242,6 +242,13 @@ var pureManagedTypes = map[string]bool{
 	// Its fallible members are named individually below, exactly as
 	// GameComponent's are.
 	"Microsoft.Xna.Framework.DrawableGameComponent": true,
+
+	// Foundation 74. LaunchParameters declares one constructor, whose body is
+	// the base Dictionary constructor and a string parse of
+	// Environment.GetCommandLineArgs(). It creates no device, starts no game,
+	// and reaches no native code; its base is equally managed in the pinned
+	// mscorlib.
+	"Microsoft.Xna.Framework.LaunchParameters": true,
 }
 
 // bclBaseRelationship is how one non-XNA CLR base type is projected.
@@ -387,23 +394,22 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 				Detail: "each of the four consumers needs its element type, and all four element types are content-pipeline blocked"},
 		},
 	},
+	// Foundation 74. Five of the six blockers Foundation 29 recorded here were
+	// missing Go SPELLINGS, and a spelling is something this milestone can
+	// supply: KeyCollection, ValueCollection, KeyValuePair and
+	// IEqualityComparer<T> are now signature adapters, and the nested
+	// Enumerator projects through the settled List<T>.Enumerator rule.
+	// OnDeserialization needed no subsystem at all -- its only non-empty path
+	// is unreachable without the `family` serialization constructor, which the
+	// CLR does not inherit.
+	//
+	// The sixth, GetObjectData, is not a spelling problem and does not become
+	// one. It stays measured, as the adapter's one
+	// BCL_PROJECTION_BLOCKED_EXTERNAL exclusion.
 	"System.Collections.Generic.Dictionary`2": {
-		Status:    "DEFERRED",
-		Rationale: "blocked on the public surface mapping, not on the behavior: the IL is readable, but six public members cannot be projected in already-decided terms",
-		Blockers: []bclBaseBlocker{
-			{Kind: "SUBSYSTEM", CLRMember: "GetObjectData", Needs: "System.Runtime.Serialization",
-				Detail: "declared `public hidebysig newslot virtual`, NOT an explicit implementation, so LaunchParameters genuinely exposes it"},
-			{Kind: "SUBSYSTEM", CLRMember: "OnDeserialization", Needs: "System.Runtime.Serialization",
-				Detail: "likewise public, not explicit"},
-			{Kind: "SUBSYSTEM", CLRMember: "Keys", Needs: "Dictionary`2/KeyCollection",
-				Detail: "a public nested BCL type with its own surface and its own nested enumerator"},
-			{Kind: "SUBSYSTEM", CLRMember: "Values", Needs: "Dictionary`2/ValueCollection",
-				Detail: "likewise"},
-			{Kind: "SUBSYSTEM", CLRMember: "Comparer", Needs: "System.Collections.Generic.IEqualityComparer`1",
-				Detail: "a public BCL interface CNA-Go does not map"},
-			{Kind: "SUBSYSTEM", CLRMember: "GetEnumerator", Needs: "Dictionary`2/Enumerator over KeyValuePair`2",
-				Detail: "two more public nested or generic BCL types"},
-		},
+		Adapter:   "dictionaryBase[TKey, TValue]",
+		Status:    "COMPOSED",
+		Rationale: "modelled by the private dictionaryBase[TKey, TValue] adapter, which reproduces the reference's buckets/entries/free-list/version structure because enumeration order is public surface; a derived XNA class holds it in an unexported field and re-exposes thirteen of the fourteen inherited public members through measured forwarding, with no exported embedding and emphatically not as a Go map",
 	},
 }
 
@@ -826,6 +832,25 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"property-set|Enabled":     true,
 		"property-set|UpdateOrder": true,
 	},
+	// Foundation 74. LaunchParameters is pure managed, so it starts from
+	// "nothing is fallible", and exactly two of its fifteen projected
+	// operations earn an error.
+	//
+	// The null-key ArgumentNullException that opens Insert, FindEntry and
+	// Remove is NOT among them: the base's key type is System.String, which
+	// projects to Go string, so `key == null` is unrepresentable and the guard
+	// is statically dead -- the same shape as Collection<T>'s dead
+	// items.IsReadOnly guard. ContainsKey, Remove, TryGetValue and the indexer
+	// SETTER therefore have no reachable failure at all, and set_Item in
+	// particular adds a missing key rather than refusing.
+	"Microsoft.Xna.Framework.LaunchParameters": {
+		// get_Item is the one inherited read that fails, with
+		// KeyNotFoundException. Its SETTER is deliberately absent.
+		"property-get|Item": true,
+		// Add is Insert(..., add: true), whose reachable failure is the
+		// ArgumentException a duplicate key raises.
+		"method|Add": true,
+	},
 	"Microsoft.Xna.Framework.GameComponentCollection": {
 		"method|InsertItem": true,
 		"method|RemoveItem": true,
@@ -978,6 +1003,10 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|IsMouseVisible":    true,
 		"property-get|Window":            true,
 		"property-get|IsActive":          true,
+		// Foundation 74. Game::get_LaunchParameters is
+		// `ldarg.0; ldfld launchParameters; ret` -- one field read of an object
+		// the constructor allocated, reaching no host and no runtime.
+		"property-get|LaunchParameters": true,
 	},
 	// Foundation 45. GameWindow is native-backed -- most of its members reach
 	// the platform window -- so it starts fallible and these three name their
@@ -2081,6 +2110,40 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 	if inner, ok := genericTypeArgument(raw, "System.Collections.ObjectModel.ReadOnlyCollection`1["); ok {
 		return "*" + frameworkQualified(owner, "ReadOnlyCollection") + "[" + mapType(s, byIdentity, owner, inner) + "]"
 	}
+	// Foundation 74. The four BCL types Dictionary<K,V>'s inherited public
+	// surface carries at signature positions.
+	//
+	// The two nested enumerator structs take the SAME projection List<T>'s does
+	// and for the same reason -- each IS an IEnumerator<T>, and IEnumerator<T>
+	// is Iterator<T> -- so they are mapped before the collections that return
+	// them, since their identities share a prefix.
+	if arguments, ok := genericTypeArguments(raw, "System.Collections.Generic.Dictionary`2+KeyCollection+Enumerator["); ok && len(arguments) == 2 {
+		return frameworkQualified(owner, "Iterator") + "[" + mapType(s, byIdentity, owner, arguments[0]) + "]"
+	}
+	if arguments, ok := genericTypeArguments(raw, "System.Collections.Generic.Dictionary`2+ValueCollection+Enumerator["); ok && len(arguments) == 2 {
+		return frameworkQualified(owner, "Iterator") + "[" + mapType(s, byIdentity, owner, arguments[1]) + "]"
+	}
+	if arguments, ok := genericTypeArguments(raw, "System.Collections.Generic.Dictionary`2+Enumerator["); ok && len(arguments) == 2 {
+		return frameworkQualified(owner, "Iterator") + "[" + frameworkQualified(owner, "KeyValuePair") + "[" +
+			mapType(s, byIdentity, owner, arguments[0]) + ", " + mapType(s, byIdentity, owner, arguments[1]) + "]]"
+	}
+	if arguments, ok := genericTypeArguments(raw, "System.Collections.Generic.Dictionary`2+KeyCollection["); ok && len(arguments) == 2 {
+		return "*" + frameworkQualified(owner, "DictionaryKeyCollection") + "[" +
+			mapType(s, byIdentity, owner, arguments[0]) + ", " + mapType(s, byIdentity, owner, arguments[1]) + "]"
+	}
+	if arguments, ok := genericTypeArguments(raw, "System.Collections.Generic.Dictionary`2+ValueCollection["); ok && len(arguments) == 2 {
+		return "*" + frameworkQualified(owner, "DictionaryValueCollection") + "[" +
+			mapType(s, byIdentity, owner, arguments[0]) + ", " + mapType(s, byIdentity, owner, arguments[1]) + "]"
+	}
+	// KeyValuePair<K,V> is a CLR STRUCT, so it keeps value semantics and takes
+	// no pointer -- unlike the two collection views, which are classes.
+	if arguments, ok := genericTypeArguments(raw, "System.Collections.Generic.KeyValuePair`2["); ok && len(arguments) == 2 {
+		return frameworkQualified(owner, "KeyValuePair") + "[" +
+			mapType(s, byIdentity, owner, arguments[0]) + ", " + mapType(s, byIdentity, owner, arguments[1]) + "]"
+	}
+	if inner, ok := genericTypeArgument(raw, "System.Collections.Generic.IEqualityComparer`1["); ok {
+		return frameworkQualified(owner, "IEqualityComparer") + "[" + mapType(s, byIdentity, owner, inner) + "]"
+	}
 	// System.EventArgs is a CLR class, so it keeps CLR reference semantics and
 	// projects as a pointer to the framework-package language adapter.
 	if raw == "System.EventArgs" {
@@ -2148,6 +2211,32 @@ func genericTypeArgument(raw, prefix string) (string, bool) {
 		return "", false
 	}
 	return strings.TrimSuffix(strings.TrimPrefix(raw, prefix), "]"), true
+}
+
+// genericTypeArguments is genericTypeArgument for a CLR identity with more than
+// one type argument. It splits at top-level commas, so a nested generic
+// argument survives intact.
+func genericTypeArguments(raw, prefix string) ([]string, bool) {
+	if !strings.HasPrefix(raw, prefix) || !strings.HasSuffix(raw, "]") {
+		return nil, false
+	}
+	inner := raw[len(prefix) : len(raw)-1]
+	var arguments []string
+	depth, start := 0, 0
+	for i := 0; i < len(inner); i++ {
+		switch inner[i] {
+		case '[':
+			depth++
+		case ']':
+			depth--
+		case ',':
+			if depth == 0 {
+				arguments = append(arguments, strings.TrimSpace(inner[start:i]))
+				start = i + 1
+			}
+		}
+	}
+	return append(arguments, strings.TrimSpace(inner[start:])), true
 }
 
 // isFallible decides whether one projected operation gains a Go error result.
@@ -2612,9 +2701,31 @@ type bclInheritedMember struct {
 
 // bclExcludedMember records one public-looking base member that is not
 // projected, and why.
+//
+// Kind separates two very different claims and must never blur them.
+// NOT_PUBLIC_SURFACE -- the default, and every exclusion up to Foundation 73 --
+// says the member is not part of what a derived CLR caller can reach at all: a
+// constructor, which the CLR does not inherit; a `family` member; or a private
+// explicit interface implementation. Nothing is missing in that case.
+// BCL_PROJECTION_BLOCKED_EXTERNAL says the opposite: the member IS public CLR
+// surface, it IS absent from the Go projection, and Needs names the exact
+// external BCL closure that would have to be projected first. It is the
+// measured admission of a hole, not a permission to have one, and the verifier
+// counts it.
 type bclExcludedMember struct {
 	CLRMember string
+	Kind      string
+	Needs     string
 	Reason    string
+}
+
+// exclusionKind defaults an unset kind to NOT_PUBLIC_SURFACE, so the ninety
+// existing entries keep meaning exactly what they meant.
+func exclusionKind(excluded bclExcludedMember) string {
+	if excluded.Kind == "" {
+		return "NOT_PUBLIC_SURFACE"
+	}
+	return excluded.Kind
 }
 
 func bclMethod(name string, returnType string, parameters ...contractParameter) contractMember {
@@ -2642,6 +2753,12 @@ func bclProperty(name string, propertyType string, get, set bool, parameters ...
 
 func bclParameter(name, clrType string) contractParameter {
 	return contractParameter{Name: name, Type: clrType}
+}
+
+// bclOutParameter is a CLR `[out]` parameter of a BCL member, which the settled
+// direction rule removes from the Go input list and appends to the results.
+func bclOutParameter(name, clrType string) contractParameter {
+	return contractParameter{Name: name, Type: clrType + "&", Out: true}
 }
 
 // bclBaseAdapters declares every supported BCL base-class family.
@@ -2722,6 +2839,112 @@ var bclBaseAdapters = map[string]bclBaseAdapter{
 			{CLRMember: "IList.IndexOf", Reason: "private explicit implementation"},
 			{CLRMember: "IList.Insert", Reason: "private explicit implementation"},
 			{CLRMember: "IList.Remove", Reason: "private explicit implementation"},
+		},
+	},
+
+	// System.Collections.Generic.Dictionary<TKey,TValue>, read from the same
+	// pinned mscorlib 4.0.30319.1.
+	//
+	// The class stores its entries in three parallel private fields --
+	// `int32[] buckets`, `Entry[] entries` and the `count`/`freeList`/
+	// `freeCount` cursor trio -- plus `version` and the `IEqualityComparer<TKey>`
+	// the constructor chose. The parameterless constructor, the only one any
+	// pinned XNA subclass calls, is `.ctor(0, null)`: capacity zero, so
+	// Initialize is NOT called and `buckets` starts null, and a null comparer
+	// argument becomes EqualityComparer<TKey>.Default.
+	//
+	// This is the .NET Framework 4.0 RTM Dictionary. Its Insert has no
+	// collision counter and no randomised-comparer switch, so `comparer` is
+	// assigned once and get_Comparer answers the same object forever.
+	//
+	// Its public surface is exactly the fourteen members below plus
+	// GetObjectData. Everything else the class declares is one of three things
+	// that are not public surface: six public constructors and one `family`
+	// serialization constructor, which the CLR does not inherit; the private
+	// Initialize/FindEntry/Insert/Resize helpers; and twenty-three private
+	// explicit implementations of IDictionary, IDictionary<K,V>, ICollection,
+	// ICollection<KeyValuePair<K,V>> and IEnumerable, which the settled
+	// BCL-interface rule already excludes.
+	//
+	// The null-key guard that opens Insert, FindEntry and Remove is statically
+	// dead for the profile's only consumer, whose key type is System.String and
+	// therefore Go string, which has no null -- the same shape as
+	// Collection<T>'s dead `items.IsReadOnly` guard, and recorded for the same
+	// reason.
+	"System.Collections.Generic.Dictionary`2": {
+		GoAdapter:       "dictionaryBase[TKey, TValue]",
+		AdapterField:    "base",
+		GenericArity:    2,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "a mutable BCL hash map base projected as private composition plus measured forwarding; the adapter reproduces the entries array, the free list and the version counter rather than wrapping a Go map, because Dictionary's enumeration order is entries-array order and Go's is deliberately randomised",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Comparer", "System.Collections.Generic.IEqualityComparer`1[!0]", true, false),
+				Rationale: "get_Comparer is one ldfld of the comparer the constructor stored; for the parameterless constructor that is EqualityComparer<TKey>.Default, a cached CLR static, so two dictionaries answer with the same object"},
+			{Member: bclProperty("Count", "System.Int32", true, false),
+				Rationale: "get_Count is `count - freeCount`, not the length of the entries array, so a removal reduces it without shrinking anything"},
+			{Member: bclProperty("Keys", "System.Collections.Generic.Dictionary`2+KeyCollection[!0,!1]", true, false),
+				Rationale: "get_Keys allocates the view once, caches it in a private field and returns the same object forever after; the view reads through to the dictionary rather than copying, so later changes are visible through an already-obtained Keys"},
+			{Member: bclProperty("Values", "System.Collections.Generic.Dictionary`2+ValueCollection[!0,!1]", true, false),
+				Rationale: "get_Values is get_Keys' mirror, cached the same way"},
+			{Member: bclProperty("Item", "!1", true, true, bclParameter("key", "!0")),
+				Rationale: "get_Item is FindEntry then either the stored value or KeyNotFoundException, which is the ONE inherited read that fails; set_Item is `Insert(key, value, false)`, which adds a missing key rather than refusing and cannot fail"},
+			{Member: bclMethod("Add", "System.Void", bclParameter("key", "!0"), bclParameter("value", "!1")),
+				Rationale: "Add is `Insert(key, value, true)`, whose only reachable failure is the ArgumentException a duplicate key raises"},
+			{Member: bclMethod("Clear", "System.Void"),
+				Rationale: "Clear's whole body is guarded by `count > 0`, so clearing an already empty dictionary does not even increment the version -- the opposite of List<T>.Clear, and a live enumerator survives it"},
+			{Member: bclMethod("ContainsKey", "System.Boolean", bclParameter("key", "!0")),
+				Rationale: "ContainsKey is `FindEntry(key) >= 0`, which compares the stored hash before it calls the comparer's Equals"},
+			{Member: bclMethod("ContainsValue", "System.Boolean", bclParameter("value", "!1")),
+				Rationale: "ContainsValue is a forward scan of the live entries over EqualityComparer<TValue>.Default; it is the one member whose comparer is the VALUE's rather than the key's"},
+			{Member: bclMethod("GetEnumerator", "System.Collections.Generic.Dictionary`2+Enumerator[!0,!1]"),
+				Rationale: "GetEnumerator returns the nested Enumerator STRUCT, which IS an IEnumerator<KeyValuePair<K,V>>, so the settled List<T>.Enumerator rule projects it as Iterator<T>; it walks the entries array from 0, skips freed slots, and compares the captured version BEFORE the bounds test"},
+			{Member: bclMethod("OnDeserialization", "System.Void", bclParameter("sender", "System.Object")),
+				Rationale: "public and not an explicit implementation, so it is genuinely inherited surface; its body opens `if (m_siInfo == null) return`, and m_siInfo's only non-null writer is the `family` .ctor(SerializationInfo, StreamingContext), which the CLR does not inherit and no consumer declares -- so the empty branch is the only reachable body and the member cannot fail"},
+			{Member: bclMethod("Remove", "System.Boolean", bclParameter("key", "!0")),
+				Rationale: "Remove unlinks the entry, clears both halves so neither is retained, and pushes the slot onto the HEAD of the free list, so the next insertion reuses the most recently removed index -- which is observable through enumeration order"},
+			{Member: bclMethod("TryGetValue", "System.Boolean", bclParameter("key", "!0"), bclOutParameter("value", "!1")),
+				Rationale: "TryGetValue is FindEntry plus an out parameter the settled direction rule turns into a second result; a miss writes default(TValue) explicitly"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: "GetObjectData", Kind: "BCL_PROJECTION_BLOCKED_EXTERNAL",
+				Needs:  "System.Runtime.Serialization.SerializationInfo (43 public members) and StreamingContext (6), whose own inventory reaches System.Decimal (89) and System.DateTime (91), plus SerializationInfoEnumerator (6), SerializationEntry (3), IFormatterConverter and System.TypeCode",
+				Reason: "genuinely public CLR surface that IS absent from the Go projection: the settled signature-adapter rule pins an adapter to the EXACT public member inventory of the CLR type it spells, so projecting the SerializationInfo parameter means projecting all 43 of its members, which drags System.Decimal and System.DateTime -- 180 further public members that the XNA 4.0 Windows profile names nowhere else -- in behind them. That is the mscorlib port the profile is defined to exclude, so the member stays measured-absent rather than approximated"},
+			{CLRMember: ".ctor()", Reason: "the CLR does not inherit constructors; a derived type projects its own"},
+			{CLRMember: ".ctor(int32)", Reason: "the CLR does not inherit constructors, and no pinned XNA subclass calls this overload"},
+			{CLRMember: ".ctor(IEqualityComparer`1<TKey>)", Reason: "the CLR does not inherit constructors, and no pinned XNA subclass supplies a comparer"},
+			{CLRMember: ".ctor(int32,IEqualityComparer`1<TKey>)", Reason: "the CLR does not inherit constructors"},
+			{CLRMember: ".ctor(IDictionary`2<TKey,TValue>)", Reason: "the CLR does not inherit constructors"},
+			{CLRMember: ".ctor(IDictionary`2<TKey,TValue>,IEqualityComparer`1<TKey>)", Reason: "the CLR does not inherit constructors"},
+			{CLRMember: ".ctor(SerializationInfo,StreamingContext)", Reason: "`family`, and not inherited; it is also the only writer that could make m_siInfo non-null, which is why OnDeserialization's remaining body is unreachable"},
+			{CLRMember: "Initialize", Reason: "private helper"},
+			{CLRMember: "FindEntry", Reason: "private helper"},
+			{CLRMember: "Insert", Reason: "private helper; Add and set_Item are its two public entry points"},
+			{CLRMember: "Resize", Reason: "private helper"},
+			{CLRMember: "CopyTo", Reason: "the KeyValuePair-array CopyTo is PRIVATE on Dictionary itself; the two public CopyTo members belong to KeyCollection and ValueCollection"},
+			{CLRMember: "GetValueOrDefault", Reason: "`assembly`, so it is not public surface"},
+			{CLRMember: "IDictionary<TKey,TValue>.Keys", Reason: "private explicit implementation returning ICollection<TKey>; the public get_Keys carries the view"},
+			{CLRMember: "IDictionary<TKey,TValue>.Values", Reason: "private explicit implementation returning ICollection<TValue>"},
+			{CLRMember: "ICollection<KeyValuePair<TKey,TValue>>.IsReadOnly", Reason: "private explicit implementation; the settled BCL-interface rule projects nothing for it"},
+			{CLRMember: "ICollection<KeyValuePair<TKey,TValue>>.Add", Reason: "private explicit implementation; the generic Add carries the operation"},
+			{CLRMember: "ICollection<KeyValuePair<TKey,TValue>>.Contains", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection<KeyValuePair<TKey,TValue>>.CopyTo", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection<KeyValuePair<TKey,TValue>>.Remove", Reason: "private explicit implementation"},
+			{CLRMember: "IEnumerable<KeyValuePair<TKey,TValue>>.GetEnumerator", Reason: "private explicit implementation, and the public GetEnumerator already carries enumeration"},
+			{CLRMember: "IEnumerable.GetEnumerator", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.IsSynchronized", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.SyncRoot", Reason: "private explicit implementation, and CNA-Go projects no CLR sync root"},
+			{CLRMember: "ICollection.CopyTo", Reason: "private explicit implementation"},
+			{CLRMember: "IDictionary.Item", Reason: "private explicit implementation of the non-generic indexer"},
+			{CLRMember: "IDictionary.Keys", Reason: "private explicit implementation"},
+			{CLRMember: "IDictionary.Values", Reason: "private explicit implementation"},
+			{CLRMember: "IDictionary.IsReadOnly", Reason: "private explicit implementation"},
+			{CLRMember: "IDictionary.IsFixedSize", Reason: "private explicit implementation"},
+			{CLRMember: "IDictionary.Add", Reason: "private explicit implementation"},
+			{CLRMember: "IDictionary.Contains", Reason: "private explicit implementation"},
+			{CLRMember: "IDictionary.Remove", Reason: "private explicit implementation"},
+			{CLRMember: "IDictionary.GetEnumerator", Reason: "private explicit implementation returning IDictionaryEnumerator"},
 		},
 	},
 }
@@ -2967,6 +3190,126 @@ var bclSignatureAdapters = map[string]bclBaseAdapter{
 			{CLRMember: "IList.RemoveAt", Reason: "private explicit mutator"},
 		},
 	},
+
+	// Foundation 74. System.Collections.Generic.IEqualityComparer<T>, which
+	// Dictionary<K,V>::get_Comparer returns.
+	//
+	// It is an interface with exactly two abstract members, so it projects as a
+	// Go interface with two methods and no more. Neither is fallible: an
+	// implementor's whole contract is to answer.
+	"System.Collections.Generic.IEqualityComparer`1": {
+		GoAdapter:       "IEqualityComparer[T]",
+		GenericArity:    1,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "the equality contract Dictionary<K,V> stores and returns; the profile's only instance is EqualityComparer<string>.Default, whose Equals is ordinal string equality and whose GetHashCode is the pinned String::GetHashCode",
+		Members: []bclInheritedMember{
+			{Member: bclMethod("Equals", "System.Boolean", bclParameter("x", "!0"), bclParameter("y", "!0")),
+				Rationale: "abstract; GenericEqualityComparer<string> implements it as `x != null ? x.Equals(y) : y == null`, which for Go string reduces to =="},
+			{Member: bclMethod("GetHashCode", "System.Int32", bclParameter("obj", "!0")),
+				Rationale: "abstract; GenericEqualityComparer<string> forwards to String::GetHashCode, the 0x15051505 two-accumulator loop over UTF-16 code units, which this mscorlib implements with no randomised-hashing branch"},
+		},
+		Excluded: []bclExcludedMember{},
+	},
+
+	// Foundation 74. System.Collections.Generic.KeyValuePair<TKey,TValue>, the
+	// element type of Dictionary<K,V>'s enumerator.
+	//
+	// A struct with two private fields, so it projects as a Go struct value
+	// with unexported fields. Its constructor is not inherited by anything and
+	// is projected as the NewKeyValuePair function instead.
+	"System.Collections.Generic.KeyValuePair`2": {
+		GoAdapter:       "KeyValuePair[TKey, TValue]",
+		GenericArity:    2,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "the immutable pair Dictionary<K,V>'s enumerator yields; both properties are get-only, which is why the Go fields are unexported rather than public",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Key", "!0", true, false), Rationale: "get_Key is one ldfld"},
+			{Member: bclProperty("Value", "!1", true, false), Rationale: "get_Value is one ldfld"},
+			{Member: bclMethod("ToString", "System.String"),
+				Rationale: "`[` + Key.ToString() + `, ` + Value.ToString() + `]`, where a null half contributes NOTHING rather than a placeholder and the separator is emitted unconditionally, so a pair of nulls renders as `[, ]`"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: ".ctor(TKey,TValue)", Reason: "the constructor is projected as the NewKeyValuePair function; no XNA member is projected from it"},
+		},
+	},
+
+	// Foundation 74. Dictionary<TKey,TValue>.KeyCollection, returned by
+	// get_Keys.
+	//
+	// A sealed nested public class that holds the dictionary it was made from
+	// and reads through to it. Its public surface is exactly Count, CopyTo and
+	// GetEnumerator; every mutator is a private explicit implementation of
+	// ICollection<TKey> or IList, so the view is read-only without a new
+	// decision, exactly as ReadOnlyCollection<T> is.
+	"System.Collections.Generic.Dictionary`2+KeyCollection": {
+		GoAdapter:       "DictionaryKeyCollection[TKey, TValue]",
+		GenericArity:    2,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "a live view over the dictionary's entries array, not a snapshot; the Go name is the settled nested-name rule, declaring type concatenated with nested type",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Count", "System.Int32", true, false),
+				Rationale: "get_Count is one forwarded Dictionary::get_Count, so it tracks the dictionary rather than the view"},
+			{Member: bclMethod("CopyTo", "System.Void", bclParameter("array", "!0[]"), bclParameter("index", "System.Int32")),
+				Rationale: "three failures of its own, in order: a null destination, an index outside [0, array.Length], and remaining room smaller than Count; it then copies the live keys in entries-array order"},
+			{Member: bclMethod("GetEnumerator", "System.Collections.Generic.Dictionary`2+KeyCollection+Enumerator[!0,!1]"),
+				Rationale: "the nested KeyCollection.Enumerator struct, which IS an IEnumerator<TKey>, so the settled List<T>.Enumerator rule projects it as Iterator<T>; it is version-checked against the DICTIONARY, not the view"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: ".ctor(Dictionary`2<TKey,TValue>)", Kind: "LANGUAGE_MAPPING_LIMITATION",
+				Needs:  "a public Go spelling of Dictionary`2 itself",
+				Reason: "the constructor is public CLR surface, and its ONLY parameter type is the base the settled composition rule keeps private: bclBaseAdapters projects Dictionary<K,V> as the unexported dictionaryBase adapter precisely so no consumer can name it, so no exported Go function could take one. The profile's only producer of a KeyCollection is get_Keys, which hands back the cached view"},
+			{CLRMember: "ICollection<TKey>.IsReadOnly", Reason: "private explicit implementation; the settled BCL-interface rule projects nothing for it"},
+			{CLRMember: "ICollection<TKey>.Add", Reason: "private explicit mutator that throws NotSupportedException; read-only means it is not public surface"},
+			{CLRMember: "ICollection<TKey>.Clear", Reason: "private explicit mutator"},
+			{CLRMember: "ICollection<TKey>.Contains", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection<TKey>.Remove", Reason: "private explicit mutator"},
+			{CLRMember: "IEnumerable<TKey>.GetEnumerator", Reason: "private explicit implementation; the public GetEnumerator carries enumeration"},
+			{CLRMember: "IEnumerable.GetEnumerator", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.IsSynchronized", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.SyncRoot", Reason: "private explicit implementation, and CNA-Go projects no CLR sync root"},
+			{CLRMember: "ICollection.CopyTo", Reason: "private explicit implementation"},
+		},
+	},
+
+	// Foundation 74. Dictionary<TKey,TValue>.ValueCollection, KeyCollection's
+	// mirror over the other half of each entry.
+	"System.Collections.Generic.Dictionary`2+ValueCollection": {
+		GoAdapter:       "DictionaryValueCollection[TKey, TValue]",
+		GenericArity:    2,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "a live view over the dictionary's entries array, identical to KeyCollection over the value half",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Count", "System.Int32", true, false),
+				Rationale: "get_Count is one forwarded Dictionary::get_Count"},
+			{Member: bclMethod("CopyTo", "System.Void", bclParameter("array", "!1[]"), bclParameter("index", "System.Int32")),
+				Rationale: "KeyCollection::CopyTo's three checks in the same order, over the value half"},
+			{Member: bclMethod("GetEnumerator", "System.Collections.Generic.Dictionary`2+ValueCollection+Enumerator[!0,!1]"),
+				Rationale: "the nested ValueCollection.Enumerator struct, projected through the same settled rule"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: ".ctor(Dictionary`2<TKey,TValue>)", Kind: "LANGUAGE_MAPPING_LIMITATION",
+				Needs:  "a public Go spelling of Dictionary`2 itself",
+				Reason: "public CLR surface whose only parameter type is the privately composed base; see KeyCollection's entry"},
+			{CLRMember: "ICollection<TValue>.IsReadOnly", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection<TValue>.Add", Reason: "private explicit mutator that throws NotSupportedException"},
+			{CLRMember: "ICollection<TValue>.Clear", Reason: "private explicit mutator"},
+			{CLRMember: "ICollection<TValue>.Contains", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection<TValue>.Remove", Reason: "private explicit mutator"},
+			{CLRMember: "IEnumerable<TValue>.GetEnumerator", Reason: "private explicit implementation"},
+			{CLRMember: "IEnumerable.GetEnumerator", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.IsSynchronized", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.SyncRoot", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.CopyTo", Reason: "private explicit implementation"},
+		},
+	},
 }
 
 // bclSignatureAdapterConstructors are the exported functions that build a
@@ -2986,6 +3329,11 @@ var bclSignatureAdapterConstructors = map[string]string{
 	// characters are values: a name saying "over references" would describe
 	// the opposite of what the collection holds.
 	"NewReadOnlyCollectionOverCharacters": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+	// Foundation 74. KeyValuePair<TKey,TValue>::.ctor, which the Dictionary
+	// enumerator's Current builds with `newobj` on every step. It is the one
+	// new signature adapter whose CLR constructor is public AND reachable, so
+	// it gets a named Go constructor rather than an exclusion.
+	"NewKeyValuePair": "System.Collections.Generic.KeyValuePair`2",
 }
 
 // bclSignatureAdapterGoName is the Go type name of one signature adapter,

@@ -3779,3 +3779,100 @@ func TestARenderTargetCubeSubstitutesForATextureFromOutside(t *testing.T) {
 		t.Fatal("a nil cube reached the device")
 	}
 }
+
+// TestLaunchParametersIsUsableFromOutsideTheModule is Foundation 74's external
+// gate. The Dictionary base is composed PRIVATELY, so the whole question is
+// whether the fourteen forwarding members and the four BCL signature adapters
+// they carry are actually reachable by a consumer who only imports the module.
+//
+// A name that only works inside the repository has not shipped.
+func TestLaunchParametersIsUsableFromOutsideTheModule(t *testing.T) {
+	parameters := framework.NewLaunchParameters()
+	if parameters == nil {
+		t.Fatal("NewLaunchParameters is not reachable from outside")
+	}
+	parameters.Clear()
+	if err := parameters.Add("alpha", "1"); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if err := parameters.Add("beta", "2"); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+	if err := parameters.Add("alpha", "again"); err == nil {
+		t.Fatal("a duplicate key was accepted")
+	}
+	if _, err := parameters.Item("absent"); err == nil {
+		t.Fatal("an absent key was found")
+	}
+	parameters.SetItem("gamma", "3")
+	if parameters.Count() != 3 || !parameters.ContainsKey("gamma") || !parameters.ContainsValue("2") {
+		t.Fatalf("Count=%d after three insertions", parameters.Count())
+	}
+	if found, value := parameters.TryGetValue("beta"); !found || value != "2" {
+		t.Fatalf("TryGetValue(beta) = %v, %q", found, value)
+	}
+
+	// The two view types and the pair type must be nameable from outside, not
+	// merely returnable: a consumer holding one in a declared variable is the
+	// only thing that proves the exported spelling exists.
+	var keys *framework.DictionaryKeyCollection[string, string] = parameters.Keys()
+	var values *framework.DictionaryValueCollection[string, string] = parameters.Values()
+	if keys.Count() != 3 || values.Count() != 3 {
+		t.Fatalf("views report %d/%d", keys.Count(), values.Count())
+	}
+	destination := make([]string, 3)
+	if err := keys.CopyTo(destination, 0); err != nil {
+		t.Fatalf("CopyTo: %v", err)
+	}
+	if destination[0] != "alpha" || destination[1] != "beta" || destination[2] != "gamma" {
+		t.Fatalf("CopyTo wrote %v, want entries order", destination)
+	}
+
+	var iterator framework.Iterator[framework.KeyValuePair[string, string]] = parameters.GetEnumerator()
+	var pair framework.KeyValuePair[string, string]
+	pair, ok, err := iterator.Next()
+	if err != nil || !ok || pair.Key() != "alpha" || pair.Value() != "1" {
+		t.Fatalf("first pair = %q/%q, %v, %v", pair.Key(), pair.Value(), ok, err)
+	}
+	if pair.ToString() != "[alpha, 1]" {
+		t.Fatalf("KeyValuePair.ToString = %q", pair.ToString())
+	}
+	if built := framework.NewKeyValuePair("k", 3); built.Key() != "k" || built.Value() != 3 {
+		t.Fatal("NewKeyValuePair is not reachable from outside")
+	}
+
+	var comparer framework.IEqualityComparer[string] = parameters.Comparer()
+	if !comparer.Equals("a", "a") || comparer.Equals("a", "b") {
+		t.Fatal("the comparer is not ordinal equality")
+	}
+	if comparer.GetHashCode("Microsoft.Xna.Framework") != 241716342 {
+		t.Fatalf("GetHashCode = %d, want the pinned String::GetHashCode value", comparer.GetHashCode("Microsoft.Xna.Framework"))
+	}
+
+	// A mutation after an enumerator is taken fails the enumerator fast, from
+	// outside exactly as from inside.
+	live := parameters.GetEnumerator()
+	if !parameters.Remove("beta") {
+		t.Fatal("Remove did not report presence")
+	}
+	if _, _, err := live.Next(); err == nil {
+		t.Fatal("a live enumerator survived a removal")
+	}
+}
+
+// TestGameLaunchParametersIsTheGamesOwnDictionaryFromOutside proves the
+// identity half of Game::get_LaunchParameters through the public surface only.
+func TestGameLaunchParametersIsTheGamesOwnDictionaryFromOutside(t *testing.T) {
+	game, _ := newCanaryGame(t)
+	parameters := game.LaunchParameters()
+	if parameters != game.LaunchParameters() {
+		t.Fatal("Game.LaunchParameters returned two objects")
+	}
+	if err := parameters.Add("external", "value"); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+
+	if value, err := game.LaunchParameters().Item("external"); err != nil || value != "value" {
+		t.Fatalf("the Game did not observe the mutation: %q, %v", value, err)
+	}
+}

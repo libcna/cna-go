@@ -96,10 +96,6 @@ var adapterTypes = map[string]bool{
 	"GameCallbacks":     true,
 	"Iterator":          true,
 	"TimeSpan":          true,
-	// ReadOnlyCollection is a MEASURED adapter: bclSignatureAdapters pins its
-	// exact public member set, so admitting it here does not admit whatever
-	// members it happens to declare.
-	"ReadOnlyCollection": true,
 }
 
 var adapterFunctions = map[string]bool{
@@ -109,6 +105,14 @@ var adapterFunctions = map[string]bool{
 }
 
 func init() {
+	// Every BCL signature adapter is admitted FROM the measured registry, never
+	// by hand. That is what makes admission safe: bclSignatureAdapters pins the
+	// adapter's exact public member set, so admitting the TYPE here does not
+	// admit whatever members it happens to declare -- measureBCLSignatureAdapters
+	// rejects any member the pinned CLR type does not declare publicly.
+	for _, adapter := range bclSignatureAdapters {
+		adapterTypes[bclSignatureAdapterGoName(adapter)] = true
+	}
 	for name := range bclSignatureAdapterConstructors {
 		adapterFunctions[name] = true
 	}
@@ -174,6 +178,8 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["GAME_FRAME_HOOK_OVERRIDE_CAPABILITIES"] = 0
 	result.Summary["GAME_CALLBACKS_MEMBERS"] = 0
 	result.Summary["GAME_FRAME_HOOK_DEFERRED_STEPS"] = 0
+	result.Summary["BCL_ADAPTER_EXCLUSIONS"] = 0
+	result.Summary["BCL_ADAPTER_EXCLUSIONS_BLOCKED"] = 0
 	typeDiagnostics := make(map[string]int)
 	missingMembers := make(map[string][]string)
 	result.Summary["REFERENCE_TYPES"] = expected.ReferenceTypes
@@ -216,6 +222,18 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 				Message: "BCL base adapter measurement failed",
 			})
 		}
+	}
+	// Foundation 74. Every adapter exclusion is counted, and the ones that
+	// admit a genuinely public member is absent are counted SEPARATELY. An
+	// exclusion whose kind is not NOT_PUBLIC_SURFACE is a hole with a name, so
+	// it must say what external closure it waits on; one that says nothing
+	// would be an unmeasured structural category wearing a status word, which
+	// is the defect Foundation 29 removed from deferred bases.
+	for _, adapter := range result.BCLBaseAdapters {
+		countAdapterExclusions(&result, adapter.CLRBase, adapter.Exclusions)
+	}
+	for _, adapter := range result.BCLSignatureAdapters {
+		countAdapterExclusions(&result, adapter.CLRType, adapter.Exclusions)
 	}
 	result.Summary["ALLOWLIST_ENTRIES"] = allowlistEntries
 	if allowlistEntries > 0 {
@@ -427,6 +445,23 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 	result.Summary["COMPLETE_TYPES"] = len(result.CompleteTypes)
 	result.Summary["PARTIAL_TYPES"] = len(result.PartialTypes)
 	result.Summary["MISSING_TYPES"] = len(result.MissingTypes)
+	// The frontier partitions whatever is still missing, so "what is left" is
+	// a measurement taken from the same run rather than a paragraph someone
+	// remembered to update. Every classification is seeded, so a family that
+	// closes reports zero rather than dropping its key.
+	for classification := range frontierClassifications {
+		result.Summary["GLOBAL_"+classification] = 0
+	}
+	// The frontier is a claim about the WHOLE profile, so it runs only for a
+	// whole-profile run. An isolated per-type fixture models one XNA type and
+	// reports no missing types at all; demanding that the registry partition
+	// that empty set would make every fixture dirty and would say nothing
+	// about the binding. This is the same guard measureBCLSignatureAdapters
+	// applies for the same reason.
+	if expected.ReferenceTypes == fullProfileReferenceTypes {
+		result.Frontier = measureFrontier(&result, result.MissingTypes)
+		result.Summary["FRONTIER_FAMILIES"] = len(result.Frontier)
+	}
 	result.Summary["INTERFACE_WITNESS_PROJECTIONS"] = len(result.InterfaceWitnessProjections)
 	for _, witness := range result.InterfaceWitnessProjections {
 		switch witness.Member {
@@ -3119,7 +3154,9 @@ func measureBCLBaseAdapters(expected *expectedSurface, actual *actualSurface) []
 			ExcludedMembers: len(adapter.Excluded), Rationale: adapter.Rationale, Verdict: "PASS",
 		}
 		for _, excluded := range adapter.Excluded {
-			measurement.Exclusions = append(measurement.Exclusions, bclInheritedExclusion{CLRMember: excluded.CLRMember, Reason: excluded.Reason})
+			measurement.Exclusions = append(measurement.Exclusions, bclInheritedExclusion{
+				CLRMember: excluded.CLRMember, Kind: exclusionKind(excluded), Needs: excluded.Needs, Reason: excluded.Reason,
+			})
 		}
 		for _, et := range sortedExpectedTypes(expected) {
 			if baseIdentityWithoutArguments(et.BaseType) != identity {
@@ -3265,6 +3302,30 @@ func verifyExcludedBaseMembersAbsent(result *report, expected *expectedSurface, 
 	}
 }
 
+// countAdapterExclusions tallies one adapter's deliberate exclusions and
+// enforces the rule that a blocked one names its external closure.
+//
+// NOT_PUBLIC_SURFACE exclusions are the ordinary case -- a constructor, a
+// `family` member, a private explicit implementation -- and claim nothing is
+// missing. Every other kind claims something public IS missing, and is only
+// admissible with the closure that blocks it measured in Needs.
+func countAdapterExclusions(result *report, clrType string, exclusions []bclInheritedExclusion) {
+	for _, exclusion := range exclusions {
+		result.Summary["BCL_ADAPTER_EXCLUSIONS"]++
+		if exclusion.Kind == "NOT_PUBLIC_SURFACE" {
+			continue
+		}
+		result.Summary["BCL_ADAPTER_EXCLUSIONS_BLOCKED"]++
+		result.Summary["BCL_ADAPTER_EXCLUSIONS_"+exclusion.Kind]++
+		if strings.TrimSpace(exclusion.Needs) == "" {
+			addDiagnostic(result, diagnostic{
+				Category: "LANGUAGE_MAPPING_MISMATCH", XNA: clrType + "::" + exclusion.CLRMember,
+				Message: fmt.Sprintf("adapter exclusion of kind %q names no external closure; a blocked public member must say what it waits on", exclusion.Kind),
+			})
+		}
+	}
+}
+
 // measureBCLSignatureAdapters pins the exported surface of every BCL signature
 // adapter to its exact public CLR member inventory, and records which
 // projected XNA members carry the type.
@@ -3297,7 +3358,9 @@ func measureBCLSignatureAdapters(result *report, expected *expectedSurface, actu
 			Rationale: adapter.Rationale, Verdict: "PASS",
 		}
 		for _, excluded := range adapter.Excluded {
-			measurement.Exclusions = append(measurement.Exclusions, bclInheritedExclusion{CLRMember: excluded.CLRMember, Reason: excluded.Reason})
+			measurement.Exclusions = append(measurement.Exclusions, bclInheritedExclusion{
+				CLRMember: excluded.CLRMember, Kind: exclusionKind(excluded), Needs: excluded.Needs, Reason: excluded.Reason,
+			})
 		}
 		if _, present := actual.Types[symbolKey{Package: frameworkPackage, Name: goName}]; !present {
 			addDiagnostic(result, diagnostic{

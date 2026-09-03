@@ -389,6 +389,7 @@ type report struct {
 	Foundation23Interfaces       []managedInterfaceClosure            `json:"foundation23InterfaceClosures"`
 	Foundation23ManagedClasses   []managedTypeClosure                 `json:"foundation23ManagedClassClosures"`
 	BCLBaseRelationships         []bclBaseProjection                  `json:"bclBaseRelationships"`
+	Frontier                     []frontierMeasurement                `json:"frontier"`
 	BCLBaseAdapters              []bclBaseAdapterMeasurement          `json:"bclBaseAdapters"`
 	BCLSignatureAdapters         []bclSignatureAdapterMeasurement     `json:"bclSignatureAdapters"`
 	BCLInterfaceRelationships    []bclInterfaceProjection             `json:"bclInterfaceRelationships"`
@@ -704,7 +705,17 @@ type bclInheritedMemberMeasurement struct {
 
 type bclInheritedExclusion struct {
 	CLRMember string `json:"clrMember"`
-	Reason    string `json:"reason"`
+	// Kind says WHY the member is unprojected. NOT_PUBLIC_SURFACE covers the
+	// three CLR facts that make a base member invisible to a derived caller --
+	// a constructor, a protected member, a private explicit interface
+	// implementation -- and is the default. BCL_PROJECTION_BLOCKED_EXTERNAL is
+	// the one kind that admits a genuinely public member is missing, and it
+	// must name the external closure that blocks it.
+	Kind string `json:"kind"`
+	// Needs is the external BCL closure a BCL_PROJECTION_BLOCKED_EXTERNAL
+	// exclusion waits on, measured rather than asserted.
+	Needs  string `json:"needs,omitempty"`
+	Reason string `json:"reason"`
 }
 
 // bclInterfaceProjection measures one non-XNA CLR interface that XNA types
