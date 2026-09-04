@@ -8154,10 +8154,11 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect,
 	// Foundation 73's RenderTargetCube, Foundation 79's BasicEffect,
 	// Foundation 80's AlphaTestEffect, DualTextureEffect and EffectMaterial,
-	// and Foundation 81's EnvironmentMapEffect and SkinnedEffect -- with which
-	// every one of Effect's six derived types is projected.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 22 {
-		t.Fatalf("%d projected derived types, want 22", got)
+	// Foundation 81's EnvironmentMapEffect and SkinnedEffect -- with which
+	// every one of Effect's six derived types is projected -- and Foundation
+	// 83's OcclusionQuery, which is GraphicsResource's twelfth.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 23 {
+		t.Fatalf("%d projected derived types, want 23", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.

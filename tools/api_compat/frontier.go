@@ -107,11 +107,10 @@ var frontierFamilies = []frontierFamily{
 	{
 		Name:           "Graphics leftovers",
 		Classification: frontierActionableLocal,
-		Note:           "OcclusionQuery has ~12 CNA routes; the two dynamic buffers have NO dedicated routes and the hypothesis that the ordinary buffer routes plus a BufferUsage implement them must be probed before anything is bound",
+		Note:           "Foundation 83 closed OcclusionQuery. The two dynamic buffers have NO dedicated CNA routes and the Foundation 83 probe CONFIRMED the standing hypothesis against the canonical headers: CNA_VertexBufferCreateInfo carries a `dynamic` flag documented as \"True to construct DynamicVertexBuffer\", CNA_VertexBufferInfo carries `dynamic` and `is_content_lost`, both buffers have subscribe/unsubscribe_content_lost routes, and the transfer descriptors carry SetDataOptions whose non-None values \"require a supported dynamic-buffer overload\". What remains is composing the VertexBuffer and IndexBuffer bases, which are still DEFERRED",
 		Types: []string{
 			"Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
 			"Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-			"Microsoft.Xna.Framework.Graphics.OcclusionQuery",
 		},
 	},
 	{

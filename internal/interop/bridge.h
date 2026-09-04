@@ -497,6 +497,14 @@ CnaGoResult cna_go_effect_material_create(CnaGoHandle clone_source, CnaGoHandle*
 CnaGoResult cna_go_framework_dispatcher_update(CnaGoHandle game);
 CnaGoResult cna_go_title_container_read(CnaGoHandle game, const char* name, uint64_t name_length, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes);
 
+/* Foundation 83. */
+CnaGoResult cna_go_occlusion_query_create(CnaGoHandle graphics_device, CnaGoHandle* out_occlusion_query);
+CnaGoResult cna_go_occlusion_query_destroy(CnaGoHandle occlusion_query);
+CnaGoResult cna_go_occlusion_query_begin(CnaGoHandle occlusion_query);
+CnaGoResult cna_go_occlusion_query_end(CnaGoHandle occlusion_query);
+CnaGoResult cna_go_occlusion_query_get_is_complete(CnaGoHandle occlusion_query, uint8_t* out_is_complete);
+CnaGoResult cna_go_occlusion_query_get_pixel_count(CnaGoHandle occlusion_query, int32_t* out_pixel_count);
+
 /* Foundation 81. */
 CnaGoResult cna_go_environment_map_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect);
 CnaGoResult cna_go_environment_map_effect_set_diffuse_color(CnaGoHandle effect, const float* value);

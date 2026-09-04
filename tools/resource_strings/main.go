@@ -80,6 +80,22 @@ var registry = []claimedString{
 	{Key: "Arg_ExternalException", Assembly: "mscorlib.dll",
 		Value: "External component has thrown an exception."},
 
+	// Foundation 83. OcclusionQuery's four guards.
+	//
+	// EndMustBeCalledBeforeBegin is the key SpriteBatch's pair guard already
+	// uses, and its sentence is not the one the key suggests: it reads "Begin
+	// cannot be called again until End has been successfully called". The key
+	// names the situation and not the text, which is why the message is read
+	// rather than written from the key.
+	{Key: "EndMustBeCalledBeforeBegin", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Begin cannot be called again until End has been successfully called."},
+	{Key: "BeginMustBeCalledBeforeEnd", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Begin must be called successfully before End can be called."},
+	{Key: "IsCompleteMustBeCalled", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Begin may not be called on this query object again before IsComplete has been checked."},
+	{Key: "DataNotAvailable", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "The query data is not yet available. Use the IsComplete property to determine if the data is available before attempting to retrieve it."},
+
 	// Foundation 82. TitleContainer::OpenStream's three, all in
 	// Microsoft.Xna.Framework.dll with FrameworkResources. Two carry the
 	// requested name through String.Format's {0}.

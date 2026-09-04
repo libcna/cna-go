@@ -1595,6 +1595,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 80 | AlphaTestEffect, DualTextureEffect and EffectMaterial | `foundation-80-unlit-stock-effects-evidence.md` |
 | 81 | EnvironmentMapEffect and SkinnedEffect, closing the stock effects | `foundation-81-lit-stock-effects-evidence.md` |
 | 82 | FrameworkDispatcher and TitleContainer, the last root types | `foundation-82-root-types-evidence.md` |
+| 83 | OcclusionQuery, and the dynamic-buffer probe | `foundation-83-occlusion-query-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1937,6 +1938,20 @@ entry point, and a zero capacity answers CNA_RESULT_BUFFER_TOO_SMALL with the
 byte count filled in. Treating that as a failure made a file that had just been
 written report as not found, and only the device-backed run could find it --
 which is what the native stress is for.
+
+**Two assertions can contradict each other through the code under test** (83).
+`OcclusionQuery.IsComplete` arms `Begin` as its first statement, so a scenario
+that checked "a query inside its own pair is not complete" and then "a second
+Begin is refused" made the first assertion break the second -- on correct code.
+The claims cannot share a Begin/End pair. Where an observation MUTATES, the
+order of assertions is part of the test's meaning.
+
+**A physical assumption about a backend is a hypothesis, not a premise** (83).
+"A query inside its own pair cannot be complete" is true of XNA's Direct3D 9
+GetData and false of CNA, whose route answers whether A result can be read
+rather than whether THIS one is ready. The scenario records both outcomes in
+separate counters instead of asserting one, and the two qualified artifacts
+land in different columns.
 
 ## Next milestone selection rule
 

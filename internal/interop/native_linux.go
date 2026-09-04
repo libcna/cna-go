@@ -2728,6 +2728,41 @@ func nativeTitleContainerRead(game uint64, name string) ([]byte, error) {
 	return buffer[:int(written)], nil
 }
 
+// Foundation 83 -- OcclusionQuery.
+
+func nativeOcclusionQueryCreate(device uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_occlusion_query_create", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_occlusion_query_create(C.CnaGoHandle(device), out)
+	})
+}
+
+func nativeOcclusionQueryDestroy(query uint64) error {
+	return resultError("cna_occlusion_query_destroy",
+		uint32(C.cna_go_occlusion_query_destroy(C.CnaGoHandle(query))))
+}
+
+func nativeOcclusionQueryBegin(query uint64) error {
+	return resultError("cna_occlusion_query_begin",
+		uint32(C.cna_go_occlusion_query_begin(C.CnaGoHandle(query))))
+}
+
+func nativeOcclusionQueryEnd(query uint64) error {
+	return resultError("cna_occlusion_query_end",
+		uint32(C.cna_go_occlusion_query_end(C.CnaGoHandle(query))))
+}
+
+func nativeOcclusionQueryIsComplete(query uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_occlusion_query_get_is_complete(C.CnaGoHandle(query), &value))
+	return value != 0, resultError("cna_occlusion_query_get_is_complete", code)
+}
+
+func nativeOcclusionQueryPixelCount(query uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_occlusion_query_get_pixel_count(C.CnaGoHandle(query), &value))
+	return int32(value), resultError("cna_occlusion_query_get_pixel_count", code)
+}
+
 func nativeEffectLightsDirectionalLight(effect uint64, index uint32) (uint64, error) {
 	return nativeEffectHandleOut("cna_effect_lights_get_directional_light", func(out *C.CnaGoHandle) C.CnaGoResult {
 		return C.cna_go_effect_lights_get_directional_light(C.CnaGoHandle(effect), C.uint32_t(index), out)

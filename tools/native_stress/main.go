@@ -229,6 +229,22 @@ type counters struct {
 	TitleContainerReadRefusals  int `json:"TITLE_CONTAINER_READ_REFUSALS"`
 	TitleContainerGuardChecks   int `json:"TITLE_CONTAINER_GUARD_CHECKS"`
 	RootStaticOutsideGameChecks int `json:"ROOT_STATIC_OUTSIDE_GAME_CHECKS"`
+	// Foundation 83. OcclusionQuery. Creations and refusals are counted apart
+	// because CNA answers CNA_RESULT_NOT_SUPPORTED where the backend has no
+	// query object, which is a renderer capability and not a defect -- the same
+	// shape the volume-texture creation already has.
+	OcclusionQueryCreations        int `json:"OCCLUSION_QUERY_CREATIONS"`
+	OcclusionQueryCreationRefusals int `json:"OCCLUSION_QUERY_CREATION_REFUSALS"`
+	OcclusionQueryPairs            int `json:"OCCLUSION_QUERY_PAIRS"`
+	OcclusionQueryPairRefusals     int `json:"OCCLUSION_QUERY_PAIR_REFUSALS"`
+	OcclusionQueryGuardChecks      int `json:"OCCLUSION_QUERY_GUARD_CHECKS"`
+	OcclusionQueryCompletions      int `json:"OCCLUSION_QUERY_COMPLETIONS"`
+	OcclusionQueryPendingChecks    int `json:"OCCLUSION_QUERY_PENDING_CHECKS"`
+	OcclusionQueryDisposalChecks   int `json:"OCCLUSION_QUERY_DISPOSAL_CHECKS"`
+	// What IsComplete answers INSIDE a pair, which is CNA's answer and not
+	// XNA's. Counted in two buckets so the behaviour is visible either way.
+	OcclusionQueryStaleResultChecks int `json:"OCCLUSION_QUERY_STALE_RESULT_CHECKS"`
+	OcclusionQueryFreshResultChecks int `json:"OCCLUSION_QUERY_FRESH_RESULT_CHECKS"`
 	// Foundation 81. EnvironmentMapEffect and SkinnedEffect, which close the
 	// stock-effect family. The bone counters are separate because the copy is
 	// the one ARRAY crossing in the family and CNA may refuse it where it
@@ -718,6 +734,27 @@ func runParent() (counters, error) {
 			total.LitEffectCreations, total.LitEffectLightChecks, total.LitEffectApplies,
 			total.LitEffectApplyRefusals, total.LitEffectRoundTrips, total.LitEffectBoneRoundTrips,
 			total.LitEffectBoneRefusals, total.LitEffectCloneChecks, total.LitEffectDisposalChecks)
+	}
+	// Foundation 83. One creation outcome per cycle, and every check downstream
+	// counted against the creations that succeeded.
+	if total.OcclusionQueryCreations+total.OcclusionQueryCreationRefusals != total.VertexBufferCycles {
+		return total, fmt.Errorf("occlusion-query creations %d and refusals %d do not account for %d cycles",
+			total.OcclusionQueryCreations, total.OcclusionQueryCreationRefusals, total.VertexBufferCycles)
+	}
+	if total.OcclusionQueryDisposalChecks != total.OcclusionQueryCreations {
+		return total, fmt.Errorf("%d occlusion-query creations produced %d disposal checks",
+			total.OcclusionQueryCreations, total.OcclusionQueryDisposalChecks)
+	}
+	if total.OcclusionQueryStaleResultChecks+total.OcclusionQueryFreshResultChecks != total.OcclusionQueryPairs/2 {
+		return total, fmt.Errorf("%d stale and %d fresh inside-pair checks over %d pairs",
+			total.OcclusionQueryStaleResultChecks, total.OcclusionQueryFreshResultChecks, total.OcclusionQueryPairs)
+	}
+	if total.OcclusionQueryPairs+2*total.OcclusionQueryPairRefusals != 2*total.OcclusionQueryCreations ||
+		total.OcclusionQueryGuardChecks+total.OcclusionQueryPairRefusals != total.OcclusionQueryCreations ||
+		total.OcclusionQueryCompletions+total.OcclusionQueryPendingChecks+total.OcclusionQueryPairRefusals != total.OcclusionQueryCreations {
+		return total, fmt.Errorf("%d occlusion-query creations produced %d pairs, %d pair refusals, %d guard checks, %d completions and %d pending checks",
+			total.OcclusionQueryCreations, total.OcclusionQueryPairs, total.OcclusionQueryPairRefusals,
+			total.OcclusionQueryGuardChecks, total.OcclusionQueryCompletions, total.OcclusionQueryPendingChecks)
 	}
 	// Foundation 82. Three dispatcher pumps and two guard checks per cycle, and
 	// exactly one outcome for the read.
@@ -4748,6 +4785,11 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 83. OcclusionQuery, on the same live device.
+	if err := g.exerciseOcclusionQuery(device); err != nil {
+		return err
+	}
+
 	if effect != nil {
 		if err := effect.DisposeByNone(); err != nil {
 			return fmt.Errorf("disposing the stock effect: %w", err)
@@ -6353,6 +6395,157 @@ func (g *stressGame) exerciseRootStatics() error {
 		}
 	}
 	g.result.TitleContainerGuardChecks++
+	return nil
+}
+
+// exerciseOcclusionQuery is Foundation 83's slice.
+//
+// The type's four flags and every guard they gate are measured without a device
+// in occlusion_query_test.go. What needs one is the Begin/End pair reaching the
+// GPU, the completion read, and the ONE path the managed tests cannot produce:
+// a query that really does complete and answers a pixel count.
+func (g *stressGame) exerciseOcclusionQuery(device *graphics.GraphicsDevice) error {
+	query, err := graphics.NewOcclusionQuery(device)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewOcclusionQuery: %w", err)
+		}
+		g.result.OcclusionQueryCreationRefusals++
+		fmt.Fprintf(os.Stderr, "OcclusionQuery creation refused: %v\n", err)
+		return nil
+	}
+	g.result.OcclusionQueryCreations++
+
+	// A fresh query is ARMED, so Begin is legal immediately -- which is the
+	// constructor's one store seen from outside.
+	if err := query.Begin(); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("OcclusionQuery.Begin: %w", err)
+		}
+		g.result.OcclusionQueryPairRefusals++
+		fmt.Fprintf(os.Stderr, "OcclusionQuery.Begin refused: %v\n", err)
+		if err := query.DisposeByNone(); err != nil {
+			return fmt.Errorf("disposing a query that could not begin: %w", err)
+		}
+		g.result.OcclusionQueryDisposalChecks++
+		return nil
+	}
+
+	// Inside the pair: a second Begin is refused by the pair guard, and it is
+	// refused MANAGED-side, before CNA sees anything.
+	if err := query.Begin(); err == nil {
+		return errors.New("a second Begin inside a pair was accepted")
+	}
+	// A draw, so the query has something to count. It is BEST EFFORT and its
+	// outcome is deliberately not asserted: this slice runs after the effect
+	// slices, which dispose the effects they made, and CNA treats disposing the
+	// applied effect as un-applying it -- so the draw answers "no effect has
+	// been applied" here. What the query measures is not what this scenario is
+	// about; that the pair reaches the GPU and the guards hold is.
+	_ = device.DrawPrimitives(graphics.PrimitiveTypeTriangleList, 0, 1)
+	if err := query.End(); err != nil {
+		return fmt.Errorf("OcclusionQuery.End: %w", err)
+	}
+	g.result.OcclusionQueryPairs++
+
+	// A second End outside the pair is refused, again managed-side.
+	if err := query.End(); err == nil {
+		return errors.New("a second End outside a pair was accepted")
+	}
+	// Begin DISARMED the query, so a second pair is refused until IsComplete is
+	// asked. This is the store that is easiest to omit and the only place it
+	// shows: the managed tests never run a Begin that succeeds.
+	//
+	// It has to be asserted HERE, before anything asks IsComplete. The first
+	// arrangement checked "a query inside its own pair is not complete" during
+	// the pair, and that call ARMED the query -- IsComplete's first statement
+	// is the arming store, before every early return -- so this assertion then
+	// fired on correct code. The two claims cannot share a pair, and the
+	// inside-the-pair one is made in the second pair below.
+	if err := query.Begin(); err == nil {
+		return errors.New("a second Begin was accepted without IsComplete being checked")
+	}
+	g.result.OcclusionQueryGuardChecks++
+
+	// The completion read. A query that has not finished answers false and
+	// PixelCount refuses; one that has finished answers a count. BOTH are
+	// legitimate outcomes of a single frame, so both are counted rather than
+	// one of them being waited for.
+	complete, err := query.IsComplete()
+	if err != nil {
+		return fmt.Errorf("OcclusionQuery.IsComplete: %w", err)
+	}
+	if complete {
+		count, countErr := query.PixelCount()
+		if countErr != nil {
+			return fmt.Errorf("OcclusionQuery.PixelCount on a complete query: %w", countErr)
+		}
+		if count < 0 {
+			return fmt.Errorf("OcclusionQuery.PixelCount answered %d", count)
+		}
+		g.result.OcclusionQueryCompletions++
+	} else {
+		if _, countErr := query.PixelCount(); countErr == nil {
+			return errors.New("PixelCount answered on a query that is not complete")
+		}
+		g.result.OcclusionQueryPendingChecks++
+	}
+
+	// IsComplete re-armed Begin, whatever it answered, so a second pair is
+	// legal -- which is the side effect the managed tests pin and this proves
+	// end to end.
+	if err := query.Begin(); err != nil {
+		return fmt.Errorf("Begin after IsComplete re-armed it: %w", err)
+	}
+	// What IsComplete answers INSIDE a pair is recorded rather than asserted,
+	// because the measurement contradicted the assumption.
+	//
+	// XNA's Begin sets `_isAvailable = false` and its GetData returns S_FALSE
+	// until the pair is submitted, so a query inside its own pair reports
+	// incomplete. CNA answers a different question -- its route is documented
+	// as "whether the query result can be read without stalling the CPU" -- and
+	// on both qualified artifacts it reports TRUE inside the second pair,
+	// because the FIRST pair's result is still readable. Inside the first pair,
+	// where nothing has ever completed, it reports false.
+	//
+	// The projection does not mask that: the reference's IsComplete re-reads
+	// the runtime and overwrites its own flag too, so the structure is
+	// faithful and the answer is the runtime's. Both outcomes are counted, so a
+	// run in which the behaviour changed would show as a moved count rather
+	// than as silence.
+	inside, insideErr := query.IsComplete()
+	if insideErr != nil {
+		return fmt.Errorf("IsComplete inside a pair: %w", insideErr)
+	}
+	if inside {
+		g.result.OcclusionQueryStaleResultChecks++
+	} else {
+		g.result.OcclusionQueryFreshResultChecks++
+	}
+	if err := query.End(); err != nil {
+		return fmt.Errorf("the second End: %w", err)
+	}
+	g.result.OcclusionQueryPairs++
+
+	if err := query.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the OcclusionQuery: %w", err)
+	}
+	if !query.IsDisposed() {
+		return errors.New("the OcclusionQuery is not disposed after Dispose")
+	}
+	// A disposed query refuses rather than reaching a released handle.
+	//
+	// IsComplete is the member that proves it, and Begin is NOT: Begin's arming
+	// guard refuses first whatever the handle is doing, so an assertion on
+	// Begin would pass over a query whose CNA handle had been leaked.
+	// IsComplete reaches CNA with no managed guard in front of it.
+	if _, err := query.IsComplete(); err == nil {
+		return errors.New("IsComplete answered on a disposed OcclusionQuery; its CNA handle was not released")
+	}
+	if err := query.Begin(); err == nil {
+		return errors.New("Begin answered on a disposed OcclusionQuery")
+	}
+	g.result.OcclusionQueryDisposalChecks++
 	return nil
 }
 

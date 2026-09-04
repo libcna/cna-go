@@ -2108,6 +2108,30 @@ CnaGoResult cna_go_title_container_read(CnaGoHandle game, const char* name, uint
     return api.cna_title_container_read_ext(game, cna_go_view(name, name_length), destination, capacity, out_bytes);
 }
 
+CnaGoResult cna_go_occlusion_query_create(CnaGoHandle graphics_device, CnaGoHandle* out_occlusion_query) {
+    return api.cna_occlusion_query_create(graphics_device, out_occlusion_query);
+}
+
+CnaGoResult cna_go_occlusion_query_destroy(CnaGoHandle occlusion_query) {
+    return api.cna_occlusion_query_destroy(occlusion_query);
+}
+
+CnaGoResult cna_go_occlusion_query_begin(CnaGoHandle occlusion_query) {
+    return api.cna_occlusion_query_begin(occlusion_query);
+}
+
+CnaGoResult cna_go_occlusion_query_end(CnaGoHandle occlusion_query) {
+    return api.cna_occlusion_query_end(occlusion_query);
+}
+
+CnaGoResult cna_go_occlusion_query_get_is_complete(CnaGoHandle occlusion_query, uint8_t* out_is_complete) {
+    return api.cna_occlusion_query_get_is_complete(occlusion_query, out_is_complete);
+}
+
+CnaGoResult cna_go_occlusion_query_get_pixel_count(CnaGoHandle occlusion_query, int32_t* out_pixel_count) {
+    return api.cna_occlusion_query_get_pixel_count(occlusion_query, out_pixel_count);
+}
+
 CnaGoResult cna_go_environment_map_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect) {
     return api.cna_environment_map_effect_create(graphics_device, out_effect);
 }

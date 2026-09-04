@@ -170,6 +170,10 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 			// the Type-keyed one resolves a declaration first and then calls
 			// the other, which is what the reference's does too.
 			"Microsoft.Xna.Framework.Graphics.VertexBuffer": "newVertexBuffer",
+			// Foundation 83. OcclusionQuery has one public constructor and no
+			// other door: unlike Effect it is not content-loadable, and unlike
+			// the state objects it has no preset instances.
+			"Microsoft.Xna.Framework.Graphics.OcclusionQuery": "NewOcclusionQuery",
 			// Foundation 72. Effect has TWO doors -- its public compiled-bytecode
 			// constructor and ContentManager.Load<Effect> -- and both reach
 			// newEffect, which is where the whole reflected graph is built and

@@ -18,7 +18,7 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 181,
+    "COMPLETE_TYPES": 182,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 76,
+    "GLOBAL_ACTIONABLE_LOCAL": 75,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 76,
-    "MISSING_TYPES": 76,
+    "MISSING_TYPE": 75,
+    "MISSING_TYPES": 75,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2984,
-    "TARGET_TYPES": 181,
-    "TOTAL_DIAGNOSTICS": 76,
+    "TARGET_MEMBERS": 3000,
+    "TARGET_TYPES": 182,
+    "TOTAL_DIAGNOSTICS": 75,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -91,8 +91,8 @@
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
     "XNA_COMPOSED_BASE_RELATIONSHIPS": 6,
     "XNA_COMPOSED_DERIVED_TYPES": 24,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 22,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 22,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 23,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 23,
     "XNA_COMPOSED_IDENTITY_FORWARDS": 4,
     "XNA_COMPOSED_IDENTITY_SITES": 9,
     "XNA_COMPOSED_IDENTITY_USES": 10,
@@ -394,12 +394,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:OcclusionQuery",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Input.GamePad",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePad",
       "message": "mapped Go type is absent"
@@ -640,6 +634,7 @@
     "Microsoft.Xna.Framework.Graphics.IndexBuffer",
     "Microsoft.Xna.Framework.Graphics.IndexElementSize",
     "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
+    "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgr565",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Bgra4444",
@@ -794,7 +789,6 @@
     "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
-    "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadCapabilities",
     "Microsoft.Xna.Framework.Input.Mouse",
@@ -6896,13 +6890,12 @@
     {
       "family": "Graphics leftovers",
       "classification": "ACTIONABLE_LOCAL",
-      "note": "OcclusionQuery has ~12 CNA routes; the two dynamic buffers have NO dedicated routes and the hypothesis that the ordinary buffer routes plus a BufferUsage implement them must be probed before anything is bound",
+      "note": "Foundation 83 closed OcclusionQuery. The two dynamic buffers have NO dedicated CNA routes and the Foundation 83 probe CONFIRMED the standing hypothesis against the canonical headers: CNA_VertexBufferCreateInfo carries a `dynamic` flag documented as \"True to construct DynamicVertexBuffer\", CNA_VertexBufferInfo carries `dynamic` and `is_content_lost`, both buffers have subscribe/unsubscribe_content_lost routes, and the transfer descriptors carry SetDataOptions whose non-None values \"require a supported dynamic-buffer overload\". What remains is composing the VertexBuffer and IndexBuffer bases, which are still DEFERRED",
       "types": [
         "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
-        "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-        "Microsoft.Xna.Framework.Graphics.OcclusionQuery"
+        "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer"
       ],
-      "remaining": 3,
+      "remaining": 2,
       "verdict": "PASS"
     },
     {
@@ -9609,7 +9602,7 @@
       "clrMembers": 3,
       "projectedMembers": 0,
       "declaringTypes": 7,
-      "projectedTypes": 6,
+      "projectedTypes": 7,
       "rationale": "assembly-visible device-loss plumbing declared by seven public graphics types; none of its three members appears in any public contract, and projecting one would expose CNA-internal recreation machinery",
       "verdict": "PASS"
     },
@@ -10646,7 +10639,7 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.GraphicsResource",
       "derivedTypes": 11,
-      "projectedDerivedTypes": 10,
+      "projectedDerivedTypes": 11,
       "positions": 0,
       "positionsOnProjectedCarriers": 0,
       "requirement": "NONE",
@@ -11082,9 +11075,10 @@
         {
           "derived": "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
           "goDerived": "OcclusionQuery",
+          "baseField": "resource",
           "inheritedCLRMembers": 7,
           "inheritedProjections": 10,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.Graphics.RasterizerState",
@@ -11345,6 +11339,12 @@
           "derived": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
           "goDerived": "IndexBuffer",
           "constructor": "newIndexBuffer",
+          "binds": true
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
+          "goDerived": "OcclusionQuery",
+          "constructor": "NewOcclusionQuery",
           "binds": true
         },
         {

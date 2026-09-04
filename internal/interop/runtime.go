@@ -118,6 +118,9 @@ const (
 	// reason every other kind is: destruction is per-kind, and this one has its
 	// own destroy route.
 	resourceDirectionalLight
+	// Foundation 83. An OcclusionQuery handle, its own kind for the reason
+	// every other kind is: it has its own destroy route.
+	resourceOcclusionQuery
 )
 
 // effectViewResourceKinds maps a view kind onto its resource kind, in the order
@@ -3729,6 +3732,8 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeEffectDestroy(handle)
 	case resourceDirectionalLight:
 		return nativeDirectionalLightDestroy(handle)
+	case resourceOcclusionQuery:
+		return nativeOcclusionQueryDestroy(handle)
 	case resourceEffectTechniqueCollection:
 		return nativeEffectViewDestroy(effectViewTechniqueCollection, handle)
 	case resourceEffectTechnique:
@@ -4628,6 +4633,62 @@ func (r *Runtime) TitleContainerRead(name string) ([]byte, error) {
 		return nil, err
 	}
 	return nativeTitleContainerRead(game, name)
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 83 -- OcclusionQuery.
+// ---------------------------------------------------------------------------
+
+// CreateOcclusionQuery is cna_occlusion_query_create, which answers
+// CNA_RESULT_NOT_SUPPORTED where the backend has no occlusion query. That is a
+// RENDERER capability rather than a defect, exactly as the volume-texture
+// creation is.
+func (d *Device) CreateOcclusionQuery() (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	query, err := nativeOcclusionQueryCreate(handle)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(query, resourceOcclusionQuery, d.manager), nil
+}
+
+// OcclusionQueryBegin is cna_occlusion_query_begin.
+func (resource *Resource) OcclusionQueryBegin() error {
+	handle, err := resource.liveHandle(resourceOcclusionQuery)
+	if err != nil {
+		return err
+	}
+	return nativeOcclusionQueryBegin(handle)
+}
+
+// OcclusionQueryEnd is cna_occlusion_query_end.
+func (resource *Resource) OcclusionQueryEnd() error {
+	handle, err := resource.liveHandle(resourceOcclusionQuery)
+	if err != nil {
+		return err
+	}
+	return nativeOcclusionQueryEnd(handle)
+}
+
+// OcclusionQueryIsComplete is cna_occlusion_query_get_is_complete.
+func (resource *Resource) OcclusionQueryIsComplete() (bool, error) {
+	handle, err := resource.liveHandle(resourceOcclusionQuery)
+	if err != nil {
+		return false, err
+	}
+	return nativeOcclusionQueryIsComplete(handle)
+}
+
+// OcclusionQueryPixelCount is cna_occlusion_query_get_pixel_count.
+func (resource *Resource) OcclusionQueryPixelCount() (int32, error) {
+	handle, err := resource.liveHandle(resourceOcclusionQuery)
+	if err != nil {
+		return 0, err
+	}
+	return nativeOcclusionQueryPixelCount(handle)
 }
 
 // EffectLightsDirectionalLight is IEffectLights::DirectionalLight0..2.

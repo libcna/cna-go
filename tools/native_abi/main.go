@@ -624,6 +624,19 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Class:  "REDUNDANT_READ",
 		Detail: "measured to report exactly the character column of cna_sprite_font_copy_glyphs, in the same order and the same count, which CNA's own documentation states and the probe confirmed. The reference's characterMap is ONE list that get_Characters views and GetIndexForCharacter binary-searches, and reading it from two routes could produce two lists whose indices no longer correspond -- which is the invariant every other member depends on",
 	},
+	// Foundation 83 -- OcclusionQuery. One row: the type binds six of CNA's
+	// eight routes and the two it leaves are different cases.
+	{
+		Route:  "cna_occlusion_query_has_renderer",
+		Member: "Microsoft.Xna.Framework.Graphics.OcclusionQuery::IsDisposed()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "IsDisposed is GraphicsResource's `ldarg.0; ldfld isDisposed; ret`, a managed flag the reference sets in Dispose and reads with no native call. This route reports whether the native query object is alive, which is a DIFFERENT question: a query CNA-Go has disposed has neither, but a query whose renderer went away without a Dispose would answer false here and false for IsDisposed, and the reference's answer is the flag. Binding it would let a renderer event decide a managed property",
+	},
+	// cna_occlusion_query_get_is_pixel_count_precise_ext adds no row: it backs
+	// no member of the pinned contract. XNA's OcclusionQuery declares
+	// PixelCount and says nothing about whether the count is a tally or a flag,
+	// so there is no projected member the route could have served.
+
 	// Foundation 81 -- EnvironmentMapEffect and SkinnedEffect, closing the stock
 	// effect family. The pattern is unchanged: a getter beside a bound setter is
 	// unbound because the reference reads its own field, and a texture getter is

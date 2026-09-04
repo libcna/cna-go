@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               76
-MISSING_TYPE                    76
+TOTAL_DIAGNOSTICS               75
+MISSING_TYPE                    75
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 181
+COMPLETE_TYPES                 182
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         76
+GLOBAL_ACTIONABLE_LOCAL         75
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                298
+BOUND_FUNCTIONS                304
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -101,6 +101,16 @@ CNA's documented narrowing: that ABI has no stream handle for title content and
 delivers the whole file instead, so the returned reader is over bytes already in
 memory.
 
+Foundation 83 closed **`OcclusionQuery`** and ran the probe the dynamic buffers
+were waiting on. The hypothesis holds: CNA models a dynamic buffer through the
+SAME routes as a static one, with a `dynamic` flag in the create info, an
+`is_content_lost` field in the info snapshot, subscribe/unsubscribe routes for
+the `ContentLost` event, and `SetDataOptions` in the transfer descriptors. CNA
+documents the content-loss state as "currently always false", so `IsContentLost`
+will always answer false and the event will never fire — a limitation to record
+rather than a defect. What remains is composing the `VertexBuffer` and
+`IndexBuffer` bases.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
@@ -129,11 +139,15 @@ in that registry:
 3. Then **Input**, **Storage**, **Media/XACT**, the **content plumbing** and
    the **Design converters**.
 
-**The dynamic-buffer note.** `DynamicVertexBuffer` and `DynamicIndexBuffer`
-have **no dedicated CNA routes**. They are almost certainly the existing
-vertex/index buffer routes with a `BufferUsage`, plus a `ContentLost` event —
-but that is a hypothesis, and the rule in `plan.md` is that a route is bound
-only when it AGREES with the member's reference body. Probe before projecting.
+**The dynamic-buffer note, resolved.** Foundation 83 probed it against the
+canonical headers and the hypothesis was right: `CNA_VertexBufferCreateInfo`
+carries a `dynamic` flag documented as "True to construct DynamicVertexBuffer",
+the info snapshot carries `dynamic` and `is_content_lost`, both buffers have
+`subscribe_content_lost`/`unsubscribe_content_lost`, and the transfer
+descriptors carry `SetDataOptions` whose non-None values "require a supported
+dynamic-buffer overload". The creation flag and the info fields were already
+bound in Foundation 65 and 66. What remains is composing the two bases and
+binding the options-carrying uploads and the two subscription pairs.
 
 ## Two decisions that were open, and where they now stand
 

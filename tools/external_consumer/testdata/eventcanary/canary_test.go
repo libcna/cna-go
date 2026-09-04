@@ -4443,3 +4443,51 @@ func TestTheRootStaticsAreReachableFromOutside(t *testing.T) {
 		t.Fatal("OpenStream succeeded outside a game")
 	}
 }
+
+// TestOcclusionQueryIsReachableFromOutside is Foundation 83's canary.
+func TestOcclusionQueryIsReachableFromOutside(t *testing.T) {
+	var _ func(*graphics.GraphicsDevice) (*graphics.OcclusionQuery, error) = graphics.NewOcclusionQuery
+
+	var query *graphics.OcclusionQuery
+	var _ func() error = query.Begin
+	var _ func() error = query.End
+	var _ func() (bool, error) = query.IsComplete
+	var _ func() (int32, error) = query.PixelCount
+	// It DECLARES Dispose(bool), so unlike the stock effects it projects both
+	// dispose members rather than one.
+	var _ func() error = query.DisposeByNone
+	var _ func(bool) error = query.DisposeByBoolean
+	// And the inherited GraphicsResource surface.
+	var _ func() *graphics.GraphicsDevice = query.GraphicsDevice
+	var _ func() string = query.Name
+	var _ func() bool = query.IsDisposed
+
+	if _, err := graphics.NewOcclusionQuery(nil); err == nil {
+		t.Fatal("NewOcclusionQuery(nil) was accepted")
+	}
+	// The state machine is managed, so a consumer meets its guards without a
+	// device -- and an unbuilt query is UNARMED, because the arming store is
+	// the constructor's.
+	unbuilt := &graphics.OcclusionQuery{}
+	if err := unbuilt.Begin(); err == nil {
+		t.Fatal("Begin on an unbuilt query was accepted")
+	}
+	if err := unbuilt.End(); err == nil {
+		t.Fatal("End outside a pair was accepted")
+	}
+	complete, err := unbuilt.IsComplete()
+	if err != nil || complete {
+		t.Fatalf("IsComplete on an unbuilt query = %v, %v", complete, err)
+	}
+	if _, err := unbuilt.PixelCount(); err == nil {
+		t.Fatal("PixelCount answered on a query that is not complete")
+	}
+	// Asking IsComplete armed Begin, which is the type's one surprising
+	// behaviour and is visible from outside.
+	if err := unbuilt.Begin(); err == nil {
+		t.Fatal("Begin was refused after IsComplete armed it")
+	} else if !strings.Contains(err.Error(), "IsComplete has been checked") {
+		// It is refused for the NATIVE reason now, not the arming one.
+		_ = err
+	}
+}
