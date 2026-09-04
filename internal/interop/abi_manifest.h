@@ -735,7 +735,99 @@ typedef struct CNA_KeyboardState {
     uint32_t struct_version;
     uint64_t pressed_key_words[4];
 } CNA_KeyboardState;
+/* Foundation 89 -- the Input family's GamePad and Mouse structures: two state
+   ones and one capability one. Every field is mirrored in CNA's own
+   declaration order, which is what MANIFEST_LAYOUT_AGREEMENTS proves against
+   the canonical headers.
+
+   The TOUCH structures CNA also declares -- CNA_TouchState, CNA_TouchLocation,
+   CNA_TouchCapabilities and CNA_GestureSample -- were mirrored here and then
+   REMOVED with the routes that used them: the pinned
+   Microsoft.Xna.Framework.Input.Touch.dll contains no p/invoke at all, so the
+   XNA Windows runtime never reaches a digitizer. */
+typedef uint32_t CNA_PlayerIndex;
+typedef uint32_t CNA_MouseButtonFlags;
+typedef struct CNA_MouseState {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    int32_t x;
+    int32_t y;
+    int32_t scroll_wheel;
+    int32_t horizontal_scroll_wheel;
+    CNA_MouseButtonFlags pressed_buttons;
+    uint32_t reserved;
+} CNA_MouseState;
+typedef uint32_t CNA_GamePadButtonFlags;
+typedef uint32_t CNA_GamePadDeadZone;
+typedef struct CNA_GamePadAnalogState {
+    CNA_Vector2 left_thumb_stick;
+    CNA_Vector2 right_thumb_stick;
+    float left_trigger;
+    float right_trigger;
+} CNA_GamePadAnalogState;
+typedef struct CNA_GamePadState {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Bool is_connected;
+    uint8_t reserved0[3];
+    int32_t packet_number;
+    CNA_GamePadButtonFlags pressed_buttons;
+    uint32_t reserved1;
+    CNA_GamePadAnalogState analog;
+} CNA_GamePadState;
 #endif
+#ifndef CNA_C_INPUT_GAMEPAD_H
+typedef uint32_t CNA_GamePadType;
+typedef struct CNA_GamePadCapabilities {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_GamePadType gamepad_type;
+    CNA_Bool is_connected;
+    CNA_Bool has_a_button;
+    CNA_Bool has_b_button;
+    CNA_Bool has_x_button;
+    CNA_Bool has_y_button;
+    CNA_Bool has_back_button;
+    CNA_Bool has_start_button;
+    CNA_Bool has_big_button;
+    CNA_Bool has_dpad_up_button;
+    CNA_Bool has_dpad_down_button;
+    CNA_Bool has_dpad_left_button;
+    CNA_Bool has_dpad_right_button;
+    CNA_Bool has_left_shoulder_button;
+    CNA_Bool has_right_shoulder_button;
+    CNA_Bool has_left_stick_button;
+    CNA_Bool has_right_stick_button;
+    CNA_Bool has_left_x_thumb_stick;
+    CNA_Bool has_left_y_thumb_stick;
+    CNA_Bool has_right_x_thumb_stick;
+    CNA_Bool has_right_y_thumb_stick;
+    CNA_Bool has_left_trigger;
+    CNA_Bool has_right_trigger;
+    CNA_Bool has_left_vibration_motor;
+    CNA_Bool has_right_vibration_motor;
+    CNA_Bool has_voice_support;
+    CNA_Bool has_light_bar_ext;
+    CNA_Bool has_trigger_vibration_motors_ext;
+    CNA_Bool has_misc1_ext;
+    CNA_Bool has_paddle1_ext;
+    CNA_Bool has_paddle2_ext;
+    CNA_Bool has_paddle3_ext;
+    CNA_Bool has_paddle4_ext;
+    CNA_Bool has_touchpad_ext;
+    CNA_Bool has_gyro_ext;
+    CNA_Bool has_accelerometer_ext;
+    uint8_t reserved[1];
+} CNA_GamePadCapabilities;
+#endif
+typedef CNA_Result (*cna_gamepad_get_state_fn)(CNA_Handle, CNA_PlayerIndex, CNA_GamePadState*);
+typedef CNA_Result (*cna_gamepad_get_state_with_dead_zone_fn)(CNA_Handle, CNA_PlayerIndex, CNA_GamePadDeadZone, CNA_GamePadState*);
+typedef CNA_Result (*cna_gamepad_get_capabilities_fn)(CNA_Handle, CNA_PlayerIndex, CNA_GamePadCapabilities*);
+typedef CNA_Result (*cna_gamepad_set_vibration_fn)(CNA_Handle, CNA_PlayerIndex, float, float, CNA_Bool*);
+typedef CNA_Result (*cna_mouse_get_state_fn)(CNA_Handle, CNA_MouseState*);
+typedef CNA_Result (*cna_mouse_set_position_fn)(CNA_Handle, int32_t, int32_t);
+typedef CNA_Result (*cna_mouse_get_window_handle_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_mouse_set_window_handle_fn)(CNA_Handle, uint64_t);
 
 typedef uint32_t (*cna_get_abi_version_fn)(void);
 typedef CNA_Result (*cna_error_get_last_message_size_fn)(uint64_t*);
@@ -1494,6 +1586,14 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_sprite_batch_end) \
     X(cna_sprite_batch_destroy) \
     X(cna_keyboard_get_state) \
+    X(cna_gamepad_get_capabilities) \
+    X(cna_gamepad_get_state) \
+    X(cna_gamepad_get_state_with_dead_zone) \
+    X(cna_gamepad_set_vibration) \
+    X(cna_mouse_get_state) \
+    X(cna_mouse_set_position) \
+    X(cna_mouse_get_window_handle) \
+    X(cna_mouse_set_window_handle) \
     X(cna_game_window_get_allow_user_resizing) \
     X(cna_game_window_set_allow_user_resizing) \
     X(cna_game_window_get_client_bounds) \

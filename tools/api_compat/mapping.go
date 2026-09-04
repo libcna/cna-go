@@ -187,6 +187,21 @@ var pureManagedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection":            true,
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": true,
 
+	// Foundation 89. TouchPanel, and it is admitted on the strongest evidence
+	// in this registry: the whole of Microsoft.Xna.Framework.Input.Touch.dll
+	// (sha256 b0585224c18022c3...) declares NOT ONE p/invoke. Every member of
+	// the type is managed code over managed static fields, and the four that
+	// would need a device are hard-coded to answer nothing --
+	// TouchPanelCapabilities::GetCaps() is `initobj` a local and return it,
+	// GetState() updates from a state it just zeroed, and ReadGesture() and
+	// get_IsGestureAvailable throw or return a constant.
+	//
+	// XNA 4.0's touch surface shipped for Windows Phone; the Windows build kept
+	// the API with the device half removed. So the type owns no native object
+	// on this profile, and CNA's fourteen working touch routes stay unbound and
+	// are recorded under CONTRACT_DIVERGENCE in the native census.
+	"Microsoft.Xna.Framework.Input.Touch.TouchPanel": true,
+
 	// Foundation 23. The three dependency-complete System.EventArgs carriers.
 	// Microsoft.Xna.Framework.Game.dll shows GameComponentCollectionEventArgs
 	// as one private IGameComponent field: the public constructor is
@@ -797,6 +812,28 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"method|Remove":     true,
 		"method|RemoveAt":   true,
 		"method|CopyTo":     true,
+	},
+	// Foundation 89. TouchPanel's four throwing members, and only those four.
+	//
+	//	ReadGesture()            29 bytes, TWO branches, BOTH `throw`. There is
+	//	                         no `ret` instruction in the body at all, so no
+	//	                         input makes it return a sample.
+	//	get_IsGestureAvailable   throws GesturesNotEnabled when EnabledGestures
+	//	                         was never assigned, else returns `ldc.i4.0`.
+	//	set_EnabledGestures      ArgumentException on any bit outside 0x3FF.
+	//	set_DisplayOrientation   ArgumentException through ValidateOrientation,
+	//	                         which tests EQUALITY against 0, 1, 2 and 4.
+	//
+	// EnabledGestures and DisplayOrientation are marked property-set, not
+	// property, because both getters are one `ldsfld` and cannot fail. The
+	// other three properties -- WindowHandle, DisplayWidth, DisplayHeight --
+	// are absent entirely: their setters store and raise a flag with NO
+	// validation, so a negative width is accepted and read back unchanged.
+	"Microsoft.Xna.Framework.Input.Touch.TouchPanel": {
+		"method|ReadGesture":              true,
+		"property-get|IsGestureAvailable": true,
+		"property-set|EnabledGestures":    true,
+		"property-set|DisplayOrientation": true,
 	},
 	// Enumerator::get_Current forwards to TouchCollection::get_Item, so it
 	// throws before the first MoveNext and after the cursor is exhausted.

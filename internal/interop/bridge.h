@@ -899,6 +899,41 @@ CnaGoResult cna_go_sound_effect_instance_apply_3d(
 #define CNA_GO_SOUND_INSTANCE_PITCH 1
 #define CNA_GO_SOUND_INSTANCE_PAN 2
 
+
+/* Foundation 89 -- the Input family, GamePad and Mouse only. The capability
+   structure is filled on the C side and crosses as a flat byte array plus its
+   one non-boolean field, so a thirty-eight-field cgo signature never exists,
+   and the state reader flattens its CNA structure the same way -- no CNA type
+   crosses cgo.
+
+   The TOUCH routes CNA also offers are deliberately absent: the pinned
+   Microsoft.Xna.Framework.Input.Touch.dll contains no p/invoke at all, so the
+   XNA Windows runtime never reaches a digitizer and binding them would make
+   this projection answer what the reference does not. They are recorded under
+   CONTRACT_DIVERGENCE in the native census. */
+CnaGoResult cna_go_gamepad_get_state(
+    CnaGoHandle game, uint32_t player_index, uint8_t has_dead_zone, uint32_t dead_zone,
+    uint8_t* out_connected, int32_t* out_packet, uint32_t* out_buttons, float* out_analog);
+
+CnaGoResult cna_go_gamepad_get_capabilities(
+    CnaGoHandle game, uint32_t player_index, uint32_t* out_type, uint8_t* out_flags);
+CnaGoResult cna_go_gamepad_set_vibration(
+    CnaGoHandle game, uint32_t player_index, float left, float right, uint8_t* out_applied);
+CnaGoResult cna_go_mouse_get_state(CnaGoHandle game, int32_t* out_ints, uint32_t* out_buttons);
+CnaGoResult cna_go_mouse_set_position(CnaGoHandle game, int32_t x, int32_t y);
+CnaGoResult cna_go_mouse_get_window_handle(CnaGoHandle game, uint64_t* out_window);
+CnaGoResult cna_go_mouse_set_window_handle(CnaGoHandle game, uint64_t window);
+
+/* The four ints cna_go_mouse_get_state reports, by index. */
+#define CNA_GO_MOUSE_X 0
+#define CNA_GO_MOUSE_Y 1
+#define CNA_GO_MOUSE_SCROLL 2
+#define CNA_GO_MOUSE_HORIZONTAL_SCROLL 3
+
+/* The twenty-four capability flags XNA declares, in the order
+   GamePadCapabilities' properties are read. */
+#define CNA_GO_GAMEPAD_FLAG_COUNT 25
+
 #endif
 
 CnaGoResult cna_go_vertex_declaration_create(

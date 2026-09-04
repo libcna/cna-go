@@ -3640,6 +3640,78 @@ func (r *Runtime) KeyboardState() ([4]uint64, error) {
 	return nativeKeyboardState(game)
 }
 
+// ---------------------------------------------------------------------------
+// Foundation 89 -- the Input family's static readers.
+//
+// Every one takes activeGame(TRUE): CNA's input routes read the window's own
+// event state, which only exists inside a lifecycle callback. That is the same
+// requirement KeyboardState already carries and a different one from the audio
+// family's, whose routes take a game handle only for thread affinity.
+// ---------------------------------------------------------------------------
+
+// GamePadState is cna_gamepad_get_state, or its dead-zone-carrying sibling when
+// the caller names one.
+func (r *Runtime) GamePadState(playerIndex, deadZone uint32, hasDeadZone bool) (GamePadStateValues, error) {
+	game, err := r.activeGame(true)
+	if err != nil {
+		return GamePadStateValues{}, err
+	}
+	return nativeGamePadState(game, playerIndex, deadZone, hasDeadZone)
+}
+
+// GamePadCapabilities is cna_gamepad_get_capabilities, reduced to the type and
+// the twenty-five flags XNA declares.
+func (r *Runtime) GamePadCapabilities(playerIndex uint32) (uint32, [GamePadCapabilitiesFlagCount]byte, error) {
+	game, err := r.activeGame(true)
+	if err != nil {
+		return 0, [GamePadCapabilitiesFlagCount]byte{}, err
+	}
+	return nativeGamePadCapabilities(game, playerIndex)
+}
+
+// GamePadSetVibration is cna_gamepad_set_vibration, which reports whether the
+// vibration was APPLIED -- the same boolean XNA's SetVibration returns.
+func (r *Runtime) GamePadSetVibration(playerIndex uint32, left, right float32) (bool, error) {
+	game, err := r.activeGame(true)
+	if err != nil {
+		return false, err
+	}
+	return nativeGamePadSetVibration(game, playerIndex, left, right)
+}
+
+// MouseState is cna_mouse_get_state.
+func (r *Runtime) MouseState() (MouseStateValues, error) {
+	game, err := r.activeGame(true)
+	if err != nil {
+		return MouseStateValues{}, err
+	}
+	return nativeMouseState(game)
+}
+
+func (r *Runtime) MouseSetPosition(x, y int32) error {
+	game, err := r.activeGame(true)
+	if err != nil {
+		return err
+	}
+	return nativeMouseSetPosition(game, x, y)
+}
+
+func (r *Runtime) MouseWindowHandle() (uint64, error) {
+	game, err := r.activeGame(true)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMouseWindowHandle(game)
+}
+
+func (r *Runtime) MouseSetWindowHandle(window uint64) error {
+	game, err := r.activeGame(true)
+	if err != nil {
+		return err
+	}
+	return nativeMouseSetWindowHandle(game, window)
+}
+
 func (r *Runtime) validateGeneration(generation uint64, requireCallback bool) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

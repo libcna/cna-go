@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               68
-MISSING_TYPE                    68
+TOTAL_DIAGNOSTICS               63
+MISSING_TYPE                    63
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 189
+COMPLETE_TYPES                 194
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         68
+GLOBAL_ACTIONABLE_LOCAL         63
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                342
+BOUND_FUNCTIONS                350
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -246,10 +246,34 @@ declares them and the suite calls NEITHER. `MICROPHONE_CAPTURE_CALLS` exists to
 be zero and the parent accounting FAILS the run on any other value: a non-zero
 value is a run that began recording on someone's machine.
 
+Foundation 89 closed the **`Microsoft.Xna.Framework.Input`** namespace with
+`GamePad`, `GamePadCapabilities`, `Mouse`, `TouchPanel` and
+`TouchPanelCapabilities` -- and it is the milestone that bound the fewest
+routes it planned to.
+
+`Microsoft.Xna.Framework.Input.Touch.dll` **declares no p/invoke anywhere**.
+`TouchPanelCapabilities::GetCaps()` is ten bytes that zero a local and return
+it; `TouchPanel::GetState()` updates from a state it just zeroed; and
+`ReadGesture()` has two branches, both `throw`, and no `ret` instruction at all.
+XNA 4.0's touch surface shipped for Windows Phone and the Windows build kept the
+API with the device half removed. CNA implements all fourteen touch routes for
+real -- they were bound, measured, and **reverted** under
+`CONTRACT_DIVERGENCE`, because the pinned IL is the behaviour authority and a
+projection answering real touches would diverge on the first `GetState` a game
+makes. `TOUCH_PANEL_NATIVE_CALLS` is asserted to be zero from inside a live game
+with a working runtime available, which is what makes the zero mean something.
+
+GamePad's readers share one body whose middle branch is the one that matters:
+`0x48f` is `ERROR_DEVICE_NOT_CONNECTED`, and a disconnected controller answers
+an EMPTY state with no exception. Only some other failure throws. This machine
+has no controller, so that is the branch the stress run takes and
+`GAMEPADS_CONNECTED` is a measured 0 rather than a skip. `SetVibration` is
+called only with two zeros.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 68 types it does not project
+projects, it projects completely; what remains is 63 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -268,8 +292,8 @@ in that registry:
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
    grow `ContentManager.Load<T>`'s closed set.
 2. **The Model family**, which depends on the stock effects and now has them.
-3. Then **Input**, **Storage**, **Media/XACT**, the **content plumbing** and
-   the **Design converters**.
+3. Then **Storage**, **Media/XACT**, the **content plumbing** and
+   the **Design converters**. **Input** is closed as of Foundation 89.
 
 **The dynamic-buffer note, closed.** Foundation 83 probed it, Foundation 84
 acted on it, and the outcome was smaller than the note expected: **one** new

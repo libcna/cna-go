@@ -1079,6 +1079,106 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Class:  "SUBSUMED",
 		Detail: "the bound cna_vertex_buffer_set_data_raw_at_with_options is the same upload with a buffer offset, and CNA's own header says the offsetless route \"matches\" the windowed one at offset zero. The reference has ONE body for both overloads -- SetData(T[],int,int,SetDataOptions) is `ldarg.0; ldc.i4.0; ldarg.1; ... call SetData(int,T[],int,int,int,SetDataOptions)` -- so binding both would give one reference path two native paths that could drift",
 	},
+	// Foundation 89. The Input family bound eight routes for GamePad and Mouse
+	// and NONE for touch, which is the finding the milestone turned on.
+	//
+	// The pinned Microsoft.Xna.Framework.Input.Touch.dll contains NO p/invoke
+	// declaration anywhere. Every member is managed code over managed static
+	// fields, and the four that would need a device are hard-coded: capabilities
+	// return a zeroed struct, GetState returns an empty collection, ReadGesture
+	// throws on both branches, and IsGestureAvailable returns a constant false.
+	// XNA 4.0's touch surface shipped for Windows Phone and the Windows build
+	// kept the API with the device half removed.
+	//
+	// CNA implements all fourteen routes for real. They were bound, measured and
+	// reverted: the pinned IL is the behaviour authority, CNA is evidence of what
+	// the native layer can do, and a projection that answered real touches would
+	// diverge from the runtime this binding exists to match on the very first
+	// GetState call a game makes.
+	{
+		Route:  "cna_touch_get_capabilities",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::GetCapabilities()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "TouchPanelCapabilities::GetCaps() is TEN BYTES -- `ldloca.s V_0; initobj TouchPanelCapabilities; ldloc.0; ret` -- so the reference reports IsConnected false and MaximumTouchCount 0 on every machine, digitizer or not. CNA probes an actual device. Binding it would make GetCapabilities answer true where the runtime this binding targets answers false",
+	},
+	{
+		Route:  "cna_touch_get_state",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::GetState()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "TouchPanel::GetState() zeroes a local XNAINPUT_TOUCH_LOCATION_STATE, never writes it, and updates the static collection from it, so the answer is an EMPTY collection on every call. Binding CNA's reader would put real touches into a collection the reference always leaves empty",
+	},
+	{
+		Route:  "cna_touch_panel_read_gesture",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::ReadGesture()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "ReadGesture()'s 29-byte body has two branches and BOTH end in `throw` -- GesturesNotEnabled or GesturesNotAvailable. It has no `ret` instruction at all, so no input can make it return a sample, and a bound route would have no reachable call site",
+	},
+	{
+		Route:  "cna_touch_panel_get_is_gesture_available",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::IsGestureAvailable()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "get_IsGestureAvailable throws when gestures were never enabled and otherwise returns `ldc.i4.0` -- a CONSTANT false, not a queue depth. Binding CNA's route would report a sample available that ReadGesture then refuses to hand over",
+	},
+	{
+		Route:  "cna_touch_panel_get_window_handle",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::WindowHandle()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the read half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
+	{
+		Route:  "cna_touch_panel_set_window_handle",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::WindowHandle()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the write half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
+	{
+		Route:  "cna_touch_panel_get_display_width",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::DisplayWidth()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the read half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
+	{
+		Route:  "cna_touch_panel_set_display_width",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::DisplayWidth()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the write half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
+	{
+		Route:  "cna_touch_panel_get_display_height",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::DisplayHeight()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the read half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
+	{
+		Route:  "cna_touch_panel_set_display_height",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::DisplayHeight()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the write half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
+	{
+		Route:  "cna_touch_panel_get_display_orientation",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::DisplayOrientation()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the read half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
+	{
+		Route:  "cna_touch_panel_set_display_orientation",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::DisplayOrientation()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the write half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
+	{
+		Route:  "cna_touch_panel_get_enabled_gestures",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::EnabledGestures()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the read half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
+	{
+		Route:  "cna_touch_panel_set_enabled_gestures",
+		Member: "Microsoft.Xna.Framework.Input.Touch.TouchPanel::EnabledGestures()",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the write half of a property the reference implements as a PLAIN MANAGED STATIC FIELD -- the whole pinned Microsoft.Xna.Framework.Input.Touch.dll declares not one p/invoke. Routing it through CNA would give the field a second home that the reference's own accessors cannot see",
+	},
 }
 
 // verifyUnboundRoutes checks the registry against the canonical headers and the

@@ -18,7 +18,7 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 189,
+    "COMPLETE_TYPES": 194,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
@@ -28,7 +28,7 @@
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 9,
+    "FRONTIER_FAMILIES": 8,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 68,
+    "GLOBAL_ACTIONABLE_LOCAL": 63,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 68,
-    "MISSING_TYPES": 68,
+    "MISSING_TYPE": 63,
+    "MISSING_TYPES": 63,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3133,
-    "TARGET_TYPES": 189,
-    "TOTAL_DIAGNOSTICS": 68,
+    "TARGET_MEMBERS": 3183,
+    "TARGET_TYPES": 194,
+    "TOTAL_DIAGNOSTICS": 63,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -348,36 +348,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollectionEnumerator",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.GamePad",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePad",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.GamePadCapabilities",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:GamePadCapabilities",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.Mouse",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input:Mouse",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.Touch.TouchPanel",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:TouchPanel",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch:TouchPanelCapabilities",
       "message": "mapped Go type is absent"
     },
     {
@@ -665,7 +635,9 @@
     "Microsoft.Xna.Framework.IUpdateable",
     "Microsoft.Xna.Framework.Input.ButtonState",
     "Microsoft.Xna.Framework.Input.Buttons",
+    "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadButtons",
+    "Microsoft.Xna.Framework.Input.GamePadCapabilities",
     "Microsoft.Xna.Framework.Input.GamePadDPad",
     "Microsoft.Xna.Framework.Input.GamePadDeadZone",
     "Microsoft.Xna.Framework.Input.GamePadState",
@@ -676,6 +648,7 @@
     "Microsoft.Xna.Framework.Input.Keyboard",
     "Microsoft.Xna.Framework.Input.KeyboardState",
     "Microsoft.Xna.Framework.Input.Keys",
+    "Microsoft.Xna.Framework.Input.Mouse",
     "Microsoft.Xna.Framework.Input.MouseState",
     "Microsoft.Xna.Framework.Input.Touch.GestureSample",
     "Microsoft.Xna.Framework.Input.Touch.GestureType",
@@ -683,6 +656,8 @@
     "Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator",
     "Microsoft.Xna.Framework.Input.Touch.TouchLocation",
     "Microsoft.Xna.Framework.Input.Touch.TouchLocationState",
+    "Microsoft.Xna.Framework.Input.Touch.TouchPanel",
+    "Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities",
     "Microsoft.Xna.Framework.LaunchParameters",
     "Microsoft.Xna.Framework.MathHelper",
     "Microsoft.Xna.Framework.Matrix",
@@ -747,11 +722,6 @@
     "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
-    "Microsoft.Xna.Framework.Input.GamePad",
-    "Microsoft.Xna.Framework.Input.GamePadCapabilities",
-    "Microsoft.Xna.Framework.Input.Mouse",
-    "Microsoft.Xna.Framework.Input.Touch.TouchPanel",
-    "Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities",
     "Microsoft.Xna.Framework.Media.Album",
     "Microsoft.Xna.Framework.Media.AlbumCollection",
     "Microsoft.Xna.Framework.Media.Artist",
@@ -6817,7 +6787,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 40,
+      "projectedTypes": 43,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6838,7 +6808,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 56,
-      "projectedTypes": 49,
+      "projectedTypes": 51,
       "exportedEmbeddings": 0,
       "rationale": "the CLR value root; the struct projection already carries value semantics",
       "verdict": "PASS"
@@ -6876,20 +6846,6 @@
         "Microsoft.Xna.Framework.Audio.Cue",
         "Microsoft.Xna.Framework.Audio.SoundBank",
         "Microsoft.Xna.Framework.Audio.WaveBank"
-      ],
-      "remaining": 5,
-      "verdict": "PASS"
-    },
-    {
-      "family": "Input",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "~68/41/21/59 CNA routes across GamePad, Mouse and Touch; the state structs are already complete, so what is missing is the static readers and the two capability structs",
-      "types": [
-        "Microsoft.Xna.Framework.Input.GamePad",
-        "Microsoft.Xna.Framework.Input.GamePadCapabilities",
-        "Microsoft.Xna.Framework.Input.Mouse",
-        "Microsoft.Xna.Framework.Input.Touch.TouchPanel",
-        "Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities"
       ],
       "remaining": 5,
       "verdict": "PASS"

@@ -27,6 +27,7 @@ import (
 	content "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
+	touch "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch"
 	"github.com/openeggbert/cna-go/internal/interop"
 	"github.com/openeggbert/cna-go/internal/servicebridge"
 )
@@ -280,6 +281,19 @@ type counters struct {
 	MicrophoneDescriptionChecks     int `json:"MICROPHONE_DESCRIPTION_CHECKS"`
 	MicrophoneGuardChecks           int `json:"MICROPHONE_GUARD_CHECKS"`
 	MicrophoneCaptureCalls          int `json:"MICROPHONE_CAPTURE_CALLS"`
+	// Foundation 89. The Input family. GAMEPAD_VIBRATION_CALLS is deliberately
+	// separate from the reads: it is the only member here that DRIVES hardware
+	// rather than sampling it, and it is always called with two zeros.
+	GamePadCapabilityReads   int `json:"GAMEPAD_CAPABILITY_READS"`
+	GamePadStateReads        int `json:"GAMEPAD_STATE_READS"`
+	GamePadsConnected        int `json:"GAMEPADS_CONNECTED"`
+	GamePadVibrationCalls    int `json:"GAMEPAD_VIBRATION_CALLS"`
+	GamePadVibrationsApplied int `json:"GAMEPAD_VIBRATIONS_APPLIED"`
+	MouseStateReads          int `json:"MOUSE_STATE_READS"`
+	MouseHandleChecks        int `json:"MOUSE_HANDLE_CHECKS"`
+	MousePositionWrites      int `json:"MOUSE_POSITION_WRITES"`
+	TouchPanelManagedChecks  int `json:"TOUCH_PANEL_MANAGED_CHECKS"`
+	TouchPanelNativeCalls    int `json:"TOUCH_PANEL_NATIVE_CALLS"`
 	// Foundation 85. The first VERIFIED_PIXEL draw. Every counter here is over
 	// the SOFTWARE artifact only, because HEADLESS has no back-buffer readback
 	// and records a refusal instead -- which is why the refusal column exists.
@@ -925,6 +939,43 @@ func runParent() (counters, error) {
 	if total.MicrophoneCaptureCalls != 0 {
 		return total, fmt.Errorf("the suite made %d microphone capture calls; it must make none",
 			total.MicrophoneCaptureCalls)
+	}
+	// Foundation 89. Four player indices read per cycle for both capabilities
+	// and state, and four vibration calls. GAMEPADS_CONNECTED is whatever the
+	// machine has and is NOT pinned -- this suite runs on a build machine with
+	// no controller, and a zero there is the honest answer rather than a skip.
+	if total.GamePadCapabilityReads != 4*total.VertexBufferCycles ||
+		total.GamePadStateReads != 4*total.VertexBufferCycles ||
+		total.GamePadVibrationCalls != 4*total.VertexBufferCycles {
+		return total, fmt.Errorf("%d capability reads, %d state reads and %d vibration calls over %d cycles, want four each",
+			total.GamePadCapabilityReads, total.GamePadStateReads,
+			total.GamePadVibrationCalls, total.VertexBufferCycles)
+	}
+	// A vibration can only be APPLIED to a controller that is there, so the
+	// applied count can never exceed the connected count.
+	if total.GamePadVibrationsApplied > total.GamePadsConnected {
+		return total, fmt.Errorf("%d vibrations were applied to %d connected controllers",
+			total.GamePadVibrationsApplied, total.GamePadsConnected)
+	}
+	if total.MouseStateReads != total.VertexBufferCycles ||
+		total.MouseHandleChecks != total.VertexBufferCycles ||
+		total.MousePositionWrites != total.VertexBufferCycles {
+		return total, fmt.Errorf("%d mouse state reads, %d handle checks and %d position writes over %d cycles",
+			total.MouseStateReads, total.MouseHandleChecks,
+			total.MousePositionWrites, total.VertexBufferCycles)
+	}
+	// TOUCH_PANEL_NATIVE_CALLS EXISTS TO BE ZERO, and for the same reason the
+	// capture counter does. The whole pinned Input.Touch assembly declares no
+	// p/invoke, so a TouchPanel member that reached the native layer would be
+	// answering something the reference never asks. The projection binds no
+	// touch route at all; this counter is what would notice if one came back.
+	if total.TouchPanelNativeCalls != 0 {
+		return total, fmt.Errorf("TouchPanel made %d native calls; the reference makes none",
+			total.TouchPanelNativeCalls)
+	}
+	if total.TouchPanelManagedChecks != total.VertexBufferCycles {
+		return total, fmt.Errorf("%d touch-panel managed checks over %d cycles",
+			total.TouchPanelManagedChecks, total.VertexBufferCycles)
 	}
 	// Foundation 82. Three dispatcher pumps and two guard checks per cycle, and
 	// exactly one outcome for the read.
@@ -4989,6 +5040,11 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 89. The Input statics, which need a game and no device.
+	if err := g.exerciseInputStatics(); err != nil {
+		return err
+	}
+
 	// Foundation 88. The two types that finish the Audio namespace.
 	if err := g.exerciseDynamicSoundEffectInstance(); err != nil {
 		return err
@@ -7612,6 +7668,188 @@ func (g *stressGame) exerciseMicrophone() error {
 		return errors.New("GetData accepted an empty buffer")
 	}
 	g.result.MicrophoneGuardChecks++
+	return nil
+}
+
+// exerciseInputStatics is Foundation 89's slice: GamePad and Mouse against the
+// live event state, and TouchPanel against nothing at all.
+//
+// # It calls SetVibration only with two zeros
+//
+// SetVibration is the one member in this family that DRIVES hardware rather
+// than sampling it, and a test suite that spun a stranger's controller motors
+// would be doing something a test suite does not do. Both magnitudes are 0.0
+// on every call, which is the value the reference itself uses to stop a motor.
+// The counters record the calls and how many were applied, so a run cannot
+// quietly skip them.
+//
+// # A machine with no controller is a RESULT, not a skip
+//
+// The reference answers an empty GamePadState with IsConnected false when
+// XInput reports ERROR_DEVICE_NOT_CONNECTED, and does NOT throw. This build
+// machine has no controller attached, so that branch is the one the run
+// actually takes -- and it is the branch worth proving, because a projection
+// that turned a missing controller into an error would break the polling loop
+// every game writes. GAMEPADS_CONNECTED reports whatever is there.
+//
+// # TouchPanel is here to prove it reaches nothing
+//
+// Every TouchPanel member is exercised inside a live game with a real native
+// runtime available, and TOUCH_PANEL_NATIVE_CALLS must still be zero. That is
+// the assertion the whole touch finding rests on.
+func (g *stressGame) exerciseInputStatics() error {
+	indices := []framework.PlayerIndex{
+		framework.PlayerIndexOne, framework.PlayerIndexTwo,
+		framework.PlayerIndexThree, framework.PlayerIndexFour,
+	}
+	for _, index := range indices {
+		capabilities, err := input.GamePadGetCapabilities(index)
+		if err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("GamePad.GetCapabilities(%v): %w", index, err)
+			}
+			fmt.Fprintf(os.Stderr, "gamepad capabilities refused: %v\n", err)
+		}
+		g.result.GamePadCapabilityReads++
+
+		state, err := input.GamePadGetStateByPlayerIndex(index)
+		if err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("GamePad.GetState(%v): %w", index, err)
+			}
+			fmt.Fprintf(os.Stderr, "gamepad state refused: %v\n", err)
+		}
+		g.result.GamePadStateReads++
+
+		// The two must AGREE about presence. A projection that read the
+		// connected flag from the wrong place would disagree here, and this is
+		// the one cross-check no managed test can make.
+		if capabilities.IsConnected() != state.IsConnected() {
+			return fmt.Errorf("GamePad %v: capabilities say connected=%v and state says connected=%v",
+				index, capabilities.IsConnected(), state.IsConnected())
+		}
+		if state.IsConnected() {
+			g.result.GamePadsConnected++
+		} else {
+			// The empty state the ERROR_DEVICE_NOT_CONNECTED branch returns.
+			// Every value in it must be zero, which is what makes a
+			// disconnected controller safe to poll without checking first.
+			if state.PacketNumber() != 0 {
+				return fmt.Errorf("GamePad %v is disconnected but reported packet %d",
+					index, state.PacketNumber())
+			}
+			if capabilities.GamePadType() != input.GamePadTypeUnknown {
+				return fmt.Errorf("GamePad %v is disconnected but reported type %v",
+					index, capabilities.GamePadType())
+			}
+		}
+
+		// Two zeros: a stop, never a start. The Boolean says whether it was
+		// applied, and a controller that is not there cannot apply it.
+		applied, err := input.GamePadSetVibration(index, 0, 0)
+		if err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("GamePad.SetVibration(%v): %w", index, err)
+			}
+			fmt.Fprintf(os.Stderr, "gamepad vibration refused: %v\n", err)
+		}
+		g.result.GamePadVibrationCalls++
+		if applied {
+			g.result.GamePadVibrationsApplied++
+			if !state.IsConnected() {
+				return fmt.Errorf("GamePad %v applied a vibration while disconnected", index)
+			}
+		}
+	}
+
+	// Mouse. The position write goes to where the cursor already is, so the
+	// run does not move a pointer the user may be holding.
+	mouse, err := input.MouseGetState()
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("Mouse.GetState: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "mouse state refused: %v\n", err)
+	}
+	g.result.MouseStateReads++
+	if err := input.MouseSetPosition(mouse.X(), mouse.Y()); err != nil && !isNativeRefusal(err) {
+		return fmt.Errorf("Mouse.SetPosition: %w", err)
+	}
+	g.result.MousePositionWrites++
+
+	// The window handle round-trips through the native side, which is the one
+	// thing about it a managed test cannot check.
+	//
+	// A DIFFERENT value has to go across for the round trip to prove anything.
+	// Writing the handle back over itself proves nothing here: the HEADLESS
+	// artifact starts with no hooked window, so the value is 0 and a dropped
+	// write and an honest one both read back the same 0. Measured, not assumed
+	// -- both Mouse.WindowHandle and GameWindow.Handle report 0x0 on this
+	// artifact.
+	//
+	// So a SENTINEL is written and then unbound. CNA's own header says the
+	// parameter is an "opaque native window value; zero unbinds", so nothing
+	// dereferences it, and the write is the last thing this slice does with the
+	// mouse -- the state read and the position write are already behind it.
+	handle, err := input.MouseWindowHandle()
+	if err != nil && !isNativeRefusal(err) {
+		return fmt.Errorf("Mouse.WindowHandle: %w", err)
+	}
+	const mouseHandleSentinel = uintptr(0x5CA1AB1E)
+	if err := input.SetMouseWindowHandle(mouseHandleSentinel); err != nil && !isNativeRefusal(err) {
+		return fmt.Errorf("Mouse.set_WindowHandle(sentinel): %w", err)
+	}
+	written, err := input.MouseWindowHandle()
+	if err != nil && !isNativeRefusal(err) {
+		return fmt.Errorf("Mouse.WindowHandle after the write: %w", err)
+	}
+	if written != mouseHandleSentinel {
+		return fmt.Errorf("mouse window handle was set to %#x and read back %#x",
+			mouseHandleSentinel, written)
+	}
+	// Restore what was there, which on this artifact unbinds again.
+	if err := input.SetMouseWindowHandle(handle); err != nil && !isNativeRefusal(err) {
+		return fmt.Errorf("Mouse.set_WindowHandle: %w", err)
+	}
+	readBack, err := input.MouseWindowHandle()
+	if err != nil && !isNativeRefusal(err) {
+		return fmt.Errorf("Mouse.WindowHandle after restoring: %w", err)
+	}
+	if readBack != handle {
+		return fmt.Errorf("mouse window handle did not round-trip: %#x became %#x", handle, readBack)
+	}
+	g.result.MouseHandleChecks++
+
+	// TouchPanel, inside a live game with a native runtime available. Nothing
+	// below may reach it.
+	if capabilities := touch.TouchPanelGetCapabilities(); capabilities.IsConnected() {
+		return errors.New("TouchPanel reported a connected panel inside a live game; GetCaps returns a zeroed struct")
+	}
+	state := touch.TouchPanelGetState()
+	if state.Count() != 0 {
+		return fmt.Errorf("TouchPanel reported %d touches inside a live game; GetState updates from a zeroed state",
+			state.Count())
+	}
+	if !state.IsConnected() {
+		return errors.New("TouchPanel state reported disconnected; Update is called with the literal true")
+	}
+	if _, err := touch.TouchPanelReadGesture(); err == nil {
+		return errors.New("ReadGesture returned a sample; its body has no ret instruction")
+	}
+	if err := touch.SetTouchPanelEnabledGestures(touch.GestureTypeTap); err != nil {
+		return fmt.Errorf("TouchPanel.set_EnabledGestures(Tap): %w", err)
+	}
+	available, err := touch.TouchPanelIsGestureAvailable()
+	if err != nil {
+		return fmt.Errorf("TouchPanel.IsGestureAvailable after assignment: %w", err)
+	}
+	if available {
+		return errors.New("IsGestureAvailable was true inside a live game; the reference returns ldc.i4.0")
+	}
+	if _, err := touch.TouchPanelReadGesture(); err == nil {
+		return errors.New("ReadGesture returned a sample after gestures were enabled")
+	}
+	g.result.TouchPanelManagedChecks++
 	return nil
 }
 

@@ -136,18 +136,6 @@ var frontierFamilies = []frontierFamily{
 		},
 	},
 	{
-		Name:           "Input",
-		Classification: frontierActionableLocal,
-		Note:           "~68/41/21/59 CNA routes across GamePad, Mouse and Touch; the state structs are already complete, so what is missing is the static readers and the two capability structs",
-		Types: []string{
-			"Microsoft.Xna.Framework.Input.GamePad",
-			"Microsoft.Xna.Framework.Input.GamePadCapabilities",
-			"Microsoft.Xna.Framework.Input.Mouse",
-			"Microsoft.Xna.Framework.Input.Touch.TouchPanel",
-			"Microsoft.Xna.Framework.Input.Touch.TouchPanelCapabilities",
-		},
-	},
-	{
 		Name:           "Storage",
 		Classification: frontierActionableLocal,
 		Note:           "~65/12 CNA routes; the async selector pattern and the container's file surface need a System.IO projection decision, and every test must stay inside a project-controlled temporary root",

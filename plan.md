@@ -1601,8 +1601,29 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 86 | RendererDetail, and the stale audio blocker | `foundation-86-renderer-detail-evidence.md` |
 | 87 | SoundEffect and SoundEffectInstance | `foundation-87-sound-effect-evidence.md` |
 | 88 | DynamicSoundEffectInstance, Microphone, and the end of the Audio namespace | `foundation-88-audio-namespace-evidence.md` |
+| 89 | GamePad, Mouse and TouchPanel, closing the Input namespace | `foundation-89-input-evidence.md` |
 
 ### The rules these milestones settled
+
+**A reference body that reaches nothing is still the contract** (89). The
+pinned `Microsoft.Xna.Framework.Input.Touch.dll` declares no p/invoke anywhere:
+`GetCaps()` is `initobj` and `ret`, `GetState()` updates from a state it just
+zeroed, and `ReadGesture()` has no `ret` instruction at all. CNA implements all
+fourteen touch routes for real, and binding them was still WRONG -- a projection
+that answered real touches would diverge from the runtime this binding targets
+on the first `GetState` a game makes. When the reference reaches nothing, the
+faithful projection reaches nothing, and the working native routes are recorded
+as CONTRACT_DIVERGENCE. The counter that proves it, `TOUCH_PANEL_NATIVE_CALLS`,
+is exercised from INSIDE a live game so that its zero means something.
+
+**A mutation that needs hardware is named, not hidden** (89). Three of the
+family's forty-four planted defects sit on the CONNECTED-controller branch,
+which a build machine with no controller never enters. They are reported as
+unkilled with the reason, and the slice is written so an attached controller
+would kill them. `GAMEPADS_CONNECTED` reports zero as a measured result rather
+than a skipped test, because the reference's own
+`ERROR_DEVICE_NOT_CONNECTED` branch -- an empty state and NO exception -- is
+exactly what that zero exercises.
 
 **Inheritance is excluded by CLR SIGNATURE, not by name** (55). A derived class
 excludes an inherited member only when it declares one with the same kind, name,
@@ -2037,6 +2058,16 @@ twice in one file -- once in the comment and once in the code. Replacing the
 first occurrence scored a defect as unkillable while the projection was
 untouched. Anchor on surrounding code, and treat an unexpected survivor as a
 harness bug before treating it as a finding.
+
+**A round trip that writes back what it read proves nothing** (89). Both mouse
+window-handle mutations -- dropping the write, and answering a constant --
+survived a stress check that read the handle, assigned it back and compared.
+The artifact starts with no hooked window, so the value is `0` and a dropped
+write reads back the same `0` an honest one does. The same shape had already
+bitten a managed test that assigned ONE value to both DisplayWidth and
+DisplayHeight. A state round trip must carry a value the state did not already
+hold, and where the live value cannot be varied safely, a sentinel written and
+then withdrawn is the way to do it.
 
 **Reproduce the reference's FLOAT WIDTH, not its formula** (87). XNA's
 `GetSampleSizeInBytes` computes its scale factor in float32, so

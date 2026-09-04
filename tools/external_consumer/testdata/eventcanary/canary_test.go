@@ -13,6 +13,8 @@ import (
 	content "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
+	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
+	touch "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch"
 	storage "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage"
 )
 
@@ -4761,4 +4763,95 @@ func TestAudioNamespaceIsCompleteFromOutside(t *testing.T) {
 	if err := dynamic.SetIsLooped(true); err == nil {
 		t.Fatal("SetIsLooped(true) was accepted on a DynamicSoundEffectInstance")
 	}
+}
+
+// TestInputStaticsAreReachableFromOutsideTheModule is Foundation 89's canary.
+// It pins the exported shape of the five Input types and, more importantly,
+// pins the two behaviours a consumer can observe with no game and no device:
+// every native-backed static refuses, and every TouchPanel member answers
+// without one.
+func TestInputStaticsAreReachableFromOutsideTheModule(t *testing.T) {
+	var _ func(framework.PlayerIndex) (input.GamePadState, error) = input.GamePadGetStateByPlayerIndex
+	var _ func(framework.PlayerIndex, input.GamePadDeadZone) (input.GamePadState, error) = input.GamePadGetStateByPlayerIndexAndGamePadDeadZone
+	var _ func(framework.PlayerIndex) (input.GamePadCapabilities, error) = input.GamePadGetCapabilities
+	var _ func(framework.PlayerIndex, float32, float32) (bool, error) = input.GamePadSetVibration
+
+	var _ func() (input.MouseState, error) = input.MouseGetState
+	var _ func(int32, int32) error = input.MouseSetPosition
+	var _ func() (uintptr, error) = input.MouseWindowHandle
+	var _ func(uintptr) error = input.SetMouseWindowHandle
+
+	// GamePadCapabilities: every accessor a consumer can call on the value
+	// GetCapabilities answers, including the zero value it gets for a
+	// controller that is not there.
+	var capabilities input.GamePadCapabilities
+	var _ func() input.GamePadType = capabilities.GamePadType
+	var _ func() bool = capabilities.IsConnected
+	var _ func() bool = capabilities.HasAButton
+	var _ func() bool = capabilities.HasDPadRightButton
+	var _ func() bool = capabilities.HasLeftVibrationMotor
+	var _ func() bool = capabilities.HasVoiceSupport
+	if capabilities.IsConnected() || capabilities.GamePadType() != input.GamePadTypeUnknown {
+		t.Fatal("the zero GamePadCapabilities reported a controller")
+	}
+
+	// Without a running game every native-backed static refuses rather than
+	// answering a zero value, which is what tells a consumer the difference
+	// between "no controller" and "no game".
+	if _, err := input.GamePadGetStateByPlayerIndex(framework.PlayerIndexOne); err == nil {
+		t.Fatal("GamePad.GetState answered outside a game")
+	}
+	if _, err := input.GamePadGetCapabilities(framework.PlayerIndexOne); err == nil {
+		t.Fatal("GamePad.GetCapabilities answered outside a game")
+	}
+	if _, err := input.GamePadSetVibration(framework.PlayerIndexOne, 0, 0); err == nil {
+		t.Fatal("GamePad.SetVibration answered outside a game")
+	}
+	if _, err := input.MouseGetState(); err == nil {
+		t.Fatal("Mouse.GetState answered outside a game")
+	}
+	if err := input.MouseSetPosition(0, 0); err == nil {
+		t.Fatal("Mouse.SetPosition answered outside a game")
+	}
+
+	// TouchPanel needs neither. Its whole surface is managed on this profile,
+	// so a consumer with no game at all gets the same answers a game does.
+	var _ func() touch.TouchPanelCapabilities = touch.TouchPanelGetCapabilities
+	var _ func() touch.TouchCollection = touch.TouchPanelGetState
+	var _ func() (touch.GestureSample, error) = touch.TouchPanelReadGesture
+	var _ func() touch.GestureType = touch.TouchPanelEnabledGestures
+	var _ func(touch.GestureType) error = touch.SetTouchPanelEnabledGestures
+	var _ func() (bool, error) = touch.TouchPanelIsGestureAvailable
+	var _ func() uintptr = touch.TouchPanelWindowHandle
+	var _ func(uintptr) = touch.SetTouchPanelWindowHandle
+	var _ func() framework.DisplayOrientation = touch.TouchPanelDisplayOrientation
+	var _ func(framework.DisplayOrientation) error = touch.SetTouchPanelDisplayOrientation
+	var _ func() int32 = touch.TouchPanelDisplayWidth
+	var _ func(int32) = touch.SetTouchPanelDisplayWidth
+	var _ func() int32 = touch.TouchPanelDisplayHeight
+	var _ func(int32) = touch.SetTouchPanelDisplayHeight
+
+	if touch.TouchPanelGetCapabilities().IsConnected() {
+		t.Fatal("TouchPanel reported a connected panel; GetCaps returns a zeroed struct on this profile")
+	}
+	if got := touch.TouchPanelGetState().Count(); got != 0 {
+		t.Fatalf("TouchPanel reported %d touches; GetState updates from a zeroed state", got)
+	}
+	if _, err := touch.TouchPanelReadGesture(); err == nil {
+		t.Fatal("ReadGesture returned a sample; its body has no ret instruction")
+	}
+	if err := touch.SetTouchPanelDisplayOrientation(framework.DisplayOrientationLandscapeLeft |
+		framework.DisplayOrientationLandscapeRight); err == nil {
+		t.Fatal("a combined DisplayOrientation was accepted; ValidateOrientation tests equality")
+	}
+	if err := touch.SetTouchPanelEnabledGestures(touch.GestureType(0x400)); err == nil {
+		t.Fatal("a gesture bit above the 0x3FF mask was accepted")
+	}
+
+	// The unvalidated setters round-trip whatever they are handed.
+	touch.SetTouchPanelDisplayWidth(-7)
+	if got := touch.TouchPanelDisplayWidth(); got != -7 {
+		t.Fatalf("DisplayWidth = %d, want -7: the setter validates nothing", got)
+	}
+	touch.SetTouchPanelDisplayWidth(0)
 }

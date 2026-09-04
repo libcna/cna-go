@@ -410,11 +410,25 @@
       "notes": "Deferred."
     },
     {
+      "id": "gamepad",
+      "capability": "GamePad state, capabilities and vibration",
+      "status": "VERIFIED_NATIVE",
+      "evidence": "Foundation 89 projected GamePad and GamePadCapabilities over four bound routes -- cna_gamepad_get_state, get_state_with_dead_zone, get_capabilities and set_vibration. The stress slice reads capabilities and state for all four player indices and calls SetVibration four times per cycle, cross-checking that the capability read and the state read AGREE about presence -- a check no managed test can make",
+      "notes": "A disconnected controller is not an error: the reference's readers branch on 0x48f (ERROR_DEVICE_NOT_CONNECTED) and return an EMPTY value, throwing InvalidController only on some other failure. This machine has no controller attached, so GAMEPADS_CONNECTED is a measured 0 and that branch is the one exercised; the connected branch, the dead-zone forwarding and the capability flag polarity are named as unkilled mutations requiring attached hardware. SetVibration is called only with two zeros -- the value the reference itself uses to stop a motor. CNA's capability structure carries eleven _ext flags XNA does not declare and they are not copied."
+    },
+    {
+      "id": "mouse",
+      "capability": "Mouse state, position and window handle",
+      "status": "VERIFIED_NATIVE",
+      "evidence": "Foundation 89 projected Mouse over cna_mouse_get_state, set_position and the window-handle pair. The stress slice reads the state, round-trips the window handle through the native side and writes the cursor position back to where it already is, once per cycle",
+      "notes": "The reference body is entirely Win32 -- GetCursorPos, ScreenToClient, GetAsyncKeyState x5 -- so there is no managed contract to reproduce beyond the shape: positions are in the hooked window's CLIENT coordinates and the scroll wheel is a cumulative 120-unit total the projection does not reset. CNA_MouseState.horizontal_scroll_wheel has no XNA counterpart and is dropped. System.IntPtr projects to uintptr, which the mapping already declares, so no raw handle leaves the surface."
+    },
+    {
       "id": "touch",
       "capability": "Touch input",
-      "status": "UNIMPLEMENTED_CNA_GO",
-      "evidence": "strict structural report",
-      "notes": "Deferred."
+      "status": "VERIFIED_MANAGED",
+      "evidence": "Foundation 89 projected TouchPanel and TouchPanelCapabilities against Microsoft.Xna.Framework.Input.Touch.dll (b0585224c18022c3), which declares NO p/invoke anywhere: GetCaps() is ten bytes that zero a local and return it, GetState() updates the static collection from a state it just zeroed, ReadGesture() has two branches and both throw with no ret instruction in the body, and get_IsGestureAvailable returns ldc.i4.0. Twelve package tests walk the 0x3FF gesture mask, ValidateOrientation's four equality tests, the unvalidated display setters and the display-settings reset; TOUCH_PANEL_MANAGED_CHECKS runs once per stress cycle from INSIDE a live game",
+      "notes": "VERIFIED_MANAGED rather than VERIFIED_NATIVE because the reference reaches no device on this profile, not because CNA cannot. CNA implements all fourteen touch routes for real; they were bound, measured and REVERTED into deliberatelyUnboundRoutes under CONTRACT_DIVERGENCE, since the pinned IL is the behaviour authority and a projection answering real touches would diverge from the runtime this binding targets on the first GetState a game makes. TOUCH_PANEL_NATIVE_CALLS is asserted to be zero and the parent accounting fails the run on any other value. XNA 4.0's touch surface shipped for Windows Phone; the Windows build kept the API with the device half removed."
     },
     {
       "id": "design",

@@ -3468,3 +3468,118 @@ CnaGoResult cna_go_microphone_get_data_at(
     CnaGoHandle game, uint64_t index, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes) {
     return api.cna_microphone_get_data_at(game, index, destination, capacity, out_bytes);
 }
+
+/* Foundation 89 -- the Input family. */
+
+CnaGoResult cna_go_gamepad_get_capabilities(
+    CnaGoHandle game, uint32_t player_index, uint32_t* out_type, uint8_t* out_flags) {
+    CNA_GamePadCapabilities capabilities;
+    CnaGoResult result;
+    memset(&capabilities, 0, sizeof(capabilities));
+    capabilities.struct_size = (uint32_t)sizeof(capabilities);
+    capabilities.struct_version = 1;
+    result = api.cna_gamepad_get_capabilities(game, (CNA_PlayerIndex)player_index, &capabilities);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_type = (uint32_t)capabilities.gamepad_type;
+    /* The order here is the order the Go side reads them back, and it is the
+       order GamePadCapabilities declares its properties in the pinned
+       contract. CNA's _ext fields have no XNA counterpart and are not copied. */
+    out_flags[0] = (uint8_t)(capabilities.is_connected ? 1 : 0);
+    out_flags[1] = (uint8_t)(capabilities.has_a_button ? 1 : 0);
+    out_flags[2] = (uint8_t)(capabilities.has_b_button ? 1 : 0);
+    out_flags[3] = (uint8_t)(capabilities.has_x_button ? 1 : 0);
+    out_flags[4] = (uint8_t)(capabilities.has_y_button ? 1 : 0);
+    out_flags[5] = (uint8_t)(capabilities.has_back_button ? 1 : 0);
+    out_flags[6] = (uint8_t)(capabilities.has_start_button ? 1 : 0);
+    out_flags[7] = (uint8_t)(capabilities.has_big_button ? 1 : 0);
+    out_flags[8] = (uint8_t)(capabilities.has_dpad_up_button ? 1 : 0);
+    out_flags[9] = (uint8_t)(capabilities.has_dpad_down_button ? 1 : 0);
+    out_flags[10] = (uint8_t)(capabilities.has_dpad_left_button ? 1 : 0);
+    out_flags[11] = (uint8_t)(capabilities.has_dpad_right_button ? 1 : 0);
+    out_flags[12] = (uint8_t)(capabilities.has_left_shoulder_button ? 1 : 0);
+    out_flags[13] = (uint8_t)(capabilities.has_right_shoulder_button ? 1 : 0);
+    out_flags[14] = (uint8_t)(capabilities.has_left_stick_button ? 1 : 0);
+    out_flags[15] = (uint8_t)(capabilities.has_right_stick_button ? 1 : 0);
+    out_flags[16] = (uint8_t)(capabilities.has_left_x_thumb_stick ? 1 : 0);
+    out_flags[17] = (uint8_t)(capabilities.has_left_y_thumb_stick ? 1 : 0);
+    out_flags[18] = (uint8_t)(capabilities.has_right_x_thumb_stick ? 1 : 0);
+    out_flags[19] = (uint8_t)(capabilities.has_right_y_thumb_stick ? 1 : 0);
+    out_flags[20] = (uint8_t)(capabilities.has_left_trigger ? 1 : 0);
+    out_flags[21] = (uint8_t)(capabilities.has_right_trigger ? 1 : 0);
+    out_flags[22] = (uint8_t)(capabilities.has_left_vibration_motor ? 1 : 0);
+    out_flags[23] = (uint8_t)(capabilities.has_right_vibration_motor ? 1 : 0);
+    out_flags[24] = (uint8_t)(capabilities.has_voice_support ? 1 : 0);
+    return CNA_GO_RESULT_SUCCESS;
+}
+
+CnaGoResult cna_go_gamepad_set_vibration(
+    CnaGoHandle game, uint32_t player_index, float left, float right, uint8_t* out_applied) {
+    CNA_Bool applied = 0;
+    CnaGoResult result = api.cna_gamepad_set_vibration(game, (CNA_PlayerIndex)player_index,
+                                                       left, right, &applied);
+    *out_applied = (uint8_t)(applied ? 1 : 0);
+    return result;
+}
+
+CnaGoResult cna_go_mouse_get_state(CnaGoHandle game, int32_t* out_ints, uint32_t* out_buttons) {
+    CNA_MouseState state;
+    CnaGoResult result;
+    memset(&state, 0, sizeof(state));
+    state.struct_size = (uint32_t)sizeof(state);
+    state.struct_version = 1;
+    result = api.cna_mouse_get_state(game, &state);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    out_ints[CNA_GO_MOUSE_X] = state.x;
+    out_ints[CNA_GO_MOUSE_Y] = state.y;
+    out_ints[CNA_GO_MOUSE_SCROLL] = state.scroll_wheel;
+    out_ints[CNA_GO_MOUSE_HORIZONTAL_SCROLL] = state.horizontal_scroll_wheel;
+    *out_buttons = (uint32_t)state.pressed_buttons;
+    return CNA_GO_RESULT_SUCCESS;
+}
+
+CnaGoResult cna_go_mouse_set_position(CnaGoHandle game, int32_t x, int32_t y) {
+    return api.cna_mouse_set_position(game, x, y);
+}
+
+CnaGoResult cna_go_mouse_get_window_handle(CnaGoHandle game, uint64_t* out_window) {
+    return api.cna_mouse_get_window_handle(game, out_window);
+}
+
+CnaGoResult cna_go_mouse_set_window_handle(CnaGoHandle game, uint64_t window) {
+    return api.cna_mouse_set_window_handle(game, window);
+}
+
+/* Foundation 89 -- the gamepad state reader. */
+
+CnaGoResult cna_go_gamepad_get_state(
+    CnaGoHandle game, uint32_t player_index, uint8_t has_dead_zone, uint32_t dead_zone,
+    uint8_t* out_connected, int32_t* out_packet, uint32_t* out_buttons, float* out_analog) {
+    CNA_GamePadState state;
+    CnaGoResult result;
+    memset(&state, 0, sizeof(state));
+    state.struct_size = (uint32_t)sizeof(state);
+    state.struct_version = 1;
+    if (has_dead_zone) {
+        result = api.cna_gamepad_get_state_with_dead_zone(game, (CNA_PlayerIndex)player_index,
+                                                          (CNA_GamePadDeadZone)dead_zone, &state);
+    } else {
+        result = api.cna_gamepad_get_state(game, (CNA_PlayerIndex)player_index, &state);
+    }
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_connected = (uint8_t)(state.is_connected ? 1 : 0);
+    *out_packet = state.packet_number;
+    *out_buttons = (uint32_t)state.pressed_buttons;
+    out_analog[0] = state.analog.left_thumb_stick.x;
+    out_analog[1] = state.analog.left_thumb_stick.y;
+    out_analog[2] = state.analog.right_thumb_stick.x;
+    out_analog[3] = state.analog.right_thumb_stick.y;
+    out_analog[4] = state.analog.left_trigger;
+    out_analog[5] = state.analog.right_trigger;
+    return CNA_GO_RESULT_SUCCESS;
+}

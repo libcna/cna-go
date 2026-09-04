@@ -1846,6 +1846,128 @@ func cnaGoGameWindowEvent(event C.uint32_t, context C.uintptr_t) {
 	state.invokeGameWindowEvent(uint32(event))
 }
 
+// ---------------------------------------------------------------------------
+// Foundation 89 -- the Input family's static readers.
+//
+// Every route takes the GAME handle and nothing owns anything: a gamepad, a
+// mouse and a touch panel are properties of the running game rather than
+// objects with lifetimes, which is the reference's shape too -- all five
+// projected types are `abstract sealed` static classes or value structs.
+// ---------------------------------------------------------------------------
+
+// GamePadCapabilitiesFlagCount is the number of boolean capabilities XNA
+// declares. CNA carries eleven more `_ext` flags with no XNA counterpart and
+// they are not copied.
+const GamePadCapabilitiesFlagCount = 25
+
+// nativeGamePadCapabilities is cna_gamepad_get_capabilities. The flags cross as
+// a flat byte array in the order GamePadCapabilities declares its properties,
+// so a thirty-eight-argument cgo signature never exists.
+func nativeGamePadCapabilities(game uint64, playerIndex uint32) (uint32, [GamePadCapabilitiesFlagCount]byte, error) {
+	var padType C.uint32_t
+	var flags [GamePadCapabilitiesFlagCount]C.uint8_t
+	code := uint32(C.cna_go_gamepad_get_capabilities(C.CnaGoHandle(game),
+		C.uint32_t(playerIndex), &padType, &flags[0]))
+	var out [GamePadCapabilitiesFlagCount]byte
+	for index := range flags {
+		out[index] = byte(flags[index])
+	}
+	return uint32(padType), out, resultError("cna_gamepad_get_capabilities", code)
+}
+
+func nativeGamePadSetVibration(game uint64, playerIndex uint32, left, right float32) (bool, error) {
+	var applied C.uint8_t
+	code := uint32(C.cna_go_gamepad_set_vibration(C.CnaGoHandle(game), C.uint32_t(playerIndex),
+		C.float(left), C.float(right), &applied))
+	return applied != 0, resultError("cna_gamepad_set_vibration", code)
+}
+
+// GamePadStateValues is CNA_GamePadState reduced to what XNA's GamePadState
+// carries. CNA's packet_number has no XNA counterpart and is kept because the
+// reference's XINPUT_STATE has one too -- it is what a caller would use to tell
+// a repeated poll from a new one, and nothing public reports it.
+type GamePadStateValues struct {
+	IsConnected    bool
+	PacketNumber   int32
+	PressedButtons uint32
+	LeftThumbX     float32
+	LeftThumbY     float32
+	RightThumbX    float32
+	RightThumbY    float32
+	LeftTrigger    float32
+	RightTrigger   float32
+}
+
+// nativeGamePadState is cna_gamepad_get_state or its dead-zone-carrying
+// sibling. ONE wrapper serves both, because XNA's two GetState overloads differ
+// only in whether the caller names a dead zone -- the one-argument overload
+// forwards with GamePadDeadZone.IndependentAxes.
+func nativeGamePadState(game uint64, playerIndex uint32, deadZone uint32, hasDeadZone bool) (GamePadStateValues, error) {
+	var connected C.uint8_t
+	var packet C.int32_t
+	var buttons C.uint32_t
+	var analog [6]C.float
+	flag := C.uint8_t(0)
+	if hasDeadZone {
+		flag = 1
+	}
+	route := "cna_gamepad_get_state"
+	if hasDeadZone {
+		route = "cna_gamepad_get_state_with_dead_zone"
+	}
+	code := uint32(C.cna_go_gamepad_get_state(C.CnaGoHandle(game), C.uint32_t(playerIndex),
+		flag, C.uint32_t(deadZone), &connected, &packet, &buttons, &analog[0]))
+	return GamePadStateValues{
+		IsConnected:    connected != 0,
+		PacketNumber:   int32(packet),
+		PressedButtons: uint32(buttons),
+		LeftThumbX:     float32(analog[0]),
+		LeftThumbY:     float32(analog[1]),
+		RightThumbX:    float32(analog[2]),
+		RightThumbY:    float32(analog[3]),
+		LeftTrigger:    float32(analog[4]),
+		RightTrigger:   float32(analog[5]),
+	}, resultError(route, code)
+}
+
+// MouseStateValues is CNA_MouseState reduced to the five fields it carries.
+type MouseStateValues struct {
+	X                     int32
+	Y                     int32
+	ScrollWheel           int32
+	HorizontalScrollWheel int32
+	PressedButtons        uint32
+}
+
+func nativeMouseState(game uint64) (MouseStateValues, error) {
+	var ints [4]C.int32_t
+	var buttons C.uint32_t
+	code := uint32(C.cna_go_mouse_get_state(C.CnaGoHandle(game), &ints[0], &buttons))
+	return MouseStateValues{
+		X:                     int32(ints[0]),
+		Y:                     int32(ints[1]),
+		ScrollWheel:           int32(ints[2]),
+		HorizontalScrollWheel: int32(ints[3]),
+		PressedButtons:        uint32(buttons),
+	}, resultError("cna_mouse_get_state", code)
+}
+
+func nativeMouseSetPosition(game uint64, x, y int32) error {
+	return resultError("cna_mouse_set_position",
+		uint32(C.cna_go_mouse_set_position(C.CnaGoHandle(game), C.int32_t(x), C.int32_t(y))))
+}
+
+func nativeMouseWindowHandle(game uint64) (uint64, error) {
+	var window C.uint64_t
+	code := uint32(C.cna_go_mouse_get_window_handle(C.CnaGoHandle(game), &window))
+	return uint64(window), resultError("cna_mouse_get_window_handle", code)
+}
+
+func nativeMouseSetWindowHandle(game, window uint64) error {
+	return resultError("cna_mouse_set_window_handle",
+		uint32(C.cna_go_mouse_set_window_handle(C.CnaGoHandle(game), C.uint64_t(window))))
+}
+
 func nativeKeyboardState(game uint64) ([4]uint64, error) {
 	var result [4]uint64
 	var words [4]C.uint64_t

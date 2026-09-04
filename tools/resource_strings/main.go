@@ -327,6 +327,18 @@ var registry = []claimedString{
 		Value: "Game cannot be null."},
 	{Key: "GraphicsDeviceManagerAlreadyPresent", Assembly: "Microsoft.Xna.Framework.Game.dll",
 		Value: "A graphics device manager is already registered.  The graphics device manager cannot be changed once it is set."},
+	// Foundation 89, the Input family. InvalidController is what GamePad's
+	// three readers throw when the native call fails for a reason OTHER than a
+	// missing controller; the other three belong to TouchPanel, whose gesture
+	// members throw on every path on the Windows runtime.
+	{Key: "InvalidController", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "An invalid operation was performed. Is your PlayerIndex correct?"},
+	{Key: "GesturesNotEnabled", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "This operation cannot be completed until TouchPanel.EnabledGestures is assigned."},
+	{Key: "GesturesNotAvailable", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "No gestures are available at this time.  TouchPanel.ReadGesture should only be called when TouchPanel.IsGestureAvailable is true."},
+	{Key: "InvalidDisplayOrientation", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "The specified DisplayOrientation is invalid."},
 }
 
 // constantStringValue folds one constant expression to its string value.
