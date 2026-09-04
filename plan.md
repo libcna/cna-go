@@ -1597,6 +1597,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 82 | FrameworkDispatcher and TitleContainer, the last root types | `foundation-82-root-types-evidence.md` |
 | 83 | OcclusionQuery, and the dynamic-buffer probe | `foundation-83-occlusion-query-evidence.md` |
 | 84 | DynamicVertexBuffer and DynamicIndexBuffer, closing the Graphics namespace | `foundation-84-dynamic-buffers-evidence.md` |
+| 85 | the first VERIFIED_PIXEL draw | `foundation-85-pixel-draw-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1983,6 +1984,36 @@ what a non-dynamic buffer produces. A probe showed CNA refuses a non-None
 the refusal IS the flag's signature: the scenario now fails on it, and the
 mutation that never sets the flag dies. Before concluding a native argument is
 unobservable, look for the call it makes fail.
+
+**A milestone may raise EVIDENCE STRENGTH rather than the type count** (85).
+Foundation 85 added no type and bound no route: it turned every draw proof since
+Foundation 60 from `VERIFIED_NATIVE_DRAW` into `VERIFIED_PIXEL` by checking the
+texels a known material produces. A whole CLASS of defect that Foundation 80
+had called unobservable -- "the only observable is what the shader draws" -- is
+now scored for BasicEffect, and deleting a push from `OnApply` dies immediately.
+When a family's unkilled mutations all name the same missing observable,
+building that observable is a milestone.
+
+**Record the boundary the new observable has, not just the claims it enables**
+(85). The SOFTWARE artifact evaluates a FLAT MATERIAL: `DiffuseColor` and
+`Alpha` reach the texels, and `VertexColorEnabled` and `EnableDefaultLighting`
+both cross to CNA and change nothing. Writing that down is what stops a later
+milestone from spending itself on an assertion the renderer cannot satisfy.
+
+**A one-sided pixel claim proves nothing** (85). "The counter-clockwise triangle
+drew nothing" is satisfied by a renderer that never draws at all. The claim is
+made with the SAME three corners in the opposite winding order, through the same
+effect and the same state, so one fills the buffer and one leaves it untouched.
+A full-screen triangle has the same weakness against a CLEAR, which is why the
+geometry claim uses a half-screen one and checks the corners that must stay
+marked.
+
+**Scoring a mutation needs the artifact that can SEE it** (85). Eleven pixel
+defects scored against HEADLESS would all have survived, because HEADLESS
+refuses the readback and the slice skips. The harness pins the SOFTWARE library
+rather than taking the ambient one, and the parent accounting pins the slice's
+refusal count to the back buffer's so a skipped claim cannot look like a passing
+one.
 
 ## Next milestone selection rule
 

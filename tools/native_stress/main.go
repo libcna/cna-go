@@ -245,6 +245,18 @@ type counters struct {
 	// XNA's. Counted in two buckets so the behaviour is visible either way.
 	OcclusionQueryStaleResultChecks int `json:"OCCLUSION_QUERY_STALE_RESULT_CHECKS"`
 	OcclusionQueryFreshResultChecks int `json:"OCCLUSION_QUERY_FRESH_RESULT_CHECKS"`
+	// Foundation 85. The first VERIFIED_PIXEL draw. Every counter here is over
+	// the SOFTWARE artifact only, because HEADLESS has no back-buffer readback
+	// and records a refusal instead -- which is why the refusal column exists.
+	PixelDrawRefusals            int `json:"PIXEL_DRAW_REFUSALS"`
+	PixelDrawWindingChecks       int `json:"PIXEL_DRAW_WINDING_CHECKS"`
+	PixelDrawGeometryChecks      int `json:"PIXEL_DRAW_GEOMETRY_CHECKS"`
+	PixelDrawMaterialChecks      int `json:"PIXEL_DRAW_MATERIAL_CHECKS"`
+	PixelDrawAlphaChecks         int `json:"PIXEL_DRAW_ALPHA_CHECKS"`
+	PixelDrawVertexColorHonoured int `json:"PIXEL_DRAW_VERTEX_COLOR_HONOURED"`
+	PixelDrawVertexColorIgnored  int `json:"PIXEL_DRAW_VERTEX_COLOR_IGNORED"`
+	PixelDrawLightingChecks      int `json:"PIXEL_DRAW_LIGHTING_CHECKS"`
+	PixelDrawLightingIgnored     int `json:"PIXEL_DRAW_LIGHTING_IGNORED"`
 	// Foundation 84. The two dynamic buffers. Creations and refusals are
 	// counted apart because CNA_VertexBufferCreateInfo.dynamic is a renderer
 	// capability like the query object is; the option counters are per
@@ -914,6 +926,35 @@ func runParent() (counters, error) {
 	if total.BackBufferPixelChecks != total.BackBufferReads {
 		return total, fmt.Errorf("%d back-buffer reads produced %d pixel checks",
 			total.BackBufferReads, total.BackBufferPixelChecks)
+	}
+	// Foundation 85. One pixel-draw outcome per cycle, and on an artifact that
+	// CAN read back, every downstream check runs. The vertex-colour buckets are
+	// the exception the slice records rather than asserts, so they are pinned
+	// to sum to the runs instead of to a value.
+	if total.PixelDrawWindingChecks+total.PixelDrawRefusals != total.PresentationCycles {
+		return total, fmt.Errorf("pixel-draw winding checks %d and refusals %d do not account for %d cycles",
+			total.PixelDrawWindingChecks, total.PixelDrawRefusals, total.PresentationCycles)
+	}
+	if total.PixelDrawGeometryChecks != total.PixelDrawWindingChecks ||
+		total.PixelDrawMaterialChecks != total.PixelDrawWindingChecks ||
+		total.PixelDrawAlphaChecks != total.PixelDrawWindingChecks {
+		return total, fmt.Errorf("%d pixel-draw winding checks produced %d geometry, %d material and %d alpha checks",
+			total.PixelDrawWindingChecks, total.PixelDrawGeometryChecks,
+			total.PixelDrawMaterialChecks, total.PixelDrawAlphaChecks)
+	}
+	if total.PixelDrawVertexColorHonoured+total.PixelDrawVertexColorIgnored != total.PixelDrawWindingChecks {
+		return total, fmt.Errorf("vertex-colour outcomes %d honoured and %d ignored do not account for %d pixel draws",
+			total.PixelDrawVertexColorHonoured, total.PixelDrawVertexColorIgnored, total.PixelDrawWindingChecks)
+	}
+	if total.PixelDrawLightingChecks+total.PixelDrawLightingIgnored != total.PixelDrawWindingChecks {
+		return total, fmt.Errorf("lighting outcomes %d changed and %d ignored do not account for %d pixel draws",
+			total.PixelDrawLightingChecks, total.PixelDrawLightingIgnored, total.PixelDrawWindingChecks)
+	}
+	// The pixel slice runs exactly where a readback exists, so its refusals
+	// must track the back buffer's rather than drift from them.
+	if total.PixelDrawRefusals != total.BackBufferReadRefusals {
+		return total, fmt.Errorf("%d pixel-draw refusals against %d back-buffer read refusals; the two must agree",
+			total.PixelDrawRefusals, total.BackBufferReadRefusals)
 	}
 	if total.BackBufferReads+total.BackBufferReadRefusals != total.PresentationCycles {
 		return total, fmt.Errorf("back-buffer reads %d and refusals %d do not account for %d cycles",
@@ -7054,10 +7095,346 @@ func (g *stressGame) exercisePresentation() error {
 		return fmt.Errorf("GetBackBufferData: %w", readErr)
 	}
 
+	// Foundation 85. The first draw in the project whose evidence is the
+	// TEXELS rather than CNA's acceptance.
+	if err := g.exercisePixelDraw(device, parameters); err != nil {
+		return err
+	}
+
 	if err := g.exerciseCubeRenderTarget(device); err != nil {
 		return err
 	}
 	return g.exerciseOwnedDevice(device)
+}
+
+// exercisePixelDraw is Foundation 85's slice, and it is the first in the
+// project to make a DRAW's evidence VERIFIED_PIXEL rather than
+// VERIFIED_NATIVE_DRAW.
+//
+// # What changed, and why it could not be done before
+//
+// Foundation 73 read the back buffer for the first time and checked it against
+// a CLEAR colour. Every draw proof since has stopped at "CNA accepted the
+// submission": the qualified HEADLESS artifact has no readback path, and until
+// the stock effects landed there was no way to give a draw a PREDICTABLE output
+// colour. Both halves now exist -- the SOFTWARE artifact reads the buffer back,
+// and a BasicEffect with lighting, texturing, fog and vertex colour all off is
+// a known solid material.
+//
+// So this slice draws with a known material and checks the texels that come
+// back. Everything it asserts is a colour a consumer would see.
+//
+// # HEADLESS cannot run it, and says so
+//
+// The readback is a renderer capability CNA documents as such, and HEADLESS
+// refuses it -- BACK_BUFFER_READ_REFUSALS is 20 there and BACK_BUFFER_READS is
+// 20 on SOFTWARE. The slice therefore records a refusal and returns rather than
+// failing, exactly as the existing back-buffer check does. The counters make
+// the difference visible instead of letting a skipped claim look like a passing
+// one.
+func (g *stressGame) exercisePixelDraw(device *graphics.GraphicsDevice, parameters *graphics.PresentationParameters) error {
+	// A marker nothing else in this process uses, so a texel that still holds
+	// it was NOT drawn to.
+	marker := framework.NewColorByInt32AndInt32AndInt32AndInt32(17, 34, 51, 255)
+	width, height := int(parameters.BackBufferWidth()), int(parameters.BackBufferHeight())
+	if width <= 0 || height <= 0 {
+		return fmt.Errorf("the back buffer is %dx%d", width, height)
+	}
+
+	effect, err := graphics.NewBasicEffectByGraphicsDevice(device)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("the pixel slice's BasicEffect: %w", err)
+		}
+		g.result.PixelDrawRefusals++
+		fmt.Fprintf(os.Stderr, "pixel draw skipped, no BasicEffect: %v\n", err)
+		return nil
+	}
+	// BasicEffect declares no Dispose of its own, so its inherited PUBLIC
+	// surface carries one that takes no argument.
+	defer func() { _ = effect.Dispose() }()
+
+	// A solid material: no lighting, no texture, no fog, no vertex colour, full
+	// alpha. Every one of those is already the constructor's default, and every
+	// one is set anyway -- a fixture that relies on a default it does not state
+	// stops being evidence the moment the default is what breaks.
+	//
+	// DiffuseColor is deliberately NOT set here. The first two draws use the
+	// constructor's own Vector3.One, which is what lets the winding check pin
+	// the default material as a pixel fact.
+	effect.SetLightingEnabled(false)
+	effect.SetTextureEnabled(false)
+	effect.SetFogEnabled(false)
+	effect.SetVertexColorEnabled(false)
+	effect.SetAlpha(1)
+
+	// The vertex colour is YELLOW on every fixture below, and no assertion ever
+	// expects yellow. That is deliberate: with VertexColorEnabled false the
+	// material must win, so a projection that leaked the vertex colour through
+	// would be caught by the colour assertions rather than by a separate one.
+	yellow := framework.NewColorByInt32AndInt32AndInt32(255, 255, 0)
+	corner := func(x, y float32) graphics.VertexPositionColor {
+		return graphics.NewVertexPositionColor(
+			framework.NewVector3BySingleAndSingleAndSingle(x, y, 0), yellow)
+	}
+	// A fresh BasicEffect carries identity World, View and Projection, so these
+	// positions ARE clip space. The two triangles are the same three corners in
+	// opposite winding order.
+	counterClockwise := []graphics.VertexPositionColor{corner(-1, -1), corner(3, -1), corner(-1, 3)}
+	clockwise := []graphics.VertexPositionColor{counterClockwise[0], counterClockwise[2], counterClockwise[1]}
+	// A HALF-screen triangle. A full-screen one cannot be told apart from a
+	// clear, so the geometry claim needs one that leaves texels alone.
+	half := []graphics.VertexPositionColor{corner(-1, -1), corner(-1, 1), corner(1, -1)}
+
+	// draw clears to the marker, applies the effect and submits one triangle,
+	// then reports every distinct colour in the buffer. It returns nil when the
+	// renderer refuses at any step, which is how HEADLESS leaves the slice.
+	draw := func(vertices []graphics.VertexPositionColor) (map[[4]byte]int, []framework.Color, error) {
+		if err := device.ClearByColor(marker); err != nil {
+			if !isNativeRefusal(err) {
+				return nil, nil, fmt.Errorf("the pixel slice's clear: %w", err)
+			}
+			return nil, nil, nil
+		}
+		technique := effect.CurrentTechnique()
+		if technique == nil {
+			return nil, nil, errors.New("a constructed BasicEffect has no current technique")
+		}
+		pass := technique.Passes().ItemPropertySignatureCA1DC5FC(0)
+		if pass == nil {
+			return nil, nil, errors.New("a constructed BasicEffect's technique has no first pass")
+		}
+		// Apply runs OnApply, which pushes the dirty subset -- so the material
+		// each fixture sets below reaches CNA here and nowhere else.
+		if err := pass.Apply(); err != nil {
+			if !isNativeRefusal(err) {
+				return nil, nil, fmt.Errorf("the pixel slice's Apply: %w", err)
+			}
+			return nil, nil, nil
+		}
+		if err := graphics.GraphicsDeviceDrawUserPrimitivesByPrimitiveTypeAndSliceOfTAndInt32AndInt32(
+			device, graphics.PrimitiveTypeTriangleList, vertices, 0, 1); err != nil {
+			if !isNativeRefusal(err) {
+				return nil, nil, fmt.Errorf("the pixel slice's draw: %w", err)
+			}
+			return nil, nil, nil
+		}
+		pixels := make([]framework.Color, width*height)
+		if err := graphics.GraphicsDeviceGetBackBufferDataBySliceOfT(device, pixels); err != nil {
+			if !isNativeRefusal(err) {
+				return nil, nil, fmt.Errorf("the pixel slice's readback: %w", err)
+			}
+			return nil, nil, nil
+		}
+		histogram := map[[4]byte]int{}
+		for _, pixel := range pixels {
+			histogram[[4]byte{pixel.R(), pixel.G(), pixel.B(), pixel.A()}]++
+		}
+		return histogram, pixels, nil
+	}
+
+	markerKey := [4]byte{marker.R(), marker.G(), marker.B(), marker.A()}
+	// The material the first two draws use is the constructor's OWN default,
+	// which the reference sets to Vector3.One:
+	//
+	//	ldc.r4 1; ldc.r4 1; ldc.r4 1; newobj Vector3::.ctor -> diffuseColor
+	//
+	// so the texels must come back white. That makes the winding check pin the
+	// default material as a PIXEL fact at no extra cost -- a constructor that
+	// left the colour at zero would draw black and fail here.
+	white := [4]byte{255, 255, 255, 255}
+	solid := func(histogram map[[4]byte]int, want [4]byte) error {
+		if count := histogram[want]; count != width*height {
+			return fmt.Errorf("%d of %d texels are (%d,%d,%d,%d); the buffer holds %v",
+				count, width*height, want[0], want[1], want[2], want[3], histogram)
+		}
+		return nil
+	}
+
+	// (1) The DEFAULT rasterizer state CULLS a counter-clockwise triangle.
+	//
+	// This is the one claim that needs both halves to mean anything: an empty
+	// buffer proves nothing on its own, because a renderer that draws nothing
+	// at all would give the same answer. The SAME three corners in the opposite
+	// winding order, through the same effect and the same state, must fill the
+	// buffer.
+	if err := device.SetRasterizerState(graphics.RasterizerStateCullCounterClockwise()); err != nil {
+		return fmt.Errorf("restoring the default rasterizer state: %w", err)
+	}
+	culled, _, err := draw(counterClockwise)
+	if err != nil {
+		return err
+	}
+	if culled == nil {
+		g.result.PixelDrawRefusals++
+		fmt.Fprintf(os.Stderr, "pixel draw skipped: this renderer has no back-buffer readback\n")
+		return nil
+	}
+	if err := solid(culled, markerKey); err != nil {
+		return fmt.Errorf("a counter-clockwise triangle was NOT culled by the default state: %w", err)
+	}
+	drawn, _, err := draw(clockwise)
+	if err != nil {
+		return err
+	}
+	if err := solid(drawn, white); err != nil {
+		return fmt.Errorf("the clockwise triangle did not fill the buffer with the default material: %w", err)
+	}
+	g.result.PixelDrawWindingChecks++
+
+	// (2) The GEOMETRY reaches the rasteriser. With culling off, a half-screen
+	// triangle must leave about half the buffer untouched -- and the corners it
+	// covers are measured, not assumed, because a renderer's clip-space Y
+	// direction is its own business.
+	if err := device.SetRasterizerState(graphics.RasterizerStateCullNone()); err != nil {
+		return fmt.Errorf("CullNone: %w", err)
+	}
+	histogram, pixels, err := draw(half)
+	if err != nil {
+		return err
+	}
+	if histogram == nil {
+		return errors.New("the readback stopped answering part-way through the pixel slice")
+	}
+	if len(histogram) != 2 {
+		return fmt.Errorf("a half-screen triangle produced %d distinct colours, want the material and the marker: %v",
+			len(histogram), histogram)
+	}
+	total := width * height
+	// A tenth either way, which the measured split (192080 of 384000) sits well
+	// inside. The tolerance exists because the diagonal's rasterisation is the
+	// renderer's, not because the fraction is unknown.
+	if histogram[white] < total*2/5 || histogram[white] > total*3/5 {
+		return fmt.Errorf("a half-screen triangle covered %d of %d texels", histogram[white], total)
+	}
+	at := func(x, y int) [4]byte {
+		pixel := pixels[y*width+x]
+		return [4]byte{pixel.R(), pixel.G(), pixel.B(), pixel.A()}
+	}
+	// Measured on the SOFTWARE artifact: the two LEFT corners are inside the
+	// triangle and the two RIGHT corners are outside it. A draw that ignored
+	// its vertices and filled everything, or one that drew the complementary
+	// half, fails here and passes the count check above.
+	for _, row := range []struct {
+		x, y int
+		want [4]byte
+		name string
+	}{
+		{2, 2, white, "top-left"},
+		{2, height - 3, white, "bottom-left"},
+		{width - 3, 2, markerKey, "top-right"},
+		{width - 3, height - 3, markerKey, "bottom-right"},
+	} {
+		if got := at(row.x, row.y); got != row.want {
+			return fmt.Errorf("the %s corner is (%d,%d,%d,%d), want (%d,%d,%d,%d)",
+				row.name, got[0], got[1], got[2], got[3], row.want[0], row.want[1], row.want[2], row.want[3])
+		}
+	}
+	g.result.PixelDrawGeometryChecks++
+
+	// (3) The MATERIAL decides the texel. The same geometry with a different
+	// DiffuseColor must come back a different colour, and the colour must be
+	// the one that was set -- which is what makes every diffuse push in the
+	// stock-effect family observable for the first time.
+	effect.SetDiffuseColor(framework.NewVector3BySingleAndSingleAndSingle(0, 1, 0))
+	histogram, _, err = draw(half)
+	if err != nil {
+		return err
+	}
+	green := [4]byte{0, 255, 0, 255}
+	// Both halves: the new colour is there AND the old one is gone. Only the
+	// second catches a renderer that ignored the push and kept drawing white.
+	if histogram[green] < total*2/5 || histogram[white] != 0 {
+		return fmt.Errorf("DiffuseColor (0,1,0) produced %v; the material must be green and the default white gone", histogram)
+	}
+	g.result.PixelDrawMaterialChecks++
+
+	// (4) ALPHA premultiplies the colour AND lands in the alpha channel.
+	// Measured exactly: (0,1,0) at Alpha 0.5 comes back (0,127,0,127), which is
+	// 255*0.5 truncated. This is the strongest single assertion in the slice --
+	// nothing but a real shader evaluation produces that pair of numbers.
+	effect.SetAlpha(0.5)
+	histogram, _, err = draw(half)
+	if err != nil {
+		return err
+	}
+	halfGreen := [4]byte{0, 127, 0, 127}
+	if histogram[halfGreen] < total*2/5 {
+		return fmt.Errorf("Alpha 0.5 over DiffuseColor (0,1,0) produced %v, want (0,127,0,127)", histogram)
+	}
+	g.result.PixelDrawAlphaChecks++
+	effect.SetAlpha(1)
+
+	// (5) VertexColorEnabled, which this renderer does NOT honour.
+	//
+	// The fixture's vertices are yellow and the material is green. XNA's
+	// BasicEffect selects a shader that reads the vertex colour when the flag is
+	// on, so a faithful renderer would come back yellow. CNA's software
+	// renderer comes back GREEN, and the flag reaches it: OnApply pushes
+	// cna_basic_effect_set_vertex_color_enabled on the shader-index dirty bit,
+	// and the push succeeds.
+	//
+	// So this is RECORDED in two counters rather than asserted. The projection
+	// is not masking anything -- the flag crosses and the renderer ignores it --
+	// and a run in which the behaviour changed would move a count rather than
+	// pass in silence.
+	effect.SetVertexColorEnabled(true)
+	histogram, _, err = draw(half)
+	if err != nil {
+		return err
+	}
+	switch {
+	case histogram[[4]byte{255, 255, 0, 255}] >= total*2/5:
+		g.result.PixelDrawVertexColorHonoured++
+	case histogram[green] >= total*2/5:
+		g.result.PixelDrawVertexColorIgnored++
+	default:
+		return fmt.Errorf("VertexColorEnabled produced neither the vertex colour nor the material: %v", histogram)
+	}
+	effect.SetVertexColorEnabled(false)
+
+	// (6) LIGHTING, which this renderer does NOT honour either.
+	//
+	// EnableDefaultLighting installs the reference's three measured rigs and
+	// turns lighting on, so a renderer with a lighting model would come back a
+	// different colour. CNA's software renderer comes back the SAME
+	// (0,255,0,255): together with the vertex-colour result above, what it
+	// evaluates is a flat material -- DiffuseColor and Alpha -- and nothing
+	// per-vertex or per-light.
+	//
+	// Recorded in two counters for the reason the vertex-colour outcome is. The
+	// asserted half is that the draw still covers its half of the buffer, so a
+	// lighting rig that made the geometry vanish would still be caught.
+	effect.SetLightingEnabled(true)
+	effect.EnableDefaultLighting()
+	histogram, _, err = draw(half)
+	if err != nil {
+		return err
+	}
+	lit := [4]byte{}
+	litCount := 0
+	for colour, count := range histogram {
+		if colour != markerKey && count > litCount {
+			lit, litCount = colour, count
+		}
+	}
+	switch {
+	case litCount < total*2/5:
+		return fmt.Errorf("a lit draw covered %d texels, want about half: %v", litCount, histogram)
+	case lit != green:
+		g.result.PixelDrawLightingChecks++
+	default:
+		g.result.PixelDrawLightingIgnored++
+	}
+	fmt.Fprintf(os.Stderr, "PIXEL: lit material is (%d,%d,%d,%d) against the unlit (0,255,0,255)\n",
+		lit[0], lit[1], lit[2], lit[3])
+
+	// The device states this slice changed, put back the way it found them, so
+	// the scenarios after it see the defaults they were written against.
+	if err := device.SetRasterizerState(graphics.RasterizerStateCullCounterClockwise()); err != nil {
+		return fmt.Errorf("restoring the rasterizer state: %w", err)
+	}
+	return nil
 }
 
 // The four stock-vertex fixtures, and the one four-vertex array the non-zero

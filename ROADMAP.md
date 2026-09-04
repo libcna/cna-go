@@ -135,6 +135,40 @@ was in the plan:
 "currently always false" — a limitation recorded rather than a defect, and the
 boundary a renderer that can lose a device would move.
 
+Foundation 85 raised the STRENGTH of evidence rather than the type count: the
+first **`VERIFIED_PIXEL`** draw. Every draw proof from Foundation 60 to 84 was
+`VERIFIED_NATIVE_DRAW` — CNA accepted the submission and nothing could read the
+result back. The SOFTWARE artifact reads the back buffer and a `BasicEffect`
+with lighting, texturing, fog and vertex colour off is a known solid material,
+so the texels can now be checked:
+
+- The **default `RasterizerState` culls a counter-clockwise triangle**, proved
+  two-sided with the same three corners in the opposite winding order.
+- The constructor's `DiffuseColor` default, `Vector3.One`, is seen as white.
+- A half-screen triangle covers 192080 of 384000 texels with a measured corner
+  pattern, so the GEOMETRY reaches the rasteriser rather than the draw acting
+  as a clear.
+- `DiffuseColor` decides the texel, and `Alpha` premultiplies it into both the
+  colour and the alpha channel: `(0,1,0)` at `Alpha 0.5` comes back
+  `(0,127,0,127)`.
+- `VertexColorEnabled` and `EnableDefaultLighting` both reach CNA and this
+  renderer ignores both, which is recorded in two counters each rather than
+  asserted. The SOFTWARE artifact evaluates a FLAT MATERIAL -- `DiffuseColor`
+  and `Alpha` -- and nothing per-vertex or per-light, which is the boundary any
+  later pixel claim has to be written against.
+
+Eleven planted defects, all killed, in a class no earlier suite could score:
+deleting `BasicEffectSetDiffuseColor` from `OnApply` was invisible to the whole
+project before this milestone. Foundation 80 named this in advance -- its two
+unkilled push defects were "the same boundary that makes `VERIFIED_PIXEL` the
+next thing worth building" -- and the boundary has moved for `BasicEffect` only,
+so those two remain unkilled and are now killable in principle. Extending the
+pixel slice to the other five stock effects is the obvious next lever.
+
+HEADLESS has no readback path and records a refusal, pinned by the parent
+accounting to the back buffer's own refusal count so the slice cannot quietly
+stop running where it should.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
@@ -155,10 +189,7 @@ The suggested order is dependency order, which is the order the families appear
 in that registry:
 
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
-   grow `ContentManager.Load<T>`'s closed set. The stock effects are done, so
-   upgrading `DrawUser*` from `VERIFIED_NATIVE_DRAW` to `VERIFIED_PIXEL` is now
-   unblocked and not yet done: it needs the SOFTWARE back-buffer readback taken
-   with a known material, which any of the six effects can now supply.
+   grow `ContentManager.Load<T>`'s closed set.
 2. **The Model family**, which depends on the stock effects and now has them.
 3. Then **Input**, **Storage**, **Media/XACT**, the **content plumbing** and
    the **Design converters**.
