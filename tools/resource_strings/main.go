@@ -345,6 +345,14 @@ var registry = []claimedString{
 	// IEffectMatrices.
 	{Key: "ModelHasNoEffect", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "ModelMeshPart has a null Effect."},
+	// Foundation 91, the Storage family. InvalidStoragePath is the reference's
+	// OWN containment refusal -- what ValidateArguments throws for a path that
+	// resolves outside the container's root -- and CannotEndTwice is what a
+	// second End on one Begin raises.
+	{Key: "InvalidStoragePath", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "The specified storage path is invalid."},
+	{Key: "CannotEndTwice", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "An \"End\" function can only be called once for each call to \"Begin.\""},
 	{Key: "ModelHasNoIEffectMatrices", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "This model contains a custom effect which does not implement the IEffectMatrices interface, so it cannot be drawn using Model.Draw. Instead, call ModelMesh.Draw after setting the appropriate effect parameters."},
 }

@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               51
-MISSING_TYPE                    51
+TOTAL_DIAGNOSTICS               49
+MISSING_TYPE                    49
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 206
+COMPLETE_TYPES                 208
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         51
+GLOBAL_ACTIONABLE_LOCAL         49
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                350
+BOUND_FUNCTIONS                393
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -298,10 +298,33 @@ contract declares ZERO public constructors across all twelve types and a Model
 reaches a consumer only through `ContentManager.Load<Model>`. The content-reader
 family unblocks it.
 
+Foundation 91 closed **`Microsoft.Xna.Framework.Storage`** with `StorageDevice`
+and `StorageContainer`, and it is the family a measurement chose rather than the
+plan. Content plumbing was next on the list until `cna_content_reader_create`
+turned out to need a `CNA_StorageStreamHandle`, which only `storage.h` produces.
+The real chain is Storage, then content plumbing, then the Model family's native
+draw slice.
+
+XNA's storage APM is **fake async**, measured from XNA rather than taken from
+CNA: `BeginShowSelector` invokes the callback and returns a completed result
+before it exits, so `IsCompleted` is always true and the wait handle is always
+signalled.
+
+`StorageContainer` carries the reference's OWN containment guard --
+`ValidateArguments` refuses any path that resolves outside the container root --
+so "a game cannot reach the user's documents through this type" is XNA's rule,
+not one this projection adds.
+
+And the stress slice proves where it writes instead of assuming. The root was
+measured first and turned out to be `~/.local/share/...`, outside the project;
+CNA builds it from `XDG_DATA_HOME`, so the harness redirects that into the
+repository AND the slice refuses to continue unless the root it reads back
+actually lies there. `STORAGE_ROOT_CHECKS` is the counter that proves it ran.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 51 types it does not project
+projects, it projects completely; what remains is 49 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -319,9 +342,11 @@ in that registry:
 
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
    grow `ContentManager.Load<T>`'s closed set.
-2. Then **Storage**, **Media/XACT**, the **content plumbing** and
-   the **Design converters**. **Input** closed in Foundation 89 and the
-   **Model family** in Foundation 90, which finished the Graphics namespace.
+2. Then the **content plumbing**, which Storage has now unblocked and which in
+   turn unblocks the Model family's native draw slice, and after it
+   **Media/XACT**, the **Design converters**, the **content serializer
+   attributes** and **GamerServices**. **Input** closed in Foundation 89, the
+   **Model family** in Foundation 90 and **Storage** in Foundation 91.
 
 **The dynamic-buffer note, closed.** Foundation 83 probed it, Foundation 84
 acted on it, and the outcome was smaller than the note expected: **one** new

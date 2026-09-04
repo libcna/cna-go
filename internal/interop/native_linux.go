@@ -3223,3 +3223,364 @@ func nativeDirectionalLightDestroy(light uint64) error {
 	return resultError("cna_directional_light_destroy",
 		uint32(C.cna_go_directional_light_destroy(C.CnaGoHandle(light))))
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 91. The Storage family.
+//
+// Every route here takes an opaque handle or a string view, so there is no
+// struct to mirror and nothing for MANIFEST_LAYOUT_AGREEMENTS to prove; what
+// has to agree is the parameter lists, which the route census checks against
+// the canonical headers.
+//
+// None of these takes a game handle. Storage is not a graphics resource and CNA
+// does not tie it to a window's event state, so unlike the Input family these
+// are callable outside a lifecycle callback -- which is what lets a save happen
+// from wherever a game decides to save.
+
+// storageStringArg is the pointer half of a CNA_StringView. An empty Go string
+// has no data pointer, and CNA reads the length first, so nil is correct rather
+// than merely tolerated.
+func storageStringArg(value string) *C.char {
+	if len(value) == 0 {
+		return nil
+	}
+	return (*C.char)(unsafe.Pointer(unsafe.StringData(value)))
+}
+
+func nativeStorageShowSelector() (uint64, error) {
+	var device C.CnaGoHandle
+	code := uint32(C.cna_go_storage_device_show_selector(&device))
+	return uint64(device), resultError("cna_storage_device_show_selector", code)
+}
+
+func nativeStorageShowSelectorForPlayer(player uint32) (uint64, error) {
+	var device C.CnaGoHandle
+	code := uint32(C.cna_go_storage_device_show_selector_for_player(C.uint32_t(player), &device))
+	return uint64(device), resultError("cna_storage_device_show_selector_for_player", code)
+}
+
+func nativeStorageShowSelectorWithSpace(sizeInBytes, directoryCount int32) (uint64, error) {
+	var device C.CnaGoHandle
+	code := uint32(C.cna_go_storage_device_show_selector_with_space(
+		C.int32_t(sizeInBytes), C.int32_t(directoryCount), &device))
+	return uint64(device), resultError("cna_storage_device_show_selector_with_space", code)
+}
+
+func nativeStorageShowSelectorForPlayerWithSpace(player uint32, sizeInBytes, directoryCount int32) (uint64, error) {
+	var device C.CnaGoHandle
+	code := uint32(C.cna_go_storage_device_show_selector_for_player_with_space(
+		C.uint32_t(player), C.int32_t(sizeInBytes), C.int32_t(directoryCount), &device))
+	return uint64(device), resultError("cna_storage_device_show_selector_for_player_with_space", code)
+}
+
+func nativeStorageDeviceFreeSpace(device uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_storage_device_get_free_space(C.CnaGoHandle(device), &value))
+	return int64(value), resultError("cna_storage_device_get_free_space", code)
+}
+
+func nativeStorageDeviceTotalSpace(device uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_storage_device_get_total_space(C.CnaGoHandle(device), &value))
+	return int64(value), resultError("cna_storage_device_get_total_space", code)
+}
+
+func nativeStorageDeviceIsConnected(device uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_storage_device_get_is_connected(C.CnaGoHandle(device), &value))
+	return value != 0, resultError("cna_storage_device_get_is_connected", code)
+}
+
+func nativeStorageDeviceDeleteContainer(device uint64, titleName string) error {
+	data := storageStringArg(titleName)
+	code := uint32(C.cna_go_storage_device_delete_container(
+		C.CnaGoHandle(device), data, C.uint64_t(len(titleName))))
+	runtime.KeepAlive(titleName)
+	return resultError("cna_storage_device_delete_container", code)
+}
+
+func nativeStorageDeviceDestroy(device uint64) error {
+	return resultError("cna_storage_device_destroy",
+		uint32(C.cna_go_storage_device_destroy(C.CnaGoHandle(device))))
+}
+
+func nativeStorageContainerOpen(device uint64, displayName string) (uint64, error) {
+	data := storageStringArg(displayName)
+	var container C.CnaGoHandle
+	code := uint32(C.cna_go_storage_container_open(
+		C.CnaGoHandle(device), data, C.uint64_t(len(displayName)), &container))
+	runtime.KeepAlive(displayName)
+	return uint64(container), resultError("cna_storage_container_open", code)
+}
+
+func nativeStorageContainerDisplayName(container uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_storage_container_get_display_name_size(C.CnaGoHandle(container), &byteCount))
+	if err := resultError("cna_storage_container_get_display_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_storage_container_copy_display_name(
+		C.CnaGoHandle(container), (*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_storage_container_copy_display_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeStorageContainerIsDisposed(container uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_storage_container_get_is_disposed(C.CnaGoHandle(container), &value))
+	return value != 0, resultError("cna_storage_container_get_is_disposed", code)
+}
+
+func nativeStorageContainerDevice(container uint64) (uint64, error) {
+	var device C.CnaGoHandle
+	code := uint32(C.cna_go_storage_container_get_storage_device(C.CnaGoHandle(container), &device))
+	return uint64(device), resultError("cna_storage_container_get_storage_device", code)
+}
+
+func nativeStorageContainerDispose(container uint64) error {
+	return resultError("cna_storage_container_dispose",
+		uint32(C.cna_go_storage_container_dispose(C.CnaGoHandle(container))))
+}
+
+func nativeStorageContainerDestroy(container uint64) error {
+	return resultError("cna_storage_container_destroy",
+		uint32(C.cna_go_storage_container_destroy(C.CnaGoHandle(container))))
+}
+
+func nativeStorageContainerCreateDirectory(container uint64, directory string) error {
+	data := storageStringArg(directory)
+	code := uint32(C.cna_go_storage_container_create_directory(
+		C.CnaGoHandle(container), data, C.uint64_t(len(directory))))
+	runtime.KeepAlive(directory)
+	return resultError("cna_storage_container_create_directory", code)
+}
+
+func nativeStorageContainerDeleteDirectory(container uint64, directory string) error {
+	data := storageStringArg(directory)
+	code := uint32(C.cna_go_storage_container_delete_directory(
+		C.CnaGoHandle(container), data, C.uint64_t(len(directory))))
+	runtime.KeepAlive(directory)
+	return resultError("cna_storage_container_delete_directory", code)
+}
+
+func nativeStorageContainerDirectoryExists(container uint64, directory string) (bool, error) {
+	data := storageStringArg(directory)
+	var value C.uint8_t
+	code := uint32(C.cna_go_storage_container_directory_exists(
+		C.CnaGoHandle(container), data, C.uint64_t(len(directory)), &value))
+	runtime.KeepAlive(directory)
+	return value != 0, resultError("cna_storage_container_directory_exists", code)
+}
+
+func nativeStorageContainerFileExists(container uint64, file string) (bool, error) {
+	data := storageStringArg(file)
+	var value C.uint8_t
+	code := uint32(C.cna_go_storage_container_file_exists(
+		C.CnaGoHandle(container), data, C.uint64_t(len(file)), &value))
+	runtime.KeepAlive(file)
+	return value != 0, resultError("cna_storage_container_file_exists", code)
+}
+
+func nativeStorageContainerDeleteFile(container uint64, file string) error {
+	data := storageStringArg(file)
+	code := uint32(C.cna_go_storage_container_delete_file(
+		C.CnaGoHandle(container), data, C.uint64_t(len(file))))
+	runtime.KeepAlive(file)
+	return resultError("cna_storage_container_delete_file", code)
+}
+
+// nativeStorageContainerNames is the two-step enumeration BOTH GetDirectoryNames
+// and GetFileNames use: a count, then one copy per index. The count and the
+// copies are separate CNA calls, so a directory that changes between them would
+// be seen half-changed -- which is exactly what the reference's own
+// Directory.GetFiles cannot promise either.
+func nativeStorageContainerNames(container uint64, pattern string, directories bool) ([]string, error) {
+	data := storageStringArg(pattern)
+	var count C.uint64_t
+	var code uint32
+	if directories {
+		code = uint32(C.cna_go_storage_container_get_directory_name_count(
+			C.CnaGoHandle(container), data, C.uint64_t(len(pattern)), &count))
+	} else {
+		code = uint32(C.cna_go_storage_container_get_file_name_count(
+			C.CnaGoHandle(container), data, C.uint64_t(len(pattern)), &count))
+	}
+	route := "cna_storage_container_get_file_name_count"
+	if directories {
+		route = "cna_storage_container_get_directory_name_count"
+	}
+	if err := resultError(route, code); err != nil {
+		runtime.KeepAlive(pattern)
+		return nil, err
+	}
+	names := make([]string, 0, int(count))
+	for index := C.uint64_t(0); index < count; index++ {
+		buffer := make([]byte, 512)
+		var copied C.uint64_t
+		if directories {
+			code = uint32(C.cna_go_storage_container_copy_directory_name(
+				C.CnaGoHandle(container), data, C.uint64_t(len(pattern)), index,
+				(*C.char)(unsafe.Pointer(&buffer[0])), C.uint64_t(len(buffer)), &copied))
+		} else {
+			code = uint32(C.cna_go_storage_container_copy_file_name(
+				C.CnaGoHandle(container), data, C.uint64_t(len(pattern)), index,
+				(*C.char)(unsafe.Pointer(&buffer[0])), C.uint64_t(len(buffer)), &copied))
+		}
+		copyRoute := "cna_storage_container_copy_file_name"
+		if directories {
+			copyRoute = "cna_storage_container_copy_directory_name"
+		}
+		if err := resultError(copyRoute, code); err != nil {
+			runtime.KeepAlive(pattern)
+			return nil, err
+		}
+		names = append(names, string(buffer[:int(copied)]))
+	}
+	runtime.KeepAlive(pattern)
+	return names, nil
+}
+
+func nativeStorageContainerCreateFile(container uint64, file string) (uint64, error) {
+	data := storageStringArg(file)
+	var stream C.CnaGoHandle
+	code := uint32(C.cna_go_storage_container_create_file(
+		C.CnaGoHandle(container), data, C.uint64_t(len(file)), &stream))
+	runtime.KeepAlive(file)
+	return uint64(stream), resultError("cna_storage_container_create_file", code)
+}
+
+// nativeStorageContainerOpenFile serves all THREE OpenFile overloads. The
+// reference's shorter two forward to the longest with defaults, so one Go
+// wrapper with a mode selector keeps the three CNA routes reachable without
+// pretending they are one.
+func nativeStorageContainerOpenFile(container uint64, file string, mode uint32, access uint32, share uint32, arity int) (uint64, error) {
+	data := storageStringArg(file)
+	var stream C.CnaGoHandle
+	var code uint32
+	var route string
+	switch arity {
+	case 1:
+		route = "cna_storage_container_open_file"
+		code = uint32(C.cna_go_storage_container_open_file(
+			C.CnaGoHandle(container), data, C.uint64_t(len(file)), C.uint32_t(mode), &stream))
+	case 2:
+		route = "cna_storage_container_open_file_access"
+		code = uint32(C.cna_go_storage_container_open_file_access(
+			C.CnaGoHandle(container), data, C.uint64_t(len(file)),
+			C.uint32_t(mode), C.uint32_t(access), &stream))
+	default:
+		route = "cna_storage_container_open_file_share"
+		code = uint32(C.cna_go_storage_container_open_file_share(
+			C.CnaGoHandle(container), data, C.uint64_t(len(file)),
+			C.uint32_t(mode), C.uint32_t(access), C.uint32_t(share), &stream))
+	}
+	runtime.KeepAlive(file)
+	return uint64(stream), resultError(route, code)
+}
+
+func nativeStorageStreamRead(stream uint64, destination []byte) (int, error) {
+	if len(destination) == 0 {
+		return 0, nil
+	}
+	var read C.uint64_t
+	code := uint32(C.cna_go_storage_stream_read(C.CnaGoHandle(stream),
+		(*C.uint8_t)(unsafe.Pointer(&destination[0])), C.uint64_t(len(destination)), &read))
+	return int(read), resultError("cna_storage_stream_read", code)
+}
+
+func nativeStorageStreamWrite(stream uint64, data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	return resultError("cna_storage_stream_write",
+		uint32(C.cna_go_storage_stream_write(C.CnaGoHandle(stream),
+			(*C.uint8_t)(unsafe.Pointer(&data[0])), C.uint64_t(len(data)))))
+}
+
+func nativeStorageStreamSeek(stream uint64, offset int64, origin uint32) (int64, error) {
+	var position C.int64_t
+	code := uint32(C.cna_go_storage_stream_seek(C.CnaGoHandle(stream),
+		C.int64_t(offset), C.uint32_t(origin), &position))
+	return int64(position), resultError("cna_storage_stream_seek", code)
+}
+
+func nativeStorageStreamPosition(stream uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_storage_stream_get_position(C.CnaGoHandle(stream), &value))
+	return int64(value), resultError("cna_storage_stream_get_position", code)
+}
+
+func nativeStorageStreamLength(stream uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_storage_stream_get_length(C.CnaGoHandle(stream), &value))
+	return int64(value), resultError("cna_storage_stream_get_length", code)
+}
+
+func nativeStorageStreamSetLength(stream uint64, length int64) error {
+	return resultError("cna_storage_stream_set_length",
+		uint32(C.cna_go_storage_stream_set_length(C.CnaGoHandle(stream), C.int64_t(length))))
+}
+
+func nativeStorageStreamCanRead(stream uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_storage_stream_get_can_read(C.CnaGoHandle(stream), &value))
+	return value != 0, resultError("cna_storage_stream_get_can_read", code)
+}
+
+func nativeStorageStreamCanWrite(stream uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_storage_stream_get_can_write(C.CnaGoHandle(stream), &value))
+	return value != 0, resultError("cna_storage_stream_get_can_write", code)
+}
+
+func nativeStorageStreamCanSeek(stream uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_storage_stream_get_can_seek(C.CnaGoHandle(stream), &value))
+	return value != 0, resultError("cna_storage_stream_get_can_seek", code)
+}
+
+func nativeStorageStreamFlush(stream uint64) error {
+	return resultError("cna_storage_stream_flush",
+		uint32(C.cna_go_storage_stream_flush(C.CnaGoHandle(stream))))
+}
+
+func nativeStorageStreamClose(stream uint64) error {
+	return resultError("cna_storage_stream_close",
+		uint32(C.cna_go_storage_stream_close(C.CnaGoHandle(stream))))
+}
+
+// The three `_ext` routes, which are NOT XNA surface. They exist so a test can
+// isolate itself in a project-controlled root and then PROVE it.
+
+func nativeStorageSetAppName(name string) error {
+	data := storageStringArg(name)
+	code := uint32(C.cna_go_storage_set_app_name_ext(data, C.uint64_t(len(name))))
+	runtime.KeepAlive(name)
+	return resultError("cna_storage_set_app_name_ext", code)
+}
+
+func nativeStorageRoot() (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_storage_get_root_size_ext(&byteCount))
+	if err := resultError("cna_storage_get_root_size_ext", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_storage_copy_root_ext(
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_storage_copy_root_ext", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}

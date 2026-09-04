@@ -4944,3 +4944,82 @@ func TestModelFamilyIsReachableFromOutsideTheModule(t *testing.T) {
 		t.Fatal("CopyBoneTransformsTo accepted a nil destination")
 	}
 }
+
+// TestStorageIsReachableFromOutsideTheModule is Foundation 91's canary. It pins
+// the exported shape of both Storage types and, more usefully, the two
+// behaviours a consumer reaches with no runtime at all: the selector's argument
+// guards and the End-twice latch.
+func TestStorageIsReachableFromOutsideTheModule(t *testing.T) {
+	var _ func(framework.AsyncCallback, any) (*framework.AsyncResult, error) = storage.StorageDeviceBeginShowSelectorByAsyncCallbackAndObject
+	var _ func(framework.PlayerIndex, framework.AsyncCallback, any) (*framework.AsyncResult, error) = storage.StorageDeviceBeginShowSelectorByPlayerIndexAndAsyncCallbackAndObject
+	var _ func(int32, int32, framework.AsyncCallback, any) (*framework.AsyncResult, error) = storage.StorageDeviceBeginShowSelectorByInt32AndInt32AndAsyncCallbackAndObject
+	var _ func(framework.PlayerIndex, int32, int32, framework.AsyncCallback, any) (*framework.AsyncResult, error) = storage.StorageDeviceBeginShowSelectorByPlayerIndexAndInt32AndInt32AndAsyncCallbackAndObject
+	var _ func(*framework.AsyncResult) (*storage.StorageDevice, error) = storage.StorageDeviceEndShowSelector
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = storage.StorageDeviceAddDeviceChangedHandler
+	var _ func(framework.EventSubscription) error = storage.StorageDeviceRemoveDeviceChangedHandler
+
+	var device *storage.StorageDevice
+	var _ func() (int64, error) = device.FreeSpace
+	var _ func() (int64, error) = device.TotalSpace
+	var _ func() (bool, error) = device.IsConnected
+	var _ func(string) error = device.DeleteContainer
+	var _ func(string, framework.AsyncCallback, any) (*framework.AsyncResult, error) = device.BeginOpenContainer
+	var _ func(*framework.AsyncResult) (*storage.StorageContainer, error) = device.EndOpenContainer
+
+	var container *storage.StorageContainer
+	var _ func() (string, error) = container.DisplayName
+	var _ func() (*storage.StorageDevice, error) = container.StorageDevice
+	var _ func() (bool, error) = container.IsDisposed
+	var _ func() error = container.Dispose
+	var _ func() error = container.Finalize
+	var _ func(string) error = container.CreateDirectory
+	var _ func(string) error = container.DeleteDirectory
+	var _ func(string) (bool, error) = container.DirectoryExists
+	var _ func(string) (bool, error) = container.FileExists
+	var _ func(string) error = container.DeleteFile
+	var _ func() ([]string, error) = container.GetDirectoryNamesByNone
+	var _ func(string) ([]string, error) = container.GetDirectoryNamesByString
+	var _ func() ([]string, error) = container.GetFileNamesByNone
+	var _ func(string) ([]string, error) = container.GetFileNamesByString
+
+	// The four members whose Stream return is a READ-WRITE-SEEKER, which is the
+	// position that needed the direction mechanism extended to returns.
+	var _ func(string) (io.ReadWriteSeeker, error) = container.CreateFile
+	var _ func(string, framework.FileMode) (io.ReadWriteSeeker, error) = container.OpenFileByStringAndFileMode
+	var _ func(string, framework.FileMode, framework.FileAccess) (io.ReadWriteSeeker, error) = container.OpenFileByStringAndFileModeAndFileAccess
+	var _ func(string, framework.FileMode, framework.FileAccess, framework.FileShare) (io.ReadWriteSeeker, error) = container.OpenFileByStringAndFileModeAndFileAccessAndFileShare
+
+	// The selector's guards, which need no runtime.
+	if _, err := storage.StorageDeviceBeginShowSelectorByPlayerIndexAndInt32AndInt32AndAsyncCallbackAndObject(
+		framework.PlayerIndex(4), 0, 1, nil, nil); err == nil {
+		t.Fatal("player 4 was accepted; the reference's range is 0..3")
+	}
+	if _, err := storage.StorageDeviceBeginShowSelectorByPlayerIndexAndInt32AndInt32AndAsyncCallbackAndObject(
+		framework.PlayerIndexOne, -1, 1, nil, nil); err == nil {
+		t.Fatal("a negative sizeInBytes was accepted")
+	}
+
+	// End refuses a result no Begin produced, which is the reference's `isinst`
+	// failure reported as ArgumentNullException.
+	if _, err := storage.StorageDeviceEndShowSelector(
+		framework.NewCompletedAsyncResult(nil)); err == nil {
+		t.Fatal("EndShowSelector accepted a stray result")
+	}
+	if _, err := storage.StorageDeviceEndShowSelector(nil); err == nil {
+		t.Fatal("EndShowSelector accepted nil")
+	}
+
+	// The fake-async shape a consumer observes.
+	result := framework.NewCompletedAsyncResult("state")
+	if !result.IsCompleted() || !result.CompletedSynchronously() {
+		t.Fatal("the async result reported incomplete; XNA completes before Begin returns")
+	}
+	if result.AsyncState() != "state" {
+		t.Fatal("the async result dropped its state")
+	}
+	select {
+	case <-result.AsyncWaitHandle():
+	default:
+		t.Fatal("the wait handle was not already signalled")
+	}
+}

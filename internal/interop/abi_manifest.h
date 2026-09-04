@@ -829,6 +829,72 @@ typedef CNA_Result (*cna_mouse_set_position_fn)(CNA_Handle, int32_t, int32_t);
 typedef CNA_Result (*cna_mouse_get_window_handle_fn)(CNA_Handle, uint64_t*);
 typedef CNA_Result (*cna_mouse_set_window_handle_fn)(CNA_Handle, uint64_t);
 
+
+/* Foundation 91 -- the Storage family. Every type here is an opaque handle or a
+   string view, so unlike the Input family there is no struct layout to mirror
+   and no MANIFEST_LAYOUT_AGREEMENT to prove: what has to agree is the parameter
+   lists, which ROUTE_TYPE_PAIRINGS checks against the canonical headers.
+
+   The three `_ext` routes are bound deliberately and are NOT XNA surface. They
+   are how the test harness proves it is operating inside a project-controlled
+   root: set_app_name_ext isolates it, and copy_root_ext is what the assertion
+   reads back. Binding them is the same judgement that made
+   MICROPHONE_CAPTURE_CALLS a counter -- a safety claim is worth more when
+   something measures it. */
+#ifndef CNA_C_STORAGE_H
+typedef CNA_Handle CNA_StorageDeviceHandle;
+typedef CNA_Handle CNA_StorageContainerHandle;
+typedef CNA_Handle CNA_StorageStreamHandle;
+typedef uint32_t CNA_FileMode;
+typedef uint32_t CNA_FileAccess;
+typedef uint32_t CNA_FileShare;
+typedef uint32_t CNA_SeekOrigin;
+typedef void (*CNA_StorageCompletionCallback)(void*);
+#endif
+typedef CNA_Result (*cna_storage_device_show_selector_fn)(CNA_StorageCompletionCallback, void *, CNA_StorageDeviceHandle *);
+typedef CNA_Result (*cna_storage_device_show_selector_for_player_fn)(CNA_PlayerIndex, CNA_StorageCompletionCallback, void *, CNA_StorageDeviceHandle *);
+typedef CNA_Result (*cna_storage_device_show_selector_with_space_fn)(int32_t, int32_t, CNA_StorageCompletionCallback, void *, CNA_StorageDeviceHandle *);
+typedef CNA_Result (*cna_storage_device_show_selector_for_player_with_space_fn)(CNA_PlayerIndex, int32_t, int32_t, CNA_StorageCompletionCallback, void *, CNA_StorageDeviceHandle *);
+typedef CNA_Result (*cna_storage_device_get_free_space_fn)(CNA_StorageDeviceHandle, int64_t *);
+typedef CNA_Result (*cna_storage_device_get_is_connected_fn)(CNA_StorageDeviceHandle, CNA_Bool *);
+typedef CNA_Result (*cna_storage_device_get_total_space_fn)(CNA_StorageDeviceHandle, int64_t *);
+typedef CNA_Result (*cna_storage_device_delete_container_fn)(CNA_StorageDeviceHandle, CNA_StringView);
+typedef CNA_Result (*cna_storage_device_destroy_fn)(CNA_StorageDeviceHandle);
+typedef CNA_Result (*cna_storage_container_open_fn)(CNA_StorageDeviceHandle, CNA_StringView, CNA_StorageCompletionCallback, void *, CNA_StorageContainerHandle *);
+typedef CNA_Result (*cna_storage_container_get_display_name_size_fn)(CNA_StorageContainerHandle, uint64_t *);
+typedef CNA_Result (*cna_storage_container_copy_display_name_fn)(CNA_StorageContainerHandle, char *, uint64_t, uint64_t *);
+typedef CNA_Result (*cna_storage_container_get_is_disposed_fn)(CNA_StorageContainerHandle, CNA_Bool *);
+typedef CNA_Result (*cna_storage_container_get_storage_device_fn)(CNA_StorageContainerHandle, CNA_StorageDeviceHandle *);
+typedef CNA_Result (*cna_storage_container_dispose_fn)(CNA_StorageContainerHandle);
+typedef CNA_Result (*cna_storage_container_create_directory_fn)(CNA_StorageContainerHandle, CNA_StringView);
+typedef CNA_Result (*cna_storage_container_directory_exists_fn)(CNA_StorageContainerHandle, CNA_StringView, CNA_Bool *);
+typedef CNA_Result (*cna_storage_container_delete_directory_fn)(CNA_StorageContainerHandle, CNA_StringView);
+typedef CNA_Result (*cna_storage_container_file_exists_fn)(CNA_StorageContainerHandle, CNA_StringView, CNA_Bool *);
+typedef CNA_Result (*cna_storage_container_delete_file_fn)(CNA_StorageContainerHandle, CNA_StringView);
+typedef CNA_Result (*cna_storage_container_get_directory_name_count_fn)(CNA_StorageContainerHandle, CNA_StringView, uint64_t *);
+typedef CNA_Result (*cna_storage_container_copy_directory_name_fn)(CNA_StorageContainerHandle, CNA_StringView, uint64_t, char *, uint64_t, uint64_t *);
+typedef CNA_Result (*cna_storage_container_get_file_name_count_fn)(CNA_StorageContainerHandle, CNA_StringView, uint64_t *);
+typedef CNA_Result (*cna_storage_container_copy_file_name_fn)(CNA_StorageContainerHandle, CNA_StringView, uint64_t, char *, uint64_t, uint64_t *);
+typedef CNA_Result (*cna_storage_container_create_file_fn)(CNA_StorageContainerHandle, CNA_StringView, CNA_StorageStreamHandle *);
+typedef CNA_Result (*cna_storage_container_open_file_fn)(CNA_StorageContainerHandle, CNA_StringView, CNA_FileMode, CNA_StorageStreamHandle *);
+typedef CNA_Result (*cna_storage_container_open_file_access_fn)(CNA_StorageContainerHandle, CNA_StringView, CNA_FileMode, CNA_FileAccess, CNA_StorageStreamHandle *);
+typedef CNA_Result (*cna_storage_container_open_file_share_fn)(CNA_StorageContainerHandle, CNA_StringView, CNA_FileMode, CNA_FileAccess, CNA_FileShare, CNA_StorageStreamHandle *);
+typedef CNA_Result (*cna_storage_container_destroy_fn)(CNA_StorageContainerHandle);
+typedef CNA_Result (*cna_storage_stream_read_fn)(CNA_StorageStreamHandle, uint8_t *, uint64_t, uint64_t *);
+typedef CNA_Result (*cna_storage_stream_write_fn)(CNA_StorageStreamHandle, const  uint8_t *, uint64_t);
+typedef CNA_Result (*cna_storage_stream_seek_fn)(CNA_StorageStreamHandle, int64_t, CNA_SeekOrigin, int64_t *);
+typedef CNA_Result (*cna_storage_stream_get_position_fn)(CNA_StorageStreamHandle, int64_t *);
+typedef CNA_Result (*cna_storage_stream_get_length_fn)(CNA_StorageStreamHandle, int64_t *);
+typedef CNA_Result (*cna_storage_stream_set_length_fn)(CNA_StorageStreamHandle, int64_t);
+typedef CNA_Result (*cna_storage_stream_get_can_read_fn)(CNA_StorageStreamHandle, CNA_Bool *);
+typedef CNA_Result (*cna_storage_stream_get_can_write_fn)(CNA_StorageStreamHandle, CNA_Bool *);
+typedef CNA_Result (*cna_storage_stream_get_can_seek_fn)(CNA_StorageStreamHandle, CNA_Bool *);
+typedef CNA_Result (*cna_storage_stream_flush_fn)(CNA_StorageStreamHandle);
+typedef CNA_Result (*cna_storage_stream_close_fn)(CNA_StorageStreamHandle);
+typedef CNA_Result (*cna_storage_set_app_name_ext_fn)(CNA_StringView);
+typedef CNA_Result (*cna_storage_get_root_size_ext_fn)(uint64_t *);
+typedef CNA_Result (*cna_storage_copy_root_ext_fn)(char *, uint64_t, uint64_t *);
+
 typedef uint32_t (*cna_get_abi_version_fn)(void);
 typedef CNA_Result (*cna_error_get_last_message_size_fn)(uint64_t*);
 typedef CNA_Result (*cna_error_copy_last_message_fn)(char*, uint64_t, uint64_t*);
@@ -1586,6 +1652,49 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_sprite_batch_end) \
     X(cna_sprite_batch_destroy) \
     X(cna_keyboard_get_state) \
+    X(cna_storage_device_show_selector) \
+    X(cna_storage_device_show_selector_for_player) \
+    X(cna_storage_device_show_selector_with_space) \
+    X(cna_storage_device_show_selector_for_player_with_space) \
+    X(cna_storage_device_get_free_space) \
+    X(cna_storage_device_get_is_connected) \
+    X(cna_storage_device_get_total_space) \
+    X(cna_storage_device_delete_container) \
+    X(cna_storage_device_destroy) \
+    X(cna_storage_container_open) \
+    X(cna_storage_container_get_display_name_size) \
+    X(cna_storage_container_copy_display_name) \
+    X(cna_storage_container_get_is_disposed) \
+    X(cna_storage_container_get_storage_device) \
+    X(cna_storage_container_dispose) \
+    X(cna_storage_container_create_directory) \
+    X(cna_storage_container_directory_exists) \
+    X(cna_storage_container_delete_directory) \
+    X(cna_storage_container_file_exists) \
+    X(cna_storage_container_delete_file) \
+    X(cna_storage_container_get_directory_name_count) \
+    X(cna_storage_container_copy_directory_name) \
+    X(cna_storage_container_get_file_name_count) \
+    X(cna_storage_container_copy_file_name) \
+    X(cna_storage_container_create_file) \
+    X(cna_storage_container_open_file) \
+    X(cna_storage_container_open_file_access) \
+    X(cna_storage_container_open_file_share) \
+    X(cna_storage_container_destroy) \
+    X(cna_storage_stream_read) \
+    X(cna_storage_stream_write) \
+    X(cna_storage_stream_seek) \
+    X(cna_storage_stream_get_position) \
+    X(cna_storage_stream_get_length) \
+    X(cna_storage_stream_set_length) \
+    X(cna_storage_stream_get_can_read) \
+    X(cna_storage_stream_get_can_write) \
+    X(cna_storage_stream_get_can_seek) \
+    X(cna_storage_stream_flush) \
+    X(cna_storage_stream_close) \
+    X(cna_storage_set_app_name_ext) \
+    X(cna_storage_get_root_size_ext) \
+    X(cna_storage_copy_root_ext) \
     X(cna_gamepad_get_capabilities) \
     X(cna_gamepad_get_state) \
     X(cna_gamepad_get_state_with_dead_zone) \

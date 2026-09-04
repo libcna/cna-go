@@ -605,6 +605,8 @@
     "signatureAdapterCarriers": 6
   },
   "languageAdapters": [
+    "AsyncCallback",
+    "AsyncResult",
     "DictionaryKeyCollection<TKey,TValue>",
     "DictionaryValueCollection<TKey,TValue>",
     "EventArgs",
@@ -612,6 +614,9 @@
     "EventSource<T>",
     "EventSubscription",
     "ExceptionReference",
+    "FileAccess",
+    "FileMode",
+    "FileShare",
     "GameCallbacks",
     "IEqualityComparer<T>",
     "Iterator<T>",

@@ -18,7 +18,7 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 206,
+    "COMPLETE_TYPES": 208,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
@@ -28,7 +28,7 @@
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 7,
+    "FRONTIER_FAMILIES": 6,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 51,
+    "GLOBAL_ACTIONABLE_LOCAL": 49,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 51,
-    "MISSING_TYPES": 51,
+    "MISSING_TYPE": 49,
+    "MISSING_TYPES": 49,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3256,
-    "TARGET_TYPES": 206,
-    "TOTAL_DIAGNOSTICS": 51,
+    "TARGET_MEMBERS": 3289,
+    "TARGET_TYPES": 208,
+    "TOTAL_DIAGNOSTICS": 49,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -397,18 +397,6 @@
       "xna": "Microsoft.Xna.Framework.Media.VideoPlayer",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:VideoPlayer",
       "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Storage.StorageContainer",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageContainer",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Storage.StorageDevice",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDevice",
-      "message": "mapped Go type is absent"
     }
   ],
   "completeTypes": [
@@ -613,6 +601,8 @@
     "Microsoft.Xna.Framework.Quaternion",
     "Microsoft.Xna.Framework.Ray",
     "Microsoft.Xna.Framework.Rectangle",
+    "Microsoft.Xna.Framework.Storage.StorageContainer",
+    "Microsoft.Xna.Framework.Storage.StorageDevice",
     "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
     "Microsoft.Xna.Framework.TitleContainer",
     "Microsoft.Xna.Framework.Vector2",
@@ -669,9 +659,7 @@
     "Microsoft.Xna.Framework.Media.Song",
     "Microsoft.Xna.Framework.Media.SongCollection",
     "Microsoft.Xna.Framework.Media.Video",
-    "Microsoft.Xna.Framework.Media.VideoPlayer",
-    "Microsoft.Xna.Framework.Storage.StorageContainer",
-    "Microsoft.Xna.Framework.Storage.StorageDevice"
+    "Microsoft.Xna.Framework.Media.VideoPlayer"
   ],
   "interfaceWitnessProjections": [
     {
@@ -6703,7 +6691,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 47,
+      "projectedTypes": 49,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6743,17 +6731,6 @@
         "Microsoft.Xna.Framework.Audio.WaveBank"
       ],
       "remaining": 5,
-      "verdict": "PASS"
-    },
-    {
-      "family": "Storage",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "~65/12 CNA routes; the async selector pattern and the container's file surface need a System.IO projection decision, and every test must stay inside a project-controlled temporary root",
-      "types": [
-        "Microsoft.Xna.Framework.Storage.StorageContainer",
-        "Microsoft.Xna.Framework.Storage.StorageDevice"
-      ],
-      "remaining": 2,
       "verdict": "PASS"
     },
     {
@@ -9853,7 +9830,7 @@
       "clrMembers": 1,
       "projectedMembers": 0,
       "declaringTypes": 29,
-      "projectedTypes": 8,
+      "projectedTypes": 9,
       "rationale": "adds no Go surface of its own: no Disposable interface, no Close alias, no io.Closer adaptation, and no finalizer. Twenty-eight of the twenty-nine declaring types already declare Dispose publicly and it maps as an ordinary member; GraphicsDeviceManager implements it explicitly, so its Dispose() is not public surface and nothing is projected for it. Ownership and lifetime remain a per-type question that this relationship does not answer.",
       "verdict": "PASS"
     },
@@ -11743,7 +11720,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "2f73f2fde6746436551ef64f78d102750bc0c39a9be27d17a80b37a3cfbbbe7c",
+    "mappingSha256": "49a3c0b79f519b0fdb6a9de198da7175d431d5f809de8d549f0a668152add220",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

@@ -3583,3 +3583,188 @@ CnaGoResult cna_go_gamepad_get_state(
     out_analog[5] = state.analog.right_trigger;
     return CNA_GO_RESULT_SUCCESS;
 }
+
+
+/* Foundation 91 -- the Storage family, forty-three routes.
+
+   Two flattenings the wrappers perform. A CNA_StringView becomes a pointer and
+   a length, which is what every string route in this bridge already does. And
+   the CNA_StorageCompletionCallback every selector and open route accepts is
+   passed as NULL: XNA's own AsyncCallback is invoked from MANAGED code, by
+   Begin itself, before it returns -- so a native callback would fire a second
+   time for the same completion.
+
+   The three `_ext` routes are not XNA surface. They exist here so the test
+   harness can isolate itself in a project-controlled root and then PROVE it,
+   which is the same judgement that made MICROPHONE_CAPTURE_CALLS a counter. */
+CnaGoResult cna_go_storage_device_show_selector(CnaGoHandle* out_device) {
+    return api.cna_storage_device_show_selector(NULL, NULL, (CNA_StorageDeviceHandle*)out_device);
+}
+
+CnaGoResult cna_go_storage_device_show_selector_for_player(uint32_t player, CnaGoHandle* out_device) {
+    return api.cna_storage_device_show_selector_for_player((CNA_PlayerIndex)player, NULL, NULL, (CNA_StorageDeviceHandle*)out_device);
+}
+
+CnaGoResult cna_go_storage_device_show_selector_with_space(int32_t size_in_bytes, int32_t directory_count, CnaGoHandle* out_device) {
+    return api.cna_storage_device_show_selector_with_space(size_in_bytes, directory_count, NULL, NULL, (CNA_StorageDeviceHandle*)out_device);
+}
+
+CnaGoResult cna_go_storage_device_show_selector_for_player_with_space(uint32_t player, int32_t size_in_bytes, int32_t directory_count, CnaGoHandle* out_device) {
+    return api.cna_storage_device_show_selector_for_player_with_space((CNA_PlayerIndex)player, size_in_bytes, directory_count, NULL, NULL, (CNA_StorageDeviceHandle*)out_device);
+}
+
+CnaGoResult cna_go_storage_device_get_free_space(CnaGoHandle device, int64_t* out_free_space) {
+    return api.cna_storage_device_get_free_space((CNA_StorageDeviceHandle)device, out_free_space);
+}
+
+CnaGoResult cna_go_storage_device_get_is_connected(CnaGoHandle device, uint8_t* out_is_connected) {
+    return api.cna_storage_device_get_is_connected((CNA_StorageDeviceHandle)device, (CNA_Bool*)out_is_connected);
+}
+
+CnaGoResult cna_go_storage_device_get_total_space(CnaGoHandle device, int64_t* out_total_space) {
+    return api.cna_storage_device_get_total_space((CNA_StorageDeviceHandle)device, out_total_space);
+}
+
+CnaGoResult cna_go_storage_device_delete_container(CnaGoHandle device, const char* title_name, uint64_t title_name_length) {
+    return api.cna_storage_device_delete_container((CNA_StorageDeviceHandle)device, cna_go_view(title_name, title_name_length));
+}
+
+CnaGoResult cna_go_storage_device_destroy(CnaGoHandle device) {
+    return api.cna_storage_device_destroy((CNA_StorageDeviceHandle)device);
+}
+
+CnaGoResult cna_go_storage_container_open(CnaGoHandle device, const char* display_name, uint64_t display_name_length, CnaGoHandle* out_container) {
+    return api.cna_storage_container_open((CNA_StorageDeviceHandle)device, cna_go_view(display_name, display_name_length), NULL, NULL, (CNA_StorageContainerHandle*)out_container);
+}
+
+CnaGoResult cna_go_storage_container_get_display_name_size(CnaGoHandle container, uint64_t* out_bytes) {
+    return api.cna_storage_container_get_display_name_size((CNA_StorageContainerHandle)container, out_bytes);
+}
+
+CnaGoResult cna_go_storage_container_copy_display_name(CnaGoHandle container, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_storage_container_copy_display_name((CNA_StorageContainerHandle)container, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_storage_container_get_is_disposed(CnaGoHandle container, uint8_t* out_is_disposed) {
+    return api.cna_storage_container_get_is_disposed((CNA_StorageContainerHandle)container, (CNA_Bool*)out_is_disposed);
+}
+
+CnaGoResult cna_go_storage_container_get_storage_device(CnaGoHandle container, CnaGoHandle* out_device) {
+    return api.cna_storage_container_get_storage_device((CNA_StorageContainerHandle)container, (CNA_StorageDeviceHandle*)out_device);
+}
+
+CnaGoResult cna_go_storage_container_dispose(CnaGoHandle container) {
+    return api.cna_storage_container_dispose((CNA_StorageContainerHandle)container);
+}
+
+CnaGoResult cna_go_storage_container_create_directory(CnaGoHandle container, const char* directory, uint64_t directory_length) {
+    return api.cna_storage_container_create_directory((CNA_StorageContainerHandle)container, cna_go_view(directory, directory_length));
+}
+
+CnaGoResult cna_go_storage_container_directory_exists(CnaGoHandle container, const char* directory, uint64_t directory_length, uint8_t* out_exists) {
+    return api.cna_storage_container_directory_exists((CNA_StorageContainerHandle)container, cna_go_view(directory, directory_length), (CNA_Bool*)out_exists);
+}
+
+CnaGoResult cna_go_storage_container_delete_directory(CnaGoHandle container, const char* directory, uint64_t directory_length) {
+    return api.cna_storage_container_delete_directory((CNA_StorageContainerHandle)container, cna_go_view(directory, directory_length));
+}
+
+CnaGoResult cna_go_storage_container_file_exists(CnaGoHandle container, const char* file, uint64_t file_length, uint8_t* out_exists) {
+    return api.cna_storage_container_file_exists((CNA_StorageContainerHandle)container, cna_go_view(file, file_length), (CNA_Bool*)out_exists);
+}
+
+CnaGoResult cna_go_storage_container_delete_file(CnaGoHandle container, const char* file, uint64_t file_length) {
+    return api.cna_storage_container_delete_file((CNA_StorageContainerHandle)container, cna_go_view(file, file_length));
+}
+
+CnaGoResult cna_go_storage_container_get_directory_name_count(CnaGoHandle container, const char* search_pattern, uint64_t search_pattern_length, uint64_t* out_count) {
+    return api.cna_storage_container_get_directory_name_count((CNA_StorageContainerHandle)container, cna_go_view(search_pattern, search_pattern_length), out_count);
+}
+
+CnaGoResult cna_go_storage_container_copy_directory_name(CnaGoHandle container, const char* search_pattern, uint64_t search_pattern_length, uint64_t index, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_storage_container_copy_directory_name((CNA_StorageContainerHandle)container, cna_go_view(search_pattern, search_pattern_length), index, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_storage_container_get_file_name_count(CnaGoHandle container, const char* search_pattern, uint64_t search_pattern_length, uint64_t* out_count) {
+    return api.cna_storage_container_get_file_name_count((CNA_StorageContainerHandle)container, cna_go_view(search_pattern, search_pattern_length), out_count);
+}
+
+CnaGoResult cna_go_storage_container_copy_file_name(CnaGoHandle container, const char* search_pattern, uint64_t search_pattern_length, uint64_t index, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_storage_container_copy_file_name((CNA_StorageContainerHandle)container, cna_go_view(search_pattern, search_pattern_length), index, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_storage_container_create_file(CnaGoHandle container, const char* file, uint64_t file_length, CnaGoHandle* out_stream) {
+    return api.cna_storage_container_create_file((CNA_StorageContainerHandle)container, cna_go_view(file, file_length), (CNA_StorageStreamHandle*)out_stream);
+}
+
+CnaGoResult cna_go_storage_container_open_file(CnaGoHandle container, const char* file, uint64_t file_length, uint32_t file_mode, CnaGoHandle* out_stream) {
+    return api.cna_storage_container_open_file((CNA_StorageContainerHandle)container, cna_go_view(file, file_length), (CNA_FileMode)file_mode, (CNA_StorageStreamHandle*)out_stream);
+}
+
+CnaGoResult cna_go_storage_container_open_file_access(CnaGoHandle container, const char* file, uint64_t file_length, uint32_t file_mode, uint32_t file_access, CnaGoHandle* out_stream) {
+    return api.cna_storage_container_open_file_access((CNA_StorageContainerHandle)container, cna_go_view(file, file_length), (CNA_FileMode)file_mode, (CNA_FileAccess)file_access, (CNA_StorageStreamHandle*)out_stream);
+}
+
+CnaGoResult cna_go_storage_container_open_file_share(CnaGoHandle container, const char* file, uint64_t file_length, uint32_t file_mode, uint32_t file_access, uint32_t file_share, CnaGoHandle* out_stream) {
+    return api.cna_storage_container_open_file_share((CNA_StorageContainerHandle)container, cna_go_view(file, file_length), (CNA_FileMode)file_mode, (CNA_FileAccess)file_access, (CNA_FileShare)file_share, (CNA_StorageStreamHandle*)out_stream);
+}
+
+CnaGoResult cna_go_storage_container_destroy(CnaGoHandle container) {
+    return api.cna_storage_container_destroy((CNA_StorageContainerHandle)container);
+}
+
+CnaGoResult cna_go_storage_stream_read(CnaGoHandle stream, uint8_t* destination, uint64_t capacity, uint64_t* out_read) {
+    return api.cna_storage_stream_read((CNA_StorageStreamHandle)stream, destination, capacity, out_read);
+}
+
+CnaGoResult cna_go_storage_stream_write(CnaGoHandle stream, const uint8_t* data, uint64_t count) {
+    return api.cna_storage_stream_write((CNA_StorageStreamHandle)stream, data, count);
+}
+
+CnaGoResult cna_go_storage_stream_seek(CnaGoHandle stream, int64_t offset, uint32_t origin, int64_t* out_position) {
+    return api.cna_storage_stream_seek((CNA_StorageStreamHandle)stream, offset, (CNA_SeekOrigin)origin, out_position);
+}
+
+CnaGoResult cna_go_storage_stream_get_position(CnaGoHandle stream, int64_t* out_position) {
+    return api.cna_storage_stream_get_position((CNA_StorageStreamHandle)stream, out_position);
+}
+
+CnaGoResult cna_go_storage_stream_get_length(CnaGoHandle stream, int64_t* out_length) {
+    return api.cna_storage_stream_get_length((CNA_StorageStreamHandle)stream, out_length);
+}
+
+CnaGoResult cna_go_storage_stream_set_length(CnaGoHandle stream, int64_t length) {
+    return api.cna_storage_stream_set_length((CNA_StorageStreamHandle)stream, length);
+}
+
+CnaGoResult cna_go_storage_stream_get_can_read(CnaGoHandle stream, uint8_t* out_can_read) {
+    return api.cna_storage_stream_get_can_read((CNA_StorageStreamHandle)stream, (CNA_Bool*)out_can_read);
+}
+
+CnaGoResult cna_go_storage_stream_get_can_write(CnaGoHandle stream, uint8_t* out_can_write) {
+    return api.cna_storage_stream_get_can_write((CNA_StorageStreamHandle)stream, (CNA_Bool*)out_can_write);
+}
+
+CnaGoResult cna_go_storage_stream_get_can_seek(CnaGoHandle stream, uint8_t* out_can_seek) {
+    return api.cna_storage_stream_get_can_seek((CNA_StorageStreamHandle)stream, (CNA_Bool*)out_can_seek);
+}
+
+CnaGoResult cna_go_storage_stream_flush(CnaGoHandle stream) {
+    return api.cna_storage_stream_flush((CNA_StorageStreamHandle)stream);
+}
+
+CnaGoResult cna_go_storage_stream_close(CnaGoHandle stream) {
+    return api.cna_storage_stream_close((CNA_StorageStreamHandle)stream);
+}
+
+CnaGoResult cna_go_storage_set_app_name_ext(const char* app_name, uint64_t app_name_length) {
+    return api.cna_storage_set_app_name_ext(cna_go_view(app_name, app_name_length));
+}
+
+CnaGoResult cna_go_storage_get_root_size_ext(uint64_t* out_bytes) {
+    return api.cna_storage_get_root_size_ext(out_bytes);
+}
+
+CnaGoResult cna_go_storage_copy_root_ext(char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_storage_copy_root_ext(destination, capacity, out_bytes);
+}

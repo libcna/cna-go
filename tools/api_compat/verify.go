@@ -96,6 +96,21 @@ var adapterTypes = map[string]bool{
 	"GameCallbacks":     true,
 	"Iterator":          true,
 	"TimeSpan":          true,
+	// Foundation 91. The three System.IO enums StorageContainer's OpenFile
+	// overloads carry. They are language adapters rather than BCL signature
+	// adapters because an enum has no member SET to pin -- it has values, and
+	// the values are checked against the pinned BCL literals by their own test.
+	"FileMode":   true,
+	"FileAccess": true,
+	"FileShare":  true,
+	// Foundation 91. System.IAsyncResult, which StorageDevice's Begin members
+	// return. It is a language adapter rather than a BCL signature adapter
+	// because the CONCRETE CLR type behind it -- StorageDeviceAsyncResult -- is
+	// `private`, so there is no public CLR type whose member set could be
+	// pinned; what the contract names is the interface, and the four members
+	// below are the whole of it.
+	"AsyncResult":   true,
+	"AsyncCallback": true,
 	// ExceptionReference is the exported interface every System.Exception
 	// signature position widens to. It is a language adapter rather than a
 	// signature adapter because it carries no state: the CONCRETE projection,
@@ -109,6 +124,10 @@ var adapterFunctions = map[string]bool{
 	"EventArgsEmpty":    true,
 	"NewGame":           true,
 	"TimeSpanFromTicks": true,
+	// Foundation 91. The AsyncResult adapter's constructor, which StorageDevice
+	// needs from another package for the reason the ReadOnlyCollection
+	// constructors are exported.
+	"NewCompletedAsyncResult": true,
 }
 
 func init() {
@@ -1950,7 +1969,17 @@ func verifyEventAccessorProjection(result *report, expected *expectedMember, act
 	if expected.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
 		qualifier = "framework."
 	}
-	removal := strings.HasPrefix(actual.Key.Name, "Remove")
+	// A STATIC event's accessors are type-prefixed like every other static
+	// member, so StorageDevice::DeviceChanged projects to
+	// StorageDeviceRemoveDeviceChangedHandler -- which does not START with
+	// "Remove". Stripping the owner's type name first is what makes the test
+	// work for both shapes; before Foundation 91 every projected event was an
+	// instance event and the bare prefix was enough.
+	name := actual.Key.Name
+	if actual.Key.Receiver == "" {
+		name = strings.TrimPrefix(name, expected.Owner[strings.LastIndex(expected.Owner, ".")+1:])
+	}
+	removal := strings.HasPrefix(name, "Remove")
 	if removal {
 		if len(actual.Parameters) != 1 || !eventSubscriptionSpelling.MatchString(actual.Parameters[0]) {
 			fail("event removal must take exactly one %sEventSubscription, found %v", qualifier, actual.Parameters)
@@ -2226,7 +2255,37 @@ func isAdapterMember(key symbolKey) bool {
 	if adapterTypes[key.Receiver] {
 		return true
 	}
-	return key.Receiver == "" && adapterFunctions[key.Name]
+	if key.Receiver == "" && adapterFunctions[key.Name] {
+		return true
+	}
+	return key.Receiver == "" && adapterConstants[key.Name]
+}
+
+// adapterConstants are the enum VALUES a language-adapter enum declares. They
+// are listed one by one rather than admitted by name prefix, because a prefix
+// rule would admit any exported identifier a future edit happened to spell
+// FileModeSomething -- and the whole job of the unexpected-member check is to
+// notice exactly that.
+//
+// Their VALUES are not admitted here. Each is checked against the pinned BCL
+// literal by TestSystemIOEnumValuesMatchTheBCL, which is what keeps this list
+// from being a way to smuggle in a wrong number.
+var adapterConstants = map[string]bool{
+	"FileModeCreateNew":    true,
+	"FileModeCreate":       true,
+	"FileModeOpen":         true,
+	"FileModeOpenOrCreate": true,
+	"FileModeTruncate":     true,
+	"FileModeAppend":       true,
+	"FileAccessRead":       true,
+	"FileAccessWrite":      true,
+	"FileAccessReadWrite":  true,
+	"FileShareNone":        true,
+	"FileShareRead":        true,
+	"FileShareWrite":       true,
+	"FileShareReadWrite":   true,
+	"FileShareDelete":      true,
+	"FileShareInheritable": true,
 }
 
 // substitutionAdapterKeys are the reference interfaces the substitutable-base

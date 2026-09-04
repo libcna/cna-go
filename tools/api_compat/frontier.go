@@ -117,15 +117,6 @@ var frontierFamilies = []frontierFamily{
 		},
 	},
 	{
-		Name:           "Storage",
-		Classification: frontierActionableLocal,
-		Note:           "~65/12 CNA routes; the async selector pattern and the container's file surface need a System.IO projection decision, and every test must stay inside a project-controlled temporary root",
-		Types: []string{
-			"Microsoft.Xna.Framework.Storage.StorageContainer",
-			"Microsoft.Xna.Framework.Storage.StorageDevice",
-		},
-	},
-	{
 		Name:           "Media and video",
 		Classification: frontierActionableLocal,
 		Note:           "~31/23/53/46/50/55/19 CNA routes; the family splits into pure collection semantics, library enumeration, playback and video decode, and an empty host library is valid evidence for empty collections rather than for unimplementable ones",

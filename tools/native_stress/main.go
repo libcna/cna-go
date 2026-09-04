@@ -28,6 +28,7 @@ import (
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
 	touch "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch"
+	storage "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage"
 	"github.com/openeggbert/cna-go/internal/interop"
 	"github.com/openeggbert/cna-go/internal/servicebridge"
 )
@@ -294,6 +295,17 @@ type counters struct {
 	MousePositionWrites      int `json:"MOUSE_POSITION_WRITES"`
 	TouchPanelManagedChecks  int `json:"TOUCH_PANEL_MANAGED_CHECKS"`
 	TouchPanelNativeCalls    int `json:"TOUCH_PANEL_NATIVE_CALLS"`
+	// Foundation 91. Storage. STORAGE_ROOT_CHECKS is the containment proof:
+	// the slice does nothing until it has read back a root it recognises.
+	StorageRootChecks      int `json:"STORAGE_ROOT_CHECKS"`
+	StorageSelectorCycles  int `json:"STORAGE_SELECTOR_CYCLES"`
+	StorageDeviceReads     int `json:"STORAGE_DEVICE_READS"`
+	StorageContainerCycles int `json:"STORAGE_CONTAINER_CYCLES"`
+	StorageFileWrites      int `json:"STORAGE_FILE_WRITES"`
+	StorageFileReads       int `json:"STORAGE_FILE_READS"`
+	StorageEnumerations    int `json:"STORAGE_ENUMERATIONS"`
+	StorageDirectoryCycles int `json:"STORAGE_DIRECTORY_CYCLES"`
+	StorageDisposalChecks  int `json:"STORAGE_DISPOSAL_CHECKS"`
 	// Foundation 85. The first VERIFIED_PIXEL draw. Every counter here is over
 	// the SOFTWARE artifact only, because HEADLESS has no back-buffer readback
 	// and records a refusal instead -- which is why the refusal column exists.
@@ -5045,6 +5057,12 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 91. Storage, which needs neither a game nor a device -- but
+	// which MUST prove where it is writing before it writes anything.
+	if err := g.exerciseStorage(); err != nil {
+		return err
+	}
+
 	// Foundation 88. The two types that finish the Audio namespace.
 	if err := g.exerciseDynamicSoundEffectInstance(); err != nil {
 		return err
@@ -7850,6 +7868,237 @@ func (g *stressGame) exerciseInputStatics() error {
 		return errors.New("ReadGesture returned a sample after gestures were enabled")
 	}
 	g.result.TouchPanelManagedChecks++
+	return nil
+}
+
+// exerciseStorage is Foundation 91's slice, and it opens by proving where it is
+// allowed to write.
+//
+// # Containment is enforced, not assumed
+//
+// The standing constraint is that a test uses only a project-controlled root
+// and never the host's own directories. On this platform CNA builds its root
+// from XDG_DATA_HOME, so an unconfigured run would write to
+// ~/.local/share/<app> -- outside the project, in the user's home. That was
+// measured rather than guessed: the slice printed the root before it was
+// allowed to do anything else.
+//
+// So the harness sets XDG_DATA_HOME to a directory inside the repository, and
+// this slice REFUSES TO CONTINUE unless the root it reads back actually lives
+// there. A run that cannot prove containment does nothing and says so, which is
+// the same shape as MICROPHONE_CAPTURE_CALLS: a safety claim is worth more when
+// something measures it.
+func (g *stressGame) exerciseStorage() error {
+	const appName = "cna-go-stress-storage"
+	runtime, ok := interop.CurrentRuntime()
+	if !ok {
+		return nil
+	}
+	// The root this run is permitted to touch. Without it, nothing below runs.
+	permitted := os.Getenv("CNA_GO_STORAGE_ROOT")
+	if permitted == "" {
+		fmt.Fprintln(os.Stderr, "storage slice skipped: CNA_GO_STORAGE_ROOT names no project-controlled root")
+		return nil
+	}
+	if err := runtime.StorageSetApplicationName(appName); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("storage set app name: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "storage app name refused: %v\n", err)
+		return nil
+	}
+	root, err := runtime.StorageRoot()
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("storage root: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "storage root refused: %v\n", err)
+		return nil
+	}
+	// THE CONTAINMENT PROOF. A root outside the permitted directory fails the
+	// run rather than being worked around.
+	if !strings.HasPrefix(root, permitted) {
+		return fmt.Errorf("storage root %q is outside the permitted root %q; refusing to touch it",
+			root, permitted)
+	}
+	g.result.StorageRootChecks++
+
+	// Only now may anything be written.
+	device, err := storage.StorageDeviceBeginShowSelectorByAsyncCallbackAndObject(nil, nil)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("BeginShowSelector: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "storage selector refused: %v\n", err)
+		return nil
+	}
+	selected, err := storage.StorageDeviceEndShowSelector(device)
+	if err != nil {
+		return fmt.Errorf("EndShowSelector: %w", err)
+	}
+	g.result.StorageSelectorCycles++
+
+	// A second End on the same result is the reference's CannotEndTwice, and it
+	// is the one refusal in this family a managed test cannot reach through a
+	// real device.
+	if _, err := storage.StorageDeviceEndShowSelector(device); err == nil {
+		return errors.New("a second EndShowSelector succeeded; the reference refuses it")
+	}
+
+	if _, err := selected.IsConnected(); err != nil {
+		return fmt.Errorf("IsConnected: %w", err)
+	}
+	if _, err := selected.FreeSpace(); err != nil {
+		return fmt.Errorf("FreeSpace: %w", err)
+	}
+	if _, err := selected.TotalSpace(); err != nil {
+		return fmt.Errorf("TotalSpace: %w", err)
+	}
+	g.result.StorageDeviceReads++
+
+	opened, err := selected.BeginOpenContainer("stress", nil, nil)
+	if err != nil {
+		return fmt.Errorf("BeginOpenContainer: %w", err)
+	}
+	container, err := selected.EndOpenContainer(opened)
+	if err != nil {
+		return fmt.Errorf("EndOpenContainer: %w", err)
+	}
+	g.result.StorageContainerCycles++
+
+	if name, err := container.DisplayName(); err != nil {
+		return fmt.Errorf("DisplayName: %w", err)
+	} else if name == "" {
+		return errors.New("the container reported an empty display name")
+	}
+
+	// A file, written and read back. This is the only place the projection's
+	// io.ReadWriteSeeker claim is actually exercised.
+	payload := []byte("cna-go stress payload")
+	// Start from a known state. A run that failed part-way through leaves the
+	// file behind, and the next run could then not tell CreateFile from an
+	// OpenFile of something that already existed.
+	if present, err := container.FileExists("stress.dat"); err != nil {
+		return fmt.Errorf("FileExists before create: %w", err)
+	} else if present {
+		if err := container.DeleteFile("stress.dat"); err != nil {
+			return fmt.Errorf("DeleteFile before create: %w", err)
+		}
+	}
+	stream, err := container.CreateFile("stress.dat")
+	if err != nil {
+		return fmt.Errorf("CreateFile: %w", err)
+	}
+	written, err := stream.Write(payload)
+	if err != nil || written != len(payload) {
+		return fmt.Errorf("Write = %d, %v", written, err)
+	}
+	if closer, ok := stream.(io.Closer); ok {
+		if err := closer.Close(); err != nil {
+			return fmt.Errorf("Close after write: %w", err)
+		}
+	}
+	g.result.StorageFileWrites++
+
+	exists, err := container.FileExists("stress.dat")
+	if err != nil {
+		return fmt.Errorf("FileExists: %w", err)
+	}
+	if !exists {
+		return errors.New("the file just written does not exist")
+	}
+
+	reopened, err := container.OpenFileByStringAndFileMode("stress.dat", framework.FileModeOpen)
+	if err != nil {
+		return fmt.Errorf("OpenFile: %w", err)
+	}
+	buffer := make([]byte, len(payload))
+	read, err := io.ReadFull(reopened, buffer)
+	if err != nil {
+		return fmt.Errorf("ReadFull = %d, %w", read, err)
+	}
+	if string(buffer) != string(payload) {
+		return fmt.Errorf("read back %q, want %q", buffer, payload)
+	}
+	// Seek back and read the first byte again, which is what makes this a
+	// ReadWriteSeeker rather than a ReadWriter.
+	if _, err := reopened.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("Seek: %w", err)
+	}
+	single := make([]byte, 1)
+	if _, err := reopened.Read(single); err != nil {
+		return fmt.Errorf("Read after Seek: %w", err)
+	}
+	if single[0] != payload[0] {
+		return fmt.Errorf("after seeking to the start the first byte was %q", single)
+	}
+	// Read PAST the end. CNA reports the end as a zero-length read with no
+	// error; io.Reader requires io.EOF, and this is the only place that
+	// translation is observable.
+	if _, err := reopened.Seek(0, io.SeekEnd); err != nil {
+		return fmt.Errorf("Seek to end: %w", err)
+	}
+	if _, err := reopened.Read(single); !errors.Is(err, io.EOF) {
+		return fmt.Errorf("reading past the end = %v, want io.EOF", err)
+	}
+	if closer, ok := reopened.(io.Closer); ok {
+		if err := closer.Close(); err != nil {
+			return fmt.Errorf("Close after read: %w", err)
+		}
+	}
+	g.result.StorageFileReads++
+
+	// The enumeration, which is the two-step count-then-copy path.
+	names, err := container.GetFileNamesByNone()
+	if err != nil {
+		return fmt.Errorf("GetFileNames: %w", err)
+	}
+	found := false
+	for _, name := range names {
+		if strings.Contains(name, "stress.dat") {
+			found = true
+		}
+	}
+	if !found {
+		return fmt.Errorf("GetFileNames answered %v, which does not include the file just written", names)
+	}
+	g.result.StorageEnumerations++
+
+	// A directory, created and enumerated and removed.
+	if err := container.CreateDirectory("sub"); err != nil {
+		return fmt.Errorf("CreateDirectory: %w", err)
+	}
+	present, err := container.DirectoryExists("sub")
+	if err != nil || !present {
+		return fmt.Errorf("DirectoryExists = %v, %v", present, err)
+	}
+	if err := container.DeleteDirectory("sub"); err != nil {
+		return fmt.Errorf("DeleteDirectory: %w", err)
+	}
+	g.result.StorageDirectoryCycles++
+
+	// Clean up the file, then dispose. A run must not leave the next one a
+	// pre-existing file to trip over.
+	if err := container.DeleteFile("stress.dat"); err != nil {
+		return fmt.Errorf("DeleteFile: %w", err)
+	}
+	if present, err := container.FileExists("stress.dat"); err != nil {
+		return fmt.Errorf("FileExists after delete: %w", err)
+	} else if present {
+		return errors.New("the file still exists after DeleteFile")
+	}
+	if err := container.Dispose(); err != nil {
+		return fmt.Errorf("Dispose: %w", err)
+	}
+	disposed, err := container.IsDisposed()
+	if err != nil || !disposed {
+		return fmt.Errorf("IsDisposed after Dispose = %v, %v", disposed, err)
+	}
+	// A disposed container refuses, which is VerifyNotDisposed.
+	if _, err := container.FileExists("stress.dat"); err == nil {
+		return errors.New("a disposed container answered FileExists")
+	}
+	g.result.StorageDisposalChecks++
 	return nil
 }
 

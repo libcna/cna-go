@@ -1603,6 +1603,30 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 88 | DynamicSoundEffectInstance, Microphone, and the end of the Audio namespace | `foundation-88-audio-namespace-evidence.md` |
 | 89 | GamePad, Mouse and TouchPanel, closing the Input namespace | `foundation-89-input-evidence.md` |
 | 90 | the Model family, closing the Graphics namespace | `foundation-90-model-family-evidence.md` |
+| 91 | StorageDevice and StorageContainer, closing the Storage namespace | `foundation-91-storage-evidence.md` |
+
+**A recorded blocker is a claim, and claims get re-measured** (91).
+System.IO.BinaryReader had been DEFERRED since Foundation 29 partly because "the
+reader's inherited surface depends on seeking". ContentReader's IL contains ZERO
+`Stream::Seek` calls -- the one hit was the substring of `get_CanSeek`, inside a
+`private static` helper whose check is skipped when the stream cannot seek. Half
+the blocker was wrong for four milestones because nobody re-measured it. A
+blocker inherited from an earlier session is evidence about that session, not
+about today.
+
+**Prove where a test writes; do not assume it** (91). The Storage slice's root
+was measured before anything was written, and it was `~/.local/share/<app>` --
+outside the project, in the user's home. CNA builds it from XDG_DATA_HOME, so
+the harness redirects it; but the slice does not trust the redirect either. It
+reads the root back and refuses to continue unless it lies under the permitted
+path. A safety constraint that only a comment enforces is not enforced.
+
+**Fake async is a shape, not a simplification** (91). XNA's storage
+BeginXxx/EndXxx invokes the callback and returns a completed result before Begin
+exits. So IsCompleted, CompletedSynchronously and a signalled wait handle are
+constants -- and a projection that returned false from IsCompleted "to be safe"
+would be describing an implementation the reference does not have. CNA's header
+says the same, but the evidence is the IL.
 
 ### The rules these milestones settled
 
@@ -2095,6 +2119,13 @@ forwards only some inherited members, so the base's iterator and half its bounds
 checks cannot be reached through that family at all. The fix is to test the
 adapter from its own package, not to route a Model test through machinery no
 consumer can reach.
+
+**A test that reads the same constant as the code follows it** (91). The
+selector sentinel test passed `framework.PlayerIndex(storageNoPlayer)`, so a
+mutation that changed the constant moved the test with it and survived. The
+literal is written out now, with a separate assertion that the constant IS 255.
+This is the value half of the anchor rule below: an anchor must not match prose,
+and an expectation must not be computed from the thing it checks.
 
 **A mutation anchor that can match PROSE is not a mutation** (86). This project
 quotes reference bodies in doc comments, so `return nameHash ^ idHash` appears

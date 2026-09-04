@@ -32,6 +32,24 @@ var bclTypes = map[string]string{
 	"System.TimeSpan":  "TimeSpan",
 	"System.Type":      "reflect.Type",
 	"System.IO.Stream": "io.Reader",
+	// Foundation 91. The three System.IO enums StorageContainer::OpenFile
+	// carries. Their literals are the BCL's and CNA's storage.h defines the
+	// same numbers, which is why the projection passes a value straight through
+	// rather than translating it.
+	// Foundation 91. System.IAsyncResult, the return of StorageDevice's four
+	// BeginShowSelector overloads and BeginOpenContainer. XNA's storage APM is
+	// FAKE async -- Begin invokes the callback before it returns -- so the
+	// projection is a value that is already complete rather than a promise.
+	"System.IAsyncResult": "*AsyncResult",
+	// System.AsyncCallback, the delegate every Begin member takes. It is
+	// projected as a Go func for the reason System.EventHandler<T> is: a
+	// delegate is a callable, and degrading it to `any` would erase the
+	// argument the callback is handed -- which for an APM callback is the very
+	// result it exists to receive.
+	"System.AsyncCallback": "AsyncCallback",
+	"System.IO.FileMode":   "FileMode",
+	"System.IO.FileAccess": "FileAccess",
+	"System.IO.FileShare":  "FileShare",
 	// Foundation 69. System.Text.StringBuilder, on exactly the measurement
 	// System.IO.Stream's entry rests on.
 	//
@@ -2001,7 +2019,8 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 	// does. Keying it by the derived identity would silently hand a
 	// RenderTarget2D an io.Reader it cannot write to.
 	base.Parameters = applyStreamDirection(memberIdentity(declaring.Name, m), parameters)
-	base.Results = mapReturn(s, byIdentity, owner, m.GenericParameters, m.ReturnType)
+	base.Results = applyStreamReturnDirection(memberIdentity(declaring.Name, m),
+		mapReturn(s, byIdentity, owner, m.GenericParameters, m.ReturnType))
 	base.Results = append(base.Results, outResults...)
 	if isFallible(declaring, m, "") {
 		base.Results = append(base.Results, "error")
@@ -2418,6 +2437,53 @@ var writtenStreamParameters = map[string][]int{
 	"Microsoft.Xna.Framework.Graphics.Texture2D::SaveAsJpeg(System.IO.Stream,System.Int32,System.Int32)": {0},
 }
 
+// readWriteStreamReturns names the members that RETURN a stream the caller both
+// reads and writes.
+//
+// It is the return-position counterpart of writtenStreamParameters and exists
+// for the same measured reason: the CLR has one Stream, Go has several
+// interfaces, and direction cannot be derived from a signature because both
+// directions are spelled `Stream`.
+//
+// Foundation 53's note said "every stream position in the profile is read",
+// which was true of RETURN positions when it was written -- ContentManager,
+// TitleContainer and the media library all hand back something to read.
+// StorageContainer is where that stops being true: a save file is opened to be
+// written, and CreateFile exists for nothing else.
+//
+// The Go type is io.ReadWriteSeeker rather than io.ReadWriter because the CNA
+// stream behind it carries seek, length and position -- cna_storage_stream_seek
+// and its siblings -- and a save file that could not seek would not be one.
+var readWriteStreamReturns = map[string]bool{
+	"Microsoft.Xna.Framework.Storage.StorageContainer::CreateFile(System.String)":                                                           true,
+	"Microsoft.Xna.Framework.Storage.StorageContainer::OpenFile(System.String,System.IO.FileMode)":                                          true,
+	"Microsoft.Xna.Framework.Storage.StorageContainer::OpenFile(System.String,System.IO.FileMode,System.IO.FileAccess)":                     true,
+	"Microsoft.Xna.Framework.Storage.StorageContainer::OpenFile(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare)": true,
+}
+
+// applyStreamReturnDirection rewrites the io.Reader default at a return
+// position readWriteStreamReturns names. Like its parameter counterpart it
+// fails loudly on a registry entry that does not describe the member it names:
+// an entry for a member that returns no stream would otherwise become an
+// expected signature nobody wrote.
+func applyStreamReturnDirection(xna string, results []string) []string {
+	if !readWriteStreamReturns[xna] {
+		return results
+	}
+	rewritten := append([]string(nil), results...)
+	found := false
+	for index, result := range rewritten {
+		if result == "io.Reader" {
+			rewritten[index] = "io.ReadWriteSeeker"
+			found = true
+		}
+	}
+	if !found {
+		panic(fmt.Sprintf("readWriteStreamReturns names %s, whose results are %v", xna, results))
+	}
+	return rewritten
+}
+
 // applyStreamDirection rewrites the io.Reader default at the positions
 // writtenStreamParameters names. It fails loudly rather than silently on a
 // registry entry that does not describe the member it names: an index out of
@@ -2638,11 +2704,22 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 		return frameworkQualified(owner, "ExceptionReference")
 	}
 	if mapped, ok := bclTypes[raw]; ok {
-		// TimeSpan is the one primitive BCL entry that maps to a CNA-Go type
-		// rather than a Go builtin or standard-library type, so it obeys the
-		// same package-qualification rule as every other framework-package
-		// value. mapping-rules.json already declares it as framework.TimeSpan.
-		if raw == "System.TimeSpan" && owner.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
+		// A BCL entry that maps to a CNA-GO type rather than a Go builtin or a
+		// standard-library one obeys the same package-qualification rule every
+		// other framework-package value does.
+		//
+		// TimeSpan was the only such entry until Foundation 91 added four:
+		// System.IAsyncResult and the three System.IO enums StorageContainer's
+		// OpenFile overloads carry. All five are declared in
+		// mapping-rules.json under languageAdapters and all five live in the
+		// framework package, so all five qualify from anywhere else.
+		if frameworkDeclaredBCLTypes[raw] && owner.PackagePath != modulePath+"/Microsoft/Xna/Framework" {
+			// The qualifier goes AFTER any pointer marker: a CLR interface
+			// projects to a Go pointer, and `*framework.AsyncResult` is the
+			// spelling, not `framework.*AsyncResult`.
+			if strings.HasPrefix(mapped, "*") {
+				return "*framework." + mapped[1:]
+			}
 			return "framework." + mapped
 		}
 		return mapped
@@ -3849,6 +3926,19 @@ func inheritedCLRMemberCount(t contractType) int {
 // appears in a private BCL adapter field type. The adapter is declared in the
 // same package as the consumers that hold it, so an XNA argument needs no
 // package qualifier.
+// frameworkDeclaredBCLTypes are the BCL entries whose Go spelling is a type
+// this module DECLARES, rather than a Go builtin or a standard-library type.
+// They and only they take the framework package qualifier when named from
+// another package.
+var frameworkDeclaredBCLTypes = map[string]bool{
+	"System.TimeSpan":      true,
+	"System.IAsyncResult":  true,
+	"System.AsyncCallback": true,
+	"System.IO.FileMode":   true,
+	"System.IO.FileAccess": true,
+	"System.IO.FileShare":  true,
+}
+
 func goAdapterArgument(clr string) string {
 	if mapped, ok := bclTypes[clr]; ok {
 		return mapped

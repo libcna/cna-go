@@ -5182,3 +5182,170 @@ func (resource *Resource) EffectLightsDirectionalLight(index uint32) (*Resource,
 	}
 	return resource.runtime.registerResource(light, resourceDirectionalLight, resource.parent), nil
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 91. The Storage family.
+//
+// None of these takes a game handle. Storage is not a graphics resource and CNA
+// does not tie it to the window's event state, so unlike the Input family they
+// are callable outside a lifecycle callback -- which is what lets a game save
+// from wherever it decides to save rather than only inside Update.
+
+// StorageShowSelector is cna_storage_device_show_selector and its three
+// siblings, chosen by which of the two optional halves the caller supplied.
+//
+// XNA's four BeginShowSelector overloads differ in exactly that: a player, a
+// space requirement, both, or neither. CNA has one route per combination, so
+// the selection here is the reference's overload set rather than a switch this
+// projection invented.
+func (r *Runtime) StorageShowSelector(player uint32, hasPlayer bool, sizeInBytes, directoryCount int32, hasSpace bool) (uint64, error) {
+	switch {
+	case hasPlayer && hasSpace:
+		return nativeStorageShowSelectorForPlayerWithSpace(player, sizeInBytes, directoryCount)
+	case hasPlayer:
+		return nativeStorageShowSelectorForPlayer(player)
+	case hasSpace:
+		return nativeStorageShowSelectorWithSpace(sizeInBytes, directoryCount)
+	default:
+		return nativeStorageShowSelector()
+	}
+}
+
+func (r *Runtime) StorageDeviceFreeSpace(device uint64) (int64, error) {
+	return nativeStorageDeviceFreeSpace(device)
+}
+
+func (r *Runtime) StorageDeviceTotalSpace(device uint64) (int64, error) {
+	return nativeStorageDeviceTotalSpace(device)
+}
+
+func (r *Runtime) StorageDeviceIsConnected(device uint64) (bool, error) {
+	return nativeStorageDeviceIsConnected(device)
+}
+
+func (r *Runtime) StorageDeviceDeleteContainer(device uint64, titleName string) error {
+	return nativeStorageDeviceDeleteContainer(device, titleName)
+}
+
+func (r *Runtime) StorageDeviceDestroy(device uint64) error {
+	return nativeStorageDeviceDestroy(device)
+}
+
+func (r *Runtime) StorageContainerOpen(device uint64, displayName string) (uint64, error) {
+	return nativeStorageContainerOpen(device, displayName)
+}
+
+func (r *Runtime) StorageContainerDisplayName(container uint64) (string, error) {
+	return nativeStorageContainerDisplayName(container)
+}
+
+func (r *Runtime) StorageContainerIsDisposed(container uint64) (bool, error) {
+	return nativeStorageContainerIsDisposed(container)
+}
+
+func (r *Runtime) StorageContainerDevice(container uint64) (uint64, error) {
+	return nativeStorageContainerDevice(container)
+}
+
+func (r *Runtime) StorageContainerDispose(container uint64) error {
+	return nativeStorageContainerDispose(container)
+}
+
+func (r *Runtime) StorageContainerDestroy(container uint64) error {
+	return nativeStorageContainerDestroy(container)
+}
+
+func (r *Runtime) StorageContainerCreateDirectory(container uint64, directory string) error {
+	return nativeStorageContainerCreateDirectory(container, directory)
+}
+
+func (r *Runtime) StorageContainerDeleteDirectory(container uint64, directory string) error {
+	return nativeStorageContainerDeleteDirectory(container, directory)
+}
+
+func (r *Runtime) StorageContainerDirectoryExists(container uint64, directory string) (bool, error) {
+	return nativeStorageContainerDirectoryExists(container, directory)
+}
+
+func (r *Runtime) StorageContainerFileExists(container uint64, file string) (bool, error) {
+	return nativeStorageContainerFileExists(container, file)
+}
+
+func (r *Runtime) StorageContainerDeleteFile(container uint64, file string) error {
+	return nativeStorageContainerDeleteFile(container, file)
+}
+
+func (r *Runtime) StorageContainerDirectoryNames(container uint64, pattern string) ([]string, error) {
+	return nativeStorageContainerNames(container, pattern, true)
+}
+
+func (r *Runtime) StorageContainerFileNames(container uint64, pattern string) ([]string, error) {
+	return nativeStorageContainerNames(container, pattern, false)
+}
+
+func (r *Runtime) StorageContainerCreateFile(container uint64, file string) (uint64, error) {
+	return nativeStorageContainerCreateFile(container, file)
+}
+
+// StorageContainerOpenFile carries the ARITY the caller reached it through, so
+// the three CNA routes stay distinguishable. XNA's shorter overloads forward to
+// the longest with defaults, and reproducing that here would collapse three
+// bound routes into one and leave two with no call site.
+func (r *Runtime) StorageContainerOpenFile(container uint64, file string, mode, access, share uint32, arity int) (uint64, error) {
+	return nativeStorageContainerOpenFile(container, file, mode, access, share, arity)
+}
+
+func (r *Runtime) StorageStreamRead(stream uint64, destination []byte) (int, error) {
+	return nativeStorageStreamRead(stream, destination)
+}
+
+func (r *Runtime) StorageStreamWrite(stream uint64, data []byte) error {
+	return nativeStorageStreamWrite(stream, data)
+}
+
+func (r *Runtime) StorageStreamSeek(stream uint64, offset int64, origin uint32) (int64, error) {
+	return nativeStorageStreamSeek(stream, offset, origin)
+}
+
+func (r *Runtime) StorageStreamPosition(stream uint64) (int64, error) {
+	return nativeStorageStreamPosition(stream)
+}
+
+func (r *Runtime) StorageStreamLength(stream uint64) (int64, error) {
+	return nativeStorageStreamLength(stream)
+}
+
+func (r *Runtime) StorageStreamSetLength(stream uint64, length int64) error {
+	return nativeStorageStreamSetLength(stream, length)
+}
+
+func (r *Runtime) StorageStreamCanRead(stream uint64) (bool, error) {
+	return nativeStorageStreamCanRead(stream)
+}
+
+func (r *Runtime) StorageStreamCanWrite(stream uint64) (bool, error) {
+	return nativeStorageStreamCanWrite(stream)
+}
+
+func (r *Runtime) StorageStreamCanSeek(stream uint64) (bool, error) {
+	return nativeStorageStreamCanSeek(stream)
+}
+
+func (r *Runtime) StorageStreamFlush(stream uint64) error {
+	return nativeStorageStreamFlush(stream)
+}
+
+func (r *Runtime) StorageStreamClose(stream uint64) error {
+	return nativeStorageStreamClose(stream)
+}
+
+// StorageSetApplicationName and StorageRoot are the two `_ext` routes the test
+// harness uses to isolate itself and then prove it. They are NOT XNA surface
+// and no projected member reaches them.
+func (r *Runtime) StorageSetApplicationName(name string) error {
+	return nativeStorageSetAppName(name)
+}
+
+func (r *Runtime) StorageRoot() (string, error) {
+	return nativeStorageRoot()
+}
