@@ -187,6 +187,34 @@ var pureManagedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection":            true,
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": true,
 
+	// Foundation 90. The Model family's eight non-collection types, admitted on
+	// the same evidence the rest of this registry needs: every one of their
+	// contract members is a field access in the pinned IL.
+	//
+	// A Model arrives from ContentManager.Load<Model>, which is native-backed,
+	// and its mesh parts hold native vertex and index buffers -- but nothing
+	// here READS a device. The four types' getters are `ldfld`, their setters
+	// are `stfld` with no validation, and ModelMeshPart.set_Effect is a
+	// managed walk over a managed collection. The two Draw members and the
+	// three Copy* members are the exceptions, and they are named individually
+	// in managedFallibleMembers below.
+	//
+	// The four collections are admitted for the same reason: their inherited
+	// surface forwards to a managed list, and their declared surface is a
+	// name scan and an enumerator.
+	"Microsoft.Xna.Framework.Graphics.Model":                              true,
+	"Microsoft.Xna.Framework.Graphics.ModelBone":                          true,
+	"Microsoft.Xna.Framework.Graphics.ModelMesh":                          true,
+	"Microsoft.Xna.Framework.Graphics.ModelMeshPart":                      true,
+	"Microsoft.Xna.Framework.Graphics.ModelBoneCollection":                true,
+	"Microsoft.Xna.Framework.Graphics.ModelBoneCollection+Enumerator":     true,
+	"Microsoft.Xna.Framework.Graphics.ModelEffectCollection":              true,
+	"Microsoft.Xna.Framework.Graphics.ModelEffectCollection+Enumerator":   true,
+	"Microsoft.Xna.Framework.Graphics.ModelMeshCollection":                true,
+	"Microsoft.Xna.Framework.Graphics.ModelMeshCollection+Enumerator":     true,
+	"Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection":            true,
+	"Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator": true,
+
 	// Foundation 89. TouchPanel, and it is admitted on the strongest evidence
 	// in this registry: the whole of Microsoft.Xna.Framework.Input.Touch.dll
 	// (sha256 b0585224c18022c3...) declares NOT ONE p/invoke. Every member of
@@ -419,15 +447,28 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 		Status:    "COMPOSED",
 		Rationale: "modelled by the private collectionBase[T] adapter; a derived XNA class holds it in an unexported field and re-exposes the eleven inherited public members through measured forwarding, with no exported embedding",
 	},
+	// Foundation 90 closed this. Both blockers Foundation 29 recorded are gone,
+	// and one of them was settled rather than merely unblocked.
+	//
+	// The SUBSYSTEM blocker dissolved with the element types: ModelBone,
+	// ModelMesh and ModelMeshPart are projected by the same milestone that
+	// composes this base, and Effect has been projected since Foundation 72.
+	//
+	// The ARCHITECTURE blocker asked for a rule for a derived member that HIDES
+	// an inherited one. All four consumers declare
+	// `public hidebysig instance GetEnumerator()` returning their own nested
+	// Enumerator, with neither `virtual` nor `newslot` -- C# `new`, which hides
+	// rather than overrides. The answer Foundation 29 called available but
+	// untested is the one this milestone tested and adopted: reaching a hidden
+	// base member in C# requires a cast to the base, CNA-Go projects no base
+	// type to cast to, so the INHERITED GetEnumerator is unreachable and is not
+	// projected. Each collection has exactly one Go method named GetEnumerator,
+	// the derived one, and the collision rule never fires because there is only
+	// one member to name.
 	"System.Collections.ObjectModel.ReadOnlyCollection`1": {
-		Status:    "DEFERRED",
-		Rationale: "DEFERRED AS A BASE ONLY; it is SUPPORTED as a signature adapter, and the two roles are independent",
-		Blockers: []bclBaseBlocker{
-			{Kind: "ARCHITECTURE", CLRMember: "GetEnumerator", Needs: "a rule for a derived member that HIDES an inherited one",
-				Detail: "all four base consumers declare a GetEnumerator returning their own nested Enumerator, which hides the inherited one. The settled collision rule would resolve that into two hashed names, neither of which is GetEnumerator. The principled answer -- a hidden inherited member is unreachable because CNA-Go projects no base type to cast to -- is available but untested, because every consumer is blocked on its element type anyway"},
-			{Kind: "SUBSYSTEM", Needs: "ModelBone, Effect, ModelMesh, ModelMeshPart",
-				Detail: "each of the four consumers needs its element type, and all four element types are content-pipeline blocked"},
-		},
+		Adapter:   "ReadOnlyCollection[T]",
+		Status:    "COMPOSED",
+		Rationale: "modelled by the framework ReadOnlyCollection[T] adapter, which is the same type that serves as this base's signature adapter; a derived XNA class holds it in an unexported field and re-exposes the five REACHABLE inherited public members through measured forwarding, with no exported embedding. The sixth, GetEnumerator, is hidden by a derived declaration on all four consumers and is therefore unreachable rather than renamed",
 	},
 	// Foundation 74. Five of the six blockers Foundation 29 recorded here were
 	// missing Go SPELLINGS, and a spelling is something this milestone can
@@ -812,6 +853,59 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"method|Remove":     true,
 		"method|RemoveAt":   true,
 		"method|CopyTo":     true,
+	},
+	// Foundation 90. The Model family, whose fallible members are exactly the
+	// ones that validate an argument or reach a device.
+	//
+	// All three Copy* members share one two-guard prologue -- a null
+	// destination is ArgumentNullException, and a destination shorter than
+	// Bones.Count is ArgumentOutOfRangeException -- and Draw reaches the
+	// device through every mesh part it draws, as well as refusing an effect
+	// that is null or does not implement IEffectMatrices.
+	//
+	// Every getter and both setters are absent on purpose: Root, Bones, Meshes
+	// and Tag are one `ldfld` each, and set_Tag is one `stfld` that validates
+	// nothing.
+	"Microsoft.Xna.Framework.Graphics.Model": {
+		"method|CopyBoneTransformsTo":         true,
+		"method|CopyAbsoluteBoneTransformsTo": true,
+		"method|CopyBoneTransformsFrom":       true,
+		"method|Draw":                         true,
+	},
+	// ModelMesh.Draw refuses a part with no effect and reaches the device
+	// through every part it draws. Its six properties are field reads.
+	"Microsoft.Xna.Framework.Graphics.ModelMesh": {
+		"method|Draw": true,
+	},
+	// The two collections with a by-name lookup. TryGetValue refuses an empty
+	// name with ArgumentNullException -- IsNullOrEmpty, so the empty string
+	// throws too -- and the by-name indexer adds KeyNotFoundException on top of
+	// it. The inherited indexer and CopyTo carry the base's own failures.
+	"Microsoft.Xna.Framework.Graphics.ModelBoneCollection": {
+		"method|TryGetValue": true,
+		"property-get|Item":  true,
+		"method|CopyTo":      true,
+	},
+	"Microsoft.Xna.Framework.Graphics.ModelMeshCollection": {
+		"method|TryGetValue": true,
+		"property-get|Item":  true,
+		"method|CopyTo":      true,
+	},
+	// The two without one still inherit an indexer that can be out of range and
+	// a CopyTo that validates three things.
+	"Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection": {
+		"property-get|Item": true,
+		"method|CopyTo":     true,
+	},
+	"Microsoft.Xna.Framework.Graphics.ModelEffectCollection": {
+		"property-get|Item": true,
+		"method|CopyTo":     true,
+	},
+	// ModelEffectCollection's enumerator is the one that can FAIL: it wraps
+	// List<Effect>.Enumerator, which is version-checked, while its three
+	// array-backed siblings have no version and cannot detect a change.
+	"Microsoft.Xna.Framework.Graphics.ModelEffectCollection+Enumerator": {
+		"method|MoveNext": true,
 	},
 	// Foundation 89. TouchPanel's four throwing members, and only those four.
 	//
@@ -3533,6 +3627,73 @@ var bclBaseAdapters = map[string]bclBaseAdapter{
 			{Name: "State", Reason: "Go has no explicit interface implementation and no way for one package to satisfy another package's unexported method, and this base's derived types live in FOUR other packages. The reference interface's distinguishing accessor therefore has to be exported -- and it stays unsatisfiable from outside the module because its result type is declared in internal/bclexception"},
 		},
 	},
+
+	// Foundation 90. System.Collections.ObjectModel.ReadOnlyCollection<T> as a
+	// BASE, which is a different role from the signature adapter of the same
+	// name it has carried since Foundation 29. The two are independent and both
+	// are now live.
+	//
+	// Its four consumers are the Model family's collections. Each holds the
+	// adapter in an unexported `base` field over the same object its own
+	// backing field holds, which is what the reference's constructor does:
+	//
+	//	.ctor(ModelBone[] bones)
+	//	    base..ctor(bones);  this.wrappedArray = bones
+	//
+	// FIVE of the six inherited public members are forwarded. The sixth,
+	// GetEnumerator, is HIDDEN: all four consumers declare
+	// `public hidebysig instance GetEnumerator()` returning their own nested
+	// Enumerator, with neither `virtual` nor `newslot`, which is C# `new`.
+	// Reaching a hidden base member requires a cast to the base and CNA-Go
+	// projects no base type to cast to, so the inherited one is unreachable and
+	// is excluded rather than renamed by the collision rule.
+	"System.Collections.ObjectModel.ReadOnlyCollection`1": {
+		GoAdapter:       "ReadOnlyCollection[T]",
+		AdapterField:    "base",
+		GenericArity:    1,
+		BehaviorLevel:   "SUPPORTED",
+		Authority:       "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256: "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:       "a read-only BCL view projected as private composition plus measured forwarding; it stores the IList it was given rather than copying it, so mutation visibility and enumeration semantics are the underlying list's -- which is why the one List-backed consumer is live and version-checked while the three array-backed ones are neither",
+		Members: []bclInheritedMember{
+			{Member: bclProperty("Count", "System.Int32", true, false),
+				Rationale: "get_Count is one forwarded `list.Count`"},
+			{Member: bclProperty("Item", "!0", true, false, bclParameter("index", "System.Int32")),
+				Rationale: "get_Item is one forwarded `list[index]`; the SETTER is a private explicit implementation, which is what makes the view read-only"},
+			{Member: bclMethod("Contains", "System.Boolean", bclParameter("value", "!0")),
+				Rationale: "Contains is one forwarded `list.Contains(value)` over EqualityComparer<T>.Default, which for these four element types is reference identity"},
+			{Member: bclMethod("CopyTo", "System.Void", bclParameter("array", "!0[]"), bclParameter("index", "System.Int32")),
+				Rationale: "CopyTo is one forwarded `list.CopyTo(array, index)`, carrying a null destination, a negative index and a too-small destination"},
+			{Member: bclMethod("IndexOf", "System.Int32", bclParameter("value", "!0")),
+				Rationale: "IndexOf is one forwarded `list.IndexOf(value)`, the first match or -1"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: "GetEnumerator", Reason: "HIDDEN by a derived declaration on all four consumers -- each declares its own GetEnumerator returning its own nested Enumerator, with neither virtual nor newslot. Reaching the hidden base member requires a cast to the base, and CNA-Go projects no base type to cast to, so the inherited one is unreachable rather than renamed"},
+			{CLRMember: ".ctor(IList`1<T>)", Reason: "the CLR does not inherit constructors; each consumer's own assembly constructor is what builds the adapter"},
+			{CLRMember: "Items", Reason: "`family`; exposing it would hand out the wrapped list"},
+			{CLRMember: "ICollection<T>.IsReadOnly", Reason: "private explicit implementation; the settled BCL-interface rule projects nothing for it"},
+			{CLRMember: "IList<T>.Item", Reason: "private explicit implementation whose setter throws NotSupportedException"},
+			{CLRMember: "ICollection<T>.Add", Reason: "private explicit mutator; read-only means it is not public surface"},
+			{CLRMember: "ICollection<T>.Clear", Reason: "private explicit mutator"},
+			{CLRMember: "ICollection<T>.Remove", Reason: "private explicit mutator"},
+			{CLRMember: "IList<T>.Insert", Reason: "private explicit mutator"},
+			{CLRMember: "IList<T>.RemoveAt", Reason: "private explicit mutator"},
+			{CLRMember: "IEnumerable.GetEnumerator", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.IsSynchronized", Reason: "private explicit implementation"},
+			{CLRMember: "ICollection.SyncRoot", Reason: "private explicit implementation, and CNA-Go projects no CLR sync root"},
+			{CLRMember: "ICollection.CopyTo", Reason: "private explicit implementation"},
+			{CLRMember: "IList.IsFixedSize", Reason: "private explicit implementation"},
+			{CLRMember: "IList.IsReadOnly", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Item", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Add", Reason: "private explicit mutator"},
+			{CLRMember: "IList.Clear", Reason: "private explicit mutator"},
+			{CLRMember: "IList.Contains", Reason: "private explicit implementation"},
+			{CLRMember: "IList.IndexOf", Reason: "private explicit implementation"},
+			{CLRMember: "IList.Insert", Reason: "private explicit mutator"},
+			{CLRMember: "IList.Remove", Reason: "private explicit mutator"},
+			{CLRMember: "IList.RemoveAt", Reason: "private explicit mutator"},
+		},
+	},
 }
 
 // bclBaseArguments splits the CLR generic arguments off a base identity, so
@@ -3693,6 +3854,38 @@ func goAdapterArgument(clr string) string {
 		return mapped
 	}
 	return flattenedBaseName(clr)
+}
+
+// goAdapterArgumentForOwner is goAdapterArgument plus the two things a type
+// argument needs when it names an XNA type rather than a BCL one: the pointer a
+// CLR CLASS projects to, and the package qualifier when the argument is
+// declared somewhere other than the consumer's own package.
+//
+// A CLR INTERFACE takes neither -- it projects to a Go interface, which is
+// already a reference and is spelled bare. That is why collectionBase's
+// IGameComponent consumer needed none of this.
+func goAdapterArgumentForOwner(clr string, owner *expectedType) string {
+	if mapped, ok := bclTypes[clr]; ok {
+		return mapped
+	}
+	name := flattenedBaseName(clr)
+	if clrTypeIsInterface(clr) {
+		return name
+	}
+	return "*" + name
+}
+
+// clrTypeIsInterface answers from the CLR NAME, which is the only thing
+// available where adapter field types are rendered. Every XNA interface in the
+// pinned profile is named `I` followed by an upper-case letter, and no XNA
+// class is -- the profile has no IndexBuffer-style false positive because the
+// character after the I decides it.
+func clrTypeIsInterface(clr string) bool {
+	name := flattenedBaseName(clr)
+	if len(name) < 2 || name[0] != 'I' {
+		return false
+	}
+	return name[1] >= 'A' && name[1] <= 'Z'
 }
 
 // bclSignatureAdapters declares every BCL type the pinned XNA contract carries
@@ -3979,6 +4172,17 @@ var bclSignatureAdapterConstructors = map[string]string{
 	// characters are values: a name saying "over references" would describe
 	// the opposite of what the collection holds.
 	"NewReadOnlyCollectionOverCharacters": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+	// Foundation 90. The LIVE reference-element counterpart, for
+	// ModelMesh::get_Effects, whose CLR collection wraps a `List<Effect>` that
+	// ModelMeshPart.set_Effect keeps adding to and removing from.
+	//
+	// A fourth constructor rather than a use of the second because the
+	// difference is exactly the one ReadOnlyCollection<T>'s own documentation
+	// turns on: the view stores the IList REFERENCE, so a List-backed view sees
+	// every addition while an array-backed view cannot change length at all.
+	// The second constructor captures a slice header by value, which is right
+	// for a `T[]` and wrong for a `List<T>`.
+	"NewReadOnlyCollectionOverLiveReferences": "System.Collections.ObjectModel.ReadOnlyCollection`1",
 	// Foundation 74. KeyValuePair<TKey,TValue>::.ctor, which the Dictionary
 	// enumerator's Current builds with `newobj` on every step. It is the one
 	// new signature adapter whose CLR constructor is public AND reachable, so

@@ -59,7 +59,12 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// inherited CLR members each and the three ExternalException subclasses
 	// nine, and each inherited property with a setter projects two Go
 	// identities.
-	if surface.BCLInheritedCLRMembers != 91 || surface.BCLInheritedProjections != 109 {
+	// Foundation 90 added twenty of each: the four Model collections each
+	// inherit FIVE reachable ReadOnlyCollection<T> members, and every one of
+	// the five is get-only, so each contributes exactly one Go identity. The
+	// sixth inherited member, GetEnumerator, is hidden by a derived
+	// declaration on all four and contributes nothing.
+	if surface.BCLInheritedCLRMembers != 111 || surface.BCLInheritedProjections != 129 {
 		t.Fatalf("BCL inherited counts = %d CLR members/%d projections", surface.BCLInheritedCLRMembers, surface.BCLInheritedProjections)
 	}
 	// 15, not 14: Milestone 55 replaced the name-keyed inheritance exclusion
@@ -103,7 +108,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// contribute twenty-six inherited projections between them. 3677, not 3662:
 	// Foundation 88 composed SoundEffectInstance, whose one derived type
 	// contributes fifteen.
-	if surface.ExpectedGoMembers != 3677 {
+	// 3697, not 3677: Foundation 90 composed ReadOnlyCollection<T> as a base,
+	// and the Model family's four collections contribute twenty inherited
+	// projections between them on top of their own declared members.
+	if surface.ExpectedGoMembers != 3697 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -5375,7 +5383,7 @@ func bclCompositionFixture(t *testing.T, identity string) (*expectedSurface, *ac
 		t.Fatalf("%s does not inherit a supported BCL base", identity)
 	}
 	actual.Types[owner.Key].Fields = []actualField{
-		{Name: adapter.AdapterField, Type: adapterFieldType(adapter, owner.BaseType)},
+		{Name: adapter.AdapterField, Type: adapterFieldType(adapter, owner.BaseType, owner)},
 		{Name: "componentAdded", Type: "EventSource[*GameComponentCollectionEventArgs]"},
 	}
 	iteratorKey := symbolKey{Package: modulePath + "/Microsoft/Xna/Framework", Name: "Iterator"}
@@ -5442,7 +5450,7 @@ func bclCompositionMutationCase(t *testing.T, mutation string) (*expectedSurface
 		// Embedding the private adapter still promotes a method set CNA-Go
 		// never measured, so it is refused too.
 		actual.Types[owner.Key].Fields = append(actual.Types[owner.Key].Fields,
-			actualField{Name: "collectionBase", Type: adapterFieldType(adapter, owner.BaseType), Embedded: true})
+			actualField{Name: "collectionBase", Type: adapterFieldType(adapter, owner.BaseType, owner), Embedded: true})
 	case "raw_slice_projection":
 		// `type GameComponentCollection []IGameComponent` is not a struct.
 		actual.Types[owner.Key].Kind = "other"
@@ -5516,7 +5524,16 @@ func TestBCLBaseCompositionIsMeasuredNotAssumed(t *testing.T) {
 		if adapter.GoAdapter == "" || adapter.AdapterField == "" || adapter.Authority == "" || adapter.AuthoritySHA256 == "" {
 			t.Fatalf("%s adapter is under-specified: %+v", identity, adapter)
 		}
-		if strings.ToUpper(adapter.GoAdapter[:1]) == adapter.GoAdapter[:1] {
+		// A base adapter is private machinery and is normally unexported. The
+		// exception is a CLR type that is ALSO a signature adapter: it is
+		// exported because a projected member returns one, and Foundation 90
+		// made ReadOnlyCollection<T> the first type to hold both roles at
+		// once. Its export is justified by the signature role, and the base
+		// role still requires it to be held in an unexported FIELD -- which
+		// the next check enforces and which is what keeps the base state
+		// private.
+		_, alsoSignatureAdapter := bclSignatureAdapters[identity]
+		if !alsoSignatureAdapter && strings.ToUpper(adapter.GoAdapter[:1]) == adapter.GoAdapter[:1] {
 			t.Fatalf("%s adapter %q must be unexported", identity, adapter.GoAdapter)
 		}
 		if strings.ToUpper(adapter.AdapterField[:1]) == adapter.AdapterField[:1] {
@@ -5803,14 +5820,17 @@ func TestBCLSignatureAdaptersAreMeasuredNotAssumed(t *testing.T) {
 			}
 		}
 	}
-	// The read-only base relationship is still deferred, so no XNA type may
-	// derive from it yet even though the signature projection exists.
+	// Foundation 90 made the read-only relationship COMPOSED, which is what
+	// the Model family's four collections derive through. The two roles stay
+	// independent: this test is about the SIGNATURE adapter, and the point
+	// preserved here is that one CLR type holding both roles must declare both
+	// registrations rather than having one imply the other.
 	relationship := bclBaseRelationships["System.Collections.ObjectModel.ReadOnlyCollection`1"]
-	if relationship.Status != "DEFERRED" {
-		t.Fatalf("ReadOnlyCollection base status = %q, want DEFERRED", relationship.Status)
+	if relationship.Status != "COMPOSED" {
+		t.Fatalf("ReadOnlyCollection base status = %q, want COMPOSED", relationship.Status)
 	}
-	if _, isBaseAdapter := bclBaseAdapters["System.Collections.ObjectModel.ReadOnlyCollection`1"]; isBaseAdapter {
-		t.Fatal("a DEFERRED base must not declare a base adapter")
+	if _, isBaseAdapter := bclBaseAdapters["System.Collections.ObjectModel.ReadOnlyCollection`1"]; !isBaseAdapter {
+		t.Fatal("a COMPOSED base must declare a base adapter")
 	}
 }
 

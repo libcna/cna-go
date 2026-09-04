@@ -18,14 +18,14 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               63
-MISSING_TYPE                    63
+TOTAL_DIAGNOSTICS               51
+MISSING_TYPE                    51
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 194
+COMPLETE_TYPES                 206
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         63
+GLOBAL_ACTIONABLE_LOCAL         51
 GLOBAL_UNREVIEWED                0
 BOUND_FUNCTIONS                350
 MANIFEST_LAYOUT_AGREEMENTS     457
@@ -270,10 +270,38 @@ has no controller, so that is the branch the stress run takes and
 `GAMEPADS_CONNECTED` is a measured 0 rather than a skip. `SetVibration` is
 called only with two zeros.
 
+Foundation 90 closed the **Model family** and with it the whole
+**`Microsoft.Xna.Framework.Graphics`** namespace: twelve types, the largest
+single family in the profile.
+
+It also settled a blocker that had stood since Foundation 29.
+`ReadOnlyCollection<T>` was DEFERRED **as a base** because all four Model
+collections declare their own `GetEnumerator`, which HIDES the inherited one,
+and the collision rule would have hashed both names. The answer adopted here is
+that a hidden base member is UNREACHABLE -- reaching one in C# needs a cast to
+the base, and CNA-Go projects no base type to cast to -- so it is excluded
+rather than renamed, and each collection keeps exactly one `GetEnumerator`.
+
+Three of the four collections wrap an ARRAY and one wraps a `List<Effect>`, and
+the difference is observable twice: only the List-backed view is LIVE, and only
+its enumerator is version-checked. `ModelMeshPart.set_Effect` is what mutates
+it, and it is a reference count -- the old effect leaves the mesh's Effects only
+when no sibling still uses it.
+
+`Model.Draw` draws every model in the process through ONE private static
+`Matrix[]`, grown to fit and never shrunk. That is reproduced rather than made
+safe: the reference is not thread-safe here, and hiding it would describe a
+different runtime.
+
+What is not claimed: no native slice exercises the draw path, because the
+contract declares ZERO public constructors across all twelve types and a Model
+reaches a consumer only through `ContentManager.Load<Model>`. The content-reader
+family unblocks it.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 63 types it does not project
+projects, it projects completely; what remains is 51 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -291,9 +319,9 @@ in that registry:
 
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
    grow `ContentManager.Load<T>`'s closed set.
-2. **The Model family**, which depends on the stock effects and now has them.
-3. Then **Storage**, **Media/XACT**, the **content plumbing** and
-   the **Design converters**. **Input** is closed as of Foundation 89.
+2. Then **Storage**, **Media/XACT**, the **content plumbing** and
+   the **Design converters**. **Input** closed in Foundation 89 and the
+   **Model family** in Foundation 90, which finished the Graphics namespace.
 
 **The dynamic-buffer note, closed.** Foundation 83 probed it, Foundation 84
 acted on it, and the outcome was smaller than the note expected: **one** new

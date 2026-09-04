@@ -339,6 +339,14 @@ var registry = []claimedString{
 		Value: "No gestures are available at this time.  TouchPanel.ReadGesture should only be called when TouchPanel.IsGestureAvailable is true."},
 	{Key: "InvalidDisplayOrientation", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "The specified DisplayOrientation is invalid."},
+	// Foundation 90, the Model family. ModelMesh.Draw throws the first for a
+	// part with no effect; Model.Draw throws either, and the second names the
+	// way out -- ModelMesh.Draw, which sets no transforms and so needs no
+	// IEffectMatrices.
+	{Key: "ModelHasNoEffect", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "ModelMeshPart has a null Effect."},
+	{Key: "ModelHasNoIEffectMatrices", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "This model contains a custom effect which does not implement the IEffectMatrices interface, so it cannot be drawn using Model.Draw. Instead, call ModelMesh.Draw after setting the appropriate effect parameters."},
 }
 
 // constantStringValue folds one constant expression to its string value.

@@ -1811,12 +1811,21 @@ func measureCollectionInterfaceProjection(result *report, expected *expectedSurf
 		}
 		verifyExcludedBaseMembersAbsent(result, expected, actual, owner, adapter)
 	}
+	// The required set names CLR members, so the match is on the CLR member
+	// name rather than the Go one. Those differ whenever the naming rules
+	// rename a member: ModelBoneCollection declares its own `Item(String)`
+	// beside the inherited `Item(Int32)`, and the settled collision rule gives
+	// both of them hashed Go names, neither of which is "Item". Matching on
+	// GoName would report the indexer missing when it is present twice.
 	for _, name := range required {
 		found := false
 		for _, key := range owner.Members {
 			member := expected.Members[key]
-			if member.GoName == name {
-				_, found = actual.Members[key]
+			if clrMemberName(member.XNA) != name {
+				continue
+			}
+			if _, present := actual.Members[key]; present {
+				found = true
 				break
 			}
 		}
@@ -2886,7 +2895,7 @@ func verifyBCLBaseComposition(result *report, typeDiagnostics map[string]int, et
 		typeDiagnostics[et.XNA]++
 		return
 	}
-	wanted := adapterFieldType(adapter, et.BaseType)
+	wanted := adapterFieldType(adapter, et.BaseType, et)
 	found := false
 	for _, field := range actual.Fields {
 		if field.Embedded {
@@ -2940,17 +2949,45 @@ func verifyBCLBaseComposition(result *report, typeDiagnostics map[string]int, et
 // adapterFieldType is the exact Go spelling the private adapter field must
 // have on one derived type: the adapter family with the CLR base's own generic
 // arguments substituted for its parameters.
-func adapterFieldType(adapter bclBaseAdapter, baseType string) string {
+// adapterFieldType renders the exact Go type a derived consumer must hold its
+// BCL base adapter in.
+//
+// Two corrections Foundation 90 needed, both of which are the general rule
+// rather than a special case for the family that exposed them. Until then every
+// composed BCL base lived in the SAME package as its one consumer and took an
+// INTERFACE type argument, so neither showed up.
+//
+//   - The adapter name is package-qualified exactly as every other projected
+//     type is. ReadOnlyCollection[T] is declared in Microsoft/Xna/Framework and
+//     its four consumers are in Graphics, so their field type reads
+//     `framework.ReadOnlyCollection[...]`; a consumer inside the framework
+//     package would spell it bare, which is what frameworkQualified decides.
+//   - A CLR CLASS argument renders as a Go POINTER, because that is what the
+//     class projection is everywhere else in this verifier. collectionBase's
+//     only consumer takes IGameComponent, an interface, which needs none.
+func adapterFieldType(adapter bclBaseAdapter, baseType string, owner *expectedType) string {
+	name := adapter.GoAdapter
+	open := strings.Index(name, "[")
+	head := name
+	if open >= 0 {
+		head = name[:open]
+	}
+	// Only an UNQUALIFIED adapter name takes the framework qualifier. An
+	// adapter that already names its own package -- bclexception.State, which
+	// the exception family composes out of internal/bclexception -- is spelled
+	// exactly as declared.
+	if !strings.Contains(head, ".") {
+		head = frameworkQualified(owner, head)
+	}
 	arguments := bclBaseArguments(baseType)
-	open := strings.Index(adapter.GoAdapter, "[")
 	if open < 0 || len(arguments) != adapter.GenericArity {
-		return adapter.GoAdapter
+		return head
 	}
 	mapped := make([]string, 0, len(arguments))
 	for _, argument := range arguments {
-		mapped = append(mapped, goAdapterArgument(argument))
+		mapped = append(mapped, goAdapterArgumentForOwner(argument, owner))
 	}
-	return adapter.GoAdapter[:open] + "[" + strings.Join(mapped, ", ") + "]"
+	return head + "[" + strings.Join(mapped, ", ") + "]"
 }
 
 // measureBCLBaseRelationships summarises every declared non-XNA base across the
@@ -3224,7 +3261,7 @@ func measureBCLBaseAdapters(expected *expectedSurface, actual *actualSurface) []
 			at := actual.Types[et.Key]
 			consumer := bclBaseAdapterConsumer{
 				XNA: et.XNA, Go: et.Key.String(), BaseArguments: bclBaseArguments(et.BaseType),
-				Projected: at != nil, AdapterFieldType: adapterFieldType(adapter, et.BaseType),
+				Projected: at != nil, AdapterFieldType: adapterFieldType(adapter, et.BaseType, et),
 				DeclaredMembers: et.SourceMembers, InheritedProjections: et.BCLInheritedProjections,
 				DeclaredProjections: len(et.Members) - et.BCLInheritedProjections, Verdict: "PASS",
 			}

@@ -1602,8 +1602,35 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 87 | SoundEffect and SoundEffectInstance | `foundation-87-sound-effect-evidence.md` |
 | 88 | DynamicSoundEffectInstance, Microphone, and the end of the Audio namespace | `foundation-88-audio-namespace-evidence.md` |
 | 89 | GamePad, Mouse and TouchPanel, closing the Input namespace | `foundation-89-input-evidence.md` |
+| 90 | the Model family, closing the Graphics namespace | `foundation-90-model-family-evidence.md` |
 
 ### The rules these milestones settled
+
+**A HIDDEN inherited member is unreachable, not renamed** (90). All four Model
+collections declare their own `GetEnumerator` with neither `virtual` nor
+`newslot` -- C# `new`, which hides `ReadOnlyCollection<T>`'s. Reaching a hidden
+base member in C# requires a cast to the base; CNA-Go projects no base type to
+cast to, so the inherited member cannot be reached by any consumer and is
+EXCLUDED from the adapter rather than given a hashed name by the collision
+rule. Each collection keeps exactly one `GetEnumerator`, the derived one. This
+is what unblocked a base that had been DEFERRED since Foundation 29.
+
+**A read-only view over a LIST is live; over an ARRAY it is frozen** (90).
+`ReadOnlyCollection<T>` stores the `IList` reference, so what the underlying
+list can do, the view does. `ModelEffectCollection` wraps a `List<Effect>` its
+owner keeps mutating, so its view must see every addition and its enumerator
+must be version-checked; its three array-backed siblings can be neither, because
+an array's length never changes. One adapter, two sources, and the signatures
+carry the difference -- only the List-backed `MoveNext` returns an error.
+
+**A family with no public constructor has no native slice until its factory
+lands** (90). The Model family's twelve types declare ZERO public constructors:
+a Model arrives only from `ContentManager.Load<Model>`. Its draw path reaches
+the device and is still recorded VERIFIED_MANAGED, because nothing outside the
+package can build one to draw. Naming that as unclaimed is the honest report;
+adding a constructor the reference does not have to make a test possible would
+not be.
+
 
 **A reference body that reaches nothing is still the contract** (89). The
 pinned `Microsoft.Xna.Framework.Input.Touch.dll` declares no p/invoke anywhere:
@@ -2051,6 +2078,23 @@ reverted: XNA never probes for audio hardware, it maps the error code the
 creation call returns, so an up-front probe would be a call the reference does
 not make. The measurement it produced is kept in the evidence; the binding is
 not.
+
+**An EQUIVALENT mutant is a finding, not a test gap** (90). Widening the second
+`case` of a Go `switch` cannot change behaviour, because Go takes the first
+matching case and a value the first case matched never reaches the second. The
+switch's own semantics were already enforcing the exclusivity the reference's
+`else if` does. Two of milestone 90's survivors were of this kind; the answer is
+to replace the mutation with a defect that IS distinguishable -- two independent
+`if`s -- and to record why the first one could never have been killed, rather
+than to weaken a test until something fails.
+
+**A survivor can mean the code is UNREACHABLE from where the test sits** (90).
+Three planted defects in the live-list source survived every Model test, and the
+reason was structural: `ModelEffectCollection` HIDES `GetEnumerator` and
+forwards only some inherited members, so the base's iterator and half its bounds
+checks cannot be reached through that family at all. The fix is to test the
+adapter from its own package, not to route a Model test through machinery no
+consumer can reach.
 
 **A mutation anchor that can match PROSE is not a mutation** (86). This project
 quotes reference bodies in doc comments, so `return nameHash ^ idHash` appears

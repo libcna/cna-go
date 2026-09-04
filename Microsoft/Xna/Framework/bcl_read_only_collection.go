@@ -188,6 +188,110 @@ func (i *arrayListIterator[T]) Next() (T, bool, error) {
 // version-checked enumeration rather than the array source's unchecked one.
 var _ readOnlyListSource[int] = (*collectionBase[int])(nil)
 
+// liveListSource is the projection of a `List<T>` used as the IList<T> a
+// ReadOnlyCollection<T> wraps, as opposed to the `T[]` arrayListSource covers.
+//
+// The distinction is the CLR's, not a convenience. ReadOnlyCollection<T> stores
+// the IList REFERENCE it was handed, so when the owner is a List<T> that the
+// owner keeps ADDING TO, every addition is visible through the view
+// immediately. An array-backed view cannot observe that, because an array's
+// length never changes; a List-backed one must.
+//
+// The source is a function rather than a captured slice for exactly that
+// reason: a captured slice header would freeze the length at construction, and
+// a *[]T would expose the owner's storage to anything holding the view. A
+// closure over the owner is what the CLR reference is -- a way to ask the
+// owner for its list, each time, without being able to replace it.
+type liveListSource[T any] struct {
+	list  func() []T
+	equal func(a, b T) bool
+}
+
+func (s *liveListSource[T]) count() int32 { return int32(len(s.list())) }
+
+func (s *liveListSource[T]) item(index int32) (T, error) {
+	items := s.list()
+	if index < 0 || int(index) >= len(items) {
+		var zero T
+		return zero, collectionIndexError("index")
+	}
+	return items[index], nil
+}
+
+func (s *liveListSource[T]) indexOf(item T) int32 {
+	for i, candidate := range s.list() {
+		if s.equal(candidate, item) {
+			return int32(i)
+		}
+	}
+	return -1
+}
+
+func (s *liveListSource[T]) copyTo(destination []T, arrayIndex int32) error {
+	items := s.list()
+	if destination == nil {
+		return collectionNullError("destination")
+	}
+	if arrayIndex < 0 {
+		return collectionIndexError("arrayIndex")
+	}
+	if int64(arrayIndex)+int64(len(items)) > int64(len(destination)) {
+		return collectionArgumentError("destination is too small")
+	}
+	copy(destination[int(arrayIndex):], items)
+	return nil
+}
+
+func (s *liveListSource[T]) getEnumerator() Iterator[T] {
+	return &liveListIterator[T]{source: s, version: len(s.list())}
+}
+
+// liveListIterator projects List<T>.Enumerator, which is version-checked: the
+// reference captures List<T>._version at construction and throws
+// InvalidOperationException from MoveNext once the list has been mutated.
+//
+// CNA-Go has no _version to read, so the check is over the LENGTH, which is
+// what every mutation of the lists this source backs changes -- the only
+// mutators any consumer of this source declares are Add and Remove. A
+// same-length replacement would go unnoticed here and would be caught there;
+// no consumer performs one.
+type liveListIterator[T any] struct {
+	source  *liveListSource[T]
+	version int
+	index   int
+}
+
+func (i *liveListIterator[T]) Next() (T, bool, error) {
+	var zero T
+	items := i.source.list()
+	if len(items) != i.version {
+		return zero, false, errCollectionEnumerationFailed
+	}
+	if i.index >= len(items) {
+		return zero, false, nil
+	}
+	value := items[i.index]
+	i.index++
+	return value, true, nil
+}
+
+// NewReadOnlyCollectionOverLiveReferences builds a read-only view over a
+// List<T> of CLR REFERENCES that its owner keeps mutating.
+//
+// It exists because Microsoft.Xna.Framework.Graphics.ModelEffectCollection
+// wraps a `List<Effect>` rather than an array, and ModelMeshPart.set_Effect
+// adds to and removes from that list while consumers hold the view. It lives in
+// a different Go package and cannot reach the unexported source types.
+//
+// The element comparer is Go's `==`, which for a pointer is identity --
+// EqualityComparer<T>.Default for a CLR class that overrides no Equals.
+func NewReadOnlyCollectionOverLiveReferences[T comparable](list func() []T) *ReadOnlyCollection[T] {
+	return &ReadOnlyCollection[T]{source: &liveListSource[T]{
+		list:  list,
+		equal: func(a, b T) bool { return a == b },
+	}}
+}
+
 // NewReadOnlyCollectionOverSingles builds the live read-only view a
 // System.Single buffer is wrapped in, which is the one shape the pinned XNA
 // contract constructs.

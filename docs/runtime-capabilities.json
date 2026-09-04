@@ -424,6 +424,20 @@
       "notes": "The reference body is entirely Win32 -- GetCursorPos, ScreenToClient, GetAsyncKeyState x5 -- so there is no managed contract to reproduce beyond the shape: positions are in the hooked window's CLIENT coordinates and the scroll wheel is a cumulative 120-unit total the projection does not reset. CNA_MouseState.horizontal_scroll_wheel has no XNA counterpart and is dropped. System.IntPtr projects to uintptr, which the mapping already declares, so no raw handle leaves the surface."
     },
     {
+      "id": "model-family",
+      "capability": "Model, ModelBone, ModelMesh, ModelMeshPart and their four collections",
+      "status": "VERIFIED_MANAGED",
+      "evidence": "Foundation 90 projected all twelve types against Microsoft.Xna.Framework.Graphics.dll (560080fc39021c61), closing the Graphics namespace: ModelMeshPart.set_Effect decoded at 175 bytes as a reference count over the parent mesh's Effects using ReferenceEquals throughout, ModelMesh.Draw at 120 bytes including its per-iteration re-fetch of CurrentTechnique.Passes, Model.Draw at 236 bytes including the process-wide static bone array, and CopyAbsoluteBoneTransformsTo at 154 bytes as a single forward pass that reads its own output. Fourteen in-package tests, one external-consumer canary and a planted-defect table cover them",
+      "notes": "VERIFIED_MANAGED rather than VERIFIED_NATIVE for a measured reason, not an omission: the pinned contract declares ZERO public constructors across all twelve types, so a Model reaches a consumer only through ContentManager.Load<Model>, and the content-reader family is not projected. ModelMeshPart.draw does reach the device -- SetVertexBuffer, Indices, DrawIndexedPrimitives -- but nothing outside package graphics can build a Model to draw, so no native slice exercises it and none is claimed. No CNA route was bound: the 134 cna_model* routes (43 of them _ext) describe a native model object the reference never reaches, because it deserializes instead."
+    },
+    {
+      "id": "readonlycollection-base",
+      "capability": "ReadOnlyCollection<T> as a composed CLR BASE",
+      "status": "VERIFIED_MANAGED",
+      "evidence": "Foundation 90 moved this BCL base from DEFERRED to COMPOSED, clearing both blockers Foundation 29 recorded. Its four consumers -- the Model collections -- each hold the framework ReadOnlyCollection[T] adapter in an unexported `base` field over the same object their own backing field holds, which is what the reference's constructor does, and forward the five reachable inherited members",
+      "notes": "The ARCHITECTURE blocker asked for a rule for a derived member that HIDES an inherited one. All four consumers declare their own GetEnumerator with neither virtual nor newslot, which is C# `new`. The adopted rule: reaching a hidden base member requires a cast to the base, CNA-Go projects no base type to cast to, so the inherited member is UNREACHABLE and is excluded from the adapter rather than renamed by the collision rule. The same type keeps its independent role as a signature adapter; a fourth constructor, NewReadOnlyCollectionOverLiveReferences, was added because the one List-backed consumer needs a LIVE view where the three array-backed ones need a frozen one."
+    },
+    {
       "id": "touch",
       "capability": "Touch input",
       "status": "VERIFIED_MANAGED",

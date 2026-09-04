@@ -105,25 +105,6 @@ type frontierFamily struct {
 // than a stale paragraph.
 var frontierFamilies = []frontierFamily{
 	{
-		Name:           "Model family",
-		Classification: frontierActionableLocal,
-		Note:           "the largest single family at twelve types and ~233 CNA routes; it depends on the vertex structs and the stock effects, and on ReadOnlyCollection<T> becoming usable as a BASE rather than only as a signature adapter",
-		Types: []string{
-			"Microsoft.Xna.Framework.Graphics.Model",
-			"Microsoft.Xna.Framework.Graphics.ModelBone",
-			"Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
-			"Microsoft.Xna.Framework.Graphics.ModelBoneCollection+Enumerator",
-			"Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
-			"Microsoft.Xna.Framework.Graphics.ModelEffectCollection+Enumerator",
-			"Microsoft.Xna.Framework.Graphics.ModelMesh",
-			"Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
-			"Microsoft.Xna.Framework.Graphics.ModelMeshCollection+Enumerator",
-			"Microsoft.Xna.Framework.Graphics.ModelMeshPart",
-			"Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
-			"Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
-		},
-	},
-	{
 		Name:           "XACT",
 		Classification: frontierActionableLocal,
 		Note:           "~32/12/10/17 CNA routes; needs project-authored legal bank fixtures, and structural state is not audibility",
@@ -180,7 +161,7 @@ var frontierFamilies = []frontierFamily{
 	{
 		Name:           "Content plumbing",
 		Classification: frontierActionableLocal,
-		Note:           "~87 CNA content-reader routes; the question is how much of ContentReader's public state -- stream position, shared resources, external references, type-reader identity -- the C API actually exposes, measured member by member rather than blocked as a family",
+		Note:           "68 cna_content* routes in total -- 20 reader, 13 type-reader, 34 manager, of which only 3 are _ext -- and the question is how much of ContentReader's public state, stream position, shared resources, external references and type-reader identity, the C API actually exposes, measured member by member rather than blocked as a family. This family also unblocks the Model family's native slice: Model has no public constructor, so ContentManager.Load<Model> is the only way a consumer can obtain one to draw",
 		Types: []string{
 			"Microsoft.Xna.Framework.Content.ContentReader",
 			"Microsoft.Xna.Framework.Content.ContentTypeReader",

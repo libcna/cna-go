@@ -5,30 +5,30 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "BCL_ADAPTER_EXCLUSIONS": 142,
+    "BCL_ADAPTER_EXCLUSIONS": 166,
     "BCL_ADAPTER_EXCLUSIONS_BCL_PROJECTION_BLOCKED_EXTERNAL": 10,
     "BCL_ADAPTER_EXCLUSIONS_BLOCKED": 12,
     "BCL_ADAPTER_EXCLUSIONS_LANGUAGE_MAPPING_LIMITATION": 2,
-    "BCL_BASE_ADAPTERS": 4,
-    "BCL_BASE_ADAPTER_CONSUMERS": 10,
-    "BCL_DEFERRED_BASE_BLOCKERS": 9,
-    "BCL_INHERITED_MEMBER_PROJECTIONS": 109,
-    "BCL_INHERITED_PUBLIC_MEMBERS": 91,
+    "BCL_BASE_ADAPTERS": 5,
+    "BCL_BASE_ADAPTER_CONSUMERS": 14,
+    "BCL_DEFERRED_BASE_BLOCKERS": 7,
+    "BCL_INHERITED_MEMBER_PROJECTIONS": 129,
+    "BCL_INHERITED_PUBLIC_MEMBERS": 111,
     "BCL_LANGUAGE_ACCESSORS": 1,
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 194,
+    "COMPLETE_TYPES": 206,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3677,
+    "EXPECTED_GO_MEMBERS": 3697,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 8,
+    "FRONTIER_FAMILIES": 7,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 63,
+    "GLOBAL_ACTIONABLE_LOCAL": 51,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 63,
-    "MISSING_TYPES": 63,
+    "MISSING_TYPE": 51,
+    "MISSING_TYPES": 51,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3183,
-    "TARGET_TYPES": 194,
-    "TOTAL_DIAGNOSTICS": 63,
+    "TARGET_MEMBERS": 3256,
+    "TARGET_TYPES": 206,
+    "TOTAL_DIAGNOSTICS": 51,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -276,78 +276,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/GamerServices:GamerServicesComponent",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.Model",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Model",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelBone",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelBone",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelBoneCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelBoneCollection+Enumerator",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelBoneCollectionEnumerator",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelEffectCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelEffectCollection+Enumerator",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelEffectCollectionEnumerator",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelMesh",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMesh",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelMeshCollection+Enumerator",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshCollectionEnumerator",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPart",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollectionEnumerator",
       "message": "mapped Go type is absent"
     },
     {
@@ -568,6 +496,18 @@
     "Microsoft.Xna.Framework.Graphics.IVertexType",
     "Microsoft.Xna.Framework.Graphics.IndexBuffer",
     "Microsoft.Xna.Framework.Graphics.IndexElementSize",
+    "Microsoft.Xna.Framework.Graphics.Model",
+    "Microsoft.Xna.Framework.Graphics.ModelBone",
+    "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
+    "Microsoft.Xna.Framework.Graphics.ModelBoneCollection+Enumerator",
+    "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
+    "Microsoft.Xna.Framework.Graphics.ModelEffectCollection+Enumerator",
+    "Microsoft.Xna.Framework.Graphics.ModelMesh",
+    "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
+    "Microsoft.Xna.Framework.Graphics.ModelMeshCollection+Enumerator",
+    "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
+    "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
+    "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
     "Microsoft.Xna.Framework.Graphics.NoSuitableGraphicsDeviceException",
     "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
     "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
@@ -710,18 +650,6 @@
     "Microsoft.Xna.Framework.Design.Vector3Converter",
     "Microsoft.Xna.Framework.Design.Vector4Converter",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
-    "Microsoft.Xna.Framework.Graphics.Model",
-    "Microsoft.Xna.Framework.Graphics.ModelBone",
-    "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
-    "Microsoft.Xna.Framework.Graphics.ModelBoneCollection+Enumerator",
-    "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
-    "Microsoft.Xna.Framework.Graphics.ModelEffectCollection+Enumerator",
-    "Microsoft.Xna.Framework.Graphics.ModelMesh",
-    "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
-    "Microsoft.Xna.Framework.Graphics.ModelMeshCollection+Enumerator",
-    "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
-    "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
-    "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
     "Microsoft.Xna.Framework.Media.Album",
     "Microsoft.Xna.Framework.Media.AlbumCollection",
     "Microsoft.Xna.Framework.Media.Artist",
@@ -6681,25 +6609,13 @@
     },
     {
       "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
-      "status": "DEFERRED",
-      "addsProjectedSurface": false,
+      "adapter": "ReadOnlyCollection[T]",
+      "status": "COMPOSED",
+      "addsProjectedSurface": true,
       "derivedTypes": 4,
-      "projectedTypes": 0,
+      "projectedTypes": 4,
       "exportedEmbeddings": 0,
-      "blockers": [
-        {
-          "kind": "ARCHITECTURE",
-          "clrMember": "GetEnumerator",
-          "needs": "a rule for a derived member that HIDES an inherited one",
-          "detail": "all four base consumers declare a GetEnumerator returning their own nested Enumerator, which hides the inherited one. The settled collision rule would resolve that into two hashed names, neither of which is GetEnumerator. The principled answer -- a hidden inherited member is unreachable because CNA-Go projects no base type to cast to -- is available but untested, because every consumer is blocked on its element type anyway"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "needs": "ModelBone, Effect, ModelMesh, ModelMeshPart",
-          "detail": "each of the four consumers needs its element type, and all four element types are content-pipeline blocked"
-        }
-      ],
-      "rationale": "DEFERRED AS A BASE ONLY; it is SUPPORTED as a signature adapter, and the two roles are independent",
+      "rationale": "modelled by the framework ReadOnlyCollection[T] adapter, which is the same type that serves as this base's signature adapter; a derived XNA class holds it in an unexported field and re-exposes the five REACHABLE inherited public members through measured forwarding, with no exported embedding. The sixth, GetEnumerator, is hidden by a derived declaration on all four consumers and is therefore unreachable rather than renamed",
       "verdict": "PASS"
     },
     {
@@ -6787,7 +6703,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 43,
+      "projectedTypes": 47,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6808,34 +6724,13 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 56,
-      "projectedTypes": 51,
+      "projectedTypes": 55,
       "exportedEmbeddings": 0,
       "rationale": "the CLR value root; the struct projection already carries value semantics",
       "verdict": "PASS"
     }
   ],
   "frontier": [
-    {
-      "family": "Model family",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "the largest single family at twelve types and ~233 CNA routes; it depends on the vertex structs and the stock effects, and on ReadOnlyCollection\u003cT\u003e becoming usable as a BASE rather than only as a signature adapter",
-      "types": [
-        "Microsoft.Xna.Framework.Graphics.Model",
-        "Microsoft.Xna.Framework.Graphics.ModelBone",
-        "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
-        "Microsoft.Xna.Framework.Graphics.ModelBoneCollection+Enumerator",
-        "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
-        "Microsoft.Xna.Framework.Graphics.ModelEffectCollection+Enumerator",
-        "Microsoft.Xna.Framework.Graphics.ModelMesh",
-        "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
-        "Microsoft.Xna.Framework.Graphics.ModelMeshCollection+Enumerator",
-        "Microsoft.Xna.Framework.Graphics.ModelMeshPart",
-        "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
-        "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator"
-      ],
-      "remaining": 12,
-      "verdict": "PASS"
-    },
     {
       "family": "XACT",
       "classification": "ACTIONABLE_LOCAL",
@@ -6903,7 +6798,7 @@
     {
       "family": "Content plumbing",
       "classification": "ACTIONABLE_LOCAL",
-      "note": "~87 CNA content-reader routes; the question is how much of ContentReader's public state -- stream position, shared resources, external references, type-reader identity -- the C API actually exposes, measured member by member rather than blocked as a family",
+      "note": "68 cna_content* routes in total -- 20 reader, 13 type-reader, 34 manager, of which only 3 are _ext -- and the question is how much of ContentReader's public state, stream position, shared resources, external references and type-reader identity, the C API actually exposes, measured member by member rather than blocked as a family. This family also unblocks the Model family's native slice: Model has no public constructor, so ContentManager.Load\u003cModel\u003e is the only way a consumer can obtain one to draw",
       "types": [
         "Microsoft.Xna.Framework.Content.ContentReader",
         "Microsoft.Xna.Framework.Content.ContentTypeReader",
@@ -7564,6 +7459,413 @@
         }
       ],
       "rationale": "a mutable BCL collection base projected as private composition plus measured forwarding; every public mutator routes through the equivalent overridable hook so a subclass override runs",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+      "goAdapter": "ReadOnlyCollection[T]",
+      "adapterField": "base",
+      "behaviorLevel": "SUPPORTED",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "inheritedClrMembers": 5,
+      "inheritedProjectionsPerConsumer": 5,
+      "excludedMembers": 24,
+      "consumers": [
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelBoneCollection",
+          "baseArguments": [
+            "Microsoft.Xna.Framework.Graphics.ModelBone"
+          ],
+          "projected": true,
+          "adapterFieldType": "framework.ReadOnlyCollection[*ModelBone]",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 3,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 5,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelEffectCollection",
+          "baseArguments": [
+            "Microsoft.Xna.Framework.Graphics.Effect"
+          ],
+          "projected": true,
+          "adapterFieldType": "framework.ReadOnlyCollection[*Effect]",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 1,
+          "xnaDeclaredProjections": 1,
+          "bclInheritedProjections": 5,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshCollection",
+          "baseArguments": [
+            "Microsoft.Xna.Framework.Graphics.ModelMesh"
+          ],
+          "projected": true,
+          "adapterFieldType": "framework.ReadOnlyCollection[*ModelMesh]",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 3,
+          "xnaDeclaredProjections": 3,
+          "bclInheritedProjections": 5,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollection",
+          "baseArguments": [
+            "Microsoft.Xna.Framework.Graphics.ModelMeshPart"
+          ],
+          "projected": true,
+          "adapterFieldType": "framework.ReadOnlyCollection[*ModelMeshPart]",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 1,
+          "xnaDeclaredProjections": 1,
+          "bclInheritedProjections": 5,
+          "verdict": "PASS"
+        }
+      ],
+      "inheritedMemberInventory": [
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Contains",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelBoneCollection.Contains",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "Contains is one forwarded `list.Contains(value)` over EqualityComparer\u003cT\u003e.Default, which for these four element types is reference identity"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "CopyTo",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelBoneCollection.CopyTo",
+          "goResults": "error",
+          "present": true,
+          "rationale": "CopyTo is one forwarded `list.CopyTo(array, index)`, carrying a null destination, a negative index and a too-small destination"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Count",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelBoneCollection.Count",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Count is one forwarded `list.Count`"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "IndexOf",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelBoneCollection.IndexOf",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "IndexOf is one forwarded `list.IndexOf(value)`, the first match or -1"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Item",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelBoneCollection.ItemPropertySignature854B41ED",
+          "goResults": "*ModelBone,error",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Item is one forwarded `list[index]`; the SETTER is a private explicit implementation, which is what makes the view read-only"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Contains",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelEffectCollection.Contains",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "Contains is one forwarded `list.Contains(value)` over EqualityComparer\u003cT\u003e.Default, which for these four element types is reference identity"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "CopyTo",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelEffectCollection.CopyTo",
+          "goResults": "error",
+          "present": true,
+          "rationale": "CopyTo is one forwarded `list.CopyTo(array, index)`, carrying a null destination, a negative index and a too-small destination"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Count",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelEffectCollection.Count",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Count is one forwarded `list.Count`"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "IndexOf",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelEffectCollection.IndexOf",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "IndexOf is one forwarded `list.IndexOf(value)`, the first match or -1"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Item",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelEffectCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelEffectCollection.Item",
+          "goResults": "EffectReference,error",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Item is one forwarded `list[index]`; the SETTER is a private explicit implementation, which is what makes the view read-only"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Contains",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshCollection.Contains",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "Contains is one forwarded `list.Contains(value)` over EqualityComparer\u003cT\u003e.Default, which for these four element types is reference identity"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "CopyTo",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshCollection.CopyTo",
+          "goResults": "error",
+          "present": true,
+          "rationale": "CopyTo is one forwarded `list.CopyTo(array, index)`, carrying a null destination, a negative index and a too-small destination"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Count",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshCollection.Count",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Count is one forwarded `list.Count`"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "IndexOf",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshCollection.IndexOf",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "IndexOf is one forwarded `list.IndexOf(value)`, the first match or -1"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Item",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshCollection.ItemPropertySignature854B41ED",
+          "goResults": "*ModelMesh,error",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Item is one forwarded `list[index]`; the SETTER is a private explicit implementation, which is what makes the view read-only"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Contains",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollection.Contains",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "Contains is one forwarded `list.Contains(value)` over EqualityComparer\u003cT\u003e.Default, which for these four element types is reference identity"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "CopyTo",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollection.CopyTo",
+          "goResults": "error",
+          "present": true,
+          "rationale": "CopyTo is one forwarded `list.CopyTo(array, index)`, carrying a null destination, a negative index and a too-small destination"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Count",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollection.Count",
+          "goResults": "int32",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Count is one forwarded `list.Count`"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "IndexOf",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollection.IndexOf",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "IndexOf is one forwarded `list.IndexOf(value)`, the first match or -1"
+        },
+        {
+          "clrBase": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+          "clrMember": "Item",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:ModelMeshPartCollection.Item",
+          "goResults": "*ModelMeshPart,error",
+          "accessor": "get",
+          "present": true,
+          "rationale": "get_Item is one forwarded `list[index]`; the SETTER is a private explicit implementation, which is what makes the view read-only"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": "GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "HIDDEN by a derived declaration on all four consumers -- each declares its own GetEnumerator returning its own nested Enumerator, with neither virtual nor newslot. Reaching the hidden base member requires a cast to the base, and CNA-Go projects no base type to cast to, so the inherited one is unreachable rather than renamed"
+        },
+        {
+          "clrMember": ".ctor(IList`1\u003cT\u003e)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors; each consumer's own assembly constructor is what builds the adapter"
+        },
+        {
+          "clrMember": "Items",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`family`; exposing it would hand out the wrapped list"
+        },
+        {
+          "clrMember": "ICollection\u003cT\u003e.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation; the settled BCL-interface rule projects nothing for it"
+        },
+        {
+          "clrMember": "IList\u003cT\u003e.Item",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation whose setter throws NotSupportedException"
+        },
+        {
+          "clrMember": "ICollection\u003cT\u003e.Add",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator; read-only means it is not public surface"
+        },
+        {
+          "clrMember": "ICollection\u003cT\u003e.Clear",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "ICollection\u003cT\u003e.Remove",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList\u003cT\u003e.Insert",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList\u003cT\u003e.RemoveAt",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IEnumerable.GetEnumerator",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.IsSynchronized",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "ICollection.SyncRoot",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation, and CNA-Go projects no CLR sync root"
+        },
+        {
+          "clrMember": "ICollection.CopyTo",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.IsFixedSize",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.IsReadOnly",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.Item",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.Add",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList.Clear",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList.Contains",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.IndexOf",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit implementation"
+        },
+        {
+          "clrMember": "IList.Insert",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList.Remove",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        },
+        {
+          "clrMember": "IList.RemoveAt",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "private explicit mutator"
+        }
+      ],
+      "rationale": "a read-only BCL view projected as private composition plus measured forwarding; it stores the IList it was given rather than copying it, so mutation visibility and enumeration semantics are the underlying list's -- which is why the one List-backed consumer is live and version-checked while the three array-backed ones are neither",
       "verdict": "PASS"
     },
     {
@@ -9521,7 +9823,7 @@
       "clrMembers": 4,
       "projectedMembers": 0,
       "declaringTypes": 5,
-      "projectedTypes": 1,
+      "projectedTypes": 5,
       "rationale": "projected by the declared collection rule as the Iterator\u003cT\u003e adapter or the collection's own enumerator members",
       "verdict": "PASS"
     },
@@ -10401,7 +10703,7 @@
       "derivedTypes": 6,
       "projectedDerivedTypes": 6,
       "positions": 11,
-      "positionsOnProjectedCarriers": 9,
+      "positionsOnProjectedCarriers": 11,
       "requirement": "LIVE",
       "rows": [
         {
@@ -10510,7 +10812,7 @@
       "derivedTypes": 1,
       "projectedDerivedTypes": 1,
       "positions": 2,
-      "positionsOnProjectedCarriers": 1,
+      "positionsOnProjectedCarriers": 2,
       "requirement": "LIVE",
       "rows": [
         {
@@ -10746,7 +11048,7 @@
       "derivedTypes": 1,
       "projectedDerivedTypes": 1,
       "positions": 8,
-      "positionsOnProjectedCarriers": 7,
+      "positionsOnProjectedCarriers": 8,
       "requirement": "LIVE",
       "rows": [
         {

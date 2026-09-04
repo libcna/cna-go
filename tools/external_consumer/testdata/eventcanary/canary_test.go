@@ -4855,3 +4855,92 @@ func TestInputStaticsAreReachableFromOutsideTheModule(t *testing.T) {
 	}
 	touch.SetTouchPanelDisplayWidth(0)
 }
+
+// TestModelFamilyIsReachableFromOutsideTheModule is Foundation 90's canary. It
+// pins the exported shape of all twelve Model types and, more importantly, that
+// a consumer OUTSIDE the module can reach the five inherited ReadOnlyCollection
+// members through the private composition -- which is the whole point of
+// composing the base rather than deferring it.
+func TestModelFamilyIsReachableFromOutsideTheModule(t *testing.T) {
+	var model *graphics.Model
+	var _ func() *graphics.ModelBone = model.Root
+	var _ func() *graphics.ModelBoneCollection = model.Bones
+	var _ func() *graphics.ModelMeshCollection = model.Meshes
+	var _ func() any = model.Tag
+	var _ func(any) = model.SetTag
+	var _ func([]framework.Matrix) error = model.CopyBoneTransformsTo
+	var _ func([]framework.Matrix) error = model.CopyBoneTransformsFrom
+	var _ func([]framework.Matrix) error = model.CopyAbsoluteBoneTransformsTo
+	var _ func(framework.Matrix, framework.Matrix, framework.Matrix) error = model.Draw
+
+	var bone *graphics.ModelBone
+	var _ func() string = bone.Name
+	var _ func() int32 = bone.Index
+	var _ func() framework.Matrix = bone.Transform
+	var _ func(framework.Matrix) = bone.SetTransform
+	var _ func() *graphics.ModelBone = bone.Parent
+	var _ func() *graphics.ModelBoneCollection = bone.Children
+
+	var mesh *graphics.ModelMesh
+	var _ func() string = mesh.Name
+	var _ func() *graphics.ModelBone = mesh.ParentBone
+	var _ func() framework.BoundingSphere = mesh.BoundingSphere
+	var _ func() *graphics.ModelMeshPartCollection = mesh.MeshParts
+	var _ func() *graphics.ModelEffectCollection = mesh.Effects
+	var _ func() error = mesh.Draw
+
+	var part *graphics.ModelMeshPart
+	var _ func() int32 = part.StartIndex
+	var _ func() int32 = part.PrimitiveCount
+	var _ func() int32 = part.VertexOffset
+	var _ func() int32 = part.NumVertices
+	var _ func() *graphics.IndexBuffer = part.IndexBuffer
+	var _ func() *graphics.VertexBuffer = part.VertexBuffer
+	var _ func() graphics.EffectReference = part.Effect
+	var _ func(graphics.EffectReference) = part.SetEffect
+
+	// The five INHERITED members, on every collection. A consumer must be able
+	// to call these even though CNA-Go exposes no base type at all.
+	var bones *graphics.ModelBoneCollection
+	var _ func() int32 = bones.Count
+	var _ func(int32) (*graphics.ModelBone, error) = bones.ItemPropertySignature854B41ED
+	var _ func(*graphics.ModelBone) bool = bones.Contains
+	var _ func(*graphics.ModelBone) int32 = bones.IndexOf
+	var _ func([]*graphics.ModelBone, int32) error = bones.CopyTo
+	// And the two DECLARED ones that hide or extend the base.
+	var _ func(string) (*graphics.ModelBone, error) = bones.ItemPropertySignatureC23A10DE
+	var _ func(string) (bool, *graphics.ModelBone, error) = bones.TryGetValue
+	var _ func() graphics.ModelBoneCollectionEnumerator = bones.GetEnumerator
+
+	var meshes *graphics.ModelMeshCollection
+	var _ func() int32 = meshes.Count
+	var _ func(int32) (*graphics.ModelMesh, error) = meshes.ItemPropertySignature854B41ED
+	var _ func(string) (bool, *graphics.ModelMesh, error) = meshes.TryGetValue
+
+	var parts *graphics.ModelMeshPartCollection
+	var _ func() int32 = parts.Count
+	var _ func(int32) (*graphics.ModelMeshPart, error) = parts.Item
+	var _ func() graphics.ModelMeshPartCollectionEnumerator = parts.GetEnumerator
+
+	var effects *graphics.ModelEffectCollection
+	var _ func() int32 = effects.Count
+	var _ func(int32) (graphics.EffectReference, error) = effects.Item
+	var _ func(graphics.EffectReference) bool = effects.Contains
+	var _ func() graphics.ModelEffectCollectionEnumerator = effects.GetEnumerator
+
+	// The four enumerators, and the asymmetry between them: only the
+	// List-backed one can fail, because only it is version-checked.
+	var boneEnum graphics.ModelBoneCollectionEnumerator
+	var _ func() *graphics.ModelBone = boneEnum.Current
+	var _ func() bool = boneEnum.MoveNext
+	var _ func() = boneEnum.Dispose
+	var effectEnum graphics.ModelEffectCollectionEnumerator
+	var _ func() graphics.EffectReference = effectEnum.Current
+	var _ func() (bool, error) = effectEnum.MoveNext
+
+	// The one behaviour a consumer can reach with no content and no device: the
+	// Copy* guards, on a Model with no bones at all.
+	if err := model.CopyBoneTransformsTo(nil); err == nil {
+		t.Fatal("CopyBoneTransformsTo accepted a nil destination")
+	}
+}
