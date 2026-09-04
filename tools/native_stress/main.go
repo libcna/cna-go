@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
+	audio "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio"
 	content "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
@@ -245,6 +246,24 @@ type counters struct {
 	// XNA's. Counted in two buckets so the behaviour is visible either way.
 	OcclusionQueryStaleResultChecks int `json:"OCCLUSION_QUERY_STALE_RESULT_CHECKS"`
 	OcclusionQueryFreshResultChecks int `json:"OCCLUSION_QUERY_FRESH_RESULT_CHECKS"`
+	// Foundation 87. SoundEffect and SoundEffectInstance. Playback IS available
+	// on both qualified artifacts -- cna_audio_get_capabilities reports
+	// is_playback_available=true -- so the creations are counted apart from the
+	// refusals only because CNA documents NOT_SUPPORTED for a machine without
+	// audio hardware and a run on such a machine must record rather than fail.
+	SoundEffectCreations          int `json:"SOUND_EFFECT_CREATIONS"`
+	SoundEffectCreationRefusals   int `json:"SOUND_EFFECT_CREATION_REFUSALS"`
+	SoundEffectDescriptionChecks  int `json:"SOUND_EFFECT_DESCRIPTION_CHECKS"`
+	SoundEffectGuardChecks        int `json:"SOUND_EFFECT_GUARD_CHECKS"`
+	SoundEffectScalarChecks       int `json:"SOUND_EFFECT_SCALAR_CHECKS"`
+	SoundEffectPlays              int `json:"SOUND_EFFECT_PLAYS"`
+	SoundEffectPlayLimitChecks    int `json:"SOUND_EFFECT_PLAY_LIMIT_CHECKS"`
+	SoundInstanceCreations        int `json:"SOUND_INSTANCE_CREATIONS"`
+	SoundInstanceTransitions      int `json:"SOUND_INSTANCE_TRANSITIONS"`
+	SoundInstanceScalarRoundTrips int `json:"SOUND_INSTANCE_SCALAR_ROUND_TRIPS"`
+	SoundInstanceModeLatchChecks  int `json:"SOUND_INSTANCE_MODE_LATCH_CHECKS"`
+	SoundInstanceApply3DChecks    int `json:"SOUND_INSTANCE_APPLY_3D_CHECKS"`
+	SoundEffectDisposalChecks     int `json:"SOUND_EFFECT_DISPOSAL_CHECKS"`
 	// Foundation 85. The first VERIFIED_PIXEL draw. Every counter here is over
 	// the SOFTWARE artifact only, because HEADLESS has no back-buffer readback
 	// and records a refusal instead -- which is why the refusal column exists.
@@ -818,6 +837,41 @@ func runParent() (counters, error) {
 		total.DynamicBufferLatchClears > total.DynamicBufferCreations {
 		return total, fmt.Errorf("%d content-lost reads and %d latch clears over %d creations",
 			total.DynamicBufferContentLostReads, total.DynamicBufferLatchClears, total.DynamicBufferCreations)
+	}
+	// Foundation 87. One creation outcome per cycle, and every check downstream
+	// counted against the creations that succeeded. SOUND_EFFECT_PLAYS and
+	// SOUND_EFFECT_PLAY_LIMIT_CHECKS are the two halves of Play's bool, which
+	// is false ONLY when the voice limit was hit.
+	if total.SoundEffectCreations+total.SoundEffectCreationRefusals != total.VertexBufferCycles {
+		return total, fmt.Errorf("sound-effect creations %d and refusals %d do not account for %d cycles",
+			total.SoundEffectCreations, total.SoundEffectCreationRefusals, total.VertexBufferCycles)
+	}
+	if total.SoundEffectDescriptionChecks != total.SoundEffectCreations ||
+		total.SoundEffectGuardChecks != total.SoundEffectCreations ||
+		total.SoundEffectScalarChecks != total.SoundEffectCreations ||
+		total.SoundEffectDisposalChecks != total.SoundEffectCreations ||
+		total.SoundInstanceCreations != total.SoundEffectCreations ||
+		total.SoundInstanceModeLatchChecks != total.SoundEffectCreations {
+		return total, fmt.Errorf("%d sound-effect creations produced %d description, %d guard, %d scalar, %d disposal, %d instance and %d latch checks",
+			total.SoundEffectCreations, total.SoundEffectDescriptionChecks, total.SoundEffectGuardChecks,
+			total.SoundEffectScalarChecks, total.SoundEffectDisposalChecks,
+			total.SoundInstanceCreations, total.SoundInstanceModeLatchChecks)
+	}
+	if total.SoundEffectPlays+total.SoundEffectPlayLimitChecks != total.SoundEffectCreations {
+		return total, fmt.Errorf("sound-effect plays %d and voice-limit answers %d do not account for %d creations",
+			total.SoundEffectPlays, total.SoundEffectPlayLimitChecks, total.SoundEffectCreations)
+	}
+	// Five transport transitions -- Play, Pause, Resume, Stop and the
+	// resume-after-stop that tells Resume apart from Play -- and three scalar
+	// round trips per instance.
+	if total.SoundInstanceTransitions != 5*total.SoundInstanceCreations ||
+		total.SoundInstanceScalarRoundTrips != 3*total.SoundInstanceCreations {
+		return total, fmt.Errorf("%d instances produced %d transitions and %d scalar round trips",
+			total.SoundInstanceCreations, total.SoundInstanceTransitions, total.SoundInstanceScalarRoundTrips)
+	}
+	if total.SoundInstanceApply3DChecks > total.SoundInstanceCreations {
+		return total, fmt.Errorf("%d Apply3D checks over %d instances",
+			total.SoundInstanceApply3DChecks, total.SoundInstanceCreations)
 	}
 	// Foundation 82. Three dispatcher pumps and two guard checks per cycle, and
 	// exactly one outcome for the read.
@@ -4877,6 +4931,11 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 87. The audio family, which needs a game and no device.
+	if err := g.exerciseSoundEffect(); err != nil {
+		return err
+	}
+
 	// Foundation 83. OcclusionQuery, on the same live device.
 	if err := g.exerciseOcclusionQuery(device); err != nil {
 		return err
@@ -6962,6 +7021,327 @@ func (g *stressGame) exerciseDynamicBuffers(device *graphics.GraphicsDevice) err
 		return fmt.Errorf("the index disposal refusal said %q", err)
 	}
 	g.result.DynamicBufferDisposalChecks++
+	return nil
+}
+
+// exerciseSoundEffect is Foundation 87's slice.
+//
+// # It plays SILENCE, deliberately
+//
+// Every fixture below is an all-zero PCM16 buffer. That is not a shortcut: the
+// qualified artifacts open a REAL playback device -- cna_audio_get_capabilities
+// reports is_playback_available=true on both -- so a fixture with signal in it
+// would make audible noise on the machine running the suite, twenty times per
+// cycle, for no evidence gained.
+//
+// Silence exercises creation, instance lifetime, transport, state and the
+// scalar round trips identically: every one of them is about STRUCTURE, and
+// none of them reads a sample back. What silence cannot prove is audibility,
+// and this scenario does not claim it -- the same position the ROADMAP already
+// records for XACT, where "structural state is not audibility".
+//
+// # What needs a device and what does not
+//
+// The managed half -- the four static setters' four different validation
+// shapes, the seven constructor guards, the pan/Apply3D mode latch, every
+// disposal refusal -- is measured without a runtime in the package tests. What
+// needs one is CNA accepting the buffer, the instance existing, the transport
+// reaching the mixer, and the state coming back.
+func (g *stressGame) exerciseSoundEffect() error {
+	// One second of 8kHz mono silence. 8000 is chosen over 44100 because its
+	// thousandth IS representable in binary32, so the byte count is the exact
+	// 16000 rather than the truncated number 44100 produces -- a fixture whose
+	// size is arithmetic rather than a measurement.
+	const sampleRate = 8000
+	pcm := make([]byte, 16000)
+
+	effect, err := audio.NewSoundEffectBySliceOfByteAndInt32AndAudioChannels(
+		pcm, sampleRate, audio.AudioChannelsMono)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewSoundEffect: %w", err)
+		}
+		g.result.SoundEffectCreationRefusals++
+		fmt.Fprintf(os.Stderr, "sound effect creation refused: %v\n", err)
+		return nil
+	}
+	g.result.SoundEffectCreations++
+
+	// The duration CNA computed, which is what the projection stores rather
+	// than recomputing it managed-side. One second of 8kHz mono is one second.
+	if ticks := effect.Duration().Ticks(); ticks != 10_000_000 {
+		return fmt.Errorf("Duration = %d ticks for one second of 8kHz mono silence, want 10000000", ticks)
+	}
+	if effect.IsDisposed() {
+		return errors.New("a fresh sound effect reports itself disposed")
+	}
+	if effect.Name() != "" {
+		return fmt.Errorf("a fresh sound effect is named %q", effect.Name())
+	}
+	if err := effect.SetName("stress-silence"); err != nil {
+		return fmt.Errorf("SetName: %w", err)
+	}
+	if effect.Name() != "stress-silence" {
+		return errors.New("SetName did not store")
+	}
+	g.result.SoundEffectDescriptionChecks++
+
+	// The seven-argument constructor over the same buffer, with a loop region
+	// that covers exactly the frames. A zero loopLength is REWRITTEN by the
+	// reference to the whole range and CNA documents the same rule, so both
+	// forms must be accepted.
+	frames := int32(len(pcm) / 2)
+	for name, build := range map[string]func() (*audio.SoundEffect, error){
+		"explicit loop": func() (*audio.SoundEffect, error) {
+			return audio.NewSoundEffectBySliceOfByteAndInt32AndInt32AndInt32AndAudioChannelsAndInt32AndInt32(
+				pcm, 0, int32(len(pcm)), sampleRate, audio.AudioChannelsMono, 0, frames)
+		},
+		"zero loop length": func() (*audio.SoundEffect, error) {
+			return audio.NewSoundEffectBySliceOfByteAndInt32AndInt32AndInt32AndAudioChannelsAndInt32AndInt32(
+				pcm, 0, int32(len(pcm)), sampleRate, audio.AudioChannelsMono, 0, 0)
+		},
+		"windowed": func() (*audio.SoundEffect, error) {
+			return audio.NewSoundEffectBySliceOfByteAndInt32AndInt32AndInt32AndAudioChannelsAndInt32AndInt32(
+				pcm, 2, int32(len(pcm))-2, sampleRate, audio.AudioChannelsMono, 0, 0)
+		},
+	} {
+		built, buildErr := build()
+		if buildErr != nil {
+			return fmt.Errorf("the %s constructor: %w", name, buildErr)
+		}
+		// The WINDOWED form takes two bytes fewer, which is one frame at mono
+		// PCM16 -- and CNA's duration must reflect the COUNT it was given. A
+		// creation that ignored the count would report the whole buffer.
+		if name == "windowed" {
+			if ticks := built.Duration().Ticks(); ticks >= 10_000_000 {
+				return fmt.Errorf("a windowed effect reports %d ticks, want less than the whole buffer's 10000000", ticks)
+			}
+		} else if ticks := built.Duration().Ticks(); ticks != 10_000_000 {
+			return fmt.Errorf("the %s effect reports %d ticks, want the whole buffer's 10000000", name, ticks)
+		}
+		if disposeErr := built.Dispose(); disposeErr != nil {
+			return fmt.Errorf("disposing the %s effect: %w", name, disposeErr)
+		}
+		// Disposal is IDEMPOTENT, which the reference's flag makes it: a second
+		// call must succeed rather than reaching a released handle.
+		if disposeErr := built.Dispose(); disposeErr != nil {
+			return fmt.Errorf("a second Dispose of the %s effect: %w", name, disposeErr)
+		}
+	}
+	g.result.SoundEffectGuardChecks++
+
+	// The four process-wide scalars, each set to a value the class initializer
+	// does not use and read back. The getters are managed fields, so what this
+	// proves is that the native write was ACCEPTED -- a refused one would
+	// leave MasterVolume's field alone and update SpeedOfSound's, which is the
+	// asymmetry the package tests pin from the other side.
+	if err := audio.SetSoundEffectMasterVolume(0.5); err != nil {
+		return fmt.Errorf("SetMasterVolume: %w", err)
+	}
+	if got := audio.SoundEffectMasterVolume(); got != 0.5 {
+		return fmt.Errorf("MasterVolume = %v after a successful set", got)
+	}
+	if err := audio.SetSoundEffectSpeedOfSound(400); err != nil {
+		return fmt.Errorf("SetSpeedOfSound: %w", err)
+	}
+	if err := audio.SetSoundEffectDopplerScale(0); err != nil {
+		return fmt.Errorf("SetDopplerScale(0): %w -- zero is legal there", err)
+	}
+	if err := audio.SetSoundEffectDistanceScale(0); err != nil {
+		return fmt.Errorf("SetDistanceScale(0): %w", err)
+	}
+	// Zero is CLAMPED to Single.Epsilon, silently, and the getter shows it.
+	if got := audio.SoundEffectDistanceScale(); got == 0 {
+		return errors.New("SetDistanceScale(0) stored a zero; the reference clamps to Single.Epsilon")
+	}
+	g.result.SoundEffectScalarChecks++
+	// Put them back so the rest of the run sees the defaults.
+	_ = audio.SetSoundEffectMasterVolume(1)
+	_ = audio.SetSoundEffectSpeedOfSound(343.5)
+	_ = audio.SetSoundEffectDopplerScale(1)
+	_ = audio.SetSoundEffectDistanceScale(1)
+
+	// Play, which needs the dispatcher to have run. exerciseRootStatics pumps
+	// it three times immediately before this slice, so the precondition is met
+	// -- and a run that reordered them would fail here rather than silently.
+	played, err := effect.PlayByNone()
+	if err != nil {
+		return fmt.Errorf("SoundEffect.Play: %w", err)
+	}
+	if played {
+		g.result.SoundEffectPlays++
+	} else {
+		// FALSE means the voice limit, and nothing else.
+		g.result.SoundEffectPlayLimitChecks++
+	}
+
+	// An instance, and its whole transport.
+	instance, err := effect.CreateInstance()
+	if err != nil {
+		return fmt.Errorf("CreateInstance: %w", err)
+	}
+	g.result.SoundInstanceCreations++
+	if state, stateErr := instance.State(); stateErr != nil {
+		return fmt.Errorf("a fresh instance's State: %w", stateErr)
+	} else if state != audio.SoundStateStopped {
+		return fmt.Errorf("a fresh instance is %v, want Stopped", state)
+	}
+	for _, step := range []struct {
+		name string
+		call func() error
+		want audio.SoundState
+	}{
+		{"Play", instance.Play, audio.SoundStatePlaying},
+		{"Pause", instance.Pause, audio.SoundStatePaused},
+		{"Resume", instance.Resume, audio.SoundStatePlaying},
+		{"Stop", instance.StopByNone, audio.SoundStateStopped},
+	} {
+		if err := step.call(); err != nil {
+			return fmt.Errorf("SoundEffectInstance.%s: %w", step.name, err)
+		}
+		state, stateErr := instance.State()
+		if stateErr != nil {
+			return fmt.Errorf("State after %s: %w", step.name, stateErr)
+		}
+		if state != step.want {
+			return fmt.Errorf("after %s the instance is %v, want %v", step.name, state, step.want)
+		}
+		g.result.SoundInstanceTransitions++
+	}
+
+	// IsLooped must be set BEFORE the first Play, on both sides: the reference
+	// refuses once its packet is submitted and CNA refuses "after playback has
+	// begun". The instance above has already played, so a fresh one is what
+	// this claim needs -- and the refusal on the PLAYED one is asserted too,
+	// because a projection that dropped the guard would pass the first half.
+	if err := instance.SetIsLooped(true); err == nil {
+		return errors.New("SetIsLooped was accepted after Play; the packet is submitted by then")
+	}
+	loopable, err := effect.CreateInstance()
+	if err != nil {
+		return fmt.Errorf("an instance for the loop flag: %w", err)
+	}
+	if err := loopable.SetIsLooped(true); err != nil {
+		return fmt.Errorf("SetIsLooped before any Play: %w", err)
+	}
+	if !loopable.IsLooped() {
+		return errors.New("SetIsLooped did not store")
+	}
+	if err := loopable.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the loopable instance: %w", err)
+	}
+	g.result.SoundInstanceScalarRoundTrips++
+
+	// Resume on a STOPPED instance, which is what tells Resume apart from Play.
+	//
+	// MEASURED: a stopped instance that is resumed stays STOPPED. Resume lifts
+	// a pause and does not start playback, so a projection that routed it to
+	// cna_sound_effect_instance_play would leave the instance Playing here --
+	// and every other transport assertion in this slice would still pass,
+	// because the two agree everywhere except on a stopped instance.
+	if err := instance.StopByNone(); err != nil {
+		return fmt.Errorf("stopping before the resume check: %w", err)
+	}
+	if err := instance.Resume(); err != nil {
+		return fmt.Errorf("Resume on a stopped instance: %w", err)
+	}
+	state, stateErr := instance.State()
+	if stateErr != nil {
+		return fmt.Errorf("State after resuming a stopped instance: %w", stateErr)
+	}
+	if state != audio.SoundStateStopped {
+		return fmt.Errorf("a stopped instance that was resumed is %v, want Stopped -- Resume lifts a pause and does not start playback", state)
+	}
+	g.result.SoundInstanceTransitions++
+
+	// The two scalars that have no such precondition, each set and read back.
+	// The getter is a managed field the setter stores AFTER its native write,
+	// so a value that comes back is one CNA accepted.
+	for name, check := range map[string]func() error{
+		"Volume": func() error {
+			if err := instance.SetVolume(0.25); err != nil {
+				return err
+			}
+			if got := instance.Volume(); got != 0.25 {
+				return fmt.Errorf("Volume = %v", got)
+			}
+			return nil
+		},
+		"Pitch": func() error {
+			if err := instance.SetPitch(-0.5); err != nil {
+				return err
+			}
+			if got := instance.Pitch(); got != -0.5 {
+				return fmt.Errorf("Pitch = %v", got)
+			}
+			return nil
+		},
+	} {
+		if err := check(); err != nil {
+			return fmt.Errorf("the %s round trip: %w", name, err)
+		}
+		g.result.SoundInstanceScalarRoundTrips++
+	}
+
+	// The MODE LATCH, end to end. A fresh instance is neither 2D nor 3D; the
+	// first of the two members to be called decides, and after a Play the other
+	// one refuses.
+	panned, err := effect.CreateInstance()
+	if err != nil {
+		return fmt.Errorf("an instance for the pan half: %w", err)
+	}
+	if err := panned.SetPan(0.5); err != nil {
+		return fmt.Errorf("SetPan on a fresh instance: %w", err)
+	}
+	if got := panned.Pan(); got != 0.5 {
+		return fmt.Errorf("Pan = %v after a successful set", got)
+	}
+	// Apply3D on the SAME instance is still legal, because no packet has been
+	// submitted -- the guard clears the flag each time.
+	if err := panned.Apply3DByAudioListenerAndAudioEmitter(
+		audio.NewAudioListener(), audio.NewAudioEmitter()); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("Apply3D before any Play: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "Apply3D refused before Play: %v\n", err)
+	} else {
+		g.result.SoundInstanceApply3DChecks++
+	}
+	if err := panned.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the panned instance: %w", err)
+	}
+	g.result.SoundInstanceModeLatchChecks++
+
+	// Disposal, and the ordering CNA requires: the effect releases its
+	// instances before releasing itself, so disposing the EFFECT while an
+	// instance is still live must succeed.
+	if err := effect.Dispose(); err != nil {
+		return fmt.Errorf("disposing the effect with a live instance: %w", err)
+	}
+	if !effect.IsDisposed() || !instance.IsDisposed() {
+		return errors.New("disposing the effect did not dispose its instance")
+	}
+	// A disposed effect refuses rather than reaching a released handle, and
+	// names ITSELF when it does.
+	if _, err := effect.CreateInstance(); err == nil {
+		return errors.New("CreateInstance answered on a disposed SoundEffect")
+	} else if !strings.Contains(err.Error(), "SoundEffect") {
+		return fmt.Errorf("the disposal refusal said %q", err)
+	}
+	if err := instance.Play(); err == nil {
+		return errors.New("Play answered on a disposed SoundEffectInstance")
+	}
+	// The instance's own disposal is idempotent too, and it was already
+	// disposed by its effect -- so this is a SECOND release of a handle CNA has
+	// already destroyed, which the managed flag must stop before it happens.
+	if err := instance.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing an already-released instance: %w", err)
+	}
+	// get_Name has NO disposal check, so it still answers.
+	if effect.Name() != "stress-silence" {
+		return errors.New("a disposed effect stopped answering its name")
+	}
+	g.result.SoundEffectDisposalChecks++
 	return nil
 }
 

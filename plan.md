@@ -1599,6 +1599,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 84 | DynamicVertexBuffer and DynamicIndexBuffer, closing the Graphics namespace | `foundation-84-dynamic-buffers-evidence.md` |
 | 85 | the first VERIFIED_PIXEL draw | `foundation-85-pixel-draw-evidence.md` |
 | 86 | RendererDetail, and the stale audio blocker | `foundation-86-renderer-detail-evidence.md` |
+| 87 | SoundEffect and SoundEffectInstance | `foundation-87-sound-effect-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -2035,6 +2036,33 @@ twice in one file -- once in the comment and once in the code. Replacing the
 first occurrence scored a defect as unkillable while the projection was
 untouched. Anchor on surrounding code, and treat an unexpected survivor as a
 harness bug before treating it as a finding.
+
+**Reproduce the reference's FLOAT WIDTH, not its formula** (87). XNA's
+`GetSampleSizeInBytes` computes its scale factor in float32, so
+`(float)44100 / 1000f` is 44.099998474121094 and one second truncates to 44099
+samples rather than 44100. Doing the same arithmetic in float64 gives a
+different byte count at 44100 and 22050 and the same one at 8000 and 48000 --
+so a test that used only the exact rates would have agreed with the wrong
+projection.
+
+**A mutation of a path that never executes is not killed, and the fix is to
+make the path reachable** (87). CNA reports only its three defined sound states,
+so `get_State`'s fallback branch never ran and a mutation of it survived
+correctly. Extracting the mapping into its own function let a test reach the
+branch. Extracting is the answer; scoring it as unfalsifiable would have been
+giving up on a claim that was one refactor away.
+
+**Two members that agree everywhere except one state need that state** (87).
+Resume and Play produce the same observable on a playing, paused or fresh
+instance; they differ only on a STOPPED one, where Resume leaves it stopped. The
+assertion is a Stop-then-Resume pair, and without it a projection that routed
+Resume to the play route passed every other transport check.
+
+**A native scenario that can make sound must make SILENCE** (87). The qualified
+artifacts open a real playback device, so the audio fixtures are all-zero PCM.
+Structure -- creation, lifetime, transport, state -- is exercised identically and
+nothing audible reaches the machine running the suite. What silence cannot prove
+is audibility, and the scenario says so rather than implying it.
 
 ## Next milestone selection rule
 

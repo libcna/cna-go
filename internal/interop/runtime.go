@@ -121,6 +121,12 @@ const (
 	// Foundation 83. An OcclusionQuery handle, its own kind for the reason
 	// every other kind is: it has its own destroy route.
 	resourceOcclusionQuery
+	// Foundation 87. The audio family's two owned handles. CNA's header states
+	// the ordering constraint plainly -- "The returned effect must be destroyed
+	// after all instances created from it and before the game" -- which is what
+	// makes the instance a CHILD resource of the effect rather than a sibling.
+	resourceSoundEffect
+	resourceSoundEffectInstance
 )
 
 // effectViewResourceKinds maps a view kind onto its resource kind, in the order
@@ -3734,6 +3740,10 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeDirectionalLightDestroy(handle)
 	case resourceOcclusionQuery:
 		return nativeOcclusionQueryDestroy(handle)
+	case resourceSoundEffect:
+		return nativeSoundEffectDestroy(handle)
+	case resourceSoundEffectInstance:
+		return nativeSoundInstanceDestroy(handle)
 	case resourceEffectTechniqueCollection:
 		return nativeEffectViewDestroy(effectViewTechniqueCollection, handle)
 	case resourceEffectTechnique:
@@ -4621,6 +4631,224 @@ func (r *Runtime) FrameworkDispatcherUpdate() error {
 		return err
 	}
 	return nativeFrameworkDispatcherUpdate(game)
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 87 -- SoundEffect and SoundEffectInstance.
+//
+// Every creation route takes a GAME handle, and CNA accepts an "active owned or
+// callback-borrowed" one -- so activeGame(false) is enough and none of these
+// requires a lifecycle callback. That is the same shape the two root types have
+// and a different one from the graphics family, whose device is callback-scoped.
+// ---------------------------------------------------------------------------
+
+// CreateSoundEffectFromPCM16 is cna_sound_effect_create_pcm16_range_ext, which
+// CNA calls "the canonical seven-argument constructor".
+//
+// The offset, count and loop region are the reference's own arguments, and the
+// three-argument constructor supplies 0, len, 0, 0 -- so ONE route serves both
+// and the short CNA route is recorded as SUBSUMED.
+func (r *Runtime) CreateSoundEffectFromPCM16(sampleRate, channels uint32, data []byte,
+	offset, count, loopStart, loopLength int32) (*Resource, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, errors.New("a sound effect needs PCM bytes")
+	}
+	handle, err := nativeSoundEffectCreatePCM16Range(game, sampleRate, channels,
+		unsafe.Pointer(&data[0]), uint64(len(data)), offset, count, loopStart, loopLength)
+	if err != nil {
+		return nil, err
+	}
+	return r.registerResource(handle, resourceSoundEffect, nil), nil
+}
+
+// CreateSoundEffectFromEncoded is cna_sound_effect_create_from_encoded_ext,
+// which backs SoundEffect::FromStream.
+func (r *Runtime) CreateSoundEffectFromEncoded(data []byte) (*Resource, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, errors.New("a sound effect needs encoded bytes")
+	}
+	handle, err := nativeSoundEffectCreateFromEncoded(game, unsafe.Pointer(&data[0]), uint64(len(data)))
+	if err != nil {
+		return nil, err
+	}
+	return r.registerResource(handle, resourceSoundEffect, nil), nil
+}
+
+// SetMasterVolume, SetDistanceScale, SetDopplerScale and SetSpeedOfSound are the
+// four process-wide scalars. Only the setters cross: the reference's getters are
+// one `ldsfld` over a static field these maintain.
+func (r *Runtime) SetMasterVolume(value float32) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeSoundEffectSetMasterVolume(game, value)
+}
+
+func (r *Runtime) SetDistanceScale(value float32) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeSoundEffectSetDistanceScale(game, value)
+}
+
+func (r *Runtime) SetDopplerScale(value float32) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeSoundEffectSetDopplerScale(game, value)
+}
+
+func (r *Runtime) SetSpeedOfSound(value float32) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeSoundEffectSetSpeedOfSound(game, value)
+}
+
+// SoundEffectDurationTicks is cna_sound_effect_get_duration_ticks, in the CLR's
+// own 100-nanosecond unit.
+func (resource *Resource) SoundEffectDurationTicks() (int64, error) {
+	handle, err := resource.liveHandle(resourceSoundEffect)
+	if err != nil {
+		return 0, err
+	}
+	return nativeSoundEffectDurationTicks(handle)
+}
+
+// CreateSoundEffectInstance is cna_sound_effect_create_instance. The instance is
+// registered as a CHILD of the effect, which is what makes CNA's documented
+// ordering -- effects destroyed after their instances -- a structural property
+// rather than a rule a caller has to remember.
+func (resource *Resource) CreateSoundEffectInstance() (*Resource, error) {
+	handle, err := resource.liveHandle(resourceSoundEffect)
+	if err != nil {
+		return nil, err
+	}
+	instance, err := nativeSoundEffectCreateInstance(handle)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(instance, resourceSoundEffectInstance, resource), nil
+}
+
+// SoundEffectPlay and SoundEffectPlayWithSettings are the two fire-and-forget
+// plays. Both report whether playback STARTED.
+func (resource *Resource) SoundEffectPlay() (bool, error) {
+	handle, err := resource.liveHandle(resourceSoundEffect)
+	if err != nil {
+		return false, err
+	}
+	return nativeSoundEffectPlay(handle)
+}
+
+func (resource *Resource) SoundEffectPlayWithSettings(volume, pitch, pan float32) (bool, error) {
+	handle, err := resource.liveHandle(resourceSoundEffect)
+	if err != nil {
+		return false, err
+	}
+	return nativeSoundEffectPlayWithSettings(handle, volume, pitch, pan)
+}
+
+// The instance transport and its four setters.
+
+func (resource *Resource) SoundInstancePlay() error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	return nativeSoundInstancePlay(handle)
+}
+
+func (resource *Resource) SoundInstancePause() error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	return nativeSoundInstancePause(handle)
+}
+
+func (resource *Resource) SoundInstanceResume() error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	return nativeSoundInstanceResume(handle)
+}
+
+func (resource *Resource) SoundInstanceStop(immediate bool) error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	return nativeSoundInstanceStop(handle, immediate)
+}
+
+// SoundInstanceInfo is cna_sound_effect_instance_get_info, the ONE read the
+// instance has: state, loop flag and the three scalars in a single call.
+func (resource *Resource) SoundInstanceInfo() (SoundEffectInstanceInfo, error) {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return SoundEffectInstanceInfo{}, err
+	}
+	return nativeSoundInstanceInfo(handle)
+}
+
+func (resource *Resource) SoundInstanceSetVolume(value float32) error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	return nativeSoundInstanceSetVolume(handle, value)
+}
+
+func (resource *Resource) SoundInstanceSetPitch(value float32) error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	return nativeSoundInstanceSetPitch(handle, value)
+}
+
+func (resource *Resource) SoundInstanceSetPan(value float32) error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	return nativeSoundInstanceSetPan(handle, value)
+}
+
+// SoundInstanceApply3D is cna_sound_effect_instance_apply_3d_multi_ext.
+//
+// The listeners cross as a flat array of twelve floats each -- forward,
+// position, up, velocity -- and the emitter as thirteen, its Doppler scale
+// first. CNA's structures are versioned and Go cannot build one, so the bridge
+// assembles them.
+func (resource *Resource) SoundInstanceApply3D(listeners []float32, count uint64, emitter []float32) error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	return nativeSoundInstanceApply3D(handle, listeners, count, emitter)
+}
+
+func (resource *Resource) SoundInstanceSetIsLooped(value bool) error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	return nativeSoundInstanceSetIsLooped(handle, value)
 }
 
 // TitleContainerRead is cna_title_container_read_ext, which hands back the

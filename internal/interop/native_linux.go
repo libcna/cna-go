@@ -2775,6 +2775,187 @@ func nativeVertexBufferSetDataRawAtWithOptions(buffer, offset uint64, data unsaf
 			C.uint32_t(stride), C.uint32_t(options))))
 }
 
+// ---------------------------------------------------------------------------
+// Foundation 87 -- SoundEffect and SoundEffectInstance.
+// ---------------------------------------------------------------------------
+
+// nativeSoundEffectCreatePCM16Range is cna_sound_effect_create_pcm16_range_ext,
+// which CNA calls "the canonical seven-argument constructor". BOTH of XNA's
+// constructors reach it: the three-argument one forwards to FromBuffer with an
+// offset of zero, the whole length and a zero loop region, so one route serves
+// both and cna_sound_effect_create_pcm16 is recorded as SUBSUMED.
+func nativeSoundEffectCreatePCM16Range(game uint64, sampleRate, channels uint32, data unsafe.Pointer,
+	byteCount uint64, offset, count, loopStart, loopLength int32) (uint64, error) {
+	var handle C.CnaGoHandle
+	code := uint32(C.cna_go_sound_effect_create_pcm16_range(C.CnaGoHandle(game),
+		C.uint32_t(sampleRate), C.uint32_t(channels), (*C.uint8_t)(data), C.uint64_t(byteCount),
+		C.int32_t(offset), C.int32_t(count), C.int32_t(loopStart), C.int32_t(loopLength), &handle))
+	return uint64(handle), resultError("cna_sound_effect_create_pcm16_range_ext", code)
+}
+
+// nativeSoundEffectCreateFromEncoded is cna_sound_effect_create_from_encoded_ext,
+// which backs SoundEffect::FromStream. CNA's note explains the shape: "The
+// canonical operation takes a C++ stream and reads it to the end, so C takes the
+// bytes it would have read."
+func nativeSoundEffectCreateFromEncoded(game uint64, data unsafe.Pointer, byteCount uint64) (uint64, error) {
+	var handle C.CnaGoHandle
+	code := uint32(C.cna_go_sound_effect_create_from_encoded(C.CnaGoHandle(game),
+		(*C.uint8_t)(data), C.uint64_t(byteCount), &handle))
+	return uint64(handle), resultError("cna_sound_effect_create_from_encoded_ext", code)
+}
+
+func nativeSoundEffectDurationTicks(effect uint64) (int64, error) {
+	var ticks C.int64_t
+	code := uint32(C.cna_go_sound_effect_get_duration_ticks(C.CnaGoHandle(effect), &ticks))
+	return int64(ticks), resultError("cna_sound_effect_get_duration_ticks", code)
+}
+
+func nativeSoundEffectCreateInstance(effect uint64) (uint64, error) {
+	var handle C.CnaGoHandle
+	code := uint32(C.cna_go_sound_effect_create_instance(C.CnaGoHandle(effect), &handle))
+	return uint64(handle), resultError("cna_sound_effect_create_instance", code)
+}
+
+func nativeSoundEffectDestroy(effect uint64) error {
+	return resultError("cna_sound_effect_destroy",
+		uint32(C.cna_go_sound_effect_destroy(C.CnaGoHandle(effect))))
+}
+
+// nativeSoundEffectPlay is cna_sound_effect_play. The bool it reports is not
+// "did it make a sound": CNA answers CNA_FALSE for a disposed effect and
+// CNA_RESULT_INVALID_STATE when too many instances are already playing, and it
+// is the latter that XNA's Play converts into a false return.
+func nativeSoundEffectPlay(effect uint64) (bool, error) {
+	var played C.uint8_t
+	code := uint32(C.cna_go_sound_effect_play(C.CnaGoHandle(effect), &played))
+	return played != 0, resultError("cna_sound_effect_play", code)
+}
+
+func nativeSoundEffectPlayWithSettings(effect uint64, volume, pitch, pan float32) (bool, error) {
+	var played C.uint8_t
+	code := uint32(C.cna_go_sound_effect_play_with_settings(C.CnaGoHandle(effect),
+		C.float(volume), C.float(pitch), C.float(pan), &played))
+	return played != 0, resultError("cna_sound_effect_play_with_settings", code)
+}
+
+// The four process-wide scalars. Only the SETTERS are bound: the reference's
+// getters are one `ldsfld` over a static field the setter maintains, so reading
+// CNA back would be a second answer to a question the managed field already
+// holds. Their read routes are recorded as REDUNDANT_READ.
+func nativeSoundEffectSetMasterVolume(game uint64, value float32) error {
+	return resultError("cna_sound_effect_set_master_volume",
+		uint32(C.cna_go_sound_effect_set_master_volume(C.CnaGoHandle(game), C.float(value))))
+}
+
+func nativeSoundEffectSetDistanceScale(game uint64, value float32) error {
+	return resultError("cna_sound_effect_set_distance_scale",
+		uint32(C.cna_go_sound_effect_set_distance_scale(C.CnaGoHandle(game), C.float(value))))
+}
+
+func nativeSoundEffectSetDopplerScale(game uint64, value float32) error {
+	return resultError("cna_sound_effect_set_doppler_scale",
+		uint32(C.cna_go_sound_effect_set_doppler_scale(C.CnaGoHandle(game), C.float(value))))
+}
+
+func nativeSoundEffectSetSpeedOfSound(game uint64, value float32) error {
+	return resultError("cna_sound_effect_set_speed_of_sound",
+		uint32(C.cna_go_sound_effect_set_speed_of_sound(C.CnaGoHandle(game), C.float(value))))
+}
+
+func nativeSoundInstancePlay(instance uint64) error {
+	return resultError("cna_sound_effect_instance_play",
+		uint32(C.cna_go_sound_effect_instance_play(C.CnaGoHandle(instance))))
+}
+
+func nativeSoundInstancePause(instance uint64) error {
+	return resultError("cna_sound_effect_instance_pause",
+		uint32(C.cna_go_sound_effect_instance_pause(C.CnaGoHandle(instance))))
+}
+
+func nativeSoundInstanceResume(instance uint64) error {
+	return resultError("cna_sound_effect_instance_resume",
+		uint32(C.cna_go_sound_effect_instance_resume(C.CnaGoHandle(instance))))
+}
+
+func nativeSoundInstanceStop(instance uint64, immediate bool) error {
+	flag := C.uint8_t(0)
+	if immediate {
+		flag = 1
+	}
+	return resultError("cna_sound_effect_instance_stop",
+		uint32(C.cna_go_sound_effect_instance_stop(C.CnaGoHandle(instance), flag)))
+}
+
+// SoundEffectInstanceInfo is CNA_SoundEffectInstanceInfo, reduced to the five
+// fields it carries that mean anything.
+type SoundEffectInstanceInfo struct {
+	State    uint32
+	IsLooped bool
+	Volume   float32
+	Pitch    float32
+	Pan      float32
+}
+
+func nativeSoundInstanceInfo(instance uint64) (SoundEffectInstanceInfo, error) {
+	var state C.uint32_t
+	var looped C.uint8_t
+	var scalars [3]C.float
+	code := uint32(C.cna_go_sound_effect_instance_get_info(C.CnaGoHandle(instance),
+		&state, &looped, &scalars[0]))
+	info := SoundEffectInstanceInfo{
+		State:    uint32(state),
+		IsLooped: looped != 0,
+		Volume:   float32(scalars[0]),
+		Pitch:    float32(scalars[1]),
+		Pan:      float32(scalars[2]),
+	}
+	return info, resultError("cna_sound_effect_instance_get_info", code)
+}
+
+func nativeSoundInstanceSetVolume(instance uint64, value float32) error {
+	return resultError("cna_sound_effect_instance_set_volume",
+		uint32(C.cna_go_sound_effect_instance_set_volume(C.CnaGoHandle(instance), C.float(value))))
+}
+
+func nativeSoundInstanceSetPitch(instance uint64, value float32) error {
+	return resultError("cna_sound_effect_instance_set_pitch",
+		uint32(C.cna_go_sound_effect_instance_set_pitch(C.CnaGoHandle(instance), C.float(value))))
+}
+
+func nativeSoundInstanceSetPan(instance uint64, value float32) error {
+	return resultError("cna_sound_effect_instance_set_pan",
+		uint32(C.cna_go_sound_effect_instance_set_pan(C.CnaGoHandle(instance), C.float(value))))
+}
+
+func nativeSoundInstanceSetIsLooped(instance uint64, value bool) error {
+	flag := C.uint8_t(0)
+	if value {
+		flag = 1
+	}
+	return resultError("cna_sound_effect_instance_set_is_looped",
+		uint32(C.cna_go_sound_effect_instance_set_is_looped(C.CnaGoHandle(instance), flag)))
+}
+
+// nativeSoundInstanceApply3D is cna_sound_effect_instance_apply_3d_multi_ext.
+//
+// ONE route covers both of XNA's Apply3D overloads, because the reference's
+// single-listener overload builds a one-element array and forwards -- so the
+// multi-listener CNA route with a count of one IS the single-listener case, and
+// cna_sound_effect_instance_apply_3d is recorded as SUBSUMED.
+func nativeSoundInstanceApply3D(instance uint64, listeners []float32, count uint64, emitter []float32) error {
+	if len(listeners) == 0 || len(emitter) == 0 {
+		return resultError("cna_sound_effect_instance_apply_3d_multi_ext", resultInvalidArgument)
+	}
+	return resultError("cna_sound_effect_instance_apply_3d_multi_ext",
+		uint32(C.cna_go_sound_effect_instance_apply_3d(C.CnaGoHandle(instance),
+			(*C.float)(&listeners[0]), C.uint64_t(count), (*C.float)(&emitter[0]))))
+}
+
+func nativeSoundInstanceDestroy(instance uint64) error {
+	return resultError("cna_sound_effect_instance_destroy",
+		uint32(C.cna_go_sound_effect_instance_destroy(C.CnaGoHandle(instance))))
+}
+
 func nativeEffectLightsDirectionalLight(effect uint64, index uint32) (uint64, error) {
 	return nativeEffectHandleOut("cna_effect_lights_get_directional_light", func(out *C.CnaGoHandle) C.CnaGoResult {
 		return C.cna_go_effect_lights_get_directional_light(C.CnaGoHandle(effect), C.uint32_t(index), out)

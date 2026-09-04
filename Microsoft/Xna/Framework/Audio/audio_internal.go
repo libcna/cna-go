@@ -1,6 +1,7 @@
 package audio
 
 import (
+	"errors"
 	"fmt"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
@@ -36,11 +37,50 @@ func flipHandedness(vector framework.Vector3) framework.Vector3 {
 // message is the exact FrameworkResources string the reference throw site
 // loads, so the projected text stays traceable to the retained assembly.
 func argumentOutOfRangeError(parameter, message string) error {
-	return fmt.Errorf("audio argument out of range: %s: %s", parameter, message)
+	return fmt.Errorf("%w: %s: %s", errAudioArgumentOutOfRange, parameter, message)
 }
+
+// errAudioArgumentOutOfRange is the sentinel that channel wraps. It was added
+// with the other three in Foundation 87: the message text is unchanged, and
+// what it gains is that a caller -- and a test -- can tell a RANGE refusal
+// apart from the other four kinds the family raises, which matters because
+// three of the four static setters refuse a NaN and the fourth stores it.
+var errAudioArgumentOutOfRange = errors.New("audio argument out of range")
 
 // invalidEmitterDopplerScale is the exact FrameworkResources value that
 // AudioEmitter::set_DopplerScale loads before it throws, read from the
 // Microsoft.Xna.Framework.FrameworkResources.resources stream of the retained
 // Microsoft.Xna.Framework.dll.
 const invalidEmitterDopplerScale = "The doppler scale of an audio emitter must be greater than or equal to zero."
+
+// ---------------------------------------------------------------------------
+// Foundation 87 -- the audio family's three managed failure channels.
+// ---------------------------------------------------------------------------
+
+// The reference's audio members throw four CLR exception kinds and each one is
+// a distinct channel here, because a consumer distinguishes them:
+//
+//	ArgumentOutOfRangeException  a range, with a PARAMETER NAME and usually no message
+//	ArgumentException            a buffer or loop shape, with a MESSAGE and no name
+//	ArgumentNullException        a null or EMPTY string argument
+//	ObjectDisposedException      GetType().Name plus a fixed sentence
+//	InvalidOperationException    the dispatcher precondition and the 3D pan refusal
+var (
+	errAudioArgument         = errors.New("audio argument is not valid")
+	errAudioArgumentNull     = errors.New("audio argument must not be null")
+	errAudioObjectDisposed   = errors.New("object has already been disposed")
+	errAudioInvalidOperation = errors.New("operation is not valid")
+)
+
+// argumentError projects System.ArgumentException(string message), which the
+// buffer and loop checks throw with a MESSAGE and NO parameter name -- so the
+// message is the only thing a caller gets and it is reproduced verbatim.
+func argumentError(message string) error {
+	return fmt.Errorf("%w: %s", errAudioArgument, message)
+}
+
+// argumentNullError projects System.ArgumentNullException(string paramName),
+// which carries a parameter name and no message of its own.
+func argumentNullError(parameter string) error {
+	return fmt.Errorf("%w: %s", errAudioArgumentNull, parameter)
+}

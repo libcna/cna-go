@@ -96,6 +96,40 @@ var registry = []claimedString{
 	{Key: "DataNotAvailable", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "The query data is not yet available. Use the IsComplete property to determine if the data is available before attempting to retrieve it."},
 
+	// Foundation 87. The audio family's eight, all in Microsoft.Xna.Framework.dll
+	// with FrameworkResources.
+	//
+	// Four of them belong to ONE method -- SoundEffect::FromBuffer -- and each
+	// names a different way the buffer arguments can be wrong. They are worth
+	// having verbatim because the reference throws plain ArgumentException with
+	// a MESSAGE and no parameter name for all four, so the message is the only
+	// thing a caller gets.
+	//
+	// ObjectDisposedException is the one every audio member shares. It is the
+	// MESSAGE half of ObjectDisposedException(objectName, message), whose first
+	// argument is GetType().Name -- so the sentence is fixed and the type name
+	// is the object's.
+	{Key: "InvalidAudioBuffer", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Ensure that the buffer length is non-zero and meets the block alignment requirements for the audio format."},
+	{Key: "InvalidAudioBufferOffset", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Offset must be within the buffer boundaries and meet the block alignment requirements for the audio format."},
+	{Key: "InvalidOffsetCountLength", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Ensure that count is valid and meets the block alignment requirements for the audio format. Offset and count must define a valid region within the buffer boundaries."},
+	{Key: "InvalidLoopRegion", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Ensure that the loop region is defined in samples and within the buffer boundaries."},
+	{Key: "InvalidBufferSize", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Buffer size cannot be negative."},
+	{Key: "InvalidIsLoopedCall", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Loop must be set before the first Play call."},
+	{Key: "InvalidApply3DCall", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "The sound is not a 3D sound. Call Apply3D before the first Play call to configure it to be a 3D sound."},
+	{Key: "InvalidPanCall", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Pan cannot be set on a 3D sound. To ensure a 2D sound avoid calling Apply3D and ensure Pan is set before the first Play call."},
+	{Key: "CallFrameworkDispatcherUpdate", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "FrameworkDispatcher.Update has not been called. Regular FrameworkDispatcher.Update calls are necessary for fire and forget sound effects and framework events to function correctly. See http://go.microsoft.com/fwlink/?LinkId=193853 for details."},
+	{Key: "ObjectDisposedException", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "This object has already been disposed."},
+
 	// Foundation 82. TitleContainer::OpenStream's three, all in
 	// Microsoft.Xna.Framework.dll with FrameworkResources. Two carry the
 	// requested name through String.Format's {0}.

@@ -4608,3 +4608,93 @@ func TestRendererDetailIsReachableFromOutside(t *testing.T) {
 		t.Fatal("Equals accepted a string")
 	}
 }
+
+// TestSoundEffectFamilyIsReachableFromOutside is Foundation 87's canary.
+func TestSoundEffectFamilyIsReachableFromOutside(t *testing.T) {
+	// The two constructors and FromStream.
+	var _ func([]uint8, int32, audio.AudioChannels) (*audio.SoundEffect, error) = audio.NewSoundEffectBySliceOfByteAndInt32AndAudioChannels
+	var _ func([]uint8, int32, int32, int32, audio.AudioChannels, int32, int32) (*audio.SoundEffect, error) = audio.NewSoundEffectBySliceOfByteAndInt32AndInt32AndInt32AndAudioChannelsAndInt32AndInt32
+	var _ func(io.Reader) (*audio.SoundEffect, error) = audio.SoundEffectFromStream
+
+	// The four process-wide scalars, whose GETTERS are infallible because the
+	// reference's are one `ldsfld` and whose SETTERS are not.
+	var _ func() float32 = audio.SoundEffectMasterVolume
+	var _ func() float32 = audio.SoundEffectSpeedOfSound
+	var _ func() float32 = audio.SoundEffectDopplerScale
+	var _ func() float32 = audio.SoundEffectDistanceScale
+	var _ func(float32) error = audio.SetSoundEffectMasterVolume
+	var _ func(float32) error = audio.SetSoundEffectSpeedOfSound
+	var _ func(float32) error = audio.SetSoundEffectDopplerScale
+	var _ func(float32) error = audio.SetSoundEffectDistanceScale
+
+	// The two static conversions.
+	var _ func(framework.TimeSpan, int32, audio.AudioChannels) (int32, error) = audio.SoundEffectGetSampleSizeInBytes
+	var _ func(int32, int32, audio.AudioChannels) (framework.TimeSpan, error) = audio.SoundEffectGetSampleDuration
+
+	var effect *audio.SoundEffect
+	var _ func() bool = effect.IsDisposed
+	var _ func() string = effect.Name
+	var _ func(string) error = effect.SetName
+	var _ func() framework.TimeSpan = effect.Duration
+	var _ func() (*audio.SoundEffectInstance, error) = effect.CreateInstance
+	var _ func() (bool, error) = effect.PlayByNone
+	var _ func(float32, float32, float32) (bool, error) = effect.PlayBySingleAndSingleAndSingle
+	var _ func() error = effect.Dispose
+	var _ func() error = effect.Finalize
+
+	var instance *audio.SoundEffectInstance
+	var _ func() error = instance.Play
+	var _ func() error = instance.Pause
+	var _ func() error = instance.Resume
+	var _ func() error = instance.StopByNone
+	var _ func(bool) error = instance.StopByBoolean
+	var _ func() (audio.SoundState, error) = instance.State
+	var _ func() float32 = instance.Volume
+	var _ func(float32) error = instance.SetVolume
+	var _ func() float32 = instance.Pitch
+	var _ func(float32) error = instance.SetPitch
+	var _ func() float32 = instance.Pan
+	var _ func(float32) error = instance.SetPan
+	var _ func() bool = instance.IsLooped
+	var _ func(bool) error = instance.SetIsLooped
+	var _ func() bool = instance.IsDisposed
+	var _ func() error = instance.DisposeByNone
+	var _ func(bool) error = instance.DisposeByBoolean
+	var _ func() error = instance.Finalize
+	var _ func(*audio.AudioListener, *audio.AudioEmitter) error = instance.Apply3DByAudioListenerAndAudioEmitter
+	var _ func([]*audio.AudioListener, *audio.AudioEmitter) error = instance.Apply3DBySliceOfAudioListenerAndAudioEmitter
+
+	// The static defaults are the class initializer's, and a consumer sees them
+	// without a device.
+	if audio.SoundEffectMasterVolume() != 1 || audio.SoundEffectSpeedOfSound() != 343.5 ||
+		audio.SoundEffectDopplerScale() != 1 || audio.SoundEffectDistanceScale() != 1 {
+		t.Fatal("the SoundEffect statics do not carry the class initializer's values")
+	}
+
+	// The measured sample conversion, which is NOT the round number: the scale
+	// factor is computed in float32, so one second at 44.1kHz mono truncates to
+	// 44099 samples and 88198 bytes.
+	size, err := audio.SoundEffectGetSampleSizeInBytes(
+		framework.TimeSpanFromTicks(10_000_000), 44100, audio.AudioChannelsMono)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if size != 88198 {
+		t.Fatalf("one second of 44.1kHz mono = %d bytes, want the measured 88198", size)
+	}
+
+	// The constructor guards a consumer meets without a device.
+	if _, err := audio.NewSoundEffectBySliceOfByteAndInt32AndAudioChannels(nil, 44100, audio.AudioChannelsMono); err == nil {
+		t.Fatal("a nil buffer was accepted")
+	}
+	if _, err := audio.SoundEffectFromStream(nil); err == nil {
+		t.Fatal("FromStream(nil) was accepted")
+	}
+	// A zero value answers rather than panicking.
+	if !effect.IsDisposed() || effect.Name() != "" {
+		t.Fatal("a nil SoundEffect did not answer its zero values")
+	}
+	if !instance.IsDisposed() || instance.Volume() != 0 {
+		t.Fatal("a nil SoundEffectInstance did not answer its zero values")
+	}
+}

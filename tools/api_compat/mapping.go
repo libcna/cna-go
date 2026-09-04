@@ -953,6 +953,40 @@ func fallibilityKeys(m contractMember, accessor string) []string {
 // profile ships. A member is admitted here on its BODY, never on the intuition
 // that it "should not fail".
 var managedStoredMembers = map[string]map[string]bool{
+	// Foundation 87. SoundEffect's four static scalars and its three instance
+	// reads, every one of which is a FIELD in the reference.
+	//
+	// The four static getters are `ldsfld` over static fields their setters
+	// maintain -- CNA has a read route for each and every one is recorded as
+	// REDUNDANT_READ, because reading the mixer back would be a second answer
+	// to a question the managed field already holds. The SETTERS are absent
+	// from this list on purpose: each calls native, and that call can be
+	// refused.
+	//
+	// get_IsDisposed, get_Name and get_Duration are `ldfld` with NO disposal
+	// check, so all three answer AFTER Dispose. Duration is the interesting one:
+	// its value comes from CNA at construction and is then a stored number, so
+	// the READ is managed even though what it reports was measured natively.
+	"Microsoft.Xna.Framework.Audio.SoundEffect": {
+		"property-get|MasterVolume":  true,
+		"property-get|SpeedOfSound":  true,
+		"property-get|DopplerScale":  true,
+		"property-get|DistanceScale": true,
+		"property-get|IsDisposed":    true,
+		"property-get|Name":          true,
+		"property-get|Duration":      true,
+	},
+	// SoundEffectInstance's four cached reads. The reference stores each scalar
+	// AFTER its native write succeeds, so the getter reports what is actually
+	// in effect and reaches nothing itself. get_State is deliberately NOT here:
+	// it is a live native read that derives a SoundState from the voice state.
+	"Microsoft.Xna.Framework.Audio.SoundEffectInstance": {
+		"property-get|IsDisposed": true,
+		"property-get|Volume":     true,
+		"property-get|Pitch":      true,
+		"property-get|Pan":        true,
+		"property-get|IsLooped":   true,
+	},
 	// GraphicsDeviceManager's nine configuration properties. Every one of the
 	// reference's getters is a single `ldfld` -- no validation, no device, no
 	// throw site -- and every setter is a store plus `isDeviceDirty = true`,

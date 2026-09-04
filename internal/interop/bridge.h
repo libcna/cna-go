@@ -832,6 +832,46 @@ CnaGoResult cna_go_keyboard_get_state(
 }
 #endif
 
+
+/* Foundation 87 -- SoundEffect and SoundEffectInstance. The two CNA structures
+   are filled on the C side; everything else crosses cgo as scalars. */
+CnaGoResult cna_go_sound_effect_create_pcm16_range(
+    CnaGoHandle game, uint32_t sample_rate, uint32_t channels, const uint8_t* pcm_bytes,
+    uint64_t byte_count, int32_t offset, int32_t count, int32_t loop_start, int32_t loop_length,
+    CnaGoHandle* out_sound_effect);
+CnaGoResult cna_go_sound_effect_create_from_encoded(
+    CnaGoHandle game, const uint8_t* bytes, uint64_t byte_count, CnaGoHandle* out_sound_effect);
+CnaGoResult cna_go_sound_effect_get_duration_ticks(CnaGoHandle sound_effect, int64_t* out_ticks);
+CnaGoResult cna_go_sound_effect_create_instance(CnaGoHandle sound_effect, CnaGoHandle* out_instance);
+CnaGoResult cna_go_sound_effect_destroy(CnaGoHandle sound_effect);
+CnaGoResult cna_go_sound_effect_play(CnaGoHandle sound_effect, uint8_t* out_played);
+CnaGoResult cna_go_sound_effect_play_with_settings(
+    CnaGoHandle sound_effect, float volume, float pitch, float pan, uint8_t* out_played);
+CnaGoResult cna_go_sound_effect_set_master_volume(CnaGoHandle game, float value);
+CnaGoResult cna_go_sound_effect_set_distance_scale(CnaGoHandle game, float value);
+CnaGoResult cna_go_sound_effect_set_doppler_scale(CnaGoHandle game, float value);
+CnaGoResult cna_go_sound_effect_set_speed_of_sound(CnaGoHandle game, float value);
+CnaGoResult cna_go_sound_effect_instance_play(CnaGoHandle instance);
+CnaGoResult cna_go_sound_effect_instance_pause(CnaGoHandle instance);
+CnaGoResult cna_go_sound_effect_instance_resume(CnaGoHandle instance);
+CnaGoResult cna_go_sound_effect_instance_stop(CnaGoHandle instance, uint8_t immediate);
+CnaGoResult cna_go_sound_effect_instance_get_info(
+    CnaGoHandle instance, uint32_t* out_state, uint8_t* out_is_looped, float* out_scalars);
+CnaGoResult cna_go_sound_effect_instance_set_volume(CnaGoHandle instance, float value);
+CnaGoResult cna_go_sound_effect_instance_set_pitch(CnaGoHandle instance, float value);
+CnaGoResult cna_go_sound_effect_instance_set_pan(CnaGoHandle instance, float value);
+CnaGoResult cna_go_sound_effect_instance_set_is_looped(CnaGoHandle instance, uint8_t is_looped);
+CnaGoResult cna_go_sound_effect_instance_destroy(CnaGoHandle instance);
+/* Apply3D. The listeners cross as a flat array of 12 floats each -- forward,
+   position, up, velocity -- and the emitter as 13, its Doppler scale first. */
+CnaGoResult cna_go_sound_effect_instance_apply_3d(
+    CnaGoHandle instance, const float* listeners, uint64_t listener_count, const float* emitter);
+
+/* The three floats cna_go_sound_effect_instance_get_info reports, by index. */
+#define CNA_GO_SOUND_INSTANCE_VOLUME 0
+#define CNA_GO_SOUND_INSTANCE_PITCH 1
+#define CNA_GO_SOUND_INSTANCE_PAN 2
+
 #endif
 
 CnaGoResult cna_go_vertex_declaration_create(

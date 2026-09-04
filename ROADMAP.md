@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               72
-MISSING_TYPE                    72
+TOTAL_DIAGNOSTICS               70
+MISSING_TYPE                    70
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 185
+COMPLETE_TYPES                 187
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         72
+GLOBAL_ACTIONABLE_LOCAL         70
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                305
+BOUND_FUNCTIONS                327
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -190,10 +190,42 @@ returned error code, and `NoAudioHardwareException` comes out of that switch. A
 route with no faithful call site does not get bound, so the measurement is kept
 and the binding is not.
 
+Foundation 87 closed **`SoundEffect`** and **`SoundEffectInstance`** over 22
+bound routes. They landed together because the pinned contract declares NO
+public constructor for the instance: one comes from `CreateInstance` or from
+`Play`'s pool and nowhere else.
+
+The measurement that decided it is that **`GetSampleSizeInBytes` does not return
+round numbers**. Its scale factor is computed in float32, and `(float)44100 /
+1000f` is 44.099998474121094 -- so one second at 44.1kHz mono truncates to 44099
+samples and **88198** bytes, not 88200. At 8000Hz and 48000Hz, whose thousandths
+ARE representable, the counts are exact. At 44100 STEREO the round number comes
+back, and not because the truncation went away: 44099 is odd, so
+`samples % Channels` adds one sample back -- which is what makes the alignment
+step an addition rather than a round-up.
+
+Three members carry a "before the first Play" precondition -- `set_Pan`,
+`Apply3D` and `set_IsLooped` -- and one private flag decides all three. The
+native run found that the projection had dropped `set_IsLooped`'s guard entirely
+AND never set the flag, so the pan/Apply3D mode latch could not latch either;
+CNA surfaced it by refusing the call after playback exactly as the reference
+does.
+
+Every native fixture is SILENT PCM. The qualified artifacts open a real playback
+device, so a fixture with signal in it would make audible noise on the machine
+running the suite twenty times per cycle for no evidence gained. Silence
+exercises creation, lifetime, transport and state identically; what it cannot
+prove is audibility, and the scenario does not claim it.
+
+`internal/dispatcher` joins `internal/bclhash` as the second internal package
+this session: `FrameworkDispatcher.UpdateCalledAtLeastOnce` is `assembly`, not in
+the contract, and read from another namespace, so Go leaves no other way to
+share it without adding public surface.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 72 types it does not project
+projects, it projects completely; what remains is 70 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why

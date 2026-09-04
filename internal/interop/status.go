@@ -53,3 +53,17 @@ func resultError(operation string, code uint32) error {
 	}
 	return &NativeError{Operation: operation, Code: code, Message: nativeLastErrorMessage()}
 }
+
+// IsInvalidState reports whether an error is CNA_RESULT_INVALID_STATE.
+//
+// Exactly one projected member needs to tell that code apart from every other
+// failure: SoundEffect::Play catches InstancePlayLimitException and converts it
+// into a FALSE return, and CNA documents INVALID_STATE as its answer "when too
+// many instances are already playing". Every other failure stays an error there.
+//
+// It is a predicate rather than an exported constant so the numeric code stays
+// inside this package, which is the rule every other status here follows.
+func IsInvalidState(err error) bool {
+	var native *NativeError
+	return errors.As(err, &native) && native.Code == resultInvalidState
+}

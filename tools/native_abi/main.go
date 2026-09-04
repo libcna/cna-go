@@ -928,6 +928,110 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Detail: "get_GraphicsDevice is `ldarg.0; ldfld _parent; ret`, a stored reference with no disposal check, and it must answer with the SAME GraphicsDevice object the resource was created on. CNA's route returns a fresh callback-scoped handle, which is only valid inside a lifecycle callback and would not be the identity the reference returns",
 	},
 
+	// Foundation 87. The audio family bound 22 routes and left these behind,
+	// every one for a reason read off the reference rather than assumed.
+	{
+		Route:  "cna_sound_effect_create_pcm16",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::.ctor(System.Byte[],System.Int32,Microsoft.Xna.Framework.Audio.AudioChannels)",
+		Class:  "SUBSUMED",
+		Detail: "CNA calls cna_sound_effect_create_pcm16_range_ext \"the canonical seven-argument constructor\" and this one \"the short one that uses the whole buffer and no loop region\". The reference agrees from its own side: the three-argument constructor forwards to FromBuffer with offset 0, the whole length and a zero loop region, so one reference body reaches one route",
+	},
+	{
+		Route:  "cna_sound_effect_instance_apply_3d",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffectInstance::Apply3D(Microsoft.Xna.Framework.Audio.AudioListener,Microsoft.Xna.Framework.Audio.AudioEmitter)",
+		Class:  "SUBSUMED",
+		Detail: "the multi-listener route with a count of ONE is this route. The reference makes the same reduction: Apply3D(listener, emitter) is 20 bytes that build a one-element array and forward to the array overload, so both XNA members reach one native call",
+	},
+	{
+		Route:  "cna_sound_effect_get_master_volume",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::MasterVolume()",
+		Class:  "REDUNDANT_READ",
+		Detail: "get_MasterVolume is `ldsfld currentVolume; ret` -- a static FIELD the setter maintains after its native write succeeds. Reading the mixer back would be a second answer to a question the managed field already holds, and the two could disagree after a refused set",
+	},
+	{
+		Route:  "cna_sound_effect_get_speed_of_sound",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::SpeedOfSound()",
+		Class:  "REDUNDANT_READ",
+		Detail: "get_SpeedOfSound is one `ldsfld`, as the other three scalar getters are",
+	},
+	{
+		Route:  "cna_sound_effect_get_doppler_scale",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::DopplerScale()",
+		Class:  "REDUNDANT_READ",
+		Detail: "get_DopplerScale is one `ldsfld`",
+	},
+	{
+		Route:  "cna_sound_effect_get_distance_scale",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::DistanceScale()",
+		Class:  "REDUNDANT_READ",
+		Detail: "get_DistanceScale is one `ldsfld`, and this one would DISAGREE with the field on purpose: set_DistanceScale clamps a zero to Single.Epsilon before storing, so the managed field and any independent read of the mixer are two different numbers by design",
+	},
+	{
+		Route:  "cna_sound_effect_get_is_disposed",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::IsDisposed()",
+		Class:  "REDUNDANT_READ",
+		Detail: "get_IsDisposed is `ldfld disposed; ret` over the flag Dispose sets. A native read could not answer at all once the handle is released, which is exactly when the member is most likely to be asked",
+	},
+	{
+		Route:  "cna_sound_effect_instance_get_is_disposed",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffectInstance::IsDisposed()",
+		Class:  "REDUNDANT_READ",
+		Detail: "the instance's flag, on the same evidence as the effect's",
+	},
+	{
+		Route:  "cna_sound_effect_get_name_size",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::Name()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "get_Name is `ldfld effectName; ret` with NO disposal check, so the reference answers a name AFTER Dispose -- which a native read of a released handle cannot do. The same position GraphicsResource's name routes are already in",
+	},
+	{
+		Route:  "cna_sound_effect_copy_name",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::Name()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "the second half of the same read",
+	},
+	{
+		Route:  "cna_sound_effect_set_name",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::Name()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "set_Name is a disposal check, an IsNullOrEmpty refusal and a `stfld`. Binding a native write would make an infallible-after-validation store fallible, and the value it wrote could not be read back by the getter above",
+	},
+	{
+		Route:  "cna_sound_effect_get_sample_duration_ticks",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::GetSampleDuration(System.Int32,System.Int32,Microsoft.Xna.Framework.Audio.AudioChannels)",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "XNA's GetSampleDuration is STATIC and takes a size, a sample rate and a channel count with no effect in sight; this route takes a sound-effect HANDLE. They answer different questions, and the static member's whole body is AudioFormat arithmetic that reaches no runtime",
+	},
+	{
+		Route:  "cna_sound_effect_get_sample_size_in_bytes",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::GetSampleSizeInBytes(System.TimeSpan,System.Int32,Microsoft.Xna.Framework.Audio.AudioChannels)",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the same divergence as its sibling: a static conversion against a handle-taking route",
+	},
+	{
+		Route:  "cna_sound_effect_get_type_name_size",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::IsDisposed()",
+		Class:  "REDUNDANT_READ",
+		Detail: "the .NET type name of a sealed type, which is a compile-time constant on the Go side. SoundEffect is `sealed` in the reference, so GetType().Name has exactly one possible answer and asking CNA for it would be asking a question whose answer is already written down",
+	},
+	{
+		Route:  "cna_sound_effect_copy_type_name",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffect::IsDisposed()",
+		Class:  "REDUNDANT_READ",
+		Detail: "the second half of the same read",
+	},
+	{
+		Route:  "cna_sound_effect_instance_get_type_name_size",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffectInstance::IsDisposed()",
+		Class:  "REDUNDANT_READ",
+		Detail: "the instance's type name. Unlike the effect's, this one has TWO possible answers once DynamicSoundEffectInstance is projected -- but the answer is the projection's own runtime type, which Go knows without asking, and CNA's would report what CNA built rather than what the CLR contract says the object is",
+	},
+	{
+		Route:  "cna_sound_effect_instance_copy_type_name",
+		Member: "Microsoft.Xna.Framework.Audio.SoundEffectInstance::IsDisposed()",
+		Class:  "REDUNDANT_READ",
+		Detail: "the second half of the same read",
+	},
 	// Foundation 84. The dynamic buffers bound exactly one new route,
 	// cna_vertex_buffer_set_data_raw_at_with_options, and its offsetless
 	// sibling is what that leaves behind.

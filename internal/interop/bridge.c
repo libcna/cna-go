@@ -3207,3 +3207,184 @@ CnaGoResult cna_go_graphics_adapter_get_native_monitor_handle(
 CnaGoResult cna_go_graphics_device_get_adapter_index(CnaGoHandle device, uint32_t* out_index) {
     return api.cna_graphics_device_get_adapter_index(device, out_index);
 }
+
+/* Foundation 87 -- SoundEffect and SoundEffectInstance. */
+
+CnaGoResult cna_go_sound_effect_create_pcm16_range(
+    CnaGoHandle game, uint32_t sample_rate, uint32_t channels, const uint8_t* pcm_bytes,
+    uint64_t byte_count, int32_t offset, int32_t count, int32_t loop_start, int32_t loop_length,
+    CnaGoHandle* out_sound_effect) {
+    CNA_SoundEffectCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.sample_rate = sample_rate;
+    info.channels = channels;
+    return api.cna_sound_effect_create_pcm16_range_ext(game, &info, pcm_bytes, byte_count,
+                                                       offset, count, loop_start, loop_length,
+                                                       out_sound_effect);
+}
+
+CnaGoResult cna_go_sound_effect_create_from_encoded(
+    CnaGoHandle game, const uint8_t* bytes, uint64_t byte_count, CnaGoHandle* out_sound_effect) {
+    return api.cna_sound_effect_create_from_encoded_ext(game, bytes, byte_count, out_sound_effect);
+}
+
+CnaGoResult cna_go_sound_effect_get_duration_ticks(CnaGoHandle sound_effect, int64_t* out_ticks) {
+    return api.cna_sound_effect_get_duration_ticks(sound_effect, out_ticks);
+}
+
+CnaGoResult cna_go_sound_effect_create_instance(CnaGoHandle sound_effect, CnaGoHandle* out_instance) {
+    return api.cna_sound_effect_create_instance(sound_effect, out_instance);
+}
+
+CnaGoResult cna_go_sound_effect_destroy(CnaGoHandle sound_effect) {
+    return api.cna_sound_effect_destroy(sound_effect);
+}
+
+CnaGoResult cna_go_sound_effect_play(CnaGoHandle sound_effect, uint8_t* out_played) {
+    CNA_Bool played = 0;
+    CnaGoResult result = api.cna_sound_effect_play(sound_effect, &played);
+    *out_played = (uint8_t)(played ? 1 : 0);
+    return result;
+}
+
+CnaGoResult cna_go_sound_effect_play_with_settings(
+    CnaGoHandle sound_effect, float volume, float pitch, float pan, uint8_t* out_played) {
+    CNA_Bool played = 0;
+    CnaGoResult result = api.cna_sound_effect_play_with_settings(sound_effect, volume, pitch, pan, &played);
+    *out_played = (uint8_t)(played ? 1 : 0);
+    return result;
+}
+
+CnaGoResult cna_go_sound_effect_set_master_volume(CnaGoHandle game, float value) {
+    return api.cna_sound_effect_set_master_volume(game, value);
+}
+
+CnaGoResult cna_go_sound_effect_set_distance_scale(CnaGoHandle game, float value) {
+    return api.cna_sound_effect_set_distance_scale(game, value);
+}
+
+CnaGoResult cna_go_sound_effect_set_doppler_scale(CnaGoHandle game, float value) {
+    return api.cna_sound_effect_set_doppler_scale(game, value);
+}
+
+CnaGoResult cna_go_sound_effect_set_speed_of_sound(CnaGoHandle game, float value) {
+    return api.cna_sound_effect_set_speed_of_sound(game, value);
+}
+
+CnaGoResult cna_go_sound_effect_instance_play(CnaGoHandle instance) {
+    return api.cna_sound_effect_instance_play(instance);
+}
+
+CnaGoResult cna_go_sound_effect_instance_pause(CnaGoHandle instance) {
+    return api.cna_sound_effect_instance_pause(instance);
+}
+
+CnaGoResult cna_go_sound_effect_instance_resume(CnaGoHandle instance) {
+    return api.cna_sound_effect_instance_resume(instance);
+}
+
+CnaGoResult cna_go_sound_effect_instance_stop(CnaGoHandle instance, uint8_t immediate) {
+    return api.cna_sound_effect_instance_stop(instance, (CNA_Bool)(immediate ? 1 : 0));
+}
+
+CnaGoResult cna_go_sound_effect_instance_get_info(
+    CnaGoHandle instance, uint32_t* out_state, uint8_t* out_is_looped, float* out_scalars) {
+    CNA_SoundEffectInstanceInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_sound_effect_instance_get_info(instance, &info);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    *out_state = (uint32_t)info.state;
+    *out_is_looped = (uint8_t)(info.is_looped ? 1 : 0);
+    out_scalars[CNA_GO_SOUND_INSTANCE_VOLUME] = info.volume;
+    out_scalars[CNA_GO_SOUND_INSTANCE_PITCH] = info.pitch;
+    out_scalars[CNA_GO_SOUND_INSTANCE_PAN] = info.pan;
+    return CNA_GO_RESULT_SUCCESS;
+}
+
+CnaGoResult cna_go_sound_effect_instance_set_volume(CnaGoHandle instance, float value) {
+    return api.cna_sound_effect_instance_set_volume(instance, value);
+}
+
+CnaGoResult cna_go_sound_effect_instance_set_pitch(CnaGoHandle instance, float value) {
+    return api.cna_sound_effect_instance_set_pitch(instance, value);
+}
+
+CnaGoResult cna_go_sound_effect_instance_set_pan(CnaGoHandle instance, float value) {
+    return api.cna_sound_effect_instance_set_pan(instance, value);
+}
+
+CnaGoResult cna_go_sound_effect_instance_set_is_looped(CnaGoHandle instance, uint8_t is_looped) {
+    return api.cna_sound_effect_instance_set_is_looped(instance, (CNA_Bool)(is_looped ? 1 : 0));
+}
+
+CnaGoResult cna_go_sound_effect_instance_destroy(CnaGoHandle instance) {
+    return api.cna_sound_effect_instance_destroy(instance);
+}
+
+/* Apply3D. CNA takes versioned structures and Go has no way to build them, so
+   the vectors cross as a flat float array and the structures are assembled
+   here -- the same shape every other versioned CNA structure in this bridge
+   takes. */
+CnaGoResult cna_go_sound_effect_instance_apply_3d(
+    CnaGoHandle instance, const float* listeners, uint64_t listener_count, const float* emitter) {
+    CNA_AudioListener stack_listeners[8];
+    CNA_AudioListener* built = stack_listeners;
+    CNA_AudioEmitter built_emitter;
+    CnaGoResult result;
+    uint64_t index;
+    if (listener_count == 0 || listeners == NULL || emitter == NULL) {
+        return CNA_GO_RESULT_INVALID_ARGUMENT;
+    }
+    if (listener_count > 8) {
+        built = (CNA_AudioListener*)calloc((size_t)listener_count, sizeof(CNA_AudioListener));
+        if (built == NULL) {
+            return CNA_GO_RESULT_INVALID_ARGUMENT;
+        }
+    }
+    for (index = 0; index < listener_count; ++index) {
+        const float* source = listeners + index * 12;
+        memset(&built[index], 0, sizeof(built[index]));
+        built[index].struct_size = (uint32_t)sizeof(built[index]);
+        built[index].struct_version = 1;
+        built[index].forward.x = source[0];
+        built[index].forward.y = source[1];
+        built[index].forward.z = source[2];
+        built[index].position.x = source[3];
+        built[index].position.y = source[4];
+        built[index].position.z = source[5];
+        built[index].up.x = source[6];
+        built[index].up.y = source[7];
+        built[index].up.z = source[8];
+        built[index].velocity.x = source[9];
+        built[index].velocity.y = source[10];
+        built[index].velocity.z = source[11];
+    }
+    memset(&built_emitter, 0, sizeof(built_emitter));
+    built_emitter.struct_size = (uint32_t)sizeof(built_emitter);
+    built_emitter.struct_version = 1;
+    built_emitter.doppler_scale = emitter[0];
+    built_emitter.forward.x = emitter[1];
+    built_emitter.forward.y = emitter[2];
+    built_emitter.forward.z = emitter[3];
+    built_emitter.position.x = emitter[4];
+    built_emitter.position.y = emitter[5];
+    built_emitter.position.z = emitter[6];
+    built_emitter.up.x = emitter[7];
+    built_emitter.up.y = emitter[8];
+    built_emitter.up.z = emitter[9];
+    built_emitter.velocity.x = emitter[10];
+    built_emitter.velocity.y = emitter[11];
+    built_emitter.velocity.z = emitter[12];
+    result = api.cna_sound_effect_instance_apply_3d_multi_ext(instance, built, listener_count, &built_emitter);
+    if (built != stack_listeners) {
+        free(built);
+    }
+    return result;
+}

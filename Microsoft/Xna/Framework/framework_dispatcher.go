@@ -3,6 +3,7 @@ package framework
 import (
 	"errors"
 
+	"github.com/openeggbert/cna-go/internal/dispatcher"
 	"github.com/openeggbert/cna-go/internal/interop"
 )
 
@@ -65,6 +66,15 @@ type FrameworkDispatcher struct{}
 // error result here is the native boundary's, which is the settled rule for
 // every projected member that crosses one.
 func FrameworkDispatcherUpdate() error {
+	// `UpdateCalledAtLeastOnce = true` is the reference's FIRST statement, so
+	// it is set before the refusal below can happen -- a dispatcher call that
+	// finds no running game has still been made, and SoundEffect::Play's guard
+	// asks whether Update was CALLED rather than whether it succeeded.
+	//
+	// The flag lives in internal/dispatcher because Microsoft.Xna.Framework.Audio
+	// reads it and Go cannot share an unexported symbol across packages. See
+	// that package for why it is not an exported accessor here.
+	dispatcher.MarkUpdated()
 	runtime, ok := interop.CurrentRuntime()
 	if !ok {
 		return errNoRunningGame

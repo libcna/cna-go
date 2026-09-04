@@ -905,6 +905,72 @@ typedef CNA_Result (*cna_occlusion_query_begin_fn)(CNA_OcclusionQueryHandle);
 typedef CNA_Result (*cna_occlusion_query_end_fn)(CNA_OcclusionQueryHandle);
 typedef CNA_Result (*cna_occlusion_query_get_is_complete_fn)(CNA_OcclusionQueryHandle, CNA_Bool*);
 typedef CNA_Result (*cna_occlusion_query_get_pixel_count_fn)(CNA_OcclusionQueryHandle, int32_t*);
+/* Foundation 87 -- SoundEffect and SoundEffectInstance.
+   CNA_AUDIO_CHANNELS_MONO is 1 and _STEREO is 2, which happen to match XNA's
+   AudioChannels literals; the Go side maps them explicitly anyway. */
+#ifndef CNA_C_AUDIO_H
+typedef uint32_t CNA_AudioChannels;
+typedef uint32_t CNA_SoundState;
+typedef struct CNA_SoundEffectCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    uint32_t sample_rate;
+    CNA_AudioChannels channels;
+    uint64_t reserved;
+} CNA_SoundEffectCreateInfo;
+typedef struct CNA_SoundEffectInstanceInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_SoundState state;
+    CNA_Bool is_looped;
+    uint8_t reserved0[3];
+    float volume;
+    float pitch;
+    float pan;
+    uint32_t reserved1;
+} CNA_SoundEffectInstanceInfo;
+#endif
+typedef CNA_Result (*cna_sound_effect_create_pcm16_range_ext_fn)(CNA_Handle, const CNA_SoundEffectCreateInfo*, const uint8_t*, uint64_t, int32_t, int32_t, int32_t, int32_t, CNA_Handle*);
+typedef CNA_Result (*cna_sound_effect_create_from_encoded_ext_fn)(CNA_Handle, const uint8_t*, uint64_t, CNA_Handle*);
+typedef CNA_Result (*cna_sound_effect_get_duration_ticks_fn)(CNA_Handle, int64_t*);
+typedef CNA_Result (*cna_sound_effect_create_instance_fn)(CNA_Handle, CNA_Handle*);
+typedef CNA_Result (*cna_sound_effect_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_sound_effect_play_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_sound_effect_play_with_settings_fn)(CNA_Handle, float, float, float, CNA_Bool*);
+typedef CNA_Result (*cna_sound_effect_set_master_volume_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_sound_effect_set_distance_scale_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_sound_effect_set_doppler_scale_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_sound_effect_set_speed_of_sound_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_sound_effect_instance_play_fn)(CNA_Handle);
+typedef CNA_Result (*cna_sound_effect_instance_pause_fn)(CNA_Handle);
+typedef CNA_Result (*cna_sound_effect_instance_resume_fn)(CNA_Handle);
+typedef CNA_Result (*cna_sound_effect_instance_stop_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_sound_effect_instance_get_info_fn)(CNA_Handle, CNA_SoundEffectInstanceInfo*);
+typedef CNA_Result (*cna_sound_effect_instance_set_volume_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_sound_effect_instance_set_pitch_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_sound_effect_instance_set_pan_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_sound_effect_instance_set_is_looped_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_sound_effect_instance_destroy_fn)(CNA_Handle);
+#ifndef CNA_C_AUDIO_H
+typedef struct CNA_AudioEmitter {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    float doppler_scale;
+    CNA_Vector3 forward;
+    CNA_Vector3 position;
+    CNA_Vector3 up;
+    CNA_Vector3 velocity;
+} CNA_AudioEmitter;
+typedef struct CNA_AudioListener {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Vector3 forward;
+    CNA_Vector3 position;
+    CNA_Vector3 up;
+    CNA_Vector3 velocity;
+} CNA_AudioListener;
+#endif
+typedef CNA_Result (*cna_sound_effect_instance_apply_3d_multi_ext_fn)(CNA_Handle, const CNA_AudioListener*, uint64_t, const CNA_AudioEmitter*);
 /* Foundation 84 -- the dynamic buffers' options-carrying upload. */
 typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_with_options_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t, uint32_t, CNA_SetDataOptions);
 /* Foundation 81 -- EnvironmentMapEffect and SkinnedEffect. */
@@ -1231,6 +1297,28 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_occlusion_query_get_is_complete) \
     X(cna_occlusion_query_get_pixel_count) \
     X(cna_vertex_buffer_set_data_raw_at_with_options) \
+    X(cna_sound_effect_create_pcm16_range_ext) \
+    X(cna_sound_effect_create_from_encoded_ext) \
+    X(cna_sound_effect_get_duration_ticks) \
+    X(cna_sound_effect_create_instance) \
+    X(cna_sound_effect_destroy) \
+    X(cna_sound_effect_play) \
+    X(cna_sound_effect_play_with_settings) \
+    X(cna_sound_effect_set_master_volume) \
+    X(cna_sound_effect_set_distance_scale) \
+    X(cna_sound_effect_set_doppler_scale) \
+    X(cna_sound_effect_set_speed_of_sound) \
+    X(cna_sound_effect_instance_play) \
+    X(cna_sound_effect_instance_pause) \
+    X(cna_sound_effect_instance_resume) \
+    X(cna_sound_effect_instance_stop) \
+    X(cna_sound_effect_instance_get_info) \
+    X(cna_sound_effect_instance_set_volume) \
+    X(cna_sound_effect_instance_set_pitch) \
+    X(cna_sound_effect_instance_set_pan) \
+    X(cna_sound_effect_instance_set_is_looped) \
+    X(cna_sound_effect_instance_destroy) \
+    X(cna_sound_effect_instance_apply_3d_multi_ext) \
     X(cna_environment_map_effect_create) \
     X(cna_environment_map_effect_set_diffuse_color) \
     X(cna_environment_map_effect_set_emissive_color) \

@@ -18,7 +18,7 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 185,
+    "COMPLETE_TYPES": 187,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 72,
+    "GLOBAL_ACTIONABLE_LOCAL": 70,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 72,
-    "MISSING_TYPES": 72,
+    "MISSING_TYPE": 70,
+    "MISSING_TYPES": 70,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3047,
-    "TARGET_TYPES": 185,
-    "TOTAL_DIAGNOSTICS": 72,
+    "TARGET_MEMBERS": 3089,
+    "TARGET_TYPES": 187,
+    "TOTAL_DIAGNOSTICS": 70,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -138,18 +138,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.SoundBank",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:SoundBank",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.SoundEffect",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:SoundEffect",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:SoundEffectInstance",
       "message": "mapped Go type is absent"
     },
     {
@@ -547,6 +535,8 @@
     "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
     "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
     "Microsoft.Xna.Framework.Audio.RendererDetail",
+    "Microsoft.Xna.Framework.Audio.SoundEffect",
+    "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.SoundState",
     "Microsoft.Xna.Framework.BoundingBox",
     "Microsoft.Xna.Framework.BoundingFrustum",
@@ -732,8 +722,6 @@
     "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.Microphone",
     "Microsoft.Xna.Framework.Audio.SoundBank",
-    "Microsoft.Xna.Framework.Audio.SoundEffect",
-    "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.WaveBank",
     "Microsoft.Xna.Framework.Content.ContentReader",
     "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
@@ -6841,7 +6829,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 37,
+      "projectedTypes": 39,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6893,14 +6881,12 @@
     {
       "family": "Audio",
       "classification": "ACTIONABLE_LOCAL",
-      "note": "Foundation 86 closed RendererDetail, which needed no CNA at all -- two strings and five members, and the first type in the project whose authority is the Xact assembly. Foundation 86 also MEASURED what the other four are waiting on rather than assuming it: cna_audio_get_capabilities reports is_playback_available=TRUE on both qualified artifacts, so the old \"nothing behind it would play\" note was stale. CNA carries ~63/18/10 routes for SoundEffect, SoundEffectInstance and the dynamic instance. Microphone's physical capture is a separate question from its enumeration and state surface, and the capture members are projected without ever being exercised against a real device",
+      "note": "Foundation 87 closed SoundEffect and SoundEffectInstance over 21 bound routes. Foundation 86 closed RendererDetail, which needed no CNA at all -- two strings and five members, and the first type in the project whose authority is the Xact assembly. Foundation 86 also MEASURED what the other four are waiting on rather than assuming it: cna_audio_get_capabilities reports is_playback_available=TRUE on both qualified artifacts, so the old \"nothing behind it would play\" note was stale. CNA carries ~63/18/10 routes for SoundEffect, SoundEffectInstance and the dynamic instance. Microphone's physical capture is a separate question from its enumeration and state surface, and the capture members are projected without ever being exercised against a real device",
       "types": [
         "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
-        "Microsoft.Xna.Framework.Audio.Microphone",
-        "Microsoft.Xna.Framework.Audio.SoundEffect",
-        "Microsoft.Xna.Framework.Audio.SoundEffectInstance"
+        "Microsoft.Xna.Framework.Audio.Microphone"
       ],
-      "remaining": 4,
+      "remaining": 2,
       "verdict": "PASS"
     },
     {
@@ -9632,7 +9618,7 @@
       "clrMembers": 1,
       "projectedMembers": 0,
       "declaringTypes": 29,
-      "projectedTypes": 6,
+      "projectedTypes": 8,
       "rationale": "adds no Go surface of its own: no Disposable interface, no Close alias, no io.Closer adaptation, and no finalizer. Twenty-eight of the twenty-nine declaring types already declare Dispose publicly and it maps as an ordinary member; GraphicsDeviceManager implements it explicitly, so its Dispose() is not public surface and nothing is projected for it. Ownership and lifetime remain a per-type question that this relationship does not answer.",
       "verdict": "PASS"
     },
@@ -10375,7 +10361,7 @@
       "derivedTypes": 1,
       "projectedDerivedTypes": 0,
       "positions": 1,
-      "positionsOnProjectedCarriers": 0,
+      "positionsOnProjectedCarriers": 1,
       "requirement": "LATENT",
       "rows": [
         {
@@ -11495,7 +11481,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "adfcc3c6e08d0d7b26d38527e842bc788a1657b367b5e2344cab87dfe786d12c",
+    "mappingSha256": "6d8ec4b06910cd11e56c282cdd24968eacfe1a97df8303fe2042744a0fd74dc0",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }
