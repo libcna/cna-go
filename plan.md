@@ -1606,6 +1606,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 91 | StorageDevice and StorageContainer, closing the Storage namespace | `foundation-91-storage-evidence.md` |
 | 92 | the content plumbing: ContentReader, the type readers and ResourceContentManager | `foundation-92-content-plumbing-evidence.md` |
 | 93 | the five content serializer attributes, and System.Attribute as a composed base | `foundation-93-content-serializer-attributes-evidence.md` |
+| 94 | the thirteen Design converters, and the end of the deferred frontier | `foundation-94-design-converters-evidence.md` |
 
 **A recorded blocker is a claim, and claims get re-measured** (91).
 System.IO.BinaryReader had been DEFERRED since Foundation 29 partly because "the
@@ -1888,6 +1889,26 @@ operation; the runtime's own readers of those attributes are `private`; and CNA
 does the dispatch anyway. Project what the contract declares, and record the
 operation the language cannot express on the type itself.
 
+**A blocker that names a SUBSYSTEM is a blocker that has not been counted**
+(94). ExpandableObjectConverter was deferred on three: ITypeDescriptorContext
+"the single largest blocker in the profile", CultureInfo "culture-aware
+conversion", IDictionary "shared with System.Exception::Data". Counted, they
+were zero members, two members and one. A subsystem name describes the CLR type;
+what matters is how much of it the PROFILE reaches, and that is a number.
+
+**A negative fixture must not borrow the project's unfinished work** (94). Four
+verifier fixtures needed a DEFERRED base and took whichever entry happened to be
+one; the subject moved three times as bases were composed, and Foundation 94
+composed the last. They stage one now, over a real base so only the STATUS is
+synthetic. A fixture that depends on something being incomplete stops testing
+the moment it is completed.
+
+**Signature positions are not the whole reach of a type** (94).
+InstanceDescriptor occupies no parameter or return position in the Design
+converters and is still required twice: both CanConvert members compare
+`typeof` it, and every leaf's ConvertTo constructs one. Read the BEHAVIOUR as
+well as the signatures before concluding a type is not needed.
+
 **A graphics state object freezes** (59). Every setter is fallible because
 `ThrowIfBound` is a refusal the reference really throws; every getter is one
 `ldfld`. The static presets are frozen from construction.
@@ -1897,12 +1918,14 @@ operation the language cannot express on the type itself.
 This section is a STATEMENT OF CURRENT STATE, not a permanent list, and it is
 rewritten whenever a milestone makes one of its entries false.
 
-Still deferred: XACT; media/video; design; and GamerServices. Audio closed in
+Still deferred: XACT; media/video; and GamerServices. Audio closed in
 Foundation 88, Input and touch in 89, the Model family in 90, Storage in 91, the
-content plumbing in 92 and the content serializer attributes in 93.
+content plumbing in 92, the content serializer attributes in 93 and the Design
+converters in 94.
 
-`System.ComponentModel.ExpandableObjectConverter` is now the ONLY deferred BCL
-base left, and the thirteen Design converters are what it holds. Every one of them is now classified in
+**NO BASE RELATIONSHIP IS DEFERRED ANY MORE.** All twelve XNA and all twelve BCL
+entries are COMPOSED, MAPPED or IMPLIED. A new DEFERRED entry is a regression by
+construction, and `TestBCLBaseRelationshipsAreExhaustive` asserts it. Every one of them is now classified in
 `tools/api_compat/frontier.go`, which partitions the live missing-type set and
 generates `docs/generated/remaining-work.md`; that generated table is the
 authority for what each family is stopped on, and this paragraph is its

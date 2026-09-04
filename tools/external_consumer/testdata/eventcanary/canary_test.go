@@ -11,6 +11,7 @@ import (
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	audio "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio"
 	content "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content"
+	design "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design"
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
@@ -5195,5 +5196,81 @@ func TestContentSerializerAttributesAreReachableFromOutsideTheModule(t *testing.
 	}
 	if ignore.Equals(attribute) {
 		t.Fatal("two different attribute types compared equal")
+	}
+}
+
+// TestDesignConvertersAreReachableFromOutsideTheModule is Foundation 94's
+// canary. The whole namespace reaches no runtime, so a consumer with no game
+// and no device exercises all of it.
+func TestDesignConvertersAreReachableFromOutsideTheModule(t *testing.T) {
+	stringType := reflect.TypeOf("")
+
+	converter := design.NewVector2Converter()
+	var _ func(any, reflect.Type) bool = converter.CanConvertFrom
+	var _ func(any, reflect.Type) bool = converter.CanConvertTo
+	var _ func(any) bool = converter.GetCreateInstanceSupported
+	var _ func(any) bool = converter.GetPropertiesSupported
+	var _ func(any, any, []any) []framework.PropertyDescriptor = converter.GetProperties
+	var _ func(any, *framework.CultureInfo, any) (any, error) = converter.ConvertFrom
+	var _ func(any, *framework.CultureInfo, any, reflect.Type) (any, error) = converter.ConvertTo
+	var _ func(any, map[string]any) (any, error) = converter.CreateInstance
+
+	// The round trip a consumer actually wants.
+	text, err := converter.ConvertTo(nil, nil, framework.NewVector2BySingleAndSingle(1, 2), stringType)
+	if err != nil {
+		t.Fatalf("ConvertTo: %v", err)
+	}
+	if text != "1, 2" {
+		t.Fatalf("ConvertTo produced %q outside the module", text)
+	}
+	back, err := converter.ConvertFrom(nil, nil, "1, 2")
+	if err != nil {
+		t.Fatalf("ConvertFrom: %v", err)
+	}
+	if back != framework.NewVector2BySingleAndSingle(1, 2) {
+		t.Fatalf("ConvertFrom produced %v", back)
+	}
+
+	// The flag asymmetry, which is the family's one behavioural surprise.
+	if !design.NewRectangleConverter().CanConvertTo(nil, stringType) {
+		t.Fatal("a flag-clearing converter refused to format to a string")
+	}
+	if design.NewRectangleConverter().CanConvertFrom(nil, stringType) {
+		t.Fatal("a flag-clearing converter accepted a string source")
+	}
+
+	// Every one of the thirteen is constructible from outside.
+	var _ *design.MathTypeConverter = design.NewMathTypeConverter()
+	var _ *design.Vector3Converter = design.NewVector3Converter()
+	var _ *design.Vector4Converter = design.NewVector4Converter()
+	var _ *design.QuaternionConverter = design.NewQuaternionConverter()
+	var _ *design.PointConverter = design.NewPointConverter()
+	var _ *design.ColorConverter = design.NewColorConverter()
+	var _ *design.RectangleConverter = design.NewRectangleConverter()
+	var _ *design.PlaneConverter = design.NewPlaneConverter()
+	var _ *design.RayConverter = design.NewRayConverter()
+	var _ *design.BoundingBoxConverter = design.NewBoundingBoxConverter()
+	var _ *design.BoundingSphereConverter = design.NewBoundingSphereConverter()
+	var _ *design.MatrixConverter = design.NewMatrixConverter()
+
+	// The property descriptors, and the InstanceDescriptor branch.
+	properties := design.NewMatrixConverter().GetProperties(nil, nil, nil)
+	if len(properties) != 17 || properties[0].Name() != "Translation" {
+		t.Fatalf("MatrixConverter describes %d properties starting with %q", len(properties), properties[0].Name())
+	}
+	built, err := converter.ConvertTo(nil, nil, framework.NewVector2BySingleAndSingle(3, 4),
+		reflect.TypeOf(&framework.InstanceDescriptor{}))
+	if err != nil {
+		t.Fatalf("ConvertTo to an InstanceDescriptor: %v", err)
+	}
+	descriptor, ok := built.(*framework.InstanceDescriptor)
+	if !ok || len(descriptor.Arguments()) != 2 {
+		t.Fatalf("the InstanceDescriptor branch produced %T", built)
+	}
+	var _ func() reflect.Type = descriptor.MemberType
+
+	// CultureInfo, sized to the one thing the profile reaches.
+	if framework.CultureInfoCurrentCulture().ListSeparator() != "," {
+		t.Fatal("the current culture's list separator did not survive the module boundary")
 	}
 }

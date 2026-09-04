@@ -95,7 +95,11 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// ContentManager's members -- everything but the OpenStream it overrides --
 	// and ContentTypeReader`1 inherits two of ContentTypeReader's three, having
 	// its own Read and its own TargetType.
-	if surface.XNAInheritedCLRMembers != 243 || surface.XNAInheritedProjections != 335 {
+	// 303/395, not 243/335: Foundation 94 composed MathTypeConverter, whose
+	// TWELVE derived converters each inherit the same five members -- the two
+	// CanConvert overloads, the two GetSupported getters and GetProperties --
+	// and none overrides any of them.
+	if surface.XNAInheritedCLRMembers != 303 || surface.XNAInheritedProjections != 395 {
 		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
 	}
 	// The subtraction the exclusion performs is measured rather than implied:
@@ -130,7 +134,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// 3745, not 3720: Foundation 93's five content serializer attributes bring
 	// twenty-five BCL-inherited System.Attribute projections between them, on
 	// top of their own declared constructors and properties.
-	if surface.ExpectedGoMembers != 3745 {
+	// Foundation 94's thirteen Design converters bring sixty XNA-inherited
+	// projections -- five on each of the twelve leaves -- plus their own
+	// declared members and MathTypeConverter's two protected fields.
+	if surface.ExpectedGoMembers != 3805 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -4764,14 +4771,20 @@ func TestBCLBaseRelationshipsAreExhaustive(t *testing.T) {
 		bclBaseRelationships["System.EventArgs"].Adapter != "EventArgs" {
 		t.Fatalf("System.EventArgs = %+v", bclBaseRelationships["System.EventArgs"])
 	}
+	// NOTHING is deferred any more, and that is the assertion.
+	//
 	// System.Exception and ExternalException were DEFERRED until Foundation 78
-	// composed them, System.IO.BinaryReader until Foundation 92 and
-	// System.Attribute until Foundation 93. ExpandableObjectConverter is the
-	// one that is still open, and the thirteen Design converters are still
-	// missing because of it.
-	for _, deferred := range []string{"System.ComponentModel.ExpandableObjectConverter"} {
-		if bclBaseRelationships[deferred].Status != "DEFERRED" {
-			t.Fatalf("%s = %+v, want DEFERRED", deferred, bclBaseRelationships[deferred])
+	// composed them, System.IO.BinaryReader until Foundation 92,
+	// System.Attribute until Foundation 93 and ExpandableObjectConverter until
+	// Foundation 94. Every BCL base relationship the profile needs is now
+	// COMPOSED, MAPPED or IMPLIED.
+	//
+	// A new DEFERRED entry is therefore a regression by construction: it would
+	// mean a base was recorded as blocked after the frontier had closed.
+	for identity, relationship := range bclBaseRelationships {
+		if relationship.Status == "DEFERRED" {
+			t.Fatalf("%s is DEFERRED; every BCL base relationship was composed by Foundation 94: %+v",
+				identity, relationship)
 		}
 	}
 	for _, composed := range []string{"System.Exception", "System.Runtime.InteropServices.ExternalException"} {
@@ -4785,6 +4798,17 @@ func TestBCLBaseRelationshipsAreExhaustive(t *testing.T) {
 	if bclBaseRelationships["System.Attribute"].Status != "COMPOSED" ||
 		bclBaseRelationships["System.Attribute"].Adapter != "attributeBase" {
 		t.Fatalf("System.Attribute = %+v, want COMPOSED over attributeBase", bclBaseRelationships["System.Attribute"])
+	}
+	// Foundation 94. ExpandableObjectConverter is MAPPED with NO adapter, which
+	// is the shape a base takes when it contributes no inherited surface at
+	// all: its three fields are private and BOTH its public members are
+	// overridden by MathTypeConverter, which the contract declares them on.
+	//
+	// The absent adapter is asserted, not just tolerated. An adapter here would
+	// be a Go type holding nothing, for a base contributing nothing.
+	expandable := bclBaseRelationships["System.ComponentModel.ExpandableObjectConverter"]
+	if expandable.Status != "MAPPED" || expandable.Adapter != "" {
+		t.Fatalf("System.ComponentModel.ExpandableObjectConverter = %+v, want MAPPED with no adapter", expandable)
 	}
 }
 
@@ -5940,17 +5964,21 @@ func TestEveryDeferredBaseNamesItsBlockers(t *testing.T) {
 // TestDeferredBaseWithoutBlockersIsRejected is the negative control for the
 // claim above, run through the real measurement rather than the table.
 func TestDeferredBaseWithoutBlockersIsRejected(t *testing.T) {
-	// ExpandableObjectConverter rather than System.Exception: Foundation 78
-	// composed the latter, and a COMPOSED base is not required to carry
-	// blockers. The claim under test is about DEFERRED bases, so it has to be
-	// run on one -- and after Foundation 93 composed System.Attribute this is
-	// the only one left, which is itself worth noticing: when the Design
-	// converters close, this test needs a different subject or a fixture.
+	// The subject is STAGED, because after Foundation 94 there is no DEFERRED
+	// BCL base left to borrow -- the previous comment here predicted exactly
+	// that and it happened one milestone later.
+	//
+	// A negative fixture that needs the project to have unfinished work stops
+	// testing the moment the work finishes. Staging keeps the rule under test
+	// whatever the registry says, and the subject is a real base so that only
+	// the STATUS is synthetic.
 	identity := "System.ComponentModel.ExpandableObjectConverter"
 	original := bclBaseRelationships[identity]
 	t.Cleanup(func() { bclBaseRelationships[identity] = original })
 
 	stripped := original
+	stripped.Status = "DEFERRED"
+	stripped.Adapter = ""
 	stripped.Blockers = nil
 	bclBaseRelationships[identity] = stripped
 
@@ -6707,16 +6735,36 @@ func withXNABaseRelationships(t *testing.T, mutate func(), fn func()) {
 // It has to be a relationship that is still DEFERRED: GameComponent became the
 // first COMPOSED one in Foundation 41, and a COMPOSED relationship is not held
 // to the blocker rules, which is the whole point of the status.
-// deferredBaseFixtureName is the DEFERRED base the mutations below act on.
+// deferredBaseFixtureName is the base the deferral mutations below act on, and
+// as of Foundation 94 its status is STAGED rather than borrowed.
 //
-// It used to be GraphicsResource, which Foundation 56 composed, and then
-// Effect, which Foundation 79 composed. MathTypeConverter took its place on the
-// same reasoning applied harder: it is the one deferred XNA base whose blocker
-// is not an XNA decision at all. It extends System.ComponentModel
-// .ExpandableObjectConverter, itself a DEFERRED BCL base with three recorded
-// blockers, so composing it needs a BCL closure before an XNA one -- which
-// makes it the entry least likely to be composed next.
-const deferredBaseFixtureName = "Microsoft.Xna.Framework.Design.MathTypeConverter"
+// It used to name whichever entry happened to be DEFERRED: GraphicsResource
+// until Foundation 56 composed it, then Effect until Foundation 79, then
+// MathTypeConverter until Foundation 94. That milestone composed the last one,
+// and every base relationship in the project -- XNA and BCL -- is now COMPOSED.
+//
+// So there is no real deferred entry left to borrow, and the fixture stages one
+// instead. That is not a weakening; it is what the rule always deserved. A
+// negative fixture that depends on the project still having unfinished work
+// stops testing the moment the work finishes, which is exactly what happened
+// three times. Staging makes the defect reproducible whatever the registry says.
+//
+// GameComponent is the subject because it is a REAL base with a real derived
+// type in the contract, so only the STATUS is synthetic -- which is precisely
+// what these defects are about.
+const deferredBaseFixtureName = "Microsoft.Xna.Framework.GameComponent"
+
+// stageDeferredBase makes the fixture base DEFERRED with one valid blocker, so
+// a mutation can then break it in exactly one way. The caller mutates what
+// this returns and stores it back.
+func stageDeferredBase() xnaBaseRelationship {
+	return xnaBaseRelationship{
+		Status: "DEFERRED",
+		Blockers: []xnaBaseBlocker{
+			{Class: "ARCHITECTURE", Detail: "staged by the fixture; see deferredBaseFixtureName"},
+		},
+	}
+}
 
 const gameComponentBase = "Microsoft.Xna.Framework.GameComponent"
 
@@ -6735,22 +6783,22 @@ var xnaBaseDefects = map[string]func(complete *[]string){
 	// Foundation 29's rule, on the second frontier: a deferral that records
 	// nothing says nothing.
 	"deferred_base_records_no_blocker": func(*[]string) {
-		relationship := xnaBaseRelationships[deferredBaseFixtureName]
+		relationship := stageDeferredBase()
 		relationship.Blockers = nil
 		xnaBaseRelationships[deferredBaseFixtureName] = relationship
 	},
 	"blocker_class_is_unrecorded": func(*[]string) {
-		relationship := xnaBaseRelationships[deferredBaseFixtureName]
+		relationship := stageDeferredBase()
 		relationship.Blockers = []xnaBaseBlocker{{Class: "LATER", Detail: "not now"}}
 		xnaBaseRelationships[deferredBaseFixtureName] = relationship
 	},
 	"blocker_records_no_detail": func(*[]string) {
-		relationship := xnaBaseRelationships[deferredBaseFixtureName]
+		relationship := stageDeferredBase()
 		relationship.Blockers = []xnaBaseBlocker{{Class: "ARCHITECTURE"}}
 		xnaBaseRelationships[deferredBaseFixtureName] = relationship
 	},
 	"status_is_neither_composed_nor_deferred": func(*[]string) {
-		relationship := xnaBaseRelationships[deferredBaseFixtureName]
+		relationship := stageDeferredBase()
 		relationship.Status = "SOON"
 		xnaBaseRelationships[deferredBaseFixtureName] = relationship
 	},
@@ -6761,17 +6809,18 @@ var xnaBaseDefects = map[string]func(complete *[]string){
 			Status: "DEFERRED", Blockers: []xnaBaseBlocker{{Class: "ARCHITECTURE", Detail: "invented"}},
 		}
 	},
-	// The substantive rule. Vector3Converter inherits five public members from
-	// the DEFERRED MathTypeConverter that CNA-Go does not project, so calling
-	// it COMPLETE asserts something false.
+	// The substantive rule: a type that inherits public members from a DEFERRED
+	// base is not complete, because those members are not projected.
 	//
 	// It used to be Texture2D over the deferred Texture, then BasicEffect over
-	// the deferred Effect. Foundation 56 and Foundation 79 composed those two
-	// chains and both derived types became genuinely complete -- inherited
-	// surface included -- so the fixture has twice moved to a relationship that
-	// is still deferred rather than being weakened to keep passing.
+	// the deferred Effect, then Vector3Converter over the deferred
+	// MathTypeConverter -- and each time the base was composed the fixture
+	// moved rather than being weakened. Foundation 94 composed the last one, so
+	// the base is STAGED deferred here and DrawableGameComponent is the derived
+	// type whose completeness claim then becomes false.
 	"derived_type_of_a_deferred_base_reported_complete": func(complete *[]string) {
-		*complete = append(*complete, "Microsoft.Xna.Framework.Design.Vector3Converter")
+		xnaBaseRelationships[deferredBaseFixtureName] = stageDeferredBase()
+		*complete = append(*complete, "Microsoft.Xna.Framework.DrawableGameComponent")
 	},
 }
 
@@ -8264,16 +8313,18 @@ func TestTheComposedRelationshipsAreTheMeasuredFamilies(t *testing.T) {
 	// Nine since Foundation 88 composed SoundEffectInstance, which is the
 	// FIRST composed base outside the graphics namespace; eleven since
 	// Foundation 92 composed ContentManager and ContentTypeReader, the first
-	// two in the content namespace.
-	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 11 {
-		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 11", got)
+	// two in the content namespace; twelve since Foundation 94 composed
+	// MathTypeConverter, after which NOTHING in the profile is deferred.
+	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 12 {
+		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 12", got)
 	}
 	// Two for GameComponent, twelve for GraphicsResource, three for Texture,
 	// one for Texture2D, one for TextureCube, six for Effect, one each for the
-	// two buffer bases, one for SoundEffectInstance and one each for
-	// ContentManager and ContentTypeReader.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 29 {
-		t.Fatalf("the composed relationships cover %d derived types, want 29", got)
+	// two buffer bases, one for SoundEffectInstance, one each for
+	// ContentManager and ContentTypeReader, and TWELVE for MathTypeConverter --
+	// the largest composed family in the profile.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 41 {
+		t.Fatalf("the composed relationships cover %d derived types, want 41", got)
 	}
 	// DrawableGameComponent, SpriteBatch, Texture, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
@@ -8286,8 +8337,8 @@ func TestTheComposedRelationshipsAreTheMeasuredFamilies(t *testing.T) {
 	// DynamicVertexBuffer and DynamicIndexBuffer, Foundation 88's
 	// DynamicSoundEffectInstance and Foundation 92's ResourceContentManager and
 	// ContentTypeReader`1.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 28 {
-		t.Fatalf("%d projected derived types, want 28", got)
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 40 {
+		t.Fatalf("%d projected derived types, want 40", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.
@@ -8300,14 +8351,14 @@ func TestTheComposedRelationshipsAreTheMeasuredFamilies(t *testing.T) {
 				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
 		}
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 243 {
-		t.Fatalf("%d inherited public CLR members, want 243", got)
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 303 {
+		t.Fatalf("%d inherited public CLR members, want 303", got)
 	}
-	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 335 {
-		t.Fatalf("%d inherited Go projections, want 335", got)
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 395 {
+		t.Fatalf("%d inherited Go projections, want 395", got)
 	}
-	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 335 {
-		t.Fatalf("%d attributed inherited members, want every one of the 335", got)
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 395 {
+		t.Fatalf("%d attributed inherited members, want every one of the 395", got)
 	}
 	// Ten, not eight: Foundation 88's DynamicSoundEffectInstance declares its
 	// OWN IsLooped accessors, which occupy the two slots its base's would have
@@ -8748,10 +8799,19 @@ func TestAMethodTypeParameterTokenResolvesToItsDeclaredName(t *testing.T) {
 // Foundation 54 found the rule by tripping over Texture2D, whose Texture base
 // was deferred. Foundation 56 composed that chain and the fixture moved to
 // BasicEffect over Effect; Foundation 79 composed that one too, so it moved
-// again -- to Vector3Converter over MathTypeConverter, whose five inherited
-// public members CNA-Go projects nowhere and whose own base is a deferred BCL
-// type.
+// again to Vector3Converter over MathTypeConverter.
+//
+// Foundation 94 composed that one as well, and with it the LAST deferred base
+// in the project. So the base is now STAGED deferred here rather than borrowed,
+// for the reason deferredBaseFixtureName records: a negative fixture that needs
+// the project to have unfinished work stops testing the moment the work
+// finishes, which is what happened three times running.
 func TestATypeWithUnprojectedInheritedMembersIsNotComplete(t *testing.T) {
+	const staged = "Microsoft.Xna.Framework.Design.MathTypeConverter"
+	original := xnaBaseRelationships[staged]
+	t.Cleanup(func() { xnaBaseRelationships[staged] = original })
+	xnaBaseRelationships[staged] = stageDeferredBase()
+
 	surface, err := buildExpected(loadPinnedContract(t))
 	if err != nil {
 		t.Fatal(err)

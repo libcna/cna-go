@@ -68,7 +68,7 @@ func identityMeasurement(t *testing.T, staged string) (report, map[string]xnaCom
 }
 
 // gameComponentIdentity is the base every mutation below acts on. It is named
-// rather than indexed, because the registry has eleven entries now and a
+// rather than indexed, because the registry has twelve entries now and a
 // positional assertion would silently start measuring another family.
 const gameComponentIdentity = "Microsoft.Xna.Framework.GameComponent"
 
@@ -76,8 +76,8 @@ const gameComponentIdentity = "Microsoft.Xna.Framework.GameComponent"
 // to pass unmutated, or every mutation below would "fail" for the wrong reason.
 func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	result, measurements := identityMeasurement(t, "")
-	if len(measurements) != 11 {
-		t.Fatalf("%d identity measurements, want eleven composed bases", len(measurements))
+	if len(measurements) != 12 {
+		t.Fatalf("%d identity measurements, want twelve composed bases", len(measurements))
 	}
 	for base, measurement := range measurements {
 		if measurement.Verdict != "PASS" {
@@ -94,7 +94,8 @@ func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	// binding AND resolves an identity through the link it forwards to.
 	// ContentTypeReader has no site because no member of it reads the object --
 	// it is composed for SUBSTITUTABILITY alone, which is what NoIdentityNeeded
-	// records.
+	// records. Foundation 94's MathTypeConverter has none for the same reason
+	// and not even substitutability: nothing in the profile names it.
 	if got := result.Summary["XNA_COMPOSED_IDENTITY_SITES"]; got != 17 {
 		t.Fatalf("%d identity sites, want seventeen", got)
 	}
@@ -114,6 +115,9 @@ func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	// SkinnedEffect, Foundation 83's OcclusionQuery, Foundation 84's two
 	// dynamic buffers, Foundation 88's DynamicSoundEffectInstance and
 	// Foundation 92's ResourceContentManager.
+	//
+	// Foundation 94's twelve Design converters add NONE: their base needs no
+	// CLR `this`, so there is nothing for them to bind.
 	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 27 {
 		t.Fatalf("%d identity bindings, want the twenty-seven projected derived types", got)
 	}

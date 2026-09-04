@@ -162,6 +162,34 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 		},
 	},
 
+	// Foundation 94. MathTypeConverter needs NO identity either, and for the
+	// same reason ContentTypeReader does not: nothing in it reads the object.
+	//
+	// Its five inherited members are two type comparisons, two `ldc.i4.1`
+	// returns and one `ldfld`. `ldarg.0` never leaves the object -- never a
+	// sender, never a ToString receiver, never the subject of an exception
+	// message -- so there is no CLR `this` to split between the base and the
+	// twelve derived converters.
+	"Microsoft.Xna.Framework.Design.MathTypeConverter": {
+		Package:          modulePath + "/Microsoft/Xna/Framework/Design",
+		GoBase:           "MathTypeConverter",
+		NoIdentityNeeded: true,
+		DerivedConstructors: map[string]string{
+			"Microsoft.Xna.Framework.Design.Vector2Converter":        "NewVector2Converter",
+			"Microsoft.Xna.Framework.Design.Vector3Converter":        "NewVector3Converter",
+			"Microsoft.Xna.Framework.Design.Vector4Converter":        "NewVector4Converter",
+			"Microsoft.Xna.Framework.Design.QuaternionConverter":     "NewQuaternionConverter",
+			"Microsoft.Xna.Framework.Design.PointConverter":          "NewPointConverter",
+			"Microsoft.Xna.Framework.Design.ColorConverter":          "NewColorConverter",
+			"Microsoft.Xna.Framework.Design.RectangleConverter":      "NewRectangleConverter",
+			"Microsoft.Xna.Framework.Design.PlaneConverter":          "NewPlaneConverter",
+			"Microsoft.Xna.Framework.Design.RayConverter":            "NewRayConverter",
+			"Microsoft.Xna.Framework.Design.BoundingBoxConverter":    "NewBoundingBoxConverter",
+			"Microsoft.Xna.Framework.Design.BoundingSphereConverter": "NewBoundingSphereConverter",
+			"Microsoft.Xna.Framework.Design.MatrixConverter":         "NewMatrixConverter",
+		},
+	},
+
 	// Foundation 92. ContentTypeReader needs NO identity, and that is measured
 	// rather than assumed.
 	//

@@ -11,24 +11,24 @@
     "BCL_ADAPTER_EXCLUSIONS_LANGUAGE_MAPPING_LIMITATION": 2,
     "BCL_BASE_ADAPTERS": 7,
     "BCL_BASE_ADAPTER_CONSUMERS": 20,
-    "BCL_DEFERRED_BASE_BLOCKERS": 3,
+    "BCL_DEFERRED_BASE_BLOCKERS": 0,
     "BCL_INHERITED_MEMBER_PROJECTIONS": 169,
     "BCL_INHERITED_PUBLIC_MEMBERS": 151,
     "BCL_LANGUAGE_ACCESSORS": 1,
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 218,
+    "COMPLETE_TYPES": 231,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3745,
+    "EXPECTED_GO_MEMBERS": 3805,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 4,
+    "FRONTIER_FAMILIES": 3,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 39,
+    "GLOBAL_ACTIONABLE_LOCAL": 26,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 39,
-    "MISSING_TYPES": 39,
+    "MISSING_TYPE": 26,
+    "MISSING_TYPES": 26,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3391,
-    "TARGET_TYPES": 218,
-    "TOTAL_DIAGNOSTICS": 39,
+    "TARGET_MEMBERS": 3504,
+    "TARGET_TYPES": 231,
+    "TOTAL_DIAGNOSTICS": 26,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -89,19 +89,19 @@
     "XNA_BASE_SUBSTITUTABILITY_NONE": 3,
     "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 8,
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
-    "XNA_COMPOSED_BASE_RELATIONSHIPS": 11,
-    "XNA_COMPOSED_DERIVED_TYPES": 29,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 28,
+    "XNA_COMPOSED_BASE_RELATIONSHIPS": 12,
+    "XNA_COMPOSED_DERIVED_TYPES": 41,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 40,
     "XNA_COMPOSED_IDENTITY_BINDINGS": 27,
     "XNA_COMPOSED_IDENTITY_FORWARDS": 6,
     "XNA_COMPOSED_IDENTITY_SITES": 17,
     "XNA_COMPOSED_IDENTITY_USES": 18,
-    "XNA_DEFERRED_BASE_BLOCKERS": 2,
-    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 335,
-    "XNA_INHERITED_MEMBER_PROJECTIONS": 335,
-    "XNA_INHERITED_PUBLIC_MEMBERS": 243,
+    "XNA_DEFERRED_BASE_BLOCKERS": 0,
+    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 395,
+    "XNA_INHERITED_MEMBER_PROJECTIONS": 395,
+    "XNA_INHERITED_PUBLIC_MEMBERS": 303,
     "XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN": 10,
-    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 60
+    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 0
   },
   "diagnostics": [
     {
@@ -132,84 +132,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.WaveBank",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:WaveBank",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:BoundingBoxConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:BoundingSphereConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.ColorConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:ColorConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.MathTypeConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:MathTypeConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.MatrixConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:MatrixConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.PlaneConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:PlaneConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.PointConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:PointConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.QuaternionConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:QuaternionConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.RayConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:RayConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.RectangleConverter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:RectangleConverter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.Vector2Converter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:Vector2Converter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.Vector3Converter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:Vector3Converter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Design.Vector4Converter",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:Vector4Converter",
       "message": "mapped Go type is absent"
     },
     {
@@ -377,6 +299,19 @@
     "Microsoft.Xna.Framework.CurveKeyCollection",
     "Microsoft.Xna.Framework.CurveLoopType",
     "Microsoft.Xna.Framework.CurveTangent",
+    "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
+    "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
+    "Microsoft.Xna.Framework.Design.ColorConverter",
+    "Microsoft.Xna.Framework.Design.MathTypeConverter",
+    "Microsoft.Xna.Framework.Design.MatrixConverter",
+    "Microsoft.Xna.Framework.Design.PlaneConverter",
+    "Microsoft.Xna.Framework.Design.PointConverter",
+    "Microsoft.Xna.Framework.Design.QuaternionConverter",
+    "Microsoft.Xna.Framework.Design.RayConverter",
+    "Microsoft.Xna.Framework.Design.RectangleConverter",
+    "Microsoft.Xna.Framework.Design.Vector2Converter",
+    "Microsoft.Xna.Framework.Design.Vector3Converter",
+    "Microsoft.Xna.Framework.Design.Vector4Converter",
     "Microsoft.Xna.Framework.DisplayOrientation",
     "Microsoft.Xna.Framework.DrawableGameComponent",
     "Microsoft.Xna.Framework.FrameworkDispatcher",
@@ -566,19 +501,6 @@
     "Microsoft.Xna.Framework.Audio.Cue",
     "Microsoft.Xna.Framework.Audio.SoundBank",
     "Microsoft.Xna.Framework.Audio.WaveBank",
-    "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
-    "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
-    "Microsoft.Xna.Framework.Design.ColorConverter",
-    "Microsoft.Xna.Framework.Design.MathTypeConverter",
-    "Microsoft.Xna.Framework.Design.MatrixConverter",
-    "Microsoft.Xna.Framework.Design.PlaneConverter",
-    "Microsoft.Xna.Framework.Design.PointConverter",
-    "Microsoft.Xna.Framework.Design.QuaternionConverter",
-    "Microsoft.Xna.Framework.Design.RayConverter",
-    "Microsoft.Xna.Framework.Design.RectangleConverter",
-    "Microsoft.Xna.Framework.Design.Vector2Converter",
-    "Microsoft.Xna.Framework.Design.Vector3Converter",
-    "Microsoft.Xna.Framework.Design.Vector4Converter",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
     "Microsoft.Xna.Framework.Media.Album",
     "Microsoft.Xna.Framework.Media.AlbumCollection",
@@ -6530,32 +6452,12 @@
     },
     {
       "clrBase": "System.ComponentModel.ExpandableObjectConverter",
-      "status": "DEFERRED",
+      "status": "MAPPED",
       "addsProjectedSurface": false,
       "derivedTypes": 1,
-      "projectedTypes": 0,
+      "projectedTypes": 1,
       "exportedEmbeddings": 0,
-      "blockers": [
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "CanConvertFrom",
-          "needs": "System.ComponentModel.ITypeDescriptorContext",
-          "detail": "the descriptor-context contract, which is the single largest blocker in the profile at thirteen types"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "ConvertFrom",
-          "needs": "System.Globalization.CultureInfo",
-          "detail": "culture-aware conversion, which twelve types depend on"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "GetProperties",
-          "needs": "System.Collections.IDictionary",
-          "detail": "shared with System.Exception::Data"
-        }
-      ],
-      "rationale": "part of the System.ComponentModel TypeConverter subsystem, which is a separate mapping",
+      "rationale": "MathTypeConverter overrides both public members and the contract declares them on it; the base's own three fields are private, so nothing is inherited surface and the relationship carries no adapter",
       "verdict": "PASS"
     },
     {
@@ -6685,28 +6587,6 @@
         "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
       ],
       "remaining": 1,
-      "verdict": "PASS"
-    },
-    {
-      "family": "Design converters",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "thirteen pure-managed types with no native dependency at all; they need the minimal System.ComponentModel closure their IL actually reaches -- TypeConverter, ExpandableObjectConverter, ITypeDescriptorContext, PropertyDescriptor(Collection), InstanceDescriptor and CultureInfo -- and nothing more",
-      "types": [
-        "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
-        "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
-        "Microsoft.Xna.Framework.Design.ColorConverter",
-        "Microsoft.Xna.Framework.Design.MathTypeConverter",
-        "Microsoft.Xna.Framework.Design.MatrixConverter",
-        "Microsoft.Xna.Framework.Design.PlaneConverter",
-        "Microsoft.Xna.Framework.Design.PointConverter",
-        "Microsoft.Xna.Framework.Design.QuaternionConverter",
-        "Microsoft.Xna.Framework.Design.RayConverter",
-        "Microsoft.Xna.Framework.Design.RectangleConverter",
-        "Microsoft.Xna.Framework.Design.Vector2Converter",
-        "Microsoft.Xna.Framework.Design.Vector3Converter",
-        "Microsoft.Xna.Framework.Design.Vector4Converter"
-      ],
-      "remaining": 13,
       "verdict": "PASS"
     }
   ],
@@ -10681,7 +10561,7 @@
     },
     {
       "clrBase": "Microsoft.Xna.Framework.Design.MathTypeConverter",
-      "status": "DEFERRED",
+      "status": "COMPOSED",
       "derived": [
         "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
         "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
@@ -10697,16 +10577,6 @@
         "Microsoft.Xna.Framework.Design.Vector4Converter"
       ],
       "inheritedPublicMembers": 5,
-      "blockers": [
-        {
-          "class": "ARCHITECTURE",
-          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
-        },
-        {
-          "class": "SUBSYSTEM",
-          "detail": "MathTypeConverter extends System.ComponentModel.ExpandableObjectConverter, which is already a DEFERRED BCL base with three recorded blockers, so the twelve Design converters are blocked by a BCL decision before the XNA one is reached"
-        }
-      ],
       "verdict": "PASS"
     },
     {
@@ -11126,7 +10996,7 @@
     {
       "base": "Microsoft.Xna.Framework.Design.MathTypeConverter",
       "derivedTypes": 12,
-      "projectedDerivedTypes": 0,
+      "projectedDerivedTypes": 12,
       "positions": 0,
       "positionsOnProjectedCarriers": 0,
       "requirement": "NONE",
@@ -11611,6 +11481,109 @@
       "verdict": "PASS"
     },
     {
+      "clrBase": "Microsoft.Xna.Framework.Design.MathTypeConverter",
+      "goBase": "MathTypeConverter",
+      "rows": [
+        {
+          "derived": "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
+          "goDerived": "BoundingBoxConverter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
+          "goDerived": "BoundingSphereConverter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.ColorConverter",
+          "goDerived": "ColorConverter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.MatrixConverter",
+          "goDerived": "MatrixConverter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.PlaneConverter",
+          "goDerived": "PlaneConverter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.PointConverter",
+          "goDerived": "PointConverter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.QuaternionConverter",
+          "goDerived": "QuaternionConverter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.RayConverter",
+          "goDerived": "RayConverter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.RectangleConverter",
+          "goDerived": "RectangleConverter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.Vector2Converter",
+          "goDerived": "Vector2Converter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.Vector3Converter",
+          "goDerived": "Vector3Converter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Design.Vector4Converter",
+          "goDerived": "Vector4Converter",
+          "baseField": "base",
+          "inheritedCLRMembers": 5,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
       "clrBase": "Microsoft.Xna.Framework.GameComponent",
       "goBase": "GameComponent",
       "rows": [
@@ -11922,6 +11895,11 @@
     {
       "clrBase": "Microsoft.Xna.Framework.Content.ContentTypeReader",
       "goBase": "ContentTypeReader",
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Design.MathTypeConverter",
+      "goBase": "MathTypeConverter",
       "verdict": "PASS"
     },
     {

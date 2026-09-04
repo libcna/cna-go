@@ -149,26 +149,6 @@ var frontierFamilies = []frontierFamily{
 		Note:           "one type over ~53 guide_* CNA routes; sign-in-dependent behaviour is a separate question from the component's Initialize/Update ordering",
 		Types:          []string{"Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"},
 	},
-	{
-		Name:           "Design converters",
-		Classification: frontierActionableLocal,
-		Note:           "thirteen pure-managed types with no native dependency at all; they need the minimal System.ComponentModel closure their IL actually reaches -- TypeConverter, ExpandableObjectConverter, ITypeDescriptorContext, PropertyDescriptor(Collection), InstanceDescriptor and CultureInfo -- and nothing more",
-		Types: []string{
-			"Microsoft.Xna.Framework.Design.BoundingBoxConverter",
-			"Microsoft.Xna.Framework.Design.BoundingSphereConverter",
-			"Microsoft.Xna.Framework.Design.ColorConverter",
-			"Microsoft.Xna.Framework.Design.MathTypeConverter",
-			"Microsoft.Xna.Framework.Design.MatrixConverter",
-			"Microsoft.Xna.Framework.Design.PlaneConverter",
-			"Microsoft.Xna.Framework.Design.PointConverter",
-			"Microsoft.Xna.Framework.Design.QuaternionConverter",
-			"Microsoft.Xna.Framework.Design.RayConverter",
-			"Microsoft.Xna.Framework.Design.RectangleConverter",
-			"Microsoft.Xna.Framework.Design.Vector2Converter",
-			"Microsoft.Xna.Framework.Design.Vector3Converter",
-			"Microsoft.Xna.Framework.Design.Vector4Converter",
-		},
-	},
 }
 
 // frontierMeasurement is one family's live row.

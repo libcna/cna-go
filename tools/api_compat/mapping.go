@@ -41,6 +41,46 @@ var bclTypes = map[string]string{
 	// FAKE async -- Begin invokes the callback before it returns -- so the
 	// projection is a value that is already complete rather than a promise.
 	"System.IAsyncResult": "*AsyncResult",
+	// Foundation 94. The four BCL types the Design converters name in public
+	// signatures, each mapped from what the profile MEASURABLY reaches rather
+	// than from the CLR type's full surface.
+	//
+	// ITypeDescriptorContext occupies THIRTY-EIGHT parameter positions and
+	// ZERO of its members is ever called: every one of the thirty-eight is a
+	// pass-through to the base converter. An opaque token is exactly what
+	// System.Object already maps to, so it maps there too. Giving it a
+	// projected type would be inventing an object with nothing on it.
+	"System.ComponentModel.ITypeDescriptorContext": "any",
+	// IDictionary is used through ONE member, get_Item, fifteen times, and
+	// every key is a property NAME. A Go map with string keys IS a name-to-value
+	// lookup, and unlike a func it is a value a consumer writes literally --
+	// which matters, because CreateInstance's whole job is to take one a caller
+	// built.
+	"System.Collections.IDictionary": "map[string]any",
+	// PropertyDescriptor is a NAMED, READABLE component, and it is not a
+	// reflect.StructField -- which reading only the vector converters would
+	// suggest. Vector2Converter wraps `Type::GetField("X")` in the `private`
+	// FieldPropertyDescriptor; ColorConverter wraps `Type::GetProperty("R")` in
+	// the `private` PropertyPropertyDescriptor, because XNA's Color exposes its
+	// channels as properties over a packed value and this projection follows
+	// it. A StructField covers the first kind and cannot cover the second, so
+	// what is projected is what both kinds share.
+	//
+	// The collection is used through one member, Sort(string[]), which over a
+	// slice is ordering it by the given names.
+	"System.ComponentModel.PropertyDescriptorCollection": "[]PropertyDescriptor",
+	"System.ComponentModel.PropertyDescriptor":           "PropertyDescriptor",
+	// CultureInfo gets a projected type for the reason System.IAsyncResult
+	// does: it occupies twenty-one PARAMETER positions and a nil means "the
+	// current culture", which a bare string cannot carry. It is sized to the
+	// two members the profile reaches -- get_CurrentCulture and, through
+	// get_TextInfo, get_ListSeparator.
+	"System.Globalization.CultureInfo": "*CultureInfo",
+	// InstanceDescriptor is a TYPE TOKEN. No member takes one or returns one,
+	// and both CanConvertFrom and CanConvertTo compare against `typeof` it, so
+	// a consumer must be able to name it to ask the question. See the projected
+	// type for why it has no members.
+	"System.ComponentModel.Design.Serialization.InstanceDescriptor": "*InstanceDescriptor",
 	// System.Resources.ResourceManager, which the profile names at exactly ONE
 	// signature position -- ResourceContentManager::.ctor -- and uses through
 	// exactly ONE member, GetObject(String) -> Object.
@@ -213,6 +253,27 @@ var pureManagedTypes = map[string]bool{
 	// members throw from authoritative managed argument validation.
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection":            true,
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": true,
+
+	// Foundation 94. The thirteen Design converters. The whole namespace is
+	// string parsing, string formatting and field description: no member
+	// touches CNA, a graphics device or a game, and the deepest thing any of
+	// them reaches is a culture's list separator.
+	//
+	// Their fallible members are named in managedFallibleMembers and are
+	// exactly the ones that PARSE or that refuse a nil argument.
+	"Microsoft.Xna.Framework.Design.MathTypeConverter":       true,
+	"Microsoft.Xna.Framework.Design.Vector2Converter":        true,
+	"Microsoft.Xna.Framework.Design.Vector3Converter":        true,
+	"Microsoft.Xna.Framework.Design.Vector4Converter":        true,
+	"Microsoft.Xna.Framework.Design.QuaternionConverter":     true,
+	"Microsoft.Xna.Framework.Design.PointConverter":          true,
+	"Microsoft.Xna.Framework.Design.ColorConverter":          true,
+	"Microsoft.Xna.Framework.Design.RectangleConverter":      true,
+	"Microsoft.Xna.Framework.Design.PlaneConverter":          true,
+	"Microsoft.Xna.Framework.Design.RayConverter":            true,
+	"Microsoft.Xna.Framework.Design.BoundingBoxConverter":    true,
+	"Microsoft.Xna.Framework.Design.BoundingSphereConverter": true,
+	"Microsoft.Xna.Framework.Design.MatrixConverter":         true,
 
 	// Foundation 93. The five content serializer attributes, which own nothing
 	// and reach nothing: every declared member is a field access, a field copy
@@ -509,17 +570,44 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 		Status:    "COMPOSED",
 		Rationale: "every inherited read is projected over cna_content_reader_read_bytes_exact, because CNA's reader BORROWS the stream and reading it from the Go side as well would advance one position twice; three members are excluded, each for a measured reason rather than for convenience",
 	},
+	// Foundation 94 measured all three blockers and closed them. Each named a
+	// subsystem, and each subsystem turned out to be a handful of members.
+	//
+	// ITypeDescriptorContext was "the single largest blocker in the profile at
+	// thirteen types". It occupies THIRTY-EIGHT parameter positions across
+	// those thirteen and ZERO of its members is ever called -- every one is a
+	// pass-through to the base converter. An opaque token maps to `any`.
+	//
+	// CultureInfo is reached through exactly two members, get_CurrentCulture
+	// and, via get_TextInfo, get_ListSeparator. In this profile a culture IS
+	// the thing that separates list items.
+	//
+	// IDictionary is reached through ONE member, get_Item, and every key is a
+	// property NAME.
+	//
+	// What is composed here is the ExpandableObjectConverter half a Design
+	// converter actually inherits: GetProperties, GetPropertiesSupported and
+	// the constructor. Its own two `private` fields and the extender-property
+	// machinery below them are excluded, being invisible to a consumer.
+	// The status is MAPPED and the relationship carries NO ADAPTER, which is
+	// what the measurement supports. A COMPOSED base contributes INHERITED
+	// members to its derived types; this one contributes none, because
+	// MathTypeConverter OVERRIDES both of its public members -- GetProperties
+	// and GetPropertiesSupported -- and the contract lists both on
+	// MathTypeConverter. Its three fields are private extender-property
+	// machinery no consumer sees.
+	//
+	// So the base is mapped, the derived type declares everything a consumer
+	// reaches, and nothing is inherited. MAPPED still enforces the rule that
+	// matters here -- the derived type may not fake the base with an exported
+	// Go embedding -- while asking for no adapter field, because there is no
+	// base state to hold.
+	//
+	// It is the same judgement System.IServiceProvider got in Foundation 21 on
+	// the interface side: mapped, and adding no projected surface.
 	"System.ComponentModel.ExpandableObjectConverter": {
-		Status:    "DEFERRED",
-		Rationale: "part of the System.ComponentModel TypeConverter subsystem, which is a separate mapping",
-		Blockers: []bclBaseBlocker{
-			{Kind: "SUBSYSTEM", CLRMember: "CanConvertFrom", Needs: "System.ComponentModel.ITypeDescriptorContext",
-				Detail: "the descriptor-context contract, which is the single largest blocker in the profile at thirteen types"},
-			{Kind: "SUBSYSTEM", CLRMember: "ConvertFrom", Needs: "System.Globalization.CultureInfo",
-				Detail: "culture-aware conversion, which twelve types depend on"},
-			{Kind: "SUBSYSTEM", CLRMember: "GetProperties", Needs: "System.Collections.IDictionary",
-				Detail: "shared with System.Exception::Data"},
-		},
+		Status:    "MAPPED",
+		Rationale: "MathTypeConverter overrides both public members and the contract declares them on it; the base's own three fields are private, so nothing is inherited surface and the relationship carries no adapter",
 	},
 	"System.Collections.ObjectModel.Collection`1": {
 		Adapter:   "collectionBase[T]",
@@ -679,6 +767,23 @@ var internalXNAInterfaces = map[string]bclInterfaceRelationship{
 			"the public ContentLost event those types expose is their own declared member, not this interface's",
 	},
 }
+
+// designConverterFallible is the fallible set for the nine Design converters
+// that declare ConvertFrom, and designConverterNoParseFallible for the three
+// that do not. They are named rather than repeated thirteen times because the
+// difference between them IS the measurement: which converters declare the
+// member.
+var (
+	designConverterFallible = map[string]bool{
+		"method|ConvertFrom":    true,
+		"method|ConvertTo":      true,
+		"method|CreateInstance": true,
+	}
+	designConverterNoParseFallible = map[string]bool{
+		"method|ConvertTo":      true,
+		"method|CreateInstance": true,
+	}
+)
 
 // inventedDisposalNames are Go identities a binding might synthesize from
 // System.IDisposable and that the no-surface rule forbids. None of them is an
@@ -933,6 +1038,32 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"method|RemoveAt":   true,
 		"method|CopyTo":     true,
 	},
+	// Foundation 94. The Design converters' fallible members, which are exactly
+	// the ones that PARSE a string or that refuse a nil argument.
+	//
+	// ConvertTo is fallible on all thirteen because its first branch raises
+	// ArgumentNullException for a nil destinationType, and its last falls
+	// through to the base's NotSupportedException. CreateInstance is fallible
+	// for the same shape. ConvertFrom is fallible on the six that parse AND on
+	// the three whose whole body forwards to the base, because a forward to a
+	// throwing member throws.
+	//
+	// The inherited CanConvert pair and the two GetSupported members are NOT
+	// fallible: every one of them is a comparison or an `ldc.i4.1`.
+	"Microsoft.Xna.Framework.Design.Vector2Converter":        designConverterFallible,
+	"Microsoft.Xna.Framework.Design.Vector3Converter":        designConverterFallible,
+	"Microsoft.Xna.Framework.Design.Vector4Converter":        designConverterFallible,
+	"Microsoft.Xna.Framework.Design.QuaternionConverter":     designConverterFallible,
+	"Microsoft.Xna.Framework.Design.PointConverter":          designConverterFallible,
+	"Microsoft.Xna.Framework.Design.ColorConverter":          designConverterFallible,
+	"Microsoft.Xna.Framework.Design.RayConverter":            designConverterFallible,
+	"Microsoft.Xna.Framework.Design.BoundingBoxConverter":    designConverterFallible,
+	"Microsoft.Xna.Framework.Design.BoundingSphereConverter": designConverterFallible,
+	// The three that declare no ConvertFrom at all.
+	"Microsoft.Xna.Framework.Design.RectangleConverter": designConverterNoParseFallible,
+	"Microsoft.Xna.Framework.Design.PlaneConverter":     designConverterNoParseFallible,
+	"Microsoft.Xna.Framework.Design.MatrixConverter":    designConverterNoParseFallible,
+
 	// Foundation 93. The three content serializer attribute members that refuse
 	// an empty string, each throwing ArgumentNullException with the parameter
 	// name the reference itself uses.
@@ -2855,6 +2986,13 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 			if strings.HasPrefix(mapped, "*") {
 				return "*framework." + mapped[1:]
 			}
+			// A SLICE of a framework-declared type takes the qualifier on its
+			// ELEMENT: `[]framework.PropertyDescriptor`, not
+			// `framework.[]PropertyDescriptor`. Foundation 94's
+			// PropertyDescriptorCollection is the first mapping shaped this way.
+			if strings.HasPrefix(mapped, "[]") {
+				return "[]framework." + mapped[2:]
+			}
 			return "framework." + mapped
 		}
 		return mapped
@@ -4171,9 +4309,15 @@ var frameworkDeclaredBCLTypes = map[string]bool{
 	"System.TimeSpan":      true,
 	"System.IAsyncResult":  true,
 	"System.AsyncCallback": true,
-	"System.IO.FileMode":   true,
-	"System.IO.FileAccess": true,
-	"System.IO.FileShare":  true,
+	// Foundation 94. The three the Design converters name, all declared in the
+	// framework package and all named from Microsoft/Xna/Framework/Design.
+	"System.Globalization.CultureInfo":                              true,
+	"System.ComponentModel.Design.Serialization.InstanceDescriptor": true,
+	"System.ComponentModel.PropertyDescriptor":                      true,
+	"System.ComponentModel.PropertyDescriptorCollection":            true,
+	"System.IO.FileMode":                                            true,
+	"System.IO.FileAccess":                                          true,
+	"System.IO.FileShare":                                           true,
 }
 
 // goTypeParameterList renders a generic CLR type's Go type-parameter list, as
@@ -4904,10 +5048,21 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	"Microsoft.Xna.Framework.Content.ContentTypeReader": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
 		{Class: "ARCHITECTURE", Detail: "the inheritance is projected and both types are complete, but neither can be INSTANTIATED by a consumer. The reference builds a type reader from a type NAME found in the asset's manifest, using Type.GetType; Go has no counterpart, and CNA performs that dispatch itself in cna_content_reader_initialize_type_readers. So the readers that exist are the ones CNA knows, and a game cannot ship one for its own content the way XNA lets it. That is a real capability this binding does not have, recorded rather than papered over with a hook nothing would call"},
 	}},
-	"Microsoft.Xna.Framework.Design.MathTypeConverter": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "SUBSYSTEM", Detail: "MathTypeConverter extends System.ComponentModel.ExpandableObjectConverter, which is already a DEFERRED BCL base with three recorded blockers, so the twelve Design converters are blocked by a BCL decision before the XNA one is reached"},
-	}},
+	// Foundation 94 composed it, and the BCL blocker it named went first: the
+	// three things ExpandableObjectConverter was deferred on were each a
+	// subsystem NAME over a handful of members -- zero called on
+	// ITypeDescriptorContext, two on CultureInfo, one on IDictionary.
+	//
+	// Nothing in the profile names MathTypeConverter in a public signature, so
+	// its substitutability requirement is NONE and private named composition is
+	// exactly sufficient -- the same measurement that made GameComponent the
+	// safe family to start the architecture with.
+	//
+	// Its twelve derived types are the largest COMPOSED family in the profile.
+	// What they inherit is five members: the two CanConvert overloads, the two
+	// GetSupported getters and GetProperties. None is overridden by any derived
+	// converter, which is why all sixty projections are plain forwards.
+	"Microsoft.Xna.Framework.Design.MathTypeConverter": {Status: "COMPOSED"},
 }
 
 // ---------------------------------------------------------------------------

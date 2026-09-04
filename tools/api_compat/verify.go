@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"go/ast"
 	"go/types"
 	"regexp"
 	"sort"
@@ -111,6 +112,19 @@ var adapterTypes = map[string]bool{
 	// below are the whole of it.
 	"AsyncResult":   true,
 	"AsyncCallback": true,
+	// Foundation 94. The three BCL types the Design converters name in public
+	// signatures. Each is a language adapter rather than a BCL signature
+	// adapter for the same reason AsyncResult is: what the profile reaches of
+	// them is a handful of members, and the CLR types' full surface is not what
+	// is being pinned.
+	//
+	// CultureInfo is sized to the two members the Design namespace's IL
+	// touches. InstanceDescriptor carries the type and arguments the leaf
+	// ConvertTo methods build one from. PropertyDescriptor is the name-and-read
+	// pair both of the reference's private descriptor classes share.
+	"CultureInfo":        true,
+	"InstanceDescriptor": true,
+	"PropertyDescriptor": true,
 	// ExceptionReference is the exported interface every System.Exception
 	// signature position widens to. It is a language adapter rather than a
 	// signature adapter because it carries no state: the CONCRETE projection,
@@ -128,6 +142,16 @@ var adapterFunctions = map[string]bool{
 	// needs from another package for the reason the ReadOnlyCollection
 	// constructors are exported.
 	"NewCompletedAsyncResult": true,
+	// Foundation 94. The three the Design converters need from another package,
+	// for the same reason: their adapter types live in the framework package
+	// and are constructed from Microsoft/Xna/Framework/Design.
+	//
+	// CultureInfoCurrentCulture is spelled as a package FUNCTION rather than a
+	// method because the CLR member it projects, CultureInfo::get_CurrentCulture,
+	// is static.
+	"CultureInfoCurrentCulture": true,
+	"NewInstanceDescriptor":     true,
+	"NewPropertyDescriptor":     true,
 }
 
 func init() {
@@ -315,6 +339,30 @@ func verify(expected *expectedSurface, actual *actualSurface, allowlistEntries i
 		for _, memberKey := range et.Members {
 			em := expected.Members[memberKey]
 			am, memberOK := actual.Members[memberKey]
+			// A field whose projected Go name is UNEXPORTED cannot be in the
+			// member scan, which collects exported surface. It is in the type's
+			// field list instead, and that is where it is looked for.
+			//
+			// The condition is the Go name rather than the contract's recorded
+			// accessibility, and deliberately: the contract carries no `access`
+			// for fields at all. What it does carry is the CLR name, and a
+			// non-public CLR field has a camelCase one -- which is why the
+			// projection's field is unexported in the first place.
+			//
+			// Foundation 94 is where this first arose. MathTypeConverter
+			// declares two `family` fields the contract lists,
+			// propertyDescriptions and supportStringConvert, and every earlier
+			// projected field in the profile has been public.
+			if !memberOK && em.GoKind == "field" && em.GoName != "" && !ast.IsExported(em.GoName) {
+				for _, field := range at.Fields {
+					if field.Name == em.GoName && !field.Exported {
+						am, memberOK = &actualMember{
+							Key: memberKey, Kind: "field", Results: []string{field.Type},
+						}, true
+						break
+					}
+				}
+			}
 			if !memberOK {
 				addDiagnostic(&result, diagnostic{Category: "MISSING_MEMBER", XNA: em.XNA, Go: memberKey.String(), Message: "mapped Go member is absent"})
 				typeDiagnostics[et.XNA]++

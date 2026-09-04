@@ -18,14 +18,14 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               39
-MISSING_TYPE                    39
+TOTAL_DIAGNOSTICS               26
+MISSING_TYPE                    26
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 218
+COMPLETE_TYPES                 231
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         39
+GLOBAL_ACTIONABLE_LOCAL         26
 GLOBAL_UNREVIEWED                0
 BOUND_FUNCTIONS                407
 MANIFEST_LAYOUT_AGREEMENTS     457
@@ -375,10 +375,31 @@ and already walks fields, so the reference's three separate steps collapse to
 one call. The guards were removed rather than kept as decoration -- a guard no
 input can reach is not documentation, it is a line that looks tested and is not.
 
+Foundation 94 closed the **Design converters**, all thirteen, and with them the
+**deferred frontier**: no base relationship in the project is deferred any more.
+
+Its three blockers each named a SUBSYSTEM, and counting is what dissolved them.
+`ITypeDescriptorContext` was recorded as "the single largest blocker in the
+profile at thirteen types" -- it occupies thirty-eight parameter positions and
+**zero of its members is ever called**, every one a pass-through. `CultureInfo`
+is reached through two members, and in this profile a culture IS the thing that
+separates list items. `IDictionary` is reached through one.
+
+Two mappings were then corrected by measurement rather than by signatures.
+`InstanceDescriptor` occupies no signature position and is still required twice
+-- both `CanConvert` members compare `typeof` it, and every leaf's `ConvertTo`
+constructs one. And `PropertyDescriptor` is not a `reflect.StructField`, because
+`ColorConverter` reflects PROPERTIES where the vector converters reflect fields.
+
+The mutation run found fourteen real test gaps and no equivalents on its first
+pass -- a count check never given too many components, a message checked for
+names but not for how they join, sixteen matrix cell descriptors never read.
+All fourteen are covered and the second pass killed 49 of 49.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 39 types it does not project
+projects, it projects completely; what remains is 26 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -396,9 +417,9 @@ in that registry:
 
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
    grow `ContentManager.Load<T>`'s closed set.
-2. Then the **Design converters**, which need no native half at all, and after
-   them **Media/XACT** and **GamerServices**. The **content serializer
-   attributes** closed in Foundation 93.
+2. Then **Media/XACT** and **GamerServices**, which are what remain. The
+   **content serializer attributes** closed in Foundation 93 and the **Design
+   converters** in Foundation 94.
 
 **The Model family's native draw slice is measured and BLOCKED, which corrects
 what this section said before.** The route exists and is bindable:
