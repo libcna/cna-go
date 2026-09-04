@@ -18,7 +18,7 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 179,
+    "COMPLETE_TYPES": 181,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
@@ -28,7 +28,7 @@
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 12,
+    "FRONTIER_FAMILIES": 11,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 78,
+    "GLOBAL_ACTIONABLE_LOCAL": 76,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 78,
-    "MISSING_TYPES": 78,
+    "MISSING_TYPE": 76,
+    "MISSING_TYPES": 76,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2982,
-    "TARGET_TYPES": 179,
-    "TOTAL_DIAGNOSTICS": 78,
+    "TARGET_MEMBERS": 2984,
+    "TARGET_TYPES": 181,
+    "TOTAL_DIAGNOSTICS": 76,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -300,12 +300,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Design.Vector4Converter",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Design:Vector4Converter",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.FrameworkDispatcher",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:FrameworkDispatcher",
       "message": "mapped Go type is absent"
     },
     {
@@ -565,12 +559,6 @@
       "xna": "Microsoft.Xna.Framework.Storage.StorageDevice",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage:StorageDevice",
       "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.TitleContainer",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework:TitleContainer",
-      "message": "mapped Go type is absent"
     }
   ],
   "completeTypes": [
@@ -598,6 +586,7 @@
     "Microsoft.Xna.Framework.CurveTangent",
     "Microsoft.Xna.Framework.DisplayOrientation",
     "Microsoft.Xna.Framework.DrawableGameComponent",
+    "Microsoft.Xna.Framework.FrameworkDispatcher",
     "Microsoft.Xna.Framework.Game",
     "Microsoft.Xna.Framework.GameComponent",
     "Microsoft.Xna.Framework.GameComponentCollection",
@@ -750,6 +739,7 @@
     "Microsoft.Xna.Framework.Ray",
     "Microsoft.Xna.Framework.Rectangle",
     "Microsoft.Xna.Framework.Storage.StorageDeviceNotConnectedException",
+    "Microsoft.Xna.Framework.TitleContainer",
     "Microsoft.Xna.Framework.Vector2",
     "Microsoft.Xna.Framework.Vector3",
     "Microsoft.Xna.Framework.Vector4"
@@ -789,7 +779,6 @@
     "Microsoft.Xna.Framework.Design.Vector2Converter",
     "Microsoft.Xna.Framework.Design.Vector3Converter",
     "Microsoft.Xna.Framework.Design.Vector4Converter",
-    "Microsoft.Xna.Framework.FrameworkDispatcher",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
     "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
     "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
@@ -832,8 +821,7 @@
     "Microsoft.Xna.Framework.Media.Video",
     "Microsoft.Xna.Framework.Media.VideoPlayer",
     "Microsoft.Xna.Framework.Storage.StorageContainer",
-    "Microsoft.Xna.Framework.Storage.StorageDevice",
-    "Microsoft.Xna.Framework.TitleContainer"
+    "Microsoft.Xna.Framework.Storage.StorageDevice"
   ],
   "interfaceWitnessProjections": [
     {
@@ -6877,7 +6865,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 35,
+      "projectedTypes": 37,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6905,17 +6893,6 @@
     }
   ],
   "frontier": [
-    {
-      "family": "Root types",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "TitleContainer and FrameworkDispatcher are small statics that fold into whichever milestone first needs them; Foundation 75 closed the other two root types, GraphicsDeviceInformation and PreparingDeviceSettingsEventArgs, and with them GraphicsDeviceManager",
-      "types": [
-        "Microsoft.Xna.Framework.FrameworkDispatcher",
-        "Microsoft.Xna.Framework.TitleContainer"
-      ],
-      "remaining": 2,
-      "verdict": "PASS"
-    },
     {
       "family": "Graphics leftovers",
       "classification": "ACTIONABLE_LOCAL",

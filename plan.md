@@ -1594,6 +1594,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 79 | BasicEffect, DirectionalLight and IEffectLights | `foundation-79-stock-effect-evidence.md` |
 | 80 | AlphaTestEffect, DualTextureEffect and EffectMaterial | `foundation-80-unlit-stock-effects-evidence.md` |
 | 81 | EnvironmentMapEffect and SkinnedEffect, closing the stock effects | `foundation-81-lit-stock-effects-evidence.md` |
+| 82 | FrameworkDispatcher and TitleContainer, the last root types | `foundation-82-root-types-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1919,6 +1920,23 @@ a path that refuses before reaching either statement; and a correction that
 forces `M44 = 1` was checked over identity input whose M44 is already 1. The
 lesson is one question to ask of every assertion: *if the thing I am claiming
 were absent, would this line change?*
+
+**A STATIC member may still need a running game, and saying so beats answering
+nothing** (82). `FrameworkDispatcher::Update` and `TitleContainer::OpenStream`
+are static and need nothing in the reference; both CNA routes take a game
+handle, and the canonical header says why -- "a game handle is taken here only
+for thread affinity". So both projections refuse outside a game where the
+reference would have worked. The alternative was doing nothing and reporting
+success, which would let a consumer believe media and audio had been pumped
+when they had not.
+
+**A route that both sizes and copies reports BUFFER_TOO_SMALL as its size
+answer** (82). Every other size query in this binding is a separate `_size`
+route that succeeds; `cna_title_container_read_ext` sizes and copies through one
+entry point, and a zero capacity answers CNA_RESULT_BUFFER_TOO_SMALL with the
+byte count filled in. Treating that as a failure made a file that had just been
+written report as not found, and only the device-backed run could find it --
+which is what the native stress is for.
 
 ## Next milestone selection rule
 

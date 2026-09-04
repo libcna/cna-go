@@ -4599,6 +4599,37 @@ func (resource *Resource) SkinnedEffectSetTexture(texture *Resource) error {
 	return nativeSkinnedEffectSetTexture(handle, textureHandle)
 }
 
+// ---------------------------------------------------------------------------
+// Foundation 82 -- the two root types.
+//
+// Both canonical members are STATIC and both CNA routes take a game handle
+// anyway. The header says why: "The canonical dispatcher is static and exists
+// for applications that do not run the game loop; a game handle is taken here
+// only for thread affinity." So neither requires a callback -- an owned game on
+// its own thread is enough -- and activeGame(false) is what expresses that.
+// ---------------------------------------------------------------------------
+
+// FrameworkDispatcherUpdate is cna_framework_dispatcher_update.
+func (r *Runtime) FrameworkDispatcherUpdate() error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeFrameworkDispatcherUpdate(game)
+}
+
+// TitleContainerRead is cna_title_container_read_ext, which hands back the
+// WHOLE file rather than a stream. The narrowing is CNA's own and documented:
+// "This ABI has no stream handle for title content, and a title asset is read
+// to use it, so the count/copy pair delivers the whole file instead."
+func (r *Runtime) TitleContainerRead(name string) ([]byte, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return nil, err
+	}
+	return nativeTitleContainerRead(game, name)
+}
+
 // EffectLightsDirectionalLight is IEffectLights::DirectionalLight0..2.
 //
 // The canonical header calls the result "an owned stable member-view handle",

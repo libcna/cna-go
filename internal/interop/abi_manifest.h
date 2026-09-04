@@ -894,6 +894,9 @@ typedef CNA_Result (*cna_dual_texture_effect_set_alpha_fn)(CNA_EffectHandle, flo
 typedef CNA_Result (*cna_dual_texture_effect_set_texture_fn)(CNA_EffectHandle, uint32_t, CNA_Handle);
 typedef CNA_Result (*cna_dual_texture_effect_set_vertex_color_enabled_fn)(CNA_EffectHandle, CNA_Bool);
 typedef CNA_Result (*cna_effect_material_create_fn)(CNA_EffectHandle, CNA_EffectHandle*);
+/* Foundation 82 -- the two root types. */
+typedef CNA_Result (*cna_framework_dispatcher_update_fn)(CNA_Handle);
+typedef CNA_Result (*cna_title_container_read_ext_fn)(CNA_Handle, CNA_StringView, uint8_t*, uint64_t, uint64_t*);
 /* Foundation 81 -- EnvironmentMapEffect and SkinnedEffect. */
 typedef CNA_Result (*cna_environment_map_effect_create_fn)(CNA_Handle, CNA_EffectHandle*);
 typedef CNA_Result (*cna_environment_map_effect_set_diffuse_color_fn)(CNA_EffectHandle, CNA_Vector3);
@@ -1209,6 +1212,8 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_dual_texture_effect_set_texture) \
     X(cna_dual_texture_effect_set_vertex_color_enabled) \
     X(cna_effect_material_create) \
+    X(cna_framework_dispatcher_update) \
+    X(cna_title_container_read_ext) \
     X(cna_environment_map_effect_create) \
     X(cna_environment_map_effect_set_diffuse_color) \
     X(cna_environment_map_effect_set_emissive_color) \

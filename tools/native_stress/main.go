@@ -13,6 +13,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -219,6 +220,15 @@ type counters struct {
 	EffectMaterialCreations     int `json:"EFFECT_MATERIAL_CREATIONS"`
 	EffectMaterialRefusals      int `json:"EFFECT_MATERIAL_REFUSALS"`
 	EffectMaterialIdentityCheck int `json:"EFFECT_MATERIAL_IDENTITY_CHECKS"`
+	// Foundation 82. The two root-type statics, which are the only projected
+	// members that take a game handle for THREAD AFFINITY alone. Reads and
+	// refusals are counted apart because a title asset that is not there is
+	// CNA answering CNA_RESULT_IO, not a defect.
+	FrameworkDispatcherUpdates  int `json:"FRAMEWORK_DISPATCHER_UPDATES"`
+	TitleContainerReads         int `json:"TITLE_CONTAINER_READS"`
+	TitleContainerReadRefusals  int `json:"TITLE_CONTAINER_READ_REFUSALS"`
+	TitleContainerGuardChecks   int `json:"TITLE_CONTAINER_GUARD_CHECKS"`
+	RootStaticOutsideGameChecks int `json:"ROOT_STATIC_OUTSIDE_GAME_CHECKS"`
 	// Foundation 81. EnvironmentMapEffect and SkinnedEffect, which close the
 	// stock-effect family. The bone counters are separate because the copy is
 	// the one ARRAY crossing in the family and CNA may refuse it where it
@@ -709,6 +719,18 @@ func runParent() (counters, error) {
 			total.LitEffectApplyRefusals, total.LitEffectRoundTrips, total.LitEffectBoneRoundTrips,
 			total.LitEffectBoneRefusals, total.LitEffectCloneChecks, total.LitEffectDisposalChecks)
 	}
+	// Foundation 82. Three dispatcher pumps and two guard checks per cycle, and
+	// exactly one outcome for the read.
+	if total.FrameworkDispatcherUpdates != 3*total.VertexBufferCycles {
+		return total, fmt.Errorf("%d dispatcher updates over %d cycles, want three each",
+			total.FrameworkDispatcherUpdates, total.VertexBufferCycles)
+	}
+	if total.TitleContainerReads+total.TitleContainerReadRefusals != total.VertexBufferCycles ||
+		total.TitleContainerGuardChecks != 2*total.VertexBufferCycles {
+		return total, fmt.Errorf("title-container reads %d, refusals %d and guard checks %d do not account for %d cycles",
+			total.TitleContainerReads, total.TitleContainerReadRefusals,
+			total.TitleContainerGuardChecks, total.VertexBufferCycles)
+	}
 	if total.EffectMaterialCreations+total.EffectMaterialRefusals != total.VertexBufferCycles ||
 		total.EffectMaterialIdentityCheck != total.EffectMaterialCreations {
 		return total, fmt.Errorf("EffectMaterial creations %d, refusals %d and identity checks %d do not account for %d cycles",
@@ -1078,6 +1100,14 @@ func runChild(scenario string, index int) error {
 	if err != nil {
 		return err
 	}
+	// Foundation 82 tried to pump the dispatcher HERE, before Run, because
+	// CNA's header names that case: "The canonical dispatcher is static and
+	// exists for applications that do not run the game loop." It refuses.
+	// framework.NewGame constructs no native game -- CNA-Go creates it inside
+	// Run -- so there is no constructed-but-not-running state a consumer can
+	// reach, and every call site the projection has is already inside a
+	// callback. The probe is recorded rather than kept: it measured a state
+	// this binding does not have.
 	if err := game.subscribeGameEvents(host); err != nil {
 		return err
 	}
@@ -4713,6 +4743,11 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 82. The two root-type statics, which need only a game.
+	if err := g.exerciseRootStatics(); err != nil {
+		return err
+	}
+
 	if effect != nil {
 		if err := effect.DisposeByNone(); err != nil {
 			return fmt.Errorf("disposing the stock effect: %w", err)
@@ -6234,6 +6269,90 @@ func (g *stressGame) exerciseLitEffects(device *graphics.GraphicsDevice) error {
 		return errors.New("SpecularColor answered on a disposed SkinnedEffect")
 	}
 	g.result.LitEffectDisposalChecks++
+	return nil
+}
+
+// exerciseRootStatics is Foundation 82's slice: FrameworkDispatcher.Update and
+// TitleContainer.OpenStream.
+//
+// Neither takes a device. Both take a game handle for thread affinity, which is
+// the one thing about them that cannot be measured without a running game --
+// the guards are all managed and are measured in title_container_test.go.
+func (g *stressGame) exerciseRootStatics() error {
+	// The dispatcher, pumped repeatedly. CNA documents calling it while the
+	// loop runs as "harmless and does the work twice", so a second call must
+	// succeed as well as the first.
+	for range 3 {
+		if err := framework.FrameworkDispatcherUpdate(); err != nil {
+			return fmt.Errorf("FrameworkDispatcherUpdate: %w", err)
+		}
+		g.result.FrameworkDispatcherUpdates++
+	}
+
+	// A title asset that is really there.
+	//
+	// CNA resolves the title path itself -- it logs "[TitleContainer] Resolved
+	// path" as the executable's own -- and nothing in the projection can ask it
+	// where that is. So the asset is WRITTEN next to the executable and read
+	// back through the member, which is the only way to prove the resolution
+	// and the copy together.
+	//
+	// The executable itself was the first fixture and is not usable: CNA
+	// answers CNA result 5, "Failed to open file", for a binary that is
+	// currently executing, so a run over it would have measured that refusal
+	// rather than a read.
+	name := fmt.Sprintf("cna-go-title-probe-%d.bin", os.Getpid())
+	assetPath := filepath.Join(filepath.Dir(os.Args[0]), name)
+	want := []byte("cna-go title container probe")
+	if err := os.WriteFile(assetPath, want, 0o600); err != nil {
+		return fmt.Errorf("writing a title asset: %w", err)
+	}
+	defer func() { _ = os.Remove(assetPath) }()
+	reader, err := framework.TitleContainerOpenStream(name)
+	switch {
+	case err != nil:
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("TitleContainerOpenStream(%q): %w", name, err)
+		}
+		g.result.TitleContainerReadRefusals++
+		fmt.Fprintf(os.Stderr, "TitleContainerOpenStream refused: %v\n", err)
+	default:
+		content, readErr := io.ReadAll(reader)
+		if readErr != nil {
+			return fmt.Errorf("reading the title stream: %w", readErr)
+		}
+		if !bytes.Equal(content, want) {
+			return fmt.Errorf("the title stream carried %q, want %q", content, want)
+		}
+		g.result.TitleContainerReads++
+	}
+
+	// An asset that is NOT there is CNA's CNA_RESULT_IO, carrying the
+	// reference's own OpenStreamNotFound text.
+	missing, missingErr := framework.TitleContainerOpenStream("cna-go-no-such-title-asset.bin")
+	if missingErr == nil {
+		return errors.New("TitleContainerOpenStream opened an asset that does not exist")
+	}
+	if !strings.Contains(missingErr.Error(), "File not found.") {
+		return fmt.Errorf("a missing title asset reported %v, without the reference's message", missingErr)
+	}
+	// The reader must be NIL and not a reader over nothing. This is the only
+	// place the failing READ is reachable -- every managed guard refuses before
+	// it -- so it is the only place the typed-nil hazard can be held.
+	if missing != nil {
+		return errors.New("a failed title read handed back a non-nil reader")
+	}
+	g.result.TitleContainerGuardChecks++
+
+	// The guards run BEFORE the game handle is looked up, which is what makes
+	// them measurable without one -- and is asserted here from inside a game so
+	// the ordering is held from both sides.
+	for _, refused := range []string{"", "..\\secret", "a:b"} {
+		if _, err := framework.TitleContainerOpenStream(refused); err == nil {
+			return fmt.Errorf("TitleContainerOpenStream(%q) was accepted inside a game", refused)
+		}
+	}
+	g.result.TitleContainerGuardChecks++
 	return nil
 }
 

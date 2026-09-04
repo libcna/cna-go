@@ -4406,3 +4406,40 @@ func TestTheLitStockEffectsAreReachableFromOutside(t *testing.T) {
 		}
 	}
 }
+
+// TestTheRootStaticsAreReachableFromOutside is Foundation 82's canary. Both
+// types are `public abstract sealed` in the reference -- C# for a static class
+// -- so each projects as a type identity plus one type-prefixed function.
+func TestTheRootStaticsAreReachableFromOutside(t *testing.T) {
+	var _ framework.FrameworkDispatcher
+	var _ framework.TitleContainer
+	var _ func() error = framework.FrameworkDispatcherUpdate
+	var _ func(string) (io.Reader, error) = framework.TitleContainerOpenStream
+
+	// Both refuse outside a game, which is the one divergence they share: the
+	// reference's statics need nothing, and CNA takes a game handle for thread
+	// affinity even on a static member.
+	if err := framework.FrameworkDispatcherUpdate(); err == nil {
+		t.Fatal("FrameworkDispatcherUpdate succeeded outside a game")
+	}
+
+	// TitleContainer's guards run BEFORE the game handle is looked up, so a
+	// consumer meets them without one -- and the three refusals are distinct.
+	empty, emptyErr := framework.TitleContainerOpenStream("")
+	if emptyErr == nil {
+		t.Fatal("OpenStream(\"\") was accepted")
+	}
+	if empty != nil {
+		t.Fatal("a refused OpenStream handed back a non-nil reader")
+	}
+	for _, escape := range []string{`..\secret`, "../secret", `\etc\passwd`, "a:b", "a|b"} {
+		if _, err := framework.TitleContainerOpenStream(escape); err == nil {
+			t.Fatalf("OpenStream(%q) was accepted", escape)
+		}
+	}
+	// A name that passes every guard fails on the READ instead, and its message
+	// is the reference's own.
+	if _, err := framework.TitleContainerOpenStream("content/asset.xnb"); err == nil {
+		t.Fatal("OpenStream succeeded outside a game")
+	}
+}

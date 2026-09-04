@@ -493,6 +493,10 @@ CnaGoResult cna_go_dual_texture_effect_set_texture(CnaGoHandle effect, uint32_t 
 CnaGoResult cna_go_dual_texture_effect_set_vertex_color_enabled(CnaGoHandle effect, uint8_t value);
 CnaGoResult cna_go_effect_material_create(CnaGoHandle clone_source, CnaGoHandle* out_effect);
 
+/* Foundation 82. */
+CnaGoResult cna_go_framework_dispatcher_update(CnaGoHandle game);
+CnaGoResult cna_go_title_container_read(CnaGoHandle game, const char* name, uint64_t name_length, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes);
+
 /* Foundation 81. */
 CnaGoResult cna_go_environment_map_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect);
 CnaGoResult cna_go_environment_map_effect_set_diffuse_color(CnaGoHandle effect, const float* value);

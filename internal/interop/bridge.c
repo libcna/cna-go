@@ -2100,6 +2100,14 @@ CnaGoResult cna_go_effect_material_create(CnaGoHandle clone_source, CnaGoHandle*
     return api.cna_effect_material_create(clone_source, out_effect);
 }
 
+CnaGoResult cna_go_framework_dispatcher_update(CnaGoHandle game) {
+    return api.cna_framework_dispatcher_update(game);
+}
+
+CnaGoResult cna_go_title_container_read(CnaGoHandle game, const char* name, uint64_t name_length, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_title_container_read_ext(game, cna_go_view(name, name_length), destination, capacity, out_bytes);
+}
+
 CnaGoResult cna_go_environment_map_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect) {
     return api.cna_environment_map_effect_create(graphics_device, out_effect);
 }

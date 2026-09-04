@@ -80,6 +80,22 @@ var registry = []claimedString{
 	{Key: "Arg_ExternalException", Assembly: "mscorlib.dll",
 		Value: "External component has thrown an exception."},
 
+	// Foundation 82. TitleContainer::OpenStream's three, all in
+	// Microsoft.Xna.Framework.dll with FrameworkResources. Two carry the
+	// requested name through String.Format's {0}.
+	//
+	// OpenStreamError is registered and NOT reachable: CNA reports both of the
+	// reference's open failures as CNA_RESULT_IO and gives no way to tell a
+	// missing file from an unreadable one, so the projection can only report
+	// the not-found half. Retaining the other message is what keeps that a
+	// recorded limitation rather than a forgotten branch.
+	{Key: "InvalidTitleContainerName", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Invalid filename. TitleContainer.OpenStream requires a relative URI."},
+	{Key: "OpenStreamNotFound", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Error loading \"%s\". File not found.", Placeholders: true},
+	{Key: "OpenStreamError", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Error loading \"%s\". Cannot open file.", Placeholders: true},
+
 	// Foundation 81. The three messages the last two stock effects carry.
 	// CantDisableLighting's {0} is typeof(T).Name -- the SHORT class name, not
 	// the namespaced one -- and SkinnedEffectMaxBones' is the bone limit, which

@@ -105,15 +105,6 @@ type frontierFamily struct {
 // than a stale paragraph.
 var frontierFamilies = []frontierFamily{
 	{
-		Name:           "Root types",
-		Classification: frontierActionableLocal,
-		Note:           "TitleContainer and FrameworkDispatcher are small statics that fold into whichever milestone first needs them; Foundation 75 closed the other two root types, GraphicsDeviceInformation and PreparingDeviceSettingsEventArgs, and with them GraphicsDeviceManager",
-		Types: []string{
-			"Microsoft.Xna.Framework.FrameworkDispatcher",
-			"Microsoft.Xna.Framework.TitleContainer",
-		},
-	},
-	{
 		Name:           "Graphics leftovers",
 		Classification: frontierActionableLocal,
 		Note:           "OcclusionQuery has ~12 CNA routes; the two dynamic buffers have NO dedicated routes and the hypothesis that the ordinary buffer routes plus a BufferUsage implement them must be probed before anything is bound",

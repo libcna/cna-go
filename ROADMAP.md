@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               78
-MISSING_TYPE                    78
+TOTAL_DIAGNOSTICS               76
+MISSING_TYPE                    76
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 179
+COMPLETE_TYPES                 181
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         78
+GLOBAL_ACTIONABLE_LOCAL         76
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                296
+BOUND_FUNCTIONS                298
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -92,6 +92,14 @@ pinned contract lists no such property on either and both accessors are
 interface witnesses; `TextureCube` became the fourth substitutable base, because
 `EnvironmentMapEffect::EnvironmentMap` is the only TextureCube-typed parameter
 position in the profile.
+
+Foundation 82 closed the last two **root types**, `FrameworkDispatcher` and
+`TitleContainer`. Both are static in the reference and both CNA routes take a
+game handle for thread affinity, so both refuse outside a running game --
+recorded rather than silently succeeding. `TitleContainer.OpenStream` carries
+CNA's documented narrowing: that ABI has no stream handle for title content and
+delivers the whole file instead, so the returned reader is over bytes already in
+memory.
 
 ## No partial types, and no missing members
 

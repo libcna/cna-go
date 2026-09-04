@@ -37,6 +37,13 @@ func (e *NativeError) Error() string {
 	return fmt.Sprintf("%s failed with CNA result %d: %s", e.Operation, e.Code, e.Message)
 }
 
+// cnaResultBufferTooSmall is CNA_RESULT_BUFFER_TOO_SMALL, which the canonical
+// abi.h defines as 14. It is named here because ONE bound route uses it as a
+// success: cna_title_container_read_ext sizes and copies through the same
+// entry point, and a zero capacity answers this code with the byte count
+// filled in.
+const cnaResultBufferTooSmall uint32 = 14
+
 func resultError(operation string, code uint32) error {
 	if code == resultSuccess {
 		return nil

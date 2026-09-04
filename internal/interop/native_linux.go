@@ -2686,6 +2686,48 @@ func nativeSkinnedEffectCopyBoneTransforms(handle uint64, count int) ([]float32,
 	return out, nil
 }
 
+// Foundation 82 -- the two root types.
+
+func nativeFrameworkDispatcherUpdate(game uint64) error {
+	return resultError("cna_framework_dispatcher_update",
+		uint32(C.cna_go_framework_dispatcher_update(C.CnaGoHandle(game))))
+}
+
+// nativeTitleContainerRead is the size-then-copy pair CNA's title reader has.
+// The route always reports the file's byte count, so a first call with a zero
+// capacity is a SIZE query and the second is the copy.
+func nativeTitleContainerRead(game uint64, name string) ([]byte, error) {
+	view := C.CString(name)
+	defer C.free(unsafe.Pointer(view))
+	var size C.uint64_t
+	code := uint32(C.cna_go_title_container_read(C.CnaGoHandle(game), view,
+		C.uint64_t(len(name)), nil, 0, &size))
+	// A zero capacity is how this route is SIZED, and it answers
+	// CNA_RESULT_BUFFER_TOO_SMALL rather than success -- the header says
+	// out_bytes "always receives the file's byte count", including then. Every
+	// other size query in this binding is a separate `_size` route that
+	// succeeds, so treating 14 as a failure here is the mistake to avoid: the
+	// first run of the title probe reported a file that had just been written
+	// as not found.
+	if code != cnaResultBufferTooSmall {
+		if err := resultError("cna_title_container_read_ext", code); err != nil {
+			return nil, err
+		}
+	}
+	if size == 0 {
+		return []byte{}, nil
+	}
+	buffer := make([]byte, int(size))
+	var written C.uint64_t
+	code = uint32(C.cna_go_title_container_read(C.CnaGoHandle(game), view,
+		C.uint64_t(len(name)), (*C.uint8_t)(unsafe.Pointer(&buffer[0])),
+		C.uint64_t(len(buffer)), &written))
+	if err := resultError("cna_title_container_read_ext", code); err != nil {
+		return nil, err
+	}
+	return buffer[:int(written)], nil
+}
+
 func nativeEffectLightsDirectionalLight(effect uint64, index uint32) (uint64, error) {
 	return nativeEffectHandleOut("cna_effect_lights_get_directional_light", func(out *C.CnaGoHandle) C.CnaGoResult {
 		return C.cna_go_effect_lights_get_directional_light(C.CnaGoHandle(effect), C.uint32_t(index), out)
