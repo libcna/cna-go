@@ -1605,6 +1605,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 90 | the Model family, closing the Graphics namespace | `foundation-90-model-family-evidence.md` |
 | 91 | StorageDevice and StorageContainer, closing the Storage namespace | `foundation-91-storage-evidence.md` |
 | 92 | the content plumbing: ContentReader, the type readers and ResourceContentManager | `foundation-92-content-plumbing-evidence.md` |
+| 93 | the five content serializer attributes, and System.Attribute as a composed base | `foundation-93-content-serializer-attributes-evidence.md` |
 
 **A recorded blocker is a claim, and claims get re-measured** (91).
 System.IO.BinaryReader had been DEFERRED since Foundation 29 partly because "the
@@ -1870,6 +1871,23 @@ happened to the Dispose rule and to `inventedDisposalNames` when ContentReader
 brought `System.IO.BinaryReader`'s own `Close` and `Dispose` into the surface.
 The fix is the missing arm, never an exception for the type that exposed it.
 
+**A guard no input can reach is removed, not reproduced** (93). The reference
+often performs in three steps what a Go standard-library call performs in one --
+`reflect.DeepEqual` answers null, compares runtime types AND walks fields, which
+is all of `System.Attribute::Equals`. Writing the first two out separately makes
+lines that look tested and are not, and the mutation run is what exposes them:
+a mutant that neuters a dead guard SURVIVES. Reproducing the reference means
+reproducing its answers, not its instruction count. This is the same judgement
+`Collection<T>`'s statically dead `items.IsReadOnly` guard got in Foundation 74.
+
+**A language limitation on how a type is USED is not a reason to withhold the
+TYPE** (93). Go cannot attach an attribute to a declaration, and `System.Attribute`
+was deferred for four years of milestones on that ground. But the pinned contract
+declares five classes with constructors and properties, not an attaching
+operation; the runtime's own readers of those attributes are `private`; and CNA
+does the dispatch anyway. Project what the contract declares, and record the
+operation the language cannot express on the type itself.
+
 **A graphics state object freezes** (59). Every setter is fallible because
 `ThrowIfBound` is a refusal the reference really throws; every getter is one
 `ldfld`. The static presets are frozen from construction.
@@ -1879,9 +1897,12 @@ The fix is the missing arm, never an exception for the type that exposed it.
 This section is a STATEMENT OF CURRENT STATE, not a permanent list, and it is
 rewritten whenever a milestone makes one of its entries false.
 
-Still deferred: XACT; media/video; design; the content serializer attributes;
-and GamerServices. Audio closed in Foundation 88, Input and touch in 89, the
-Model family in 90, Storage in 91 and the content plumbing in 92. Every one of them is now classified in
+Still deferred: XACT; media/video; design; and GamerServices. Audio closed in
+Foundation 88, Input and touch in 89, the Model family in 90, Storage in 91, the
+content plumbing in 92 and the content serializer attributes in 93.
+
+`System.ComponentModel.ExpandableObjectConverter` is now the ONLY deferred BCL
+base left, and the thirteen Design converters are what it holds. Every one of them is now classified in
 `tools/api_compat/frontier.go`, which partitions the live missing-type set and
 generates `docs/generated/remaining-work.md`; that generated table is the
 authority for what each family is stopped on, and this paragraph is its

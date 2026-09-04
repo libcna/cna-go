@@ -5,30 +5,30 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "BCL_ADAPTER_EXCLUSIONS": 174,
+    "BCL_ADAPTER_EXCLUSIONS": 182,
     "BCL_ADAPTER_EXCLUSIONS_BCL_PROJECTION_BLOCKED_EXTERNAL": 10,
     "BCL_ADAPTER_EXCLUSIONS_BLOCKED": 12,
     "BCL_ADAPTER_EXCLUSIONS_LANGUAGE_MAPPING_LIMITATION": 2,
-    "BCL_BASE_ADAPTERS": 6,
-    "BCL_BASE_ADAPTER_CONSUMERS": 15,
-    "BCL_DEFERRED_BASE_BLOCKERS": 6,
-    "BCL_INHERITED_MEMBER_PROJECTIONS": 144,
-    "BCL_INHERITED_PUBLIC_MEMBERS": 126,
+    "BCL_BASE_ADAPTERS": 7,
+    "BCL_BASE_ADAPTER_CONSUMERS": 20,
+    "BCL_DEFERRED_BASE_BLOCKERS": 3,
+    "BCL_INHERITED_MEMBER_PROJECTIONS": 169,
+    "BCL_INHERITED_PUBLIC_MEMBERS": 151,
     "BCL_LANGUAGE_ACCESSORS": 1,
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 213,
+    "COMPLETE_TYPES": 218,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3720,
+    "EXPECTED_GO_MEMBERS": 3745,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 5,
+    "FRONTIER_FAMILIES": 4,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 44,
+    "GLOBAL_ACTIONABLE_LOCAL": 39,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 44,
-    "MISSING_TYPES": 44,
+    "MISSING_TYPE": 39,
+    "MISSING_TYPES": 39,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3344,
-    "TARGET_TYPES": 213,
-    "TOTAL_DIAGNOSTICS": 44,
+    "TARGET_MEMBERS": 3391,
+    "TARGET_TYPES": 218,
+    "TOTAL_DIAGNOSTICS": 39,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -132,36 +132,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.WaveBank",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:WaveBank",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerAttribute",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerCollectionItemNameAttribute",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerIgnoreAttribute",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerRuntimeTypeAttribute",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerTypeVersionAttribute",
       "message": "mapped Go type is absent"
     },
     {
@@ -392,6 +362,11 @@
     "Microsoft.Xna.Framework.Content.ContentLoadException",
     "Microsoft.Xna.Framework.Content.ContentManager",
     "Microsoft.Xna.Framework.Content.ContentReader",
+    "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
+    "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
+    "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
+    "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
+    "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
     "Microsoft.Xna.Framework.Content.ContentTypeReader",
     "Microsoft.Xna.Framework.Content.ContentTypeReaderManager",
     "Microsoft.Xna.Framework.Content.ContentTypeReader`1",
@@ -591,11 +566,6 @@
     "Microsoft.Xna.Framework.Audio.Cue",
     "Microsoft.Xna.Framework.Audio.SoundBank",
     "Microsoft.Xna.Framework.Audio.WaveBank",
-    "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
-    "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
-    "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
-    "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
-    "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
     "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
     "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
     "Microsoft.Xna.Framework.Design.ColorConverter",
@@ -6516,31 +6486,13 @@
   "bclBaseRelationships": [
     {
       "clrBase": "System.Attribute",
-      "status": "DEFERRED",
-      "addsProjectedSurface": false,
+      "adapter": "attributeBase",
+      "status": "COMPOSED",
+      "addsProjectedSurface": true,
       "derivedTypes": 5,
-      "projectedTypes": 0,
+      "projectedTypes": 5,
       "exportedEmbeddings": 0,
-      "blockers": [
-        {
-          "kind": "ARCHITECTURE",
-          "needs": "an attribute application model",
-          "detail": "Go has no attribute metadata, so a projected attribute type could be constructed and read back but never applied to anything; the five ContentSerializer* types would be inert data objects whose whole purpose, annotating content-pipeline members, is unrepresentable"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "GetCustomAttribute",
-          "needs": "System.Reflection",
-          "detail": "the inherited static lookups take Assembly, MemberInfo, Module and ParameterInfo, none of which CNA-Go maps; whether inherited STATICS are part of a derived type's projected surface is itself undecided, having never arisen before"
-        },
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "TypeId",
-          "needs": "a decision on System.Object-typed members",
-          "detail": "the default implementation returns GetType(), so projecting it as any would hand back a reflect.Type through an untyped result"
-        }
-      ],
-      "rationale": "Go has no attribute metadata; the content serializer attributes need a separate mapping",
+      "rationale": "five public instance members, measured from the pinned mscorlib; the three public statics take System.Reflection types the profile does not map and are excluded by name",
       "verdict": "PASS"
     },
     {
@@ -6736,20 +6688,6 @@
       "verdict": "PASS"
     },
     {
-      "family": "Content serializer attributes",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "the five attribute TYPES are ordinary classes with constructors and string/bool properties; whether Go can ATTACH them to declarations is a different question from whether the types can exist, and only the attaching operation is a candidate language limitation",
-      "types": [
-        "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
-        "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
-        "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
-        "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
-        "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute"
-      ],
-      "remaining": 5,
-      "verdict": "PASS"
-    },
-    {
       "family": "Design converters",
       "classification": "ACTIONABLE_LOCAL",
       "note": "thirteen pure-managed types with no native dependency at all; they need the minimal System.ComponentModel closure their IL actually reaches -- TypeConverter, ExpandableObjectConverter, ITypeDescriptorContext, PropertyDescriptor(Collection), InstanceDescriptor and CultureInfo -- and nothing more",
@@ -6773,6 +6711,385 @@
     }
   ],
   "bclBaseAdapters": [
+    {
+      "clrBase": "System.Attribute",
+      "goAdapter": "attributeBase",
+      "adapterField": "base",
+      "behaviorLevel": "PARTIAL",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "inheritedClrMembers": 5,
+      "inheritedProjectionsPerConsumer": 5,
+      "excludedMembers": 8,
+      "consumers": [
+        {
+          "xna": "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerAttribute",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "attributeBase",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 9,
+          "xnaDeclaredProjections": 15,
+          "bclInheritedProjections": 5,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerCollectionItemNameAttribute",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "attributeBase",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 2,
+          "xnaDeclaredProjections": 2,
+          "bclInheritedProjections": 5,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerIgnoreAttribute",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "attributeBase",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 1,
+          "xnaDeclaredProjections": 1,
+          "bclInheritedProjections": 5,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerRuntimeTypeAttribute",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "attributeBase",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 2,
+          "xnaDeclaredProjections": 2,
+          "bclInheritedProjections": 5,
+          "verdict": "PASS"
+        },
+        {
+          "xna": "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerTypeVersionAttribute",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "attributeBase",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 2,
+          "xnaDeclaredProjections": 2,
+          "bclInheritedProjections": 5,
+          "verdict": "PASS"
+        }
+      ],
+      "inheritedMemberInventory": [
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Equals",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerAttribute.Equals",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the reference compares the two attributes FIELD BY FIELD through reflection, so two separately constructed attributes with equal fields are equal -- which is not Go's == on a pointer"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "GetHashCode",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerAttribute.GetHashCode",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "the reference forwards to the runtime type's hash, so every instance of one attribute type shares a hash and Equals is what separates them"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "IsDefaultAttribute",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerAttribute.IsDefaultAttribute",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base returns false -- `ldc.i4.0; ret` -- and none of the five overrides it"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Match",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerAttribute.Match",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base implementation is `return this.Equals(obj)`; a derived attribute may narrow it and none of these five does"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "TypeId",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerAttribute.TypeId",
+          "goResults": "any",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the default returns GetType(), so it answers the RUNTIME type through an object-typed property; `any` holding a reflect.Type is what the CLR itself hands back"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Equals",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerCollectionItemNameAttribute.Equals",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the reference compares the two attributes FIELD BY FIELD through reflection, so two separately constructed attributes with equal fields are equal -- which is not Go's == on a pointer"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "GetHashCode",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerCollectionItemNameAttribute.GetHashCode",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "the reference forwards to the runtime type's hash, so every instance of one attribute type shares a hash and Equals is what separates them"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "IsDefaultAttribute",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerCollectionItemNameAttribute.IsDefaultAttribute",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base returns false -- `ldc.i4.0; ret` -- and none of the five overrides it"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Match",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerCollectionItemNameAttribute.Match",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base implementation is `return this.Equals(obj)`; a derived attribute may narrow it and none of these five does"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "TypeId",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerCollectionItemNameAttribute.TypeId",
+          "goResults": "any",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the default returns GetType(), so it answers the RUNTIME type through an object-typed property; `any` holding a reflect.Type is what the CLR itself hands back"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Equals",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerIgnoreAttribute.Equals",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the reference compares the two attributes FIELD BY FIELD through reflection, so two separately constructed attributes with equal fields are equal -- which is not Go's == on a pointer"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "GetHashCode",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerIgnoreAttribute.GetHashCode",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "the reference forwards to the runtime type's hash, so every instance of one attribute type shares a hash and Equals is what separates them"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "IsDefaultAttribute",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerIgnoreAttribute.IsDefaultAttribute",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base returns false -- `ldc.i4.0; ret` -- and none of the five overrides it"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Match",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerIgnoreAttribute.Match",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base implementation is `return this.Equals(obj)`; a derived attribute may narrow it and none of these five does"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "TypeId",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerIgnoreAttribute.TypeId",
+          "goResults": "any",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the default returns GetType(), so it answers the RUNTIME type through an object-typed property; `any` holding a reflect.Type is what the CLR itself hands back"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Equals",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerRuntimeTypeAttribute.Equals",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the reference compares the two attributes FIELD BY FIELD through reflection, so two separately constructed attributes with equal fields are equal -- which is not Go's == on a pointer"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "GetHashCode",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerRuntimeTypeAttribute.GetHashCode",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "the reference forwards to the runtime type's hash, so every instance of one attribute type shares a hash and Equals is what separates them"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "IsDefaultAttribute",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerRuntimeTypeAttribute.IsDefaultAttribute",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base returns false -- `ldc.i4.0; ret` -- and none of the five overrides it"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Match",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerRuntimeTypeAttribute.Match",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base implementation is `return this.Equals(obj)`; a derived attribute may narrow it and none of these five does"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "TypeId",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerRuntimeTypeAttribute.TypeId",
+          "goResults": "any",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the default returns GetType(), so it answers the RUNTIME type through an object-typed property; `any` holding a reflect.Type is what the CLR itself hands back"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Equals",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerTypeVersionAttribute.Equals",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the reference compares the two attributes FIELD BY FIELD through reflection, so two separately constructed attributes with equal fields are equal -- which is not Go's == on a pointer"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "GetHashCode",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerTypeVersionAttribute.GetHashCode",
+          "goResults": "int32",
+          "present": true,
+          "rationale": "the reference forwards to the runtime type's hash, so every instance of one attribute type shares a hash and Equals is what separates them"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "IsDefaultAttribute",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerTypeVersionAttribute.IsDefaultAttribute",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base returns false -- `ldc.i4.0; ret` -- and none of the five overrides it"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "Match",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerTypeVersionAttribute.Match",
+          "goResults": "bool",
+          "present": true,
+          "rationale": "the base implementation is `return this.Equals(obj)`; a derived attribute may narrow it and none of these five does"
+        },
+        {
+          "clrBase": "System.Attribute",
+          "clrMember": "TypeId",
+          "clrKind": "property",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerTypeVersionAttribute.TypeId",
+          "goResults": "any",
+          "accessor": "get",
+          "present": true,
+          "rationale": "the default returns GetType(), so it answers the RUNTIME type through an object-typed property; `any` holding a reflect.Type is what the CLR itself hands back"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": "GetCustomAttribute",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "STATIC, and its four overload groups take System.Reflection.MemberInfo, ParameterInfo, Module and Assembly -- none of which the profile maps. A static is not surface a consumer reaches through a derived type in this model, and Go has no attribute metadata for it to query even if it were"
+        },
+        {
+          "clrMember": "GetCustomAttributes",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "STATIC, the same four Reflection parameter shapes"
+        },
+        {
+          "clrMember": "IsDefined",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "STATIC, the same four Reflection parameter shapes"
+        },
+        {
+          "clrMember": ".ctor()",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`family` -- protected -- so not public surface, and the CLR does not inherit constructors; each derived attribute declares its own"
+        },
+        {
+          "clrMember": "GetTypeInfoCount",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`private` _Attribute interface implementation, invisible to a consumer"
+        },
+        {
+          "clrMember": "GetTypeInfo",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`private` _Attribute interface implementation"
+        },
+        {
+          "clrMember": "GetIDsOfNames",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`private` _Attribute interface implementation"
+        },
+        {
+          "clrMember": "Invoke",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`private` _Attribute interface implementation"
+        }
+      ],
+      "rationale": "the five public instance members of System.Attribute; PARTIAL because the three public STATIC lookups are excluded, each taking a System.Reflection type the profile does not map",
+      "verdict": "PASS"
+    },
     {
       "clrBase": "System.Collections.Generic.Dictionary`2",
       "goAdapter": "dictionaryBase[TKey, TValue]",

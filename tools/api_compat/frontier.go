@@ -150,18 +150,6 @@ var frontierFamilies = []frontierFamily{
 		Types:          []string{"Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"},
 	},
 	{
-		Name:           "Content serializer attributes",
-		Classification: frontierActionableLocal,
-		Note:           "the five attribute TYPES are ordinary classes with constructors and string/bool properties; whether Go can ATTACH them to declarations is a different question from whether the types can exist, and only the attaching operation is a candidate language limitation",
-		Types: []string{
-			"Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
-			"Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
-			"Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
-			"Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
-			"Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
-		},
-	},
-	{
 		Name:           "Design converters",
 		Classification: frontierActionableLocal,
 		Note:           "thirteen pure-managed types with no native dependency at all; they need the minimal System.ComponentModel closure their IL actually reaches -- TypeConverter, ExpandableObjectConverter, ITypeDescriptorContext, PropertyDescriptor(Collection), InstanceDescriptor and CultureInfo -- and nothing more",

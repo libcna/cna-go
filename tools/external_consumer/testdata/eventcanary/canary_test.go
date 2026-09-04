@@ -5111,3 +5111,89 @@ func TestContentPlumbingIsReachableFromOutsideTheModule(t *testing.T) {
 		t.Fatal("an unsupported asset type loaded")
 	}
 }
+
+// TestContentSerializerAttributesAreReachableFromOutsideTheModule is
+// Foundation 93's canary. The five attribute types reach no runtime at all, so
+// a consumer with no game and no device can exercise every member -- which is
+// exactly what this does.
+func TestContentSerializerAttributesAreReachableFromOutsideTheModule(t *testing.T) {
+	attribute := content.NewContentSerializerAttribute()
+	var _ func() string = attribute.ElementName
+	var _ func(string) = attribute.SetElementName
+	var _ func() bool = attribute.FlattenContent
+	var _ func(bool) = attribute.SetFlattenContent
+	var _ func() bool = attribute.Optional
+	var _ func(bool) = attribute.SetOptional
+	var _ func() bool = attribute.AllowNull
+	var _ func(bool) = attribute.SetAllowNull
+	var _ func() bool = attribute.SharedResource
+	var _ func(bool) = attribute.SetSharedResource
+	var _ func() string = attribute.CollectionItemName
+	var _ func(string) error = attribute.SetCollectionItemName
+	var _ func() bool = attribute.HasCollectionItemName
+	var _ func() *content.ContentSerializerAttribute = attribute.Clone
+	// The five inherited System.Attribute members.
+	var _ func(any) bool = attribute.Equals
+	var _ func() int32 = attribute.GetHashCode
+	var _ func(any) bool = attribute.Match
+	var _ func() bool = attribute.IsDefaultAttribute
+	var _ func() any = attribute.TypeId
+
+	// AllowNull defaults to TRUE, which is the constructor's one instruction.
+	if !attribute.AllowNull() {
+		t.Fatal("AllowNull defaulted to false outside the module")
+	}
+	// An unset collection item name reads back as "Item" and reports false.
+	if attribute.CollectionItemName() != "Item" || attribute.HasCollectionItemName() {
+		t.Fatal("the collection item name fallback did not survive the module boundary")
+	}
+	if err := attribute.SetCollectionItemName(""); err == nil {
+		t.Fatal("an empty collection item name was accepted")
+	}
+
+	// Clone and the field-by-field Equals, which is what makes two separately
+	// constructed attributes equal.
+	if !attribute.Clone().Equals(attribute) {
+		t.Fatal("a clone did not equal its source")
+	}
+	if !content.NewContentSerializerAttribute().Equals(content.NewContentSerializerAttribute()) {
+		t.Fatal("two fresh attributes were not equal; Equals compares fields")
+	}
+	if attribute.IsDefaultAttribute() {
+		t.Fatal("IsDefaultAttribute answered true")
+	}
+
+	name, err := content.NewContentSerializerCollectionItemNameAttribute("Entry")
+	if err != nil {
+		t.Fatalf("NewContentSerializerCollectionItemNameAttribute: %v", err)
+	}
+	var _ func() string = name.CollectionItemName
+	if _, err = content.NewContentSerializerCollectionItemNameAttribute(""); err == nil {
+		t.Fatal("an empty collection item name was accepted by the constructor")
+	}
+
+	runtimeType, err := content.NewContentSerializerRuntimeTypeAttribute("Some.Type")
+	if err != nil {
+		t.Fatalf("NewContentSerializerRuntimeTypeAttribute: %v", err)
+	}
+	var _ func() string = runtimeType.RuntimeType
+	if _, err = content.NewContentSerializerRuntimeTypeAttribute(""); err == nil {
+		t.Fatal("an empty runtime type was accepted")
+	}
+
+	// The Int32 constructor has no guard and is not fallible.
+	version := content.NewContentSerializerTypeVersionAttribute(-3)
+	var _ func() int32 = version.TypeVersion
+	if version.TypeVersion() != -3 {
+		t.Fatal("a negative type version was not stored")
+	}
+
+	ignore := content.NewContentSerializerIgnoreAttribute()
+	var _ func(any) bool = ignore.Equals
+	if !ignore.Equals(content.NewContentSerializerIgnoreAttribute()) {
+		t.Fatal("two stateless attributes were not equal")
+	}
+	if ignore.Equals(attribute) {
+		t.Fatal("two different attribute types compared equal")
+	}
+}

@@ -68,7 +68,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// reachable System.IO.BinaryReader members -- the eighteen public ones less
 	// the three Read overloads the inherited model cannot express -- and every
 	// one is a method, so each contributes exactly one Go identity.
-	if surface.BCLInheritedCLRMembers != 126 || surface.BCLInheritedProjections != 144 {
+	// Foundation 93 added twenty-five of each: five content serializer
+	// attributes inheriting five System.Attribute members apiece, four methods
+	// and one get-only property, so each contributes exactly one Go identity.
+	if surface.BCLInheritedCLRMembers != 151 || surface.BCLInheritedProjections != 169 {
 		t.Fatalf("BCL inherited counts = %d CLR members/%d projections", surface.BCLInheritedCLRMembers, surface.BCLInheritedProjections)
 	}
 	// 15, not 14: Milestone 55 replaced the name-keyed inheritance exclusion
@@ -124,7 +127,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// fifteen BCL-inherited BinaryReader projections and the two content bases
 	// bring eight XNA-inherited ones, on top of the declared members of all
 	// five.
-	if surface.ExpectedGoMembers != 3720 {
+	// 3745, not 3720: Foundation 93's five content serializer attributes bring
+	// twenty-five BCL-inherited System.Attribute projections between them, on
+	// top of their own declared constructors and properties.
+	if surface.ExpectedGoMembers != 3745 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -4759,9 +4765,11 @@ func TestBCLBaseRelationshipsAreExhaustive(t *testing.T) {
 		t.Fatalf("System.EventArgs = %+v", bclBaseRelationships["System.EventArgs"])
 	}
 	// System.Exception and ExternalException were DEFERRED until Foundation 78
-	// composed them; System.Attribute is the one that is still open, and the
-	// content-serializer attributes are still missing because of it.
-	for _, deferred := range []string{"System.Attribute"} {
+	// composed them, System.IO.BinaryReader until Foundation 92 and
+	// System.Attribute until Foundation 93. ExpandableObjectConverter is the
+	// one that is still open, and the thirteen Design converters are still
+	// missing because of it.
+	for _, deferred := range []string{"System.ComponentModel.ExpandableObjectConverter"} {
 		if bclBaseRelationships[deferred].Status != "DEFERRED" {
 			t.Fatalf("%s = %+v, want DEFERRED", deferred, bclBaseRelationships[deferred])
 		}
@@ -4771,6 +4779,12 @@ func TestBCLBaseRelationshipsAreExhaustive(t *testing.T) {
 			bclBaseRelationships[composed].Adapter != "bclexception.State" {
 			t.Fatalf("%s = %+v, want COMPOSED over bclexception.State", composed, bclBaseRelationships[composed])
 		}
+	}
+	// Foundation 93. System.Attribute is composed over its own adapter, which
+	// holds nothing: the CLR type declares no instance field.
+	if bclBaseRelationships["System.Attribute"].Status != "COMPOSED" ||
+		bclBaseRelationships["System.Attribute"].Adapter != "attributeBase" {
+		t.Fatalf("System.Attribute = %+v, want COMPOSED over attributeBase", bclBaseRelationships["System.Attribute"])
 	}
 }
 
@@ -5926,10 +5940,13 @@ func TestEveryDeferredBaseNamesItsBlockers(t *testing.T) {
 // TestDeferredBaseWithoutBlockersIsRejected is the negative control for the
 // claim above, run through the real measurement rather than the table.
 func TestDeferredBaseWithoutBlockersIsRejected(t *testing.T) {
-	// System.Attribute rather than System.Exception: Foundation 78 composed the
-	// latter, and a COMPOSED base is not required to carry blockers. The claim
-	// under test is about DEFERRED bases, so it has to be run on one.
-	identity := "System.Attribute"
+	// ExpandableObjectConverter rather than System.Exception: Foundation 78
+	// composed the latter, and a COMPOSED base is not required to carry
+	// blockers. The claim under test is about DEFERRED bases, so it has to be
+	// run on one -- and after Foundation 93 composed System.Attribute this is
+	// the only one left, which is itself worth noticing: when the Design
+	// converters close, this test needs a different subject or a fixture.
+	identity := "System.ComponentModel.ExpandableObjectConverter"
 	original := bclBaseRelationships[identity]
 	t.Cleanup(func() { bclBaseRelationships[identity] = original })
 

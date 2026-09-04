@@ -18,14 +18,14 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               44
-MISSING_TYPE                    44
+TOTAL_DIAGNOSTICS               39
+MISSING_TYPE                    39
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 213
+COMPLETE_TYPES                 218
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         44
+GLOBAL_ACTIONABLE_LOCAL         39
 GLOBAL_UNREVIEWED                0
 BOUND_FUNCTIONS                407
 MANIFEST_LAYOUT_AGREEMENTS     457
@@ -323,8 +323,11 @@ actually lies there. `STORAGE_ROOT_CHECKS` is the counter that proves it ran.
 
 Foundation 92 closed the **content plumbing**: `ContentReader`,
 `ContentTypeReader`, `ContentTypeReader<T>`, `ContentTypeReaderManager` and
-`ResourceContentManager`. That completes the chain Foundation 91 measured and
-leaves the Model family's native draw slice as the next thing it unblocks.
+`ResourceContentManager`. That completes the chain Foundation 91 measured.
+
+It did NOT unblock the Model family's native draw slice, which this document
+claimed it would. Measuring the route afterwards is what settled it -- see
+"What is left, and why" below.
 
 Its lasting result is a rule rather than a family. **Three recorded blockers
 were re-measured and all three were claims rather than measurements**:
@@ -348,10 +351,34 @@ behind it. Scoring those nine as killed was the alternative and it was not taken
 A forty-sixth mutant is recorded as **equivalent**, with the argument for why,
 and the harness asserts it SURVIVES.
 
+Foundation 93 closed the **content serializer attributes** -- all five of them
+-- and the interesting part is the base rather than the family.
+`System.Attribute` had carried three recorded blockers since Foundation 29 and
+**none of the three survived measurement**. "Go has no attribute metadata" is
+true and does not stop the TYPES existing: the contract declares five classes
+with constructors and properties, not an attaching operation, and the runtime's
+own readers of these attributes (`ReflectiveReader<T>`,
+`ReflectiveReaderMemberHelper`) are both `private` while CNA does the dispatch
+anyway. The `GetCustomAttribute` blocker asked a question that answers itself
+once measured -- those three members are STATIC. And the `TypeId` blocker was
+already settled elsewhere, because an object-typed member projects to `any` and
+`TypeId` really does hand back the runtime type.
+
+What a consumer cannot do is ATTACH one of these attributes to a declaration.
+That is recorded on the adapter and on each type rather than used to withhold
+all five.
+
+The mutation run again corrected the work rather than confirming it. Three
+survivors showed that the projected `Equals` carried guards no input could
+reach: `reflect.DeepEqual` already answers nil, already compares runtime types,
+and already walks fields, so the reference's three separate steps collapse to
+one call. The guards were removed rather than kept as decoration -- a guard no
+input can reach is not documentation, it is a line that looks tested and is not.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 44 types it does not project
+projects, it projects completely; what remains is 39 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -369,15 +396,34 @@ in that registry:
 
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
    grow `ContentManager.Load<T>`'s closed set.
-2. Then the **Model family's native draw slice**, which the content plumbing
-   has now unblocked. The route it needs is measured and named:
-   `cna_content_manager_load_model(CNA_Handle, CNA_StringView, CNA_ModelHandle*)`,
-   declared in `models.h` rather than in either content header and exported by
-   the qualified library. It is the exact parallel of the three routes
-   `ContentManager.Load<T>`'s closed set already binds, so the remaining work is
-   a fourth arm on that switch and a stress slice that draws what it loads.
-   After it come **Media/XACT**, the **Design converters**,
-   the **content serializer attributes** and **GamerServices**. **Input**
+2. Then the **Design converters**, which need no native half at all, and after
+   them **Media/XACT** and **GamerServices**. The **content serializer
+   attributes** closed in Foundation 93.
+
+**The Model family's native draw slice is measured and BLOCKED, which corrects
+what this section said before.** The route exists and is bindable:
+`cna_content_manager_load_model(CNA_Handle, CNA_StringView, CNA_ModelHandle*)`,
+declared in `models.h` rather than in either content header, exported by the
+qualified library, and the exact parallel of the three routes
+`ContentManager.Load<T>`'s closed set already binds. Its whole model graph --
+bones, meshes, parts, effects and both buffers, thirty-three routes in all -- is
+exported too, and every one was checked against the library.
+
+What is missing is the ASSET. CNA's own documentation for the route says it
+loads "from a compiled `.xnb`", and answers `CNA_RESULT_IO` for anything else.
+There is no `.xnb` corpus in this repository and none anywhere under `~/deps`.
+The texture slice works because CNA's texture loader accepts a raw PNG the
+harness encodes itself; there is no equivalent for a model, and the `gltf_*`
+routes in `models.h` only REPORT diagnostics on an already-imported model --
+`set_gltf_import_report_ext` is a setter, and the ABI exposes no glTF import
+entry point.
+
+So binding the family now would add thirty-three routes whose only call site
+could never execute, and planted defects in the graph walk could never be
+killed. That is precisely the trap Foundation 92 hit in its inherited decode,
+at a scale where narrowing a seam does not help: the code needs a real asset.
+What would lift the blocker is a compiled `.xnb` produced by the XNA content
+pipeline, or a CNA route that imports a format the project can author. **Input**
    closed in Foundation 89, the **Model family** in Foundation 90, **Storage**
    in Foundation 91 and the **content plumbing** in Foundation 92.
 

@@ -214,6 +214,21 @@ var pureManagedTypes = map[string]bool{
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection":            true,
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": true,
 
+	// Foundation 93. The five content serializer attributes, which own nothing
+	// and reach nothing: every declared member is a field access, a field copy
+	// or a String.IsNullOrEmpty check, and the five INHERITED members answer
+	// from the derived object's own fields through reflection. Nothing in the
+	// family can fail for a runtime reason, which is what this registry means.
+	//
+	// Three members ARE fallible and are named in managedFallibleMembers, all
+	// for the same measured reason: the reference throws
+	// ArgumentNullException for an empty string.
+	"Microsoft.Xna.Framework.Content.ContentSerializerAttribute":                   true,
+	"Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute": true,
+	"Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute":             true,
+	"Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute":        true,
+	"Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute":        true,
+
 	// Foundation 92. The two content type readers, which own no native object
 	// at all: every contract member is a field read, and the CNA reader they
 	// are handed belongs to ContentReader rather than to them.
@@ -447,17 +462,33 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 		Status:    "COMPOSED",
 		Rationale: "the same private adapter as System.Exception, with the ErrorCode member and the ToString override its three XNA subclasses inherit",
 	},
+	// Foundation 93 re-measured all three of Foundation 29's blockers here.
+	// One was right about a LIMITATION and wrong about the consequence, and the
+	// other two were not blockers at all.
+	//
+	// "Go has no attribute metadata" is TRUE, and it does not stop the types
+	// existing. What Go cannot do is ATTACH one to a declaration -- and the
+	// pinned contract declares five classes with constructors and properties,
+	// not an attaching operation. The runtime's own readers of these attributes
+	// are ReflectiveReader`1 and ReflectiveReaderMemberHelper, both `private`
+	// and neither contract surface; CNA performs the type-reader dispatch
+	// anyway, which Foundation 92 measured. So projecting the types delivers
+	// exactly what the contract promises, and the unattachability is recorded
+	// on each type rather than used to withhold all five.
+	//
+	// The GetCustomAttribute blocker asked a question that answers itself once
+	// measured: those three members are STATIC, and a static is not inherited
+	// surface any consumer reaches through a derived type in this model. They
+	// are excluded by name below with their measured parameter types.
+	//
+	// The TypeId blocker was already settled elsewhere. An object-typed member
+	// projects to `any` -- Model.Tag does -- and TypeId's default really does
+	// hand back the runtime type, so `any` holding a reflect.Type is the
+	// faithful projection rather than a leak.
 	"System.Attribute": {
-		Status:    "DEFERRED",
-		Rationale: "Go has no attribute metadata; the content serializer attributes need a separate mapping",
-		Blockers: []bclBaseBlocker{
-			{Kind: "ARCHITECTURE", Needs: "an attribute application model",
-				Detail: "Go has no attribute metadata, so a projected attribute type could be constructed and read back but never applied to anything; the five ContentSerializer* types would be inert data objects whose whole purpose, annotating content-pipeline members, is unrepresentable"},
-			{Kind: "SUBSYSTEM", CLRMember: "GetCustomAttribute", Needs: "System.Reflection",
-				Detail: "the inherited static lookups take Assembly, MemberInfo, Module and ParameterInfo, none of which CNA-Go maps; whether inherited STATICS are part of a derived type's projected surface is itself undecided, having never arisen before"},
-			{Kind: "SUBSYSTEM", CLRMember: "TypeId", Needs: "a decision on System.Object-typed members",
-				Detail: "the default implementation returns GetType(), so projecting it as any would hand back a reflect.Type through an untyped result"},
-		},
+		Adapter:   "attributeBase",
+		Status:    "COMPOSED",
+		Rationale: "five public instance members, measured from the pinned mscorlib; the three public statics take System.Reflection types the profile does not map and are excluded by name",
 	},
 	// Foundation 92 CORRECTED this entry and then closed it. Foundation 29
 	// recorded two reasons to defer and NEITHER survived measurement intact.
@@ -902,6 +933,23 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"method|RemoveAt":   true,
 		"method|CopyTo":     true,
 	},
+	// Foundation 93. The three content serializer attribute members that refuse
+	// an empty string, each throwing ArgumentNullException with the parameter
+	// name the reference itself uses.
+	//
+	// ContentSerializerAttribute's SETTER is fallible and its GETTER is not,
+	// which is why the key names the accessor: the getter substitutes "Item"
+	// for an empty field and cannot fail.
+	"Microsoft.Xna.Framework.Content.ContentSerializerAttribute": {
+		"property-set|CollectionItemName": true,
+	},
+	"Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute": {
+		"constructor|.ctor": true,
+	},
+	"Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute": {
+		"constructor|.ctor": true,
+	},
+
 	// Foundation 92. ContentTypeReader`1's two Reads, which are the only
 	// members in either type that can fail. The untyped one casts an existing
 	// instance to T and raises BadXnbWrongType when it does not fit; the typed
@@ -3798,6 +3846,48 @@ var bclBaseAdapters = map[string]bclBaseAdapter{
 		},
 		LanguageAccessors: []bclLanguageAccessor{
 			{Name: "State", Reason: "Go has no explicit interface implementation and no way for one package to satisfy another package's unexported method, and this base's derived types live in FOUR other packages. The reference interface's distinguishing accessor therefore has to be exported -- and it stays unsatisfiable from outside the module because its result type is declared in internal/bclexception"},
+		},
+	},
+
+	// Foundation 93. System.Attribute, the base all five content serializer
+	// attributes extend.
+	//
+	// The adapter holds NOTHING. System.Attribute declares no instance field --
+	// measured from the pinned mscorlib, where its only state is the protected
+	// constructor's implicit object header -- so the Go adapter is an empty
+	// struct and the five inherited members answer from the DERIVED object's
+	// own data. Equals and Match compare field values; TypeId reads the runtime
+	// type; IsDefaultAttribute is `ldc.i4.0` on the base.
+	"System.Attribute": {
+		GoAdapter:                "attributeBase",
+		AdapterField:             "base",
+		AdapterInConsumerPackage: true,
+		GenericArity:             0,
+		BehaviorLevel:            "PARTIAL",
+		Authority:                "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256:          "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:                "the five public instance members of System.Attribute; PARTIAL because the three public STATIC lookups are excluded, each taking a System.Reflection type the profile does not map",
+		Members: []bclInheritedMember{
+			{Member: bclMethod("Equals", "System.Boolean", bclParameter("obj", "System.Object")),
+				Rationale: "the reference compares the two attributes FIELD BY FIELD through reflection, so two separately constructed attributes with equal fields are equal -- which is not Go's == on a pointer"},
+			{Member: bclMethod("GetHashCode", "System.Int32"),
+				Rationale: "the reference forwards to the runtime type's hash, so every instance of one attribute type shares a hash and Equals is what separates them"},
+			{Member: bclMethod("Match", "System.Boolean", bclParameter("obj", "System.Object")),
+				Rationale: "the base implementation is `return this.Equals(obj)`; a derived attribute may narrow it and none of these five does"},
+			{Member: bclMethod("IsDefaultAttribute", "System.Boolean"),
+				Rationale: "the base returns false -- `ldc.i4.0; ret` -- and none of the five overrides it"},
+			{Member: bclProperty("TypeId", "System.Object", true, false),
+				Rationale: "the default returns GetType(), so it answers the RUNTIME type through an object-typed property; `any` holding a reflect.Type is what the CLR itself hands back"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: "GetCustomAttribute", Reason: "STATIC, and its four overload groups take System.Reflection.MemberInfo, ParameterInfo, Module and Assembly -- none of which the profile maps. A static is not surface a consumer reaches through a derived type in this model, and Go has no attribute metadata for it to query even if it were"},
+			{CLRMember: "GetCustomAttributes", Reason: "STATIC, the same four Reflection parameter shapes"},
+			{CLRMember: "IsDefined", Reason: "STATIC, the same four Reflection parameter shapes"},
+			{CLRMember: ".ctor()", Reason: "`family` -- protected -- so not public surface, and the CLR does not inherit constructors; each derived attribute declares its own"},
+			{CLRMember: "GetTypeInfoCount", Reason: "`private` _Attribute interface implementation, invisible to a consumer"},
+			{CLRMember: "GetTypeInfo", Reason: "`private` _Attribute interface implementation"},
+			{CLRMember: "GetIDsOfNames", Reason: "`private` _Attribute interface implementation"},
+			{CLRMember: "Invoke", Reason: "`private` _Attribute interface implementation"},
 		},
 	},
 
