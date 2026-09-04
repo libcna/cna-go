@@ -81,6 +81,46 @@ type SoundEffectInstance struct {
 	// isPacketSubmitted is `assembly` in the reference and is read by set_Pan's
 	// guard prefix, which CLEARS is3d when no packet has been submitted.
 	isPacketSubmitted bool
+	// derived is the CLR `this`: the outermost object this instance is the base
+	// of. Foundation 88 added it with DynamicSoundEffectInstance, which is the
+	// contract's only derived type -- and the note that used to stand here,
+	// saying the disposal literal would become an identity site the moment that
+	// type arrived, is what this field answers.
+	derived soundEffectInstanceObject
+}
+
+// soundEffectInstanceObject is the CLR `this` a composed SoundEffectInstance
+// needs. One member, because one thing needs it: every disposal refusal in the
+// family carries `GetType().Name`, and a DynamicSoundEffectInstance must name
+// itself.
+type soundEffectInstanceObject interface {
+	// clrTypeName is System.Object::ToString's answer for this object.
+	clrTypeName() string
+}
+
+// clrTypeName makes a SoundEffectInstance its own `this` when nothing composes it.
+func (i *SoundEffectInstance) clrTypeName() string {
+	return "SoundEffectInstance"
+}
+
+// self resolves the CLR `this`. It is nil-safe for the reason
+// GraphicsResource.self is: a base half whose derived object was never bound is
+// still a legal receiver, and answering with itself is what the reference does
+// for an object of its own class.
+func (i *SoundEffectInstance) self() soundEffectInstanceObject {
+	if i != nil && i.derived != nil {
+		return i.derived
+	}
+	return i
+}
+
+// bindDerived installs the CLR `this`. Every constructor of a type that
+// composes a SoundEffectInstance calls it, and nothing else does.
+func (i *SoundEffectInstance) bindDerived(derived soundEffectInstanceObject) {
+	if i == nil {
+		return
+	}
+	i.derived = derived
 }
 
 // errSoundEffectInstanceNil is the Go-only guard for a zero value.
@@ -470,22 +510,18 @@ func (i *SoundEffectInstance) disposeFromEffect() error {
 	return i.DisposeByBoolean(true)
 }
 
-// objectDisposed is Helpers' ObjectDisposedException(GetType().Name, message).
+// objectDisposed is Helpers' ObjectDisposedException(GetType().Name, message),
+// and it is this type's IDENTITY SITE.
 //
-// # This becomes an IDENTITY SITE the moment DynamicSoundEffectInstance lands
+// The reference pushes `GetType().Name`, so a disposed
+// DynamicSoundEffectInstance must name ITSELF. Until Foundation 88 the literal
+// here had exactly one possible answer and was right by accident; that
+// milestone projected the derived type and the answer now comes through self().
 //
-// The reference pushes `GetType().Name`, so a disposed DynamicSoundEffectInstance
-// must name ITSELF. SoundEffectInstance is not `sealed` and the contract
-// declares a derived type, so the literal below has exactly one possible answer
-// TODAY and will have two as soon as that type is projected.
-//
-// Foundation 84 met this exact situation with VertexBuffer and IndexBuffer: the
-// literal was right by accident until the dynamic buffers arrived, and the fix
-// was a `self()` resolution through the composed base. The milestone that
-// projects DynamicSoundEffectInstance must do the same here, and this note is
-// what stops it being rediscovered.
+// Foundation 84 met the same situation with VertexBuffer and IndexBuffer, and
+// the note this comment replaces is what stopped it being rediscovered.
 func (i *SoundEffectInstance) objectDisposed() error {
-	return fmt.Errorf("%w: SoundEffectInstance: %s", errAudioObjectDisposed, objectDisposedMessage)
+	return fmt.Errorf("%w: %s: %s", errAudioObjectDisposed, i.self().clrTypeName(), objectDisposedMessage)
 }
 
 // Apply3DByAudioListenerAndAudioEmitter is

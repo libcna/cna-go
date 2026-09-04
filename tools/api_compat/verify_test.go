@@ -75,7 +75,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// 224/312, not 204/286: Foundation 84 composed VertexBuffer and
 	// IndexBuffer, and each dynamic buffer inherits ten public members from
 	// GraphicsResource through its base plus its base's own three.
-	if surface.XNAInheritedCLRMembers != 224 || surface.XNAInheritedProjections != 312 {
+	// 236/327, not 224/312: Foundation 88 composed SoundEffectInstance, whose
+	// one derived type inherits twelve of its members -- everything but the two
+	// IsLooped accessors it OVERRIDES.
+	if surface.XNAInheritedCLRMembers != 236 || surface.XNAInheritedProjections != 327 {
 		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
 	}
 	// The subtraction the exclusion performs is measured rather than implied:
@@ -83,7 +86,9 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// DrawableGameComponent::Initialize, and GamerServicesComponent's
 	// Initialize and Update. Foundation 79 added five more, one per stock
 	// effect: each declares its own Clone, which occupies Effect's slot.
-	if surface.XNAInheritedOverriddenMembers != 8 {
+	// Ten, not eight: Foundation 88's DynamicSoundEffectInstance declares its
+	// own two IsLooped accessors, which occupy its base's slots.
+	if surface.XNAInheritedOverriddenMembers != 10 {
 		t.Fatalf("XNA inherited overridden count = %d", surface.XNAInheritedOverriddenMembers)
 	}
 	// 3456, not 3443: Foundation 73's newly composed TextureCube adds
@@ -95,8 +100,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// Foundation 79 composed Effect, whose six derived types contribute
 	// eighty-five inherited projections between them. 3662, not 3636:
 	// Foundation 84 composed the two buffer bases, and the two dynamic buffers
-	// contribute twenty-six inherited projections between them.
-	if surface.ExpectedGoMembers != 3662 {
+	// contribute twenty-six inherited projections between them. 3677, not 3662:
+	// Foundation 88 composed SoundEffectInstance, whose one derived type
+	// contributes fifteen.
+	if surface.ExpectedGoMembers != 3677 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -8154,15 +8161,16 @@ func xnaCompositionFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	// Eight since Foundation 84 composed VertexBuffer and IndexBuffer.
-	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 8 {
-		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 8", got)
+	// Nine since Foundation 88 composed SoundEffectInstance, which is the
+	// FIRST composed base outside the graphics namespace.
+	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 9 {
+		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 9", got)
 	}
 	// Two for GameComponent, twelve for GraphicsResource, three for Texture,
-	// one for Texture2D, one for TextureCube, six for Effect and one each for
-	// the two buffer bases.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 26 {
-		t.Fatalf("the composed relationships cover %d derived types, want 26", got)
+	// one for Texture2D, one for TextureCube, six for Effect, one each for the
+	// two buffer bases and one for SoundEffectInstance.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 27 {
+		t.Fatalf("the composed relationships cover %d derived types, want 27", got)
 	}
 	// DrawableGameComponent, SpriteBatch, Texture, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
@@ -8171,10 +8179,11 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	// Foundation 80's AlphaTestEffect, DualTextureEffect and EffectMaterial,
 	// Foundation 81's EnvironmentMapEffect and SkinnedEffect -- with which
 	// every one of Effect's six derived types is projected -- and Foundation
-	// 83's OcclusionQuery, which is GraphicsResource's twelfth, and Foundation
-	// 84's DynamicVertexBuffer and DynamicIndexBuffer.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 25 {
-		t.Fatalf("%d projected derived types, want 25", got)
+	// 83's OcclusionQuery, which is GraphicsResource's twelfth, Foundation 84's
+	// DynamicVertexBuffer and DynamicIndexBuffer, and Foundation 88's
+	// DynamicSoundEffectInstance.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 26 {
+		t.Fatalf("%d projected derived types, want 26", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.
@@ -8187,19 +8196,21 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
 		}
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 224 {
-		t.Fatalf("%d inherited public CLR members, want 224", got)
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 236 {
+		t.Fatalf("%d inherited public CLR members, want 236", got)
 	}
-	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 312 {
-		t.Fatalf("%d inherited Go projections, want 312", got)
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 327 {
+		t.Fatalf("%d inherited Go projections, want 327", got)
 	}
-	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 312 {
-		t.Fatalf("%d attributed inherited members, want every one of the 312", got)
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 327 {
+		t.Fatalf("%d attributed inherited members, want every one of the 327", got)
 	}
-	// Eight, not three: each of Effect's five stock derived types declares its
-	// own Clone, which occupies the slot Effect's Clone would have filled.
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"]; got != 8 {
-		t.Fatalf("%d overridden inherited members, want 8", got)
+	// Ten, not eight: Foundation 88's DynamicSoundEffectInstance declares its
+	// OWN IsLooped accessors, which occupy the two slots its base's would have
+	// filled -- and both of the reference's overrides REFUSE, which is why the
+	// enumeration has to notice them.
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN"]; got != 10 {
+		t.Fatalf("%d overridden inherited members, want 10", got)
 	}
 }
 

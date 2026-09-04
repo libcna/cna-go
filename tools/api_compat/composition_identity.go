@@ -308,6 +308,32 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 			"Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer": "NewDynamicVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage",
 		},
 	},
+	// Foundation 88. SoundEffectInstance is the FIRST composed base outside the
+	// graphics namespace, and the first whose chain is only two deep:
+	// DynamicSoundEffectInstance -> SoundEffectInstance. It holds the CLR
+	// `this` itself rather than forwarding, because there is nothing below it
+	// to forward to.
+	//
+	// Its ONE site is objectDisposed, which every member in the family reaches:
+	// the reference pushes `GetType().Name` into
+	// ObjectDisposedException(objectName, message), so a disposed
+	// DynamicSoundEffectInstance must name itself. The literal that used to
+	// stand there carried a note saying it would become an identity site the
+	// moment the derived type arrived -- and this entry is that moment.
+	"Microsoft.Xna.Framework.Audio.SoundEffectInstance": {
+		Package:      modulePath + "/Microsoft/Xna/Framework/Audio",
+		GoBase:       "SoundEffectInstance",
+		DerivedField: "derived",
+		SelfMember:   "self",
+		BindMember:   "bindDerived",
+		Sites: []xnaCompositionIdentitySite{
+			{GoMember: "objectDisposed", Uses: 1, Reference: "every member's disposal check: ldarg.0; call Object::GetType(); callvirt MemberInfo::get_Name(); newobj ObjectDisposedException(string,string) -- the object names the exception"},
+		},
+		DerivedConstructors: map[string]string{
+			"Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance": "NewDynamicSoundEffectInstance",
+		},
+	},
+
 	"Microsoft.Xna.Framework.Graphics.IndexBuffer": {
 		Package:    modulePath + "/Microsoft/Xna/Framework/Graphics",
 		GoBase:     "IndexBuffer",

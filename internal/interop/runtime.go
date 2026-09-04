@@ -4829,6 +4829,166 @@ func (resource *Resource) SoundInstanceSetPan(value float32) error {
 	return nativeSoundInstanceSetPan(handle, value)
 }
 
+// CreateDynamicSoundEffectInstance is
+// cna_dynamic_sound_effect_instance_create, which needs no SoundEffect -- a
+// streaming instance has no source effect and is registered with NO parent.
+//
+// That is the one structural difference from an ordinary instance, and it is
+// the reference's too: DynamicSoundEffectInstance's constructor calls the base
+// parameterless constructor and allocates its own voice, where every other
+// instance is built from an effect.
+func (r *Runtime) CreateDynamicSoundEffectInstance(sampleRate int32, channels uint32) (*Resource, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return nil, err
+	}
+	handle, err := nativeDynamicSoundInstanceCreate(game, sampleRate, channels)
+	if err != nil {
+		return nil, err
+	}
+	return r.registerResource(handle, resourceSoundEffectInstance, nil), nil
+}
+
+// DynamicSoundInstancePendingBufferCount is
+// cna_dynamic_sound_effect_instance_get_pending_buffer_count, a live read.
+func (resource *Resource) DynamicSoundInstancePendingBufferCount() (int32, error) {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return 0, err
+	}
+	return nativeDynamicSoundInstancePendingBufferCount(handle)
+}
+
+// DynamicSoundInstanceSubmitBuffer is
+// cna_dynamic_sound_effect_instance_submit_buffer. CNA copies the bytes during
+// the call, which is what lets the caller reuse the slice immediately.
+func (resource *Resource) DynamicSoundInstanceSubmitBuffer(data []byte, offset, count int32) error {
+	handle, err := resource.liveHandle(resourceSoundEffectInstance)
+	if err != nil {
+		return err
+	}
+	if len(data) == 0 {
+		return errors.New("a submitted buffer needs bytes")
+	}
+	return nativeDynamicSoundInstanceSubmitBuffer(handle, unsafe.Pointer(&data[0]),
+		uint64(len(data)), offset, count)
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 88 -- Microphone, which is INDEX-addressed and owns nothing.
+//
+// Every one of these takes the game handle and a position. There is no Resource
+// and no destruction: a microphone is a place in the machine's list, which is
+// the reference's shape too -- XNA's Microphone carries an assembly `Id` and
+// declares no disposal at all.
+// ---------------------------------------------------------------------------
+
+// MicrophoneCount is cna_microphone_get_count.
+func (r *Runtime) MicrophoneCount() (uint64, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMicrophoneCount(game)
+}
+
+// MicrophoneDefaultIndex is cna_microphone_get_default_index_ext, which reports
+// the position AND whether there is one at all. A machine with microphones need
+// not have a DEFAULT, and CNA says so: the index is "left unchanged when there
+// is no default", so the availability flag is what a caller must read first.
+func (r *Runtime) MicrophoneDefaultIndex() (uint64, bool, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, false, err
+	}
+	return nativeMicrophoneDefaultIndex(game)
+}
+
+// MicrophoneName is the count/copy pair, which is how every string crosses this
+// ABI.
+func (r *Runtime) MicrophoneName(index uint64) (string, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return "", err
+	}
+	return nativeMicrophoneName(game, index)
+}
+
+// MicrophoneBufferDurationTicks and MicrophoneSetBufferDurationTicks are the
+// capture buffer's length, in the CLR's own 100-nanosecond unit.
+func (r *Runtime) MicrophoneBufferDurationTicks(index uint64) (int64, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMicrophoneBufferDurationTicks(game, index)
+}
+
+func (r *Runtime) MicrophoneSetBufferDurationTicks(index uint64, ticks int64) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMicrophoneSetBufferDurationTicks(game, index, ticks)
+}
+
+// MicrophoneIsHeadset, MicrophoneSampleRate and MicrophoneState are the three
+// description reads.
+func (r *Runtime) MicrophoneIsHeadset(index uint64) (bool, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return false, err
+	}
+	return nativeMicrophoneIsHeadset(game, index)
+}
+
+func (r *Runtime) MicrophoneSampleRate(index uint64) (int32, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMicrophoneSampleRate(game, index)
+}
+
+func (r *Runtime) MicrophoneState(index uint64) (uint32, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMicrophoneState(game, index)
+}
+
+// MicrophoneStart, MicrophoneStop and MicrophoneGetData are the CAPTURE
+// members. They are bound because the pinned contract declares Start, Stop and
+// GetData, and the native scenario never calls Start or GetData: recording from
+// a physical microphone is not something a test suite does on someone's
+// machine. That is a standing constraint on the SUITE and not a limitation of
+// the projection, and it is written here so a later scenario does not add the
+// call without noticing.
+func (r *Runtime) MicrophoneStart(index uint64) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMicrophoneStart(game, index)
+}
+
+func (r *Runtime) MicrophoneStop(index uint64) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMicrophoneStop(game, index)
+}
+
+func (r *Runtime) MicrophoneGetData(index uint64, destination []byte) (uint64, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMicrophoneGetData(game, index, destination)
+}
+
 // SoundInstanceApply3D is cna_sound_effect_instance_apply_3d_multi_ext.
 //
 // The listeners cross as a flat array of twelve floats each -- forward,

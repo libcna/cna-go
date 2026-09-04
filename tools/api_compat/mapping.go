@@ -976,6 +976,12 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property-get|Name":          true,
 		"property-get|Duration":      true,
 	},
+	// Foundation 88. Microphone's buffer duration, which set_BufferDuration
+	// maintains after its native write succeeds. The SETTER is absent on
+	// purpose: it pushes, and that call can be refused.
+	"Microsoft.Xna.Framework.Audio.Microphone": {
+		"property-get|BufferDuration": true,
+	},
 	// SoundEffectInstance's four cached reads. The reference stores each scalar
 	// AFTER its native write succeeds, so the getter reports what is actually
 	// in effect and reaches nothing itself. get_State is deliberately NOT here:
@@ -4275,10 +4281,16 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	"Microsoft.Xna.Framework.Graphics.IndexBuffer":  {Status: "COMPOSED"},
 	"Microsoft.Xna.Framework.Graphics.VertexBuffer": {Status: "COMPOSED"},
 
-	"Microsoft.Xna.Framework.Audio.SoundEffectInstance": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "SUBSYSTEM", Detail: "SoundEffectInstance is a missing type. The blocker this entry used to record -- \"the qualification artifact pins a NULL audio renderer, so nothing behind it would play\" -- was STALE, and Foundation 86 measured it rather than restating it: cna_audio_get_capabilities reports is_playback_available=TRUE on both qualified artifacts. What remains is CNA-Go's own surface"},
-	}},
+	// Foundation 88 composed it. Its ONE derived type, DynamicSoundEffectInstance,
+	// is complete, and the blocker list is empty for the reason the buffer bases'
+	// are: there is nothing left to record.
+	//
+	// The derived type OVERRIDES four of the base's members and two of them
+	// REFUSE -- get_IsLooped always answers false and set_IsLooped accepts only
+	// false -- which is the clearest case in the project of why an inherited
+	// surface has to be enumerated rather than assumed.
+	"Microsoft.Xna.Framework.Audio.SoundEffectInstance": {Status: "COMPOSED"},
+
 	// Foundation 63 projected ContentManager itself. The relationship is still
 	// deferred because its DERIVED type is not projected, and the blocker is
 	// recorded as ResourceContentManager's rather than left as the stale claim

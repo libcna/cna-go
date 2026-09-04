@@ -2951,6 +2951,141 @@ func nativeSoundInstanceApply3D(instance uint64, listeners []float32, count uint
 			(*C.float)(&listeners[0]), C.uint64_t(count), (*C.float)(&emitter[0]))))
 }
 
+// ---------------------------------------------------------------------------
+// Foundation 88 -- DynamicSoundEffectInstance.
+//
+// Its handle is a SoundEffectInstance handle as far as the transport routes are
+// concerned: CNA's play, pause, resume, stop, get_info and the four setters all
+// take it. What the five routes below add is the streaming half -- creation
+// without a SoundEffect, the pending-buffer count, the submission, and the two
+// sample conversions, which unlike SoundEffect's STATIC pair are instance
+// members and therefore really do take a handle.
+// ---------------------------------------------------------------------------
+
+func nativeDynamicSoundInstanceCreate(game uint64, sampleRate int32, channels uint32) (uint64, error) {
+	var handle C.CnaGoHandle
+	code := uint32(C.cna_go_dynamic_sound_effect_instance_create(C.CnaGoHandle(game),
+		C.int32_t(sampleRate), C.uint32_t(channels), &handle))
+	return uint64(handle), resultError("cna_dynamic_sound_effect_instance_create", code)
+}
+
+func nativeDynamicSoundInstancePendingBufferCount(instance uint64) (int32, error) {
+	var count C.int32_t
+	code := uint32(C.cna_go_dynamic_sound_effect_instance_get_pending_buffer_count(
+		C.CnaGoHandle(instance), &count))
+	return int32(count), resultError("cna_dynamic_sound_effect_instance_get_pending_buffer_count", code)
+}
+
+func nativeDynamicSoundInstanceSubmitBuffer(instance uint64, data unsafe.Pointer, byteCount uint64, offset, count int32) error {
+	return resultError("cna_dynamic_sound_effect_instance_submit_buffer",
+		uint32(C.cna_go_dynamic_sound_effect_instance_submit_buffer(C.CnaGoHandle(instance),
+			(*C.uint8_t)(data), C.uint64_t(byteCount), C.int32_t(offset), C.int32_t(count))))
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 88 -- Microphone.
+//
+// The whole family is INDEX-addressed: a microphone is a POSITION in the
+// machine's list rather than an owned handle, so nothing here is a Resource and
+// nothing here is destroyed. That is CNA's shape and the reference's too --
+// XNA's Microphone has an `assembly initonly int32 Id` and no disposal at all.
+//
+// # start_at and get_data_at are bound and NEVER exercised
+//
+// Both are projected because the pinned contract declares Start and GetData.
+// Neither is called by the native scenario, and the reason is a standing
+// constraint rather than a technical one: recording from a physical microphone
+// is not something a test suite does on someone's machine. The enumeration and
+// state surface is exercised in full; capture is not.
+// ---------------------------------------------------------------------------
+
+func nativeMicrophoneCount(game uint64) (uint64, error) {
+	var count C.uint64_t
+	code := uint32(C.cna_go_microphone_get_count(C.CnaGoHandle(game), &count))
+	return uint64(count), resultError("cna_microphone_get_count", code)
+}
+
+// nativeMicrophoneDefaultIndex reports the default microphone's position AND
+// whether there is one. CNA's route carries both because a machine with
+// microphones need not have a DEFAULT: "Receives the zero-based index; left
+// unchanged when there is no default."
+func nativeMicrophoneDefaultIndex(game uint64) (uint64, bool, error) {
+	var index C.uint64_t
+	var available C.uint8_t
+	code := uint32(C.cna_go_microphone_get_default_index(C.CnaGoHandle(game), &index, &available))
+	return uint64(index), available != 0, resultError("cna_microphone_get_default_index_ext", code)
+}
+
+func nativeMicrophoneName(game, index uint64) (string, error) {
+	var size C.uint64_t
+	code := uint32(C.cna_go_microphone_get_name_size_at(C.CnaGoHandle(game), C.uint64_t(index), &size))
+	if err := resultError("cna_microphone_get_name_size_at", code); err != nil {
+		return "", err
+	}
+	if size == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(size))
+	var written C.uint64_t
+	code = uint32(C.cna_go_microphone_copy_name_at(C.CnaGoHandle(game), C.uint64_t(index),
+		(*C.char)(unsafe.Pointer(&buffer[0])), C.uint64_t(len(buffer)), &written))
+	if err := resultError("cna_microphone_copy_name_at", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(written)]), nil
+}
+
+func nativeMicrophoneBufferDurationTicks(game, index uint64) (int64, error) {
+	var ticks C.int64_t
+	code := uint32(C.cna_go_microphone_get_buffer_duration_ticks_at(C.CnaGoHandle(game),
+		C.uint64_t(index), &ticks))
+	return int64(ticks), resultError("cna_microphone_get_buffer_duration_ticks_at", code)
+}
+
+func nativeMicrophoneSetBufferDurationTicks(game, index uint64, ticks int64) error {
+	return resultError("cna_microphone_set_buffer_duration_ticks_at",
+		uint32(C.cna_go_microphone_set_buffer_duration_ticks_at(C.CnaGoHandle(game),
+			C.uint64_t(index), C.int64_t(ticks))))
+}
+
+func nativeMicrophoneIsHeadset(game, index uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_microphone_get_is_headset_at(C.CnaGoHandle(game), C.uint64_t(index), &value))
+	return value != 0, resultError("cna_microphone_get_is_headset_at", code)
+}
+
+func nativeMicrophoneSampleRate(game, index uint64) (int32, error) {
+	var rate C.int32_t
+	code := uint32(C.cna_go_microphone_get_sample_rate_at(C.CnaGoHandle(game), C.uint64_t(index), &rate))
+	return int32(rate), resultError("cna_microphone_get_sample_rate_at", code)
+}
+
+func nativeMicrophoneState(game, index uint64) (uint32, error) {
+	var state C.uint32_t
+	code := uint32(C.cna_go_microphone_get_state_at(C.CnaGoHandle(game), C.uint64_t(index), &state))
+	return uint32(state), resultError("cna_microphone_get_state_at", code)
+}
+
+func nativeMicrophoneStart(game, index uint64) error {
+	return resultError("cna_microphone_start_at",
+		uint32(C.cna_go_microphone_start_at(C.CnaGoHandle(game), C.uint64_t(index))))
+}
+
+func nativeMicrophoneStop(game, index uint64) error {
+	return resultError("cna_microphone_stop_at",
+		uint32(C.cna_go_microphone_stop_at(C.CnaGoHandle(game), C.uint64_t(index))))
+}
+
+func nativeMicrophoneGetData(game, index uint64, destination []byte) (uint64, error) {
+	if len(destination) == 0 {
+		return 0, resultError("cna_microphone_get_data_at", resultInvalidArgument)
+	}
+	var written C.uint64_t
+	code := uint32(C.cna_go_microphone_get_data_at(C.CnaGoHandle(game), C.uint64_t(index),
+		(*C.uint8_t)(unsafe.Pointer(&destination[0])), C.uint64_t(len(destination)), &written))
+	return uint64(written), resultError("cna_microphone_get_data_at", code)
+}
+
 func nativeSoundInstanceDestroy(instance uint64) error {
 	return resultError("cna_sound_effect_instance_destroy",
 		uint32(C.cna_go_sound_effect_instance_destroy(C.CnaGoHandle(instance))))

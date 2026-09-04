@@ -128,23 +128,10 @@ func newSoundEffectFromBuffer(
 	if err := checkAudioChannels(channels); err != nil {
 		return nil, err
 	}
+	if err := checkAudioBufferWindow(buffer, offset, count, int32(channels)); err != nil {
+		return nil, err
+	}
 	blockAlign := audioBlockAlign(int32(channels))
-	length := int32(len(buffer))
-	if len(buffer) == 0 || length%blockAlign != 0 {
-		return nil, argumentError(invalidAudioBuffer)
-	}
-	if offset < 0 || offset >= length || offset%blockAlign != 0 {
-		return nil, argumentError(invalidAudioBufferOffset)
-	}
-	// `checked(offset + count)` -- the reference catches the OverflowException
-	// and reports it with the SAME message the range test uses.
-	total := int64(offset) + int64(count)
-	if total > math.MaxInt32 || total < math.MinInt32 {
-		return nil, argumentError(invalidOffsetCountLength)
-	}
-	if int32(total) > length || count <= 0 || count%blockAlign != 0 {
-		return nil, argumentError(invalidOffsetCountLength)
-	}
 	loopEnd := int64(loopStart) + int64(loopLength)
 	if loopEnd > math.MaxInt32 || loopEnd < math.MinInt32 {
 		return nil, argumentError(invalidLoopRegion)
@@ -167,6 +154,46 @@ func newSoundEffectFromBuffer(
 		return nil, err
 	}
 	return newSoundEffect(resource)
+}
+
+// checkAudioBufferWindow is the four-check prefix SoundEffect::FromBuffer and
+// DynamicSoundEffectInstance::SubmitBuffer SHARE, instruction for instruction:
+//
+//	if (buffer == null || buffer.Length == 0 || !format.IsAligned(buffer.Length))
+//	    throw new ArgumentException(InvalidAudioBuffer);
+//	if (offset < 0 || offset >= buffer.Length || !format.IsAligned(offset))
+//	    throw new ArgumentException(InvalidAudioBufferOffset);
+//	try { total = checked(offset + count); }
+//	catch (OverflowException) { throw new ArgumentException(InvalidOffsetCountLength); }
+//	if (total > buffer.Length || count <= 0 || !format.IsAligned(count))
+//	    throw new ArgumentException(InvalidOffsetCountLength);
+//
+// `IsAligned(v)` is `v % BlockAlign == 0` and BlockAlign is `channels * 2`, so
+// the buffer, the offset and the count must EACH be a whole number of frames --
+// three separate tests with three separate messages, which is what makes them
+// worth writing out once rather than twice.
+//
+// Every one of the four throws plain ArgumentException with a MESSAGE and no
+// parameter name, so the sentence is all a caller gets.
+func checkAudioBufferWindow(buffer []uint8, offset, count, channels int32) error {
+	blockAlign := audioBlockAlign(channels)
+	length := int32(len(buffer))
+	if len(buffer) == 0 || length%blockAlign != 0 {
+		return argumentError(invalidAudioBuffer)
+	}
+	if offset < 0 || offset >= length || offset%blockAlign != 0 {
+		return argumentError(invalidAudioBufferOffset)
+	}
+	// `checked(offset + count)` -- the reference catches the OverflowException
+	// and reports it with the SAME message the range test uses.
+	total := int64(offset) + int64(count)
+	if total > math.MaxInt32 || total < math.MinInt32 {
+		return argumentError(invalidOffsetCountLength)
+	}
+	if int32(total) > length || count <= 0 || count%blockAlign != 0 {
+		return argumentError(invalidOffsetCountLength)
+	}
+	return nil
 }
 
 // SoundEffectFromStream is SoundEffect::FromStream(Stream), 22 bytes:

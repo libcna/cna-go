@@ -18,17 +18,17 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 187,
+    "COMPLETE_TYPES": 189,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3662,
+    "EXPECTED_GO_MEMBERS": 3677,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 10,
+    "FRONTIER_FAMILIES": 9,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 70,
+    "GLOBAL_ACTIONABLE_LOCAL": 68,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 70,
-    "MISSING_TYPES": 70,
+    "MISSING_TYPE": 68,
+    "MISSING_TYPES": 68,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3089,
-    "TARGET_TYPES": 187,
-    "TOTAL_DIAGNOSTICS": 70,
+    "TARGET_MEMBERS": 3133,
+    "TARGET_TYPES": 189,
+    "TOTAL_DIAGNOSTICS": 68,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -89,19 +89,19 @@
     "XNA_BASE_SUBSTITUTABILITY_NONE": 3,
     "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 6,
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
-    "XNA_COMPOSED_BASE_RELATIONSHIPS": 8,
-    "XNA_COMPOSED_DERIVED_TYPES": 26,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 25,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 25,
+    "XNA_COMPOSED_BASE_RELATIONSHIPS": 9,
+    "XNA_COMPOSED_DERIVED_TYPES": 27,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 26,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 26,
     "XNA_COMPOSED_IDENTITY_FORWARDS": 6,
-    "XNA_COMPOSED_IDENTITY_SITES": 15,
-    "XNA_COMPOSED_IDENTITY_USES": 16,
-    "XNA_DEFERRED_BASE_BLOCKERS": 8,
-    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 312,
-    "XNA_INHERITED_MEMBER_PROJECTIONS": 312,
-    "XNA_INHERITED_PUBLIC_MEMBERS": 224,
-    "XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN": 8,
-    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 82
+    "XNA_COMPOSED_IDENTITY_SITES": 16,
+    "XNA_COMPOSED_IDENTITY_USES": 17,
+    "XNA_DEFERRED_BASE_BLOCKERS": 6,
+    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 327,
+    "XNA_INHERITED_MEMBER_PROJECTIONS": 327,
+    "XNA_INHERITED_PUBLIC_MEMBERS": 236,
+    "XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN": 10,
+    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 68
   },
   "diagnostics": [
     {
@@ -120,18 +120,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Audio.Cue",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:Cue",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:DynamicSoundEffectInstance",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.Microphone",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:Microphone",
       "message": "mapped Go type is absent"
     },
     {
@@ -530,7 +518,9 @@
     "Microsoft.Xna.Framework.Audio.AudioEmitter",
     "Microsoft.Xna.Framework.Audio.AudioListener",
     "Microsoft.Xna.Framework.Audio.AudioStopOptions",
+    "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
+    "Microsoft.Xna.Framework.Audio.Microphone",
     "Microsoft.Xna.Framework.Audio.MicrophoneState",
     "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
     "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
@@ -719,8 +709,6 @@
     "Microsoft.Xna.Framework.Audio.AudioCategory",
     "Microsoft.Xna.Framework.Audio.AudioEngine",
     "Microsoft.Xna.Framework.Audio.Cue",
-    "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
-    "Microsoft.Xna.Framework.Audio.Microphone",
     "Microsoft.Xna.Framework.Audio.SoundBank",
     "Microsoft.Xna.Framework.Audio.WaveBank",
     "Microsoft.Xna.Framework.Content.ContentReader",
@@ -6829,7 +6817,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 39,
+      "projectedTypes": 40,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6876,17 +6864,6 @@
         "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator"
       ],
       "remaining": 12,
-      "verdict": "PASS"
-    },
-    {
-      "family": "Audio",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "Foundation 87 closed SoundEffect and SoundEffectInstance over 21 bound routes. Foundation 86 closed RendererDetail, which needed no CNA at all -- two strings and five members, and the first type in the project whose authority is the Xact assembly. Foundation 86 also MEASURED what the other four are waiting on rather than assuming it: cna_audio_get_capabilities reports is_playback_available=TRUE on both qualified artifacts, so the old \"nothing behind it would play\" note was stale. CNA carries ~63/18/10 routes for SoundEffect, SoundEffectInstance and the dynamic instance. Microphone's physical capture is a separate question from its enumeration and state surface, and the capture members are projected without ever being exercised against a real device",
-      "types": [
-        "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
-        "Microsoft.Xna.Framework.Audio.Microphone"
-      ],
-      "remaining": 2,
       "verdict": "PASS"
     },
     {
@@ -9954,21 +9931,11 @@
   "xnaBaseRelationships": [
     {
       "clrBase": "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
-      "status": "DEFERRED",
+      "status": "COMPOSED",
       "derived": [
         "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance"
       ],
       "inheritedPublicMembers": 14,
-      "blockers": [
-        {
-          "class": "ARCHITECTURE",
-          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
-        },
-        {
-          "class": "SUBSYSTEM",
-          "detail": "SoundEffectInstance is a missing type. The blocker this entry used to record -- \"the qualification artifact pins a NULL audio renderer, so nothing behind it would play\" -- was STALE, and Foundation 86 measured it rather than restating it: cna_audio_get_capabilities reports is_playback_available=TRUE on both qualified artifacts. What remains is CNA-Go's own surface"
-        }
-      ],
       "verdict": "PASS"
     },
     {
@@ -10359,7 +10326,7 @@
     {
       "base": "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
       "derivedTypes": 1,
-      "projectedDerivedTypes": 0,
+      "projectedDerivedTypes": 1,
       "positions": 1,
       "positionsOnProjectedCarriers": 1,
       "requirement": "LATENT",
@@ -10896,6 +10863,21 @@
   ],
   "xnaComposition": [
     {
+      "clrBase": "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
+      "goBase": "SoundEffectInstance",
+      "rows": [
+        {
+          "derived": "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
+          "goDerived": "DynamicSoundEffectInstance",
+          "baseField": "instance",
+          "inheritedCLRMembers": 12,
+          "inheritedProjections": 15,
+          "composition": "PRIVATE_NAMED"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
       "clrBase": "Microsoft.Xna.Framework.GameComponent",
       "goBase": "GameComponent",
       "rows": [
@@ -11160,6 +11142,28 @@
     }
   ],
   "xnaCompositionIdentity": [
+    {
+      "clrBase": "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
+      "goBase": "SoundEffectInstance",
+      "derivedField": "derived",
+      "sites": [
+        {
+          "goMember": "objectDisposed",
+          "reference": "every member's disposal check: ldarg.0; call Object::GetType(); callvirt MemberInfo::get_Name(); newobj ObjectDisposedException(string,string) -- the object names the exception",
+          "uses": 1,
+          "reaches": 1
+        }
+      ],
+      "bindings": [
+        {
+          "derived": "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
+          "goDerived": "DynamicSoundEffectInstance",
+          "constructor": "NewDynamicSoundEffectInstance",
+          "binds": true
+        }
+      ],
+      "verdict": "PASS"
+    },
     {
       "clrBase": "Microsoft.Xna.Framework.GameComponent",
       "goBase": "GameComponent",
@@ -11481,7 +11485,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "6d8ec4b06910cd11e56c282cdd24968eacfe1a97df8303fe2042744a0fd74dc0",
+    "mappingSha256": "2f73f2fde6746436551ef64f78d102750bc0c39a9be27d17a80b37a3cfbbbe7c",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

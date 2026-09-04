@@ -74,6 +74,7 @@
     "pureValueOperation": "no-added-error-unless-authoritative-managed-argument-failure-is-projected",
     "managedStoredMember": "no-added-error-when-the-reference-body-reaches-no-runtime-boundary: a-managed-field-read-or-write, a-compile-time-constant, or-an-empty-body",
     "managedStoredMemberIdentities": [
+      "Microsoft.Xna.Framework.Audio.Microphone|property-get|BufferDuration",
       "Microsoft.Xna.Framework.Audio.SoundEffectInstance|property-get|IsDisposed",
       "Microsoft.Xna.Framework.Audio.SoundEffectInstance|property-get|IsLooped",
       "Microsoft.Xna.Framework.Audio.SoundEffectInstance|property-get|Pan",

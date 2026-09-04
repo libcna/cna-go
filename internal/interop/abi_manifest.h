@@ -971,6 +971,27 @@ typedef struct CNA_AudioListener {
 } CNA_AudioListener;
 #endif
 typedef CNA_Result (*cna_sound_effect_instance_apply_3d_multi_ext_fn)(CNA_Handle, const CNA_AudioListener*, uint64_t, const CNA_AudioEmitter*);
+/* Foundation 88 -- DynamicSoundEffectInstance. */
+typedef CNA_Result (*cna_dynamic_sound_effect_instance_create_fn)(CNA_Handle, int32_t, CNA_AudioChannels, CNA_Handle*);
+typedef CNA_Result (*cna_dynamic_sound_effect_instance_get_pending_buffer_count_fn)(CNA_Handle, int32_t*);
+typedef CNA_Result (*cna_dynamic_sound_effect_instance_submit_buffer_fn)(CNA_Handle, const uint8_t*, uint64_t, int32_t, int32_t);
+/* Foundation 88 -- Microphone. The whole family is INDEX-addressed: a
+   microphone is a position in the machine's list, not an owned handle. */
+typedef CNA_Result (*cna_microphone_get_count_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_microphone_get_default_index_ext_fn)(CNA_Handle, uint64_t*, CNA_Bool*);
+typedef CNA_Result (*cna_microphone_get_name_size_at_fn)(CNA_Handle, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_microphone_copy_name_at_fn)(CNA_Handle, uint64_t, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_microphone_get_buffer_duration_ticks_at_fn)(CNA_Handle, uint64_t, int64_t*);
+typedef CNA_Result (*cna_microphone_set_buffer_duration_ticks_at_fn)(CNA_Handle, uint64_t, int64_t);
+typedef CNA_Result (*cna_microphone_get_is_headset_at_fn)(CNA_Handle, uint64_t, CNA_Bool*);
+typedef CNA_Result (*cna_microphone_get_sample_rate_at_fn)(CNA_Handle, uint64_t, int32_t*);
+#ifndef CNA_C_AUDIO_H
+typedef uint32_t CNA_MicrophoneState;
+#endif
+typedef CNA_Result (*cna_microphone_get_state_at_fn)(CNA_Handle, uint64_t, CNA_MicrophoneState*);
+typedef CNA_Result (*cna_microphone_start_at_fn)(CNA_Handle, uint64_t);
+typedef CNA_Result (*cna_microphone_stop_at_fn)(CNA_Handle, uint64_t);
+typedef CNA_Result (*cna_microphone_get_data_at_fn)(CNA_Handle, uint64_t, uint8_t*, uint64_t, uint64_t*);
 /* Foundation 84 -- the dynamic buffers' options-carrying upload. */
 typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_with_options_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t, uint32_t, CNA_SetDataOptions);
 /* Foundation 81 -- EnvironmentMapEffect and SkinnedEffect. */
@@ -1319,6 +1340,21 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_sound_effect_instance_set_is_looped) \
     X(cna_sound_effect_instance_destroy) \
     X(cna_sound_effect_instance_apply_3d_multi_ext) \
+    X(cna_dynamic_sound_effect_instance_create) \
+    X(cna_dynamic_sound_effect_instance_get_pending_buffer_count) \
+    X(cna_dynamic_sound_effect_instance_submit_buffer) \
+    X(cna_microphone_get_count) \
+    X(cna_microphone_get_default_index_ext) \
+    X(cna_microphone_get_name_size_at) \
+    X(cna_microphone_copy_name_at) \
+    X(cna_microphone_get_buffer_duration_ticks_at) \
+    X(cna_microphone_set_buffer_duration_ticks_at) \
+    X(cna_microphone_get_is_headset_at) \
+    X(cna_microphone_get_sample_rate_at) \
+    X(cna_microphone_get_state_at) \
+    X(cna_microphone_start_at) \
+    X(cna_microphone_stop_at) \
+    X(cna_microphone_get_data_at) \
     X(cna_environment_map_effect_create) \
     X(cna_environment_map_effect_set_diffuse_color) \
     X(cna_environment_map_effect_set_emissive_color) \

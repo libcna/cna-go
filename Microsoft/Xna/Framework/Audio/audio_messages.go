@@ -23,6 +23,16 @@ const (
 	// words.
 	invalidIsLoopedCall = "Loop must be set before the first Play call."
 
+	// invalidMicrophoneBufferDuration carries the DOUBLE SPACE before "10ms"
+	// that is in the resource, because the message is reproduced byte for byte
+	// rather than tidied.
+	invalidMicrophoneBufferDuration = "Microphone buffer duration must be between 100ms and 1sec and  10ms aligned."
+
+	// invalidDynamicIsLoopedCall is the flattest refusal in the family: a
+	// streaming instance has no loop to set, so the property is not supported
+	// at all rather than conditionally refused.
+	invalidDynamicIsLoopedCall = "IsLooped property is not supported for DynamicSoundEffectInstance."
+
 	// invalidApply3DCall is invalidPanCall's mirror: the two members are the
 	// two halves of one mode latch, and each refuses when the other has won.
 	invalidApply3DCall = "The sound is not a 3D sound. Call Apply3D before the first Play call to configure it to be a 3D sound."

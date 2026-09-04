@@ -264,6 +264,22 @@ type counters struct {
 	SoundInstanceModeLatchChecks  int `json:"SOUND_INSTANCE_MODE_LATCH_CHECKS"`
 	SoundInstanceApply3DChecks    int `json:"SOUND_INSTANCE_APPLY_3D_CHECKS"`
 	SoundEffectDisposalChecks     int `json:"SOUND_EFFECT_DISPOSAL_CHECKS"`
+	// Foundation 88. DynamicSoundEffectInstance and Microphone, which finish the
+	// Audio namespace. The microphone counters cover ENUMERATION and
+	// DESCRIPTION only: Start and GetData are projected and never called, so
+	// there is deliberately no capture counter to report.
+	DynamicInstanceCreations        int `json:"DYNAMIC_INSTANCE_CREATIONS"`
+	DynamicInstanceRefusals         int `json:"DYNAMIC_INSTANCE_REFUSALS"`
+	DynamicInstanceLoopChecks       int `json:"DYNAMIC_INSTANCE_LOOP_CHECKS"`
+	DynamicInstanceSubmissions      int `json:"DYNAMIC_INSTANCE_SUBMISSIONS"`
+	DynamicInstancePendingChecks    int `json:"DYNAMIC_INSTANCE_PENDING_CHECKS"`
+	DynamicInstanceConversionChecks int `json:"DYNAMIC_INSTANCE_CONVERSION_CHECKS"`
+	DynamicInstanceDisposalChecks   int `json:"DYNAMIC_INSTANCE_DISPOSAL_CHECKS"`
+	MicrophoneEnumerations          int `json:"MICROPHONE_ENUMERATIONS"`
+	MicrophonesFound                int `json:"MICROPHONES_FOUND"`
+	MicrophoneDescriptionChecks     int `json:"MICROPHONE_DESCRIPTION_CHECKS"`
+	MicrophoneGuardChecks           int `json:"MICROPHONE_GUARD_CHECKS"`
+	MicrophoneCaptureCalls          int `json:"MICROPHONE_CAPTURE_CALLS"`
 	// Foundation 85. The first VERIFIED_PIXEL draw. Every counter here is over
 	// the SOFTWARE artifact only, because HEADLESS has no back-buffer readback
 	// and records a refusal instead -- which is why the refusal column exists.
@@ -872,6 +888,43 @@ func runParent() (counters, error) {
 	if total.SoundInstanceApply3DChecks > total.SoundInstanceCreations {
 		return total, fmt.Errorf("%d Apply3D checks over %d instances",
 			total.SoundInstanceApply3DChecks, total.SoundInstanceCreations)
+	}
+	// Foundation 88. One streaming-instance outcome per cycle, and every check
+	// downstream counted against the creations that succeeded.
+	if total.DynamicInstanceCreations+total.DynamicInstanceRefusals != total.VertexBufferCycles {
+		return total, fmt.Errorf("dynamic-instance creations %d and refusals %d do not account for %d cycles",
+			total.DynamicInstanceCreations, total.DynamicInstanceRefusals, total.VertexBufferCycles)
+	}
+	if total.DynamicInstanceLoopChecks != total.DynamicInstanceCreations ||
+		total.DynamicInstanceSubmissions != total.DynamicInstanceCreations ||
+		total.DynamicInstancePendingChecks != total.DynamicInstanceCreations ||
+		total.DynamicInstanceConversionChecks != total.DynamicInstanceCreations ||
+		total.DynamicInstanceDisposalChecks != total.DynamicInstanceCreations {
+		return total, fmt.Errorf("%d streaming instances produced %d loop, %d submission, %d pending, %d conversion and %d disposal checks",
+			total.DynamicInstanceCreations, total.DynamicInstanceLoopChecks,
+			total.DynamicInstanceSubmissions, total.DynamicInstancePendingChecks,
+			total.DynamicInstanceConversionChecks, total.DynamicInstanceDisposalChecks)
+	}
+	// The microphone enumeration runs once per cycle and the guard checks with
+	// it. MICROPHONES_FOUND is whatever the machine has, so it is NOT pinned to
+	// a number -- what IS pinned is that every microphone found was described.
+	if total.MicrophoneEnumerations != total.VertexBufferCycles ||
+		total.MicrophoneGuardChecks != total.VertexBufferCycles {
+		return total, fmt.Errorf("%d microphone enumerations and %d guard checks over %d cycles",
+			total.MicrophoneEnumerations, total.MicrophoneGuardChecks, total.VertexBufferCycles)
+	}
+	if total.MicrophoneDescriptionChecks != total.MicrophonesFound {
+		return total, fmt.Errorf("%d microphones found produced %d description checks",
+			total.MicrophonesFound, total.MicrophoneDescriptionChecks)
+	}
+	// THE CAPTURE COUNTER EXISTS TO BE ZERO. Microphone.Start and GetData are
+	// projected and this suite calls neither: starting capture opens a real
+	// recording device on whatever machine the suite runs on. A non-zero value
+	// here is a run that began recording, and it fails rather than being
+	// reported.
+	if total.MicrophoneCaptureCalls != 0 {
+		return total, fmt.Errorf("the suite made %d microphone capture calls; it must make none",
+			total.MicrophoneCaptureCalls)
 	}
 	// Foundation 82. Three dispatcher pumps and two guard checks per cycle, and
 	// exactly one outcome for the read.
@@ -4936,6 +4989,14 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 88. The two types that finish the Audio namespace.
+	if err := g.exerciseDynamicSoundEffectInstance(); err != nil {
+		return err
+	}
+	if err := g.exerciseMicrophone(); err != nil {
+		return err
+	}
+
 	// Foundation 83. OcclusionQuery, on the same live device.
 	if err := g.exerciseOcclusionQuery(device); err != nil {
 		return err
@@ -7342,6 +7403,215 @@ func (g *stressGame) exerciseSoundEffect() error {
 		return errors.New("a disposed effect stopped answering its name")
 	}
 	g.result.SoundEffectDisposalChecks++
+	return nil
+}
+
+// exerciseDynamicSoundEffectInstance is Foundation 88's streaming slice.
+//
+// It plays SILENCE, for the reason the SoundEffect slice does: the qualified
+// artifacts open a real playback device.
+func (g *stressGame) exerciseDynamicSoundEffectInstance() error {
+	// 22050 rather than 8000, and the choice is load-bearing: its conversion
+	// answer is DISTINCTIVE. One second of 22050Hz mono is 44098 bytes -- the
+	// truncated number the float32 scale factor produces -- where 8000Hz gives
+	// the round 16000. An instance built with the wrong rate answers the wrong
+	// number, and a fixture at 8000 would agree with a projection that
+	// hardcoded 8000.
+	const sampleRate = 22050
+	instance, err := audio.NewDynamicSoundEffectInstance(sampleRate, audio.AudioChannelsMono)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewDynamicSoundEffectInstance: %w", err)
+		}
+		g.result.DynamicInstanceRefusals++
+		fmt.Fprintf(os.Stderr, "dynamic instance creation refused: %v\n", err)
+		return nil
+	}
+	g.result.DynamicInstanceCreations++
+
+	// It can NEVER loop, and both halves are proved on a live object: the
+	// getter always answers false and the setter refuses true.
+	looped, err := instance.IsLooped()
+	if err != nil {
+		return fmt.Errorf("IsLooped: %w", err)
+	}
+	if looped {
+		return errors.New("a fresh DynamicSoundEffectInstance reports itself looped")
+	}
+	if err := instance.SetIsLooped(true); err == nil {
+		return errors.New("SetIsLooped(true) was accepted; a streaming instance has no loop")
+	}
+	if err := instance.SetIsLooped(false); err != nil {
+		return fmt.Errorf("SetIsLooped(false): %w", err)
+	}
+	g.result.DynamicInstanceLoopChecks++
+
+	// The two conversions, which unlike SoundEffect's STATIC pair really do
+	// reach CNA. One second of 8kHz mono is 16000 bytes, and CNA must agree.
+	oneSecond := framework.TimeSpanFromTicks(10_000_000)
+	size, err := instance.GetSampleSizeInBytes(oneSecond)
+	if err != nil {
+		return fmt.Errorf("GetSampleSizeInBytes: %w", err)
+	}
+	// The exact number, because it is the one the instance's OWN sample rate
+	// produces. 22050 mono PCM16 truncates to 22049 samples and 44098 bytes.
+	if size != 44098 {
+		return fmt.Errorf("one second at %dHz mono = %d bytes, want the measured 44098", sampleRate, size)
+	}
+	back, err := instance.GetSampleDuration(size)
+	if err != nil {
+		return fmt.Errorf("GetSampleDuration: %w", err)
+	}
+	if back.Ticks() <= 0 {
+		return fmt.Errorf("GetSampleDuration answered %d ticks for %d bytes", back.Ticks(), size)
+	}
+	g.result.DynamicInstanceConversionChecks++
+
+	// A submission of silence, and the pending count that reports it. The count
+	// is a LIVE read, unlike every cached scalar on the base.
+	pcm := make([]byte, 1600)
+	before, err := instance.PendingBufferCount()
+	if err != nil {
+		return fmt.Errorf("PendingBufferCount: %w", err)
+	}
+	if before != 0 {
+		return fmt.Errorf("a fresh streaming instance has %d pending buffers", before)
+	}
+	if err := instance.SubmitBufferBySliceOfByte(pcm); err != nil {
+		return fmt.Errorf("SubmitBuffer: %w", err)
+	}
+	g.result.DynamicInstanceSubmissions++
+	after, err := instance.PendingBufferCount()
+	if err != nil {
+		return fmt.Errorf("PendingBufferCount after a submission: %w", err)
+	}
+	if after <= before {
+		return fmt.Errorf("a submitted buffer did not raise the pending count: %d then %d", before, after)
+	}
+	g.result.DynamicInstancePendingChecks++
+
+	// The projection's own refusals, before CNA sees anything.
+	if err := instance.SubmitBufferBySliceOfByteAndInt32AndInt32(pcm, 1, 4); err == nil {
+		return errors.New("a misaligned offset was accepted")
+	}
+	if err := instance.SubmitBufferBySliceOfByteAndInt32AndInt32(pcm, 0, 5); err == nil {
+		return errors.New("a misaligned count was accepted")
+	}
+
+	if err := instance.Play(); err != nil {
+		return fmt.Errorf("DynamicSoundEffectInstance.Play: %w", err)
+	}
+	if err := instance.StopByNone(); err != nil {
+		return fmt.Errorf("stopping the streaming instance: %w", err)
+	}
+	if err := instance.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the streaming instance: %w", err)
+	}
+	if !instance.IsDisposed() {
+		return errors.New("the streaming instance is not disposed after Dispose")
+	}
+	// A disposed instance names ITSELF, which is the identity site made live.
+	if _, err := instance.IsLooped(); err == nil {
+		return errors.New("IsLooped answered on a disposed streaming instance")
+	} else if !strings.Contains(err.Error(), "DynamicSoundEffectInstance") {
+		return fmt.Errorf("the disposal refusal said %q; the reference names the object's own type", err)
+	}
+	g.result.DynamicInstanceDisposalChecks++
+	return nil
+}
+
+// exerciseMicrophone is Foundation 88's enumeration slice.
+//
+// # It NEVER starts capture
+//
+// Microphone.Start and Microphone.GetData are projected because the pinned
+// contract declares them, and this scenario calls NEITHER. Starting capture
+// opens a real recording device on whatever machine the suite runs on, and that
+// is not something a test suite does. The counter MICROPHONE_CAPTURE_CALLS
+// exists to be ZERO and to say so out loud: a run that started reporting a
+// non-zero value would be a run that had begun recording.
+//
+// What IS exercised is everything else: the count, the default, each device's
+// name, buffer duration, headset flag, sample rate and state, the two sample
+// conversions, and every managed guard. Stop is called because stopping a
+// device that is not capturing is safe and is the reference's own no-op.
+func (g *stressGame) exerciseMicrophone() error {
+	all, err := audio.MicrophoneAll()
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("Microphone.All: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "microphone enumeration refused: %v\n", err)
+		return nil
+	}
+	g.result.MicrophoneEnumerations++
+	count := all.Count()
+	g.result.MicrophonesFound += int(count)
+
+	// The default, which may legitimately be absent: CNA reports availability
+	// separately from the index, and the reference answers null.
+	defaultMicrophone, err := audio.MicrophoneDefault()
+	if err != nil {
+		return fmt.Errorf("Microphone.Default: %w", err)
+	}
+	if count == 0 && defaultMicrophone != nil {
+		return errors.New("a machine with no microphones reported a default one")
+	}
+
+	for index := int32(0); index < count; index++ {
+		microphone, itemErr := all.Item(index)
+		if itemErr != nil {
+			return fmt.Errorf("Microphone.All[%d]: %w", index, itemErr)
+		}
+		if microphone == nil {
+			return fmt.Errorf("Microphone.All[%d] is nil", index)
+		}
+		// Every description read, none of which touches capture.
+		if _, err := microphone.SampleRate(); err != nil {
+			return fmt.Errorf("microphone %d SampleRate: %w", index, err)
+		}
+		if _, err := microphone.IsHeadset(); err != nil {
+			return fmt.Errorf("microphone %d IsHeadset: %w", index, err)
+		}
+		state, stateErr := microphone.State()
+		if stateErr != nil {
+			return fmt.Errorf("microphone %d State: %w", index, stateErr)
+		}
+		// Nothing has started it, so it must be stopped.
+		if state != audio.MicrophoneStateStopped {
+			return fmt.Errorf("microphone %d is %v before anything started it", index, state)
+		}
+		// The two conversions, which are instance members here.
+		size, sizeErr := microphone.GetSampleSizeInBytes(framework.TimeSpanFromTicks(10_000_000))
+		if sizeErr != nil {
+			return fmt.Errorf("microphone %d GetSampleSizeInBytes: %w", index, sizeErr)
+		}
+		if _, durationErr := microphone.GetSampleDuration(size); durationErr != nil {
+			return fmt.Errorf("microphone %d GetSampleDuration: %w", index, durationErr)
+		}
+		// Stop on a device that is not capturing is the reference's no-op.
+		if stopErr := microphone.Stop(); stopErr != nil && !isNativeRefusal(stopErr) {
+			return fmt.Errorf("microphone %d Stop: %w", index, stopErr)
+		}
+		g.result.MicrophoneDescriptionChecks++
+	}
+
+	// The managed guards, which need no device at all -- so they run whether or
+	// not this machine has a microphone.
+	probe := &audio.Microphone{}
+	if err := probe.SetBufferDuration(framework.TimeSpanFromTicks(90 * 10000)); err == nil {
+		return errors.New("a 90ms buffer duration was accepted; the floor is 100ms")
+	}
+	if err := probe.SetBufferDuration(framework.TimeSpanFromTicks(105 * 10000)); err == nil {
+		return errors.New("a 105ms buffer duration was accepted; it must be 10ms aligned")
+	}
+	if _, err := probe.GetSampleDuration(-1); err == nil {
+		return errors.New("a negative size was accepted")
+	}
+	if _, err := probe.GetDataBySliceOfByte(nil); err == nil {
+		return errors.New("GetData accepted an empty buffer")
+	}
+	g.result.MicrophoneGuardChecks++
 	return nil
 }
 

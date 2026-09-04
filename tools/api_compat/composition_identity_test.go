@@ -76,8 +76,8 @@ const gameComponentIdentity = "Microsoft.Xna.Framework.GameComponent"
 // to pass unmutated, or every mutation below would "fail" for the wrong reason.
 func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	result, measurements := identityMeasurement(t, "")
-	if len(measurements) != 8 {
-		t.Fatalf("%d identity measurements, want eight composed bases", len(measurements))
+	if len(measurements) != 9 {
+		t.Fatalf("%d identity measurements, want nine composed bases", len(measurements))
 	}
 	for base, measurement := range measurements {
 		if measurement.Verdict != "PASS" {
@@ -90,11 +90,11 @@ func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	// none -- it is the one middle link that forwards and resolves nothing.
 	// Every other middle link forwards its binding AND resolves an identity
 	// through the link it forwards to.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_SITES"]; got != 15 {
-		t.Fatalf("%d identity sites, want fifteen", got)
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_SITES"]; got != 16 {
+		t.Fatalf("%d identity sites, want sixteen", got)
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 16 {
-		t.Fatalf("%d identity uses, want sixteen: GameComponent's Dispose(bool) has two and the other fourteen sites have one each", got)
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 17 {
+		t.Fatalf("%d identity uses, want seventeen: GameComponent's Dispose(bool) has two and the other fifteen sites have one each", got)
 	}
 	// Texture, Texture2D, Foundation 73's TextureCube, Foundation 79's Effect
 	// and Foundation 84's two buffer bases are middle links.
@@ -106,9 +106,9 @@ func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect,
 	// Foundation 73's RenderTargetCube, Foundation 79's BasicEffect,
 	// Foundation 80's three, Foundation 81's EnvironmentMapEffect and
-	// SkinnedEffect, Foundation 83's OcclusionQuery and Foundation 84's two
-	// dynamic buffers.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 25 {
+	// SkinnedEffect, Foundation 83's OcclusionQuery, Foundation 84's two
+	// dynamic buffers and Foundation 88's DynamicSoundEffectInstance.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 26 {
 		t.Fatalf("%d identity bindings, want the twenty-three projected derived types", got)
 	}
 	for _, category := range []string{"BASE_MAPPING_MISMATCH"} {
@@ -201,7 +201,7 @@ func TestSelfIgnoringMutationIsNotCaughtStructurally(t *testing.T) {
 	if result.Summary["BASE_MAPPING_MISMATCH"] != 0 {
 		t.Fatalf("the structural gate rejected a body it cannot actually distinguish: %+v", measurements)
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 16 {
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 17 {
 		t.Fatalf("identity uses = %d", got)
 	}
 }

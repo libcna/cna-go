@@ -1600,6 +1600,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 85 | the first VERIFIED_PIXEL draw | `foundation-85-pixel-draw-evidence.md` |
 | 86 | RendererDetail, and the stale audio blocker | `foundation-86-renderer-detail-evidence.md` |
 | 87 | SoundEffect and SoundEffectInstance | `foundation-87-sound-effect-evidence.md` |
+| 88 | DynamicSoundEffectInstance, Microphone, and the end of the Audio namespace | `foundation-88-audio-namespace-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -2063,6 +2064,34 @@ artifacts open a real playback device, so the audio fixtures are all-zero PCM.
 Structure -- creation, lifetime, transport, state -- is exercised identically and
 nothing audible reaches the machine running the suite. What silence cannot prove
 is audibility, and the scenario says so rather than implying it.
+
+**A conversion CNA also offers is not automatically CNA's to answer** (88). The
+four audio sample conversions were bound and then reverted: one second at
+22050Hz mono is 44098 bytes to the reference, whose scale factor is float32, and
+44100 to CNA, which computes it exactly. Both answer the same question and
+differ by one frame. When the reference computes something itself, binding a
+route that computes it differently is a divergence dressed as a binding.
+
+**Choose the fixture value whose answer is DISTINCTIVE** (88). The same
+scenario at 8000Hz would have passed against the wrong projection, because
+8000/1000 is exact in binary32 and both sides answer 16000 there. A fixture is
+evidence only when a wrong implementation would give a different number, and
+picking the rate that separates them is part of writing the assertion.
+
+**A counter can exist to be ZERO** (88). MICROPHONE_CAPTURE_CALLS is asserted to
+be zero by the parent accounting, and the run FAILS on any other value: the
+suite projects Microphone.Start and GetData and calls neither, because starting
+capture opens a real recording device on whatever machine the suite runs on. An
+assertion that something did not happen is worth as much as one that it did,
+and it is the only way to keep a constraint from eroding.
+
+**A contract FIELD is projected as a field, and both consequences are recorded**
+(88). Microphone.Name is `kind: field`, so it is an exported Go field: the
+`initonly` half has no counterpart, and a field cannot carry a nil guard, so
+reading it through a nil pointer panics where every method answers. Hiding it
+behind a getter would have projected a property the contract does not declare,
+which is the larger divergence -- so both limitations are written down and
+pinned by a test.
 
 ## Next milestone selection rule
 

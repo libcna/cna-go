@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               70
-MISSING_TYPE                    70
+TOTAL_DIAGNOSTICS               68
+MISSING_TYPE                    68
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 187
+COMPLETE_TYPES                 189
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         70
+GLOBAL_ACTIONABLE_LOCAL         68
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                327
+BOUND_FUNCTIONS                342
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -222,10 +222,34 @@ this session: `FrameworkDispatcher.UpdateCalledAtLeastOnce` is `assembly`, not i
 the contract, and read from another namespace, so Go leaves no other way to
 share it without adding public surface.
 
+Foundation 88 closed **`DynamicSoundEffectInstance`** and **`Microphone`**, and
+with them the whole **`Microsoft.Xna.Framework.Audio`** namespace.
+
+A streaming instance can NEVER loop, and the reference says so twice: its
+`get_IsLooped` returns a constant false and its `set_IsLooped` accepts only the
+value the getter already reports. Both are overrides, which is what made
+`SoundEffectInstance` the first COMPOSED base outside the graphics namespace --
+and its identity site is the disposal refusal every member in the family
+reaches.
+
+The native scenario found a defect again, the third time this session. It
+asserted the byte count the REFERENCE produces and CNA answered a different one:
+one second at 22050Hz mono is **44098** bytes to XNA, whose scale factor is
+computed in float32, and **44100** to CNA, which computes the exact arithmetic.
+All four sample-conversion routes were bound and then reverted; both types now
+use the managed `AudioFormat` body the reference reads. The fixture's rate is
+load-bearing and the scenario says so -- 8000Hz would have agreed with the wrong
+projection, because its thousandth is exact in binary32.
+
+`Microphone.Start` and `Microphone.GetData` are projected because the contract
+declares them and the suite calls NEITHER. `MICROPHONE_CAPTURE_CALLS` exists to
+be zero and the parent accounting FAILS the run on any other value: a non-zero
+value is a run that began recording on someone's machine.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 70 types it does not project
+projects, it projects completely; what remains is 68 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why

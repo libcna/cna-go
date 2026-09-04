@@ -928,6 +928,44 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Detail: "get_GraphicsDevice is `ldarg.0; ldfld _parent; ret`, a stored reference with no disposal check, and it must answer with the SAME GraphicsDevice object the resource was created on. CNA's route returns a fresh callback-scoped handle, which is only valid inside a lifecycle callback and would not be the identity the reference returns",
 	},
 
+	// Foundation 88. The four sample-conversion routes, which were bound end to
+	// end and then REVERTED when the native scenario measured what they answer.
+	{
+		Route:  "cna_dynamic_sound_effect_instance_get_sample_size_in_bytes",
+		Member: "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance::GetSampleSizeInBytes(System.TimeSpan)",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "MEASURED: one second at 22050Hz mono is 44098 bytes to the reference and 44100 to CNA. XNA computes its scale factor in FLOAT32 -- `(float)22050 / 1000f` truncates one second to 22049 samples -- and CNA computes the exact arithmetic. Both are the same question and they differ by one frame, so the reference's answer is the contract and the conversion is the managed AudioFormat body its `format` field performs",
+	},
+	{
+		Route:  "cna_dynamic_sound_effect_instance_get_sample_duration_ticks",
+		Member: "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance::GetSampleDuration(System.Int32)",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the same divergence read the other way: the reference's DurationFromSize does its multiply and divide in float32 and CNA does not",
+	},
+	{
+		Route:  "cna_microphone_get_sample_size_in_bytes_at",
+		Member: "Microsoft.Xna.Framework.Audio.Microphone::GetSampleSizeInBytes(System.TimeSpan)",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "Microphone's constructor builds `AudioFormat.Create(GetSampleRate(), 1, 16)` and this member reads it, so the same float32 arithmetic applies and the same divergence with CNA's exact conversion would follow",
+	},
+	{
+		Route:  "cna_microphone_get_sample_duration_ticks_at",
+		Member: "Microsoft.Xna.Framework.Audio.Microphone::GetSampleDuration(System.Int32)",
+		Class:  "CONTRACT_DIVERGENCE",
+		Detail: "the microphone's duration conversion, on the same evidence as its sibling",
+	},
+	{
+		Route:  "cna_microphone_subscribe_buffer_ready_at",
+		Member: "Microsoft.Xna.Framework.Audio.Microphone::BufferReady()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "the event cannot fire without capture running, and this suite never starts capture: recording from a physical microphone is not something a test suite does on someone's machine. Binding a callback that can only be delivered by an operation the project declines to perform would be binding a route with no reachable behaviour",
+	},
+	{
+		Route:  "cna_dynamic_sound_effect_instance_subscribe_buffer_needed",
+		Member: "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance::BufferNeeded()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "binding it would hold a Go callback across the native boundary for the instance's lifetime, which is the shape every other CNA event in this project is deliberately not bound in. PendingBufferCount is a live read that answers the same question the event announces",
+	},
 	// Foundation 87. The audio family bound 22 routes and left these behind,
 	// every one for a reason read off the reference rather than assumed.
 	{

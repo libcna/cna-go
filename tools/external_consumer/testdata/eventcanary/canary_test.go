@@ -4698,3 +4698,67 @@ func TestSoundEffectFamilyIsReachableFromOutside(t *testing.T) {
 		t.Fatal("a nil SoundEffectInstance did not answer its zero values")
 	}
 }
+
+// TestAudioNamespaceIsCompleteFromOutside is Foundation 88's canary, and it
+// compiles the two types that finish Microsoft.Xna.Framework.Audio.
+func TestAudioNamespaceIsCompleteFromOutside(t *testing.T) {
+	var _ func(int32, audio.AudioChannels) (*audio.DynamicSoundEffectInstance, error) = audio.NewDynamicSoundEffectInstance
+
+	var dynamic *audio.DynamicSoundEffectInstance
+	// The two OVERRIDDEN accessors, whose shapes differ from the base's: the
+	// getter is fallible because the reference's disposal check throws.
+	var _ func() (bool, error) = dynamic.IsLooped
+	var _ func(bool) error = dynamic.SetIsLooped
+	var _ func() (int32, error) = dynamic.PendingBufferCount
+	var _ func([]uint8) error = dynamic.SubmitBufferBySliceOfByte
+	var _ func([]uint8, int32, int32) error = dynamic.SubmitBufferBySliceOfByteAndInt32AndInt32
+	var _ func(int32) (framework.TimeSpan, error) = dynamic.GetSampleDuration
+	var _ func(framework.TimeSpan) (int32, error) = dynamic.GetSampleSizeInBytes
+	var _ func() error = dynamic.Play
+	// It carries BOTH dispose members -- it declares the protected one and
+	// inherits the public one -- and NO Finalize, because the base's is
+	// `family` and not part of an inherited PUBLIC surface.
+	var _ func() error = dynamic.DisposeByNone
+	var _ func(bool) error = dynamic.DisposeByBoolean
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = dynamic.AddBufferNeededHandler
+
+	var _ func() (*framework.ReadOnlyCollection[*audio.Microphone], error) = audio.MicrophoneAll
+	var _ func() (*audio.Microphone, error) = audio.MicrophoneDefault
+
+	var microphone *audio.Microphone
+	var _ func() framework.TimeSpan = microphone.BufferDuration
+	var _ func(framework.TimeSpan) error = microphone.SetBufferDuration
+	var _ func() (int32, error) = microphone.SampleRate
+	var _ func() (bool, error) = microphone.IsHeadset
+	var _ func() (audio.MicrophoneState, error) = microphone.State
+	var _ func() error = microphone.Start
+	var _ func() error = microphone.Stop
+	var _ func([]uint8) (int32, error) = microphone.GetDataBySliceOfByte
+	var _ func([]uint8, int32, int32) (int32, error) = microphone.GetDataBySliceOfByteAndInt32AndInt32
+	var _ func(framework.TimeSpan) (int32, error) = microphone.GetSampleSizeInBytes
+	var _ func(int32) (framework.TimeSpan, error) = microphone.GetSampleDuration
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = microphone.AddBufferReadyHandler
+
+	// Name is a FIELD, which is what the pinned contract declares. A consumer
+	// reads and -- because Go has no readonly field -- can write it.
+	built := audio.Microphone{Name: "consumer"}
+	if built.Name != "consumer" {
+		t.Fatalf("Name = %q", built.Name)
+	}
+
+	// The guards a consumer meets without a device.
+	if _, err := audio.NewDynamicSoundEffectInstance(7999, audio.AudioChannelsMono); err == nil {
+		t.Fatal("a sample rate below the floor was accepted")
+	}
+	if _, err := audio.NewDynamicSoundEffectInstance(44100, audio.AudioChannels(3)); err == nil {
+		t.Fatal("three channels were accepted")
+	}
+	if err := built.SetBufferDuration(framework.TimeSpanFromTicks(90 * 10000)); err == nil {
+		t.Fatal("a 90ms buffer duration was accepted; the floor is 100ms")
+	}
+	// A dynamic instance can never loop, which a consumer sees without a device
+	// only through the setter's refusal -- the getter needs a live object.
+	if err := dynamic.SetIsLooped(true); err == nil {
+		t.Fatal("SetIsLooped(true) was accepted on a DynamicSoundEffectInstance")
+	}
+}

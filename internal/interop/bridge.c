@@ -908,7 +908,6 @@ CnaGoResult cna_go_graphics_device_set_rasterizer_state(
     return api.cna_graphics_device_set_rasterizer_state(device, &state);
 }
 
-
 CnaGoResult cna_go_render_target2d_create(
     CnaGoHandle device,
     uint32_t width,
@@ -1884,7 +1883,6 @@ CnaGoResult cna_go_effect_annotation_get_value_matrix(CnaGoHandle annotation, fl
     return result;
 }
 
-
 /* ---------------------------------------------------------------------------
  * Foundation 79 -- the stock-effect routes.
  *
@@ -2381,7 +2379,6 @@ CnaGoResult cna_go_effect_parameter_set_value(CnaGoHandle parameter, uint32_t va
 CnaGoResult cna_go_effect_parameter_set_values(CnaGoHandle parameter, uint32_t value_type, const void* values, uint64_t count) {
     return api.cna_effect_parameter_set_values(parameter, value_type, values, count);
 }
-
 
 CnaGoResult cna_go_effect_parameter_set_value_texture(CnaGoHandle parameter, uint32_t texture_type, CnaGoHandle texture) {
     return api.cna_effect_parameter_set_value_texture(parameter, texture_type, texture);
@@ -3387,4 +3384,87 @@ CnaGoResult cna_go_sound_effect_instance_apply_3d(
         free(built);
     }
     return result;
+}
+
+/* Foundation 88 -- DynamicSoundEffectInstance. */
+
+CnaGoResult cna_go_dynamic_sound_effect_instance_create(
+    CnaGoHandle game, int32_t sample_rate, uint32_t channels, CnaGoHandle* out_instance) {
+    return api.cna_dynamic_sound_effect_instance_create(game, sample_rate,
+                                                        (CNA_AudioChannels)channels, out_instance);
+}
+
+CnaGoResult cna_go_dynamic_sound_effect_instance_get_pending_buffer_count(
+    CnaGoHandle instance, int32_t* out_count) {
+    return api.cna_dynamic_sound_effect_instance_get_pending_buffer_count(instance, out_count);
+}
+
+CnaGoResult cna_go_dynamic_sound_effect_instance_submit_buffer(
+    CnaGoHandle instance, const uint8_t* bytes, uint64_t byte_count, int32_t offset, int32_t count) {
+    return api.cna_dynamic_sound_effect_instance_submit_buffer(instance, bytes, byte_count, offset, count);
+}
+
+
+/* Foundation 88 -- Microphone. */
+
+CnaGoResult cna_go_microphone_get_count(CnaGoHandle game, uint64_t* out_count) {
+    return api.cna_microphone_get_count(game, out_count);
+}
+
+CnaGoResult cna_go_microphone_get_default_index(
+    CnaGoHandle game, uint64_t* out_index, uint8_t* out_available) {
+    CNA_Bool available = 0;
+    CnaGoResult result = api.cna_microphone_get_default_index_ext(game, out_index, &available);
+    *out_available = (uint8_t)(available ? 1 : 0);
+    return result;
+}
+
+CnaGoResult cna_go_microphone_get_name_size_at(CnaGoHandle game, uint64_t index, uint64_t* out_bytes) {
+    return api.cna_microphone_get_name_size_at(game, index, out_bytes);
+}
+
+CnaGoResult cna_go_microphone_copy_name_at(
+    CnaGoHandle game, uint64_t index, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_microphone_copy_name_at(game, index, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_microphone_get_buffer_duration_ticks_at(
+    CnaGoHandle game, uint64_t index, int64_t* out_ticks) {
+    return api.cna_microphone_get_buffer_duration_ticks_at(game, index, out_ticks);
+}
+
+CnaGoResult cna_go_microphone_set_buffer_duration_ticks_at(
+    CnaGoHandle game, uint64_t index, int64_t ticks) {
+    return api.cna_microphone_set_buffer_duration_ticks_at(game, index, ticks);
+}
+
+CnaGoResult cna_go_microphone_get_is_headset_at(CnaGoHandle game, uint64_t index, uint8_t* out_value) {
+    CNA_Bool value = 0;
+    CnaGoResult result = api.cna_microphone_get_is_headset_at(game, index, &value);
+    *out_value = (uint8_t)(value ? 1 : 0);
+    return result;
+}
+
+CnaGoResult cna_go_microphone_get_sample_rate_at(CnaGoHandle game, uint64_t index, int32_t* out_rate) {
+    return api.cna_microphone_get_sample_rate_at(game, index, out_rate);
+}
+
+CnaGoResult cna_go_microphone_get_state_at(CnaGoHandle game, uint64_t index, uint32_t* out_state) {
+    CNA_MicrophoneState state = 0;
+    CnaGoResult result = api.cna_microphone_get_state_at(game, index, &state);
+    *out_state = (uint32_t)state;
+    return result;
+}
+
+CnaGoResult cna_go_microphone_start_at(CnaGoHandle game, uint64_t index) {
+    return api.cna_microphone_start_at(game, index);
+}
+
+CnaGoResult cna_go_microphone_stop_at(CnaGoHandle game, uint64_t index) {
+    return api.cna_microphone_stop_at(game, index);
+}
+
+CnaGoResult cna_go_microphone_get_data_at(
+    CnaGoHandle game, uint64_t index, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_microphone_get_data_at(game, index, destination, capacity, out_bytes);
 }

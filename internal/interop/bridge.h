@@ -864,6 +864,33 @@ CnaGoResult cna_go_sound_effect_instance_set_is_looped(CnaGoHandle instance, uin
 CnaGoResult cna_go_sound_effect_instance_destroy(CnaGoHandle instance);
 /* Apply3D. The listeners cross as a flat array of 12 floats each -- forward,
    position, up, velocity -- and the emitter as 13, its Doppler scale first. */
+/* Foundation 88 -- Microphone. Index-addressed, so every wrapper takes the
+   game handle and the position rather than an owned resource. */
+CnaGoResult cna_go_microphone_get_count(CnaGoHandle game, uint64_t* out_count);
+CnaGoResult cna_go_microphone_get_default_index(CnaGoHandle game, uint64_t* out_index, uint8_t* out_available);
+CnaGoResult cna_go_microphone_get_name_size_at(CnaGoHandle game, uint64_t index, uint64_t* out_bytes);
+CnaGoResult cna_go_microphone_copy_name_at(
+    CnaGoHandle game, uint64_t index, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_microphone_get_buffer_duration_ticks_at(
+    CnaGoHandle game, uint64_t index, int64_t* out_ticks);
+CnaGoResult cna_go_microphone_set_buffer_duration_ticks_at(
+    CnaGoHandle game, uint64_t index, int64_t ticks);
+CnaGoResult cna_go_microphone_get_is_headset_at(CnaGoHandle game, uint64_t index, uint8_t* out_value);
+CnaGoResult cna_go_microphone_get_sample_rate_at(CnaGoHandle game, uint64_t index, int32_t* out_rate);
+CnaGoResult cna_go_microphone_get_state_at(CnaGoHandle game, uint64_t index, uint32_t* out_state);
+CnaGoResult cna_go_microphone_start_at(CnaGoHandle game, uint64_t index);
+CnaGoResult cna_go_microphone_stop_at(CnaGoHandle game, uint64_t index);
+CnaGoResult cna_go_microphone_get_data_at(
+    CnaGoHandle game, uint64_t index, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes);
+
+/* Foundation 88 -- DynamicSoundEffectInstance. */
+CnaGoResult cna_go_dynamic_sound_effect_instance_create(
+    CnaGoHandle game, int32_t sample_rate, uint32_t channels, CnaGoHandle* out_instance);
+CnaGoResult cna_go_dynamic_sound_effect_instance_get_pending_buffer_count(
+    CnaGoHandle instance, int32_t* out_count);
+CnaGoResult cna_go_dynamic_sound_effect_instance_submit_buffer(
+    CnaGoHandle instance, const uint8_t* bytes, uint64_t byte_count, int32_t offset, int32_t count);
+
 CnaGoResult cna_go_sound_effect_instance_apply_3d(
     CnaGoHandle instance, const float* listeners, uint64_t listener_count, const float* emitter);
 

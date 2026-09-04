@@ -124,15 +124,6 @@ var frontierFamilies = []frontierFamily{
 		},
 	},
 	{
-		Name:           "Audio",
-		Classification: frontierActionableLocal,
-		Note:           "Foundation 87 closed SoundEffect and SoundEffectInstance over 21 bound routes. Foundation 86 closed RendererDetail, which needed no CNA at all -- two strings and five members, and the first type in the project whose authority is the Xact assembly. Foundation 86 also MEASURED what the other four are waiting on rather than assuming it: cna_audio_get_capabilities reports is_playback_available=TRUE on both qualified artifacts, so the old \"nothing behind it would play\" note was stale. CNA carries ~63/18/10 routes for SoundEffect, SoundEffectInstance and the dynamic instance. Microphone's physical capture is a separate question from its enumeration and state surface, and the capture members are projected without ever being exercised against a real device",
-		Types: []string{
-			"Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
-			"Microsoft.Xna.Framework.Audio.Microphone",
-		},
-	},
-	{
 		Name:           "XACT",
 		Classification: frontierActionableLocal,
 		Note:           "~32/12/10/17 CNA routes; needs project-authored legal bank fixtures, and structural state is not audibility",
