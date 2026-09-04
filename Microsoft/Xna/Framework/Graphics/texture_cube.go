@@ -123,6 +123,18 @@ func (t *TextureCube) bindDerived(derived graphicsResourceObject) {
 	t.texture.bindDerived(derived)
 }
 
+// noteContentRestored is TextureCube::CopyData's tail on the SETTING path, the
+// same identity site Texture2D.noteContentRestored is: a RenderTargetCube is an
+// IDynamicGraphicsResource and a plain TextureCube is not.
+func (t *TextureCube) noteContentRestored() {
+	if t == nil || t.texture == nil {
+		return
+	}
+	if dynamic, isDynamic := t.texture.resource.self().(dynamicGraphicsResource); isDynamic {
+		dynamic.setContentLost(false)
+	}
+}
+
 // textureBase answers with the composed Texture, which is what makes a
 // TextureCube usable at a Texture-typed parameter position.
 func (t *TextureCube) textureBase() *Texture {

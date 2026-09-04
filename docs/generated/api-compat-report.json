@@ -18,17 +18,17 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 182,
+    "COMPLETE_TYPES": 184,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3636,
+    "EXPECTED_GO_MEMBERS": 3662,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 11,
+    "FRONTIER_FAMILIES": 10,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 75,
+    "GLOBAL_ACTIONABLE_LOCAL": 73,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 75,
-    "MISSING_TYPES": 75,
+    "MISSING_TYPE": 73,
+    "MISSING_TYPES": 73,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3000,
-    "TARGET_TYPES": 182,
-    "TOTAL_DIAGNOSTICS": 75,
+    "TARGET_MEMBERS": 3040,
+    "TARGET_TYPES": 184,
+    "TOTAL_DIAGNOSTICS": 73,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -84,24 +84,24 @@
     "UNMEASURED_STRUCTURAL_CATEGORY": 0,
     "XNA_BASE_DERIVED_TYPES": 41,
     "XNA_BASE_RELATIONSHIPS": 12,
-    "XNA_BASE_SUBSTITUTABILITY_LATENT": 5,
-    "XNA_BASE_SUBSTITUTABILITY_LIVE": 4,
+    "XNA_BASE_SUBSTITUTABILITY_LATENT": 3,
+    "XNA_BASE_SUBSTITUTABILITY_LIVE": 6,
     "XNA_BASE_SUBSTITUTABILITY_NONE": 3,
-    "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 4,
+    "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 6,
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
-    "XNA_COMPOSED_BASE_RELATIONSHIPS": 6,
-    "XNA_COMPOSED_DERIVED_TYPES": 24,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 23,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 23,
-    "XNA_COMPOSED_IDENTITY_FORWARDS": 4,
-    "XNA_COMPOSED_IDENTITY_SITES": 9,
-    "XNA_COMPOSED_IDENTITY_USES": 10,
-    "XNA_DEFERRED_BASE_BLOCKERS": 12,
-    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 286,
-    "XNA_INHERITED_MEMBER_PROJECTIONS": 286,
-    "XNA_INHERITED_PUBLIC_MEMBERS": 204,
+    "XNA_COMPOSED_BASE_RELATIONSHIPS": 8,
+    "XNA_COMPOSED_DERIVED_TYPES": 26,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 25,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 25,
+    "XNA_COMPOSED_IDENTITY_FORWARDS": 6,
+    "XNA_COMPOSED_IDENTITY_SITES": 15,
+    "XNA_COMPOSED_IDENTITY_USES": 16,
+    "XNA_DEFERRED_BASE_BLOCKERS": 8,
+    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 312,
+    "XNA_INHERITED_MEMBER_PROJECTIONS": 312,
+    "XNA_INHERITED_PUBLIC_MEMBERS": 224,
     "XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN": 8,
-    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 100
+    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 82
   },
   "diagnostics": [
     {
@@ -306,18 +306,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/GamerServices:GamerServicesComponent",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DynamicIndexBuffer",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:DynamicVertexBuffer",
       "message": "mapped Go type is absent"
     },
     {
@@ -607,6 +595,8 @@
     "Microsoft.Xna.Framework.Graphics.DisplayMode",
     "Microsoft.Xna.Framework.Graphics.DisplayModeCollection",
     "Microsoft.Xna.Framework.Graphics.DualTextureEffect",
+    "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
+    "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
     "Microsoft.Xna.Framework.Graphics.Effect",
     "Microsoft.Xna.Framework.Graphics.EffectAnnotation",
     "Microsoft.Xna.Framework.Graphics.EffectAnnotationCollection",
@@ -775,8 +765,6 @@
     "Microsoft.Xna.Framework.Design.Vector3Converter",
     "Microsoft.Xna.Framework.Design.Vector4Converter",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
-    "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
-    "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
     "Microsoft.Xna.Framework.Graphics.Model",
     "Microsoft.Xna.Framework.Graphics.ModelBone",
     "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
@@ -6888,17 +6876,6 @@
   ],
   "frontier": [
     {
-      "family": "Graphics leftovers",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "Foundation 83 closed OcclusionQuery. The two dynamic buffers have NO dedicated CNA routes and the Foundation 83 probe CONFIRMED the standing hypothesis against the canonical headers: CNA_VertexBufferCreateInfo carries a `dynamic` flag documented as \"True to construct DynamicVertexBuffer\", CNA_VertexBufferInfo carries `dynamic` and `is_content_lost`, both buffers have subscribe/unsubscribe_content_lost routes, and the transfer descriptors carry SetDataOptions whose non-None values \"require a supported dynamic-buffer overload\". What remains is composing the VertexBuffer and IndexBuffer bases, which are still DEFERRED",
-      "types": [
-        "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
-        "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer"
-      ],
-      "remaining": 2,
-      "verdict": "PASS"
-    },
-    {
       "family": "Model family",
       "classification": "ACTIONABLE_LOCAL",
       "note": "the largest single family at twelve types and ~233 CNA routes; it depends on the vertex structs and the stock effects, and on ReadOnlyCollection\u003cT\u003e becoming usable as a BASE rather than only as a signature adapter",
@@ -9592,7 +9569,7 @@
       "clrMembers": 3,
       "projectedMembers": 0,
       "declaringTypes": 4,
-      "projectedTypes": 2,
+      "projectedTypes": 4,
       "rationale": "assembly-visible content-loss plumbing declared by four public graphics types; the public ContentLost event those types expose is their own declared member, not this interface's",
       "verdict": "PASS"
     },
@@ -10128,21 +10105,11 @@
     },
     {
       "clrBase": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
-      "status": "DEFERRED",
+      "status": "COMPOSED",
       "derived": [
         "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer"
       ],
       "inheritedPublicMembers": 9,
-      "blockers": [
-        {
-          "class": "ARCHITECTURE",
-          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
-        },
-        {
-          "class": "TRANSITIVE",
-          "detail": "IndexBuffer extends GraphicsResource and is itself a missing type"
-        }
-      ],
       "verdict": "PASS"
     },
     {
@@ -10176,21 +10143,11 @@
     },
     {
       "clrBase": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
-      "status": "DEFERRED",
+      "status": "COMPOSED",
       "derived": [
         "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer"
       ],
       "inheritedPublicMembers": 9,
-      "blockers": [
-        {
-          "class": "ARCHITECTURE",
-          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
-        },
-        {
-          "class": "TRANSITIVE",
-          "detail": "VertexBuffer extends GraphicsResource and is itself a missing type"
-        }
-      ],
       "verdict": "PASS"
     }
   ],
@@ -10649,10 +10606,10 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
       "derivedTypes": 1,
-      "projectedDerivedTypes": 0,
+      "projectedDerivedTypes": 1,
       "positions": 2,
       "positionsOnProjectedCarriers": 1,
-      "requirement": "LATENT",
+      "requirement": "LIVE",
       "rows": [
         {
           "base": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
@@ -10885,10 +10842,10 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
       "derivedTypes": 1,
-      "projectedDerivedTypes": 0,
+      "projectedDerivedTypes": 1,
       "positions": 8,
       "positionsOnProjectedCarriers": 7,
-      "requirement": "LATENT",
+      "requirement": "LIVE",
       "rows": [
         {
           "base": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
@@ -11132,6 +11089,21 @@
       "verdict": "PASS"
     },
     {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
+      "goBase": "IndexBuffer",
+      "rows": [
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
+          "goDerived": "DynamicIndexBuffer",
+          "baseField": "buffer",
+          "inheritedCLRMembers": 10,
+          "inheritedProjections": 13,
+          "composition": "PRIVATE_NAMED"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
       "clrBase": "Microsoft.Xna.Framework.Graphics.Texture",
       "goBase": "Texture",
       "rows": [
@@ -11185,6 +11157,21 @@
           "derived": "Microsoft.Xna.Framework.Graphics.RenderTargetCube",
           "goDerived": "RenderTargetCube",
           "baseField": "cube",
+          "inheritedCLRMembers": 10,
+          "inheritedProjections": 13,
+          "composition": "PRIVATE_NAMED"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+      "goBase": "VertexBuffer",
+      "rows": [
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+          "goDerived": "DynamicVertexBuffer",
+          "baseField": "buffer",
           "inheritedCLRMembers": 10,
           "inheritedProjections": 13,
           "composition": "PRIVATE_NAMED"
@@ -11387,6 +11374,34 @@
       "verdict": "PASS"
     },
     {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.IndexBuffer",
+      "goBase": "IndexBuffer",
+      "forwardsTo": "GraphicsResource",
+      "sites": [
+        {
+          "goMember": "checkDisposed",
+          "reference": "CopyData: ldarg.0; ldfld pComPtr; ldarg.0; call Helpers::CheckDisposed(object, native int) -- VertexBuffer's site with the index buffer's receiver",
+          "uses": 1,
+          "reaches": 1
+        },
+        {
+          "goMember": "noteContentRestored",
+          "reference": "CopyData: ldarg.s isSetting; brfalse; ldarg.0; isinst IDynamicGraphicsResource; ... callvirt SetContentLost(false)",
+          "uses": 1,
+          "reaches": 1
+        }
+      ],
+      "bindings": [
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
+          "goDerived": "DynamicIndexBuffer",
+          "constructor": "NewDynamicIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage",
+          "binds": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
       "clrBase": "Microsoft.Xna.Framework.Graphics.Texture",
       "goBase": "Texture",
       "forwardsTo": "GraphicsResource",
@@ -11416,6 +11431,14 @@
       "clrBase": "Microsoft.Xna.Framework.Graphics.Texture2D",
       "goBase": "Texture2D",
       "forwardsTo": "Texture",
+      "sites": [
+        {
+          "goMember": "noteContentRestored",
+          "reference": "CopyData: ldarg.s isSetting; brfalse; ldarg.0; isinst IDynamicGraphicsResource; ... callvirt SetContentLost(false) -- the isinst is on the object",
+          "uses": 1,
+          "reaches": 1
+        }
+      ],
       "bindings": [
         {
           "derived": "Microsoft.Xna.Framework.Graphics.RenderTarget2D",
@@ -11430,11 +11453,47 @@
       "clrBase": "Microsoft.Xna.Framework.Graphics.TextureCube",
       "goBase": "TextureCube",
       "forwardsTo": "Texture",
+      "sites": [
+        {
+          "goMember": "noteContentRestored",
+          "reference": "CopyData: ldarg.s isSetting; brfalse; ldarg.0; isinst IDynamicGraphicsResource; ... callvirt SetContentLost(false)",
+          "uses": 1,
+          "reaches": 1
+        }
+      ],
       "bindings": [
         {
           "derived": "Microsoft.Xna.Framework.Graphics.RenderTargetCube",
           "goDerived": "RenderTargetCube",
           "constructor": "NewRenderTargetCubeByGraphicsDeviceAndInt32AndBooleanAndSurfaceFormatAndDepthFormatAndInt32AndRenderTargetUsage",
+          "binds": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Graphics.VertexBuffer",
+      "goBase": "VertexBuffer",
+      "forwardsTo": "GraphicsResource",
+      "sites": [
+        {
+          "goMember": "checkDisposed",
+          "reference": "CopyData: ldarg.0; ldfld pComPtr; ldarg.0; call Helpers::CheckDisposed(object, native int) -- the object names the exception's type, and every SetData and GetData overload reaches it",
+          "uses": 1,
+          "reaches": 1
+        },
+        {
+          "goMember": "noteContentRestored",
+          "reference": "CopyData: ldarg.s isSetting; brfalse; ldarg.0; isinst IDynamicGraphicsResource; ... callvirt SetContentLost(false) -- the isinst is on the object, so only the resolved DynamicVertexBuffer answers yes",
+          "uses": 1,
+          "reaches": 1
+        }
+      ],
+      "bindings": [
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
+          "goDerived": "DynamicVertexBuffer",
+          "constructor": "NewDynamicVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage",
           "binds": true
         }
       ],

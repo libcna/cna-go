@@ -2763,6 +2763,18 @@ func nativeOcclusionQueryPixelCount(query uint64) (int32, error) {
 	return int32(value), resultError("cna_occlusion_query_get_pixel_count", code)
 }
 
+// Foundation 84 -- the dynamic buffers' options-carrying upload.
+//
+// ONE route covers both DynamicVertexBuffer.SetData overloads, because the
+// reference's four-argument one forwards to the six-argument one with an offset
+// of zero. The no-offset CNA route is recorded as SUBSUMED for the same reason.
+func nativeVertexBufferSetDataRawAtWithOptions(buffer, offset uint64, data unsafe.Pointer, byteCount, vertexCount uint64, stride, options uint32) error {
+	return resultError("cna_vertex_buffer_set_data_raw_at_with_options",
+		uint32(C.cna_go_vertex_buffer_set_data_raw_at_with_options(C.CnaGoHandle(buffer),
+			C.uint64_t(offset), data, C.uint64_t(byteCount), C.uint64_t(vertexCount),
+			C.uint32_t(stride), C.uint32_t(options))))
+}
+
 func nativeEffectLightsDirectionalLight(effect uint64, index uint32) (uint64, error) {
 	return nativeEffectHandleOut("cna_effect_lights_get_directional_light", func(out *C.CnaGoHandle) C.CnaGoResult {
 		return C.cna_go_effect_lights_get_directional_light(C.CnaGoHandle(effect), C.uint32_t(index), out)

@@ -2177,6 +2177,19 @@ var substitutableBases = map[string]string{
 	// back a value a caller uses every TextureCube member on, and no derived
 	// identity is at stake there.
 	"Microsoft.Xna.Framework.Graphics.TextureCube": "TextureCubeReference",
+	// Foundation 84. Both buffer bases had their positions from the day they
+	// were projected -- GraphicsDevice::SetVertexBuffer's two overloads,
+	// VertexBufferBinding's three constructors and its op_Implicit,
+	// GraphicsDevice::set_Indices -- and were measured LATENT for eighteen
+	// foundations because no projected type derived from either. The dynamic
+	// buffers are the first, so both requirements went LIVE together.
+	//
+	// Neither widens at returns. get_Indices and get_VertexBuffer hand back a
+	// value whose buffer members a consumer reads, not a derived identity the
+	// member exists to produce, so the default holds and the lost C# downcast
+	// is recorded on the interfaces rather than worked around.
+	"Microsoft.Xna.Framework.Graphics.VertexBuffer": "VertexBufferReference",
+	"Microsoft.Xna.Framework.Graphics.IndexBuffer":  "IndexBufferReference",
 }
 
 // returnWideningBases are the substitutable bases whose RETURN positions widen
@@ -4216,14 +4229,17 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	"Microsoft.Xna.Framework.Graphics.Effect": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
 		{Class: "SUBSYSTEM", Detail: "the inheritance is projected and ONE of the six derived types is complete, BasicEffect. The five that remain -- AlphaTestEffect, DualTextureEffect, EnvironmentMapEffect, SkinnedEffect and EffectMaterial -- are the same shape and are blocked by nothing but the work"},
 	}},
-	"Microsoft.Xna.Framework.Graphics.IndexBuffer": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "TRANSITIVE", Detail: "IndexBuffer extends GraphicsResource and is itself a missing type"},
-	}},
-	"Microsoft.Xna.Framework.Graphics.VertexBuffer": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "TRANSITIVE", Detail: "VertexBuffer extends GraphicsResource and is itself a missing type"},
-	}},
+	// Foundation 84 composed both buffer bases, and their blocker lists are
+	// empty -- the third and fourth entries in the registry with nothing left
+	// to record. Each has exactly one derived type and both are complete.
+	//
+	// The TRANSITIVE blocker they used to carry stopped being true at
+	// Foundations 65 and 66, which projected the two buffers themselves; what
+	// kept the relationship deferred after that was only that nothing derived
+	// from them yet. The dynamic buffers are that something, and they are also
+	// what turned both bases' substitutability from LATENT to LIVE.
+	"Microsoft.Xna.Framework.Graphics.IndexBuffer":  {Status: "COMPOSED"},
+	"Microsoft.Xna.Framework.Graphics.VertexBuffer": {Status: "COMPOSED"},
 
 	"Microsoft.Xna.Framework.Audio.SoundEffectInstance": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,

@@ -89,6 +89,18 @@ const (
 func NewIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage(
 	graphicsDevice *GraphicsDevice, indexElementSize IndexElementSize, indexCount int32, usage BufferUsage,
 ) (*IndexBuffer, error) {
+	return newIndexBufferWithDynamic(graphicsDevice, indexElementSize, indexCount, usage, false)
+}
+
+// newIndexBufferWithDynamic is the body this type's constructor and
+// DynamicIndexBuffer's share, for the reason the vertex side has one: the
+// reference's two constructors differ by a single D3DUSAGE_DYNAMIC bit into one
+// private CreateBuffer, and CNA's create-info differs by a single `dynamic`
+// field. One body with one flag cannot drift; two bodies could.
+func newIndexBufferWithDynamic(
+	graphicsDevice *GraphicsDevice, indexElementSize IndexElementSize, indexCount int32, usage BufferUsage,
+	dynamic bool,
+) (*IndexBuffer, error) {
 	if indexCount <= 0 {
 		return nil, fmt.Errorf("%w: indexCount: %s", errArgumentOutOfRange, resourcesMustBeGreaterThanZeroSize)
 	}
@@ -105,7 +117,7 @@ func NewIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage(
 	if err != nil {
 		return nil, err
 	}
-	resource, err := device.CreateIndexBuffer(indexCount, nativeIndexElementSize(indexElementSize), nativeBufferUsage(usage), false)
+	resource, err := device.CreateIndexBuffer(indexCount, nativeIndexElementSize(indexElementSize), nativeBufferUsage(usage), dynamic)
 	if err != nil {
 		return nil, err
 	}
@@ -253,6 +265,25 @@ func (b *IndexBuffer) BufferUsage() BufferUsage {
 // clrTypeName is System.Object::ToString's answer for an IndexBuffer.
 func (b *IndexBuffer) clrTypeName() string {
 	return "Microsoft.Xna.Framework.Graphics.IndexBuffer"
+}
+
+// checkDisposed is Helpers::CheckDisposed(object, native int), the same
+// identity site VertexBuffer.checkDisposed is and for the same reason: the
+// `ldarg.0` the reference pushes as an OBJECT decides the exception's type
+// name, so a disposed DynamicIndexBuffer names itself.
+func (b *IndexBuffer) checkDisposed() error {
+	if !b.IsDisposed() {
+		return nil
+	}
+	return fmt.Errorf("%w: %s", interop.ErrDisposed, b.resource.self().clrTypeName())
+}
+
+// noteContentRestored is CopyData's tail on the SETTING path, the same
+// identity site VertexBuffer.noteContentRestored is.
+func (b *IndexBuffer) noteContentRestored() {
+	if dynamic, isDynamic := b.resource.self().(dynamicGraphicsResource); isDynamic {
+		dynamic.setContentLost(false)
+	}
 }
 
 // bindDerived forwards the CLR `this` to the composed base.

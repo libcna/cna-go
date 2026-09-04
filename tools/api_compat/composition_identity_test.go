@@ -76,38 +76,39 @@ const gameComponentIdentity = "Microsoft.Xna.Framework.GameComponent"
 // to pass unmutated, or every mutation below would "fail" for the wrong reason.
 func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	result, measurements := identityMeasurement(t, "")
-	if len(measurements) != 6 {
-		t.Fatalf("%d identity measurements, want six composed bases", len(measurements))
+	if len(measurements) != 8 {
+		t.Fatalf("%d identity measurements, want eight composed bases", len(measurements))
 	}
 	for base, measurement := range measurements {
 		if measurement.Verdict != "PASS" {
 			t.Fatalf("%s identity measurement = %+v", base, measurement)
 		}
 	}
-	// Five GameComponent sites, two GraphicsResource ones and Foundation 79's
-	// two on Effect. Texture, Texture2D and TextureCube have none: they are
-	// middle links that forward and hold nothing, and their entries are checked
-	// by the forwarding claim instead. Effect is a middle link too, and the
-	// first with sites of its own -- it forwards its binding AND reports a
-	// runtime type in two members.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_SITES"]; got != 9 {
-		t.Fatalf("%d identity sites, want nine", got)
+	// Five GameComponent sites, two GraphicsResource ones, Foundation 79's two
+	// on Effect and Foundation 84's six: two each on VertexBuffer and
+	// IndexBuffer, and one each on Texture2D and TextureCube. Texture alone has
+	// none -- it is the one middle link that forwards and resolves nothing.
+	// Every other middle link forwards its binding AND resolves an identity
+	// through the link it forwards to.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_SITES"]; got != 15 {
+		t.Fatalf("%d identity sites, want fifteen", got)
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 10 {
-		t.Fatalf("%d identity uses, want ten: GameComponent's Dispose(bool) has two and the other eight sites have one each", got)
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 16 {
+		t.Fatalf("%d identity uses, want sixteen: GameComponent's Dispose(bool) has two and the other fourteen sites have one each", got)
 	}
-	// Texture, Texture2D, Foundation 73's TextureCube and Foundation 79's
-	// Effect are middle links.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]; got != 4 {
-		t.Fatalf("%d forwarding links, want the four middle links", got)
+	// Texture, Texture2D, Foundation 73's TextureCube, Foundation 79's Effect
+	// and Foundation 84's two buffer bases are middle links.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_FORWARDS"]; got != 6 {
+		t.Fatalf("%d forwarding links, want the six middle links", got)
 	}
 	// DrawableGameComponent, Texture, SpriteBatch, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
 	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect,
 	// Foundation 73's RenderTargetCube, Foundation 79's BasicEffect,
 	// Foundation 80's three, Foundation 81's EnvironmentMapEffect and
-	// SkinnedEffect, and Foundation 83's OcclusionQuery.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 23 {
+	// SkinnedEffect, Foundation 83's OcclusionQuery and Foundation 84's two
+	// dynamic buffers.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 25 {
 		t.Fatalf("%d identity bindings, want the twenty-three projected derived types", got)
 	}
 	for _, category := range []string{"BASE_MAPPING_MISMATCH"} {
@@ -200,7 +201,7 @@ func TestSelfIgnoringMutationIsNotCaughtStructurally(t *testing.T) {
 	if result.Summary["BASE_MAPPING_MISMATCH"] != 0 {
 		t.Fatalf("the structural gate rejected a body it cannot actually distinguish: %+v", measurements)
 	}
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 10 {
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_USES"]; got != 16 {
 		t.Fatalf("identity uses = %d", got)
 	}
 }

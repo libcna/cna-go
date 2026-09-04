@@ -32,6 +32,27 @@ func (t *Texture2D) bindDerived(derived graphicsResourceObject) {
 	t.texture.bindDerived(derived)
 }
 
+// noteContentRestored is Texture2D::CopyData's tail on the SETTING path:
+//
+//	ldarg.s isSetting; brfalse ret
+//	ldarg.0; isinst IDynamicGraphicsResource
+//	         ... callvirt SetContentLost(false)
+//	ldarg.0; ldc.i4.1; stfld Texture::renderTargetContentsDirty
+//
+// The `isinst` is on the OBJECT, so it is an identity site: a bare receiver is
+// the Texture2D HALF of a RenderTarget2D and would answer "not dynamic" for
+// every texture in the profile. The second store, renderTargetContentsDirty, is
+// a private field with no public reader and no CNA counterpart, and is not
+// projected.
+func (t *Texture2D) noteContentRestored() {
+	if t == nil || t.texture == nil {
+		return
+	}
+	if dynamic, isDynamic := t.texture.resource.self().(dynamicGraphicsResource); isDynamic {
+		dynamic.setContentLost(false)
+	}
+}
+
 // nativeResource is the one owned CNA handle, reached through the chain. It is
 // unexported and never escapes the package.
 func (t *Texture2D) nativeResource() *interop.Resource {

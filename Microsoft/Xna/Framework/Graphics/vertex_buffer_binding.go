@@ -54,18 +54,22 @@ type VertexBufferBinding struct {
 // Neither ArgumentOutOfRangeException carries a message. The reference uses the
 // one-argument constructor at both sites, so the parameter name is all a caller
 // gets -- and inventing a sentence here would be inventing evidence.
-func NewVertexBufferBindingByVertexBufferAndInt32AndInt32(vertexBuffer *VertexBuffer, vertexOffset, instanceFrequency int32) (VertexBufferBinding, error) {
-	if vertexBuffer == nil {
+func NewVertexBufferBindingByVertexBufferAndInt32AndInt32(vertexBuffer VertexBufferReference, vertexOffset, instanceFrequency int32) (VertexBufferBinding, error) {
+	// The reference's null check sees ONE null whether the argument was a
+	// null Effect-style reference or a null of a derived class, so the
+	// resolution happens first and the check is on the resolved half.
+	buffer := resolveVertexBuffer(vertexBuffer)
+	if buffer == nil {
 		return VertexBufferBinding{}, fmt.Errorf("%w: vertexBuffer: %s", errGraphicsResourceArgumentNull, nullNotAllowed)
 	}
-	if vertexOffset < 0 || vertexOffset >= vertexBuffer.VertexCount() {
+	if vertexOffset < 0 || vertexOffset >= buffer.VertexCount() {
 		return VertexBufferBinding{}, fmt.Errorf("%w: vertexOffset", errArgumentOutOfRange)
 	}
 	if instanceFrequency < 0 {
 		return VertexBufferBinding{}, fmt.Errorf("%w: instanceFrequency", errArgumentOutOfRange)
 	}
 	return VertexBufferBinding{
-		vertexBuffer:      vertexBuffer,
+		vertexBuffer:      buffer,
 		vertexOffset:      vertexOffset,
 		instanceFrequency: instanceFrequency,
 	}, nil
@@ -74,7 +78,7 @@ func NewVertexBufferBindingByVertexBufferAndInt32AndInt32(vertexBuffer *VertexBu
 // NewVertexBufferBindingByVertexBufferAndInt32 is
 // VertexBufferBinding::.ctor(VertexBuffer, int32), which is the three-argument
 // body with the frequency check dropped and a zero stored.
-func NewVertexBufferBindingByVertexBufferAndInt32(vertexBuffer *VertexBuffer, vertexOffset int32) (VertexBufferBinding, error) {
+func NewVertexBufferBindingByVertexBufferAndInt32(vertexBuffer VertexBufferReference, vertexOffset int32) (VertexBufferBinding, error) {
 	return NewVertexBufferBindingByVertexBufferAndInt32AndInt32(vertexBuffer, vertexOffset, 0)
 }
 
@@ -83,11 +87,12 @@ func NewVertexBufferBindingByVertexBufferAndInt32(vertexBuffer *VertexBuffer, ve
 // with a zero offset there is nothing to validate, so a buffer of any size is
 // accepted -- including one the two-argument constructor would refuse an offset
 // into.
-func NewVertexBufferBindingByVertexBuffer(vertexBuffer *VertexBuffer) (VertexBufferBinding, error) {
-	if vertexBuffer == nil {
+func NewVertexBufferBindingByVertexBuffer(vertexBuffer VertexBufferReference) (VertexBufferBinding, error) {
+	buffer := resolveVertexBuffer(vertexBuffer)
+	if buffer == nil {
 		return VertexBufferBinding{}, fmt.Errorf("%w: vertexBuffer: %s", errGraphicsResourceArgumentNull, nullNotAllowed)
 	}
-	return VertexBufferBinding{vertexBuffer: vertexBuffer}, nil
+	return VertexBufferBinding{vertexBuffer: buffer}, nil
 }
 
 // VertexBufferBindingOperatorImplicitByVertexBuffer is
@@ -98,7 +103,7 @@ func NewVertexBufferBindingByVertexBuffer(vertexBuffer *VertexBuffer) (VertexBuf
 // Go has no implicit conversion, so the settled operator rule spells it as a
 // package-level function -- and it is FALLIBLE for the same reason the
 // constructor it calls is: a null buffer is refused.
-func VertexBufferBindingOperatorImplicitByVertexBuffer(vertexBuffer *VertexBuffer) (VertexBufferBinding, error) {
+func VertexBufferBindingOperatorImplicitByVertexBuffer(vertexBuffer VertexBufferReference) (VertexBufferBinding, error) {
 	return NewVertexBufferBindingByVertexBuffer(vertexBuffer)
 }
 

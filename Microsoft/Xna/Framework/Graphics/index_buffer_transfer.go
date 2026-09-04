@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"unsafe"
-
-	"github.com/openeggbert/cna-go/internal/interop"
 )
 
 // ---------------------------------------------------------------------------
@@ -119,7 +117,7 @@ func validateCopyParameters(dataLength, dataIndex, elementCount int32) error {
 // IndexBufferSetDataBySliceOfT is IndexBuffer::SetData<T>(T[]):
 //
 //	SetData(0, data, 0, data == null ? 0 : data.Length);
-func IndexBufferSetDataBySliceOfT[T any](buffer *IndexBuffer, data []T) error {
+func IndexBufferSetDataBySliceOfT[T any](buffer IndexBufferReference, data []T) error {
 	return IndexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32(buffer, 0, data, 0, int32(len(data)))
 }
 
@@ -127,7 +125,7 @@ func IndexBufferSetDataBySliceOfT[T any](buffer *IndexBuffer, data []T) error {
 // IndexBuffer::SetData<T>(T[], int32, int32):
 //
 //	SetData(0, data, startIndex, elementCount);
-func IndexBufferSetDataBySliceOfTAndInt32AndInt32[T any](buffer *IndexBuffer, data []T, startIndex, elementCount int32) error {
+func IndexBufferSetDataBySliceOfTAndInt32AndInt32[T any](buffer IndexBufferReference, data []T, startIndex, elementCount int32) error {
 	return IndexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32(buffer, 0, data, startIndex, elementCount)
 }
 
@@ -140,35 +138,47 @@ func IndexBufferSetDataBySliceOfTAndInt32AndInt32[T any](buffer *IndexBuffer, da
 // `0` is SetDataOptions.None, which the reference hardcodes: the streaming
 // options belong to DynamicIndexBuffer's own SetData overloads, which are a
 // different type CNA-Go does not project.
-func IndexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32[T any](buffer *IndexBuffer, offsetInBytes int32, data []T, startIndex, elementCount int32) error {
-	width, size, err := prepareIndexTransfer[T](buffer, data, startIndex, elementCount, offsetInBytes, true)
+func IndexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32[T any](buffer IndexBufferReference, offsetInBytes int32, data []T, startIndex, elementCount int32) error {
+	// The receiver of a generic instance method widens like any other
+	// base-typed position, so a DynamicIndexBuffer reaches its base's SetData
+	// exactly as a C# caller reaches it through inheritance.
+	target := resolveIndexBuffer(buffer)
+	width, size, err := prepareIndexTransfer[T](target, data, startIndex, elementCount, offsetInBytes, true)
 	if err != nil {
 		return err
 	}
-	resource := buffer.nativeResource()
+	resource := target.nativeResource()
 	if resource == nil {
 		return errIndexBufferNil
 	}
 	// The window is the CALLER'S: CNA reads `element_count` elements starting
 	// at `start_index` in the array it is handed, exactly as the reference
 	// pins `data[startIndex]` and copies from there.
+	_ = width
+	var uploadErr error
 	if offsetInBytes == 0 {
-		return resource.SetIndexData(nativeIndexElementSize(size), 0,
+		uploadErr = resource.SetIndexData(nativeIndexElementSize(size), 0,
+			uint64(startIndex), uint64(elementCount), unsafe.Pointer(&data[0]), uint64(len(data)))
+	} else {
+		uploadErr = resource.SetIndexDataAt(uint64(offsetInBytes), nativeIndexElementSize(size), 0,
 			uint64(startIndex), uint64(elementCount), unsafe.Pointer(&data[0]), uint64(len(data)))
 	}
-	_ = width
-	return resource.SetIndexDataAt(uint64(offsetInBytes), nativeIndexElementSize(size), 0,
-		uint64(startIndex), uint64(elementCount), unsafe.Pointer(&data[0]), uint64(len(data)))
+	if uploadErr != nil {
+		return uploadErr
+	}
+	// CopyData's tail, after the result check.
+	target.noteContentRestored()
+	return nil
 }
 
 // IndexBufferGetDataBySliceOfT is IndexBuffer::GetData<T>(T[]).
-func IndexBufferGetDataBySliceOfT[T any](buffer *IndexBuffer, data []T) error {
+func IndexBufferGetDataBySliceOfT[T any](buffer IndexBufferReference, data []T) error {
 	return IndexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32(buffer, 0, data, 0, int32(len(data)))
 }
 
 // IndexBufferGetDataBySliceOfTAndInt32AndInt32 is
 // IndexBuffer::GetData<T>(T[], int32, int32).
-func IndexBufferGetDataBySliceOfTAndInt32AndInt32[T any](buffer *IndexBuffer, data []T, startIndex, elementCount int32) error {
+func IndexBufferGetDataBySliceOfTAndInt32AndInt32[T any](buffer IndexBufferReference, data []T, startIndex, elementCount int32) error {
 	return IndexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32(buffer, 0, data, startIndex, elementCount)
 }
 
@@ -186,18 +196,19 @@ func IndexBufferGetDataBySliceOfTAndInt32AndInt32[T any](buffer *IndexBuffer, da
 // at `start_index`, "matching the documented XNA overload contract" -- so
 // `offsetInBytes` has no counterpart on the read route and a non-zero one is
 // refused rather than silently ignored.
-func IndexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32[T any](buffer *IndexBuffer, offsetInBytes int32, data []T, startIndex, elementCount int32) error {
-	_, size, err := prepareIndexTransfer[T](buffer, data, startIndex, elementCount, offsetInBytes, false)
+func IndexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32[T any](buffer IndexBufferReference, offsetInBytes int32, data []T, startIndex, elementCount int32) error {
+	target := resolveIndexBuffer(buffer)
+	_, size, err := prepareIndexTransfer[T](target, data, startIndex, elementCount, offsetInBytes, false)
 	if err != nil {
 		return err
 	}
-	if buffer.BufferUsage() == BufferUsageWriteOnly {
+	if target.BufferUsage() == BufferUsageWriteOnly {
 		return fmt.Errorf("%w: %s", errIndexTransferNotSupported, writeOnlyGetNotSupported)
 	}
 	if offsetInBytes != 0 {
 		return fmt.Errorf("%w: offsetInBytes: CNA reads back from index zero", errArgumentOutOfRange)
 	}
-	resource := buffer.nativeResource()
+	resource := target.nativeResource()
 	if resource == nil {
 		return errIndexBufferNil
 	}
@@ -212,10 +223,8 @@ func prepareIndexTransfer[T any](buffer *IndexBuffer, data []T, startIndex, elem
 	if buffer == nil || buffer.resource == nil {
 		return 0, 0, errIndexBufferNil
 	}
-	if buffer.IsDisposed() {
-		// Helpers.CheckDisposed(this, pComPtr), which throws
-		// ObjectDisposedException naming the type.
-		return 0, 0, fmt.Errorf("%w: IndexBuffer", interop.ErrDisposed)
+	if err := buffer.checkDisposed(); err != nil {
+		return 0, 0, err
 	}
 	// `data == null || data.Length == 0` is ONE branch in the IL, and both
 	// arrive at ArgumentNullException("data"). Go has no null slice distinct

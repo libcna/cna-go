@@ -4691,6 +4691,18 @@ func (resource *Resource) OcclusionQueryPixelCount() (int32, error) {
 	return nativeOcclusionQueryPixelCount(handle)
 }
 
+// SetVertexDataRawWithOptions is cna_vertex_buffer_set_data_raw_at_with_options,
+// which DynamicVertexBuffer's two SetData overloads reach and the static
+// buffer's three do not: the options-carrying route is documented as the wider
+// one, with CNA_SET_DATA_NONE matching the plain route exactly.
+func (resource *Resource) SetVertexDataRawWithOptions(bufferOffsetInBytes uint64, data unsafe.Pointer, byteCount, vertexCount uint64, stride, options uint32) error {
+	handle, err := resource.liveHandle(resourceVertexBuffer)
+	if err != nil {
+		return err
+	}
+	return nativeVertexBufferSetDataRawAtWithOptions(handle, bufferOffsetInBytes, data, byteCount, vertexCount, stride, options)
+}
+
 // EffectLightsDirectionalLight is IEffectLights::DirectionalLight0..2.
 //
 // The canonical header calls the result "an owned stable member-view handle",

@@ -927,6 +927,16 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Class:  "MANAGED_REFERENCE",
 		Detail: "get_GraphicsDevice is `ldarg.0; ldfld _parent; ret`, a stored reference with no disposal check, and it must answer with the SAME GraphicsDevice object the resource was created on. CNA's route returns a fresh callback-scoped handle, which is only valid inside a lifecycle callback and would not be the identity the reference returns",
 	},
+
+	// Foundation 84. The dynamic buffers bound exactly one new route,
+	// cna_vertex_buffer_set_data_raw_at_with_options, and its offsetless
+	// sibling is what that leaves behind.
+	{
+		Route:  "cna_vertex_buffer_set_data_raw_with_options",
+		Member: "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer::SetData(!!0[],System.Int32,System.Int32,Microsoft.Xna.Framework.Graphics.SetDataOptions)",
+		Class:  "SUBSUMED",
+		Detail: "the bound cna_vertex_buffer_set_data_raw_at_with_options is the same upload with a buffer offset, and CNA's own header says the offsetless route \"matches\" the windowed one at offset zero. The reference has ONE body for both overloads -- SetData(T[],int,int,SetDataOptions) is `ldarg.0; ldc.i4.0; ldarg.1; ... call SetData(int,T[],int,int,int,SetDataOptions)` -- so binding both would give one reference path two native paths that could drift",
+	},
 }
 
 // verifyUnboundRoutes checks the registry against the canonical headers and the

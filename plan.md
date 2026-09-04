@@ -1596,6 +1596,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 81 | EnvironmentMapEffect and SkinnedEffect, closing the stock effects | `foundation-81-lit-stock-effects-evidence.md` |
 | 82 | FrameworkDispatcher and TitleContainer, the last root types | `foundation-82-root-types-evidence.md` |
 | 83 | OcclusionQuery, and the dynamic-buffer probe | `foundation-83-occlusion-query-evidence.md` |
+| 84 | DynamicVertexBuffer and DynamicIndexBuffer, closing the Graphics namespace | `foundation-84-dynamic-buffers-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1952,6 +1953,36 @@ GetData and false of CNA, whose route answers whether A result can be read
 rather than whether THIS one is ready. The scenario records both outcomes in
 separate counters instead of asserting one, and the two qualified artifacts
 land in different columns.
+
+**An `assembly` interface the reference DISPATCHES ON is projected unexported**
+(84). `IDynamicGraphicsResource` is not in the pinned contract, and leaving it
+out lost a real behaviour: every `CopyData` ends its setting path with
+`ldarg.0; isinst IDynamicGraphicsResource; ... SetContentLost(false)`, so a
+successful upload clears a dynamic resource's content-lost latch. Exporting it
+would have added a type the contract does not declare. The rule is the same one
+the `clrTypeName` identity mechanism follows: an internal member the reference
+needs is projected with an unexported name, and only the members the reference
+actually dispatches on are projected at all.
+
+**A CLR enum converter is measured, never assumed to be an equality** (84).
+`ConvertXnaSetDataOptionsToDx` tests bit 0, then bit 1, and returns zero
+otherwise, so `Discard|NoOverwrite` is Discard and an undefined value is mapped
+rather than refused. CNA numbers its three options identically and answers
+`INVALID_ARGUMENT` for an undefined one, so a cast would have been right for the
+three named values and wrong for everything else -- refusing where the reference
+silently accepts, which is the direction that breaks working consumer code. A
+shared numbering is a coincidence to be checked, and the CHECK is the converter's
+IL rather than the enum's declaration.
+
+**A flag with no getter is observed through the REFUSAL it changes** (84).
+Nothing in the contract reports whether a buffer was created dynamic, and
+`IsContentLost` answers false either way, so the flag looked unobservable and the
+scenario counted a refused upload as a renderer capability -- which is exactly
+what a non-dynamic buffer produces. A probe showed CNA refuses a non-None
+`SetDataOptions` on a static buffer and accepts every option on a dynamic one, so
+the refusal IS the flag's signature: the scenario now fails on it, and the
+mutation that never sets the flag dies. Before concluding a native argument is
+unobservable, look for the call it makes fail.
 
 ## Next milestone selection rule
 

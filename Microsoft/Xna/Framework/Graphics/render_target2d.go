@@ -239,6 +239,21 @@ func (t *RenderTarget2D) IsContentLost() (bool, error) {
 	return t.contentLost, nil
 }
 
+// setContentLost is RenderTarget2D::SetContentLost(bool), the
+// IDynamicGraphicsResource member the reference dispatches on. It stores the
+// flag and raises ContentLost only when the flag is true, exactly as the
+// dynamic buffers' does -- one body, four implementing types.
+//
+// Foundation 84 projected it. Until then the type carried the latch and the
+// event with nothing that could clear or raise them, because the interface the
+// reference dispatches through was not projected at all.
+func (t *RenderTarget2D) setContentLost(isContentLost bool) {
+	t.contentLost = isContentLost
+	if isContentLost {
+		_ = t.contentLostEvent.Raise(t, framework.EventArgsEmpty())
+	}
+}
+
 // AddContentLostHandler is add_ContentLost, on the settled two-accessor event
 // projection.
 //

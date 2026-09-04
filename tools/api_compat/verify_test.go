@@ -72,7 +72,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// inherited surface of all SIX of its derived types into the enumeration --
 	// five of them still unprojected, which is what
 	// XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED counts.
-	if surface.XNAInheritedCLRMembers != 204 || surface.XNAInheritedProjections != 286 {
+	// 224/312, not 204/286: Foundation 84 composed VertexBuffer and
+	// IndexBuffer, and each dynamic buffer inherits ten public members from
+	// GraphicsResource through its base plus its base's own three.
+	if surface.XNAInheritedCLRMembers != 224 || surface.XNAInheritedProjections != 312 {
 		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
 	}
 	// The subtraction the exclusion performs is measured rather than implied:
@@ -90,8 +93,10 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// ExternalException, adding the eight derived exception types' inherited
 	// surface, and removed two blocked declared constructors. 3636, not 3551:
 	// Foundation 79 composed Effect, whose six derived types contribute
-	// eighty-five inherited projections between them.
-	if surface.ExpectedGoMembers != 3636 {
+	// eighty-five inherited projections between them. 3662, not 3636:
+	// Foundation 84 composed the two buffer bases, and the two dynamic buffers
+	// contribute twenty-six inherited projections between them.
+	if surface.ExpectedGoMembers != 3662 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -4542,8 +4547,10 @@ func TestEventProjectionIsMeasuredExactly(t *testing.T) {
 	// Disposing through the newly composed TextureCube. 28, not 22: Foundation
 	// 79 composed Effect, and each of its six derived types inherits the same
 	// Disposing event two links up.
-	if inheritedEvents != 28 || inheritedAccessors != 56 {
-		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 28 and 56", inheritedEvents, inheritedAccessors)
+	// 30, not 28: Foundation 84 composed the two buffer bases, and each dynamic
+	// buffer inherits the same Disposing event two links up.
+	if inheritedEvents != 30 || inheritedAccessors != 60 {
+		t.Fatalf("XNA-inherited events = %d producing %d accessors, want 30 and 60", inheritedEvents, inheritedAccessors)
 	}
 	if events != declaredEvents+inheritedEvents || accessors != declaredAccessors+inheritedAccessors {
 		t.Fatalf("event partition = %d/%d, walk found %d/%d", events, accessors,
@@ -7999,11 +8006,17 @@ func TestTheLiveSubstitutabilityFamiliesAreTextureAndTexture2D(t *testing.T) {
 	// TextureCube went live in Foundation 81, when EnvironmentMapEffect put the
 	// profile's only TextureCube-typed PARAMETER position on a projected
 	// carrier.
+	// VertexBuffer and IndexBuffer went live in Foundation 84, when the dynamic
+	// buffers became the first projected types deriving from them. Both had
+	// their positions all along -- SetVertexBuffer, VertexBufferBinding,
+	// set_Indices -- and were LATENT until something could be handed to one.
 	want := []string{
 		"Microsoft.Xna.Framework.Graphics.Effect",
+		"Microsoft.Xna.Framework.Graphics.IndexBuffer",
 		"Microsoft.Xna.Framework.Graphics.Texture",
 		"Microsoft.Xna.Framework.Graphics.Texture2D",
 		"Microsoft.Xna.Framework.Graphics.TextureCube",
+		"Microsoft.Xna.Framework.Graphics.VertexBuffer",
 	}
 	if len(live) != len(want) {
 		t.Fatalf("live substitutability families = %v, want %v", live, want)
@@ -8013,16 +8026,17 @@ func TestTheLiveSubstitutabilityFamiliesAreTextureAndTexture2D(t *testing.T) {
 			t.Fatalf("live substitutability families = %v, want %v", live, want)
 		}
 	}
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 4 {
-		t.Fatalf("%d registered substitutable bases, want the four live families", got)
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 6 {
+		t.Fatalf("%d registered substitutable bases, want the six live families", got)
 	}
 	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_NONE"]; got != 3 {
 		t.Fatalf("%d families have no substitutability requirement, want 3", got)
 	}
-	// Five, not six: TextureCube's requirement went from latent to live in
-	// Foundation 81, as Effect's did in Foundation 79.
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 5 {
-		t.Fatalf("%d families have a latent requirement, want 5", got)
+	// Three, not five: VertexBuffer's and IndexBuffer's requirements went from
+	// latent to live in Foundation 84, as TextureCube's did in Foundation 81
+	// and Effect's in Foundation 79.
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 3 {
+		t.Fatalf("%d families have a latent requirement, want 3", got)
 	}
 	if got := result.Summary["XNA_BASE_TYPED_SIGNATURE_POSITIONS"]; got != 51 {
 		t.Fatalf("%d base-typed public signature positions, want 51", got)
@@ -8140,14 +8154,15 @@ func xnaCompositionFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	// Six since Foundation 79 composed Effect.
-	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 6 {
-		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 6", got)
+	// Eight since Foundation 84 composed VertexBuffer and IndexBuffer.
+	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 8 {
+		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 8", got)
 	}
-	// Two for GameComponent, eleven for GraphicsResource, three for Texture,
-	// one for Texture2D, one for TextureCube and six for Effect.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 24 {
-		t.Fatalf("the composed relationships cover %d derived types, want 24", got)
+	// Two for GameComponent, twelve for GraphicsResource, three for Texture,
+	// one for Texture2D, one for TextureCube, six for Effect and one each for
+	// the two buffer bases.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 26 {
+		t.Fatalf("the composed relationships cover %d derived types, want 26", got)
 	}
 	// DrawableGameComponent, SpriteBatch, Texture, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
@@ -8156,9 +8171,10 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	// Foundation 80's AlphaTestEffect, DualTextureEffect and EffectMaterial,
 	// Foundation 81's EnvironmentMapEffect and SkinnedEffect -- with which
 	// every one of Effect's six derived types is projected -- and Foundation
-	// 83's OcclusionQuery, which is GraphicsResource's twelfth.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 23 {
-		t.Fatalf("%d projected derived types, want 23", got)
+	// 83's OcclusionQuery, which is GraphicsResource's twelfth, and Foundation
+	// 84's DynamicVertexBuffer and DynamicIndexBuffer.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 25 {
+		t.Fatalf("%d projected derived types, want 25", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.
@@ -8171,14 +8187,14 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
 		}
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 204 {
-		t.Fatalf("%d inherited public CLR members, want 204", got)
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 224 {
+		t.Fatalf("%d inherited public CLR members, want 224", got)
 	}
-	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 286 {
-		t.Fatalf("%d inherited Go projections, want 286", got)
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 312 {
+		t.Fatalf("%d inherited Go projections, want 312", got)
 	}
-	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 286 {
-		t.Fatalf("%d attributed inherited members, want every one of the 286", got)
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 312 {
+		t.Fatalf("%d attributed inherited members, want every one of the 312", got)
 	}
 	// Eight, not three: each of Effect's five stock derived types declares its
 	// own Clone, which occupies the slot Effect's Clone would have filled.

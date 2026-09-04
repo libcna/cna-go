@@ -119,7 +119,13 @@ func TextureCubeSetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAnd
 	if err != nil {
 		return err
 	}
-	return resource.SetTextureCubeData(transfer, sliceStart(data), uint64(len(data)))
+	if err := resource.SetTextureCubeData(transfer, sliceStart(data), uint64(len(data))); err != nil {
+		return err
+	}
+	// CopyData's tail on the SETTING path, after the result check: a
+	// RenderTargetCube's content-lost latch clears on a successful upload.
+	resolveTextureCube(texture).noteContentRestored()
+	return nil
 }
 
 // TextureCubeGetDataByCubeMapFaceAndSliceOfT is

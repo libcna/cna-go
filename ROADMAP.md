@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               75
-MISSING_TYPE                    75
+TOTAL_DIAGNOSTICS               73
+MISSING_TYPE                    73
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 182
+COMPLETE_TYPES                 184
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         75
+GLOBAL_ACTIONABLE_LOCAL         73
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                304
+BOUND_FUNCTIONS                305
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -105,16 +105,40 @@ Foundation 83 closed **`OcclusionQuery`** and ran the probe the dynamic buffers
 were waiting on. The hypothesis holds: CNA models a dynamic buffer through the
 SAME routes as a static one, with a `dynamic` flag in the create info, an
 `is_content_lost` field in the info snapshot, subscribe/unsubscribe routes for
-the `ContentLost` event, and `SetDataOptions` in the transfer descriptors. CNA
-documents the content-loss state as "currently always false", so `IsContentLost`
-will always answer false and the event will never fire — a limitation to record
-rather than a defect. What remains is composing the `VertexBuffer` and
-`IndexBuffer` bases.
+the `ContentLost` event, and `SetDataOptions` in the transfer descriptors.
+
+Foundation 84 closed **`DynamicVertexBuffer`** and **`DynamicIndexBuffer`**, and
+with them the whole `Graphics` namespace. Three measurements decided it and none
+was in the plan:
+
+- **A successful `SetData` clears the content-lost latch.** Every `CopyData` in
+  the family ends its setting path with
+  `ldarg.0; isinst IDynamicGraphicsResource; ... SetContentLost(false)`, after
+  the result check. `IDynamicGraphicsResource` is `assembly` and not in the
+  contract, so it is projected as an unexported interface with the one member
+  the reference dispatches on — and `RenderTarget2D` and `RenderTargetCube`,
+  which had carried the latch and the event since Foundations 58 and 73 with
+  nothing able to clear or raise them, now carry it too.
+- **`SetDataOptions` is converted by a BIT TEST.** `ConvertXnaSetDataOptionsToDx`
+  tests bit 0, then bit 1, and returns zero otherwise, so `Discard|NoOverwrite`
+  is Discard and an undefined value is mapped rather than refused. CNA refuses an
+  undefined option by name, so handing it the caller's raw value would refuse
+  where the reference accepts.
+- **The `dynamic` flag has exactly one observable.** Nothing in the contract
+  reports it and `IsContentLost` answers false either way; CNA refuses a non-None
+  `SetDataOptions` on a buffer created static, so a refusal on a buffer created
+  dynamic is a defect rather than a capability, and the native scenario treats it
+  that way.
+
+`IsContentLost` still answers false on both qualified artifacts and the
+`ContentLost` event still cannot fire there, because CNA documents the state as
+"currently always false" — a limitation recorded rather than a defect, and the
+boundary a renderer that can lose a device would move.
 
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 83 types it does not project
+projects, it projects completely; what remains is 73 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -139,15 +163,16 @@ in that registry:
 3. Then **Input**, **Storage**, **Media/XACT**, the **content plumbing** and
    the **Design converters**.
 
-**The dynamic-buffer note, resolved.** Foundation 83 probed it against the
-canonical headers and the hypothesis was right: `CNA_VertexBufferCreateInfo`
-carries a `dynamic` flag documented as "True to construct DynamicVertexBuffer",
-the info snapshot carries `dynamic` and `is_content_lost`, both buffers have
-`subscribe_content_lost`/`unsubscribe_content_lost`, and the transfer
-descriptors carry `SetDataOptions` whose non-None values "require a supported
-dynamic-buffer overload". The creation flag and the info fields were already
-bound in Foundation 65 and 66. What remains is composing the two bases and
-binding the options-carrying uploads and the two subscription pairs.
+**The dynamic-buffer note, closed.** Foundation 83 probed it, Foundation 84
+acted on it, and the outcome was smaller than the note expected: **one** new
+route, `cna_vertex_buffer_set_data_raw_at_with_options`. The index side needed
+none — `cna_index_buffer_set_data` and `_set_data_at` already carried an
+`options` argument, and the static overloads pass a hardcoded zero because the
+reference hardcodes `SetDataOptions.None` there. The four
+`subscribe_content_lost` / `unsubscribe_content_lost` routes stay unbound for
+the reason `cna_render_target_subscribe_content_lost` does: CNA raises them only
+on DirectX9, Direct2D and Skia, and the qualified artifacts are HEADLESS and
+SOFTWARE.
 
 ## Two decisions that were open, and where they now stand
 

@@ -905,6 +905,8 @@ typedef CNA_Result (*cna_occlusion_query_begin_fn)(CNA_OcclusionQueryHandle);
 typedef CNA_Result (*cna_occlusion_query_end_fn)(CNA_OcclusionQueryHandle);
 typedef CNA_Result (*cna_occlusion_query_get_is_complete_fn)(CNA_OcclusionQueryHandle, CNA_Bool*);
 typedef CNA_Result (*cna_occlusion_query_get_pixel_count_fn)(CNA_OcclusionQueryHandle, int32_t*);
+/* Foundation 84 -- the dynamic buffers' options-carrying upload. */
+typedef CNA_Result (*cna_vertex_buffer_set_data_raw_at_with_options_fn)(CNA_VertexBufferHandle, uint64_t, const void*, uint64_t, uint64_t, uint32_t, CNA_SetDataOptions);
 /* Foundation 81 -- EnvironmentMapEffect and SkinnedEffect. */
 typedef CNA_Result (*cna_environment_map_effect_create_fn)(CNA_Handle, CNA_EffectHandle*);
 typedef CNA_Result (*cna_environment_map_effect_set_diffuse_color_fn)(CNA_EffectHandle, CNA_Vector3);
@@ -1228,6 +1230,7 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_occlusion_query_end) \
     X(cna_occlusion_query_get_is_complete) \
     X(cna_occlusion_query_get_pixel_count) \
+    X(cna_vertex_buffer_set_data_raw_at_with_options) \
     X(cna_environment_map_effect_create) \
     X(cna_environment_map_effect_set_diffuse_color) \
     X(cna_environment_map_effect_set_emissive_color) \

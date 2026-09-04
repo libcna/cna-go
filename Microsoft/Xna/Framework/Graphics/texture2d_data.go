@@ -157,7 +157,19 @@ func Texture2DSetDataByInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[T 
 	if len(data) > 0 {
 		pointer = unsafe.Pointer(&data[0])
 	}
-	return resource.SetTextureData(identity, transfer, pointer, uint64(len(data)))
+	if err := resource.SetTextureData(identity, transfer, pointer, uint64(len(data))); err != nil {
+		return err
+	}
+	// Texture2D::CopyData's tail on the SETTING path, after the result check:
+	//
+	//	ldarg.s isSetting; brfalse ret
+	//	ldarg.0; isinst IDynamicGraphicsResource; ... SetContentLost(false)
+	//
+	// A RenderTarget2D is one, so uploading to it clears its content-lost
+	// latch. A plain Texture2D is not, and nothing happens. See
+	// dynamicGraphicsResource.
+	resolveTexture2D(texture).noteContentRestored()
+	return nil
 }
 
 // Texture2DGetDataBySliceOfT is Texture2D::GetData<T>(T[]), the mirror of the

@@ -208,8 +208,15 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 	"Microsoft.Xna.Framework.Graphics.TextureCube": {
 		Package:    modulePath + "/Microsoft/Xna/Framework/Graphics",
 		GoBase:     "TextureCube",
+		SelfMember: "self",
 		BindMember: "bindDerived",
 		ForwardsTo: "Texture",
+		// Foundation 84, for the reason Texture2D's site exists: TextureCube
+		// ::CopyData carries the same `isinst IDynamicGraphicsResource` tail,
+		// and RenderTargetCube is one.
+		Sites: []xnaCompositionIdentitySite{
+			{GoMember: "noteContentRestored", Uses: 1, Reference: "CopyData: ldarg.s isSetting; brfalse; ldarg.0; isinst IDynamicGraphicsResource; ... callvirt SetContentLost(false)"},
+		},
 		DerivedConstructors: map[string]string{
 			"Microsoft.Xna.Framework.Graphics.RenderTargetCube": "NewRenderTargetCubeByGraphicsDeviceAndInt32AndBooleanAndSurfaceFormatAndDepthFormatAndInt32AndRenderTargetUsage",
 		},
@@ -254,13 +261,68 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 	// RenderTarget2D -> Texture2D -> Texture -> GraphicsResource. Every link but
 	// the root forwards, so a RenderTarget2D's ToString answers with ITS name
 	// after three hops.
+	//
+	// Foundation 84 gave it a SITE. Texture2D::CopyData ends its setting path
+	// with `ldarg.0; isinst IDynamicGraphicsResource; ... SetContentLost(false)`
+	// -- a test on the OBJECT, so a bare receiver would answer "not dynamic"
+	// for a RenderTarget2D and its content-lost latch would never clear.
 	"Microsoft.Xna.Framework.Graphics.Texture2D": {
 		Package:    modulePath + "/Microsoft/Xna/Framework/Graphics",
 		GoBase:     "Texture2D",
+		SelfMember: "self",
 		BindMember: "bindDerived",
 		ForwardsTo: "Texture",
+		Sites: []xnaCompositionIdentitySite{
+			{GoMember: "noteContentRestored", Uses: 1, Reference: "CopyData: ldarg.s isSetting; brfalse; ldarg.0; isinst IDynamicGraphicsResource; ... callvirt SetContentLost(false) -- the isinst is on the object"},
+		},
 		DerivedConstructors: map[string]string{
 			"Microsoft.Xna.Framework.Graphics.RenderTarget2D": "NewRenderTarget2DByGraphicsDeviceAndInt32AndInt32AndBooleanAndSurfaceFormatAndDepthFormatAndInt32AndRenderTargetUsage",
+		},
+	},
+
+	// Foundation 84. The two buffer bases are the fourth and fifth middle
+	// links, and each heads a chain three deep: DynamicVertexBuffer ->
+	// VertexBuffer -> GraphicsResource, and the index side's twin.
+	//
+	// Both carry a SITE, which the first three middle links did not: every
+	// transfer begins with `Helpers.CheckDisposed(this, pComPtr)`, and the
+	// `ldarg.0` pushed as an OBJECT decides the ObjectDisposedException's type
+	// name. Foundations 65 and 66 spelled that name as a literal because a
+	// VertexBuffer could only ever be a VertexBuffer; the dynamic buffers make
+	// the literal wrong, so the check moved into checkDisposed and resolves
+	// through the link it forwards to.
+	"Microsoft.Xna.Framework.Graphics.VertexBuffer": {
+		Package:    modulePath + "/Microsoft/Xna/Framework/Graphics",
+		GoBase:     "VertexBuffer",
+		SelfMember: "self",
+		BindMember: "bindDerived",
+		ForwardsTo: "GraphicsResource",
+		Sites: []xnaCompositionIdentitySite{
+			{GoMember: "checkDisposed", Uses: 1, Reference: "CopyData: ldarg.0; ldfld pComPtr; ldarg.0; call Helpers::CheckDisposed(object, native int) -- the object names the exception's type, and every SetData and GetData overload reaches it"},
+			{GoMember: "noteContentRestored", Uses: 1, Reference: "CopyData: ldarg.s isSetting; brfalse; ldarg.0; isinst IDynamicGraphicsResource; ... callvirt SetContentLost(false) -- the isinst is on the object, so only the resolved DynamicVertexBuffer answers yes"},
+		},
+		DerivedConstructors: map[string]string{
+			// The DECLARATION-keyed constructor, which is the one that builds
+			// the object; the Type-keyed one resolves a declaration and calls
+			// it, so binding once here covers both.
+			"Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer": "NewDynamicVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage",
+		},
+	},
+	"Microsoft.Xna.Framework.Graphics.IndexBuffer": {
+		Package:    modulePath + "/Microsoft/Xna/Framework/Graphics",
+		GoBase:     "IndexBuffer",
+		SelfMember: "self",
+		BindMember: "bindDerived",
+		ForwardsTo: "GraphicsResource",
+		Sites: []xnaCompositionIdentitySite{
+			{GoMember: "checkDisposed", Uses: 1, Reference: "CopyData: ldarg.0; ldfld pComPtr; ldarg.0; call Helpers::CheckDisposed(object, native int) -- VertexBuffer's site with the index buffer's receiver"},
+			{GoMember: "noteContentRestored", Uses: 1, Reference: "CopyData: ldarg.s isSetting; brfalse; ldarg.0; isinst IDynamicGraphicsResource; ... callvirt SetContentLost(false)"},
+		},
+		DerivedConstructors: map[string]string{
+			// The IndexElementSize-keyed constructor, for the reason the
+			// vertex side names its declaration-keyed one: the Type-keyed
+			// overload resolves a size and calls this.
+			"Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer": "NewDynamicIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage",
 		},
 	},
 }

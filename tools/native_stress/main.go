@@ -245,6 +245,23 @@ type counters struct {
 	// XNA's. Counted in two buckets so the behaviour is visible either way.
 	OcclusionQueryStaleResultChecks int `json:"OCCLUSION_QUERY_STALE_RESULT_CHECKS"`
 	OcclusionQueryFreshResultChecks int `json:"OCCLUSION_QUERY_FRESH_RESULT_CHECKS"`
+	// Foundation 84. The two dynamic buffers. Creations and refusals are
+	// counted apart because CNA_VertexBufferCreateInfo.dynamic is a renderer
+	// capability like the query object is; the option counters are per
+	// SetDataOptions value, because CNA documents Discard and NoOverwrite as
+	// hints a family may implement differently and a refusal of one is not a
+	// refusal of the upload.
+	DynamicBufferCreations         int `json:"DYNAMIC_BUFFER_CREATIONS"`
+	DynamicBufferCreationRefusals  int `json:"DYNAMIC_BUFFER_CREATION_REFUSALS"`
+	DynamicBufferDescriptionChecks int `json:"DYNAMIC_BUFFER_DESCRIPTION_CHECKS"`
+	DynamicBufferOptionUploads     int `json:"DYNAMIC_BUFFER_OPTION_UPLOADS"`
+	DynamicBufferOptionRefusals    int `json:"DYNAMIC_BUFFER_OPTION_REFUSALS"`
+	DynamicBufferRoundTrips        int `json:"DYNAMIC_BUFFER_ROUND_TRIPS"`
+	DynamicBufferContentLostReads  int `json:"DYNAMIC_BUFFER_CONTENT_LOST_READS"`
+	DynamicBufferLatchClears       int `json:"DYNAMIC_BUFFER_LATCH_CLEARS"`
+	DynamicBufferGuardChecks       int `json:"DYNAMIC_BUFFER_GUARD_CHECKS"`
+	DynamicBufferBindChecks        int `json:"DYNAMIC_BUFFER_BIND_CHECKS"`
+	DynamicBufferDisposalChecks    int `json:"DYNAMIC_BUFFER_DISPOSAL_CHECKS"`
 	// Foundation 81. EnvironmentMapEffect and SkinnedEffect, which close the
 	// stock-effect family. The bone counters are separate because the copy is
 	// the one ARRAY crossing in the family and CNA may refuse it where it
@@ -755,6 +772,40 @@ func runParent() (counters, error) {
 		return total, fmt.Errorf("%d occlusion-query creations produced %d pairs, %d pair refusals, %d guard checks, %d completions and %d pending checks",
 			total.OcclusionQueryCreations, total.OcclusionQueryPairs, total.OcclusionQueryPairRefusals,
 			total.OcclusionQueryGuardChecks, total.OcclusionQueryCompletions, total.OcclusionQueryPendingChecks)
+	}
+	// Foundation 84. One creation outcome per cycle, and every check downstream
+	// counted against the creations that succeeded. The option counters are NOT
+	// pinned to a multiple, because CNA may refuse an individual SetDataOptions
+	// value where it accepts the upload -- what is pinned is that every upload
+	// had exactly one outcome.
+	if total.DynamicBufferCreations+total.DynamicBufferCreationRefusals != total.VertexBufferCycles {
+		return total, fmt.Errorf("dynamic-buffer creations %d and refusals %d do not account for %d cycles",
+			total.DynamicBufferCreations, total.DynamicBufferCreationRefusals, total.VertexBufferCycles)
+	}
+	if total.DynamicBufferDescriptionChecks != total.DynamicBufferCreations ||
+		total.DynamicBufferGuardChecks != total.DynamicBufferCreations ||
+		total.DynamicBufferBindChecks != total.DynamicBufferCreations ||
+		total.DynamicBufferDisposalChecks != total.DynamicBufferCreations {
+		return total, fmt.Errorf("%d dynamic-buffer creations produced %d description, %d guard, %d bind and %d disposal checks",
+			total.DynamicBufferCreations, total.DynamicBufferDescriptionChecks,
+			total.DynamicBufferGuardChecks, total.DynamicBufferBindChecks, total.DynamicBufferDisposalChecks)
+	}
+	// Eight uploads are attempted per creation -- three named vertex options,
+	// two undefined vertex ones, two index ones and one offset -- and each has
+	// exactly one outcome. A refusal of any of them fails the run rather than
+	// being counted, so the refusal column is here to be zero and say so.
+	if total.DynamicBufferOptionUploads+total.DynamicBufferOptionRefusals != 8*total.DynamicBufferCreations {
+		return total, fmt.Errorf("%d dynamic uploads and %d refusals do not account for the eight per %d creations",
+			total.DynamicBufferOptionUploads, total.DynamicBufferOptionRefusals, total.DynamicBufferCreations)
+	}
+	if total.DynamicBufferRoundTrips > total.DynamicBufferOptionUploads {
+		return total, fmt.Errorf("%d dynamic round trips over %d uploads",
+			total.DynamicBufferRoundTrips, total.DynamicBufferOptionUploads)
+	}
+	if total.DynamicBufferContentLostReads > 2*total.DynamicBufferCreations ||
+		total.DynamicBufferLatchClears > total.DynamicBufferCreations {
+		return total, fmt.Errorf("%d content-lost reads and %d latch clears over %d creations",
+			total.DynamicBufferContentLostReads, total.DynamicBufferLatchClears, total.DynamicBufferCreations)
 	}
 	// Foundation 82. Three dispatcher pumps and two guard checks per cycle, and
 	// exactly one outcome for the read.
@@ -4790,6 +4841,12 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 84. The two dynamic buffers, on the same live device and
+	// after the same draws.
+	if err := g.exerciseDynamicBuffers(device); err != nil {
+		return err
+	}
+
 	if effect != nil {
 		if err := effect.DisposeByNone(); err != nil {
 			return fmt.Errorf("disposing the stock effect: %w", err)
@@ -6546,6 +6603,324 @@ func (g *stressGame) exerciseOcclusionQuery(device *graphics.GraphicsDevice) err
 		return errors.New("Begin answered on a disposed OcclusionQuery")
 	}
 	g.result.OcclusionQueryDisposalChecks++
+	return nil
+}
+
+// exerciseDynamicBuffers is Foundation 84's slice.
+//
+// The managed half -- the guard orders, the latch, SetContentLost's raise rule
+// and the IDynamicGraphicsResource dispatch -- is measured without a device in
+// dynamic_buffer_test.go. What needs one is everything CNA decides:
+//
+//   - that a buffer created with the `dynamic` flag reports itself dynamic, and
+//     that a plain one does not, which is the only place the flag is visible;
+//   - that every SetDataOptions value crosses and the data comes back;
+//   - that the content-lost read reaches CNA and answers, and that a successful
+//     upload clears a latch that was set by hand -- the ONE path that proves
+//     the clear runs after a real native upload rather than only in a unit
+//     test;
+//   - that a dynamic buffer BINDS where its base does, which is the
+//     substitutability claim end to end.
+func (g *stressGame) exerciseDynamicBuffers(device *graphics.GraphicsDevice) error {
+	vertex, err := graphics.NewDynamicVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
+		device, stressVertexDeclaration, 4, graphics.BufferUsageNone)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewDynamicVertexBuffer: %w", err)
+		}
+		g.result.DynamicBufferCreationRefusals++
+		fmt.Fprintf(os.Stderr, "dynamic vertex buffer creation refused: %v\n", err)
+		return nil
+	}
+	g.result.DynamicBufferCreations++
+
+	index, err := graphics.NewDynamicIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage(
+		device, graphics.IndexElementSizeSixteenBits, 6, graphics.BufferUsageNone)
+	if err != nil {
+		return fmt.Errorf("NewDynamicIndexBuffer: %w", err)
+	}
+
+	// The inherited description, answered through the composed base, and the
+	// CLR `this` reaching the outermost object.
+	if vertex.VertexCount() != 4 || vertex.VertexDeclaration() != stressVertexDeclaration {
+		return fmt.Errorf("the dynamic buffer reported %d vertices and %v",
+			vertex.VertexCount(), vertex.VertexDeclaration())
+	}
+	if got := vertex.ToString(); got != "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer" {
+		return fmt.Errorf("ToString = %q; the CLR `this` must reach the outermost object", got)
+	}
+	if got := index.ToString(); got != "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer" {
+		return fmt.Errorf("the index buffer's ToString = %q", got)
+	}
+	if index.IndexCount() != 6 || index.IndexElementSize() != graphics.IndexElementSizeSixteenBits {
+		return fmt.Errorf("the dynamic index buffer reported %d indices at %v",
+			index.IndexCount(), index.IndexElementSize())
+	}
+	g.result.DynamicBufferDescriptionChecks++
+
+	written := []stressVertex{
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(21, 22, 23), Colour: framework.NewColorByInt32AndInt32AndInt32(10, 20, 30)},
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(24, 25, 26), Colour: framework.NewColorByInt32AndInt32AndInt32(40, 50, 60)},
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(27, 28, 29), Colour: framework.NewColorByInt32AndInt32AndInt32(70, 80, 90)},
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(30, 31, 32), Colour: framework.NewColorByInt32AndInt32AndInt32(100, 110, 120)},
+	}
+	// Every SetDataOptions value the enum has, one upload each. None is a
+	// hint at all; Discard and NoOverwrite are, and CNA documents that a
+	// windowed upload cannot keep NoOverwrite's promise and gives the whole
+	// buffer instead -- a cost difference, not a result difference, so the
+	// readback below must be identical whichever option wrote it.
+	for _, options := range []graphics.SetDataOptions{
+		graphics.SetDataOptionsNone,
+		graphics.SetDataOptionsDiscard,
+		graphics.SetDataOptionsNoOverwrite,
+	} {
+		if err := graphics.DynamicVertexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions(
+			vertex, written, 0, int32(len(written)), options); err != nil {
+			// A refusal here is a DEFECT, not a capability, and the measurement
+			// that makes it so is this: the SAME upload on a buffer created
+			// WITHOUT the dynamic flag is refused by CNA for every non-None
+			// option, and accepted for None. The header says as much --
+			// "non-None values require a supported dynamic-buffer overload" --
+			// and a probe run confirmed it, three refusals and one acceptance.
+			//
+			// So this assertion is the only thing that can see the `dynamic`
+			// flag at all: nothing in the public contract reports it, and
+			// IsContentLost answers false whichever way it was created. A
+			// buffer that CNA will take a Discard for is a buffer CNA built
+			// dynamic.
+			g.result.DynamicBufferOptionRefusals++
+			return fmt.Errorf("CNA refused options %d on a DYNAMIC vertex buffer: %w -- it accepts every option on a dynamic buffer and refuses non-None on a static one, so the dynamic flag did not reach the creation", options, err)
+		}
+		g.result.DynamicBufferOptionUploads++
+
+		readBack := make([]stressVertex, len(written))
+		if err := graphics.VertexBufferGetDataBySliceOfT[stressVertex](vertex, readBack); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("reading back an options-%d upload: %w", options, err)
+			}
+			fmt.Fprintf(os.Stderr, "dynamic vertex readback refused: %v\n", err)
+			continue
+		}
+		for i := range written {
+			if readBack[i] != written[i] {
+				return fmt.Errorf("options %d changed vertex %d: wrote %+v, read %+v",
+					options, i, written[i], readBack[i])
+			}
+		}
+		g.result.DynamicBufferRoundTrips++
+	}
+
+	// The index side, through its own options-carrying overload and through the
+	// OFFSET one, which reaches CNA's second route.
+	indices := []uint16{0, 1, 2, 2, 3, 0}
+	// The two values the ENUM does not name, which the reference's converter
+	// accepts by a bit test and CNA refuses by name. They are the only native
+	// witness the conversion has: a projection that handed CNA the caller's raw
+	// value would be refused here and is accepted by the reference.
+	//
+	//	3  = Discard|NoOverwrite -> bit 0 wins  -> CNA_SET_DATA_DISCARD
+	//	99 = 0b1100011           -> bit 0 set   -> CNA_SET_DATA_DISCARD
+	for _, undefined := range []graphics.SetDataOptions{
+		graphics.SetDataOptionsDiscard | graphics.SetDataOptionsNoOverwrite,
+		99,
+	} {
+		if err := graphics.DynamicVertexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions(
+			vertex, written, 0, int32(len(written)), undefined); err != nil {
+			return fmt.Errorf("CNA refused SetDataOptions(%d): %w -- ConvertXnaSetDataOptionsToDx is a BIT TEST and maps it to Discard, so the caller's raw value must not reach CNA", undefined, err)
+		}
+		g.result.DynamicBufferOptionUploads++
+	}
+
+	// Discard, so the same reasoning applies: CNA refuses it on a static index
+	// buffer, which makes this the index side's only view of the flag.
+	if err := graphics.DynamicIndexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions(
+		index, indices, 0, int32(len(indices)), graphics.SetDataOptionsDiscard); err != nil {
+		g.result.DynamicBufferOptionRefusals++
+		return fmt.Errorf("CNA refused Discard on a DYNAMIC index buffer: %w -- the dynamic flag did not reach the creation", err)
+	}
+	g.result.DynamicBufferOptionUploads++
+	// And the index side's own witness for the converter: 99 is undefined and
+	// the reference maps it to Discard by its bit test, so it must be accepted
+	// here too. The two sides need the assertion separately because they reach
+	// CNA through different routes.
+	if err := graphics.DynamicIndexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions(
+		index, indices, 0, int32(len(indices)), 99); err != nil {
+		return fmt.Errorf("CNA refused SetDataOptions(99) on a dynamic index buffer: %w -- the raw value must not reach CNA", err)
+	}
+	g.result.DynamicBufferOptionUploads++
+
+	// The content-lost read, which really does reach CNA. It answers FALSE on
+	// both qualified artifacts -- CNA documents the field as "currently always
+	// false" -- so what is asserted is that it answers at all and that the
+	// answer is the documented one. A true here would be new information and is
+	// reported rather than swallowed.
+	for name, read := range map[string]func() (bool, error){
+		"vertex": vertex.IsContentLost,
+		"index":  index.IsContentLost,
+	} {
+		lost, err := read()
+		if err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("%s IsContentLost: %w", name, err)
+			}
+			fmt.Fprintf(os.Stderr, "%s IsContentLost refused: %v\n", name, err)
+			continue
+		}
+		if lost {
+			return fmt.Errorf("%s IsContentLost answered true on a qualified artifact; CNA documents the field as always false, so this is new information", name)
+		}
+		g.result.DynamicBufferContentLostReads++
+	}
+
+	// The clear across a REAL upload, as far as the public surface reaches.
+	//
+	// What this scenario CANNOT do is set the latch first, and the reason is
+	// the contract's rather than a gap here: SetContentLost is `assembly` in
+	// the reference and unexported in the projection, so no consumer -- and no
+	// consumer-shaped binary like this one -- can arm it. Exporting a hook for
+	// the scenario's benefit would add public surface the pinned contract does
+	// not declare, which is the one thing this project does not do for
+	// convenience. The armed-then-cleared path is measured on the objects
+	// themselves in dynamic_buffer_test.go, where the member is reachable.
+	//
+	// What IS measurable here is the whole path either side of it: a real
+	// native upload runs, the latch is down afterwards, and no ContentLost is
+	// delivered -- which is what a consumer streaming geometry every frame
+	// actually observes.
+	raised := 0
+	subscription, err := vertex.AddContentLostHandler(func(any, *framework.EventArgs) error {
+		raised++
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("subscribing to ContentLost: %w", err)
+	}
+	if err := graphics.DynamicVertexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions(
+		vertex, written, 0, int32(len(written)), graphics.SetDataOptionsDiscard); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("the upload that runs CopyData's tail: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "the latch-clearing upload was refused: %v\n", err)
+	} else {
+		lost, err := vertex.IsContentLost()
+		if err != nil {
+			return fmt.Errorf("IsContentLost after a successful upload: %w", err)
+		}
+		if lost {
+			return errors.New("the buffer reports content lost after a successful upload; CopyData's tail did not run")
+		}
+		if raised != 0 {
+			return fmt.Errorf("an upload raised ContentLost %d times; SetContentLost raises only on true", raised)
+		}
+		g.result.DynamicBufferLatchClears++
+	}
+	if err := vertex.RemoveContentLostHandler(subscription); err != nil {
+		return fmt.Errorf("unsubscribing from ContentLost: %w", err)
+	}
+
+	// The projection's own refusal, which must happen before CNA sees anything:
+	// five vertices into a four-vertex buffer.
+	if err := graphics.DynamicVertexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions(
+		vertex, make([]stressVertex, 5), 0, 5, graphics.SetDataOptionsNone); err == nil {
+		return errors.New("a five-vertex upload into a four-vertex dynamic buffer was accepted")
+	}
+	// And the offset overload, whose offset indexes THIS BUFFER: one vertex
+	// written a stride in must land on the second vertex and leave the first
+	// alone, which is the one thing the offsetless route cannot express.
+	//
+	// The readback is what makes the offset assertable at all: an upload that
+	// ignored it would write vertex 0 and leave vertex 1 as it was, which is
+	// the same slice of bytes the caller handed in and would look correct
+	// anywhere else. Writing a DISTINCT vertex at the offset and checking both
+	// slots is the only shape that can tell the two apart.
+	marker := []stressVertex{
+		{Position: framework.NewVector3BySingleAndSingleAndSingle(-1, -2, -3), Colour: framework.NewColorByInt32AndInt32AndInt32(1, 2, 3)},
+	}
+	if err := graphics.DynamicVertexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32AndSetDataOptions(
+		vertex, 16, marker, 0, 1, 0, graphics.SetDataOptionsNoOverwrite); err != nil {
+		g.result.DynamicBufferOptionRefusals++
+		return fmt.Errorf("CNA refused an offset NoOverwrite upload on a DYNAMIC vertex buffer: %w", err)
+	}
+	g.result.DynamicBufferOptionUploads++
+	offsetRead := make([]stressVertex, len(written))
+	if err := graphics.VertexBufferGetDataBySliceOfT[stressVertex](vertex, offsetRead); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("reading back the offset upload: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "the offset readback was refused: %v\n", err)
+	} else {
+		if offsetRead[0] != written[0] {
+			return fmt.Errorf("an upload at byte 16 overwrote vertex 0: wrote %+v, read %+v", written[0], offsetRead[0])
+		}
+		if offsetRead[1] != marker[0] {
+			return fmt.Errorf("an upload at byte 16 did not land on vertex 1: wrote %+v, read %+v", marker[0], offsetRead[1])
+		}
+		g.result.DynamicBufferRoundTrips++
+	}
+	g.result.DynamicBufferGuardChecks++
+
+	// The substitutability claim end to end: a dynamic buffer binds where its
+	// base does, on the live device, through both positions.
+	if err := device.SetVertexBufferByVertexBuffer(vertex); err != nil {
+		return fmt.Errorf("binding a DynamicVertexBuffer: %w", err)
+	}
+	if err := device.SetIndices(index); err != nil {
+		return fmt.Errorf("binding a DynamicIndexBuffer: %w", err)
+	}
+	// The getter answers the BASE, which is the return the settled rule leaves
+	// concrete: a consumer who bound a dynamic buffer holds the dynamic object
+	// they made and gets its VertexBuffer half back from the device. That the
+	// device holds SOMETHING is what is assertable through the public surface.
+	if device.Indices() == nil {
+		return errors.New("the device holds no index buffer after a DynamicIndexBuffer was bound")
+	}
+	if device.Indices().IndexCount() != index.IndexCount() {
+		return fmt.Errorf("the device holds a %d-index buffer and %d were bound",
+			device.Indices().IndexCount(), index.IndexCount())
+	}
+	// And unbinding through the same positions, which is a NULL to the
+	// reference whether the null was typed or not.
+	var noVertex *graphics.DynamicVertexBuffer
+	if err := device.SetVertexBufferByVertexBuffer(noVertex); err != nil {
+		return fmt.Errorf("unbinding with a typed-nil DynamicVertexBuffer: %w", err)
+	}
+	var noIndex *graphics.DynamicIndexBuffer
+	if err := device.SetIndices(noIndex); err != nil {
+		return fmt.Errorf("unbinding with a typed-nil DynamicIndexBuffer: %w", err)
+	}
+	if device.Indices() != nil {
+		return errors.New("a typed-nil DynamicIndexBuffer did not unbind")
+	}
+	g.result.DynamicBufferBindChecks++
+
+	if err := vertex.Dispose(); err != nil {
+		return fmt.Errorf("disposing the DynamicVertexBuffer: %w", err)
+	}
+	if err := index.Dispose(); err != nil {
+		return fmt.Errorf("disposing the DynamicIndexBuffer: %w", err)
+	}
+	if !vertex.IsDisposed() || !index.IsDisposed() {
+		return errors.New("a dynamic buffer is not disposed after Dispose")
+	}
+	// A disposed buffer refuses rather than reaching a released handle, and it
+	// names ITSELF when it does -- the identity site, proved on a real object.
+	err = graphics.DynamicVertexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions(
+		vertex, written, 0, int32(len(written)), graphics.SetDataOptionsNone)
+	if err == nil {
+		return errors.New("SetData answered on a disposed DynamicVertexBuffer; its CNA handle was not released")
+	}
+	if !strings.Contains(err.Error(), "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer") {
+		return fmt.Errorf("the disposal refusal said %q; the reference names the object's own type", err)
+	}
+	err = graphics.DynamicIndexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions(
+		index, indices, 0, int32(len(indices)), graphics.SetDataOptionsNone)
+	if err == nil {
+		return errors.New("SetData answered on a disposed DynamicIndexBuffer")
+	}
+	if !strings.Contains(err.Error(), "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer") {
+		return fmt.Errorf("the index disposal refusal said %q", err)
+	}
+	g.result.DynamicBufferDisposalChecks++
 	return nil
 }
 

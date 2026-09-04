@@ -43,8 +43,8 @@ var errDrawInvalidOperation = errors.New("operation is not valid")
 //
 // A NULL buffer unbinds everything -- it is not an error, and it does not build
 // a binding at all. That is the branch a reader would most easily get wrong.
-func (d *GraphicsDevice) SetVertexBufferByVertexBuffer(vertexBuffer *VertexBuffer) error {
-	if vertexBuffer == nil {
+func (d *GraphicsDevice) SetVertexBufferByVertexBuffer(vertexBuffer VertexBufferReference) error {
+	if resolveVertexBuffer(vertexBuffer) == nil {
 		return d.SetVertexBuffers(nil)
 	}
 	binding, err := NewVertexBufferBindingByVertexBuffer(vertexBuffer)
@@ -59,8 +59,8 @@ func (d *GraphicsDevice) SetVertexBufferByVertexBuffer(vertexBuffer *VertexBuffe
 // two-argument binding constructor -- so a bad offset is refused by THAT
 // constructor's check, which is why this member has no offset validation of its
 // own. A null buffer still unbinds, and the offset is not looked at.
-func (d *GraphicsDevice) SetVertexBufferByVertexBufferAndInt32(vertexBuffer *VertexBuffer, vertexOffset int32) error {
-	if vertexBuffer == nil {
+func (d *GraphicsDevice) SetVertexBufferByVertexBufferAndInt32(vertexBuffer VertexBufferReference, vertexOffset int32) error {
+	if resolveVertexBuffer(vertexBuffer) == nil {
 		return d.SetVertexBuffers(nil)
 	}
 	binding, err := NewVertexBufferBindingByVertexBufferAndInt32(vertexBuffer, vertexOffset)
@@ -137,14 +137,17 @@ func (d *GraphicsDevice) Indices() *IndexBuffer {
 // SetIndices is GraphicsDevice::set_Indices, which binds the buffer on the
 // device and stores it. A nil buffer unbinds, exactly as the reference's null
 // does and as CNA's CNA_INVALID_HANDLE means.
-func (d *GraphicsDevice) SetIndices(value *IndexBuffer) error {
+func (d *GraphicsDevice) SetIndices(value IndexBufferReference) error {
 	device, err := d.live()
 	if err != nil {
 		return err
 	}
+	// Resolved before the null test, so a DynamicIndexBuffer that is itself
+	// nil unbinds exactly as a null IndexBuffer does.
+	buffer := resolveIndexBuffer(value)
 	var handle uint64
-	if value != nil {
-		handle, err = device.HandleOf(value.nativeResource())
+	if buffer != nil {
+		handle, err = device.HandleOf(buffer.nativeResource())
 		if err != nil {
 			return err
 		}
@@ -152,7 +155,7 @@ func (d *GraphicsDevice) SetIndices(value *IndexBuffer) error {
 	if err := device.SetIndexBuffer(handle); err != nil {
 		return err
 	}
-	d.indices = value
+	d.indices = buffer
 	return nil
 }
 

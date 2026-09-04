@@ -2132,6 +2132,10 @@ CnaGoResult cna_go_occlusion_query_get_pixel_count(CnaGoHandle occlusion_query, 
     return api.cna_occlusion_query_get_pixel_count(occlusion_query, out_pixel_count);
 }
 
+CnaGoResult cna_go_vertex_buffer_set_data_raw_at_with_options(CnaGoHandle vertex_buffer, uint64_t buffer_offset_in_bytes, const void* data, uint64_t data_byte_count, uint64_t vertex_count, uint32_t vertex_stride, uint32_t options) {
+    return api.cna_vertex_buffer_set_data_raw_at_with_options(vertex_buffer, buffer_offset_in_bytes, data, data_byte_count, vertex_count, vertex_stride, (CNA_SetDataOptions)options);
+}
+
 CnaGoResult cna_go_environment_map_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect) {
     return api.cna_environment_map_effect_create(graphics_device, out_effect);
 }

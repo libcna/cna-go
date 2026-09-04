@@ -3112,12 +3112,12 @@ func TestIndexBufferIsReachableFromOutside(t *testing.T) {
 	var _ func() error = buffer.DisposeByNone
 	var _ func(bool) error = buffer.DisposeByBoolean
 
-	var _ func(*graphics.IndexBuffer, []uint16) error = graphics.IndexBufferSetDataBySliceOfT[uint16]
-	var _ func(*graphics.IndexBuffer, []uint16, int32, int32) error = graphics.IndexBufferSetDataBySliceOfTAndInt32AndInt32[uint16]
-	var _ func(*graphics.IndexBuffer, int32, []uint16, int32, int32) error = graphics.IndexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32[uint16]
-	var _ func(*graphics.IndexBuffer, []uint32) error = graphics.IndexBufferGetDataBySliceOfT[uint32]
-	var _ func(*graphics.IndexBuffer, []uint32, int32, int32) error = graphics.IndexBufferGetDataBySliceOfTAndInt32AndInt32[uint32]
-	var _ func(*graphics.IndexBuffer, int32, []uint32, int32, int32) error = graphics.IndexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32[uint32]
+	var _ func(graphics.IndexBufferReference, []uint16) error = graphics.IndexBufferSetDataBySliceOfT[uint16]
+	var _ func(graphics.IndexBufferReference, []uint16, int32, int32) error = graphics.IndexBufferSetDataBySliceOfTAndInt32AndInt32[uint16]
+	var _ func(graphics.IndexBufferReference, int32, []uint16, int32, int32) error = graphics.IndexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32[uint16]
+	var _ func(graphics.IndexBufferReference, []uint32) error = graphics.IndexBufferGetDataBySliceOfT[uint32]
+	var _ func(graphics.IndexBufferReference, []uint32, int32, int32) error = graphics.IndexBufferGetDataBySliceOfTAndInt32AndInt32[uint32]
+	var _ func(graphics.IndexBufferReference, int32, []uint32, int32, int32) error = graphics.IndexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32[uint32]
 
 	for _, name := range []string{"SetData", "GetData"} {
 		if _, present := reflect.TypeOf(buffer).MethodByName(name); present {
@@ -3179,12 +3179,12 @@ func TestVertexBufferIsReachableFromOutside(t *testing.T) {
 	var _ func() graphics.BufferUsage = buffer.BufferUsage
 	var _ func() error = buffer.DisposeByNone
 
-	var _ func(*graphics.VertexBuffer, []canaryVertex) error = graphics.VertexBufferSetDataBySliceOfT[canaryVertex]
-	var _ func(*graphics.VertexBuffer, []canaryVertex, int32, int32) error = graphics.VertexBufferSetDataBySliceOfTAndInt32AndInt32[canaryVertex]
-	var _ func(*graphics.VertexBuffer, int32, []canaryVertex, int32, int32, int32) error = graphics.VertexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32[canaryVertex]
-	var _ func(*graphics.VertexBuffer, []canaryVertex) error = graphics.VertexBufferGetDataBySliceOfT[canaryVertex]
-	var _ func(*graphics.VertexBuffer, []canaryVertex, int32, int32) error = graphics.VertexBufferGetDataBySliceOfTAndInt32AndInt32[canaryVertex]
-	var _ func(*graphics.VertexBuffer, int32, []canaryVertex, int32, int32, int32) error = graphics.VertexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32[canaryVertex]
+	var _ func(graphics.VertexBufferReference, []canaryVertex) error = graphics.VertexBufferSetDataBySliceOfT[canaryVertex]
+	var _ func(graphics.VertexBufferReference, []canaryVertex, int32, int32) error = graphics.VertexBufferSetDataBySliceOfTAndInt32AndInt32[canaryVertex]
+	var _ func(graphics.VertexBufferReference, int32, []canaryVertex, int32, int32, int32) error = graphics.VertexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32[canaryVertex]
+	var _ func(graphics.VertexBufferReference, []canaryVertex) error = graphics.VertexBufferGetDataBySliceOfT[canaryVertex]
+	var _ func(graphics.VertexBufferReference, []canaryVertex, int32, int32) error = graphics.VertexBufferGetDataBySliceOfTAndInt32AndInt32[canaryVertex]
+	var _ func(graphics.VertexBufferReference, int32, []canaryVertex, int32, int32, int32) error = graphics.VertexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32[canaryVertex]
 
 	for _, name := range []string{"SetData", "GetData"} {
 		if _, present := reflect.TypeOf(buffer).MethodByName(name); present {
@@ -3221,10 +3221,10 @@ func TestVertexBufferIsReachableFromOutside(t *testing.T) {
 // fields the setters maintain, so a consumer writes a plain call where every
 // other device getter needs `value, err :=`.
 func TestVertexBufferBindingAndDeviceDrawSurfaceIsReachableFromOutside(t *testing.T) {
-	var _ func(*graphics.VertexBuffer, int32, int32) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBufferAndInt32AndInt32
-	var _ func(*graphics.VertexBuffer, int32) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBufferAndInt32
-	var _ func(*graphics.VertexBuffer) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBuffer
-	var _ func(*graphics.VertexBuffer) (graphics.VertexBufferBinding, error) = graphics.VertexBufferBindingOperatorImplicitByVertexBuffer
+	var _ func(graphics.VertexBufferReference, int32, int32) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBufferAndInt32AndInt32
+	var _ func(graphics.VertexBufferReference, int32) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBufferAndInt32
+	var _ func(graphics.VertexBufferReference) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBuffer
+	var _ func(graphics.VertexBufferReference) (graphics.VertexBufferBinding, error) = graphics.VertexBufferBindingOperatorImplicitByVertexBuffer
 
 	var binding graphics.VertexBufferBinding
 	var _ func() *graphics.VertexBuffer = binding.VertexBuffer
@@ -3232,12 +3232,12 @@ func TestVertexBufferBindingAndDeviceDrawSurfaceIsReachableFromOutside(t *testin
 	var _ func() int32 = binding.InstanceFrequency
 
 	device := &graphics.GraphicsDevice{}
-	var _ func(*graphics.VertexBuffer) error = device.SetVertexBufferByVertexBuffer
-	var _ func(*graphics.VertexBuffer, int32) error = device.SetVertexBufferByVertexBufferAndInt32
+	var _ func(graphics.VertexBufferReference) error = device.SetVertexBufferByVertexBuffer
+	var _ func(graphics.VertexBufferReference, int32) error = device.SetVertexBufferByVertexBufferAndInt32
 	var _ func([]graphics.VertexBufferBinding) error = device.SetVertexBuffers
 	var _ func() []graphics.VertexBufferBinding = device.GetVertexBuffers
 	var _ func() *graphics.IndexBuffer = device.Indices
-	var _ func(*graphics.IndexBuffer) error = device.SetIndices
+	var _ func(graphics.IndexBufferReference) error = device.SetIndices
 	var _ func(graphics.PrimitiveType, int32, int32) error = device.DrawPrimitives
 	var _ func(graphics.PrimitiveType, int32, int32, int32, int32, int32) error = device.DrawIndexedPrimitives
 	var _ func(graphics.PrimitiveType, int32, int32, int32, int32, int32, int32) error = device.DrawInstancedPrimitives
@@ -4489,5 +4489,88 @@ func TestOcclusionQueryIsReachableFromOutside(t *testing.T) {
 	} else if !strings.Contains(err.Error(), "IsComplete has been checked") {
 		// It is refused for the NATIVE reason now, not the arming one.
 		_ = err
+	}
+}
+
+// TestDynamicBuffersAreReachableFromOutside is Foundation 84's canary.
+//
+// The whole point of the two types is that a consumer can hand one to a
+// position that names its BASE, so the canary is as much about the reference
+// interfaces as about the types.
+func TestDynamicBuffersAreReachableFromOutside(t *testing.T) {
+	var _ func(*graphics.GraphicsDevice, *graphics.VertexDeclaration, int32, graphics.BufferUsage) (*graphics.DynamicVertexBuffer, error) = graphics.NewDynamicVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage
+	var _ func(*graphics.GraphicsDevice, reflect.Type, int32, graphics.BufferUsage) (*graphics.DynamicVertexBuffer, error) = graphics.NewDynamicVertexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage
+	var _ func(*graphics.GraphicsDevice, graphics.IndexElementSize, int32, graphics.BufferUsage) (*graphics.DynamicIndexBuffer, error) = graphics.NewDynamicIndexBufferByGraphicsDeviceAndIndexElementSizeAndInt32AndBufferUsage
+	var _ func(*graphics.GraphicsDevice, reflect.Type, int32, graphics.BufferUsage) (*graphics.DynamicIndexBuffer, error) = graphics.NewDynamicIndexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage
+
+	var vertex *graphics.DynamicVertexBuffer
+	var _ func() (bool, error) = vertex.IsContentLost
+	var _ func() *graphics.VertexDeclaration = vertex.VertexDeclaration
+	var _ func() int32 = vertex.VertexCount
+	// It declares no Dispose of its own, so its inherited PUBLIC surface
+	// carries ONE Dispose and not the protected overload -- the same split the
+	// stock effects have against Effect.
+	var _ func() error = vertex.Dispose
+
+	var index *graphics.DynamicIndexBuffer
+	var _ func() (bool, error) = index.IsContentLost
+	var _ func() int32 = index.IndexCount
+	var _ func() graphics.IndexElementSize = index.IndexElementSize
+	var _ func() error = index.Dispose
+
+	// The reference interfaces, which are the reason the types are useful. A
+	// consumer names the interface at a variable and hands a dynamic buffer to
+	// every position that takes the base.
+	var vertexPosition graphics.VertexBufferReference = vertex
+	var indexPosition graphics.IndexBufferReference = index
+	_, _ = vertexPosition, indexPosition
+	var _ func(graphics.VertexBufferReference) error = (*graphics.GraphicsDevice)(nil).SetVertexBufferByVertexBuffer
+	var _ func(graphics.VertexBufferReference, int32) error = (*graphics.GraphicsDevice)(nil).SetVertexBufferByVertexBufferAndInt32
+	var _ func(graphics.IndexBufferReference) error = (*graphics.GraphicsDevice)(nil).SetIndices
+	var _ func(graphics.VertexBufferReference) (graphics.VertexBufferBinding, error) = graphics.NewVertexBufferBindingByVertexBuffer
+	// And the base's own generic transfers, whose RECEIVER widened with them.
+	var _ func(graphics.VertexBufferReference, []byte) error = graphics.VertexBufferSetDataBySliceOfT[byte]
+	var _ func(graphics.IndexBufferReference, []uint16) error = graphics.IndexBufferSetDataBySliceOfT[uint16]
+
+	// The options-carrying overloads, which are what the types add.
+	var _ func(*graphics.DynamicVertexBuffer, []byte, int32, int32, graphics.SetDataOptions) error = graphics.DynamicVertexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions[byte]
+	var _ func(*graphics.DynamicVertexBuffer, int32, []byte, int32, int32, int32, graphics.SetDataOptions) error = graphics.DynamicVertexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32AndSetDataOptions[byte]
+	var _ func(*graphics.DynamicIndexBuffer, []uint16, int32, int32, graphics.SetDataOptions) error = graphics.DynamicIndexBufferSetDataBySliceOfTAndInt32AndInt32AndSetDataOptions[uint16]
+	var _ func(*graphics.DynamicIndexBuffer, int32, []uint16, int32, int32, graphics.SetDataOptions) error = graphics.DynamicIndexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndSetDataOptions[uint16]
+
+	// The event pair, on the settled two-accessor projection.
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = vertex.AddContentLostHandler
+	var _ func(framework.EventSubscription) error = vertex.RemoveContentLostHandler
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = index.AddContentLostHandler
+	var _ func(framework.EventSubscription) error = index.RemoveContentLostHandler
+
+	// The guards a consumer meets without a device, in the reference's order.
+	if _, err := graphics.NewDynamicVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
+		nil, nil, -1, graphics.BufferUsageNone); err == nil {
+		t.Fatal("a nil declaration was accepted")
+	} else if !strings.Contains(err.Error(), "vertexDeclaration") {
+		t.Fatalf("the refusal named %q, not vertexDeclaration; the declaration check runs first", err)
+	}
+	if _, err := graphics.NewDynamicIndexBufferByGraphicsDeviceAndTypeAndInt32AndBufferUsage(
+		nil, nil, 0, graphics.BufferUsageNone); err == nil {
+		t.Fatal("a zero index count was accepted")
+	} else if !strings.Contains(err.Error(), "indexCount") {
+		t.Fatalf("the refusal named %q, not indexCount; the count check runs first", err)
+	}
+
+	// A zero value answers rather than panicking, on every forwarded member.
+	if vertex.VertexCount() != 0 || !vertex.IsDisposed() || vertex.ToString() != "" {
+		t.Fatal("a nil DynamicVertexBuffer did not answer its zero values")
+	}
+	if index.IndexCount() != 0 || !index.IsDisposed() {
+		t.Fatal("a nil DynamicIndexBuffer did not answer its zero values")
+	}
+	if _, err := vertex.IsContentLost(); err == nil {
+		t.Fatal("IsContentLost answered on a nil DynamicVertexBuffer")
+	}
+	// A typed nil is ONE null to a base-typed position, exactly as it is to the
+	// reference: unbinding is what a null buffer means there.
+	if resolved := graphics.VertexBufferReference(vertex); resolved == nil {
+		t.Fatal("a typed-nil DynamicVertexBuffer compared equal to a nil interface, which Go does not do")
 	}
 }

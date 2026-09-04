@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"unsafe"
-
-	"github.com/openeggbert/cna-go/internal/interop"
 )
 
 // ---------------------------------------------------------------------------
@@ -71,13 +69,13 @@ var errVertexStrideUnsupported = errors.New(
 	"a vertex stride larger than the element size needs a CNA route that writes a strided window without touching the gaps, and 0.21.0 publishes none")
 
 // VertexBufferSetDataBySliceOfT is VertexBuffer::SetData<T>(T[]).
-func VertexBufferSetDataBySliceOfT[T any](buffer *VertexBuffer, data []T) error {
+func VertexBufferSetDataBySliceOfT[T any](buffer VertexBufferReference, data []T) error {
 	return VertexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32(buffer, 0, data, 0, int32(len(data)), 0)
 }
 
 // VertexBufferSetDataBySliceOfTAndInt32AndInt32 is
 // VertexBuffer::SetData<T>(T[], int32, int32).
-func VertexBufferSetDataBySliceOfTAndInt32AndInt32[T any](buffer *VertexBuffer, data []T, startIndex, elementCount int32) error {
+func VertexBufferSetDataBySliceOfTAndInt32AndInt32[T any](buffer VertexBufferReference, data []T, startIndex, elementCount int32) error {
 	return VertexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32(buffer, 0, data, startIndex, elementCount, 0)
 }
 
@@ -86,28 +84,38 @@ func VertexBufferSetDataBySliceOfTAndInt32AndInt32[T any](buffer *VertexBuffer, 
 // which the other two funnel into with a ZERO stride -- and zero means
 // "tightly packed", not "no stride".
 func VertexBufferSetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32[T any](
-	buffer *VertexBuffer, offsetInBytes int32, data []T, startIndex, elementCount, vertexStride int32,
+	buffer VertexBufferReference, offsetInBytes int32, data []T, startIndex, elementCount, vertexStride int32,
 ) error {
-	byteCount, nativeVertices, err := prepareVertexTransfer[T](buffer, data, startIndex, elementCount, offsetInBytes, vertexStride, true)
+	// The receiver of a generic instance method widens like any other
+	// base-typed position, so a DynamicVertexBuffer reaches its base's SetData
+	// exactly as a C# caller reaches it through inheritance.
+	target := resolveVertexBuffer(buffer)
+	byteCount, nativeVertices, err := prepareVertexTransfer[T](target, data, startIndex, elementCount, offsetInBytes, vertexStride, true)
 	if err != nil {
 		return err
 	}
-	resource := buffer.nativeResource()
+	resource := target.nativeResource()
 	if resource == nil {
 		return errVertexBufferNil
 	}
-	return resource.SetVertexDataRaw(uint64(offsetInBytes),
-		unsafe.Pointer(&data[startIndex]), byteCount, nativeVertices, uint32(buffer.vertexStride))
+	if err := resource.SetVertexDataRaw(uint64(offsetInBytes),
+		unsafe.Pointer(&data[startIndex]), byteCount, nativeVertices, uint32(target.vertexStride)); err != nil {
+		return err
+	}
+	// AFTER the result check, exactly where CopyData's is: a refused upload
+	// leaves the latch alone.
+	target.noteContentRestored()
+	return nil
 }
 
 // VertexBufferGetDataBySliceOfT is VertexBuffer::GetData<T>(T[]).
-func VertexBufferGetDataBySliceOfT[T any](buffer *VertexBuffer, data []T) error {
+func VertexBufferGetDataBySliceOfT[T any](buffer VertexBufferReference, data []T) error {
 	return VertexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32(buffer, 0, data, 0, int32(len(data)), 0)
 }
 
 // VertexBufferGetDataBySliceOfTAndInt32AndInt32 is
 // VertexBuffer::GetData<T>(T[], int32, int32).
-func VertexBufferGetDataBySliceOfTAndInt32AndInt32[T any](buffer *VertexBuffer, data []T, startIndex, elementCount int32) error {
+func VertexBufferGetDataBySliceOfTAndInt32AndInt32[T any](buffer VertexBufferReference, data []T, startIndex, elementCount int32) error {
 	return VertexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32(buffer, 0, data, startIndex, elementCount, 0)
 }
 
@@ -118,21 +126,22 @@ func VertexBufferGetDataBySliceOfTAndInt32AndInt32[T any](buffer *VertexBuffer, 
 // path needs no special case -- unlike IndexBuffer's, whose CNA read always
 // begins at index zero.
 func VertexBufferGetDataByInt32AndSliceOfTAndInt32AndInt32AndInt32[T any](
-	buffer *VertexBuffer, offsetInBytes int32, data []T, startIndex, elementCount, vertexStride int32,
+	buffer VertexBufferReference, offsetInBytes int32, data []T, startIndex, elementCount, vertexStride int32,
 ) error {
-	byteCount, nativeVertices, err := prepareVertexTransfer[T](buffer, data, startIndex, elementCount, offsetInBytes, vertexStride, false)
+	target := resolveVertexBuffer(buffer)
+	byteCount, nativeVertices, err := prepareVertexTransfer[T](target, data, startIndex, elementCount, offsetInBytes, vertexStride, false)
 	if err != nil {
 		return err
 	}
-	if buffer.BufferUsage() == BufferUsageWriteOnly {
+	if target.BufferUsage() == BufferUsageWriteOnly {
 		return fmt.Errorf("%w: %s", errVertexTransferNotSupported, writeOnlyGetNotSupported)
 	}
-	resource := buffer.nativeResource()
+	resource := target.nativeResource()
 	if resource == nil {
 		return errVertexBufferNil
 	}
 	return resource.GetVertexDataRaw(uint64(offsetInBytes),
-		unsafe.Pointer(&data[startIndex]), byteCount, nativeVertices, uint32(buffer.vertexStride))
+		unsafe.Pointer(&data[startIndex]), byteCount, nativeVertices, uint32(target.vertexStride))
 }
 
 // prepareVertexTransfer is CopyData's guard prefix, shared by both directions.
@@ -162,8 +171,8 @@ func prepareVertexTransfer[T any](
 	if buffer == nil || buffer.resource == nil {
 		return 0, 0, errVertexBufferNil
 	}
-	if buffer.IsDisposed() {
-		return 0, 0, fmt.Errorf("%w: VertexBuffer", interop.ErrDisposed)
+	if err := buffer.checkDisposed(); err != nil {
+		return 0, 0, err
 	}
 	if len(data) == 0 {
 		return 0, 0, fmt.Errorf("%w: data: %s", errGraphicsResourceArgumentNull, nullNotAllowed)

@@ -169,6 +169,21 @@ func (t *RenderTargetCube) IsContentLost() (bool, error) {
 	return t.contentLost, nil
 }
 
+// setContentLost is RenderTargetCube::SetContentLost(bool), the
+// IDynamicGraphicsResource member the reference dispatches on. It stores the
+// flag and raises ContentLost only when the flag is true, exactly as the
+// dynamic buffers' does -- one body, four implementing types.
+//
+// Foundation 84 projected it. Until then the type carried the latch and the
+// event with nothing that could clear or raise them, because the interface the
+// reference dispatches through was not projected at all.
+func (t *RenderTargetCube) setContentLost(isContentLost bool) {
+	t.contentLost = isContentLost
+	if isContentLost {
+		_ = t.contentLostEvent.Raise(t, framework.EventArgsEmpty())
+	}
+}
+
 // AddContentLostHandler is add_ContentLost. The event cannot fire in either
 // qualified environment, for the reason RenderTarget2D's cannot: CNA raises it
 // only on the DIRECTX9, DIRECT2D and SKIA renderer families.

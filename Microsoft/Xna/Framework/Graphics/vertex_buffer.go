@@ -87,6 +87,25 @@ const (
 func NewVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
 	graphicsDevice *GraphicsDevice, vertexDeclaration *VertexDeclaration, vertexCount int32, usage BufferUsage,
 ) (*VertexBuffer, error) {
+	return newVertexBufferWithDynamic(graphicsDevice, vertexDeclaration, vertexCount, usage, false)
+}
+
+// newVertexBufferWithDynamic is the body both this type's constructor and
+// DynamicVertexBuffer's share.
+//
+// # Why the dynamic flag is a parameter rather than a second creation path
+//
+// The reference's two constructors differ in exactly one argument to the same
+// private CreateBuffer: `0` against `D3DUSAGE_DYNAMIC`. CNA's create-info has
+// the same shape -- one `dynamic` field, documented as "True to construct
+// DynamicVertexBuffer; false to construct VertexBuffer" -- so the projection
+// keeps ONE body and one flag rather than two bodies that would have to be kept
+// in step. Everything else, including all three guards and their order, is
+// shared because the reference shares it.
+func newVertexBufferWithDynamic(
+	graphicsDevice *GraphicsDevice, vertexDeclaration *VertexDeclaration, vertexCount int32, usage BufferUsage,
+	dynamic bool,
+) (*VertexBuffer, error) {
 	if vertexDeclaration == nil {
 		return nil, fmt.Errorf("%w: vertexDeclaration: %s", errGraphicsResourceArgumentNull, nullNotAllowed)
 	}
@@ -107,7 +126,7 @@ func NewVertexBufferByGraphicsDeviceAndVertexDeclarationAndInt32AndBufferUsage(
 	if err != nil {
 		return nil, err
 	}
-	resource, err := device.CreateVertexBuffer(native, vertexCount, nativeBufferUsage(usage), false)
+	resource, err := device.CreateVertexBuffer(native, vertexCount, nativeBufferUsage(usage), dynamic)
 	if err != nil {
 		return nil, err
 	}
@@ -240,6 +259,40 @@ func (b *VertexBuffer) BufferUsage() BufferUsage {
 // clrTypeName is System.Object::ToString's answer for a VertexBuffer.
 func (b *VertexBuffer) clrTypeName() string {
 	return "Microsoft.Xna.Framework.Graphics.VertexBuffer"
+}
+
+// checkDisposed is Helpers::CheckDisposed(object, native int), which every
+// transfer runs and which throws an ObjectDisposedException naming the OBJECT:
+//
+//	ldarg.0
+//	ldfld  pComPtr
+//	ldarg.0
+//	call   Helpers::CheckDisposed(object, native int)
+//
+// The `ldarg.0` pushed as an OBJECT is the identity site. Until Foundation 84
+// a VertexBuffer could only ever be a VertexBuffer, so the literal name was
+// right by accident; a disposed DynamicVertexBuffer must name itself, and
+// self() is what answers with the whole object rather than its base half.
+func (b *VertexBuffer) checkDisposed() error {
+	if !b.IsDisposed() {
+		return nil
+	}
+	return fmt.Errorf("%w: %s", interop.ErrDisposed, b.resource.self().clrTypeName())
+}
+
+// noteContentRestored is CopyData's tail on the SETTING path:
+//
+//	ldarg.s isSetting; brfalse ret
+//	ldarg.0; isinst IDynamicGraphicsResource
+//	         ... callvirt SetContentLost(false)
+//
+// The `isinst` is on the OBJECT, so this is an identity site: a bare receiver
+// is the VertexBuffer HALF of a DynamicVertexBuffer and would answer "not
+// dynamic" for every buffer in the profile. See dynamicGraphicsResource.
+func (b *VertexBuffer) noteContentRestored() {
+	if dynamic, isDynamic := b.resource.self().(dynamicGraphicsResource); isDynamic {
+		dynamic.setContentLost(false)
+	}
 }
 
 // bindDerived forwards the CLR `this` to the composed base.
