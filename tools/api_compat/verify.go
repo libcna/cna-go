@@ -3031,11 +3031,11 @@ func adapterFieldType(adapter bclBaseAdapter, baseType string, owner *expectedTy
 	if open >= 0 {
 		head = name[:open]
 	}
-	// Only an UNQUALIFIED adapter name takes the framework qualifier. An
-	// adapter that already names its own package -- bclexception.State, which
-	// the exception family composes out of internal/bclexception -- is spelled
-	// exactly as declared.
-	if !strings.Contains(head, ".") {
+	// Only an UNQUALIFIED adapter DECLARED ELSEWHERE takes the framework
+	// qualifier. Two kinds are left alone: an adapter that already names its
+	// own package -- bclexception.State, out of internal/bclexception -- and
+	// one declared in the consumer's own package, which binaryReaderBase is.
+	if !strings.Contains(head, ".") && !adapter.AdapterInConsumerPackage {
 		head = frameworkQualified(owner, head)
 	}
 	arguments := bclBaseArguments(baseType)

@@ -91,6 +91,22 @@ type xnaCompositionIdentity struct {
 	// `this`, keyed by the derived CLR identity. A derived type CNA-Go does not
 	// project yet is absent, and its row reports NOT_PROJECTED.
 	DerivedConstructors map[string]string
+	// NoIdentityNeeded records a ROOT composed base whose members never use
+	// the CLR `this` as an OBJECT at all -- every one of them reads its own
+	// fields and nothing more. Such a base splits no identity, so it holds no
+	// derived field, declares no self accessor and installs no binding: there
+	// is nothing for a derived type to bind.
+	//
+	// It is NOT the same as ForwardsTo. A forwarding link has an identity and
+	// hands it on; this has none to hand. Foundation 92 is where the case first
+	// arose: ContentTypeReader's whole surface is `ldfld` reads and two members
+	// whose bodies are `ret`, so nothing in it can tell a base object from a
+	// derived one.
+	//
+	// The flag must be justified by the IL, not by convenience: a base with a
+	// ToString, an event raise or an exception naming the runtime type HAS an
+	// identity site and must record it.
+	NoIdentityNeeded bool
 }
 
 type xnaCompositionIdentitySite struct {
@@ -114,6 +130,56 @@ type xnaCompositionIdentitySite struct {
 // xnaCompositionIdentities is the closed registry. Every COMPOSED XNA base
 // relationship must appear here.
 var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
+	// Foundation 92. ContentManager carries THREE identity sites, and they are
+	// one pattern repeated: Unload, Load<T> and ReadAsset<T> each open with
+	//
+	//	if (loadedAssets == null)
+	//	    throw new ObjectDisposedException(this.ToString());
+	//
+	// `ldarg.0; callvirt System.Object::ToString()` -- the receiver is the
+	// OBJECT. So a disposed ResourceContentManager must name itself, and a
+	// projection answering ContentManager would tell a consumer the wrong type
+	// was disposed.
+	//
+	// Only ONE of the three is recorded as a site, and the reason is the
+	// projection's shape rather than the reference's: Load<T> and ReadAsset<T>
+	// are GENERIC methods, which Go cannot declare as methods at all, so they
+	// project as package FUNCTIONS. The registry names sites as
+	// `GoBase.Member`, and a package function is neither -- it reaches the same
+	// self accessor through the base it is handed. Unload is the site that can
+	// be named, and it is the one checked.
+	"Microsoft.Xna.Framework.Content.ContentManager": {
+		Package:      modulePath + "/Microsoft/Xna/Framework/Content",
+		GoBase:       "ContentManager",
+		DerivedField: "derived",
+		SelfMember:   "self",
+		BindMember:   "bindDerived",
+		Sites: []xnaCompositionIdentitySite{
+			{GoMember: "Unload", Uses: 1, Reference: "Unload: ldfld loadedAssets; brtrue; ldarg.0; callvirt System.Object::ToString(); newobj ObjectDisposedException(string); throw"},
+		},
+		DerivedConstructors: map[string]string{
+			"Microsoft.Xna.Framework.Content.ResourceContentManager": "NewResourceContentManager",
+		},
+	},
+
+	// Foundation 92. ContentTypeReader needs NO identity, and that is measured
+	// rather than assumed.
+	//
+	// Its whole surface is four `ldfld` reads plus two members whose bodies do
+	// nothing -- Initialize is one `ret` and Read is abstract. `ldarg.0` never
+	// leaves the object: it is never a sender, never a ToString receiver, never
+	// the subject of an exception message. So there is no CLR `this` to split
+	// between the base and ContentTypeReader`1, and the composition installs no
+	// machinery to resolve one.
+	"Microsoft.Xna.Framework.Content.ContentTypeReader": {
+		Package:          modulePath + "/Microsoft/Xna/Framework/Content",
+		GoBase:           "ContentTypeReader",
+		NoIdentityNeeded: true,
+		DerivedConstructors: map[string]string{
+			"Microsoft.Xna.Framework.Content.ContentTypeReader`1": "NewContentTypeReaderOfT",
+		},
+	},
+
 	"Microsoft.Xna.Framework.GameComponent": {
 		Package:      modulePath + "/Microsoft/Xna/Framework",
 		GoBase:       "GameComponent",
@@ -402,6 +468,24 @@ func measureXNACompositionIdentity(result *report, expected *expectedSurface, ac
 		measurement.ForwardsTo = identity.ForwardsTo
 		if ast.IsExported(identity.DerivedField) || ast.IsExported(identity.SelfMember) || ast.IsExported(identity.BindMember) {
 			fail("the object-identity mechanism is exported; it is private implementation state and the contract declares no accessor for the base object")
+		}
+
+		if identity.NoIdentityNeeded {
+			// A base that needs no identity must hold none. Anything else would
+			// be machinery with nothing to resolve.
+			if identity.DerivedField != "" || identity.SelfMember != "" || identity.BindMember != "" {
+				fail(fmt.Sprintf("%s records that it needs no CLR `this` and still declares identity machinery; a base with nothing to resolve holds nothing",
+					identity.GoBase))
+			}
+			if len(identity.Sites) > 0 {
+				fail(fmt.Sprintf("%s records that it needs no CLR `this` and still records %d identity site(s)",
+					identity.GoBase, len(identity.Sites)))
+			}
+			if identity.ForwardsTo != "" {
+				fail(fmt.Sprintf("%s both forwards its binding and records that it needs none", identity.GoBase))
+			}
+			measurements = append(measurements, measurement)
+			continue
 		}
 
 		if identity.ForwardsTo != "" {

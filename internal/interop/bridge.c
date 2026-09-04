@@ -3768,3 +3768,117 @@ CnaGoResult cna_go_storage_get_root_size_ext(uint64_t* out_bytes) {
 CnaGoResult cna_go_storage_copy_root_ext(char* destination, uint64_t capacity, uint64_t* out_bytes) {
     return api.cna_storage_copy_root_ext(destination, capacity, out_bytes);
 }
+
+/* Foundation 92 -- the content reader. */
+
+CnaGoResult cna_go_content_reader_create(
+    CnaGoHandle content_manager, CnaGoHandle stream,
+    const char* asset_name, uint64_t asset_name_length,
+    int32_t version, uint8_t platform, CnaGoHandle* out_reader) {
+    CNA_ContentReaderCreateInfo info;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    info.content_manager = (CNA_Handle)content_manager;
+    info.stream = (CNA_StorageStreamHandle)stream;
+    info.asset_name = cna_go_view(asset_name, asset_name_length);
+    info.version = version;
+    info.platform = platform;
+    return api.cna_content_reader_create(&info, (CNA_ContentReaderHandle*)out_reader);
+}
+
+CnaGoResult cna_go_content_reader_get_asset_name_size(CnaGoHandle reader, uint64_t* out_bytes) {
+    return api.cna_content_reader_get_asset_name_size((CNA_ContentReaderHandle)reader, out_bytes);
+}
+
+CnaGoResult cna_go_content_reader_copy_asset_name(CnaGoHandle reader, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_content_reader_copy_asset_name((CNA_ContentReaderHandle)reader, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_content_reader_read_matrix(CnaGoHandle reader, float* out_values) {
+    CNA_Matrix value;
+    CnaGoResult result = api.cna_content_reader_read_matrix((CNA_ContentReaderHandle)reader, &value);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    memcpy(out_values, &value, sizeof(value));
+    return CNA_GO_RESULT_SUCCESS;
+}
+
+CnaGoResult cna_go_content_reader_read_quaternion(CnaGoHandle reader, float* out_values) {
+    CNA_Quaternion value;
+    CnaGoResult result = api.cna_content_reader_read_quaternion((CNA_ContentReaderHandle)reader, &value);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    out_values[0] = value.x; out_values[1] = value.y;
+    out_values[2] = value.z; out_values[3] = value.w;
+    return CNA_GO_RESULT_SUCCESS;
+}
+
+CnaGoResult cna_go_content_reader_read_vector2(CnaGoHandle reader, float* out_values) {
+    CNA_Vector2 value;
+    CnaGoResult result = api.cna_content_reader_read_vector2((CNA_ContentReaderHandle)reader, &value);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    out_values[0] = value.x; out_values[1] = value.y;
+    return CNA_GO_RESULT_SUCCESS;
+}
+
+CnaGoResult cna_go_content_reader_read_vector3(CnaGoHandle reader, float* out_values) {
+    CNA_Vector3 value;
+    CnaGoResult result = api.cna_content_reader_read_vector3((CNA_ContentReaderHandle)reader, &value);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    out_values[0] = value.x; out_values[1] = value.y; out_values[2] = value.z;
+    return CNA_GO_RESULT_SUCCESS;
+}
+
+CnaGoResult cna_go_content_reader_read_vector4(CnaGoHandle reader, float* out_values) {
+    CNA_Vector4 value;
+    CnaGoResult result = api.cna_content_reader_read_vector4((CNA_ContentReaderHandle)reader, &value);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    out_values[0] = value.x; out_values[1] = value.y;
+    out_values[2] = value.z; out_values[3] = value.w;
+    return CNA_GO_RESULT_SUCCESS;
+}
+
+CnaGoResult cna_go_content_reader_read_color(CnaGoHandle reader, uint8_t* out_channels) {
+    CNA_Color value;
+    CnaGoResult result = api.cna_content_reader_read_color((CNA_ContentReaderHandle)reader, &value);
+    if (result != CNA_GO_RESULT_SUCCESS) {
+        return result;
+    }
+    /* CNA_Color is four separate channel bytes, not a packed word, so the four
+       cross as four bytes and the Go side packs them the way XNA's Color does. */
+    out_channels[0] = value.r; out_channels[1] = value.g;
+    out_channels[2] = value.b; out_channels[3] = value.a;
+    return CNA_GO_RESULT_SUCCESS;
+}
+
+CnaGoResult cna_go_content_reader_read_object_tag(CnaGoHandle reader, uint8_t* out_has_value) {
+    return api.cna_content_reader_read_object_tag((CNA_ContentReaderHandle)reader, (CNA_Bool*)out_has_value);
+}
+
+CnaGoResult cna_go_content_reader_initialize_type_readers(CnaGoHandle reader) {
+    return api.cna_content_reader_initialize_type_readers((CNA_ContentReaderHandle)reader);
+}
+
+CnaGoResult cna_go_content_reader_read_shared_resources(CnaGoHandle reader) {
+    return api.cna_content_reader_read_shared_resources((CNA_ContentReaderHandle)reader);
+}
+
+CnaGoResult cna_go_content_reader_read_bytes_exact(
+    CnaGoHandle reader, int32_t count, const char* reader_name, uint64_t reader_name_length,
+    uint8_t* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_content_reader_read_bytes_exact((CNA_ContentReaderHandle)reader, count,
+        cna_go_view(reader_name, reader_name_length), destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_content_reader_destroy(CnaGoHandle reader) {
+    return api.cna_content_reader_destroy((CNA_ContentReaderHandle)reader);
+}

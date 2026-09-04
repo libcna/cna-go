@@ -3584,3 +3584,130 @@ func nativeStorageRoot() (string, error) {
 	}
 	return string(buffer[:int(copied)]), nil
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 92. The content reader.
+//
+// Fifteen of CNA's twenty routes have an XNA counterpart. The other five --
+// read_bounding_sphere, get_version, get_platform and the two check_* helpers
+// -- have none and are recorded as deliberately unbound.
+
+// ContentReaderCreateValues is CNA_ContentReaderCreateInfo reduced to what the
+// projection supplies. struct_size and struct_version are the bridge's; the
+// reserved bytes are zeroed there too.
+type ContentReaderCreateValues struct {
+	ContentManager uint64
+	Stream         uint64
+	AssetName      string
+	Version        int32
+	Platform       uint8
+}
+
+func nativeContentReaderCreate(values ContentReaderCreateValues) (uint64, error) {
+	name := storageStringArg(values.AssetName)
+	var reader C.CnaGoHandle
+	code := uint32(C.cna_go_content_reader_create(
+		C.CnaGoHandle(values.ContentManager), C.CnaGoHandle(values.Stream),
+		name, C.uint64_t(len(values.AssetName)),
+		C.int32_t(values.Version), C.uint8_t(values.Platform), &reader))
+	runtime.KeepAlive(values.AssetName)
+	return uint64(reader), resultError("cna_content_reader_create", code)
+}
+
+func nativeContentReaderAssetName(reader uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_content_reader_get_asset_name_size(C.CnaGoHandle(reader), &byteCount))
+	if err := resultError("cna_content_reader_get_asset_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_content_reader_copy_asset_name(
+		C.CnaGoHandle(reader), (*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_content_reader_copy_asset_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+// nativeContentReaderReadFloats serves the five value reads that hand back
+// floats. The count is the route's own, so a caller cannot ask for a Vector2
+// and be given four values.
+func nativeContentReaderReadFloats(reader uint64, kind int) ([]float32, error) {
+	var values [16]C.float
+	var code uint32
+	var route string
+	var count int
+	switch kind {
+	case 2:
+		route, count = "cna_content_reader_read_vector2", 2
+		code = uint32(C.cna_go_content_reader_read_vector2(C.CnaGoHandle(reader), &values[0]))
+	case 3:
+		route, count = "cna_content_reader_read_vector3", 3
+		code = uint32(C.cna_go_content_reader_read_vector3(C.CnaGoHandle(reader), &values[0]))
+	case 4:
+		route, count = "cna_content_reader_read_vector4", 4
+		code = uint32(C.cna_go_content_reader_read_vector4(C.CnaGoHandle(reader), &values[0]))
+	case 5:
+		route, count = "cna_content_reader_read_quaternion", 4
+		code = uint32(C.cna_go_content_reader_read_quaternion(C.CnaGoHandle(reader), &values[0]))
+	default:
+		route, count = "cna_content_reader_read_matrix", 16
+		code = uint32(C.cna_go_content_reader_read_matrix(C.CnaGoHandle(reader), &values[0]))
+	}
+	if err := resultError(route, code); err != nil {
+		return nil, err
+	}
+	result := make([]float32, count)
+	for i := 0; i < count; i++ {
+		result[i] = float32(values[i])
+	}
+	return result, nil
+}
+
+func nativeContentReaderReadColor(reader uint64) ([4]byte, error) {
+	var channels [4]C.uint8_t
+	code := uint32(C.cna_go_content_reader_read_color(C.CnaGoHandle(reader), &channels[0]))
+	var result [4]byte
+	for i := range result {
+		result[i] = byte(channels[i])
+	}
+	return result, resultError("cna_content_reader_read_color", code)
+}
+
+func nativeContentReaderReadObjectTag(reader uint64) (bool, error) {
+	var hasValue C.uint8_t
+	code := uint32(C.cna_go_content_reader_read_object_tag(C.CnaGoHandle(reader), &hasValue))
+	return hasValue != 0, resultError("cna_content_reader_read_object_tag", code)
+}
+
+func nativeContentReaderInitializeTypeReaders(reader uint64) error {
+	return resultError("cna_content_reader_initialize_type_readers",
+		uint32(C.cna_go_content_reader_initialize_type_readers(C.CnaGoHandle(reader))))
+}
+
+func nativeContentReaderReadSharedResources(reader uint64) error {
+	return resultError("cna_content_reader_read_shared_resources",
+		uint32(C.cna_go_content_reader_read_shared_resources(C.CnaGoHandle(reader))))
+}
+
+func nativeContentReaderReadBytesExact(reader uint64, count int32, readerName string, destination []byte) (int, error) {
+	if len(destination) == 0 {
+		return 0, nil
+	}
+	name := storageStringArg(readerName)
+	var read C.uint64_t
+	code := uint32(C.cna_go_content_reader_read_bytes_exact(
+		C.CnaGoHandle(reader), C.int32_t(count), name, C.uint64_t(len(readerName)),
+		(*C.uint8_t)(unsafe.Pointer(&destination[0])), C.uint64_t(len(destination)), &read))
+	runtime.KeepAlive(readerName)
+	return int(read), resultError("cna_content_reader_read_bytes_exact", code)
+}
+
+func nativeContentReaderDestroy(reader uint64) error {
+	return resultError("cna_content_reader_destroy",
+		uint32(C.cna_go_content_reader_destroy(C.CnaGoHandle(reader))))
+}

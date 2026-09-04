@@ -2977,8 +2977,11 @@ func TestContentManagerIsReachableFromOutside(t *testing.T) {
 	var _ func(string) (io.Reader, error) = manager.OpenStream
 	var _ func() error = manager.DisposeByNone
 	var _ func(bool) error = manager.DisposeByBoolean
-	var _ func(*content.ContentManager, string) (*graphics.Texture2D, error) = content.ContentManagerLoad[*graphics.Texture2D]
-	var _ func(*content.ContentManager, string, any) (*graphics.Texture2D, error) = content.ContentManagerReadAsset[*graphics.Texture2D]
+	// Foundation 92 widened this position: ContentManager became a substitutable
+	// base when ResourceContentManager was projected, so the receiver argument
+	// takes the interface and a derived manager can be handed to it.
+	var _ func(content.ContentManagerReference, string) (*graphics.Texture2D, error) = content.ContentManagerLoad[*graphics.Texture2D]
+	var _ func(content.ContentManagerReference, string, func(any)) (*graphics.Texture2D, error) = content.ContentManagerReadAsset[*graphics.Texture2D]
 
 	// The method-shaped names a C# reader would look for do not exist.
 	for _, name := range []string{"Load", "ReadAsset"} {
@@ -5021,5 +5024,90 @@ func TestStorageIsReachableFromOutsideTheModule(t *testing.T) {
 	case <-result.AsyncWaitHandle():
 	default:
 		t.Fatal("the wait handle was not already signalled")
+	}
+}
+
+// TestContentPlumbingIsReachableFromOutsideTheModule is Foundation 92's canary.
+// It pins the exported shape of all five types and the two things a consumer
+// reaches with no runtime: the type readers' pure-managed surface and the
+// resource manager's own lookup.
+func TestContentPlumbingIsReachableFromOutsideTheModule(t *testing.T) {
+	var reader *content.ContentTypeReader
+	var _ func() reflect.Type = reader.TargetType
+	var _ func() int32 = reader.TypeVersion
+	var _ func() bool = reader.CanDeserializeIntoExistingObject
+	var _ func(*content.ContentTypeReaderManager) error = reader.Initialize
+	var _ func(*content.ContentReader, any) (any, error) = reader.Read
+	var _ func(reflect.Type) *content.ContentTypeReader = content.NewContentTypeReader
+
+	// The substitutable base interface a consumer can NAME and not satisfy.
+	var _ content.ContentTypeReaderReference = content.NewContentTypeReader(reflect.TypeOf(int32(0)))
+
+	var typed *content.ContentTypeReaderOfT[int32]
+	var _ func() reflect.Type = typed.TargetType
+	var _ func(*content.ContentReader, any) (any, error) = typed.ReadByContentReaderAndObject
+	var _ func(*content.ContentReader, int32) (int32, error) = typed.ReadByContentReaderAnd0
+
+	var manager *content.ContentTypeReaderManager
+	var _ func(reflect.Type) (*content.ContentTypeReader, error) = manager.GetTypeReader
+
+	var contentReader *content.ContentReader
+	var _ func() (string, error) = contentReader.AssetName
+	var _ func() (*content.ContentManager, error) = contentReader.ContentManager
+	var _ func() (framework.Vector2, error) = contentReader.ReadVector2
+	var _ func() (framework.Matrix, error) = contentReader.ReadMatrix
+	var _ func() (framework.Color, error) = contentReader.ReadColor
+	var _ func() (float32, error) = contentReader.ReadSingle
+	var _ func() (float64, error) = contentReader.ReadDouble
+	// The inherited BinaryReader surface.
+	var _ func() (int32, error) = contentReader.ReadInt32
+	var _ func() (string, error) = contentReader.ReadString
+	var _ func(int32) ([]uint8, error) = contentReader.ReadBytes
+	var _ func() error = contentReader.Close
+
+	// The ten generic members, which are package functions because Go cannot
+	// declare a method with its own type parameters.
+	var _ func(*content.ContentReader) (int32, error) = content.ContentReaderReadObjectByNone[int32]
+	var _ func(*content.ContentReader, int32) (int32, error) = content.ContentReaderReadObjectByT[int32]
+	var _ func(*content.ContentReader, func(int32)) error = content.ContentReaderReadSharedResource[int32]
+	var _ func(*content.ContentReader) (int32, error) = content.ContentReaderReadExternalReference[int32]
+
+	// The type readers are pure managed, so a consumer can exercise them.
+	built := content.NewContentTypeReader(reflect.TypeOf(int32(0)))
+	if built.TargetType() != reflect.TypeOf(int32(0)) {
+		t.Fatal("TargetType did not answer the type it was built for")
+	}
+	if built.TypeVersion() != 0 || built.CanDeserializeIntoExistingObject() {
+		t.Fatal("the base virtuals did not answer their ldc.i4.0 defaults")
+	}
+	if _, err := built.Read(nil, nil); err == nil {
+		t.Fatal("the abstract Read answered; the reference has no body either")
+	}
+
+	// ResourceContentManager, whose lookup a consumer supplies.
+	resources, err := content.NewResourceContentManager(struct{}{}, func(name string) any {
+		if name == "binary" {
+			return []byte("bytes")
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("NewResourceContentManager: %v", err)
+	}
+	var _ content.ContentManagerReference = resources
+	stream, err := resources.OpenStream("binary")
+	if err != nil {
+		t.Fatalf("OpenStream: %v", err)
+	}
+	if data, err := io.ReadAll(stream); err != nil || string(data) != "bytes" {
+		t.Fatalf("read back %q, %v", data, err)
+	}
+	if _, err := resources.OpenStream("absent"); err == nil {
+		t.Fatal("a missing resource was accepted")
+	}
+	// A derived manager reaches the generic package functions, which is what
+	// the substitutable base interface exists for.
+	if _, err := content.ContentManagerLoad[*struct{}](resources, "asset"); err == nil {
+		t.Fatal("an unsupported asset type loaded")
 	}
 }

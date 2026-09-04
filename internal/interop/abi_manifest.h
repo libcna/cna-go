@@ -895,6 +895,43 @@ typedef CNA_Result (*cna_storage_set_app_name_ext_fn)(CNA_StringView);
 typedef CNA_Result (*cna_storage_get_root_size_ext_fn)(uint64_t *);
 typedef CNA_Result (*cna_storage_copy_root_ext_fn)(char *, uint64_t, uint64_t *);
 
+
+/* Foundation 92 -- the content reader. Fifteen of CNA's twenty routes have an
+   XNA counterpart; the other five -- read_bounding_sphere, get_version,
+   get_platform and the two check_* helpers -- have none and stay unbound.
+
+   CNA_ContentReaderCreateInfo is the one struct here, and it is mirrored field
+   for field so MANIFEST_LAYOUT_AGREEMENTS proves it against the canonical
+   header. Its `stream` field is what makes this family depend on Storage: only
+   storage.h produces a CNA_StorageStreamHandle. */
+#ifndef CNA_C_CONTENT_READERS_H
+typedef CNA_Handle CNA_ContentReaderHandle;
+typedef struct CNA_ContentReaderCreateInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Handle content_manager;
+    CNA_StorageStreamHandle stream;
+    CNA_StringView asset_name;
+    int32_t version;
+    uint8_t platform;
+    uint8_t reserved[3];
+} CNA_ContentReaderCreateInfo;
+#endif
+typedef CNA_Result (*cna_content_reader_create_fn)(const CNA_ContentReaderCreateInfo*, CNA_ContentReaderHandle*);
+typedef CNA_Result (*cna_content_reader_get_asset_name_size_fn)(CNA_ContentReaderHandle, uint64_t*);
+typedef CNA_Result (*cna_content_reader_copy_asset_name_fn)(CNA_ContentReaderHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_content_reader_read_matrix_fn)(CNA_ContentReaderHandle, CNA_Matrix*);
+typedef CNA_Result (*cna_content_reader_read_quaternion_fn)(CNA_ContentReaderHandle, CNA_Quaternion*);
+typedef CNA_Result (*cna_content_reader_read_vector2_fn)(CNA_ContentReaderHandle, CNA_Vector2*);
+typedef CNA_Result (*cna_content_reader_read_vector3_fn)(CNA_ContentReaderHandle, CNA_Vector3*);
+typedef CNA_Result (*cna_content_reader_read_vector4_fn)(CNA_ContentReaderHandle, CNA_Vector4*);
+typedef CNA_Result (*cna_content_reader_read_color_fn)(CNA_ContentReaderHandle, CNA_Color*);
+typedef CNA_Result (*cna_content_reader_read_object_tag_fn)(CNA_ContentReaderHandle, CNA_Bool*);
+typedef CNA_Result (*cna_content_reader_initialize_type_readers_fn)(CNA_ContentReaderHandle);
+typedef CNA_Result (*cna_content_reader_read_shared_resources_fn)(CNA_ContentReaderHandle);
+typedef CNA_Result (*cna_content_reader_read_bytes_exact_fn)(CNA_ContentReaderHandle, int32_t, CNA_StringView, uint8_t*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_content_reader_destroy_fn)(CNA_ContentReaderHandle);
+
 typedef uint32_t (*cna_get_abi_version_fn)(void);
 typedef CNA_Result (*cna_error_get_last_message_size_fn)(uint64_t*);
 typedef CNA_Result (*cna_error_copy_last_message_fn)(char*, uint64_t, uint64_t*);
@@ -1692,6 +1729,20 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_storage_stream_get_can_seek) \
     X(cna_storage_stream_flush) \
     X(cna_storage_stream_close) \
+    X(cna_content_reader_create) \
+    X(cna_content_reader_get_asset_name_size) \
+    X(cna_content_reader_copy_asset_name) \
+    X(cna_content_reader_read_matrix) \
+    X(cna_content_reader_read_quaternion) \
+    X(cna_content_reader_read_vector2) \
+    X(cna_content_reader_read_vector3) \
+    X(cna_content_reader_read_vector4) \
+    X(cna_content_reader_read_color) \
+    X(cna_content_reader_read_object_tag) \
+    X(cna_content_reader_initialize_type_readers) \
+    X(cna_content_reader_read_shared_resources) \
+    X(cna_content_reader_read_bytes_exact) \
+    X(cna_content_reader_destroy) \
     X(cna_storage_set_app_name_ext) \
     X(cna_storage_get_root_size_ext) \
     X(cna_storage_copy_root_ext) \

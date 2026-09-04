@@ -5,30 +5,30 @@
   "summary": {
     "ALLOWLIST_ENTRIES": 0,
     "BASE_MAPPING_MISMATCH": 0,
-    "BCL_ADAPTER_EXCLUSIONS": 166,
+    "BCL_ADAPTER_EXCLUSIONS": 174,
     "BCL_ADAPTER_EXCLUSIONS_BCL_PROJECTION_BLOCKED_EXTERNAL": 10,
     "BCL_ADAPTER_EXCLUSIONS_BLOCKED": 12,
     "BCL_ADAPTER_EXCLUSIONS_LANGUAGE_MAPPING_LIMITATION": 2,
-    "BCL_BASE_ADAPTERS": 5,
-    "BCL_BASE_ADAPTER_CONSUMERS": 14,
-    "BCL_DEFERRED_BASE_BLOCKERS": 7,
-    "BCL_INHERITED_MEMBER_PROJECTIONS": 129,
-    "BCL_INHERITED_PUBLIC_MEMBERS": 111,
+    "BCL_BASE_ADAPTERS": 6,
+    "BCL_BASE_ADAPTER_CONSUMERS": 15,
+    "BCL_DEFERRED_BASE_BLOCKERS": 6,
+    "BCL_INHERITED_MEMBER_PROJECTIONS": 144,
+    "BCL_INHERITED_PUBLIC_MEMBERS": 126,
     "BCL_LANGUAGE_ACCESSORS": 1,
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 208,
+    "COMPLETE_TYPES": 213,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
-    "EXPECTED_GO_MEMBERS": 3697,
+    "EXPECTED_GO_MEMBERS": 3720,
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 6,
+    "FRONTIER_FAMILIES": 5,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 49,
+    "GLOBAL_ACTIONABLE_LOCAL": 44,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 49,
-    "MISSING_TYPES": 49,
+    "MISSING_TYPE": 44,
+    "MISSING_TYPES": 44,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3289,
-    "TARGET_TYPES": 208,
-    "TOTAL_DIAGNOSTICS": 49,
+    "TARGET_MEMBERS": 3344,
+    "TARGET_TYPES": 213,
+    "TOTAL_DIAGNOSTICS": 44,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -84,24 +84,24 @@
     "UNMEASURED_STRUCTURAL_CATEGORY": 0,
     "XNA_BASE_DERIVED_TYPES": 41,
     "XNA_BASE_RELATIONSHIPS": 12,
-    "XNA_BASE_SUBSTITUTABILITY_LATENT": 3,
-    "XNA_BASE_SUBSTITUTABILITY_LIVE": 6,
+    "XNA_BASE_SUBSTITUTABILITY_LATENT": 1,
+    "XNA_BASE_SUBSTITUTABILITY_LIVE": 8,
     "XNA_BASE_SUBSTITUTABILITY_NONE": 3,
-    "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 6,
+    "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 8,
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
-    "XNA_COMPOSED_BASE_RELATIONSHIPS": 9,
-    "XNA_COMPOSED_DERIVED_TYPES": 27,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 26,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 26,
+    "XNA_COMPOSED_BASE_RELATIONSHIPS": 11,
+    "XNA_COMPOSED_DERIVED_TYPES": 29,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 28,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 27,
     "XNA_COMPOSED_IDENTITY_FORWARDS": 6,
-    "XNA_COMPOSED_IDENTITY_SITES": 16,
-    "XNA_COMPOSED_IDENTITY_USES": 17,
-    "XNA_DEFERRED_BASE_BLOCKERS": 6,
-    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 327,
-    "XNA_INHERITED_MEMBER_PROJECTIONS": 327,
-    "XNA_INHERITED_PUBLIC_MEMBERS": 236,
+    "XNA_COMPOSED_IDENTITY_SITES": 17,
+    "XNA_COMPOSED_IDENTITY_USES": 18,
+    "XNA_DEFERRED_BASE_BLOCKERS": 2,
+    "XNA_INHERITED_ATTRIBUTED_MEMBERS": 335,
+    "XNA_INHERITED_MEMBER_PROJECTIONS": 335,
+    "XNA_INHERITED_PUBLIC_MEMBERS": 243,
     "XNA_INHERITED_PUBLIC_MEMBERS_OVERRIDDEN": 10,
-    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 68
+    "XNA_INHERITED_PUBLIC_MEMBERS_UNPROJECTED": 60
   },
   "diagnostics": [
     {
@@ -136,12 +136,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentReader",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerAttribute",
       "message": "mapped Go type is absent"
@@ -168,30 +162,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentSerializerTypeVersionAttribute",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentTypeReader",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentTypeReader",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentTypeReaderManager",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentTypeReaderManager",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ContentTypeReader`1",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentTypeReaderOfT",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Content.ResourceContentManager",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ResourceContentManager",
       "message": "mapped Go type is absent"
     },
     {
@@ -421,6 +391,11 @@
     "Microsoft.Xna.Framework.ContainmentType",
     "Microsoft.Xna.Framework.Content.ContentLoadException",
     "Microsoft.Xna.Framework.Content.ContentManager",
+    "Microsoft.Xna.Framework.Content.ContentReader",
+    "Microsoft.Xna.Framework.Content.ContentTypeReader",
+    "Microsoft.Xna.Framework.Content.ContentTypeReaderManager",
+    "Microsoft.Xna.Framework.Content.ContentTypeReader`1",
+    "Microsoft.Xna.Framework.Content.ResourceContentManager",
     "Microsoft.Xna.Framework.Curve",
     "Microsoft.Xna.Framework.CurveContinuity",
     "Microsoft.Xna.Framework.CurveKey",
@@ -616,16 +591,11 @@
     "Microsoft.Xna.Framework.Audio.Cue",
     "Microsoft.Xna.Framework.Audio.SoundBank",
     "Microsoft.Xna.Framework.Audio.WaveBank",
-    "Microsoft.Xna.Framework.Content.ContentReader",
     "Microsoft.Xna.Framework.Content.ContentSerializerAttribute",
     "Microsoft.Xna.Framework.Content.ContentSerializerCollectionItemNameAttribute",
     "Microsoft.Xna.Framework.Content.ContentSerializerIgnoreAttribute",
     "Microsoft.Xna.Framework.Content.ContentSerializerRuntimeTypeAttribute",
     "Microsoft.Xna.Framework.Content.ContentSerializerTypeVersionAttribute",
-    "Microsoft.Xna.Framework.Content.ContentTypeReader",
-    "Microsoft.Xna.Framework.Content.ContentTypeReaderManager",
-    "Microsoft.Xna.Framework.Content.ContentTypeReader`1",
-    "Microsoft.Xna.Framework.Content.ResourceContentManager",
     "Microsoft.Xna.Framework.Design.BoundingBoxConverter",
     "Microsoft.Xna.Framework.Design.BoundingSphereConverter",
     "Microsoft.Xna.Framework.Design.ColorConverter",
@@ -6670,20 +6640,13 @@
     },
     {
       "clrBase": "System.IO.BinaryReader",
-      "status": "DEFERRED",
-      "addsProjectedSurface": false,
+      "adapter": "binaryReaderBase",
+      "status": "COMPOSED",
+      "addsProjectedSurface": true,
       "derivedTypes": 1,
-      "projectedTypes": 0,
+      "projectedTypes": 1,
       "exportedEmbeddings": 0,
-      "blockers": [
-        {
-          "kind": "SUBSYSTEM",
-          "clrMember": "BaseStream",
-          "needs": "System.IO.Stream as a seekable stream",
-          "detail": "CNA-Go maps System.IO.Stream to io.Reader, which carries neither seeking nor the encoding-aware Read7BitEncodedInt behavior the reader's inherited surface depends on"
-        }
-      ],
-      "rationale": "requires a stream-reader base whose seek and encoding behavior is a separate mapping",
+      "rationale": "every inherited read is projected over cna_content_reader_read_bytes_exact, because CNA's reader BORROWS the stream and reading it from the Go side as well would advance one position twice; three members are excluded, each for a measured reason rather than for convenience",
       "verdict": "PASS"
     },
     {
@@ -6691,7 +6654,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 49,
+      "projectedTypes": 51,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6770,20 +6733,6 @@
         "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
       ],
       "remaining": 1,
-      "verdict": "PASS"
-    },
-    {
-      "family": "Content plumbing",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "68 cna_content* routes in total -- 20 reader, 13 type-reader, 34 manager, of which only 3 are _ext -- and the question is how much of ContentReader's public state, stream position, shared resources, external references and type-reader identity, the C API actually exposes, measured member by member rather than blocked as a family. This family also unblocks the Model family's native slice: Model has no public constructor, so ContentManager.Load\u003cModel\u003e is the only way a consumer can obtain one to draw",
-      "types": [
-        "Microsoft.Xna.Framework.Content.ContentReader",
-        "Microsoft.Xna.Framework.Content.ContentTypeReader",
-        "Microsoft.Xna.Framework.Content.ContentTypeReader`1",
-        "Microsoft.Xna.Framework.Content.ContentTypeReaderManager",
-        "Microsoft.Xna.Framework.Content.ResourceContentManager"
-      ],
-      "remaining": 5,
       "verdict": "PASS"
     },
     {
@@ -8533,6 +8482,228 @@
       "verdict": "PASS"
     },
     {
+      "clrBase": "System.IO.BinaryReader",
+      "goAdapter": "binaryReaderBase",
+      "adapterField": "base",
+      "behaviorLevel": "PARTIAL",
+      "authority": "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+      "authoritySha256": "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+      "inheritedClrMembers": 15,
+      "inheritedProjectionsPerConsumer": 15,
+      "excludedMembers": 8,
+      "consumers": [
+        {
+          "xna": "Microsoft.Xna.Framework.Content.ContentReader",
+          "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader",
+          "baseArguments": null,
+          "projected": true,
+          "adapterFieldType": "binaryReaderBase",
+          "adapterFieldPresent": true,
+          "exportedEmbeddings": 0,
+          "xnaDeclaredMembers": 20,
+          "xnaDeclaredProjections": 20,
+          "bclInheritedProjections": 15,
+          "verdict": "PASS"
+        }
+      ],
+      "inheritedMemberInventory": [
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "Close",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.Close",
+          "goResults": "error",
+          "present": true,
+          "rationale": "the reference implements it as Dispose(true); CNA's reader closes the stream it borrowed"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "Dispose",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.Dispose",
+          "goResults": "error",
+          "present": true,
+          "rationale": "forwards to Close"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadBoolean",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadBoolean",
+          "goResults": "bool,error",
+          "present": true,
+          "rationale": "one byte, and the reference compares it against ZERO rather than against one -- so anything non-zero is true"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadByte",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadByte",
+          "goResults": "uint8,error",
+          "present": true,
+          "rationale": "one byte"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadBytes",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadBytes",
+          "goResults": "[]uint8,error",
+          "present": true,
+          "rationale": "count bytes, straight from read_bytes_exact"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadChar",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadChar",
+          "goResults": "uint16,error",
+          "present": true,
+          "rationale": "ONE character through the encoding, which for every reader the profile builds is UTF-8, so one to four bytes; a rune outside the basic plane does not fit a System.Char and the reference answers the leading surrogate"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadChars",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadChars",
+          "goResults": "[]uint16,error",
+          "present": true,
+          "rationale": "count characters, answering fewer only at the end of the stream"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadInt16",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadInt16",
+          "goResults": "int16,error",
+          "present": true,
+          "rationale": "two bytes, little-endian, which is the FORMAT's order and not the host's"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadInt32",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadInt32",
+          "goResults": "int32,error",
+          "present": true,
+          "rationale": "four bytes, little-endian"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadInt64",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadInt64",
+          "goResults": "int64,error",
+          "present": true,
+          "rationale": "eight bytes, little-endian"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadSByte",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadSByte",
+          "goResults": "int8,error",
+          "present": true,
+          "rationale": "the same byte read as signed"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadString",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadString",
+          "goResults": "string,error",
+          "present": true,
+          "rationale": "a 7-bit-encoded BYTE length followed by that many bytes; the length counts bytes rather than characters, which is why it is read before the decode"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadUInt16",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadUInt16",
+          "goResults": "uint16,error",
+          "present": true,
+          "rationale": "two bytes, little-endian"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadUInt32",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadUInt32",
+          "goResults": "uint32,error",
+          "present": true,
+          "rationale": "four bytes, little-endian"
+        },
+        {
+          "clrBase": "System.IO.BinaryReader",
+          "clrMember": "ReadUInt64",
+          "clrKind": "method",
+          "consumer": "Microsoft.Xna.Framework.Content.ContentReader",
+          "goMember": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Content:ContentReader.ReadUInt64",
+          "goResults": "uint64,error",
+          "present": true,
+          "rationale": "eight bytes, little-endian"
+        }
+      ],
+      "exclusions": [
+        {
+          "clrMember": "ReadDecimal",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "System.Decimal is named NOWHERE in the pinned contract, so this member has no element type to project. It is an honest exclusion of the same kind any BCL member gets when the profile never names its type"
+        },
+        {
+          "clrMember": "PeekChar",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the reference reads a character and rewinds the stream, and answers -1 when the stream cannot seek. CNA's content reader exposes no peek and no position, and rewinding the STORAGE stream underneath it would desynchronise the two readers -- CNA borrows the stream for its whole lifetime"
+        },
+        {
+          "clrMember": "BaseStream",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "handing back the stream is what BaseStream exists for, and here it would hand back a stream a SECOND reader is already advancing. CNA's reader owns the position; a caller reading the same stream directly would corrupt both"
+        },
+        {
+          "clrMember": ".ctor(Stream)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the CLR does not inherit constructors, and ContentReader's own is `assembly`"
+        },
+        {
+          "clrMember": ".ctor(Stream,Encoding)",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "the same"
+        },
+        {
+          "clrMember": "Read7BitEncodedInt",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`protected`, so not inherited public surface; it is reproduced unexported because ReadString needs it"
+        },
+        {
+          "clrMember": "FillBuffer",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "`protected` helper"
+        },
+        {
+          "clrMember": "Read",
+          "kind": "NOT_PUBLIC_SURFACE",
+          "reason": "OVERLOADED -- Read(), Read(Byte[],Int32,Int32) and Read(Char[],Int32,Int32) -- and the inherited-projection model has no way to express an overloaded inherited member. This is a MECHANISM limitation, not a measured one: nothing about the three bodies resists projection, and a milestone that taught the model about inherited overloads would gain all three"
+        }
+      ],
+      "rationale": "a stream reader whose inherited surface a content type reader uses constantly; PARTIAL because three public members are excluded for measured reasons rather than projected",
+      "verdict": "PASS"
+    },
+    {
       "clrBase": "System.Runtime.InteropServices.ExternalException",
       "goAdapter": "bclexception.State",
       "adapterField": "base",
@@ -10175,40 +10346,20 @@
     },
     {
       "clrBase": "Microsoft.Xna.Framework.Content.ContentManager",
-      "status": "DEFERRED",
+      "status": "COMPOSED",
       "derived": [
         "Microsoft.Xna.Framework.Content.ResourceContentManager"
       ],
       "inheritedPublicMembers": 5,
-      "blockers": [
-        {
-          "class": "ARCHITECTURE",
-          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
-        },
-        {
-          "class": "SUBSYSTEM",
-          "detail": "ContentManager is projected as of Foundation 63 and its one derived type, ResourceContentManager, is not: it loads from a System.Resources.ResourceManager, which is a BCL subsystem outside the seven pinned assemblies and has no CNA counterpart"
-        }
-      ],
       "verdict": "PASS"
     },
     {
       "clrBase": "Microsoft.Xna.Framework.Content.ContentTypeReader",
-      "status": "DEFERRED",
+      "status": "COMPOSED",
       "derived": [
         "Microsoft.Xna.Framework.Content.ContentTypeReader`1"
       ],
       "inheritedPublicMembers": 3,
-      "blockers": [
-        {
-          "class": "ARCHITECTURE",
-          "detail": "CNA-Go has no architecture for XNA-to-XNA class inheritance. The settled BCL base composition covers a base OUTSIDE the contract and is registered per BCL family; an XNA base is a projected type whose public surface the contract does not redeclare on the derived type, so a faithful derived projection needs (a) a composition and forwarding rule for a base that is itself an XNA identity, (b) a third provenance class beside XNA-declared and BCL-inherited so no member is counted twice, and (c) an override adapter for the base's protected virtuals, which GameCallbacks solves for Game alone. Exported Go embedding is already refused by BASE_MAPPING_MISMATCH and remains refused"
-        },
-        {
-          "class": "SUBSYSTEM",
-          "detail": "the same Content/XNB subsystem, and the derived type is the GENERIC ContentTypeReader`1, so the relationship would also need a rule for a generic class deriving from a non-generic one"
-        }
-      ],
       "verdict": "PASS"
     },
     {
@@ -10580,10 +10731,10 @@
     {
       "base": "Microsoft.Xna.Framework.Content.ContentManager",
       "derivedTypes": 1,
-      "projectedDerivedTypes": 0,
+      "projectedDerivedTypes": 1,
       "positions": 2,
-      "positionsOnProjectedCarriers": 1,
-      "requirement": "LATENT",
+      "positionsOnProjectedCarriers": 2,
+      "requirement": "LIVE",
       "rows": [
         {
           "base": "Microsoft.Xna.Framework.Content.ContentManager",
@@ -10607,10 +10758,10 @@
     {
       "base": "Microsoft.Xna.Framework.Content.ContentTypeReader",
       "derivedTypes": 1,
-      "projectedDerivedTypes": 0,
+      "projectedDerivedTypes": 1,
       "positions": 5,
-      "positionsOnProjectedCarriers": 0,
-      "requirement": "LATENT",
+      "positionsOnProjectedCarriers": 5,
+      "requirement": "LIVE",
       "rows": [
         {
           "base": "Microsoft.Xna.Framework.Content.ContentTypeReader",
@@ -11113,6 +11264,36 @@
       "verdict": "PASS"
     },
     {
+      "clrBase": "Microsoft.Xna.Framework.Content.ContentManager",
+      "goBase": "ContentManager",
+      "rows": [
+        {
+          "derived": "Microsoft.Xna.Framework.Content.ResourceContentManager",
+          "goDerived": "ResourceContentManager",
+          "baseField": "base",
+          "inheritedCLRMembers": 4,
+          "inheritedProjections": 5,
+          "composition": "PRIVATE_NAMED"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Content.ContentTypeReader",
+      "goBase": "ContentTypeReader",
+      "rows": [
+        {
+          "derived": "Microsoft.Xna.Framework.Content.ContentTypeReader`1",
+          "goDerived": "ContentTypeReaderOfT",
+          "baseField": "base",
+          "inheritedCLRMembers": 3,
+          "inheritedProjections": 3,
+          "composition": "PRIVATE_NAMED"
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
       "clrBase": "Microsoft.Xna.Framework.GameComponent",
       "goBase": "GameComponent",
       "rows": [
@@ -11397,6 +11578,33 @@
           "binds": true
         }
       ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Content.ContentManager",
+      "goBase": "ContentManager",
+      "derivedField": "derived",
+      "sites": [
+        {
+          "goMember": "Unload",
+          "reference": "Unload: ldfld loadedAssets; brtrue; ldarg.0; callvirt System.Object::ToString(); newobj ObjectDisposedException(string); throw",
+          "uses": 1,
+          "reaches": 1
+        }
+      ],
+      "bindings": [
+        {
+          "derived": "Microsoft.Xna.Framework.Content.ResourceContentManager",
+          "goDerived": "ResourceContentManager",
+          "constructor": "NewResourceContentManager",
+          "binds": true
+        }
+      ],
+      "verdict": "PASS"
+    },
+    {
+      "clrBase": "Microsoft.Xna.Framework.Content.ContentTypeReader",
+      "goBase": "ContentTypeReader",
       "verdict": "PASS"
     },
     {

@@ -150,6 +150,30 @@ var registry = []claimedString{
 	{Key: "OpenStreamError", Assembly: "Microsoft.Xna.Framework.dll",
 		Value: "Error loading \"%s\". Cannot open file.", Placeholders: true},
 
+	// Foundation 92. The content pipeline's own load failures. Every one leads
+	// with the asset name, which is what makes a failed load name the file
+	// rather than the reader.
+	//
+	// BadXnbWrongType carries THREE positions and its second and third are
+	// types, which Go prints with %v rather than %s -- there is no Go verb that
+	// prints a reflect.Type the way String.Format prints a System.Type. The
+	// substitution is the same documented one, and clrSpelling restores both
+	// verbs in the order they appear.
+	{Key: "BadXnbWrongType", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Error loading \"%s\". File contains %v but trying to load as %v.", Placeholders: true},
+	{Key: "BadXnbSize", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Error loading \"%s\". File has been truncated.", Placeholders: true},
+	{Key: "BadXnbMagic", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Error loading \"%s\". This is not a compiled content file.", Placeholders: true},
+	{Key: "BadXnbVersion", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Error loading \"%s\". This file was compiled using the wrong version of the XNA Framework.", Placeholders: true},
+	// ResourceContentManager's two, which are the reason its OpenStream has two
+	// distinct refusals rather than one.
+	{Key: "OpenResourceNotFound", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Error loading \"%s\". Resource not found.", Placeholders: true},
+	{Key: "OpenResourceNotBinary", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "Error loading \"%s\". Not a binary resource.", Placeholders: true},
+
 	// Foundation 81. The three messages the last two stock effects carry.
 	// CantDisableLighting's {0} is typeof(T).Name -- the SHORT class name, not
 	// the namespaced one -- and SkinnedEffectMaxBones' is the bone limit, which
@@ -495,11 +519,26 @@ func clrSpelling(entry claimedString) string {
 	if !entry.Placeholders {
 		return entry.Value
 	}
-	value := entry.Value
-	for index := 0; strings.Contains(value, "%s"); index++ {
-		value = strings.Replace(value, "%s", "{"+strconv.Itoa(index)+"}", 1)
+	// Two Go verbs appear in these messages. `%s` is the common one; `%v` is
+	// what a position holding a reflect.Type takes, because Go has no verb that
+	// prints a type the way String.Format prints one. Both stand for the same
+	// `{n}`, and they are replaced in the order they APPEAR rather than one
+	// verb at a time -- a message mixing them would otherwise be renumbered
+	// wrongly.
+	var builder strings.Builder
+	index := 0
+	for at := 0; at < len(entry.Value); {
+		if entry.Value[at] == '%' && at+1 < len(entry.Value) &&
+			(entry.Value[at+1] == 's' || entry.Value[at+1] == 'v') {
+			builder.WriteString("{" + strconv.Itoa(index) + "}")
+			index++
+			at += 2
+			continue
+		}
+		builder.WriteByte(entry.Value[at])
+		at++
 	}
-	return value
+	return builder.String()
 }
 
 func loadAssemblies(roots ...string) (map[string][]byte, error) {

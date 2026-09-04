@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               49
-MISSING_TYPE                    49
+TOTAL_DIAGNOSTICS               44
+MISSING_TYPE                    44
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 208
+COMPLETE_TYPES                 213
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         49
+GLOBAL_ACTIONABLE_LOCAL         44
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                393
+BOUND_FUNCTIONS                407
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -321,10 +321,37 @@ CNA builds it from `XDG_DATA_HOME`, so the harness redirects that into the
 repository AND the slice refuses to continue unless the root it reads back
 actually lies there. `STORAGE_ROOT_CHECKS` is the counter that proves it ran.
 
+Foundation 92 closed the **content plumbing**: `ContentReader`,
+`ContentTypeReader`, `ContentTypeReader<T>`, `ContentTypeReaderManager` and
+`ResourceContentManager`. That completes the chain Foundation 91 measured and
+leaves the Model family's native draw slice as the next thing it unblocks.
+
+Its lasting result is a rule rather than a family. **Three recorded blockers
+were re-measured and all three were claims rather than measurements**:
+`ReadOnlyCollection`-as-a-base (overturned in Foundation 90), BinaryReader's
+supposed dependence on seeking (`ContentReader`'s IL contains ZERO
+`Stream::Seek` call sites; the apparent hit was the substring of `get_CanSeek`
+inside a helper whose check is skipped when the stream cannot seek), and
+`ResourceManager` having "no CNA counterpart" (it occupies ONE contract position
+and ONE member of it is used, so the settled role rule maps it to
+`func(string) any`). A blocker written down in one milestone is evidence about
+what was known then, not about what is true now.
+
+The falsifiability run is where this milestone was actually corrected. Nine of
+its 45 planted defects survived the first pass, all of them in the inherited
+`BinaryReader` decode, because nothing could reach that code without a compiled
+asset — and `cna_content_reader_create` needs a storage stream carrying one,
+which the project does not author. The fix was to narrow `binaryReaderBase`'s
+field to the single method it actually uses, which makes the *decoding*
+reachable while the handle, the disposal latch and the short-read refusal stay
+behind it. Scoring those nine as killed was the alternative and it was not taken.
+A forty-sixth mutant is recorded as **equivalent**, with the argument for why,
+and the harness asserts it SURVIVES.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 49 types it does not project
+projects, it projects completely; what remains is 44 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -342,11 +369,17 @@ in that registry:
 
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
    grow `ContentManager.Load<T>`'s closed set.
-2. Then the **content plumbing**, which Storage has now unblocked and which in
-   turn unblocks the Model family's native draw slice, and after it
-   **Media/XACT**, the **Design converters**, the **content serializer
-   attributes** and **GamerServices**. **Input** closed in Foundation 89, the
-   **Model family** in Foundation 90 and **Storage** in Foundation 91.
+2. Then the **Model family's native draw slice**, which the content plumbing
+   has now unblocked. The route it needs is measured and named:
+   `cna_content_manager_load_model(CNA_Handle, CNA_StringView, CNA_ModelHandle*)`,
+   declared in `models.h` rather than in either content header and exported by
+   the qualified library. It is the exact parallel of the three routes
+   `ContentManager.Load<T>`'s closed set already binds, so the remaining work is
+   a fourth arm on that switch and a stress slice that draws what it loads.
+   After it come **Media/XACT**, the **Design converters**,
+   the **content serializer attributes** and **GamerServices**. **Input**
+   closed in Foundation 89, the **Model family** in Foundation 90, **Storage**
+   in Foundation 91 and the **content plumbing** in Foundation 92.
 
 **The dynamic-buffer note, closed.** Foundation 83 probed it, Foundation 84
 acted on it, and the outcome was smaller than the note expected: **one** new

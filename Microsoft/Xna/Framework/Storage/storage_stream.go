@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/openeggbert/cna-go/internal/interop"
+	"github.com/openeggbert/cna-go/internal/nativestream"
 )
 
 // storageStream is the Go projection of the System.IO.Stream a container's
@@ -41,7 +42,13 @@ const (
 var errStorageStreamClosed = errors.New("the storage stream is closed")
 
 func newStorageStream(handle uint64) *storageStream {
-	return &storageStream{handle: handle}
+	stream := &storageStream{handle: handle}
+	// The handle is registered so ContentReader can build a native reader over
+	// this stream: cna_content_reader_create takes a CNA_StorageStreamHandle
+	// and the content package cannot reach an unexported field here. See
+	// internal/nativestream for why that is a registry rather than a method.
+	nativestream.Register(stream, handle)
+	return stream
 }
 
 // Read is io.Reader over cna_storage_stream_read.
@@ -117,6 +124,9 @@ func (s *storageStream) Close() error {
 		return nil
 	}
 	s.closed = true
+	// The registry entry goes with the stream, so a handle never outlives the
+	// object it names.
+	nativestream.Forget(s)
 	runtime, ok := interop.CurrentRuntime()
 	if !ok {
 		return nil

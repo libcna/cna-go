@@ -1604,6 +1604,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 89 | GamePad, Mouse and TouchPanel, closing the Input namespace | `foundation-89-input-evidence.md` |
 | 90 | the Model family, closing the Graphics namespace | `foundation-90-model-family-evidence.md` |
 | 91 | StorageDevice and StorageContainer, closing the Storage namespace | `foundation-91-storage-evidence.md` |
+| 92 | the content plumbing: ContentReader, the type readers and ResourceContentManager | `foundation-92-content-plumbing-evidence.md` |
 
 **A recorded blocker is a claim, and claims get re-measured** (91).
 System.IO.BinaryReader had been DEFERRED since Foundation 29 partly because "the
@@ -1836,6 +1837,39 @@ the live missing-type set; `GLOBAL_UNREVIEWED` is assigned by the exhaustiveness
 check rather than written by hand, so it can only be nonzero because something
 was forgotten.
 
+**A recorded blocker is a claim, and claims get re-measured** (92). A blocker
+written down in one milestone is evidence about what was known then, not about
+what is true now. Foundation 92 re-measured three and all three were wrong:
+`ReadOnlyCollection`-as-a-base (already overturned in 90), BinaryReader's
+supposed dependence on `Stream::Seek` (ZERO call sites in `ContentReader`'s IL),
+and `ResourceManager` having no CNA counterpart (ONE contract position, ONE
+member used, so the settled role rule applies). Before a milestone is deferred
+on a recorded blocker, the blocker is re-measured against the pinned sources.
+
+**A mutation that survives because its code is unreachable is a finding about
+the SEAM, not a licence to score it killed** (92). Nine of Foundation 92's
+planted defects survived their first run, all in the inherited BinaryReader
+decode, because nothing could reach that code without a compiled asset. The fix
+was to narrow the adapter's field to the single method it actually uses, which
+made the pure decoding reachable while the handle, the disposal latch and the
+short-read refusal stayed behind it. Narrowing a field to its real role is a
+simplification that happens to be testable; adding a field only tests use is
+not, and is still forbidden.
+
+**An equivalent mutant is recorded with its argument and asserted to SURVIVE**
+(92). It runs in a separate table from the killed ones and its expected result
+is survival, so a kill means the equivalence argument is wrong or the tests pin
+something the reference does not promise. Deleting such a mutant loses the
+argument; scoring it as killed is a lie.
+
+**A projected member's provenance is what a rule about it must read** (92).
+Every expected Go member is exactly one of XNA_DECLARED, BCL_INHERITED or
+XNA_INHERITED. A rule that reads only some of the three will call a correct
+projection a defect the first time the missing arm appears -- which is what
+happened to the Dispose rule and to `inventedDisposalNames` when ContentReader
+brought `System.IO.BinaryReader`'s own `Close` and `Dispose` into the surface.
+The fix is the missing arm, never an exception for the type that exposed it.
+
 **A graphics state object freezes** (59). Every setter is fallible because
 `ThrowIfBound` is a refusal the reference really throws; every getter is one
 `ldfld`. The static presets are frozen from construction.
@@ -1845,8 +1879,9 @@ was forgotten.
 This section is a STATEMENT OF CURRENT STATE, not a permanent list, and it is
 rewritten whenever a milestone makes one of its entries false.
 
-Still deferred: audio/XACT; media/video; storage; touch; design;
-GamerServices; and broad platform work. Every one of them is now classified in
+Still deferred: XACT; media/video; design; the content serializer attributes;
+and GamerServices. Audio closed in Foundation 88, Input and touch in 89, the
+Model family in 90, Storage in 91 and the content plumbing in 92. Every one of them is now classified in
 `tools/api_compat/frontier.go`, which partitions the live missing-type set and
 generates `docs/generated/remaining-work.md`; that generated table is the
 authority for what each family is stopped on, and this paragraph is its

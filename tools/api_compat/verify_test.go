@@ -64,7 +64,11 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// the five is get-only, so each contributes exactly one Go identity. The
 	// sixth inherited member, GetEnumerator, is hidden by a derived
 	// declaration on all four and contributes nothing.
-	if surface.BCLInheritedCLRMembers != 111 || surface.BCLInheritedProjections != 129 {
+	// Foundation 92 added fifteen of each: ContentReader inherits fifteen
+	// reachable System.IO.BinaryReader members -- the eighteen public ones less
+	// the three Read overloads the inherited model cannot express -- and every
+	// one is a method, so each contributes exactly one Go identity.
+	if surface.BCLInheritedCLRMembers != 126 || surface.BCLInheritedProjections != 144 {
 		t.Fatalf("BCL inherited counts = %d CLR members/%d projections", surface.BCLInheritedCLRMembers, surface.BCLInheritedProjections)
 	}
 	// 15, not 14: Milestone 55 replaced the name-keyed inheritance exclusion
@@ -83,7 +87,12 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// 236/327, not 224/312: Foundation 88 composed SoundEffectInstance, whose
 	// one derived type inherits twelve of its members -- everything but the two
 	// IsLooped accessors it OVERRIDES.
-	if surface.XNAInheritedCLRMembers != 236 || surface.XNAInheritedProjections != 327 {
+	// 243/335, not 236/327: Foundation 92 composed ContentManager and
+	// ContentTypeReader. ResourceContentManager inherits five of
+	// ContentManager's members -- everything but the OpenStream it overrides --
+	// and ContentTypeReader`1 inherits two of ContentTypeReader's three, having
+	// its own Read and its own TargetType.
+	if surface.XNAInheritedCLRMembers != 243 || surface.XNAInheritedProjections != 335 {
 		t.Fatalf("XNA inherited counts = %d CLR members/%d projections", surface.XNAInheritedCLRMembers, surface.XNAInheritedProjections)
 	}
 	// The subtraction the exclusion performs is measured rather than implied:
@@ -111,7 +120,11 @@ func TestPinnedContractAndMappedCounts(t *testing.T) {
 	// 3697, not 3677: Foundation 90 composed ReadOnlyCollection<T> as a base,
 	// and the Model family's four collections contribute twenty inherited
 	// projections between them on top of their own declared members.
-	if surface.ExpectedGoMembers != 3697 {
+	// 3720, not 3697: Foundation 92's five content types. ContentReader brings
+	// fifteen BCL-inherited BinaryReader projections and the two content bases
+	// bring eight XNA-inherited ones, on top of the declared members of all
+	// five.
+	if surface.ExpectedGoMembers != 3720 {
 		t.Fatalf("mapped counts = %d/%d", surface.ExpectedGoTypes, surface.ExpectedGoMembers)
 	}
 	// Every expected Go member has exactly one provenance class, so the three
@@ -5160,23 +5173,45 @@ func TestIDisposableAddsNoProjectedSurface(t *testing.T) {
 		}
 	}
 
-	// Every projected Dispose identity traces to a declared XNA member -- on
-	// the owner itself, or, for an XNA-inherited projection, on the base it is
-	// attributed to. The second case is not an exception to the rule: it is the
-	// same rule read through the provenance the member carries.
+	// bclBaseDeclaresDispose is the closed set of supported BCL base classes
+	// that declare a Dispose of their own. It is written out rather than read
+	// from the BCL metadata because the supported-base registry is itself
+	// closed: a base added to it without its disposal shape considered should
+	// fail here.
+	bclBaseDeclaresDispose := map[string]bool{
+		"System.IO.BinaryReader": true,
+	}
+
+	// Every projected Dispose identity traces to a declared member -- on the
+	// owner itself, on the XNA base it is attributed to, or on the BCL base it
+	// is attributed to. None of the three is an exception to the rule: they are
+	// the same rule read through whichever provenance the member carries, which
+	// is exactly the three-way split MemberProjection records.
+	//
+	// The BCL arm arrived with Foundation 92. ContentReader is the first type
+	// to project a BCL base's Dispose: it extends System.IO.BinaryReader, whose
+	// Dispose() forwards to Close(), and neither is an XNA-declared member. A
+	// rule that knew only the first two arms called that a defect, and it was
+	// not one -- the projection is right and the rule was short an arm.
 	for key, member := range surface.Members {
 		if !strings.HasPrefix(key.Name, "Dispose") {
 			continue
 		}
-		if member.XNABase != "" {
+		switch {
+		case member.BCLBase != "":
+			if !bclBaseDeclaresDispose[member.BCLBase] {
+				t.Fatalf("%s projects %s as inherited from %s, which declares no Dispose member",
+					member.Owner, key.Name, member.BCLBase)
+			}
+		case member.XNABase != "":
 			if !declaresDispose[member.XNABase] {
 				t.Fatalf("%s projects %s as inherited from %s, which declares no Dispose member",
 					member.Owner, key.Name, member.XNABase)
 			}
-			continue
-		}
-		if !declaresDispose[member.Owner] {
-			t.Fatalf("%s projects %s but declares no Dispose member", member.Owner, key.Name)
+		default:
+			if !declaresDispose[member.Owner] {
+				t.Fatalf("%s projects %s but declares no Dispose member", member.Owner, key.Name)
+			}
 		}
 	}
 
@@ -5218,10 +5253,29 @@ func TestIDisposableAddsNoProjectedSurface(t *testing.T) {
 				t.Fatalf("%q is a projected XNA type name, so it cannot also be a forbidden disposal shape", name)
 			}
 		}
-		for key := range surface.Members {
-			if key.Name == name {
-				t.Fatalf("%q is a projected XNA member, so it cannot also be a forbidden disposal shape", name)
+		for key, member := range surface.Members {
+			if key.Name != name {
+				continue
 			}
+			// A member with this name is forbidden when it was SYNTHESIZED --
+			// which is what the set is about. A member that carries BCL
+			// provenance naming the same CLR member on a supported base was
+			// not synthesized from System.IDisposable; it is that base's own
+			// declared member, projected under the attribution the inherited
+			// model requires.
+			//
+			// Foundation 92 is where the distinction started to matter.
+			// ContentReader extends System.IO.BinaryReader, which DECLARES a
+			// public Close(), so "Close" is now a real projected identity. The
+			// live rule in verify.go already drew this line -- it skips a
+			// member the registry maps -- and this test was checking the name
+			// alone. Dropping the name from the set would have been the wrong
+			// fix: an invented Close on any other type must still fail.
+			if member.BCLBase != "" && member.BCLMember == name {
+				continue
+			}
+			t.Fatalf("%q is a projected XNA member with no BCL provenance, so it can only be a forbidden disposal shape",
+				name)
 		}
 	}
 }
@@ -8015,7 +8069,7 @@ func TestTheThreeFamiliesWithNoSubstitutabilityRequirement(t *testing.T) {
 // Every other family is still LATENT or NONE, and the registry must agree with
 // the measurement in both directions -- which measureXNABaseSubstitutability
 // itself now checks.
-func TestTheLiveSubstitutabilityFamiliesAreTextureAndTexture2D(t *testing.T) {
+func TestTheLiveSubstitutabilityFamiliesAreTheMeasuredEight(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
 	var live []string
@@ -8037,7 +8091,14 @@ func TestTheLiveSubstitutabilityFamiliesAreTextureAndTexture2D(t *testing.T) {
 	// buffers became the first projected types deriving from them. Both had
 	// their positions all along -- SetVertexBuffer, VertexBufferBinding,
 	// set_Indices -- and were LATENT until something could be handed to one.
+	// ContentManager and ContentTypeReader went live in Foundation 92, and for
+	// the same reason as the buffers: ResourceContentManager and
+	// ContentTypeReader`1 are the first projected types deriving from them.
+	// ContentManager's positions were already counted -- XNA_BASE_TYPED_-
+	// SIGNATURE_POSITIONS did not move -- which is exactly what LATENT meant.
 	want := []string{
+		"Microsoft.Xna.Framework.Content.ContentManager",
+		"Microsoft.Xna.Framework.Content.ContentTypeReader",
 		"Microsoft.Xna.Framework.Graphics.Effect",
 		"Microsoft.Xna.Framework.Graphics.IndexBuffer",
 		"Microsoft.Xna.Framework.Graphics.Texture",
@@ -8053,17 +8114,19 @@ func TestTheLiveSubstitutabilityFamiliesAreTextureAndTexture2D(t *testing.T) {
 			t.Fatalf("live substitutability families = %v, want %v", live, want)
 		}
 	}
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 6 {
-		t.Fatalf("%d registered substitutable bases, want the six live families", got)
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 8 {
+		t.Fatalf("%d registered substitutable bases, want the eight live families", got)
 	}
 	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_NONE"]; got != 3 {
 		t.Fatalf("%d families have no substitutability requirement, want 3", got)
 	}
-	// Three, not five: VertexBuffer's and IndexBuffer's requirements went from
-	// latent to live in Foundation 84, as TextureCube's did in Foundation 81
-	// and Effect's in Foundation 79.
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 3 {
-		t.Fatalf("%d families have a latent requirement, want 3", got)
+	// One, not three: ContentManager's and ContentTypeReader's requirements went
+	// from latent to live in Foundation 92, as VertexBuffer's and IndexBuffer's
+	// did in Foundation 84, TextureCube's in Foundation 81 and Effect's in
+	// Foundation 79. Every family that has ever gone live went the same way --
+	// its positions were already there and something became handable to one.
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 1 {
+		t.Fatalf("%d families have a latent requirement, want 1", got)
 	}
 	if got := result.Summary["XNA_BASE_TYPED_SIGNATURE_POSITIONS"]; got != 51 {
 		t.Fatalf("%d base-typed public signature positions, want 51", got)
@@ -8169,7 +8232,7 @@ func xnaCompositionFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 	return expected, actual
 }
 
-// TestTheComposedRelationshipsAreTheThreeMeasuredFamilies records the state the
+// TestTheComposedRelationshipsAreTheMeasuredFamilies records the state the
 // architecture reached, and why these families and not others.
 //
 // GameComponent came first because Foundation 40 measured that nothing in the
@@ -8178,19 +8241,22 @@ func xnaCompositionFixture(t *testing.T) (*expectedSurface, *actualSurface) {
 // followed in Foundation 56, and their substitutability requirement is asserted
 // separately: GraphicsResource is also NONE, and Texture's derived types are
 // what the RenderTarget2D question will turn on.
-func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
+func TestTheComposedRelationshipsAreTheMeasuredFamilies(t *testing.T) {
 	expected, actual := loadPinnedSurfaces(t)
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
 	// Nine since Foundation 88 composed SoundEffectInstance, which is the
-	// FIRST composed base outside the graphics namespace.
-	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 9 {
-		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 9", got)
+	// FIRST composed base outside the graphics namespace; eleven since
+	// Foundation 92 composed ContentManager and ContentTypeReader, the first
+	// two in the content namespace.
+	if got := result.Summary["XNA_COMPOSED_BASE_RELATIONSHIPS"]; got != 11 {
+		t.Fatalf("%d COMPOSED XNA base relationships, want exactly 11", got)
 	}
 	// Two for GameComponent, twelve for GraphicsResource, three for Texture,
 	// one for Texture2D, one for TextureCube, six for Effect, one each for the
-	// two buffer bases and one for SoundEffectInstance.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 27 {
-		t.Fatalf("the composed relationships cover %d derived types, want 27", got)
+	// two buffer bases, one for SoundEffectInstance and one each for
+	// ContentManager and ContentTypeReader.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES"]; got != 29 {
+		t.Fatalf("the composed relationships cover %d derived types, want 29", got)
 	}
 	// DrawableGameComponent, SpriteBatch, Texture, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
@@ -8200,10 +8266,11 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	// Foundation 81's EnvironmentMapEffect and SkinnedEffect -- with which
 	// every one of Effect's six derived types is projected -- and Foundation
 	// 83's OcclusionQuery, which is GraphicsResource's twelfth, Foundation 84's
-	// DynamicVertexBuffer and DynamicIndexBuffer, and Foundation 88's
-	// DynamicSoundEffectInstance.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 26 {
-		t.Fatalf("%d projected derived types, want 26", got)
+	// DynamicVertexBuffer and DynamicIndexBuffer, Foundation 88's
+	// DynamicSoundEffectInstance and Foundation 92's ResourceContentManager and
+	// ContentTypeReader`1.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 28 {
+		t.Fatalf("%d projected derived types, want 28", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.
@@ -8216,14 +8283,14 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 				"because it is NONE, so the justification and the measurement must agree", measurement.Requirement)
 		}
 	}
-	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 236 {
-		t.Fatalf("%d inherited public CLR members, want 236", got)
+	if got := result.Summary["XNA_INHERITED_PUBLIC_MEMBERS"]; got != 243 {
+		t.Fatalf("%d inherited public CLR members, want 243", got)
 	}
-	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 327 {
-		t.Fatalf("%d inherited Go projections, want 327", got)
+	if got := result.Summary["XNA_INHERITED_MEMBER_PROJECTIONS"]; got != 335 {
+		t.Fatalf("%d inherited Go projections, want 335", got)
 	}
-	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 327 {
-		t.Fatalf("%d attributed inherited members, want every one of the 327", got)
+	if got := result.Summary["XNA_INHERITED_ATTRIBUTED_MEMBERS"]; got != 335 {
+		t.Fatalf("%d attributed inherited members, want every one of the 335", got)
 	}
 	// Ten, not eight: Foundation 88's DynamicSoundEffectInstance declares its
 	// OWN IsLooped accessors, which occupy the two slots its base's would have
@@ -8744,8 +8811,13 @@ func TestAGenericMethodsRETURNResolvesItsTypeParameter(t *testing.T) {
 	if len(member.Results) == 0 || member.Results[0] != "T" {
 		t.Fatalf("results %v, want the method's own type parameter first", member.Results)
 	}
-	if len(member.Parameters) == 0 || member.Parameters[0] != "*ContentManager" {
-		t.Fatalf("parameters %v, want the receiver first", member.Parameters)
+	// The receiver is the substitutable-base INTERFACE, not *ContentManager.
+	// Foundation 92 projected ResourceContentManager, which made ContentManager
+	// a live substitutable base; the receiver position widened with it, so a
+	// derived manager can be handed to the generic member the way the reference
+	// hands one to an inherited method.
+	if len(member.Parameters) == 0 || member.Parameters[0] != "ContentManagerReference" {
+		t.Fatalf("parameters %v, want the substitutable receiver first", member.Parameters)
 	}
 	// A member with no generic parameters of its own must be unaffected: the
 	// resolution is per member, not a global rename.

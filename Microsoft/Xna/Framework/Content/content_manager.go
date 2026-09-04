@@ -56,6 +56,10 @@ type ContentManager struct {
 	// operation that needs one.
 	resource *interop.Resource
 	disposed bool
+	// derived is the CLR `this`: the outermost object of the composition
+	// chain. It is nil for a manager nothing composes, and a derived
+	// constructor installs it.
+	derived contentManagerObject
 }
 
 // errContentArgumentNull projects System.ArgumentNullException, which both
@@ -139,7 +143,13 @@ func (m *ContentManager) SetRootDirectory(value string) error {
 // has no native half yet and unloads nothing.
 func (m *ContentManager) Unload() error {
 	if m == nil || m.disposed {
-		return errContentManagerDisposed
+		// An IDENTITY SITE. The reference raises
+		// ObjectDisposedException(this.ToString()), so the refusal names the
+		// RUNTIME type: a disposed ResourceContentManager says so. The reach
+		// is written out here rather than delegated, because the object use is
+		// this member's and a helper would move it somewhere the reference has
+		// none.
+		return fmt.Errorf("%w: %s", errContentManagerDisposed, m.self().clrTypeName())
 	}
 	if m.resource == nil {
 		return nil

@@ -64,10 +64,15 @@ var errContentUnsupportedAsset = errors.New("the content manager cannot load thi
 // native content manager, which caches by normalized key, so a second Load of
 // the same name answers from it. That is why the projection keeps no cache of
 // its own -- two caches would be two answers.
-func ContentManagerLoad[T any](manager *ContentManager, assetName string) (T, error) {
+func ContentManagerLoad[T any](reference ContentManagerReference, assetName string) (T, error) {
 	var zero T
+	// The position widens to ContentManagerReference because ContentManager is
+	// a substitutable base: a ResourceContentManager must be able to reach this
+	// function, and in C# it simply does.
+	manager := contentManagerOf(reference)
 	if manager == nil || manager.disposed {
-		return zero, errContentManagerDisposed
+		// An IDENTITY SITE: ObjectDisposedException(this.ToString()).
+		return zero, manager.disposedError()
 	}
 	if assetName == "" {
 		return zero, fmt.Errorf("%w: assetName", errContentArgumentNull)
@@ -153,7 +158,36 @@ func ContentManagerLoad[T any](manager *ContentManager, assetName string) (T, er
 // load route and it is cached. So this differs from the reference in exactly
 // that way, and it is recorded rather than papered over: a second ReadAsset of
 // one name answers from CNA's cache where the reference would read again.
-func ContentManagerReadAsset[T any](manager *ContentManager, assetName string, recordDisposableObject any) (T, error) {
+func ContentManagerReadAsset[T any](reference ContentManagerReference, assetName string, recordDisposableObject func(any)) (T, error) {
+	manager := contentManagerOf(reference)
+	if manager == nil || manager.disposed {
+		// The THIRD identity site. ReadAsset carries its own disposal check in
+		// the reference rather than inheriting Load's, so it is its own site.
+		var zero T
+		return zero, manager.disposedError()
+	}
+	// The Action<IDisposable> the reference passes is how a loader hands the
+	// manager each disposable it creates, so Unload can release them. CNA owns
+	// that bookkeeping -- its content manager tracks what it created -- so the
+	// callback is accepted and not invoked, and calling it would announce
+	// objects this projection did not create.
 	_ = recordDisposableObject
-	return ContentManagerLoad[T](manager, assetName)
+	// The REFERENCE is forwarded, not the narrowed base: the CLR `this` does
+	// not change across a call, so Load must see the object the caller handed
+	// in. This is currently UNOBSERVABLE -- the guard above fires before the
+	// delegation and Load's only identity site is the same disposal check --
+	// and it is written this way regardless, because the alternative is right
+	// only for as long as that stays true.
+	return ContentManagerLoad[T](reference, assetName)
+}
+
+// contentManagerOf narrows a substitutable reference to the base half the
+// package functions operate on. A nil interface and an interface holding a nil
+// pointer are both the CLR's null, which is what the disposal guards compare
+// against.
+func contentManagerOf(reference ContentManagerReference) *ContentManager {
+	if reference == nil {
+		return nil
+	}
+	return reference.contentManager()
 }

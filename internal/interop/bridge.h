@@ -992,6 +992,30 @@ CnaGoResult cna_go_storage_get_root_size_ext(uint64_t* out_bytes);
 CnaGoResult cna_go_storage_copy_root_ext(char* destination, uint64_t capacity, uint64_t* out_bytes);
 #endif
 
+
+/* Foundation 92 -- the content reader. The create wrapper flattens
+   CNA_ContentReaderCreateInfo into scalars so no CNA struct crosses cgo, and
+   every value read hands back the flat floats its CNA type carries. */
+CnaGoResult cna_go_content_reader_create(
+    CnaGoHandle content_manager, CnaGoHandle stream,
+    const char* asset_name, uint64_t asset_name_length,
+    int32_t version, uint8_t platform, CnaGoHandle* out_reader);
+CnaGoResult cna_go_content_reader_get_asset_name_size(CnaGoHandle reader, uint64_t* out_bytes);
+CnaGoResult cna_go_content_reader_copy_asset_name(CnaGoHandle reader, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_content_reader_read_matrix(CnaGoHandle reader, float* out_values);
+CnaGoResult cna_go_content_reader_read_quaternion(CnaGoHandle reader, float* out_values);
+CnaGoResult cna_go_content_reader_read_vector2(CnaGoHandle reader, float* out_values);
+CnaGoResult cna_go_content_reader_read_vector3(CnaGoHandle reader, float* out_values);
+CnaGoResult cna_go_content_reader_read_vector4(CnaGoHandle reader, float* out_values);
+CnaGoResult cna_go_content_reader_read_color(CnaGoHandle reader, uint8_t* out_channels);
+CnaGoResult cna_go_content_reader_read_object_tag(CnaGoHandle reader, uint8_t* out_has_value);
+CnaGoResult cna_go_content_reader_initialize_type_readers(CnaGoHandle reader);
+CnaGoResult cna_go_content_reader_read_shared_resources(CnaGoHandle reader);
+CnaGoResult cna_go_content_reader_read_bytes_exact(
+    CnaGoHandle reader, int32_t count, const char* reader_name, uint64_t reader_name_length,
+    uint8_t* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_content_reader_destroy(CnaGoHandle reader);
+
 CnaGoResult cna_go_vertex_declaration_create(
     int32_t vertex_stride,
     uint8_t has_stride,

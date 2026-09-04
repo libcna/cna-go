@@ -41,6 +41,15 @@ var bclTypes = map[string]string{
 	// FAKE async -- Begin invokes the callback before it returns -- so the
 	// projection is a value that is already complete rather than a promise.
 	"System.IAsyncResult": "*AsyncResult",
+	// System.Resources.ResourceManager, which the profile names at exactly ONE
+	// signature position -- ResourceContentManager::.ctor -- and uses through
+	// exactly ONE member, GetObject(String) -> Object.
+	//
+	// So the settled role rule gives it the Go type whose role that is: a
+	// name-to-object lookup, which is a func. The same rule made a read-only
+	// Stream position an io.Reader; it is a measurement of what the profile's
+	// positions DO, not a claim that a ResourceManager is a function.
+	"System.Resources.ResourceManager": "func(string) any",
 	// System.AsyncCallback, the delegate every Begin member takes. It is
 	// projected as a Go func for the reason System.EventHandler<T> is: a
 	// delegate is a callable, and degrading it to `any` would erase the
@@ -204,6 +213,16 @@ var pureManagedTypes = map[string]bool{
 	// members throw from authoritative managed argument validation.
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection":            true,
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": true,
+
+	// Foundation 92. The two content type readers, which own no native object
+	// at all: every contract member is a field read, and the CNA reader they
+	// are handed belongs to ContentReader rather than to them.
+	//
+	// ContentTypeReader`1's Read is the exception and is named in
+	// managedFallibleMembers: its cast can fail, and the reference raises
+	// BadXnbWrongType naming both types when it does.
+	"Microsoft.Xna.Framework.Content.ContentTypeReader":   true,
+	"Microsoft.Xna.Framework.Content.ContentTypeReader`1": true,
 
 	// Foundation 90. The Model family's eight non-collection types, admitted on
 	// the same evidence the rest of this registry needs: every one of their
@@ -440,13 +459,24 @@ var bclBaseRelationships = map[string]bclBaseRelationship{
 				Detail: "the default implementation returns GetType(), so projecting it as any would hand back a reflect.Type through an untyped result"},
 		},
 	},
+	// Foundation 92 CORRECTED this entry and then closed it. Foundation 29
+	// recorded two reasons to defer and NEITHER survived measurement intact.
+	//
+	// ContentReader's whole IL contains ZERO `Stream::Seek` calls. The single
+	// apparent hit was the substring of `get_CanSeek`, and that guard sits in
+	// `private static Stream PrepareStream` -- neither inherited nor contract
+	// surface -- protecting a size check the reference SKIPS when the stream
+	// cannot seek. A non-seekable stream is a supported input to the reference
+	// itself, so io.Reader never blocked this base.
+	//
+	// Read7BitEncodedInt was the half that was real, and it is fifteen lines:
+	// seven bits per byte, the high bit continuing, the shift masked with 31,
+	// and a refusal at shift == 35 -- after FIVE bytes, not four. Reproducing
+	// it was the whole remaining cost.
 	"System.IO.BinaryReader": {
-		Status:    "DEFERRED",
-		Rationale: "requires a stream-reader base whose seek and encoding behavior is a separate mapping",
-		Blockers: []bclBaseBlocker{
-			{Kind: "SUBSYSTEM", CLRMember: "BaseStream", Needs: "System.IO.Stream as a seekable stream",
-				Detail: "CNA-Go maps System.IO.Stream to io.Reader, which carries neither seeking nor the encoding-aware Read7BitEncodedInt behavior the reader's inherited surface depends on"},
-		},
+		Adapter:   "binaryReaderBase",
+		Status:    "COMPOSED",
+		Rationale: "every inherited read is projected over cna_content_reader_read_bytes_exact, because CNA's reader BORROWS the stream and reading it from the Go side as well would advance one position twice; three members are excluded, each for a measured reason rather than for convenience",
 	},
 	"System.ComponentModel.ExpandableObjectConverter": {
 		Status:    "DEFERRED",
@@ -872,6 +902,22 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"method|RemoveAt":   true,
 		"method|CopyTo":     true,
 	},
+	// Foundation 92. ContentTypeReader`1's two Reads, which are the only
+	// members in either type that can fail. The untyped one casts an existing
+	// instance to T and raises BadXnbWrongType when it does not fit; the typed
+	// one is abstract, and a base with no body refuses.
+	"Microsoft.Xna.Framework.Content.ContentTypeReader`1": {
+		"method|Read": true,
+	},
+	// ContentTypeReader's own Read and Initialize. Read is abstract, so a bare
+	// base refuses; Initialize's base body is one `ret` and cannot fail, but it
+	// is virtual and an override may -- which is why the reference declares it
+	// returning void and the projection gives it an error.
+	"Microsoft.Xna.Framework.Content.ContentTypeReader": {
+		"method|Read":       true,
+		"method|Initialize": true,
+	},
+
 	// Foundation 90. The Model family, whose fallible members are exactly the
 	// ones that validate an argument or reach a device.
 	//
@@ -2037,6 +2083,17 @@ func mapMember(s *expectedSurface, byIdentity map[string]*contractType, owner *e
 		}
 		base.GoName, base.GoKind, base.Receiver = name, "func", ""
 		result := owner.GoName
+		// A GENERIC CLR class's constructor returns the INSTANTIATED Go type:
+		// ContentTypeReader`1's projects to *ContentTypeReaderOfT[T], not to
+		// *ContentTypeReaderOfT, because a Go generic type is not a type until
+		// its parameters are supplied.
+		//
+		// Foundation 92 is where this first arose. IPackedVector`1 is the only
+		// other generic XNA type in the profile and it is an INTERFACE, which
+		// declares no constructor, so nothing had needed it.
+		if arguments := goTypeParameterList(t); arguments != "" {
+			result += arguments
+		}
 		if t.Kind == "class" && t.Name != "Microsoft.Xna.Framework.GameTime" {
 			result = "*" + result
 		}
@@ -2356,6 +2413,21 @@ var substitutableBases = map[string]string{
 	// HALF of a BasicEffect with no path to the object that owns it. The
 	// downcast would not be lost, it would be impossible.
 	"Microsoft.Xna.Framework.Graphics.Effect": "EffectReference",
+	// Foundation 92. ContentTypeReader, whose requirement went LIVE the way the
+	// graphics bases did: ContentReader::ReadObject declares two
+	// `ContentTypeReader typeReader` parameters, and ContentTypeReader`1 is a
+	// projected derived type that must reach them.
+	//
+	// Unlike the graphics bases this one is also, in practice, closed. The
+	// readers that exist are the ones CNA's manifest walk produced, because the
+	// reference instantiates a reader from a type NAME by reflection and Go has
+	// no counterpart -- so the unexported method that keeps the interface
+	// unsatisfiable from outside the module is not merely a safety rail here,
+	// it describes what the binding can actually do.
+	"Microsoft.Xna.Framework.Content.ContentTypeReader": "ContentTypeReaderReference",
+	// Foundation 92. ContentManager, whose requirement went LIVE when
+	// ResourceContentManager became its first projected derived type.
+	"Microsoft.Xna.Framework.Content.ContentManager": "ContentManagerReference",
 	// Foundation 81. EnvironmentMapEffect::EnvironmentMap's SETTER is the only
 	// TextureCube parameter position in the whole profile, and projecting that
 	// effect put it on a carrier CNA-Go projects. TextureCube already had a
@@ -2564,6 +2636,13 @@ func mapTypeWithGenerics(s *expectedSurface, byIdentity map[string]*contractType
 		}
 		return name
 	}
+	// A delegate's argument may itself be the METHOD's type parameter, which
+	// mapType alone cannot resolve: it knows the owner's generics and not the
+	// member's. ContentReader::ReadSharedResource<T>(Action<T>) is the position
+	// that needs it -- the T inside the Action is the method's.
+	if inner, ok := genericTypeArgument(raw, "System.Action`1["); ok {
+		return "func(" + mapTypeWithGenerics(s, byIdentity, owner, generics, inner) + ")"
+	}
 	return mapType(s, byIdentity, owner, raw)
 }
 
@@ -2631,6 +2710,14 @@ func mapType(s *expectedSurface, byIdentity map[string]*contractType, owner *exp
 	// events in the profile declares. The generic argument is mapped exactly:
 	// degrading it to `any` would erase the args identity the handler is
 	// given, which is the whole reason the CLR event is generic.
+	// System.Action<T>, which ContentReader::ReadSharedResource takes. A CLR
+	// delegate projects to a Go func for the reason System.EventHandler<T> and
+	// System.AsyncCallback do: a delegate is a callable, and degrading it to
+	// `any` would erase the argument it is handed -- which for a shared-resource
+	// fixup is the resource itself.
+	if inner, ok := genericTypeArgument(raw, "System.Action`1["); ok {
+		return "func(" + mapType(s, byIdentity, owner, inner) + ")"
+	}
 	if inner, ok := genericTypeArgument(raw, "System.EventHandler`1["); ok {
 		return frameworkQualified(owner, "EventHandler") + "[" + mapType(s, byIdentity, owner, inner) + "]"
 	}
@@ -3270,6 +3357,15 @@ type bclBaseAdapter struct {
 	GoAdapter string
 	// AdapterField is the unexported field name a consumer must hold it in.
 	AdapterField string
+	// AdapterInConsumerPackage says the adapter type is declared in the SAME
+	// package as its consumer, so its Go spelling takes no package qualifier.
+	//
+	// Every adapter until Foundation 92 lived in the framework package and was
+	// named from elsewhere, which is why qualification was the unconditional
+	// rule. binaryReaderBase is the first that lives with its only consumer:
+	// its state is the CNA reader handle, which nothing outside the content
+	// package has any use for.
+	AdapterInConsumerPackage bool
 	// GenericArity is how many type arguments the CLR base takes.
 	GenericArity int
 	// BehaviorLevel is SUPPORTED when every inherited public member below has
@@ -3705,6 +3801,57 @@ var bclBaseAdapters = map[string]bclBaseAdapter{
 		},
 	},
 
+	// Foundation 92. System.IO.BinaryReader, whose one consumer is
+	// ContentReader.
+	//
+	// The base state is the CNA reader handle: BinaryReader holds a stream, and
+	// CNA's content reader is what holds it here. So the adapter is a real
+	// private struct over that handle, and every inherited member is a decode
+	// over cna_content_reader_read_bytes_exact.
+	"System.IO.BinaryReader": {
+		GoAdapter:                "binaryReaderBase",
+		AdapterField:             "base",
+		AdapterInConsumerPackage: true,
+		GenericArity:             0,
+		BehaviorLevel:            "PARTIAL",
+		Authority:                "mscorlib.dll 4.0.30319.1 (RTMRel.030319-0100), assembly version 4.0.0.0",
+		AuthoritySHA256:          "5634668d4775b0113f08ea31093b281fea69bfc4e99227f5ca761b4ed98acc63",
+		Rationale:                "a stream reader whose inherited surface a content type reader uses constantly; PARTIAL because three public members are excluded for measured reasons rather than projected",
+		Members: []bclInheritedMember{
+			{Member: bclMethod("ReadBoolean", "System.Boolean"),
+				Rationale: "one byte, and the reference compares it against ZERO rather than against one -- so anything non-zero is true"},
+			{Member: bclMethod("ReadByte", "System.Byte"), Rationale: "one byte"},
+			{Member: bclMethod("ReadSByte", "System.SByte"), Rationale: "the same byte read as signed"},
+			{Member: bclMethod("ReadInt16", "System.Int16"), Rationale: "two bytes, little-endian, which is the FORMAT's order and not the host's"},
+			{Member: bclMethod("ReadUInt16", "System.UInt16"), Rationale: "two bytes, little-endian"},
+			{Member: bclMethod("ReadInt32", "System.Int32"), Rationale: "four bytes, little-endian"},
+			{Member: bclMethod("ReadUInt32", "System.UInt32"), Rationale: "four bytes, little-endian"},
+			{Member: bclMethod("ReadInt64", "System.Int64"), Rationale: "eight bytes, little-endian"},
+			{Member: bclMethod("ReadUInt64", "System.UInt64"), Rationale: "eight bytes, little-endian"},
+			{Member: bclMethod("ReadChar", "System.Char"),
+				Rationale: "ONE character through the encoding, which for every reader the profile builds is UTF-8, so one to four bytes; a rune outside the basic plane does not fit a System.Char and the reference answers the leading surrogate"},
+			{Member: bclMethod("ReadChars", "System.Char[]", bclParameter("count", "System.Int32")),
+				Rationale: "count characters, answering fewer only at the end of the stream"},
+			{Member: bclMethod("ReadString", "System.String"),
+				Rationale: "a 7-bit-encoded BYTE length followed by that many bytes; the length counts bytes rather than characters, which is why it is read before the decode"},
+			{Member: bclMethod("ReadBytes", "System.Byte[]", bclParameter("count", "System.Int32")),
+				Rationale: "count bytes, straight from read_bytes_exact"},
+			{Member: bclMethod("Close", "System.Void"),
+				Rationale: "the reference implements it as Dispose(true); CNA's reader closes the stream it borrowed"},
+			{Member: bclMethod("Dispose", "System.Void"), Rationale: "forwards to Close"},
+		},
+		Excluded: []bclExcludedMember{
+			{CLRMember: "ReadDecimal", Reason: "System.Decimal is named NOWHERE in the pinned contract, so this member has no element type to project. It is an honest exclusion of the same kind any BCL member gets when the profile never names its type"},
+			{CLRMember: "PeekChar", Reason: "the reference reads a character and rewinds the stream, and answers -1 when the stream cannot seek. CNA's content reader exposes no peek and no position, and rewinding the STORAGE stream underneath it would desynchronise the two readers -- CNA borrows the stream for its whole lifetime"},
+			{CLRMember: "BaseStream", Reason: "handing back the stream is what BaseStream exists for, and here it would hand back a stream a SECOND reader is already advancing. CNA's reader owns the position; a caller reading the same stream directly would corrupt both"},
+			{CLRMember: ".ctor(Stream)", Reason: "the CLR does not inherit constructors, and ContentReader's own is `assembly`"},
+			{CLRMember: ".ctor(Stream,Encoding)", Reason: "the same"},
+			{CLRMember: "Read7BitEncodedInt", Reason: "`protected`, so not inherited public surface; it is reproduced unexported because ReadString needs it"},
+			{CLRMember: "FillBuffer", Reason: "`protected` helper"},
+			{CLRMember: "Read", Reason: "OVERLOADED -- Read(), Read(Byte[],Int32,Int32) and Read(Char[],Int32,Int32) -- and the inherited-projection model has no way to express an overloaded inherited member. This is a MECHANISM limitation, not a measured one: nothing about the three bodies resists projection, and a milestone that taught the model about inherited overloads would gain all three"},
+		},
+	},
+
 	// Foundation 90. System.Collections.ObjectModel.ReadOnlyCollection<T> as a
 	// BASE, which is a different role from the signature adapter of the same
 	// name it has carried since Foundation 29. The two are independent and both
@@ -3937,6 +4084,20 @@ var frameworkDeclaredBCLTypes = map[string]bool{
 	"System.IO.FileMode":   true,
 	"System.IO.FileAccess": true,
 	"System.IO.FileShare":  true,
+}
+
+// goTypeParameterList renders a generic CLR type's Go type-parameter list, as
+// `[T]`, and the empty string for a non-generic one. The names are the CLR's
+// own, which is what the type projection already spells.
+func goTypeParameterList(t contractType) string {
+	if len(t.GenericParameters) == 0 {
+		return ""
+	}
+	names := make([]string, 0, len(t.GenericParameters))
+	for _, parameter := range t.GenericParameters {
+		names = append(names, parameter.Name)
+	}
+	return "[" + strings.Join(names, ", ") + "]"
 }
 
 func goAdapterArgument(clr string) string {
@@ -4626,13 +4787,32 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 	// deferred because its DERIVED type is not projected, and the blocker is
 	// recorded as ResourceContentManager's rather than left as the stale claim
 	// that CNA-Go maps no content subsystem -- which stopped being true then.
-	"Microsoft.Xna.Framework.Content.ContentManager": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "SUBSYSTEM", Detail: "ContentManager is projected as of Foundation 63 and its one derived type, ResourceContentManager, is not: it loads from a System.Resources.ResourceManager, which is a BCL subsystem outside the seven pinned assemblies and has no CNA counterpart"},
-	}},
-	"Microsoft.Xna.Framework.Content.ContentTypeReader": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
-		xnaBaseComposition,
-		{Class: "SUBSYSTEM", Detail: "the same Content/XNB subsystem, and the derived type is the GENERIC ContentTypeReader`1, so the relationship would also need a rule for a generic class deriving from a non-generic one"},
+	// Foundation 92 CLOSED this, and the blocker it replaces did not survive
+	// measurement either.
+	//
+	// The record said ResourceContentManager was blocked because
+	// System.Resources.ResourceManager "is a BCL subsystem outside the seven
+	// pinned assemblies and has no CNA counterpart". The subsystem is real; the
+	// block was not. The pinned contract names ResourceManager at exactly ONE
+	// signature position and ResourceContentManager uses exactly ONE member of
+	// it -- GetObject(String) -> Object -- so the settled role rule gives that
+	// position the Go type whose role it is, a name-to-object func, the same way
+	// a read-only Stream position takes an io.Reader.
+	"Microsoft.Xna.Framework.Content.ContentManager": {Status: "COMPOSED"},
+	// Foundation 92. ContentTypeReader, whose one derived type in the profile
+	// is ContentTypeReader`1.
+	//
+	// COMPOSED: the derived generic holds a private ContentTypeReader and
+	// forwards the four inherited public members. That is the settled rule --
+	// private named composition plus measured forwarding, never Go embedding.
+	//
+	// The base is also in substitutableBases, because
+	// ContentReader::ReadObject declares two ContentTypeReader-typed
+	// parameters a ContentTypeReader`1 must reach. The two registrations are
+	// independent and both are needed: one says the inheritance is projected,
+	// the other says a derived value can stand in for a base one.
+	"Microsoft.Xna.Framework.Content.ContentTypeReader": {Status: "COMPOSED", Blockers: []xnaBaseBlocker{
+		{Class: "ARCHITECTURE", Detail: "the inheritance is projected and both types are complete, but neither can be INSTANTIATED by a consumer. The reference builds a type reader from a type NAME found in the asset's manifest, using Type.GetType; Go has no counterpart, and CNA performs that dispatch itself in cna_content_reader_initialize_type_readers. So the readers that exist are the ones CNA knows, and a game cannot ship one for its own content the way XNA lets it. That is a real capability this binding does not have, recorded rather than papered over with a hook nothing would call"},
 	}},
 	"Microsoft.Xna.Framework.Design.MathTypeConverter": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,

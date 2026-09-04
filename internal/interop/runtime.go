@@ -5349,3 +5349,45 @@ func (r *Runtime) StorageSetApplicationName(name string) error {
 func (r *Runtime) StorageRoot() (string, error) {
 	return nativeStorageRoot()
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 92. The content reader.
+
+func (r *Runtime) ContentReaderCreate(values ContentReaderCreateValues) (uint64, error) {
+	return nativeContentReaderCreate(values)
+}
+
+func (r *Runtime) ContentReaderAssetName(reader uint64) (string, error) {
+	return nativeContentReaderAssetName(reader)
+}
+
+// ContentReaderReadFloats serves the five float-valued reads. The KIND selects
+// the route, and each route decides how many floats it answers -- so a caller
+// cannot ask for a Vector2 and receive four.
+func (r *Runtime) ContentReaderReadFloats(reader uint64, kind int) ([]float32, error) {
+	return nativeContentReaderReadFloats(reader, kind)
+}
+
+func (r *Runtime) ContentReaderReadColor(reader uint64) ([4]byte, error) {
+	return nativeContentReaderReadColor(reader)
+}
+
+func (r *Runtime) ContentReaderReadObjectTag(reader uint64) (bool, error) {
+	return nativeContentReaderReadObjectTag(reader)
+}
+
+func (r *Runtime) ContentReaderInitializeTypeReaders(reader uint64) error {
+	return nativeContentReaderInitializeTypeReaders(reader)
+}
+
+func (r *Runtime) ContentReaderReadSharedResources(reader uint64) error {
+	return nativeContentReaderReadSharedResources(reader)
+}
+
+func (r *Runtime) ContentReaderReadBytesExact(reader uint64, count int32, readerName string, destination []byte) (int, error) {
+	return nativeContentReaderReadBytesExact(reader, count, readerName, destination)
+}
+
+func (r *Runtime) ContentReaderDestroy(reader uint64) error {
+	return nativeContentReaderDestroy(reader)
+}

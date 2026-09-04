@@ -150,18 +150,6 @@ var frontierFamilies = []frontierFamily{
 		Types:          []string{"Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"},
 	},
 	{
-		Name:           "Content plumbing",
-		Classification: frontierActionableLocal,
-		Note:           "68 cna_content* routes in total -- 20 reader, 13 type-reader, 34 manager, of which only 3 are _ext -- and the question is how much of ContentReader's public state, stream position, shared resources, external references and type-reader identity, the C API actually exposes, measured member by member rather than blocked as a family. This family also unblocks the Model family's native slice: Model has no public constructor, so ContentManager.Load<Model> is the only way a consumer can obtain one to draw",
-		Types: []string{
-			"Microsoft.Xna.Framework.Content.ContentReader",
-			"Microsoft.Xna.Framework.Content.ContentTypeReader",
-			"Microsoft.Xna.Framework.Content.ContentTypeReader`1",
-			"Microsoft.Xna.Framework.Content.ContentTypeReaderManager",
-			"Microsoft.Xna.Framework.Content.ResourceContentManager",
-		},
-	},
-	{
 		Name:           "Content serializer attributes",
 		Classification: frontierActionableLocal,
 		Note:           "the five attribute TYPES are ordinary classes with constructors and string/bool properties; whether Go can ATTACH them to declarations is a different question from whether the types can exist, and only the attaching operation is a candidate language limitation",
