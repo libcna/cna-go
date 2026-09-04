@@ -126,11 +126,10 @@ var frontierFamilies = []frontierFamily{
 	{
 		Name:           "Audio",
 		Classification: frontierActionableLocal,
-		Note:           "SDL3 is present in the qualified artifact's lib/; CNA carries ~63/18/10 routes for SoundEffect, SoundEffectInstance and the dynamic instance. Microphone's physical capture is a separate question from its enumeration and state surface",
+		Note:           "Foundation 86 closed RendererDetail, which needed no CNA at all -- two strings and five members, and the first type in the project whose authority is the Xact assembly. Foundation 86 also MEASURED what the other four are waiting on rather than assuming it: cna_audio_get_capabilities reports is_playback_available=TRUE on both qualified artifacts, so the old \"nothing behind it would play\" note was stale. CNA carries ~63/18/10 routes for SoundEffect, SoundEffectInstance and the dynamic instance. Microphone's physical capture is a separate question from its enumeration and state surface, and the capture members are projected without ever being exercised against a real device",
 		Types: []string{
 			"Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
 			"Microsoft.Xna.Framework.Audio.Microphone",
-			"Microsoft.Xna.Framework.Audio.RendererDetail",
 			"Microsoft.Xna.Framework.Audio.SoundEffect",
 			"Microsoft.Xna.Framework.Audio.SoundEffectInstance",
 		},

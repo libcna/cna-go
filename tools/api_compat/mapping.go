@@ -4243,7 +4243,7 @@ var xnaBaseRelationships = map[string]xnaBaseRelationship{
 
 	"Microsoft.Xna.Framework.Audio.SoundEffectInstance": {Status: "DEFERRED", Blockers: []xnaBaseBlocker{
 		xnaBaseComposition,
-		{Class: "SUBSYSTEM", Detail: "SoundEffectInstance is a missing type and CNA-Go has no audio backend: the qualification artifact pins a NULL audio renderer, so nothing behind it would play"},
+		{Class: "SUBSYSTEM", Detail: "SoundEffectInstance is a missing type. The blocker this entry used to record -- \"the qualification artifact pins a NULL audio renderer, so nothing behind it would play\" -- was STALE, and Foundation 86 measured it rather than restating it: cna_audio_get_capabilities reports is_playback_available=TRUE on both qualified artifacts. What remains is CNA-Go's own surface"},
 	}},
 	// Foundation 63 projected ContentManager itself. The relationship is still
 	// deferred because its DERIVED type is not projected, and the blocker is

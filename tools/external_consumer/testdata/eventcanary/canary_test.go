@@ -4574,3 +4574,37 @@ func TestDynamicBuffersAreReachableFromOutside(t *testing.T) {
 		t.Fatal("a typed-nil DynamicVertexBuffer compared equal to a nil interface, which Go does not do")
 	}
 }
+
+// TestRendererDetailIsReachableFromOutside is Foundation 86's canary.
+//
+// The type has no public constructor -- the reference's is `assembly` -- so a
+// consumer's only value is the zero one, and the canary says so rather than
+// pretending otherwise.
+func TestRendererDetailIsReachableFromOutside(t *testing.T) {
+	var detail audio.RendererDetail
+	var _ func() string = detail.FriendlyName
+	var _ func() string = detail.RendererId
+	var _ func() int32 = detail.GetHashCode
+	var _ func() string = detail.ToString
+	var _ func(any) bool = detail.Equals
+	var _ func(audio.RendererDetail, audio.RendererDetail) bool = audio.RendererDetailOperatorEqualityByRendererDetailAndRendererDetail
+	var _ func(audio.RendererDetail, audio.RendererDetail) bool = audio.RendererDetailOperatorInequalityByRendererDetailAndRendererDetail
+
+	// A value type: assignment copies, and two zero values are equal.
+	other := detail
+	if !audio.RendererDetailOperatorEqualityByRendererDetailAndRendererDetail(detail, other) {
+		t.Fatal("two default RendererDetails compare unequal")
+	}
+	if detail.FriendlyName() != "" || detail.RendererId() != "" {
+		t.Fatal("a default RendererDetail reports something")
+	}
+	if detail.GetHashCode() != 0 {
+		t.Fatalf("a default RendererDetail hashes to %d, want 0", detail.GetHashCode())
+	}
+	if detail.ToString() != "Microsoft.Xna.Framework.Audio.RendererDetail" {
+		t.Fatalf("ToString = %q", detail.ToString())
+	}
+	if detail.Equals("not a renderer detail") {
+		t.Fatal("Equals accepted a string")
+	}
+}

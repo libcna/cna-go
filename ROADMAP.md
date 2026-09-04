@@ -18,14 +18,14 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               73
-MISSING_TYPE                    73
+TOTAL_DIAGNOSTICS               72
+MISSING_TYPE                    72
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 184
+COMPLETE_TYPES                 185
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         73
+GLOBAL_ACTIONABLE_LOCAL         72
 GLOBAL_UNREVIEWED                0
 BOUND_FUNCTIONS                305
 MANIFEST_LAYOUT_AGREEMENTS     457
@@ -169,10 +169,31 @@ HEADLESS has no readback path and records a refusal, pinned by the parent
 accounting to the back buffer's own refusal count so the slice cannot quietly
 stop running where it should.
 
+Foundation 86 closed **`RendererDetail`**, the first type whose authority is the
+Xact assembly rather than `Microsoft.Xna.Framework.dll` -- two strings and five
+members with no native dependency, so projecting it needs no audio engine, no
+bank and no device. Its `GetHashCode` needed the pinned mscorlib string hash,
+which moved from the framework package into **`internal/bclhash`** so two
+projected namespaces can share one body without adding public surface.
+
+It also corrected a **stale blocker**. `xnaBaseRelationships` recorded that "the
+qualification artifact pins a NULL audio renderer, so nothing behind it would
+play"; `cna_audio_get_capabilities` reports `is_playback_available = TRUE` on
+BOTH qualified artifacts, which `docs/generated/runtime-capabilities.md` had
+already measured from a direct C probe. The audio family's remaining blocker is
+CNA-Go's own surface and nothing else.
+
+The capability route was bound end to end during that milestone and then
+**reverted**: reading `Helpers::GetExceptionFromErrorCode` settled that XNA does
+not probe for audio hardware at all -- it makes the native call and maps the
+returned error code, and `NoAudioHardwareException` comes out of that switch. A
+route with no faithful call site does not get bound, so the measurement is kept
+and the binding is not.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 73 types it does not project
+projects, it projects completely; what remains is 72 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why

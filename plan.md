@@ -1598,6 +1598,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 83 | OcclusionQuery, and the dynamic-buffer probe | `foundation-83-occlusion-query-evidence.md` |
 | 84 | DynamicVertexBuffer and DynamicIndexBuffer, closing the Graphics namespace | `foundation-84-dynamic-buffers-evidence.md` |
 | 85 | the first VERIFIED_PIXEL draw | `foundation-85-pixel-draw-evidence.md` |
+| 86 | RendererDetail, and the stale audio blocker | `foundation-86-renderer-detail-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -2014,6 +2015,26 @@ refuses the readback and the slice skips. The harness pins the SOFTWARE library
 rather than taking the ambient one, and the parent accounting pins the slice's
 refusal count to the back buffer's so a skipped claim cannot look like a passing
 one.
+
+**A stale blocker is a measurement waiting to be redone** (86). The audio
+family carried "the qualification artifact pins a NULL audio renderer, so
+nothing behind it would play" long after it stopped being true; the generated
+runtime-capabilities report already contradicted it. Before treating a recorded
+blocker as a reason to defer a family, re-run the measurement that produced it.
+
+**A route with no faithful call site does not get bound, even when it is the
+obvious one** (86). `cna_audio_get_capabilities` was bound end to end and then
+reverted: XNA never probes for audio hardware, it maps the error code the
+creation call returns, so an up-front probe would be a call the reference does
+not make. The measurement it produced is kept in the evidence; the binding is
+not.
+
+**A mutation anchor that can match PROSE is not a mutation** (86). This project
+quotes reference bodies in doc comments, so `return nameHash ^ idHash` appears
+twice in one file -- once in the comment and once in the code. Replacing the
+first occurrence scored a defect as unkillable while the projection was
+untouched. Anchor on surrounding code, and treat an unexpected survivor as a
+harness bug before treating it as a finding.
 
 ## Next milestone selection rule
 
