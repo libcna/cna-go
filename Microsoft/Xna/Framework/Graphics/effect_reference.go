@@ -110,6 +110,22 @@ func (e *DualTextureEffect) effectBase() *Effect {
 	return e.effect
 }
 
+// effectBase answers with the EnvironmentMapEffect's composed base.
+func (e *EnvironmentMapEffect) effectBase() *Effect {
+	if e == nil {
+		return nil
+	}
+	return e.effect
+}
+
+// effectBase answers with the SkinnedEffect's composed base.
+func (e *SkinnedEffect) effectBase() *Effect {
+	if e == nil {
+		return nil
+	}
+	return e.effect
+}
+
 // resolveEffect is the `ldarg` a CLR call site does for free. It answers nil for
 // a nil interface AND for an interface holding a typed nil, because the
 // reference sees one null either way.
@@ -128,4 +144,6 @@ var (
 	_ EffectReference = (*AlphaTestEffect)(nil)
 	_ EffectReference = (*DualTextureEffect)(nil)
 	_ EffectReference = (*EffectMaterial)(nil)
+	_ EffectReference = (*EnvironmentMapEffect)(nil)
+	_ EffectReference = (*SkinnedEffect)(nil)
 )

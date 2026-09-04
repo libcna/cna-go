@@ -894,6 +894,32 @@ typedef CNA_Result (*cna_dual_texture_effect_set_alpha_fn)(CNA_EffectHandle, flo
 typedef CNA_Result (*cna_dual_texture_effect_set_texture_fn)(CNA_EffectHandle, uint32_t, CNA_Handle);
 typedef CNA_Result (*cna_dual_texture_effect_set_vertex_color_enabled_fn)(CNA_EffectHandle, CNA_Bool);
 typedef CNA_Result (*cna_effect_material_create_fn)(CNA_EffectHandle, CNA_EffectHandle*);
+/* Foundation 81 -- EnvironmentMapEffect and SkinnedEffect. */
+typedef CNA_Result (*cna_environment_map_effect_create_fn)(CNA_Handle, CNA_EffectHandle*);
+typedef CNA_Result (*cna_environment_map_effect_set_diffuse_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_environment_map_effect_set_emissive_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_environment_map_effect_set_alpha_fn)(CNA_EffectHandle, float);
+typedef CNA_Result (*cna_environment_map_effect_set_texture_fn)(CNA_EffectHandle, CNA_Handle);
+typedef CNA_Result (*cna_environment_map_effect_set_environment_map_fn)(CNA_EffectHandle, CNA_Handle);
+typedef CNA_Result (*cna_environment_map_effect_get_amount_fn)(CNA_EffectHandle, float*);
+typedef CNA_Result (*cna_environment_map_effect_set_amount_fn)(CNA_EffectHandle, float);
+typedef CNA_Result (*cna_environment_map_effect_get_specular_fn)(CNA_EffectHandle, CNA_Vector3*);
+typedef CNA_Result (*cna_environment_map_effect_set_specular_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_environment_map_effect_get_fresnel_factor_fn)(CNA_EffectHandle, float*);
+typedef CNA_Result (*cna_environment_map_effect_set_fresnel_factor_fn)(CNA_EffectHandle, float);
+typedef CNA_Result (*cna_skinned_effect_create_fn)(CNA_Handle, CNA_EffectHandle*);
+typedef CNA_Result (*cna_skinned_effect_set_diffuse_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_skinned_effect_set_emissive_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_skinned_effect_get_specular_color_fn)(CNA_EffectHandle, CNA_Vector3*);
+typedef CNA_Result (*cna_skinned_effect_set_specular_color_fn)(CNA_EffectHandle, CNA_Vector3);
+typedef CNA_Result (*cna_skinned_effect_get_specular_power_fn)(CNA_EffectHandle, float*);
+typedef CNA_Result (*cna_skinned_effect_set_specular_power_fn)(CNA_EffectHandle, float);
+typedef CNA_Result (*cna_skinned_effect_set_alpha_fn)(CNA_EffectHandle, float);
+typedef CNA_Result (*cna_skinned_effect_set_prefer_per_pixel_lighting_fn)(CNA_EffectHandle, CNA_Bool);
+typedef CNA_Result (*cna_skinned_effect_set_texture_fn)(CNA_EffectHandle, CNA_Handle);
+typedef CNA_Result (*cna_skinned_effect_set_weights_per_vertex_fn)(CNA_EffectHandle, int32_t);
+typedef CNA_Result (*cna_skinned_effect_set_bone_transforms_fn)(CNA_EffectHandle, const CNA_Matrix*, uint64_t);
+typedef CNA_Result (*cna_skinned_effect_copy_bone_transforms_fn)(CNA_EffectHandle, uint64_t, CNA_Matrix*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_effect_create_compiled_fn)(CNA_Handle, const uint8_t*, uint64_t, CNA_EffectHandle*);
 typedef CNA_Result (*cna_content_manager_load_effect_fn)(CNA_Handle, CNA_StringView, CNA_EffectHandle*);
 typedef CNA_Result (*cna_effect_clone_fn)(CNA_EffectHandle, CNA_EffectHandle*);
@@ -1183,6 +1209,31 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_dual_texture_effect_set_texture) \
     X(cna_dual_texture_effect_set_vertex_color_enabled) \
     X(cna_effect_material_create) \
+    X(cna_environment_map_effect_create) \
+    X(cna_environment_map_effect_set_diffuse_color) \
+    X(cna_environment_map_effect_set_emissive_color) \
+    X(cna_environment_map_effect_set_alpha) \
+    X(cna_environment_map_effect_set_texture) \
+    X(cna_environment_map_effect_set_environment_map) \
+    X(cna_environment_map_effect_get_amount) \
+    X(cna_environment_map_effect_set_amount) \
+    X(cna_environment_map_effect_get_specular) \
+    X(cna_environment_map_effect_set_specular) \
+    X(cna_environment_map_effect_get_fresnel_factor) \
+    X(cna_environment_map_effect_set_fresnel_factor) \
+    X(cna_skinned_effect_create) \
+    X(cna_skinned_effect_set_diffuse_color) \
+    X(cna_skinned_effect_set_emissive_color) \
+    X(cna_skinned_effect_get_specular_color) \
+    X(cna_skinned_effect_set_specular_color) \
+    X(cna_skinned_effect_get_specular_power) \
+    X(cna_skinned_effect_set_specular_power) \
+    X(cna_skinned_effect_set_alpha) \
+    X(cna_skinned_effect_set_prefer_per_pixel_lighting) \
+    X(cna_skinned_effect_set_texture) \
+    X(cna_skinned_effect_set_weights_per_vertex) \
+    X(cna_skinned_effect_set_bone_transforms) \
+    X(cna_skinned_effect_copy_bone_transforms) \
     X(cna_effect_create_compiled) \
     X(cna_content_manager_load_effect) \
     X(cna_effect_clone) \

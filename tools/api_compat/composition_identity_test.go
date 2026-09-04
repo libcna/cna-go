@@ -104,10 +104,11 @@ func TestXNACompositionIdentityIsMeasuredOnTheRealSources(t *testing.T) {
 	// DrawableGameComponent, Texture, SpriteBatch, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
 	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect,
-	// Foundation 73's RenderTargetCube, Foundation 79's BasicEffect and
-	// Foundation 80's AlphaTestEffect, DualTextureEffect and EffectMaterial.
-	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 20 {
-		t.Fatalf("%d identity bindings, want the twenty projected derived types", got)
+	// Foundation 73's RenderTargetCube, Foundation 79's BasicEffect,
+	// Foundation 80's three and Foundation 81's EnvironmentMapEffect and
+	// SkinnedEffect.
+	if got := result.Summary["XNA_COMPOSED_IDENTITY_BINDINGS"]; got != 22 {
+		t.Fatalf("%d identity bindings, want the twenty-two projected derived types", got)
 	}
 	for _, category := range []string{"BASE_MAPPING_MISMATCH"} {
 		if result.Summary[category] != 0 {

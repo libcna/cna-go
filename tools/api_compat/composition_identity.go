@@ -240,6 +240,9 @@ var xnaCompositionIdentities = map[string]xnaCompositionIdentity{
 			// EffectMaterial has ONE constructor and it takes a source effect,
 			// because the reference's whole body is `base(cloneSource)`.
 			"Microsoft.Xna.Framework.Graphics.EffectMaterial": "NewEffectMaterial",
+			// Foundation 81, the last two.
+			"Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect": "NewEnvironmentMapEffectByGraphicsDevice",
+			"Microsoft.Xna.Framework.Graphics.SkinnedEffect":        "NewSkinnedEffectByGraphicsDevice",
 		},
 	},
 

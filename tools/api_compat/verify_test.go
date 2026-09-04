@@ -250,12 +250,15 @@ func TestPackedVectorMappedContract(t *testing.T) {
 		sourceTotal += expected.source
 		mappedTotal += expected.mapped
 	}
-	// The witness total is 32 rather than 25 from Foundation 49: the
+	// The witness total is 36 rather than 25 from Foundation 49: the
 	// PackedVector family contributes the same 25, GraphicsDeviceManager
 	// contributes the three IGraphicsDeviceManager operations the reference
-	// implements explicitly, and Foundation 77's four stock vertex structs
-	// contribute one IVertexType::get_VertexDeclaration each.
-	if sourceTotal != 171 || mappedTotal != 189 || len(surface.InterfaceWitnesses) != 32 {
+	// implements explicitly, Foundation 77's four stock vertex structs
+	// contribute one IVertexType::get_VertexDeclaration each, and Foundation
+	// 81's EnvironmentMapEffect and SkinnedEffect contribute two apiece --
+	// IEffectLights::LightingEnabled's getter and setter, which both implement
+	// explicitly and which the contract therefore does not list on either type.
+	if sourceTotal != 171 || mappedTotal != 189 || len(surface.InterfaceWitnesses) != 36 {
 		t.Fatalf("PackedVector totals = source %d mapped %d witnesses %d", sourceTotal, mappedTotal, len(surface.InterfaceWitnesses))
 	}
 
@@ -951,9 +954,9 @@ func TestPackedVectorCurrentSurfaceAndConformance(t *testing.T) {
 		t.Fatalf("type errors: %v", actual.TypeErrors)
 	}
 	result := verify(expected, actual, 0, "report", "contract", "mapping")
-	// 32, not 28: Foundation 77's four vertex structs each witness
-	// IVertexType::get_VertexDeclaration.
-	if result.Summary["INTERFACE_WITNESS_PROJECTIONS"] != 32 || result.Summary["PACKFROMVECTOR4_WITNESS_PROJECTIONS"] != 17 || result.Summary["TOVECTOR4_WITNESS_PROJECTIONS"] != 8 {
+	// 36, not 32: Foundation 81's two lit stock effects each witness both
+	// accessors of IEffectLights::LightingEnabled.
+	if result.Summary["INTERFACE_WITNESS_PROJECTIONS"] != 36 || result.Summary["PACKFROMVECTOR4_WITNESS_PROJECTIONS"] != 17 || result.Summary["TOVECTOR4_WITNESS_PROJECTIONS"] != 8 {
 		t.Fatalf("witness counters = %v", result.Summary)
 	}
 	if len(result.PackedInterfaceConformance) != 17 || len(result.PackedVectorTypeMeasurements) != 19 {
@@ -7993,10 +7996,14 @@ func TestTheLiveSubstitutabilityFamiliesAreTextureAndTexture2D(t *testing.T) {
 	// Texture-typed position on a carrier CNA-Go projects. Effect went live in
 	// Foundation 79, when BasicEffect became the first projected type deriving
 	// from it.
+	// TextureCube went live in Foundation 81, when EnvironmentMapEffect put the
+	// profile's only TextureCube-typed PARAMETER position on a projected
+	// carrier.
 	want := []string{
 		"Microsoft.Xna.Framework.Graphics.Effect",
 		"Microsoft.Xna.Framework.Graphics.Texture",
 		"Microsoft.Xna.Framework.Graphics.Texture2D",
+		"Microsoft.Xna.Framework.Graphics.TextureCube",
 	}
 	if len(live) != len(want) {
 		t.Fatalf("live substitutability families = %v, want %v", live, want)
@@ -8006,16 +8013,16 @@ func TestTheLiveSubstitutabilityFamiliesAreTextureAndTexture2D(t *testing.T) {
 			t.Fatalf("live substitutability families = %v, want %v", live, want)
 		}
 	}
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 3 {
-		t.Fatalf("%d registered substitutable bases, want the three live families", got)
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_REGISTERED"]; got != 4 {
+		t.Fatalf("%d registered substitutable bases, want the four live families", got)
 	}
 	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_NONE"]; got != 3 {
 		t.Fatalf("%d families have no substitutability requirement, want 3", got)
 	}
-	// Six, not seven: Effect's requirement went from latent to live in
-	// Foundation 79, when BasicEffect became a projected derived type.
-	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 6 {
-		t.Fatalf("%d families have a latent requirement, want 6", got)
+	// Five, not six: TextureCube's requirement went from latent to live in
+	// Foundation 81, as Effect's did in Foundation 79.
+	if got := result.Summary["XNA_BASE_SUBSTITUTABILITY_LATENT"]; got != 5 {
+		t.Fatalf("%d families have a latent requirement, want 5", got)
 	}
 	if got := result.Summary["XNA_BASE_TYPED_SIGNATURE_POSITIONS"]; got != 51 {
 		t.Fatalf("%d base-typed public signature positions, want 51", got)
@@ -8145,10 +8152,12 @@ func TestTheComposedRelationshipsAreTheFourMeasuredFamilies(t *testing.T) {
 	// DrawableGameComponent, SpriteBatch, Texture, Texture2D, RenderTarget2D,
 	// the four state objects, VertexDeclaration, IndexBuffer, VertexBuffer,
 	// Foundation 71's TextureCube and Texture3D, Foundation 72's Effect,
-	// Foundation 73's RenderTargetCube, Foundation 79's BasicEffect and
-	// Foundation 80's AlphaTestEffect, DualTextureEffect and EffectMaterial.
-	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 20 {
-		t.Fatalf("%d projected derived types, want 20", got)
+	// Foundation 73's RenderTargetCube, Foundation 79's BasicEffect,
+	// Foundation 80's AlphaTestEffect, DualTextureEffect and EffectMaterial,
+	// and Foundation 81's EnvironmentMapEffect and SkinnedEffect -- with which
+	// every one of Effect's six derived types is projected.
+	if got := result.Summary["XNA_COMPOSED_DERIVED_TYPES_PROJECTED"]; got != 22 {
+		t.Fatalf("%d projected derived types, want 22", got)
 	}
 	// The family was chosen because Foundation 40 measured that nothing names
 	// it. That is the whole justification, so it is asserted here too.

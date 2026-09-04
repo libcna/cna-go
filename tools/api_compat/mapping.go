@@ -1453,6 +1453,56 @@ var managedStoredMembers = map[string]map[string]bool{
 		"property|FogEnd":             true,
 		"property|VertexColorEnabled": true,
 	},
+	// Foundation 81. EnvironmentMapEffect's fourteen managed members. The six
+	// that are absent all reach an EffectParameter: FogColor, Texture,
+	// EnvironmentMap, EnvironmentMapAmount, EnvironmentMapSpecular and
+	// FresnelFactor -- the most of any stock effect.
+	//
+	// LightingEnabled is absent for a different reason: it is not a declared
+	// member of this type at all. Both accessors are EXPLICIT implementations
+	// of IEffectLights, so they are interface witnesses and take the
+	// interface's own measured fallibility.
+	"Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect": {
+		"property|World":                 true,
+		"property|View":                  true,
+		"property|Projection":            true,
+		"property|DiffuseColor":          true,
+		"property|EmissiveColor":         true,
+		"property|Alpha":                 true,
+		"property|AmbientLightColor":     true,
+		"property|FogEnabled":            true,
+		"property|FogStart":              true,
+		"property|FogEnd":                true,
+		"property-get|DirectionalLight0": true,
+		"property-get|DirectionalLight1": true,
+		"property-get|DirectionalLight2": true,
+	},
+	// SkinnedEffect's fifteen. Four of its members reach a parameter --
+	// SpecularColor, SpecularPower, FogColor and Texture -- and three more are
+	// absent for reasons of their own:
+	//
+	//	WeightsPerVertex   the SETTER validates {1,2,4} and throws
+	//	                   ArgumentOutOfRangeException, so only the getter is
+	//	                   listed and the accessor-level key says so
+	//	SetBoneTransforms  writes bonesParam
+	//	GetBoneTransforms  reads it, and validates its count twice
+	"Microsoft.Xna.Framework.Graphics.SkinnedEffect": {
+		"property|World":                  true,
+		"property|View":                   true,
+		"property|Projection":             true,
+		"property|DiffuseColor":           true,
+		"property|EmissiveColor":          true,
+		"property|Alpha":                  true,
+		"property|PreferPerPixelLighting": true,
+		"property|AmbientLightColor":      true,
+		"property|FogEnabled":             true,
+		"property|FogStart":               true,
+		"property|FogEnd":                 true,
+		"property-get|DirectionalLight0":  true,
+		"property-get|DirectionalLight1":  true,
+		"property-get|DirectionalLight2":  true,
+		"property-get|WeightsPerVertex":   true,
+	},
 	// DirectionalLight is the mirror image, and it is the reason the entries
 	// below are accessor-level rather than whole-property.
 	//
@@ -2116,6 +2166,17 @@ var substitutableBases = map[string]string{
 	// HALF of a BasicEffect with no path to the object that owns it. The
 	// downcast would not be lost, it would be impossible.
 	"Microsoft.Xna.Framework.Graphics.Effect": "EffectReference",
+	// Foundation 81. EnvironmentMapEffect::EnvironmentMap's SETTER is the only
+	// TextureCube parameter position in the whole profile, and projecting that
+	// effect put it on a carrier CNA-Go projects. TextureCube already had a
+	// projected derived type -- RenderTargetCube, since Foundation 73 -- so its
+	// requirement went LIVE for exactly the reason Texture2D's and Texture's
+	// did, having been LATENT until a position appeared.
+	//
+	// It does NOT widen at returns: EffectParameter::GetValueTextureCube hands
+	// back a value a caller uses every TextureCube member on, and no derived
+	// identity is at stake there.
+	"Microsoft.Xna.Framework.Graphics.TextureCube": "TextureCubeReference",
 }
 
 // returnWideningBases are the substitutable bases whose RETURN positions widen
@@ -2622,6 +2683,25 @@ var explicitInterfaceWitnessOwners = map[string]map[string]bool{
 	},
 	"Microsoft.Xna.Framework.Graphics.VertexPositionTexture": {
 		"Microsoft.Xna.Framework.Graphics.IVertexType": true,
+	},
+	// Foundation 81. EnvironmentMapEffect and SkinnedEffect implement
+	// IEffectLights::LightingEnabled EXPLICITLY, and only that member:
+	//
+	//	.method private ... IEffectLights.get_LightingEnabled()
+	//	  ldc.i4.1; ret                       -- lighting is ALWAYS on
+	//	.method private ... IEffectLights.set_LightingEnabled(bool)
+	//	  if (!value) throw NotSupportedException(CantDisableLighting)
+	//
+	// So the contract's public member set for both types has no
+	// LightingEnabled property at all, while their other six IEffectLights
+	// members are ordinary public declarations. Both halves of the witness rule
+	// hold: the member is absent from the public set, and both types can
+	// declare it in Go -- DirectionalLight is in their own package.
+	"Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect": {
+		"Microsoft.Xna.Framework.Graphics.IEffectLights": true,
+	},
+	"Microsoft.Xna.Framework.Graphics.SkinnedEffect": {
+		"Microsoft.Xna.Framework.Graphics.IEffectLights": true,
 	},
 }
 

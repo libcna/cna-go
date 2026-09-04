@@ -493,6 +493,33 @@ CnaGoResult cna_go_dual_texture_effect_set_texture(CnaGoHandle effect, uint32_t 
 CnaGoResult cna_go_dual_texture_effect_set_vertex_color_enabled(CnaGoHandle effect, uint8_t value);
 CnaGoResult cna_go_effect_material_create(CnaGoHandle clone_source, CnaGoHandle* out_effect);
 
+/* Foundation 81. */
+CnaGoResult cna_go_environment_map_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect);
+CnaGoResult cna_go_environment_map_effect_set_diffuse_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_environment_map_effect_set_emissive_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_environment_map_effect_set_alpha(CnaGoHandle effect, float value);
+CnaGoResult cna_go_environment_map_effect_set_texture(CnaGoHandle effect, CnaGoHandle texture);
+CnaGoResult cna_go_environment_map_effect_set_environment_map(CnaGoHandle effect, CnaGoHandle environment_map);
+CnaGoResult cna_go_environment_map_effect_get_amount(CnaGoHandle effect, float* out_value);
+CnaGoResult cna_go_environment_map_effect_set_amount(CnaGoHandle effect, float value);
+CnaGoResult cna_go_environment_map_effect_get_specular(CnaGoHandle effect, float* out_value);
+CnaGoResult cna_go_environment_map_effect_set_specular(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_environment_map_effect_get_fresnel_factor(CnaGoHandle effect, float* out_value);
+CnaGoResult cna_go_environment_map_effect_set_fresnel_factor(CnaGoHandle effect, float value);
+CnaGoResult cna_go_skinned_effect_create(CnaGoHandle graphics_device, CnaGoHandle* out_effect);
+CnaGoResult cna_go_skinned_effect_set_diffuse_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_skinned_effect_set_emissive_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_skinned_effect_get_specular_color(CnaGoHandle effect, float* out_value);
+CnaGoResult cna_go_skinned_effect_set_specular_color(CnaGoHandle effect, const float* value);
+CnaGoResult cna_go_skinned_effect_get_specular_power(CnaGoHandle effect, float* out_value);
+CnaGoResult cna_go_skinned_effect_set_specular_power(CnaGoHandle effect, float value);
+CnaGoResult cna_go_skinned_effect_set_alpha(CnaGoHandle effect, float value);
+CnaGoResult cna_go_skinned_effect_set_prefer_per_pixel_lighting(CnaGoHandle effect, uint8_t value);
+CnaGoResult cna_go_skinned_effect_set_texture(CnaGoHandle effect, CnaGoHandle texture);
+CnaGoResult cna_go_skinned_effect_set_weights_per_vertex(CnaGoHandle effect, int32_t value);
+CnaGoResult cna_go_skinned_effect_set_bone_transforms(CnaGoHandle effect, const float* transforms, uint64_t transform_count);
+CnaGoResult cna_go_skinned_effect_copy_bone_transforms(CnaGoHandle effect, uint64_t requested_count, float* destination, uint64_t capacity, uint64_t* out_count);
+
 CnaGoResult cna_go_effect_apply(CnaGoHandle effect);
 CnaGoResult cna_go_effect_destroy(CnaGoHandle effect);
 CnaGoResult cna_go_effect_clone(CnaGoHandle effect, CnaGoHandle* out_clone);

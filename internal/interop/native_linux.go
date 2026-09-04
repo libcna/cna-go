@@ -2534,6 +2534,158 @@ func nativeEffectMaterialCreate(cloneSource uint64) (uint64, error) {
 	})
 }
 
+// Foundation 81 -- EnvironmentMapEffect and SkinnedEffect.
+
+func nativeEnvironmentMapEffectCreate(device uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_environment_map_effect_create", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_environment_map_effect_create(C.CnaGoHandle(device), out)
+	})
+}
+
+func nativeEnvironmentMapEffectSetDiffuseColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_environment_map_effect_set_diffuse_color", uint32(C.cna_go_environment_map_effect_set_diffuse_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeEnvironmentMapEffectSetEmissiveColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_environment_map_effect_set_emissive_color", uint32(C.cna_go_environment_map_effect_set_emissive_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeEnvironmentMapEffectSetAlpha(handle uint64, value float32) error {
+	return resultError("cna_environment_map_effect_set_alpha", uint32(C.cna_go_environment_map_effect_set_alpha(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeEnvironmentMapEffectSetTexture(effect, handle uint64) error {
+	return resultError("cna_environment_map_effect_set_texture",
+		uint32(C.cna_go_environment_map_effect_set_texture(C.CnaGoHandle(effect), C.CnaGoHandle(handle))))
+}
+
+func nativeEnvironmentMapEffectSetEnvironmentMap(effect, handle uint64) error {
+	return resultError("cna_environment_map_effect_set_environment_map",
+		uint32(C.cna_go_environment_map_effect_set_environment_map(C.CnaGoHandle(effect), C.CnaGoHandle(handle))))
+}
+
+func nativeEnvironmentMapEffectAmount(handle uint64) (float32, error) {
+	var value C.float
+	code := uint32(C.cna_go_environment_map_effect_get_amount(C.CnaGoHandle(handle), &value))
+	return float32(value), resultError("cna_environment_map_effect_get_amount", code)
+}
+
+func nativeEnvironmentMapEffectSetAmount(handle uint64, value float32) error {
+	return resultError("cna_environment_map_effect_set_amount", uint32(C.cna_go_environment_map_effect_set_amount(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeEnvironmentMapEffectSpecular(handle uint64) ([3]float32, error) {
+	var values [3]C.float
+	code := uint32(C.cna_go_environment_map_effect_get_specular(C.CnaGoHandle(handle), &values[0]))
+	return [3]float32{float32(values[0]), float32(values[1]), float32(values[2])},
+		resultError("cna_environment_map_effect_get_specular", code)
+}
+
+func nativeEnvironmentMapEffectSetSpecular(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_environment_map_effect_set_specular", uint32(C.cna_go_environment_map_effect_set_specular(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeEnvironmentMapEffectFresnelFactor(handle uint64) (float32, error) {
+	var value C.float
+	code := uint32(C.cna_go_environment_map_effect_get_fresnel_factor(C.CnaGoHandle(handle), &value))
+	return float32(value), resultError("cna_environment_map_effect_get_fresnel_factor", code)
+}
+
+func nativeEnvironmentMapEffectSetFresnelFactor(handle uint64, value float32) error {
+	return resultError("cna_environment_map_effect_set_fresnel_factor", uint32(C.cna_go_environment_map_effect_set_fresnel_factor(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeSkinnedEffectCreate(device uint64) (uint64, error) {
+	return nativeEffectHandleOut("cna_skinned_effect_create", func(out *C.CnaGoHandle) C.CnaGoResult {
+		return C.cna_go_skinned_effect_create(C.CnaGoHandle(device), out)
+	})
+}
+
+func nativeSkinnedEffectSetDiffuseColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_skinned_effect_set_diffuse_color", uint32(C.cna_go_skinned_effect_set_diffuse_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeSkinnedEffectSetEmissiveColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_skinned_effect_set_emissive_color", uint32(C.cna_go_skinned_effect_set_emissive_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeSkinnedEffectSpecularColor(handle uint64) ([3]float32, error) {
+	var values [3]C.float
+	code := uint32(C.cna_go_skinned_effect_get_specular_color(C.CnaGoHandle(handle), &values[0]))
+	return [3]float32{float32(values[0]), float32(values[1]), float32(values[2])},
+		resultError("cna_skinned_effect_get_specular_color", code)
+}
+
+func nativeSkinnedEffectSetSpecularColor(handle uint64, value [3]float32) error {
+	values := [3]C.float{C.float(value[0]), C.float(value[1]), C.float(value[2])}
+	return resultError("cna_skinned_effect_set_specular_color", uint32(C.cna_go_skinned_effect_set_specular_color(C.CnaGoHandle(handle), &values[0])))
+}
+
+func nativeSkinnedEffectSpecularPower(handle uint64) (float32, error) {
+	var value C.float
+	code := uint32(C.cna_go_skinned_effect_get_specular_power(C.CnaGoHandle(handle), &value))
+	return float32(value), resultError("cna_skinned_effect_get_specular_power", code)
+}
+
+func nativeSkinnedEffectSetSpecularPower(handle uint64, value float32) error {
+	return resultError("cna_skinned_effect_set_specular_power", uint32(C.cna_go_skinned_effect_set_specular_power(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeSkinnedEffectSetAlpha(handle uint64, value float32) error {
+	return resultError("cna_skinned_effect_set_alpha", uint32(C.cna_go_skinned_effect_set_alpha(C.CnaGoHandle(handle), C.float(value))))
+}
+
+func nativeSkinnedEffectSetPreferPerPixelLighting(handle uint64, value bool) error {
+	var raw C.uint8_t
+	if value {
+		raw = 1
+	}
+	return resultError("cna_skinned_effect_set_prefer_per_pixel_lighting", uint32(C.cna_go_skinned_effect_set_prefer_per_pixel_lighting(C.CnaGoHandle(handle), raw)))
+}
+
+func nativeSkinnedEffectSetTexture(effect, handle uint64) error {
+	return resultError("cna_skinned_effect_set_texture",
+		uint32(C.cna_go_skinned_effect_set_texture(C.CnaGoHandle(effect), C.CnaGoHandle(handle))))
+}
+
+func nativeSkinnedEffectSetWeightsPerVertex(handle uint64, value int32) error {
+	return resultError("cna_skinned_effect_set_weights_per_vertex", uint32(C.cna_go_skinned_effect_set_weights_per_vertex(C.CnaGoHandle(handle), C.int32_t(value))))
+}
+
+func nativeSkinnedEffectSetBoneTransforms(handle uint64, transforms []float32) error {
+	if len(transforms) == 0 {
+		return resultError("cna_skinned_effect_set_bone_transforms",
+			uint32(C.cna_go_skinned_effect_set_bone_transforms(C.CnaGoHandle(handle), nil, 0)))
+	}
+	values := make([]C.float, len(transforms))
+	for index := range transforms {
+		values[index] = C.float(transforms[index])
+	}
+	return resultError("cna_skinned_effect_set_bone_transforms",
+		uint32(C.cna_go_skinned_effect_set_bone_transforms(C.CnaGoHandle(handle), &values[0],
+			C.uint64_t(len(transforms)/16))))
+}
+
+func nativeSkinnedEffectCopyBoneTransforms(handle uint64, count int) ([]float32, error) {
+	values := make([]C.float, count*16)
+	var written C.uint64_t
+	code := uint32(C.cna_go_skinned_effect_copy_bone_transforms(C.CnaGoHandle(handle),
+		C.uint64_t(count), &values[0], C.uint64_t(count), &written))
+	if err := resultError("cna_skinned_effect_copy_bone_transforms", code); err != nil {
+		return nil, err
+	}
+	out := make([]float32, int(written)*16)
+	for index := range out {
+		out[index] = float32(values[index])
+	}
+	return out, nil
+}
+
 func nativeEffectLightsDirectionalLight(effect uint64, index uint32) (uint64, error) {
 	return nativeEffectHandleOut("cna_effect_lights_get_directional_light", func(out *C.CnaGoHandle) C.CnaGoResult {
 		return C.cna_go_effect_lights_get_directional_light(C.CnaGoHandle(effect), C.uint32_t(index), out)

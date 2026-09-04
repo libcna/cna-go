@@ -197,6 +197,19 @@
       "Microsoft.Xna.Framework.Graphics.Effect|property-get|CurrentTechnique",
       "Microsoft.Xna.Framework.Graphics.Effect|property-get|Parameters",
       "Microsoft.Xna.Framework.Graphics.Effect|property-get|Techniques",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property-get|DirectionalLight0",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property-get|DirectionalLight1",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property-get|DirectionalLight2",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|Alpha",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|AmbientLightColor",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|DiffuseColor",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|EmissiveColor",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|FogEnabled",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|FogEnd",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|FogStart",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|Projection",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|View",
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect|property|World",
       "Microsoft.Xna.Framework.Graphics.GraphicsAdapter|property-get|CurrentDisplayMode",
       "Microsoft.Xna.Framework.Graphics.GraphicsAdapter|property-get|Description",
       "Microsoft.Xna.Framework.Graphics.GraphicsAdapter|property-get|DeviceId",
@@ -241,6 +254,21 @@
       "Microsoft.Xna.Framework.Graphics.SamplerState|property-get|MaxAnisotropy",
       "Microsoft.Xna.Framework.Graphics.SamplerState|property-get|MaxMipLevel",
       "Microsoft.Xna.Framework.Graphics.SamplerState|property-get|MipMapLevelOfDetailBias",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property-get|DirectionalLight0",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property-get|DirectionalLight1",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property-get|DirectionalLight2",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property-get|WeightsPerVertex",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|Alpha",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|AmbientLightColor",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|DiffuseColor",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|EmissiveColor",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|FogEnabled",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|FogEnd",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|FogStart",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|PreferPerPixelLighting",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|Projection",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|View",
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect|property|World",
       "Microsoft.Xna.Framework.Graphics.SpriteFont|property-get|Characters",
       "Microsoft.Xna.Framework.Graphics.SpriteFont|property-get|DefaultCharacter",
       "Microsoft.Xna.Framework.Graphics.SpriteFont|property-get|LineSpacing",
@@ -417,8 +445,11 @@
     "admission": "exported-method-required-by-an-actual-mapped-direct-interface-and-absent-from-the-public-declared-source-member-set",
     "owners": "the PackedVector structs as a family, plus an explicit registry; a witness is required only where the Go type CAN declare the method, which the contract cannot say on its own",
     "registeredOwners": {
-      "Microsoft.Xna.Framework.GraphicsDeviceManager": [
-        "Microsoft.Xna.Framework.IGraphicsDeviceManager"
+      "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect": [
+        "Microsoft.Xna.Framework.Graphics.IEffectLights"
+      ],
+      "Microsoft.Xna.Framework.Graphics.SkinnedEffect": [
+        "Microsoft.Xna.Framework.Graphics.IEffectLights"
       ],
       "Microsoft.Xna.Framework.Graphics.VertexPositionColor": [
         "Microsoft.Xna.Framework.Graphics.IVertexType"
@@ -431,6 +462,9 @@
       ],
       "Microsoft.Xna.Framework.Graphics.VertexPositionTexture": [
         "Microsoft.Xna.Framework.Graphics.IVertexType"
+      ],
+      "Microsoft.Xna.Framework.GraphicsDeviceManager": [
+        "Microsoft.Xna.Framework.IGraphicsDeviceManager"
       ]
     },
     "deliberatelyUnregistered": {

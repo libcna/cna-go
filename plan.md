@@ -1593,6 +1593,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 78 | the eight XNA exception types | `foundation-78-exception-family-evidence.md` |
 | 79 | BasicEffect, DirectionalLight and IEffectLights | `foundation-79-stock-effect-evidence.md` |
 | 80 | AlphaTestEffect, DualTextureEffect and EffectMaterial | `foundation-80-unlit-stock-effects-evidence.md` |
+| 81 | EnvironmentMapEffect and SkinnedEffect, closing the stock effects | `foundation-81-lit-stock-effects-evidence.md` |
 
 ### The rules these milestones settled
 
@@ -1880,6 +1881,44 @@ ToString, and NOT `bindDerivedEffect`, which installs an override -- it
 overrides nothing. Its Clone answers an Effect, exactly as the reference's does,
 and the native run asserts that positively rather than only asserting it is not
 an EffectMaterial.
+
+**An EXPLICIT interface implementation is a witness, and its refusal may have
+nowhere to go** (81). EnvironmentMapEffect and SkinnedEffect implement
+`IEffectLights::LightingEnabled` explicitly -- a two-byte getter that always
+answers true and a 51-byte setter that throws for false -- so the pinned
+contract lists no such property on either type and both accessors are interface
+witnesses. The setter's refusal cannot be reported: `IEffectLights`' measured
+contract makes the accessor INFALLIBLE, because every other implementor's is one
+`stfld`. The projection therefore answers the way the reference does for the
+legal value and records the refusal it drops, rather than widening a signature
+the interface pins. It is the one place in the stock effects where a projected
+member cannot carry a refusal the reference makes.
+
+**A substitutable base goes live the milestone a POSITION appears, not the
+milestone a derived type does** (81). TextureCube was composed in Foundation 71
+and had a projected derived type from Foundation 73, and its requirement stayed
+LATENT for ten milestones because nothing in the profile named a TextureCube at
+a parameter position. `EnvironmentMapEffect::EnvironmentMap`'s setter is the
+only one there is, and projecting that effect is what made the requirement live
+-- which the verifier reported rather than the author noticing.
+
+**A retention CNA takes is measured through the member that reveals it** (81).
+Assigning a TextureCube to an EnvironmentMapEffect makes
+`cna_texturecube_destroy` answer "The TextureCube is retained by an
+EffectParameter", where XNA's Dispose on the same texture is legal. The stress
+asserts the refusal AND asserts that clearing the property releases it, so the
+divergence is held from both sides instead of being avoided by disposing in a
+convenient order.
+
+**An assertion over a CONSTANT, a repeated call, or a coincident input holds
+nothing** (81). Five of this milestone's twenty-five planted defects survived a
+first pass, and every one of them was the test's fault. A setter's effect was
+checked through a getter that returns `ldc.i4.1`; a native release was checked
+by repeating a dispose CNA documents as idempotent; a reordering was checked on
+a path that refuses before reaching either statement; and a correction that
+forces `M44 = 1` was checked over identity input whose M44 is already 1. The
+lesson is one question to ask of every assertion: *if the thing I am claiming
+were absent, would this line change?*
 
 ## Next milestone selection rule
 

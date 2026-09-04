@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               80
-MISSING_TYPE                    80
+TOTAL_DIAGNOSTICS               78
+MISSING_TYPE                    78
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 177
+COMPLETE_TYPES                 179
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         80
+GLOBAL_ACTIONABLE_LOCAL         78
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                271
+BOUND_FUNCTIONS                296
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -85,6 +85,14 @@ generalise: the two unlit effects' `set_World` and `set_View` raise TWO
 dirty-flag bits where BasicEffect's raise three, so a shared accessor body would
 have been wrong and each type declares its own.
 
+Foundation 81 closed **`EnvironmentMapEffect`** and **`SkinnedEffect`**, and
+with them the whole stock-effect family: all six of `Effect`'s derived types are
+projected. Both implement `IEffectLights::LightingEnabled` EXPLICITLY, so the
+pinned contract lists no such property on either and both accessors are
+interface witnesses; `TextureCube` became the fourth substitutable base, because
+`EnvironmentMapEffect::EnvironmentMap` is the only TextureCube-typed parameter
+position in the profile.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
@@ -104,18 +112,14 @@ and it is zero.
 The suggested order is dependency order, which is the order the families appear
 in that registry:
 
-1. **`EnvironmentMapEffect` and `SkinnedEffect`**, the last two stock effects.
-   Both add `IEffectLights` and both implement `LightingEnabled` EXPLICITLY --
-   a two-byte getter that always answers true and a 51-byte setter -- so they
-   need the interface-witness machinery as well as ~17/21 routes, and
-   `SkinnedEffect` adds a bone-transform array and the profile's only public
-   const field. Upgrading `DrawUser*` from `VERIFIED_NATIVE_DRAW` to
-   `VERIFIED_PIXEL` is now possible and not yet done: it needs the SOFTWARE
-   back-buffer readback taken with a known material.
-2. **`SoundEffect` / `SoundEffectInstance`**, which also grow
-   `ContentManager.Load<T>`'s closed set.
-3. **The Model family**, then **Input**, **Storage**, **Media/XACT**, the
-   **content plumbing** and the **Design converters**.
+1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
+   grow `ContentManager.Load<T>`'s closed set. The stock effects are done, so
+   upgrading `DrawUser*` from `VERIFIED_NATIVE_DRAW` to `VERIFIED_PIXEL` is now
+   unblocked and not yet done: it needs the SOFTWARE back-buffer readback taken
+   with a known material, which any of the six effects can now supply.
+2. **The Model family**, which depends on the stock effects and now has them.
+3. Then **Input**, **Storage**, **Media/XACT**, the **content plumbing** and
+   the **Design converters**.
 
 **The dynamic-buffer note.** `DynamicVertexBuffer` and `DynamicIndexBuffer`
 have **no dedicated CNA routes**. They are almost certainly the existing

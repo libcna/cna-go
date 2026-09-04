@@ -18,9 +18,9 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 177,
+    "COMPLETE_TYPES": 179,
     "DECLARED_INTERFACE_CARRIERS": 1,
-    "DECLARED_INTERFACE_CONFORMANCE": 12,
+    "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
     "ERROR_MAPPING_MISMATCH": 0,
     "EVENT_MAPPING_MISMATCH": 0,
@@ -28,7 +28,7 @@
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 13,
+    "FRONTIER_FAMILIES": 12,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 80,
+    "GLOBAL_ACTIONABLE_LOCAL": 78,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -54,13 +54,13 @@
     "GLOBAL_LANGUAGE_MAPPING_LIMITATION": 0,
     "GLOBAL_UNREVIEWED": 0,
     "INTERFACE_MAPPING_MISMATCH": 0,
-    "INTERFACE_WITNESS_PROJECTIONS": 32,
+    "INTERFACE_WITNESS_PROJECTIONS": 36,
     "INTERNAL_TYPE_LEAK": 0,
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 80,
-    "MISSING_TYPES": 80,
+    "MISSING_TYPE": 78,
+    "MISSING_TYPES": 78,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 2871,
-    "TARGET_TYPES": 177,
-    "TOTAL_DIAGNOSTICS": 80,
+    "TARGET_MEMBERS": 2982,
+    "TARGET_TYPES": 179,
+    "TOTAL_DIAGNOSTICS": 78,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -84,15 +84,15 @@
     "UNMEASURED_STRUCTURAL_CATEGORY": 0,
     "XNA_BASE_DERIVED_TYPES": 41,
     "XNA_BASE_RELATIONSHIPS": 12,
-    "XNA_BASE_SUBSTITUTABILITY_LATENT": 6,
-    "XNA_BASE_SUBSTITUTABILITY_LIVE": 3,
+    "XNA_BASE_SUBSTITUTABILITY_LATENT": 5,
+    "XNA_BASE_SUBSTITUTABILITY_LIVE": 4,
     "XNA_BASE_SUBSTITUTABILITY_NONE": 3,
-    "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 3,
+    "XNA_BASE_SUBSTITUTABILITY_REGISTERED": 4,
     "XNA_BASE_TYPED_SIGNATURE_POSITIONS": 51,
     "XNA_COMPOSED_BASE_RELATIONSHIPS": 6,
     "XNA_COMPOSED_DERIVED_TYPES": 24,
-    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 20,
-    "XNA_COMPOSED_IDENTITY_BINDINGS": 20,
+    "XNA_COMPOSED_DERIVED_TYPES_PROJECTED": 22,
+    "XNA_COMPOSED_IDENTITY_BINDINGS": 22,
     "XNA_COMPOSED_IDENTITY_FORWARDS": 4,
     "XNA_COMPOSED_IDENTITY_SITES": 9,
     "XNA_COMPOSED_IDENTITY_USES": 10,
@@ -328,12 +328,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:EnvironmentMapEffect",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.Model",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:Model",
       "message": "mapped Go type is absent"
@@ -408,12 +402,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:OcclusionQuery",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics:SkinnedEffect",
       "message": "mapped Go type is absent"
     },
     {
@@ -648,6 +636,7 @@
     "Microsoft.Xna.Framework.Graphics.EffectPassCollection",
     "Microsoft.Xna.Framework.Graphics.EffectTechnique",
     "Microsoft.Xna.Framework.Graphics.EffectTechniqueCollection",
+    "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
     "Microsoft.Xna.Framework.Graphics.FillMode",
     "Microsoft.Xna.Framework.Graphics.GraphicsAdapter",
     "Microsoft.Xna.Framework.Graphics.GraphicsDevice",
@@ -694,6 +683,7 @@
     "Microsoft.Xna.Framework.Graphics.SamplerState",
     "Microsoft.Xna.Framework.Graphics.SamplerStateCollection",
     "Microsoft.Xna.Framework.Graphics.SetDataOptions",
+    "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
     "Microsoft.Xna.Framework.Graphics.SpriteBatch",
     "Microsoft.Xna.Framework.Graphics.SpriteEffects",
     "Microsoft.Xna.Framework.Graphics.SpriteFont",
@@ -803,7 +793,6 @@
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
     "Microsoft.Xna.Framework.Graphics.DynamicIndexBuffer",
     "Microsoft.Xna.Framework.Graphics.DynamicVertexBuffer",
-    "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
     "Microsoft.Xna.Framework.Graphics.Model",
     "Microsoft.Xna.Framework.Graphics.ModelBone",
     "Microsoft.Xna.Framework.Graphics.ModelBoneCollection",
@@ -817,7 +806,6 @@
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection",
     "Microsoft.Xna.Framework.Graphics.ModelMeshPartCollection+Enumerator",
     "Microsoft.Xna.Framework.Graphics.OcclusionQuery",
-    "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
     "Microsoft.Xna.Framework.Input.GamePad",
     "Microsoft.Xna.Framework.Input.GamePadCapabilities",
     "Microsoft.Xna.Framework.Input.Mouse",
@@ -848,6 +836,24 @@
     "Microsoft.Xna.Framework.TitleContainer"
   ],
   "interfaceWitnessProjections": [
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+      "member": "LightingEnabled",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.IEffectLights",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.IEffectLights::LightingEnabled()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "LightingEnabled() bool",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+      "member": "SetLightingEnabled",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.IEffectLights",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.IEffectLights::LightingEnabled()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "SetLightingEnabled(bool)",
+      "status": "PASS"
+    },
     {
       "owner": "Microsoft.Xna.Framework.Graphics.PackedVector.Alpha8",
       "member": "PackFromVector4",
@@ -1071,6 +1077,24 @@
       "interfaceMember": "Microsoft.Xna.Framework.Graphics.PackedVector.IPackedVector::PackFromVector4(Microsoft.Xna.Framework.Vector4)",
       "reason": "exported Go method required to witness an explicit CLR interface implementation",
       "signature": "PackFromVector4(framework.Vector4)",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
+      "member": "LightingEnabled",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.IEffectLights",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.IEffectLights::LightingEnabled()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "LightingEnabled() bool",
+      "status": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
+      "member": "SetLightingEnabled",
+      "sourceInterface": "Microsoft.Xna.Framework.Graphics.IEffectLights",
+      "interfaceMember": "Microsoft.Xna.Framework.Graphics.IEffectLights::LightingEnabled()",
+      "reason": "exported Go method required to witness an explicit CLR interface implementation",
+      "signature": "SetLightingEnabled(bool)",
       "status": "PASS"
     },
     {
@@ -6905,17 +6929,6 @@
       "verdict": "PASS"
     },
     {
-      "family": "Stock effects",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "Foundation 79 composed the Effect base and settled the shape against BasicEffect; Foundation 80 closed AlphaTestEffect, DualTextureEffect and EffectMaterial on it. The two that remain both add IEffectLights and both implement LightingEnabled EXPLICITLY -- a two-byte getter that always answers true and a 51-byte setter -- so they need the interface-witness machinery as well as ~17/21 routes, and SkinnedEffect adds a bone-transform array and the profile's only public const field",
-      "types": [
-        "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
-        "Microsoft.Xna.Framework.Graphics.SkinnedEffect"
-      ],
-      "remaining": 2,
-      "verdict": "PASS"
-    },
-    {
       "family": "Model family",
       "classification": "ACTIONABLE_LOCAL",
       "note": "the largest single family at twelve types and ~233 CNA routes; it depends on the vertex structs and the stock effects, and on ReadOnlyCollection\u003cT\u003e becoming usable as a BASE rather than only as a signature adapter",
@@ -9945,6 +9958,54 @@
       "verdict": "PASS"
     },
     {
+      "owner": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+      "goOwner": "*EnvironmentMapEffect",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IEffectFog",
+      "goInterface": "IEffectFog",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+      "goOwner": "*EnvironmentMapEffect",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IEffectLights",
+      "goInterface": "IEffectLights",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+      "goOwner": "*EnvironmentMapEffect",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+      "goInterface": "IEffectMatrices",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
+      "goOwner": "*SkinnedEffect",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IEffectFog",
+      "goInterface": "IEffectFog",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
+      "goOwner": "*SkinnedEffect",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IEffectLights",
+      "goInterface": "IEffectLights",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
+      "owner": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
+      "goOwner": "*SkinnedEffect",
+      "clrInterface": "Microsoft.Xna.Framework.Graphics.IEffectMatrices",
+      "goInterface": "IEffectMatrices",
+      "pointerSatisfies": true,
+      "verdict": "PASS"
+    },
+    {
       "owner": "Microsoft.Xna.Framework.GraphicsDeviceManager",
       "goOwner": "*GraphicsDeviceManager",
       "clrInterface": "Microsoft.Xna.Framework.Graphics.IGraphicsDeviceService",
@@ -10509,9 +10570,9 @@
     {
       "base": "Microsoft.Xna.Framework.Graphics.Effect",
       "derivedTypes": 6,
-      "projectedDerivedTypes": 4,
+      "projectedDerivedTypes": 6,
       "positions": 11,
-      "positionsOnProjectedCarriers": 7,
+      "positionsOnProjectedCarriers": 9,
       "requirement": "LIVE",
       "rows": [
         {
@@ -10682,7 +10743,7 @@
       "derivedTypes": 1,
       "projectedDerivedTypes": 1,
       "positions": 17,
-      "positionsOnProjectedCarriers": 14,
+      "positionsOnProjectedCarriers": 16,
       "requirement": "LIVE",
       "rows": [
         {
@@ -10829,8 +10890,8 @@
       "derivedTypes": 1,
       "projectedDerivedTypes": 1,
       "positions": 2,
-      "positionsOnProjectedCarriers": 1,
-      "requirement": "LATENT",
+      "positionsOnProjectedCarriers": 2,
+      "requirement": "LIVE",
       "rows": [
         {
           "base": "Microsoft.Xna.Framework.Graphics.TextureCube",
@@ -10989,16 +11050,18 @@
         {
           "derived": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
           "goDerived": "EnvironmentMapEffect",
+          "baseField": "effect",
           "inheritedCLRMembers": 10,
           "inheritedProjections": 14,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         },
         {
           "derived": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
           "goDerived": "SkinnedEffect",
+          "baseField": "effect",
           "inheritedCLRMembers": 10,
           "inheritedProjections": 14,
-          "composition": "NOT_PROJECTED"
+          "composition": "PRIVATE_NAMED"
         }
       ],
       "verdict": "PASS"
@@ -11248,6 +11311,18 @@
           "goDerived": "EffectMaterial",
           "constructor": "NewEffectMaterial",
           "binds": true
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
+          "goDerived": "EnvironmentMapEffect",
+          "constructor": "NewEnvironmentMapEffectByGraphicsDevice",
+          "binds": true
+        },
+        {
+          "derived": "Microsoft.Xna.Framework.Graphics.SkinnedEffect",
+          "goDerived": "SkinnedEffect",
+          "constructor": "NewSkinnedEffectByGraphicsDevice",
+          "binds": true
         }
       ],
       "verdict": "PASS"
@@ -11391,7 +11466,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "1d8d45d45d1b96931ee47a0f31719002f21b8b83ff723eeb3175f8ac03b41ed0",
+    "mappingSha256": "adfcc3c6e08d0d7b26d38527e842bc788a1657b367b5e2344cab87dfe786d12c",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

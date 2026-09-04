@@ -80,6 +80,21 @@ var registry = []claimedString{
 	{Key: "Arg_ExternalException", Assembly: "mscorlib.dll",
 		Value: "External component has thrown an exception."},
 
+	// Foundation 81. The three messages the last two stock effects carry.
+	// CantDisableLighting's {0} is typeof(T).Name -- the SHORT class name, not
+	// the namespaced one -- and SkinnedEffectMaxBones' is the bone limit, which
+	// the reference passes as the same 72 its MaxBones constant holds.
+	//
+	// All three live in Microsoft.Xna.Framework.dll rather than in
+	// Microsoft.Xna.Framework.Graphics.dll, because FrameworkResources does:
+	// the IL reads them as `[Microsoft.Xna.Framework]FrameworkResources::get_*`.
+	{Key: "CantDisableLighting", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "%s does not support setting LightingEnabled to false.", Placeholders: true},
+	{Key: "SkinnedEffectWeightsPerVertex", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "SkinnedEffect.WeightsPerVertex must be 1, 2, or 4."},
+	{Key: "SkinnedEffectMaxBones", Assembly: "Microsoft.Xna.Framework.dll",
+		Value: "SkinnedEffect supports a maximum of %s bones.", Placeholders: true},
+
 	// Foundation 75. GraphicsDeviceInformation::set_Adapter, and the two
 	// NoSuitableGraphicsDeviceException messages FindBestPlatformDevice throws.
 	// NoCompatibleDevices carries the GraphicsProfile through String.Format's

@@ -219,6 +219,22 @@ type counters struct {
 	EffectMaterialCreations     int `json:"EFFECT_MATERIAL_CREATIONS"`
 	EffectMaterialRefusals      int `json:"EFFECT_MATERIAL_REFUSALS"`
 	EffectMaterialIdentityCheck int `json:"EFFECT_MATERIAL_IDENTITY_CHECKS"`
+	// Foundation 81. EnvironmentMapEffect and SkinnedEffect, which close the
+	// stock-effect family. The bone counters are separate because the copy is
+	// the one ARRAY crossing in the family and CNA may refuse it where it
+	// accepts the scalars.
+	LitEffectCreations        int `json:"LIT_EFFECT_CREATIONS"`
+	LitEffectCreationRefusals int `json:"LIT_EFFECT_CREATION_REFUSALS"`
+	LitEffectLightChecks      int `json:"LIT_EFFECT_LIGHT_CHECKS"`
+	LitEffectRoundTrips       int `json:"LIT_EFFECT_ROUND_TRIPS"`
+	LitEffectBoneRoundTrips   int `json:"LIT_EFFECT_BONE_ROUND_TRIPS"`
+	LitEffectBoneRefusals     int `json:"LIT_EFFECT_BONE_REFUSALS"`
+	LitEffectApplies          int `json:"LIT_EFFECT_APPLIES"`
+	LitEffectApplyRefusals    int `json:"LIT_EFFECT_APPLY_REFUSALS"`
+	LitEffectCloneChecks      int `json:"LIT_EFFECT_CLONE_CHECKS"`
+	LitEffectDisposalChecks   int `json:"LIT_EFFECT_DISPOSAL_CHECKS"`
+	LitEffectRetentionChecks  int `json:"LIT_EFFECT_RETENTION_CHECKS"`
+	LitEffectReleaseChecks    int `json:"LIT_EFFECT_RELEASE_CHECKS"`
 	// The six user-primitive draws, and the four guards the projection makes
 	// before CNA is reached.
 	UserPrimitiveDraws          int `json:"USER_PRIMITIVE_DRAWS"`
@@ -673,6 +689,25 @@ func runParent() (counters, error) {
 		return total, fmt.Errorf("%d unlit-effect creations produced %d applies, %d apply refusals, %d round trips, %d clone checks and %d disposal checks",
 			total.UnlitEffectCreations, total.UnlitEffectApplies, total.UnlitEffectApplyRefusals,
 			total.UnlitEffectRoundTrips, total.UnlitEffectCloneChecks, total.UnlitEffectDisposalChecks)
+	}
+	// Foundation 81. Two creations per cycle again, and the bone round trip is
+	// accounted for once per SkinnedEffect.
+	if total.LitEffectCreations+total.LitEffectCreationRefusals != 2*total.VertexBufferCycles {
+		return total, fmt.Errorf("lit-effect creations %d and refusals %d do not account for two per %d cycles",
+			total.LitEffectCreations, total.LitEffectCreationRefusals, total.VertexBufferCycles)
+	}
+	if total.LitEffectLightChecks != total.LitEffectCreations ||
+		total.LitEffectApplies+total.LitEffectApplyRefusals != total.LitEffectCreations ||
+		2*total.LitEffectRoundTrips != total.LitEffectCreations ||
+		2*total.LitEffectCloneChecks != total.LitEffectCreations ||
+		2*total.LitEffectDisposalChecks != total.LitEffectCreations ||
+		2*total.LitEffectRetentionChecks != total.LitEffectCreations ||
+		2*total.LitEffectReleaseChecks != total.LitEffectCreations ||
+		2*(total.LitEffectBoneRoundTrips+total.LitEffectBoneRefusals) != total.LitEffectCreations {
+		return total, fmt.Errorf("%d lit-effect creations produced %d light checks, %d applies, %d apply refusals, %d round trips, %d bone round trips, %d bone refusals, %d clone checks and %d disposal checks",
+			total.LitEffectCreations, total.LitEffectLightChecks, total.LitEffectApplies,
+			total.LitEffectApplyRefusals, total.LitEffectRoundTrips, total.LitEffectBoneRoundTrips,
+			total.LitEffectBoneRefusals, total.LitEffectCloneChecks, total.LitEffectDisposalChecks)
 	}
 	if total.EffectMaterialCreations+total.EffectMaterialRefusals != total.VertexBufferCycles ||
 		total.EffectMaterialIdentityCheck != total.EffectMaterialCreations {
@@ -4673,6 +4708,11 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 81. The last two stock effects, on the same live device.
+	if err := g.exerciseLitEffects(device); err != nil {
+		return err
+	}
+
 	if effect != nil {
 		if err := effect.DisposeByNone(); err != nil {
 			return fmt.Errorf("disposing the stock effect: %w", err)
@@ -5923,6 +5963,277 @@ func (g *stressGame) exerciseUnlitEffects(device *graphics.GraphicsDevice) error
 		return errors.New("FogColor answered on a disposed AlphaTestEffect")
 	}
 	g.result.UnlitEffectDisposalChecks++
+	return nil
+}
+
+// exerciseLitEffects is Foundation 81's slice: EnvironmentMapEffect and
+// SkinnedEffect, the last two stock effects, against a live device.
+//
+// It covers what the managed tests cannot: the six and four properties that
+// cross, the three lights each publishes, the bone-transform round trip through
+// CNA, OnApply through each effect's own pass, Clone with its downcast, and
+// disposal.
+func (g *stressGame) exerciseLitEffects(device *graphics.GraphicsDevice) error {
+	surface, err := graphics.NewTexture2DByGraphicsDeviceAndInt32AndInt32(device, 4, 4)
+	if err != nil {
+		return fmt.Errorf("a texture for the lit effects: %w", err)
+	}
+	defer func() { _ = surface.DisposeByNone() }()
+
+	environment, err := graphics.NewEnvironmentMapEffectByGraphicsDevice(device)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewEnvironmentMapEffectByGraphicsDevice: %w", err)
+		}
+		g.result.LitEffectCreationRefusals += 2
+		fmt.Fprintf(os.Stderr, "EnvironmentMapEffect creation refused: %v\n", err)
+		return nil
+	}
+	g.result.LitEffectCreations++
+
+	skinned, err := graphics.NewSkinnedEffectByGraphicsDevice(device)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("NewSkinnedEffectByGraphicsDevice: %w", err)
+		}
+		g.result.LitEffectCreationRefusals++
+		fmt.Fprintf(os.Stderr, "SkinnedEffect creation refused: %v\n", err)
+		return nil
+	}
+	g.result.LitEffectCreations++
+
+	// The three published lights, on both types: stable identity and a
+	// write-through that reaches CNA.
+	for name, effect := range map[string]graphics.IEffectLights{
+		"EnvironmentMapEffect": environment, "SkinnedEffect": skinned,
+	} {
+		if effect.DirectionalLight0() == nil || effect.DirectionalLight0() != effect.DirectionalLight0() {
+			return fmt.Errorf("%s's DirectionalLight0 is not a stable object", name)
+		}
+		if effect.DirectionalLight0() == effect.DirectionalLight1() {
+			return fmt.Errorf("%s published one object for two lights", name)
+		}
+		// Lighting is ALWAYS on for these two, whatever the setter is told.
+		effect.SetLightingEnabled(false)
+		if !effect.LightingEnabled() {
+			return fmt.Errorf("%s reported LightingEnabled false", name)
+		}
+		if err := effect.EnableDefaultLighting(); err != nil {
+			return fmt.Errorf("%s.EnableDefaultLighting: %w", name, err)
+		}
+		g.result.LitEffectLightChecks++
+	}
+
+	// EnvironmentMapEffect's four scalar/vector crossings, round-tripped.
+	specular := framework.NewVector3BySingleAndSingleAndSingle(0.5, 0.25, 0.125)
+	if err := environment.SetEnvironmentMapAmount(0.75); err != nil {
+		return fmt.Errorf("SetEnvironmentMapAmount: %w", err)
+	}
+	if amount, err := environment.EnvironmentMapAmount(); err != nil || amount != 0.75 {
+		return fmt.Errorf("EnvironmentMapAmount = %v, %v", amount, err)
+	}
+	if err := environment.SetEnvironmentMapSpecular(specular); err != nil {
+		return fmt.Errorf("SetEnvironmentMapSpecular: %w", err)
+	}
+	if got, err := environment.EnvironmentMapSpecular(); err != nil || got != specular {
+		return fmt.Errorf("EnvironmentMapSpecular = %v, %v", got, err)
+	}
+	if err := environment.SetFresnelFactor(0.5); err != nil {
+		return fmt.Errorf("SetFresnelFactor: %w", err)
+	}
+	if factor, err := environment.FresnelFactor(); err != nil || factor != 0.5 {
+		return fmt.Errorf("FresnelFactor = %v, %v", factor, err)
+	}
+	// The two texture positions, including the profile's only TextureCube one.
+	if err := environment.SetTexture(surface); err != nil {
+		return fmt.Errorf("EnvironmentMapEffect.SetTexture: %w", err)
+	}
+	if texture, err := environment.Texture(); err != nil || texture != surface {
+		return fmt.Errorf("EnvironmentMapEffect.Texture = %v, %v", texture, err)
+	}
+	cube, cubeErr := graphics.NewTextureCube(device, 4, false, graphics.SurfaceFormatColor)
+	switch {
+	case cubeErr != nil:
+		if !isNativeRefusal(cubeErr) {
+			return fmt.Errorf("a cube for the environment map: %w", cubeErr)
+		}
+		fmt.Fprintf(os.Stderr, "TextureCube creation refused: %v\n", cubeErr)
+	default:
+		if err := environment.SetEnvironmentMap(cube); err != nil {
+			return fmt.Errorf("SetEnvironmentMap: %w", err)
+		}
+		if got, err := environment.EnvironmentMap(); err != nil || got != cube {
+			return fmt.Errorf("EnvironmentMap = %v, %v; the getter answers the object the setter was given", got, err)
+		}
+		// A measured divergence, recorded rather than avoided. CNA RETAINS the
+		// cube an EnvironmentMapEffect points at -- cna_texturecube_destroy
+		// answers CNA result 3, "The TextureCube is retained by an
+		// EffectParameter" -- where XNA's Dispose on the same texture is legal.
+		if err := cube.DisposeByNone(); err == nil {
+			return errors.New("disposing a TextureCube an effect retains was accepted; CNA documents a refusal")
+		}
+		g.result.LitEffectRetentionChecks++
+		// The RELEASE is proved on a SECOND cube, and that is not fussiness.
+		// CNA documents a repeated dispose as success, so disposing the same
+		// cube again after the release would succeed whether the release
+		// happened or not -- a planted defect that made SetEnvironmentMap(nil)
+		// a no-op survived exactly that assertion.
+		released, releasedErr := graphics.NewTextureCube(device, 4, false, graphics.SurfaceFormatColor)
+		if releasedErr != nil {
+			return fmt.Errorf("a second cube for the release check: %w", releasedErr)
+		}
+		if err := environment.SetEnvironmentMap(released); err != nil {
+			return fmt.Errorf("SetEnvironmentMap(second): %w", err)
+		}
+		if err := environment.SetEnvironmentMap(nil); err != nil {
+			return fmt.Errorf("SetEnvironmentMap(nil): %w", err)
+		}
+		// First dispose of THIS cube, so a success is the release and nothing
+		// else.
+		if err := released.DisposeByNone(); err != nil {
+			return fmt.Errorf("disposing a released environment map: %w", err)
+		}
+		g.result.LitEffectReleaseChecks++
+		// The first cube is still retained; disposing it again is the
+		// documented repeat and is cleanup rather than evidence.
+		_ = cube.DisposeByNone()
+	}
+
+	// SkinnedEffect's two scalar crossings and its texture.
+	if err := skinned.SetSpecularColor(specular); err != nil {
+		return fmt.Errorf("SkinnedEffect.SetSpecularColor: %w", err)
+	}
+	if got, err := skinned.SpecularColor(); err != nil || got != specular {
+		return fmt.Errorf("SkinnedEffect.SpecularColor = %v, %v", got, err)
+	}
+	if err := skinned.SetSpecularPower(24); err != nil {
+		return fmt.Errorf("SkinnedEffect.SetSpecularPower: %w", err)
+	}
+	if power, err := skinned.SpecularPower(); err != nil || power != 24 {
+		return fmt.Errorf("SkinnedEffect.SpecularPower = %v, %v", power, err)
+	}
+	if err := skinned.SetTexture(surface); err != nil {
+		return fmt.Errorf("SkinnedEffect.SetTexture: %w", err)
+	}
+	g.result.LitEffectRoundTrips++
+
+	// The bone transforms, which are the one array crossing in the family. The
+	// constructor already pushed 72 identities; this pushes a distinguishable
+	// set and reads it back.
+	bones := make([]framework.Matrix, 8)
+	for index := range bones {
+		bones[index] = framework.MatrixIdentity()
+		bones[index].M41 = float32(index)
+		// M44 is deliberately NOT 1. The reference overwrites it on every
+		// matrix GetBoneTransforms returns, and sending 1 would make that
+		// correction indistinguishable from the value coming back unchanged.
+		bones[index].M44 = 7
+	}
+	if err := skinned.SetBoneTransforms(bones); err != nil {
+		return fmt.Errorf("SetBoneTransforms: %w", err)
+	}
+	read, err := skinned.GetBoneTransforms(int32(len(bones)))
+	switch {
+	case err != nil:
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("GetBoneTransforms: %w", err)
+		}
+		g.result.LitEffectBoneRefusals++
+		fmt.Fprintf(os.Stderr, "GetBoneTransforms refused: %v\n", err)
+	default:
+		if len(read) != len(bones) {
+			return fmt.Errorf("GetBoneTransforms(%d) answered %d", len(bones), len(read))
+		}
+		for index := range read {
+			if read[index].M41 != float32(index) {
+				return fmt.Errorf("bone %d round-tripped M41 as %v", index, read[index].M41)
+			}
+			// The M44 = 1 the reference writes over every returned matrix. The
+			// input carried 7, so a 1 here is the correction and not an echo.
+			if read[index].M44 != 1 {
+				return fmt.Errorf("bone %d came back with M44 = %v; the reference forces 1 over whatever was stored", index, read[index].M44)
+			}
+		}
+		g.result.LitEffectBoneRoundTrips++
+	}
+
+	// OnApply through each effect's own pass.
+	for name, effect := range map[string]interface {
+		CurrentTechnique() *graphics.EffectTechnique
+	}{"EnvironmentMapEffect": environment, "SkinnedEffect": skinned} {
+		technique := effect.CurrentTechnique()
+		if technique == nil {
+			return fmt.Errorf("a constructed %s has no current technique", name)
+		}
+		pass := technique.Passes().ItemPropertySignatureCA1DC5FC(0)
+		if pass == nil {
+			return fmt.Errorf("a constructed %s's technique has no first pass", name)
+		}
+		if err := pass.Apply(); err != nil {
+			if !isNativeRefusal(err) {
+				return fmt.Errorf("%s pass Apply: %w", name, err)
+			}
+			g.result.LitEffectApplyRefusals++
+			fmt.Fprintf(os.Stderr, "%s Apply refused: %v\n", name, err)
+		} else {
+			g.result.LitEffectApplies++
+		}
+	}
+
+	// Clone, and the downcast each must answer.
+	clonedEnvironment, err := environment.Clone()
+	if err != nil {
+		return fmt.Errorf("EnvironmentMapEffect.Clone: %w", err)
+	}
+	typedEnvironment, ok := clonedEnvironment.(*graphics.EnvironmentMapEffect)
+	if !ok {
+		return errors.New("EnvironmentMapEffect.Clone did not hand back an EnvironmentMapEffect")
+	}
+	clonedSkinned, err := skinned.Clone()
+	if err != nil {
+		return fmt.Errorf("SkinnedEffect.Clone: %w", err)
+	}
+	typedSkinned, ok := clonedSkinned.(*graphics.SkinnedEffect)
+	if !ok {
+		return errors.New("SkinnedEffect.Clone did not hand back a SkinnedEffect")
+	}
+	// WeightsPerVertex is one of the twelve values the clone constructor copies.
+	if err := skinned.SetWeightsPerVertex(2); err != nil {
+		return fmt.Errorf("SetWeightsPerVertex(2): %w", err)
+	}
+	secondClone, err := skinned.Clone()
+	if err != nil {
+		return fmt.Errorf("SkinnedEffect.Clone after SetWeightsPerVertex: %w", err)
+	}
+	if secondClone.(*graphics.SkinnedEffect).WeightsPerVertex() != 2 {
+		return errors.New("the SkinnedEffect clone constructor did not copy WeightsPerVertex")
+	}
+	// The clones have their OWN lights.
+	if typedEnvironment.DirectionalLight0() == environment.DirectionalLight0() ||
+		typedSkinned.DirectionalLight0() == skinned.DirectionalLight0() {
+		return errors.New("a clone shares a light object with its source")
+	}
+	g.result.LitEffectCloneChecks++
+
+	for name, effect := range map[string]interface {
+		Dispose() error
+		IsDisposed() bool
+	}{
+		"EnvironmentMapEffect": environment, "SkinnedEffect": skinned,
+		"EnvironmentMapEffect clone": typedEnvironment, "SkinnedEffect clone": typedSkinned,
+		"SkinnedEffect second clone": secondClone.(*graphics.SkinnedEffect),
+	} {
+		if err := effect.Dispose(); err != nil {
+			return fmt.Errorf("disposing the %s: %w", name, err)
+		}
+		if !effect.IsDisposed() {
+			return fmt.Errorf("the %s is not disposed after Dispose", name)
+		}
+	}
+	if _, err := skinned.SpecularColor(); err == nil {
+		return errors.New("SpecularColor answered on a disposed SkinnedEffect")
+	}
+	g.result.LitEffectDisposalChecks++
 	return nil
 }
 

@@ -624,6 +624,81 @@ var deliberatelyUnboundRoutes = []unboundRoute{
 		Class:  "REDUNDANT_READ",
 		Detail: "measured to report exactly the character column of cna_sprite_font_copy_glyphs, in the same order and the same count, which CNA's own documentation states and the probe confirmed. The reference's characterMap is ONE list that get_Characters views and GetIndexForCharacter binary-searches, and reading it from two routes could produce two lists whose indices no longer correspond -- which is the invariant every other member depends on",
 	},
+	// Foundation 81 -- EnvironmentMapEffect and SkinnedEffect, closing the stock
+	// effect family. The pattern is unchanged: a getter beside a bound setter is
+	// unbound because the reference reads its own field, and a texture getter is
+	// unbound because a handle cannot carry object identity.
+	//
+	// SkinnedEffect's cna_skinned_effect_get_vertex_color_enabled and
+	// cna_skinned_effect_set_vertex_color_enabled add no row: the pinned
+	// contract declares NO VertexColorEnabled on that type, so they back no
+	// projected member and are not routes a projected member could have used.
+	{
+		Route:  "cna_environment_map_effect_get_diffuse_color",
+		Member: "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect::DiffuseColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`, and the same alpha divergence every stock effect's diffuse colour has: what OnApply pushes is the colour multiplied by alpha",
+	},
+	{
+		Route:  "cna_environment_map_effect_get_emissive_color",
+		Member: "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect::EmissiveColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`",
+	},
+	{
+		Route:  "cna_environment_map_effect_get_alpha",
+		Member: "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect::Alpha()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`",
+	},
+	{
+		Route:  "cna_environment_map_effect_get_texture",
+		Member: "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect::Texture()",
+		Class:  "REPRESENTATION",
+		Detail: "the handle/object obstacle recorded for cna_basic_effect_get_texture, on the same terms",
+	},
+	{
+		Route:  "cna_environment_map_effect_get_environment_map",
+		Member: "Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect::EnvironmentMap()",
+		Class:  "REPRESENTATION",
+		Detail: "the same obstacle one texture family over: the property's value is a TextureCube OBJECT and the route reports a handle. It is the only TextureCube-valued property in the profile, and the projection holds the object the setter was given for the reason every other stock-effect texture getter does",
+	},
+	{
+		Route:  "cna_skinned_effect_get_diffuse_color",
+		Member: "Microsoft.Xna.Framework.Graphics.SkinnedEffect::DiffuseColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`, with the alpha divergence",
+	},
+	{
+		Route:  "cna_skinned_effect_get_emissive_color",
+		Member: "Microsoft.Xna.Framework.Graphics.SkinnedEffect::EmissiveColor()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`",
+	},
+	{
+		Route:  "cna_skinned_effect_get_alpha",
+		Member: "Microsoft.Xna.Framework.Graphics.SkinnedEffect::Alpha()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`",
+	},
+	{
+		Route:  "cna_skinned_effect_get_prefer_per_pixel_lighting",
+		Member: "Microsoft.Xna.Framework.Graphics.SkinnedEffect::PreferPerPixelLighting()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld`, and the property is a PREFERENCE: the reference reports what it stored, never what the device could do",
+	},
+	{
+		Route:  "cna_skinned_effect_get_weights_per_vertex",
+		Member: "Microsoft.Xna.Framework.Graphics.SkinnedEffect::WeightsPerVertex()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "one `ldfld` of a value the SETTER has already validated against {1, 2, 4} -- so the projection knows the stored value is legal and CNA's answer could only disagree with it",
+	},
+	{
+		Route:  "cna_skinned_effect_get_texture",
+		Member: "Microsoft.Xna.Framework.Graphics.SkinnedEffect::Texture()",
+		Class:  "REPRESENTATION",
+		Detail: "the handle/object obstacle, on the same terms as every other stock-effect texture getter",
+	},
 	// Foundation 80 -- AlphaTestEffect and DualTextureEffect, the same pattern
 	// Foundation 79 recorded one type over. Every getter CNA declares beside a
 	// bound setter is here, because the reference reads its own field; the two

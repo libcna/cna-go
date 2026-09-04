@@ -92,7 +92,7 @@ func sliceStart[T any](data []T) unsafe.Pointer {
 // count of zero rather than refused here, because the refusal happens further
 // in, inside CopyData.
 func TextureCubeSetDataByCubeMapFaceAndSliceOfT[T any](
-	texture *TextureCube, cubeMapFace CubeMapFace, data []T,
+	texture TextureCubeReference, cubeMapFace CubeMapFace, data []T,
 ) error {
 	return TextureCubeSetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
 		texture, cubeMapFace, 0, nil, data, 0, int32(len(data)))
@@ -101,7 +101,7 @@ func TextureCubeSetDataByCubeMapFaceAndSliceOfT[T any](
 // TextureCubeSetDataByCubeMapFaceAndSliceOfTAndInt32AndInt32 is
 // TextureCube::SetData<T>(CubeMapFace, T[], Int32, Int32).
 func TextureCubeSetDataByCubeMapFaceAndSliceOfTAndInt32AndInt32[T any](
-	texture *TextureCube, cubeMapFace CubeMapFace, data []T, startIndex, elementCount int32,
+	texture TextureCubeReference, cubeMapFace CubeMapFace, data []T, startIndex, elementCount int32,
 ) error {
 	return TextureCubeSetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
 		texture, cubeMapFace, 0, nil, data, startIndex, elementCount)
@@ -112,10 +112,10 @@ func TextureCubeSetDataByCubeMapFaceAndSliceOfTAndInt32AndInt32[T any](
 // Int32, Int32) -- the overload the other two funnel into, and the one that
 // reaches CNA.
 func TextureCubeSetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[T any](
-	texture *TextureCube, cubeMapFace CubeMapFace, level int32, rect *framework.Rectangle,
+	texture TextureCubeReference, cubeMapFace CubeMapFace, level int32, rect *framework.Rectangle,
 	data []T, startIndex, elementCount int32,
 ) error {
-	resource, transfer, err := prepareCubeTransfer[T](texture, "TextureCube.SetData", cubeMapFace, level, rect, len(data), startIndex, elementCount)
+	resource, transfer, err := prepareCubeTransfer[T](resolveTextureCube(texture), "TextureCube.SetData", cubeMapFace, level, rect, len(data), startIndex, elementCount)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func TextureCubeSetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAnd
 // TextureCubeGetDataByCubeMapFaceAndSliceOfT is
 // TextureCube::GetData<T>(CubeMapFace, T[]).
 func TextureCubeGetDataByCubeMapFaceAndSliceOfT[T any](
-	texture *TextureCube, cubeMapFace CubeMapFace, data []T,
+	texture TextureCubeReference, cubeMapFace CubeMapFace, data []T,
 ) error {
 	return TextureCubeGetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
 		texture, cubeMapFace, 0, nil, data, 0, int32(len(data)))
@@ -134,7 +134,7 @@ func TextureCubeGetDataByCubeMapFaceAndSliceOfT[T any](
 // TextureCubeGetDataByCubeMapFaceAndSliceOfTAndInt32AndInt32 is
 // TextureCube::GetData<T>(CubeMapFace, T[], Int32, Int32).
 func TextureCubeGetDataByCubeMapFaceAndSliceOfTAndInt32AndInt32[T any](
-	texture *TextureCube, cubeMapFace CubeMapFace, data []T, startIndex, elementCount int32,
+	texture TextureCubeReference, cubeMapFace CubeMapFace, data []T, startIndex, elementCount int32,
 ) error {
 	return TextureCubeGetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32(
 		texture, cubeMapFace, 0, nil, data, startIndex, elementCount)
@@ -148,10 +148,10 @@ func TextureCubeGetDataByCubeMapFaceAndSliceOfTAndInt32AndInt32[T any](
 // destination too small is a refused call rather than a partial fill, which is
 // what the 2D readback already does.
 func TextureCubeGetDataByCubeMapFaceAndInt32AndNullableOfRectangleAndSliceOfTAndInt32AndInt32[T any](
-	texture *TextureCube, cubeMapFace CubeMapFace, level int32, rect *framework.Rectangle,
+	texture TextureCubeReference, cubeMapFace CubeMapFace, level int32, rect *framework.Rectangle,
 	data []T, startIndex, elementCount int32,
 ) error {
-	resource, transfer, err := prepareCubeTransfer[T](texture, "TextureCube.GetData", cubeMapFace, level, rect, len(data), startIndex, elementCount)
+	resource, transfer, err := prepareCubeTransfer[T](resolveTextureCube(texture), "TextureCube.GetData", cubeMapFace, level, rect, len(data), startIndex, elementCount)
 	if err != nil {
 		return err
 	}

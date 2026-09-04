@@ -4323,3 +4323,86 @@ func TestTheUnlitStockEffectsAreReachableFromOutside(t *testing.T) {
 		t.Fatal("FogColor answered on an effect with no native half")
 	}
 }
+
+// TestTheLitStockEffectsAreReachableFromOutside is Foundation 81's canary, and
+// with it every one of Effect's six derived types compiles from outside.
+func TestTheLitStockEffectsAreReachableFromOutside(t *testing.T) {
+	var _ func(*graphics.GraphicsDevice) (*graphics.EnvironmentMapEffect, error) = graphics.NewEnvironmentMapEffectByGraphicsDevice
+	var _ func(*graphics.EnvironmentMapEffect) (*graphics.EnvironmentMapEffect, error) = graphics.NewEnvironmentMapEffectByEnvironmentMapEffect
+	var _ func(*graphics.GraphicsDevice) (*graphics.SkinnedEffect, error) = graphics.NewSkinnedEffectByGraphicsDevice
+	var _ func(*graphics.SkinnedEffect) (*graphics.SkinnedEffect, error) = graphics.NewSkinnedEffectBySkinnedEffect
+
+	// EnvironmentMapEffect's six crossing members, at their exact shapes -- the
+	// most of any stock effect.
+	var environment *graphics.EnvironmentMapEffect
+	var _ func() (framework.Vector3, error) = environment.FogColor
+	var _ func() (float32, error) = environment.EnvironmentMapAmount
+	var _ func(float32) error = environment.SetEnvironmentMapAmount
+	var _ func() (framework.Vector3, error) = environment.EnvironmentMapSpecular
+	var _ func(framework.Vector3) error = environment.SetEnvironmentMapSpecular
+	var _ func() (float32, error) = environment.FresnelFactor
+	var _ func(float32) error = environment.SetFresnelFactor
+	var _ func() (*graphics.Texture2D, error) = environment.Texture
+	var _ func(graphics.Texture2DReference) error = environment.SetTexture
+	// The profile's only TextureCube parameter position, widened.
+	var _ func() (*graphics.TextureCube, error) = environment.EnvironmentMap
+	var _ func(graphics.TextureCubeReference) error = environment.SetEnvironmentMap
+	// And the fourth substitutable family is nameable from outside.
+	var _ graphics.TextureCubeReference = (*graphics.TextureCube)(nil)
+	var _ graphics.TextureCubeReference = (*graphics.RenderTargetCube)(nil)
+
+	// SkinnedEffect's own three: the constant, the validating setter and the
+	// bone-transform pair.
+	if graphics.SkinnedEffectMaxBones != 72 {
+		t.Fatalf("SkinnedEffectMaxBones = %d from outside", graphics.SkinnedEffectMaxBones)
+	}
+	var skinned *graphics.SkinnedEffect
+	var _ func() int32 = skinned.WeightsPerVertex
+	var _ func(int32) error = skinned.SetWeightsPerVertex
+	var _ func([]framework.Matrix) error = skinned.SetBoneTransforms
+	var _ func(int32) ([]framework.Matrix, error) = skinned.GetBoneTransforms
+
+	// The guards run before anything native, so they answer from outside on an
+	// effect that was never built.
+	unbuilt := &graphics.SkinnedEffect{}
+	if err := unbuilt.SetWeightsPerVertex(3); err == nil {
+		t.Fatal("SetWeightsPerVertex(3) was accepted from outside")
+	}
+	if err := unbuilt.SetBoneTransforms(nil); err == nil {
+		t.Fatal("SetBoneTransforms(nil) was accepted from outside")
+	}
+	if _, err := unbuilt.GetBoneTransforms(0); err == nil {
+		t.Fatal("GetBoneTransforms(0) was accepted from outside")
+	}
+	tooMany := make([]framework.Matrix, graphics.SkinnedEffectMaxBones+1)
+	if err := unbuilt.SetBoneTransforms(tooMany); err == nil {
+		t.Fatal("SetBoneTransforms(73) was accepted from outside")
+	}
+
+	// LightingEnabled is reachable only as an interface member in C# and is a
+	// witness here; a consumer meets it through IEffectLights either way.
+	for name, effect := range map[string]graphics.IEffectLights{
+		"BasicEffect":          &graphics.BasicEffect{},
+		"EnvironmentMapEffect": &graphics.EnvironmentMapEffect{},
+		"SkinnedEffect":        &graphics.SkinnedEffect{},
+	} {
+		if effect == nil {
+			t.Fatalf("%s does not satisfy IEffectLights from outside", name)
+		}
+	}
+	if !(&graphics.EnvironmentMapEffect{}).LightingEnabled() ||
+		!(&graphics.SkinnedEffect{}).LightingEnabled() {
+		t.Fatal("a lit stock effect reported LightingEnabled false from outside")
+	}
+
+	// All six of Effect's derived types reach a widened Effect position.
+	for _, reference := range []graphics.EffectReference{
+		(*graphics.BasicEffect)(nil), (*graphics.AlphaTestEffect)(nil),
+		(*graphics.DualTextureEffect)(nil), (*graphics.EnvironmentMapEffect)(nil),
+		(*graphics.SkinnedEffect)(nil), (*graphics.EffectMaterial)(nil),
+	} {
+		if reference == nil {
+			t.Fatal("a stock effect did not satisfy EffectReference")
+		}
+	}
+}

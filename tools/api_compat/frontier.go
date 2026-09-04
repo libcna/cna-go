@@ -124,15 +124,6 @@ var frontierFamilies = []frontierFamily{
 		},
 	},
 	{
-		Name:           "Stock effects",
-		Classification: frontierActionableLocal,
-		Note:           "Foundation 79 composed the Effect base and settled the shape against BasicEffect; Foundation 80 closed AlphaTestEffect, DualTextureEffect and EffectMaterial on it. The two that remain both add IEffectLights and both implement LightingEnabled EXPLICITLY -- a two-byte getter that always answers true and a 51-byte setter -- so they need the interface-witness machinery as well as ~17/21 routes, and SkinnedEffect adds a bone-transform array and the profile's only public const field",
-		Types: []string{
-			"Microsoft.Xna.Framework.Graphics.EnvironmentMapEffect",
-			"Microsoft.Xna.Framework.Graphics.SkinnedEffect",
-		},
-	},
-	{
 		Name:           "Model family",
 		Classification: frontierActionableLocal,
 		Note:           "the largest single family at twelve types and ~233 CNA routes; it depends on the vertex structs and the stock effects, and on ReadOnlyCollection<T> becoming usable as a BASE rather than only as a signature adapter",

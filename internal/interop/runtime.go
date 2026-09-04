@@ -4338,6 +4338,267 @@ func (resource *Resource) CreateEffectMaterial() (*Resource, error) {
 	return resource.runtime.registerResource(material, resourceEffect, resource.parent), nil
 }
 
+// ---------------------------------------------------------------------------
+// Foundation 81 -- EnvironmentMapEffect and SkinnedEffect.
+//
+// The pattern is Foundation 79's and 80's: a creation, the setters OnApply
+// pushes, and a get/set pair only where the reference itself reads the value
+// back out of an EffectParameter.
+// ---------------------------------------------------------------------------
+
+// CreateEnvironmentMapEffect is cna_environment_map_effect_create.
+func (d *Device) CreateEnvironmentMapEffect() (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	effect, err := nativeEnvironmentMapEffectCreate(handle)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(effect, resourceEffect, d.manager), nil
+}
+
+// CreateSkinnedEffect is cna_skinned_effect_create.
+func (d *Device) CreateSkinnedEffect() (*Resource, error) {
+	handle, err := d.nativeHandle()
+	if err != nil {
+		return nil, err
+	}
+	effect, err := nativeSkinnedEffectCreate(handle)
+	if err != nil {
+		return nil, err
+	}
+	return d.runtime.registerResource(effect, resourceEffect, d.manager), nil
+}
+
+// EnvironmentMapEffectSetDiffuseColor is the push OnApply makes for DiffuseColor.
+func (resource *Resource) EnvironmentMapEffectSetDiffuseColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEnvironmentMapEffectSetDiffuseColor(handle, value)
+}
+
+// EnvironmentMapEffectSetEmissiveColor is the push OnApply makes for EmissiveColor.
+func (resource *Resource) EnvironmentMapEffectSetEmissiveColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEnvironmentMapEffectSetEmissiveColor(handle, value)
+}
+
+// EnvironmentMapEffectSetAlpha is the push OnApply makes for Alpha.
+func (resource *Resource) EnvironmentMapEffectSetAlpha(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEnvironmentMapEffectSetAlpha(handle, value)
+}
+
+// EnvironmentMapEffectAmount is EnvironmentMapAmount's getter, which the reference reads back through a parameter.
+func (resource *Resource) EnvironmentMapEffectAmount() (float32, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return 0, err
+	}
+	return nativeEnvironmentMapEffectAmount(handle)
+}
+
+// EnvironmentMapEffectSetAmount is EnvironmentMapAmount's setter.
+func (resource *Resource) EnvironmentMapEffectSetAmount(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEnvironmentMapEffectSetAmount(handle, value)
+}
+
+// EnvironmentMapEffectSpecular is EnvironmentMapSpecular's getter.
+func (resource *Resource) EnvironmentMapEffectSpecular() ([3]float32, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return [3]float32{}, err
+	}
+	return nativeEnvironmentMapEffectSpecular(handle)
+}
+
+// EnvironmentMapEffectSetSpecular is EnvironmentMapSpecular's setter.
+func (resource *Resource) EnvironmentMapEffectSetSpecular(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEnvironmentMapEffectSetSpecular(handle, value)
+}
+
+// EnvironmentMapEffectFresnelFactor is FresnelFactor's getter.
+func (resource *Resource) EnvironmentMapEffectFresnelFactor() (float32, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return 0, err
+	}
+	return nativeEnvironmentMapEffectFresnelFactor(handle)
+}
+
+// EnvironmentMapEffectSetFresnelFactor is FresnelFactor's setter.
+func (resource *Resource) EnvironmentMapEffectSetFresnelFactor(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeEnvironmentMapEffectSetFresnelFactor(handle, value)
+}
+
+// SkinnedEffectSetDiffuseColor is the push OnApply makes for DiffuseColor.
+func (resource *Resource) SkinnedEffectSetDiffuseColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeSkinnedEffectSetDiffuseColor(handle, value)
+}
+
+// SkinnedEffectSetEmissiveColor is the push OnApply makes for EmissiveColor.
+func (resource *Resource) SkinnedEffectSetEmissiveColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeSkinnedEffectSetEmissiveColor(handle, value)
+}
+
+// SkinnedEffectSpecularColor is SpecularColor's getter, which the reference reads back through a parameter.
+func (resource *Resource) SkinnedEffectSpecularColor() ([3]float32, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return [3]float32{}, err
+	}
+	return nativeSkinnedEffectSpecularColor(handle)
+}
+
+// SkinnedEffectSetSpecularColor is SpecularColor's setter.
+func (resource *Resource) SkinnedEffectSetSpecularColor(value [3]float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeSkinnedEffectSetSpecularColor(handle, value)
+}
+
+// SkinnedEffectSpecularPower is SpecularPower's getter.
+func (resource *Resource) SkinnedEffectSpecularPower() (float32, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return 0, err
+	}
+	return nativeSkinnedEffectSpecularPower(handle)
+}
+
+// SkinnedEffectSetSpecularPower is SpecularPower's setter.
+func (resource *Resource) SkinnedEffectSetSpecularPower(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeSkinnedEffectSetSpecularPower(handle, value)
+}
+
+// SkinnedEffectSetAlpha is the push OnApply makes for Alpha.
+func (resource *Resource) SkinnedEffectSetAlpha(value float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeSkinnedEffectSetAlpha(handle, value)
+}
+
+// SkinnedEffectSetPreferPerPixelLighting is the push OnApply makes for the shader permutation.
+func (resource *Resource) SkinnedEffectSetPreferPerPixelLighting(value bool) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeSkinnedEffectSetPreferPerPixelLighting(handle, value)
+}
+
+// SkinnedEffectSetWeightsPerVertex is the push OnApply makes for WeightsPerVertex, which the projection has already validated.
+func (resource *Resource) SkinnedEffectSetWeightsPerVertex(value int32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeSkinnedEffectSetWeightsPerVertex(handle, value)
+}
+
+// SkinnedEffectSetBoneTransforms is SetBoneTransforms(Matrix[]), which crosses as a flat float array in CNA_Matrix's own order.
+func (resource *Resource) SkinnedEffectSetBoneTransforms(transforms []float32) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	return nativeSkinnedEffectSetBoneTransforms(handle, transforms)
+}
+
+// SkinnedEffectCopyBoneTransforms is GetBoneTransforms(Int32), which copies the leading transforms atomically.
+func (resource *Resource) SkinnedEffectCopyBoneTransforms(count int) ([]float32, error) {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return nil, err
+	}
+	return nativeSkinnedEffectCopyBoneTransforms(handle, count)
+}
+
+// EnvironmentMapEffectSetTexture is EnvironmentMapEffect::Texture's setter.
+func (resource *Resource) EnvironmentMapEffectSetTexture(texture *Resource) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	var textureHandle uint64
+	if texture != nil {
+		if textureHandle, err = texture.liveTextureHandle(); err != nil {
+			return err
+		}
+	}
+	return nativeEnvironmentMapEffectSetTexture(handle, textureHandle)
+}
+
+// EnvironmentMapEffectSetEnvironmentMap is EnvironmentMapEffect::EnvironmentMap's
+// setter. Its value is a TextureCube rather than a Texture2D, which is the one
+// texture position in the stock effects that is not a 2D surface.
+func (resource *Resource) EnvironmentMapEffectSetEnvironmentMap(cube *Resource) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	var cubeHandle uint64
+	if cube != nil {
+		if cubeHandle, err = cube.liveHandle(resourceTextureCube); err != nil {
+			return err
+		}
+	}
+	return nativeEnvironmentMapEffectSetEnvironmentMap(handle, cubeHandle)
+}
+
+// SkinnedEffectSetTexture is SkinnedEffect::Texture's setter.
+func (resource *Resource) SkinnedEffectSetTexture(texture *Resource) error {
+	handle, err := resource.liveHandle(resourceEffect)
+	if err != nil {
+		return err
+	}
+	var textureHandle uint64
+	if texture != nil {
+		if textureHandle, err = texture.liveTextureHandle(); err != nil {
+			return err
+		}
+	}
+	return nativeSkinnedEffectSetTexture(handle, textureHandle)
+}
+
 // EffectLightsDirectionalLight is IEffectLights::DirectionalLight0..2.
 //
 // The canonical header calls the result "an owned stable member-view handle",
