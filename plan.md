@@ -1608,6 +1608,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 93 | the five content serializer attributes, and System.Attribute as a composed base | `foundation-93-content-serializer-attributes-evidence.md` |
 | 94 | the thirteen Design converters, and the end of the deferred frontier | `foundation-94-design-converters-evidence.md` |
 | 95 | the media metadata graph: five entities, five collections, 105 routes | `foundation-95-media-metadata-evidence.md` |
+| 96 | the media library and the picture graph, and the containment that made them safe to walk | `foundation-96-media-library-evidence.md` |
 
 **A recorded blocker is a claim, and claims get re-measured** (91).
 System.IO.BinaryReader had been DEFERRED since Foundation 29 partly because "the
@@ -1928,6 +1929,27 @@ have, and one needs a leak a functional slice cannot observe. They are in a
 table whose expected result is SURVIVAL, so the totals say what was measured
 instead of quietly leaving out what was not.
 
+**A slice that reads the HOST's media must prove containment before it reads**
+(96). A MediaLibrary reads the machine's music and picture directories by
+design, and the first run of Foundation 96's slice found forty-one of the user's
+photographs and read their dimensions and dates. CNA resolves those directories
+from HOME -- measured; XDG_PICTURES_DIR does not move them -- so the slice now
+enumerates nothing until HOME is a directory the run was explicitly given, seeds
+that isolated library itself, and skips loudly otherwise. Same shape as
+STORAGE_ROOT_CHECKS, and for the same reason.
+
+**A fixture of ONE cannot distinguish an off-by-one** (96). A walk over a single
+element visits one item whether the enumerator starts at the first or skips it.
+Foundation 96's isolated library seeds THREE songs, THREE pictures and TWO
+sub-albums, and that is what turned four surviving enumerator mutants into
+killed ones.
+
+**A Go-only runtime check must not sit in front of an argument check** (95, 96).
+Song.FromUri had it and so did MediaLibrary.SavePicture: a nil argument answered
+"no runtime" on a machine with no game. The reference checks disposal first and
+the argument next, and an invalid argument is invalid either way. Twice in two
+milestones, so it is written down.
+
 **A graphics state object freezes** (59). Every setter is fallible because
 `ThrowIfBound` is a refusal the reference really throws; every getter is one
 `ldfld`. The static presets are frozen from construction.
@@ -1937,10 +1959,10 @@ instead of quietly leaving out what was not.
 This section is a STATEMENT OF CURRENT STATE, not a permanent list, and it is
 rewritten whenever a milestone makes one of its entries false.
 
-Still deferred: XACT; the media LIBRARY, players and video; and GamerServices.
-Foundation 95 closed the media metadata graph -- the five entities and their
-five collections -- and what remains of that namespace is enumeration and
-playback. Audio closed in
+Still deferred: XACT; media PLAYBACK and video; and GamerServices. Foundation 95
+closed the media metadata graph and Foundation 96 the library and the picture
+graph, so what remains of that namespace is MediaPlayer, MediaQueue, Video and
+VideoPlayer. Audio closed in
 Foundation 88, Input and touch in 89, the Model family in 90, Storage in 91, the
 content plumbing in 92, the content serializer attributes in 93 and the Design
 converters in 94.

@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	framework "github.com/openeggbert/cna-go/Microsoft/Xna/Framework"
 	audio "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio"
@@ -16,6 +17,7 @@ import (
 	packedvector "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics/PackedVector"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
 	touch "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch"
+	media "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media"
 	storage "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage"
 )
 
@@ -5272,5 +5274,100 @@ func TestDesignConvertersAreReachableFromOutsideTheModule(t *testing.T) {
 	// CultureInfo, sized to the one thing the profile reaches.
 	if framework.CultureInfoCurrentCulture().ListSeparator() != "," {
 		t.Fatal("the current culture's list separator did not survive the module boundary")
+	}
+}
+
+// TestTheMediaGraphIsReachableFromOutsideTheModule is Foundation 95 and 96's
+// canary. Everything here needs a runtime to ANSWER, so what a consumer with
+// none can check is the shape and the guards -- which is what it does.
+func TestTheMediaGraphIsReachableFromOutsideTheModule(t *testing.T) {
+	// The five music entities and their five collections.
+	var song *media.Song
+	var _ func() (string, error) = song.Name
+	var _ func() (framework.TimeSpan, error) = song.Duration
+	var _ func() (*media.Artist, error) = song.Artist
+	var _ func() (*media.Album, error) = song.Album
+	var _ func() (*media.Genre, error) = song.Genre
+	var _ func() (int32, error) = song.Rating
+	var _ func() bool = song.IsDisposed
+	var _ func() error = song.Dispose
+	var _ func() error = song.Finalize
+	var _ func(any) (bool, error) = song.EqualsByObject
+	var _ func(*media.Song) (bool, error) = song.EqualsBySong
+	var _ func(string, string) (*media.Song, error) = media.SongFromUri
+
+	var songs *media.SongCollection
+	var _ func() (int32, error) = songs.Count
+	var _ func(int32) (*media.Song, error) = songs.Item
+	var _ func() (framework.Iterator[*media.Song], error) = songs.GetEnumerator
+
+	// The library and the picture graph.
+	var library *media.MediaLibrary
+	var _ func() (*media.SongCollection, error) = library.Songs
+	var _ func() (*media.ArtistCollection, error) = library.Artists
+	var _ func() (*media.AlbumCollection, error) = library.Albums
+	var _ func() (*media.GenreCollection, error) = library.Genres
+	var _ func() (*media.PlaylistCollection, error) = library.Playlists
+	var _ func() (*media.PictureCollection, error) = library.Pictures
+	var _ func() (*media.PictureCollection, error) = library.SavedPictures
+	var _ func() (*media.PictureAlbum, error) = library.RootPictureAlbum
+	var _ func() (*media.MediaSource, error) = library.MediaSource
+	var _ func(string) (*media.Picture, error) = library.GetPictureFromToken
+	var _ func(string, []uint8) (*media.Picture, error) = library.SavePictureByStringAndSliceOfByte
+	var _ func(string, io.Reader) (*media.Picture, error) = library.SavePictureByStringAndStream
+
+	var picture *media.Picture
+	var _ func() (int32, error) = picture.Width
+	var _ func() (int32, error) = picture.Height
+	var _ func() (time.Time, error) = picture.Date
+	var _ func() (io.Reader, error) = picture.GetImage
+	var _ func() (*media.PictureAlbum, error) = picture.Album
+
+	var album *media.PictureAlbum
+	var _ func() (*media.PictureAlbumCollection, error) = album.Albums
+	var _ func() (*media.PictureCollection, error) = album.Pictures
+	var _ func() (*media.PictureAlbum, error) = album.Parent
+
+	// MediaSource is the one type here a consumer can exercise WITHOUT a
+	// runtime, because it owns no native object.
+	var source *media.MediaSource
+	if source.Name() != "" || source.ToString() != "" {
+		t.Fatal("a nil MediaSource did not answer empty outside the module")
+	}
+
+	// Every nil receiver reports itself disposed rather than panicking.
+	for name, disposed := range map[string]bool{
+		"Song":           song.IsDisposed(),
+		"SongCollection": songs.IsDisposed(),
+		"MediaLibrary":   library.IsDisposed(),
+		"Picture":        picture.IsDisposed(),
+		"PictureAlbum":   album.IsDisposed(),
+	} {
+		if !disposed {
+			t.Errorf("a nil %s did not report itself disposed outside the module", name)
+		}
+	}
+
+	// The operators, which answer nil comparisons without a runtime.
+	equal, err := media.SongOperatorEqualityBySongAndSong(nil, nil)
+	if err != nil || !equal {
+		t.Fatalf("two nil songs compared %v, %v", equal, err)
+	}
+	// Both operands here are nil -- a consumer cannot CONSTRUCT a Picture, the
+	// contract declares no constructor -- so what is checkable outside the
+	// module is that two absences are equal and that inequality is the
+	// negation.
+	if equal, err = media.PictureOperatorEqualityByPictureAndPicture(nil, picture); err != nil || !equal {
+		t.Fatalf("two absent pictures compared %v, %v", equal, err)
+	}
+	unequal, err := media.PictureOperatorInequalityByPictureAndPicture(nil, picture)
+	if err != nil || unequal {
+		t.Fatalf("two absent pictures compared unequal: %v, %v", unequal, err)
+	}
+
+	// The library refuses a source with no index, which is the divergence this
+	// projection records.
+	if _, err = media.NewMediaLibraryByMediaSource(nil); err == nil {
+		t.Fatal("a nil MediaSource opened a library")
 	}
 }

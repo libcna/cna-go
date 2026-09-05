@@ -4465,3 +4465,529 @@ func nativePlaylistCollectionAt(handle uint64, index int32) (uint64, error) {
 	code := uint32(C.cna_go_playlist_collection_get_at(C.CnaGoHandle(handle), C.int32_t(index), &value))
 	return uint64(value), resultError("cna_playlist_collection_get_at", code)
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 96. The media library and the picture graph.
+//
+// The same shapes Foundation 95 established, over six more types. Two are new:
+// a MediaSource is addressed by INDEX rather than by a handle, and a picture's
+// date arrives as UNIX ticks rather than CLR ones.
+// ---------------------------------------------------------------------------
+
+func nativePictureDispose(handle uint64) error {
+	return resultError("cna_picture_dispose",
+		uint32(C.cna_go_picture_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativePictureDestroy(handle uint64) error {
+	return resultError("cna_picture_destroy",
+		uint32(C.cna_go_picture_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativePictureIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_picture_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_picture_get_is_disposed", code)
+}
+
+func nativePictureHashCode(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_picture_get_hash_code(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_picture_get_hash_code", code)
+}
+
+func nativePictureName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_picture_get_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_picture_get_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_picture_copy_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_picture_copy_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativePictureTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_picture_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_picture_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_picture_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_picture_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativePictureEquals(left, right uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_picture_equals(C.CnaGoHandle(left), C.CnaGoHandle(right), &value))
+	return value != 0, resultError("cna_picture_equals", code)
+}
+
+func nativePictureAlbumDispose(handle uint64) error {
+	return resultError("cna_picture_album_dispose",
+		uint32(C.cna_go_picture_album_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativePictureAlbumDestroy(handle uint64) error {
+	return resultError("cna_picture_album_destroy",
+		uint32(C.cna_go_picture_album_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativePictureAlbumIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_picture_album_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_picture_album_get_is_disposed", code)
+}
+
+func nativePictureAlbumHashCode(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_picture_album_get_hash_code(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_picture_album_get_hash_code", code)
+}
+
+func nativePictureAlbumName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_picture_album_get_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_picture_album_get_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_picture_album_copy_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_picture_album_copy_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativePictureAlbumTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_picture_album_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_picture_album_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_picture_album_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_picture_album_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativePictureAlbumEquals(left, right uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_picture_album_equals(C.CnaGoHandle(left), C.CnaGoHandle(right), &value))
+	return value != 0, resultError("cna_picture_album_equals", code)
+}
+
+func nativePictureAlbumOf(handle uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_picture_get_album(C.CnaGoHandle(handle), &value, &available))
+	return uint64(value), available != 0, resultError("cna_picture_get_album", code)
+}
+
+func nativePictureWidth(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_picture_get_width(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_picture_get_width", code)
+}
+
+func nativePictureHeight(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_picture_get_height(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_picture_get_height", code)
+}
+
+func nativePictureDateUnixTicks(handle uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_picture_get_date_unix_ticks(C.CnaGoHandle(handle), &value))
+	return int64(value), resultError("cna_picture_get_date_unix_ticks", code)
+}
+
+func nativePictureImage(handle uint64) ([]byte, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_picture_get_image_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_picture_get_image_size", code); err != nil {
+		return nil, err
+	}
+	if byteCount == 0 {
+		return nil, nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_picture_copy_image(C.CnaGoHandle(handle),
+		(*C.uint8_t)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_picture_copy_image", code); err != nil {
+		return nil, err
+	}
+	return buffer[:int(copied)], nil
+}
+
+func nativePictureThumbnail(handle uint64) ([]byte, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_picture_get_thumbnail_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_picture_get_thumbnail_size", code); err != nil {
+		return nil, err
+	}
+	if byteCount == 0 {
+		return nil, nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_picture_copy_thumbnail(C.CnaGoHandle(handle),
+		(*C.uint8_t)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_picture_copy_thumbnail", code); err != nil {
+		return nil, err
+	}
+	return buffer[:int(copied)], nil
+}
+
+func nativePictureAlbumAlbums(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_picture_album_get_albums(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_picture_album_get_albums", code)
+}
+
+func nativePictureAlbumPictures(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_picture_album_get_pictures(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_picture_album_get_pictures", code)
+}
+
+func nativePictureAlbumParent(handle uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_picture_album_get_parent(C.CnaGoHandle(handle), &value, &available))
+	return uint64(value), available != 0, resultError("cna_picture_album_get_parent", code)
+}
+
+func nativePictureCollectionDispose(handle uint64) error {
+	return resultError("cna_picture_collection_dispose",
+		uint32(C.cna_go_picture_collection_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativePictureCollectionDestroy(handle uint64) error {
+	return resultError("cna_picture_collection_destroy",
+		uint32(C.cna_go_picture_collection_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativePictureCollectionIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_picture_collection_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_picture_collection_get_is_disposed", code)
+}
+
+func nativePictureCollectionCount(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_picture_collection_get_count(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_picture_collection_get_count", code)
+}
+
+func nativePictureCollectionTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_picture_collection_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_picture_collection_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_picture_collection_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_picture_collection_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativePictureCollectionAt(handle uint64, index int32) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_picture_collection_get_at(C.CnaGoHandle(handle), C.int32_t(index), &value))
+	return uint64(value), resultError("cna_picture_collection_get_at", code)
+}
+
+func nativePictureAlbumCollectionDispose(handle uint64) error {
+	return resultError("cna_picture_album_collection_dispose",
+		uint32(C.cna_go_picture_album_collection_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativePictureAlbumCollectionDestroy(handle uint64) error {
+	return resultError("cna_picture_album_collection_destroy",
+		uint32(C.cna_go_picture_album_collection_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativePictureAlbumCollectionIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_picture_album_collection_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_picture_album_collection_get_is_disposed", code)
+}
+
+func nativePictureAlbumCollectionCount(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_picture_album_collection_get_count(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_picture_album_collection_get_count", code)
+}
+
+func nativePictureAlbumCollectionTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_picture_album_collection_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_picture_album_collection_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_picture_album_collection_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_picture_album_collection_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativePictureAlbumCollectionAt(handle uint64, index int32) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_picture_album_collection_get_at(C.CnaGoHandle(handle), C.int32_t(index), &value))
+	return uint64(value), resultError("cna_picture_album_collection_get_at", code)
+}
+
+func nativeMediaLibraryDispose(handle uint64) error {
+	return resultError("cna_media_library_dispose",
+		uint32(C.cna_go_media_library_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeMediaLibraryDestroy(handle uint64) error {
+	return resultError("cna_media_library_destroy",
+		uint32(C.cna_go_media_library_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeMediaLibraryIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_media_library_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_media_library_get_is_disposed", code)
+}
+
+func nativeMediaLibraryTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_media_library_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_media_library_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_media_library_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_media_library_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeMediaLibraryMediaSourceName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_media_library_get_media_source_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_media_library_get_media_source_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_media_library_copy_media_source_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_media_library_copy_media_source_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeMediaLibraryMediaSourceType(handle uint64) (uint32, error) {
+	var value C.uint32_t
+	code := uint32(C.cna_go_media_library_get_media_source_type(C.CnaGoHandle(handle), &value))
+	return uint32(value), resultError("cna_media_library_get_media_source_type", code)
+}
+
+func nativeMediaLibrarySongs(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_get_songs(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_media_library_get_songs", code)
+}
+
+func nativeMediaLibraryArtists(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_get_artists(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_media_library_get_artists", code)
+}
+
+func nativeMediaLibraryAlbums(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_get_albums(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_media_library_get_albums", code)
+}
+
+func nativeMediaLibraryGenres(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_get_genres(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_media_library_get_genres", code)
+}
+
+func nativeMediaLibraryPlaylists(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_get_playlists(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_media_library_get_playlists", code)
+}
+
+func nativeMediaLibraryPictures(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_get_pictures(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_media_library_get_pictures", code)
+}
+
+func nativeMediaLibrarySavedPictures(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_get_saved_pictures(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_media_library_get_saved_pictures", code)
+}
+
+func nativeMediaLibraryRootPictureAlbum(handle uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_media_library_get_root_picture_album(C.CnaGoHandle(handle), &value, &available))
+	return uint64(value), available != 0, resultError("cna_media_library_get_root_picture_album", code)
+}
+
+func nativeMediaLibraryCreate(game uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_create(C.CnaGoHandle(game), &value))
+	return uint64(value), resultError("cna_media_library_create", code)
+}
+
+func nativeMediaLibraryCreateFromSource(game uint64, sourceIndex uint32) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_create_from_source(
+		C.CnaGoHandle(game), C.uint32_t(sourceIndex), &value))
+	return uint64(value), resultError("cna_media_library_create_from_source", code)
+}
+
+func nativeMediaLibraryPictureFromToken(library uint64, token string) (uint64, bool, error) {
+	arg := storageStringArg(token)
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_media_library_get_picture_from_token(
+		C.CnaGoHandle(library), arg, C.uint64_t(len(token)), &value, &available))
+	runtime.KeepAlive(token)
+	return uint64(value), available != 0, resultError("cna_media_library_get_picture_from_token", code)
+}
+
+func nativeMediaLibrarySavePicture(library uint64, name string, image []byte) (uint64, error) {
+	arg := storageStringArg(name)
+	var data *C.uint8_t
+	if len(image) > 0 {
+		data = (*C.uint8_t)(unsafe.Pointer(&image[0]))
+	}
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_library_save_picture(
+		C.CnaGoHandle(library), arg, C.uint64_t(len(name)),
+		data, C.uint64_t(len(image)), &value))
+	runtime.KeepAlive(name)
+	runtime.KeepAlive(image)
+	return uint64(value), resultError("cna_media_library_save_picture", code)
+}
+
+// The media sources, which CNA addresses by INDEX rather than by handle: there
+// is no CNA_MediaSourceHandle at all. Every route takes the GAME plus the
+// index, so the enumeration is scoped to the running game the way every other
+// create route is.
+
+func nativeMediaSourceAvailableCount(game uint64) (uint32, error) {
+	var value C.uint32_t
+	code := uint32(C.cna_go_media_source_get_available_count(C.CnaGoHandle(game), &value))
+	return uint32(value), resultError("cna_media_source_get_available_count", code)
+}
+
+func nativeMediaSourceTypeAt(game uint64, index uint32) (uint32, error) {
+	var value C.uint32_t
+	code := uint32(C.cna_go_media_source_get_type_at(
+		C.CnaGoHandle(game), C.uint32_t(index), &value))
+	return uint32(value), resultError("cna_media_source_get_type_at", code)
+}
+
+func nativeMediaSourceNameAt(game uint64, index uint32) (string, error) {
+	return mediaSourceTextAt(game, index,
+		"cna_media_source_get_name_size_at", "cna_media_source_copy_name_at")
+}
+
+func nativeMediaSourceTypeNameAt(game uint64, index uint32) (string, error) {
+	return mediaSourceTextAt(game, index,
+		"cna_media_source_get_type_name_size_at", "cna_media_source_copy_type_name_at")
+}
+
+// mediaSourceTextAt is the shared size-then-copy for the two string reads. It
+// dispatches on the route NAME because cgo will not take a function value for a
+// C symbol, and two four-line duplicates would be the alternative.
+func mediaSourceTextAt(game uint64, index uint32, sizeRoute, copyRoute string) (string, error) {
+	var byteCount C.uint64_t
+	var code uint32
+	if sizeRoute == "cna_media_source_get_name_size_at" {
+		code = uint32(C.cna_go_media_source_get_name_size_at(
+			C.CnaGoHandle(game), C.uint32_t(index), &byteCount))
+	} else {
+		code = uint32(C.cna_go_media_source_get_type_name_size_at(
+			C.CnaGoHandle(game), C.uint32_t(index), &byteCount))
+	}
+	if err := resultError(sizeRoute, code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	destination := (*C.char)(unsafe.Pointer(&buffer[0]))
+	if copyRoute == "cna_media_source_copy_name_at" {
+		code = uint32(C.cna_go_media_source_copy_name_at(
+			C.CnaGoHandle(game), C.uint32_t(index), destination, byteCount, &copied))
+	} else {
+		code = uint32(C.cna_go_media_source_copy_type_name_at(
+			C.CnaGoHandle(game), C.uint32_t(index), destination, byteCount, &copied))
+	}
+	if err := resultError(copyRoute, code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}

@@ -318,6 +318,22 @@ type counters struct {
 	MediaDisposalChecks        int `json:"MEDIA_DISPOSAL_CHECKS"`
 	MediaCollectionWalks       int `json:"MEDIA_COLLECTION_WALKS"`
 	MediaSongRefusals          int `json:"MEDIA_SONG_REFUSALS"`
+	// Foundation 96. The library and the picture graph. MEDIA_LIBRARY_CYCLES
+	// counts libraries opened; the collection counters are what the metadata
+	// graph could not reach in Foundation 95, because a song built from a URI
+	// has no artist and therefore no collection to walk.
+	MediaLibraryCycles      int `json:"MEDIA_LIBRARY_CYCLES"`
+	MediaLibraryRefusals    int `json:"MEDIA_LIBRARY_REFUSALS"`
+	MediaSourceEnumerations int `json:"MEDIA_SOURCE_ENUMERATIONS"`
+	MediaSourcesFound       int `json:"MEDIA_SOURCES_FOUND"`
+	MediaCollectionCounts   int `json:"MEDIA_COLLECTION_COUNTS"`
+	MediaEmptyCollections   int `json:"MEDIA_EMPTY_COLLECTIONS"`
+	MediaPictureReads       int `json:"MEDIA_PICTURE_READS"`
+	// MEDIA_HOME_CHECKS is the containment proof, the same shape
+	// STORAGE_ROOT_CHECKS is: the slice enumerates nothing until it has proved
+	// the library it is about to read is an isolated one.
+	MediaHomeChecks int `json:"MEDIA_HOME_CHECKS"`
+	MediaHomeSkips  int `json:"MEDIA_HOME_SKIPS"`
 	// Foundation 85. The first VERIFIED_PIXEL draw. Every counter here is over
 	// the SOFTWARE artifact only, because HEADLESS has no back-buffer readback
 	// and records a refusal instead -- which is why the refusal column exists.
@@ -5081,6 +5097,11 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 96. The library that enumerates it, and the picture graph.
+	if err := g.exerciseMediaLibrary(); err != nil {
+		return err
+	}
+
 	// Foundation 88. The two types that finish the Audio namespace.
 	if err := g.exerciseDynamicSoundEffectInstance(); err != nil {
 		return err
@@ -9077,6 +9098,20 @@ func writeStressWave() (string, error) {
 		root = os.TempDir()
 	}
 	path := filepath.Join(root, "cna-go-stress-song.wav")
+	data, err := stressWaveBytes()
+	if err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		return "", fmt.Errorf("writing the media fixture: %w", err)
+	}
+	return path, nil
+}
+
+// stressWaveBytes is the WAV both media slices author: 44 bytes of RIFF header
+// plus a tenth of a second of silence, the smallest thing that is
+// unambiguously a WAV.
+func stressWaveBytes() ([]byte, error) {
 	const sampleRate = 8000
 	const samples = sampleRate / 10
 	data := make([]byte, samples*2)
@@ -9099,8 +9134,421 @@ func writeStressWave() (string, error) {
 	header = appendUint16(header, 16)
 	header = append(header, 'd', 'a', 't', 'a')
 	header = appendUint32(header, uint32(len(data)))
-	if err := os.WriteFile(path, append(header, data...), 0o600); err != nil {
-		return "", fmt.Errorf("writing the media fixture: %w", err)
+	return append(header, data...), nil
+}
+
+// exerciseMediaLibrary is Foundation 96's slice, and it is what Foundation 95
+// could not reach.
+//
+// # What this adds
+//
+// The metadata graph had one public entry point, Song.FromUri, and a song built
+// from a URI carries no tags -- so no artist, no album, and therefore NO
+// COLLECTION to walk. Three of Foundation 95's mutants went unscored for that
+// reason. MediaLibrary is the entry point that hands out collections directly,
+// so the walks are reachable here whatever the host's library holds.
+//
+// # An EMPTY collection is the measurement, not a gap
+//
+// A host with no music or pictures answers zero for every Count, and every
+// index is then out of range. That is a state XNA has too, and it is counted
+// as MEDIA_EMPTY_COLLECTIONS rather than skipped -- the walk still runs, still
+// ends correctly, and still refuses an index at the count.
+func (g *stressGame) exerciseMediaLibrary() error {
+	// THE CONTAINMENT PROOF, and it comes before anything is enumerated.
+	//
+	// A MediaLibrary reads the HOST's music and picture directories. On this
+	// machine an unisolated run found forty-one of the user's photographs and
+	// read their dimensions and dates -- which is exactly the scanning of user
+	// media directories the standing constraint forbids.
+	//
+	// CNA resolves those directories from HOME, measured: XDG_PICTURES_DIR does
+	// not move them and HOME does. So the slice enumerates NOTHING until HOME
+	// is a directory the run was explicitly given, and a run without one skips
+	// loudly and says so in MEDIA_HOME_SKIPS rather than quietly reading a
+	// person's photo album.
+	permitted := os.Getenv("CNA_GO_MEDIA_HOME")
+	if permitted == "" || os.Getenv("HOME") != permitted {
+		g.result.MediaHomeSkips++
+		fmt.Fprintln(os.Stderr,
+			"media library slice skipped: HOME is not an isolated root named by CNA_GO_MEDIA_HOME")
+		return nil
 	}
-	return path, nil
+	g.result.MediaHomeChecks++
+
+	// The isolated home starts empty, and an empty collection cannot show an
+	// enumerator defect: index 0 and index -1 agree when there is nothing to
+	// walk. So the slice AUTHORS pictures into its own isolated library --
+	// the same PNG the texture slice encodes -- and the walk then has
+	// something to visit.
+	//
+	// This is fixture content in a directory the run was given, not the user's
+	// photo album; the check above is what makes that difference real.
+	if err := g.seedIsolatedPictures(permitted); err != nil {
+		return err
+	}
+
+	// The available sources first, which needs no library.
+	sources, err := media.MediaSourceGetAvailableMediaSources()
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("MediaSource.GetAvailableMediaSources: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "media sources refused: %v\n", err)
+	} else {
+		g.result.MediaSourceEnumerations++
+		g.result.MediaSourcesFound += len(sources)
+		// A host that answered the enumeration at all has at least the local
+		// device, so an EMPTY list here is a defect rather than an outcome.
+		if len(sources) == 0 {
+			return errors.New("GetAvailableMediaSources succeeded and found nothing; " +
+				"a host with a media backend has at least its local device")
+		}
+		for _, source := range sources {
+			// Every enumerated source answers its three members, and ToString
+			// agrees with Name -- which a ToString reading another field would
+			// not.
+			if source.ToString() != source.Name() {
+				return errors.New("a MediaSource's ToString disagreed with its Name")
+			}
+		}
+		// An ENUMERATED source carries its index and opens a library. This is
+		// the other half of the divergence recorded on the constructor: the
+		// library's own source does not, and the check below proves that.
+		fromSource, err := media.NewMediaLibraryByMediaSource(sources[0])
+		if err != nil {
+			return fmt.Errorf("opening a library from an enumerated source: %w", err)
+		}
+		if fromSource == nil {
+			return errors.New("an enumerated source opened nothing")
+		}
+		if err = fromSource.Dispose(); err != nil {
+			return fmt.Errorf("disposing the source-opened library: %w", err)
+		}
+		g.result.MediaLibraryCycles++
+	}
+
+	library, err := media.NewMediaLibraryByNone()
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("new MediaLibrary: %w", err)
+		}
+		g.result.MediaLibraryRefusals++
+		fmt.Fprintf(os.Stderr, "media library refused: %v\n", err)
+		return nil
+	}
+	if library == nil {
+		return errors.New("the MediaLibrary constructor reported success and produced nothing")
+	}
+	g.result.MediaLibraryCycles++
+
+	// The library's own source, which carries no index and therefore cannot be
+	// handed back to the constructor -- the divergence this projection records.
+	source, err := library.MediaSource()
+	if err != nil {
+		return fmt.Errorf("MediaLibrary.MediaSource: %w", err)
+	}
+	if source != nil {
+		if _, err = media.NewMediaLibraryByMediaSource(source); err == nil {
+			return errors.New("a library's own MediaSource opened a library; it carries no index")
+		}
+	}
+
+	// The five music collections, which Foundation 95 projected and could not
+	// walk, plus the two picture ones.
+	if err = g.walkMediaCollections(library); err != nil {
+		return err
+	}
+
+	// The root picture album, which a device with no picture library does not
+	// have. Absence is an ordinary answer.
+	root, err := library.RootPictureAlbum()
+	if err != nil {
+		return fmt.Errorf("MediaLibrary.RootPictureAlbum: %w", err)
+	}
+	if root != nil {
+		if _, err = root.Name(); err != nil {
+			return fmt.Errorf("PictureAlbum.Name: %w", err)
+		}
+		// The ROOT album has NO parent, which is what makes the optional
+		// reference shape observable: an implementation that ignored the
+		// availability flag would hand back a handle for an absent album.
+		parent, err := root.Parent()
+		if err != nil {
+			return fmt.Errorf("PictureAlbum.Parent: %w", err)
+		}
+		if parent != nil {
+			return errors.New("the root picture album reported a parent")
+		}
+		g.result.MediaUnavailableReferences++
+		children, err := root.Albums()
+		if err != nil {
+			return fmt.Errorf("PictureAlbum.Albums: %w", err)
+		}
+		if err = countAndWalkPictureAlbums(g, children); err != nil {
+			return err
+		}
+	}
+
+	// A token that names nothing answers NIL rather than failing.
+	missing, err := library.GetPictureFromToken("cna-go-stress-absent-token")
+	if err != nil {
+		return fmt.Errorf("MediaLibrary.GetPictureFromToken: %w", err)
+	}
+	if missing != nil {
+		return errors.New("an invented picture token found a picture")
+	}
+
+	if library.IsDisposed() {
+		return errors.New("a live library reported itself disposed")
+	}
+	if err = library.Dispose(); err != nil {
+		return fmt.Errorf("MediaLibrary.Dispose: %w", err)
+	}
+	if !library.IsDisposed() {
+		return errors.New("IsDisposed stayed false after Dispose")
+	}
+	if _, err = library.Songs(); err == nil {
+		return errors.New("a disposed library answered its songs")
+	}
+	return library.Dispose()
+}
+
+// walkMediaCollections counts and walks every collection the library hands out.
+// The walk is the point: it is what Foundation 95 had no way to reach.
+func (g *stressGame) walkMediaCollections(library *media.MediaLibrary) error {
+	songs, err := library.Songs()
+	if err != nil {
+		return fmt.Errorf("MediaLibrary.Songs: %w", err)
+	}
+	count, err := songs.Count()
+	if err != nil {
+		return fmt.Errorf("SongCollection.Count: %w", err)
+	}
+	g.result.MediaCollectionCounts++
+	if count == 0 {
+		g.result.MediaEmptyCollections++
+	}
+	// An index at the count is out of range whatever the count is.
+	if _, err = songs.Item(count); err == nil {
+		return errors.New("a song collection accepted an index equal to its count")
+	}
+	if _, err = songs.Item(-1); err == nil {
+		return errors.New("a song collection accepted a negative index")
+	}
+	iterator, err := songs.GetEnumerator()
+	if err != nil {
+		return fmt.Errorf("SongCollection.GetEnumerator: %w", err)
+	}
+	walked := int32(0)
+	for {
+		item, ok, err := iterator.Next()
+		if err != nil {
+			return fmt.Errorf("walking the song collection: %w", err)
+		}
+		if !ok {
+			break
+		}
+		if item == nil {
+			return errors.New("a walk reported a value and produced none")
+		}
+		if _, err = item.Name(); err != nil {
+			return fmt.Errorf("a walked song's Name: %w", err)
+		}
+		walked++
+	}
+	if walked != count {
+		return fmt.Errorf("a walk visited %d of %d songs", walked, count)
+	}
+	g.result.MediaCollectionWalks++
+	if err = songs.Dispose(); err != nil {
+		return fmt.Errorf("SongCollection.Dispose: %w", err)
+	}
+
+	// The other four music collections, counted and walked the same way.
+	for name, open := range map[string]func() (int32, error){
+		"Artists": func() (int32, error) {
+			c, e := library.Artists()
+			if e != nil {
+				return 0, e
+			}
+			return c.Count()
+		},
+		"Albums": func() (int32, error) {
+			c, e := library.Albums()
+			if e != nil {
+				return 0, e
+			}
+			return c.Count()
+		},
+		"Genres": func() (int32, error) {
+			c, e := library.Genres()
+			if e != nil {
+				return 0, e
+			}
+			return c.Count()
+		},
+		"Playlists": func() (int32, error) {
+			c, e := library.Playlists()
+			if e != nil {
+				return 0, e
+			}
+			return c.Count()
+		},
+	} {
+		got, err := open()
+		if err != nil {
+			return fmt.Errorf("MediaLibrary.%s: %w", name, err)
+		}
+		g.result.MediaCollectionCounts++
+		if got == 0 {
+			g.result.MediaEmptyCollections++
+		}
+	}
+
+	// The two picture collections.
+	pictures, err := library.Pictures()
+	if err != nil {
+		return fmt.Errorf("MediaLibrary.Pictures: %w", err)
+	}
+	pictureCount, err := pictures.Count()
+	if err != nil {
+		return fmt.Errorf("PictureCollection.Count: %w", err)
+	}
+	g.result.MediaCollectionCounts++
+	if pictureCount == 0 {
+		g.result.MediaEmptyCollections++
+	}
+	pictureWalk, err := pictures.GetEnumerator()
+	if err != nil {
+		return fmt.Errorf("PictureCollection.GetEnumerator: %w", err)
+	}
+	seen := int32(0)
+	for {
+		item, ok, err := pictureWalk.Next()
+		if err != nil {
+			return fmt.Errorf("walking the picture collection: %w", err)
+		}
+		if !ok {
+			break
+		}
+		if _, err = item.Width(); err != nil {
+			return fmt.Errorf("a walked picture's Width: %w", err)
+		}
+		if _, err = item.Date(); err != nil {
+			return fmt.Errorf("a walked picture's Date: %w", err)
+		}
+		g.result.MediaPictureReads++
+		seen++
+	}
+	if seen != pictureCount {
+		return fmt.Errorf("a walk visited %d of %d pictures", seen, pictureCount)
+	}
+	g.result.MediaCollectionWalks++
+
+	saved, err := library.SavedPictures()
+	if err != nil {
+		return fmt.Errorf("MediaLibrary.SavedPictures: %w", err)
+	}
+	if _, err = saved.Count(); err != nil {
+		return fmt.Errorf("SavedPictures.Count: %w", err)
+	}
+	g.result.MediaCollectionCounts++
+	return pictures.Dispose()
+}
+
+// countAndWalkPictureAlbums walks a picture-album collection, which is the one
+// collection kind the music half has no counterpart for.
+func countAndWalkPictureAlbums(g *stressGame, albums *media.PictureAlbumCollection) error {
+	count, err := albums.Count()
+	if err != nil {
+		return fmt.Errorf("PictureAlbumCollection.Count: %w", err)
+	}
+	g.result.MediaCollectionCounts++
+	if count == 0 {
+		g.result.MediaEmptyCollections++
+	}
+	iterator, err := albums.GetEnumerator()
+	if err != nil {
+		return fmt.Errorf("PictureAlbumCollection.GetEnumerator: %w", err)
+	}
+	walked := int32(0)
+	for {
+		item, ok, err := iterator.Next()
+		if err != nil {
+			return fmt.Errorf("walking the picture albums: %w", err)
+		}
+		if !ok {
+			break
+		}
+		if _, err = item.Name(); err != nil {
+			return fmt.Errorf("a walked album's Name: %w", err)
+		}
+		walked++
+	}
+	if walked != count {
+		return fmt.Errorf("a walk visited %d of %d albums", walked, count)
+	}
+	g.result.MediaCollectionWalks++
+	return albums.Dispose()
+}
+
+// seedIsolatedPictures writes the picture fixtures the collection walk needs
+// into the isolated home, and only there.
+//
+// Three of them, because a walk over ONE element cannot tell "starts at the
+// first" from "stops after the first": both visit one. Three separates the two.
+func (g *stressGame) seedIsolatedPictures(home string) error {
+	// CNA resolves the picture directory through the XDG user-dirs config, not
+	// through XDG_PICTURES_DIR -- measured: setting the environment variable
+	// moved nothing and writing this file did. An isolated home has no such
+	// file, so the slice writes one pointing inside itself.
+	config := filepath.Join(home, ".config")
+	if err := os.MkdirAll(config, 0o700); err != nil {
+		return fmt.Errorf("creating the isolated config directory: %w", err)
+	}
+	userDirs := "XDG_PICTURES_DIR=\"$HOME/Pictures\"\nXDG_MUSIC_DIR=\"$HOME/Music\"\n"
+	if err := os.WriteFile(filepath.Join(config, "user-dirs.dirs"), []byte(userDirs), 0o600); err != nil {
+		return fmt.Errorf("writing the isolated user-dirs config: %w", err)
+	}
+	music := filepath.Join(home, "Music")
+	if err := os.MkdirAll(music, 0o700); err != nil {
+		return fmt.Errorf("creating the isolated music directory: %w", err)
+	}
+	// Three songs as well as three pictures, and for the same reason: a walk
+	// over an EMPTY song collection cannot tell an enumerator that starts at
+	// the first element from one that skips it.
+	wave, err := stressWaveBytes()
+	if err != nil {
+		return err
+	}
+	for index := 0; index < 3; index++ {
+		path := filepath.Join(music, fmt.Sprintf("cna-go-stress-%d.wav", index))
+		if err := os.WriteFile(path, wave, 0o600); err != nil {
+			return fmt.Errorf("writing a song fixture: %w", err)
+		}
+	}
+	pictures := filepath.Join(home, "Pictures")
+	if err := os.MkdirAll(pictures, 0o700); err != nil {
+		return fmt.Errorf("creating the isolated picture directory: %w", err)
+	}
+	for index := 0; index < 3; index++ {
+		path := filepath.Join(pictures, fmt.Sprintf("cna-go-stress-%d.png", index))
+		if err := os.WriteFile(path, g.data, 0o600); err != nil {
+			return fmt.Errorf("writing a picture fixture: %w", err)
+		}
+	}
+	// TWO subdirectories, because a picture album's child albums are its
+	// subdirectories -- and a walk over one child cannot tell an enumerator
+	// that starts at the first from one that skips it.
+	for _, child := range []string{"cna-go-stress-album-a", "cna-go-stress-album-b"} {
+		directory := filepath.Join(pictures, child)
+		if err := os.MkdirAll(directory, 0o700); err != nil {
+			return fmt.Errorf("creating a picture album fixture: %w", err)
+		}
+		if err := os.WriteFile(filepath.Join(directory, "inner.png"), g.data, 0o600); err != nil {
+			return fmt.Errorf("writing a nested picture fixture: %w", err)
+		}
+	}
+	return nil
 }

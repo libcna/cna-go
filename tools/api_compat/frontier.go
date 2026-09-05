@@ -119,16 +119,10 @@ var frontierFamilies = []frontierFamily{
 	{
 		Name:           "Media and video",
 		Classification: frontierActionableLocal,
-		Note:           "Foundation 95 closed the metadata graph -- the five entities and their five collections, 105 routes. What remains is the LIBRARY that enumerates them, the two players, and video decode: MediaLibrary's 148 routes, MediaPlayer's 41 and Video/VideoPlayer's 42. An empty host library is valid evidence for empty collections rather than for unimplementable ones, which is how the metadata graph was qualified",
+		Note:           "Foundation 95 closed the metadata graph and Foundation 96 the LIBRARY and the picture graph, 169 routes between them. What remains is PLAYBACK: MediaPlayer's 41 routes, MediaQueue, and Video/VideoPlayer's 42. An empty host library is valid evidence for empty collections rather than for unimplementable ones, which is how both were qualified",
 		Types: []string{
-			"Microsoft.Xna.Framework.Media.MediaLibrary",
 			"Microsoft.Xna.Framework.Media.MediaPlayer",
 			"Microsoft.Xna.Framework.Media.MediaQueue",
-			"Microsoft.Xna.Framework.Media.MediaSource",
-			"Microsoft.Xna.Framework.Media.Picture",
-			"Microsoft.Xna.Framework.Media.PictureAlbum",
-			"Microsoft.Xna.Framework.Media.PictureAlbumCollection",
-			"Microsoft.Xna.Framework.Media.PictureCollection",
 			"Microsoft.Xna.Framework.Media.Video",
 			"Microsoft.Xna.Framework.Media.VideoPlayer",
 		},

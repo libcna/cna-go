@@ -997,6 +997,78 @@ CnaGoResult cna_go_storage_copy_root_ext(char* destination, uint64_t capacity, u
    CNA_ContentReaderCreateInfo into scalars so no CNA struct crosses cgo, and
    every value read hands back the flat floats its CNA type carries. */
 /* Foundation 95 -- the media metadata graph. */
+/* Foundation 96 -- the media library and the picture graph. */
+CnaGoResult cna_go_media_source_get_available_count(CnaGoHandle game, uint32_t* out_count);
+CnaGoResult cna_go_media_source_get_type_at(CnaGoHandle game, uint32_t index, uint32_t* out_type);
+CnaGoResult cna_go_media_source_get_name_size_at(CnaGoHandle game, uint32_t index, uint64_t* out_bytes);
+CnaGoResult cna_go_media_source_copy_name_at(CnaGoHandle game, uint32_t index, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_media_source_get_type_name_size_at(CnaGoHandle game, uint32_t index, uint64_t* out_bytes);
+CnaGoResult cna_go_media_source_copy_type_name_at(CnaGoHandle game, uint32_t index, char* destination, uint64_t capacity, uint64_t* out_bytes);
+
+CnaGoResult cna_go_media_library_copy_media_source_name(CnaGoHandle library, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_media_library_copy_type_name(CnaGoHandle library, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_media_library_create(CnaGoHandle game, CnaGoHandle* out_library);
+CnaGoResult cna_go_media_library_create_from_source(CnaGoHandle game, uint32_t source_index, CnaGoHandle* out_library);
+CnaGoResult cna_go_media_library_destroy(CnaGoHandle library);
+CnaGoResult cna_go_media_library_dispose(CnaGoHandle library);
+CnaGoResult cna_go_media_library_get_albums(CnaGoHandle library, CnaGoHandle* out_albums);
+CnaGoResult cna_go_media_library_get_artists(CnaGoHandle library, CnaGoHandle* out_artists);
+CnaGoResult cna_go_media_library_get_genres(CnaGoHandle library, CnaGoHandle* out_genres);
+CnaGoResult cna_go_media_library_get_is_disposed(CnaGoHandle library, uint8_t* out_disposed);
+CnaGoResult cna_go_media_library_get_media_source_name_size(CnaGoHandle library, uint64_t* out_bytes);
+CnaGoResult cna_go_media_library_get_media_source_type(CnaGoHandle library, uint32_t* out_type);
+CnaGoResult cna_go_media_library_get_picture_from_token(CnaGoHandle library, const char* token, uint64_t token_length, CnaGoHandle* out_picture, uint8_t* out_available);
+CnaGoResult cna_go_media_library_get_pictures(CnaGoHandle library, CnaGoHandle* out_pictures);
+CnaGoResult cna_go_media_library_get_playlists(CnaGoHandle library, CnaGoHandle* out_playlists);
+CnaGoResult cna_go_media_library_get_root_picture_album(CnaGoHandle library, CnaGoHandle* out_album, uint8_t* out_available);
+CnaGoResult cna_go_media_library_get_saved_pictures(CnaGoHandle library, CnaGoHandle* out_pictures);
+CnaGoResult cna_go_media_library_get_songs(CnaGoHandle library, CnaGoHandle* out_songs);
+CnaGoResult cna_go_media_library_get_type_name_size(CnaGoHandle library, uint64_t* out_bytes);
+CnaGoResult cna_go_media_library_save_picture(CnaGoHandle library, const char* name, uint64_t name_length, const uint8_t* image_data, uint64_t image_byte_count, CnaGoHandle* out_picture);
+CnaGoResult cna_go_picture_album_collection_copy_type_name(CnaGoHandle collection, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_album_collection_destroy(CnaGoHandle collection);
+CnaGoResult cna_go_picture_album_collection_dispose(CnaGoHandle collection);
+CnaGoResult cna_go_picture_album_collection_get_at(CnaGoHandle collection, int32_t index, CnaGoHandle* out_album);
+CnaGoResult cna_go_picture_album_collection_get_count(CnaGoHandle collection, int32_t* out_count);
+CnaGoResult cna_go_picture_album_collection_get_is_disposed(CnaGoHandle collection, uint8_t* out_disposed);
+CnaGoResult cna_go_picture_album_collection_get_type_name_size(CnaGoHandle collection, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_album_copy_name(CnaGoHandle album, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_album_copy_type_name(CnaGoHandle album, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_album_destroy(CnaGoHandle album);
+CnaGoResult cna_go_picture_album_dispose(CnaGoHandle album);
+CnaGoResult cna_go_picture_album_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal);
+CnaGoResult cna_go_picture_album_get_albums(CnaGoHandle album, CnaGoHandle* out_albums);
+CnaGoResult cna_go_picture_album_get_hash_code(CnaGoHandle album, int32_t* out_hash);
+CnaGoResult cna_go_picture_album_get_is_disposed(CnaGoHandle album, uint8_t* out_disposed);
+CnaGoResult cna_go_picture_album_get_name_size(CnaGoHandle album, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_album_get_parent(CnaGoHandle album, CnaGoHandle* out_parent, uint8_t* out_available);
+CnaGoResult cna_go_picture_album_get_pictures(CnaGoHandle album, CnaGoHandle* out_pictures);
+CnaGoResult cna_go_picture_album_get_type_name_size(CnaGoHandle album, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_collection_copy_type_name(CnaGoHandle collection, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_collection_destroy(CnaGoHandle collection);
+CnaGoResult cna_go_picture_collection_dispose(CnaGoHandle collection);
+CnaGoResult cna_go_picture_collection_get_at(CnaGoHandle collection, int32_t index, CnaGoHandle* out_picture);
+CnaGoResult cna_go_picture_collection_get_count(CnaGoHandle collection, int32_t* out_count);
+CnaGoResult cna_go_picture_collection_get_is_disposed(CnaGoHandle collection, uint8_t* out_disposed);
+CnaGoResult cna_go_picture_collection_get_type_name_size(CnaGoHandle collection, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_copy_image(CnaGoHandle picture, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_copy_name(CnaGoHandle picture, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_copy_thumbnail(CnaGoHandle picture, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_copy_type_name(CnaGoHandle picture, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_destroy(CnaGoHandle picture);
+CnaGoResult cna_go_picture_dispose(CnaGoHandle picture);
+CnaGoResult cna_go_picture_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal);
+CnaGoResult cna_go_picture_get_album(CnaGoHandle picture, CnaGoHandle* out_album, uint8_t* out_available);
+CnaGoResult cna_go_picture_get_date_unix_ticks(CnaGoHandle picture, int64_t* out_unix_ticks);
+CnaGoResult cna_go_picture_get_hash_code(CnaGoHandle picture, int32_t* out_hash);
+CnaGoResult cna_go_picture_get_height(CnaGoHandle picture, int32_t* out_height);
+CnaGoResult cna_go_picture_get_image_size(CnaGoHandle picture, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_get_is_disposed(CnaGoHandle picture, uint8_t* out_disposed);
+CnaGoResult cna_go_picture_get_name_size(CnaGoHandle picture, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_get_thumbnail_size(CnaGoHandle picture, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_get_type_name_size(CnaGoHandle picture, uint64_t* out_bytes);
+CnaGoResult cna_go_picture_get_width(CnaGoHandle picture, int32_t* out_width);
+
 CnaGoResult cna_go_song_dispose(CnaGoHandle song);
 CnaGoResult cna_go_song_destroy(CnaGoHandle song);
 CnaGoResult cna_go_song_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal);

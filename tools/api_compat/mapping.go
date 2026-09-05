@@ -41,6 +41,25 @@ var bclTypes = map[string]string{
 	// FAKE async -- Begin invokes the callback before it returns -- so the
 	// projection is a value that is already complete rather than a promise.
 	"System.IAsyncResult": "*AsyncResult",
+	// Foundation 96. IList<MediaSource>, which MediaSource::GetAvailableMediaSources
+	// returns and which is the profile's FIRST IList at a return position.
+	//
+	// The IList`1 entry in bclInterfaceRelationships is about a collection type
+	// that IMPLEMENTS the interface -- its indexer is already the collection's
+	// own member, so the interface adds no surface. A RETURN is a different
+	// position: something has to come back, and a Go slice is what an ordered,
+	// indexable list is. The same judgement PropertyDescriptorCollection got in
+	// Foundation 94.
+	"System.Collections.Generic.IList`1[Microsoft.Xna.Framework.Media.MediaSource]": "[]*MediaSource",
+	// Foundation 96. System.DateTime, which the profile names at exactly ONE
+	// signature position: Picture::get_Date.
+	//
+	// It maps to Go's time.Time, which is the standard library's instant and
+	// carries the same thing a DateTime does -- a point in time. CNA reports
+	// UNIX ticks and System.DateTime counts 100-nanosecond intervals since year
+	// one; the projection converts, because the contract's type is an instant
+	// and a caller handed a raw number could not know which epoch it was in.
+	"System.DateTime": "time.Time",
 	// Foundation 95. System.Uri, which the profile names at exactly ONE
 	// signature position -- Song::FromUri(String, Uri) -- and does exactly two
 	// things with.
@@ -267,6 +286,15 @@ var pureManagedTypes = map[string]bool{
 	// members throw from authoritative managed argument validation.
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection":            true,
 	"Microsoft.Xna.Framework.Input.Touch.TouchCollection+Enumerator": true,
+
+	// Foundation 96. MediaSource, which owns no native object at all. Its whole
+	// contract is a name, a kind and a ToString, and CNA has no media-source
+	// handle -- the available sources are addressed by index and an open
+	// library answers its own source by value.
+	//
+	// Its one static, GetAvailableMediaSources, IS fallible and is named in
+	// managedFallibleMembers: it enumerates through CNA.
+	"Microsoft.Xna.Framework.Media.MediaSource": true,
 
 	// Foundation 94. The thirteen Design converters. The whole namespace is
 	// string parsing, string formatting and field description: no member
@@ -1052,6 +1080,12 @@ var managedFallibleMembers = map[string]map[string]bool{
 		"method|RemoveAt":   true,
 		"method|CopyTo":     true,
 	},
+	// Foundation 96. MediaSource's one static, which reaches CNA to enumerate
+	// what is available. Every other member of the type is a field read.
+	"Microsoft.Xna.Framework.Media.MediaSource": {
+		"method|GetAvailableMediaSources": true,
+	},
+
 	// Foundation 94. The Design converters' fallible members, which are exactly
 	// the ones that PARSE a string or that refuse a nil argument.
 	//
@@ -1353,6 +1387,18 @@ func fallibilityKeys(m contractMember, accessor string) []string {
 // managedFallibleMembers uses, because the exemption it corrects is itself
 // keyed that way.
 var runtimeReadMembers = map[string]map[string]bool{
+	// Foundation 96. The two picture entities, the same shape as Foundation
+	// 95's five: ToString answers a NATIVE name and the operators forward to an
+	// Equals that asks CNA.
+	"Microsoft.Xna.Framework.Media.Picture": {
+		"ToString": true, "GetHashCode": true,
+		"op_Equality": true, "op_Inequality": true,
+	},
+	"Microsoft.Xna.Framework.Media.PictureAlbum": {
+		"ToString": true, "GetHashCode": true,
+		"op_Equality": true, "op_Inequality": true,
+	},
+
 	"Microsoft.Xna.Framework.Media.Song": {
 		"ToString": true, "GetHashCode": true,
 		"op_Equality": true, "op_Inequality": true,
@@ -1376,6 +1422,25 @@ var runtimeReadMembers = map[string]map[string]bool{
 }
 
 var managedStoredMembers = map[string]map[string]bool{
+	// Foundation 96. get_IsDisposed on the library and the picture graph,
+	// measured the same way Foundation 95's ten were: one `ldfld` with no
+	// native call.
+	"Microsoft.Xna.Framework.Media.MediaLibrary": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.Picture": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.PictureAlbum": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.PictureCollection": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.PictureAlbumCollection": {
+		"property-get|IsDisposed": true,
+	},
+
 	// Foundation 95. get_IsDisposed on all ten media metadata types, measured
 	// the same way SoundEffect's was: one `ldfld` over a private bool field,
 	// with no disposal check and no native call.

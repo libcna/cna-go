@@ -318,7 +318,12 @@
       "Microsoft.Xna.Framework.Media.AlbumCollection|property-get|IsDisposed",
       "Microsoft.Xna.Framework.Media.ArtistCollection|property-get|IsDisposed",
       "Microsoft.Xna.Framework.Media.GenreCollection|property-get|IsDisposed",
-      "Microsoft.Xna.Framework.Media.PlaylistCollection|property-get|IsDisposed"
+      "Microsoft.Xna.Framework.Media.PlaylistCollection|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.MediaLibrary|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.Picture|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.PictureAlbum|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.PictureCollection|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.PictureAlbumCollection|property-get|IsDisposed"
     ],
     "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
     "panicPolicy": "programmer-invariant-only-never-native-runtime-failure",

@@ -5863,3 +5863,339 @@ func (r *Runtime) MediaPlaylistCollectionTypeName(handle uint64) (string, error)
 func (r *Runtime) MediaPlaylistCollectionAt(handle uint64, index int32) (uint64, error) {
 	return nativePlaylistCollectionAt(handle, index)
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 96. The media library and the picture graph.
+// ---------------------------------------------------------------------------
+// MediaPictureDispose is cna_picture_dispose.
+func (r *Runtime) MediaPictureDispose(handle uint64) error {
+	return nativePictureDispose(handle)
+}
+
+// MediaPictureDestroy is cna_picture_destroy.
+func (r *Runtime) MediaPictureDestroy(handle uint64) error {
+	return nativePictureDestroy(handle)
+}
+
+// MediaPictureIsDisposed is cna_picture_get_is_disposed.
+func (r *Runtime) MediaPictureIsDisposed(handle uint64) (bool, error) {
+	return nativePictureIsDisposed(handle)
+}
+
+// MediaPictureHashCode is cna_picture_get_hash_code.
+func (r *Runtime) MediaPictureHashCode(handle uint64) (int32, error) {
+	return nativePictureHashCode(handle)
+}
+
+// MediaPictureName pairs cna_picture_get_name_size with cna_picture_copy_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPictureName(handle uint64) (string, error) {
+	return nativePictureName(handle)
+}
+
+// MediaPictureTypeName pairs cna_picture_get_type_name_size with cna_picture_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPictureTypeName(handle uint64) (string, error) {
+	return nativePictureTypeName(handle)
+}
+
+// MediaPictureEquals is cna_picture_equals.
+func (r *Runtime) MediaPictureEquals(left, right uint64) (bool, error) {
+	return nativePictureEquals(left, right)
+}
+
+// MediaPictureAlbumDispose is cna_picture_album_dispose.
+func (r *Runtime) MediaPictureAlbumDispose(handle uint64) error {
+	return nativePictureAlbumDispose(handle)
+}
+
+// MediaPictureAlbumDestroy is cna_picture_album_destroy.
+func (r *Runtime) MediaPictureAlbumDestroy(handle uint64) error {
+	return nativePictureAlbumDestroy(handle)
+}
+
+// MediaPictureAlbumIsDisposed is cna_picture_album_get_is_disposed.
+func (r *Runtime) MediaPictureAlbumIsDisposed(handle uint64) (bool, error) {
+	return nativePictureAlbumIsDisposed(handle)
+}
+
+// MediaPictureAlbumHashCode is cna_picture_album_get_hash_code.
+func (r *Runtime) MediaPictureAlbumHashCode(handle uint64) (int32, error) {
+	return nativePictureAlbumHashCode(handle)
+}
+
+// MediaPictureAlbumName pairs cna_picture_album_get_name_size with cna_picture_album_copy_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPictureAlbumName(handle uint64) (string, error) {
+	return nativePictureAlbumName(handle)
+}
+
+// MediaPictureAlbumTypeName pairs cna_picture_album_get_type_name_size with cna_picture_album_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPictureAlbumTypeName(handle uint64) (string, error) {
+	return nativePictureAlbumTypeName(handle)
+}
+
+// MediaPictureAlbumEquals is cna_picture_album_equals.
+func (r *Runtime) MediaPictureAlbumEquals(left, right uint64) (bool, error) {
+	return nativePictureAlbumEquals(left, right)
+}
+
+// MediaPictureAlbumOf is cna_picture_get_album.
+func (r *Runtime) MediaPictureAlbumOf(handle uint64) (uint64, bool, error) {
+	return nativePictureAlbumOf(handle)
+}
+
+// MediaPictureWidth is cna_picture_get_width.
+func (r *Runtime) MediaPictureWidth(handle uint64) (int32, error) {
+	return nativePictureWidth(handle)
+}
+
+// MediaPictureHeight is cna_picture_get_height.
+func (r *Runtime) MediaPictureHeight(handle uint64) (int32, error) {
+	return nativePictureHeight(handle)
+}
+
+// MediaPictureDateUnixTicks is cna_picture_get_date_unix_ticks.
+func (r *Runtime) MediaPictureDateUnixTicks(handle uint64) (int64, error) {
+	return nativePictureDateUnixTicks(handle)
+}
+
+// MediaPictureImage pairs cna_picture_get_image_size with cna_picture_copy_image: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPictureImage(handle uint64) ([]byte, error) {
+	return nativePictureImage(handle)
+}
+
+// MediaPictureThumbnail pairs cna_picture_get_thumbnail_size with cna_picture_copy_thumbnail: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPictureThumbnail(handle uint64) ([]byte, error) {
+	return nativePictureThumbnail(handle)
+}
+
+// MediaPictureAlbumAlbums is cna_picture_album_get_albums.
+func (r *Runtime) MediaPictureAlbumAlbums(handle uint64) (uint64, error) {
+	return nativePictureAlbumAlbums(handle)
+}
+
+// MediaPictureAlbumPictures is cna_picture_album_get_pictures.
+func (r *Runtime) MediaPictureAlbumPictures(handle uint64) (uint64, error) {
+	return nativePictureAlbumPictures(handle)
+}
+
+// MediaPictureAlbumParent is cna_picture_album_get_parent.
+func (r *Runtime) MediaPictureAlbumParent(handle uint64) (uint64, bool, error) {
+	return nativePictureAlbumParent(handle)
+}
+
+// MediaPictureCollectionDispose is cna_picture_collection_dispose.
+func (r *Runtime) MediaPictureCollectionDispose(handle uint64) error {
+	return nativePictureCollectionDispose(handle)
+}
+
+// MediaPictureCollectionDestroy is cna_picture_collection_destroy.
+func (r *Runtime) MediaPictureCollectionDestroy(handle uint64) error {
+	return nativePictureCollectionDestroy(handle)
+}
+
+// MediaPictureCollectionIsDisposed is cna_picture_collection_get_is_disposed.
+func (r *Runtime) MediaPictureCollectionIsDisposed(handle uint64) (bool, error) {
+	return nativePictureCollectionIsDisposed(handle)
+}
+
+// MediaPictureCollectionCount is cna_picture_collection_get_count.
+func (r *Runtime) MediaPictureCollectionCount(handle uint64) (int32, error) {
+	return nativePictureCollectionCount(handle)
+}
+
+// MediaPictureCollectionTypeName pairs cna_picture_collection_get_type_name_size with cna_picture_collection_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPictureCollectionTypeName(handle uint64) (string, error) {
+	return nativePictureCollectionTypeName(handle)
+}
+
+// MediaPictureCollectionAt is cna_picture_collection_get_at.
+func (r *Runtime) MediaPictureCollectionAt(handle uint64, index int32) (uint64, error) {
+	return nativePictureCollectionAt(handle, index)
+}
+
+// MediaPictureAlbumCollectionDispose is cna_picture_album_collection_dispose.
+func (r *Runtime) MediaPictureAlbumCollectionDispose(handle uint64) error {
+	return nativePictureAlbumCollectionDispose(handle)
+}
+
+// MediaPictureAlbumCollectionDestroy is cna_picture_album_collection_destroy.
+func (r *Runtime) MediaPictureAlbumCollectionDestroy(handle uint64) error {
+	return nativePictureAlbumCollectionDestroy(handle)
+}
+
+// MediaPictureAlbumCollectionIsDisposed is cna_picture_album_collection_get_is_disposed.
+func (r *Runtime) MediaPictureAlbumCollectionIsDisposed(handle uint64) (bool, error) {
+	return nativePictureAlbumCollectionIsDisposed(handle)
+}
+
+// MediaPictureAlbumCollectionCount is cna_picture_album_collection_get_count.
+func (r *Runtime) MediaPictureAlbumCollectionCount(handle uint64) (int32, error) {
+	return nativePictureAlbumCollectionCount(handle)
+}
+
+// MediaPictureAlbumCollectionTypeName pairs cna_picture_album_collection_get_type_name_size with cna_picture_album_collection_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPictureAlbumCollectionTypeName(handle uint64) (string, error) {
+	return nativePictureAlbumCollectionTypeName(handle)
+}
+
+// MediaPictureAlbumCollectionAt is cna_picture_album_collection_get_at.
+func (r *Runtime) MediaPictureAlbumCollectionAt(handle uint64, index int32) (uint64, error) {
+	return nativePictureAlbumCollectionAt(handle, index)
+}
+
+// MediaLibraryDispose is cna_media_library_dispose.
+func (r *Runtime) MediaLibraryDispose(handle uint64) error {
+	return nativeMediaLibraryDispose(handle)
+}
+
+// MediaLibraryDestroy is cna_media_library_destroy.
+func (r *Runtime) MediaLibraryDestroy(handle uint64) error {
+	return nativeMediaLibraryDestroy(handle)
+}
+
+// MediaLibraryIsDisposed is cna_media_library_get_is_disposed.
+func (r *Runtime) MediaLibraryIsDisposed(handle uint64) (bool, error) {
+	return nativeMediaLibraryIsDisposed(handle)
+}
+
+// MediaLibraryTypeName pairs cna_media_library_get_type_name_size with cna_media_library_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaLibraryTypeName(handle uint64) (string, error) {
+	return nativeMediaLibraryTypeName(handle)
+}
+
+// MediaLibraryMediaSourceName pairs cna_media_library_get_media_source_name_size with cna_media_library_copy_media_source_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaLibraryMediaSourceName(handle uint64) (string, error) {
+	return nativeMediaLibraryMediaSourceName(handle)
+}
+
+// MediaLibraryMediaSourceType is cna_media_library_get_media_source_type.
+func (r *Runtime) MediaLibraryMediaSourceType(handle uint64) (uint32, error) {
+	return nativeMediaLibraryMediaSourceType(handle)
+}
+
+// MediaLibrarySongs is cna_media_library_get_songs.
+func (r *Runtime) MediaLibrarySongs(handle uint64) (uint64, error) {
+	return nativeMediaLibrarySongs(handle)
+}
+
+// MediaLibraryArtists is cna_media_library_get_artists.
+func (r *Runtime) MediaLibraryArtists(handle uint64) (uint64, error) {
+	return nativeMediaLibraryArtists(handle)
+}
+
+// MediaLibraryAlbums is cna_media_library_get_albums.
+func (r *Runtime) MediaLibraryAlbums(handle uint64) (uint64, error) {
+	return nativeMediaLibraryAlbums(handle)
+}
+
+// MediaLibraryGenres is cna_media_library_get_genres.
+func (r *Runtime) MediaLibraryGenres(handle uint64) (uint64, error) {
+	return nativeMediaLibraryGenres(handle)
+}
+
+// MediaLibraryPlaylists is cna_media_library_get_playlists.
+func (r *Runtime) MediaLibraryPlaylists(handle uint64) (uint64, error) {
+	return nativeMediaLibraryPlaylists(handle)
+}
+
+// MediaLibraryPictures is cna_media_library_get_pictures.
+func (r *Runtime) MediaLibraryPictures(handle uint64) (uint64, error) {
+	return nativeMediaLibraryPictures(handle)
+}
+
+// MediaLibrarySavedPictures is cna_media_library_get_saved_pictures.
+func (r *Runtime) MediaLibrarySavedPictures(handle uint64) (uint64, error) {
+	return nativeMediaLibrarySavedPictures(handle)
+}
+
+// MediaLibraryRootPictureAlbum is cna_media_library_get_root_picture_album.
+func (r *Runtime) MediaLibraryRootPictureAlbum(handle uint64) (uint64, bool, error) {
+	return nativeMediaLibraryRootPictureAlbum(handle)
+}
+
+// MediaLibraryPictureFromToken is cna_media_library_get_picture_from_token.
+func (r *Runtime) MediaLibraryPictureFromToken(library uint64, token string) (uint64, bool, error) {
+	return nativeMediaLibraryPictureFromToken(library, token)
+}
+
+// MediaLibrarySavePicture is cna_media_library_save_picture.
+func (r *Runtime) MediaLibrarySavePicture(library uint64, name string, image []byte) (uint64, error) {
+	return nativeMediaLibrarySavePicture(library, name, image)
+}
+
+// MediaMediaSourceAvailableCount is cna_media_source_get_available_count.
+func (r *Runtime) MediaMediaSourceAvailableCount(game uint64) (uint32, error) {
+	return nativeMediaSourceAvailableCount(game)
+}
+
+// MediaMediaSourceTypeAt is cna_media_source_get_type_at.
+func (r *Runtime) MediaMediaSourceTypeAt(game uint64, index uint32) (uint32, error) {
+	return nativeMediaSourceTypeAt(game, index)
+}
+
+// The media-source enumeration and the two library creates take the GAME from
+// activeGame rather than from the caller, for the reason every other create
+// route does: the handle is the runtime's to hand out.
+
+// MediaSourceAvailableCount is cna_media_source_get_available_count.
+func (r *Runtime) MediaSourceAvailableCount() (uint32, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMediaSourceAvailableCount(game)
+}
+
+// MediaSourceTypeAt is cna_media_source_get_type_at.
+func (r *Runtime) MediaSourceTypeAt(index uint32) (uint32, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMediaSourceTypeAt(game, index)
+}
+
+// MediaSourceNameAt pairs cna_media_source_get_name_size_at with the copy.
+func (r *Runtime) MediaSourceNameAt(index uint32) (string, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return "", err
+	}
+	return nativeMediaSourceNameAt(game, index)
+}
+
+// MediaSourceTypeNameAt pairs the type-name size with the copy.
+func (r *Runtime) MediaSourceTypeNameAt(index uint32) (string, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return "", err
+	}
+	return nativeMediaSourceTypeNameAt(game, index)
+}
+
+// MediaLibraryCreate is cna_media_library_create.
+func (r *Runtime) MediaLibraryCreate() (uint64, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMediaLibraryCreate(game)
+}
+
+// MediaLibraryCreateFromSource is cna_media_library_create_from_source.
+func (r *Runtime) MediaLibraryCreateFromSource(sourceIndex uint32) (uint64, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMediaLibraryCreateFromSource(game, sourceIndex)
+}

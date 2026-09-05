@@ -1060,6 +1060,92 @@ typedef CNA_Result (*cna_playlist_collection_get_is_disposed_fn)(CNA_PlaylistCol
 typedef CNA_Result (*cna_playlist_collection_get_type_name_size_fn)(CNA_PlaylistCollectionHandle, uint64_t*);
 typedef CNA_Result (*cna_playlist_collection_copy_type_name_fn)(CNA_PlaylistCollectionHandle, char*, uint64_t, uint64_t*);
 
+
+
+/* Foundation 96 -- the media library and the picture graph. Six types over 64
+   routes: the library that enumerates everything, the media source that names
+   where it came from, and the four picture types it hands out.
+
+   CNA_MediaSourceType is an ENUM and not a handle, and MediaSource has no
+   handle at all: the available sources are addressed by INDEX. */
+#ifndef CNA_C_MEDIA_LIBRARY_H
+typedef CNA_Handle CNA_MediaLibraryHandle;
+typedef CNA_Handle CNA_PictureHandle;
+typedef CNA_Handle CNA_PictureCollectionHandle;
+typedef CNA_Handle CNA_PictureAlbumHandle;
+typedef CNA_Handle CNA_PictureAlbumCollectionHandle;
+typedef uint32_t CNA_MediaSourceType;
+#endif
+typedef CNA_Result (*cna_media_library_copy_media_source_name_fn)(CNA_MediaLibraryHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_media_library_copy_type_name_fn)(CNA_MediaLibraryHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_media_library_create_fn)(CNA_Handle, CNA_MediaLibraryHandle*);
+typedef CNA_Result (*cna_media_library_create_from_source_fn)(CNA_Handle, uint32_t, CNA_MediaLibraryHandle*);
+typedef CNA_Result (*cna_media_library_destroy_fn)(CNA_MediaLibraryHandle);
+typedef CNA_Result (*cna_media_library_dispose_fn)(CNA_MediaLibraryHandle);
+typedef CNA_Result (*cna_media_library_get_albums_fn)(CNA_MediaLibraryHandle, CNA_AlbumCollectionHandle*);
+typedef CNA_Result (*cna_media_library_get_artists_fn)(CNA_MediaLibraryHandle, CNA_ArtistCollectionHandle*);
+typedef CNA_Result (*cna_media_library_get_genres_fn)(CNA_MediaLibraryHandle, CNA_GenreCollectionHandle*);
+typedef CNA_Result (*cna_media_library_get_is_disposed_fn)(CNA_MediaLibraryHandle, CNA_Bool*);
+typedef CNA_Result (*cna_media_library_get_media_source_name_size_fn)(CNA_MediaLibraryHandle, uint64_t*);
+typedef CNA_Result (*cna_media_library_get_media_source_type_fn)(CNA_MediaLibraryHandle, CNA_MediaSourceType*);
+typedef CNA_Result (*cna_media_library_get_picture_from_token_fn)(CNA_MediaLibraryHandle, CNA_StringView, CNA_PictureHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_media_library_get_pictures_fn)(CNA_MediaLibraryHandle, CNA_PictureCollectionHandle*);
+typedef CNA_Result (*cna_media_library_get_playlists_fn)(CNA_MediaLibraryHandle, CNA_PlaylistCollectionHandle*);
+typedef CNA_Result (*cna_media_library_get_root_picture_album_fn)(CNA_MediaLibraryHandle, CNA_PictureAlbumHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_media_library_get_saved_pictures_fn)(CNA_MediaLibraryHandle, CNA_PictureCollectionHandle*);
+typedef CNA_Result (*cna_media_library_get_songs_fn)(CNA_MediaLibraryHandle, CNA_SongCollectionHandle*);
+typedef CNA_Result (*cna_media_library_get_type_name_size_fn)(CNA_MediaLibraryHandle, uint64_t*);
+typedef CNA_Result (*cna_media_library_save_picture_fn)(CNA_MediaLibraryHandle, CNA_StringView, const uint8_t*, uint64_t, CNA_PictureHandle*);
+typedef CNA_Result (*cna_picture_album_collection_copy_type_name_fn)(CNA_PictureAlbumCollectionHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_picture_album_collection_destroy_fn)(CNA_PictureAlbumCollectionHandle);
+typedef CNA_Result (*cna_picture_album_collection_dispose_fn)(CNA_PictureAlbumCollectionHandle);
+typedef CNA_Result (*cna_picture_album_collection_get_at_fn)(CNA_PictureAlbumCollectionHandle, int32_t, CNA_PictureAlbumHandle*);
+typedef CNA_Result (*cna_picture_album_collection_get_count_fn)(CNA_PictureAlbumCollectionHandle, int32_t*);
+typedef CNA_Result (*cna_picture_album_collection_get_is_disposed_fn)(CNA_PictureAlbumCollectionHandle, CNA_Bool*);
+typedef CNA_Result (*cna_picture_album_collection_get_type_name_size_fn)(CNA_PictureAlbumCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_picture_album_copy_name_fn)(CNA_PictureAlbumHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_picture_album_copy_type_name_fn)(CNA_PictureAlbumHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_picture_album_destroy_fn)(CNA_PictureAlbumHandle);
+typedef CNA_Result (*cna_picture_album_dispose_fn)(CNA_PictureAlbumHandle);
+typedef CNA_Result (*cna_picture_album_equals_fn)(CNA_PictureAlbumHandle, CNA_PictureAlbumHandle, CNA_Bool*);
+typedef CNA_Result (*cna_picture_album_get_albums_fn)(CNA_PictureAlbumHandle, CNA_PictureAlbumCollectionHandle*);
+typedef CNA_Result (*cna_picture_album_get_hash_code_fn)(CNA_PictureAlbumHandle, int32_t*);
+typedef CNA_Result (*cna_picture_album_get_is_disposed_fn)(CNA_PictureAlbumHandle, CNA_Bool*);
+typedef CNA_Result (*cna_picture_album_get_name_size_fn)(CNA_PictureAlbumHandle, uint64_t*);
+typedef CNA_Result (*cna_picture_album_get_parent_fn)(CNA_PictureAlbumHandle, CNA_PictureAlbumHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_picture_album_get_pictures_fn)(CNA_PictureAlbumHandle, CNA_PictureCollectionHandle*);
+typedef CNA_Result (*cna_picture_album_get_type_name_size_fn)(CNA_PictureAlbumHandle, uint64_t*);
+typedef CNA_Result (*cna_picture_collection_copy_type_name_fn)(CNA_PictureCollectionHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_picture_collection_destroy_fn)(CNA_PictureCollectionHandle);
+typedef CNA_Result (*cna_picture_collection_dispose_fn)(CNA_PictureCollectionHandle);
+typedef CNA_Result (*cna_picture_collection_get_at_fn)(CNA_PictureCollectionHandle, int32_t, CNA_PictureHandle*);
+typedef CNA_Result (*cna_picture_collection_get_count_fn)(CNA_PictureCollectionHandle, int32_t*);
+typedef CNA_Result (*cna_picture_collection_get_is_disposed_fn)(CNA_PictureCollectionHandle, CNA_Bool*);
+typedef CNA_Result (*cna_picture_collection_get_type_name_size_fn)(CNA_PictureCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_picture_copy_image_fn)(CNA_PictureHandle, uint8_t*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_picture_copy_name_fn)(CNA_PictureHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_picture_copy_thumbnail_fn)(CNA_PictureHandle, uint8_t*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_picture_copy_type_name_fn)(CNA_PictureHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_picture_destroy_fn)(CNA_PictureHandle);
+typedef CNA_Result (*cna_picture_dispose_fn)(CNA_PictureHandle);
+typedef CNA_Result (*cna_picture_equals_fn)(CNA_PictureHandle, CNA_PictureHandle, CNA_Bool*);
+typedef CNA_Result (*cna_picture_get_album_fn)(CNA_PictureHandle, CNA_PictureAlbumHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_picture_get_date_unix_ticks_fn)(CNA_PictureHandle, int64_t*);
+typedef CNA_Result (*cna_picture_get_hash_code_fn)(CNA_PictureHandle, int32_t*);
+typedef CNA_Result (*cna_picture_get_height_fn)(CNA_PictureHandle, int32_t*);
+typedef CNA_Result (*cna_picture_get_image_size_fn)(CNA_PictureHandle, uint64_t*);
+typedef CNA_Result (*cna_picture_get_is_disposed_fn)(CNA_PictureHandle, CNA_Bool*);
+typedef CNA_Result (*cna_picture_get_name_size_fn)(CNA_PictureHandle, uint64_t*);
+typedef CNA_Result (*cna_picture_get_thumbnail_size_fn)(CNA_PictureHandle, uint64_t*);
+typedef CNA_Result (*cna_picture_get_type_name_size_fn)(CNA_PictureHandle, uint64_t*);
+typedef CNA_Result (*cna_picture_get_width_fn)(CNA_PictureHandle, int32_t*);
+
+typedef CNA_Result (*cna_media_source_get_available_count_fn)(CNA_Handle, uint32_t*);
+typedef CNA_Result (*cna_media_source_get_type_at_fn)(CNA_Handle, uint32_t, CNA_MediaSourceType*);
+typedef CNA_Result (*cna_media_source_get_name_size_at_fn)(CNA_Handle, uint32_t, uint64_t*);
+typedef CNA_Result (*cna_media_source_copy_name_at_fn)(CNA_Handle, uint32_t, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_media_source_get_type_name_size_at_fn)(CNA_Handle, uint32_t, uint64_t*);
+typedef CNA_Result (*cna_media_source_copy_type_name_at_fn)(CNA_Handle, uint32_t, char*, uint64_t, uint64_t*);
 typedef uint32_t (*cna_get_abi_version_fn)(void);
 typedef CNA_Result (*cna_error_get_last_message_size_fn)(uint64_t*);
 typedef CNA_Result (*cna_error_copy_last_message_fn)(char*, uint64_t, uint64_t*);
@@ -1857,6 +1943,75 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_storage_stream_get_can_seek) \
     X(cna_storage_stream_flush) \
     X(cna_storage_stream_close) \
+    X(cna_media_source_get_available_count) \
+    X(cna_media_source_get_type_at) \
+    X(cna_media_source_get_name_size_at) \
+    X(cna_media_source_copy_name_at) \
+    X(cna_media_source_get_type_name_size_at) \
+    X(cna_media_source_copy_type_name_at) \
+    X(cna_media_library_copy_media_source_name) \
+    X(cna_media_library_copy_type_name) \
+    X(cna_media_library_create) \
+    X(cna_media_library_create_from_source) \
+    X(cna_media_library_destroy) \
+    X(cna_media_library_dispose) \
+    X(cna_media_library_get_albums) \
+    X(cna_media_library_get_artists) \
+    X(cna_media_library_get_genres) \
+    X(cna_media_library_get_is_disposed) \
+    X(cna_media_library_get_media_source_name_size) \
+    X(cna_media_library_get_media_source_type) \
+    X(cna_media_library_get_picture_from_token) \
+    X(cna_media_library_get_pictures) \
+    X(cna_media_library_get_playlists) \
+    X(cna_media_library_get_root_picture_album) \
+    X(cna_media_library_get_saved_pictures) \
+    X(cna_media_library_get_songs) \
+    X(cna_media_library_get_type_name_size) \
+    X(cna_media_library_save_picture) \
+    X(cna_picture_album_collection_copy_type_name) \
+    X(cna_picture_album_collection_destroy) \
+    X(cna_picture_album_collection_dispose) \
+    X(cna_picture_album_collection_get_at) \
+    X(cna_picture_album_collection_get_count) \
+    X(cna_picture_album_collection_get_is_disposed) \
+    X(cna_picture_album_collection_get_type_name_size) \
+    X(cna_picture_album_copy_name) \
+    X(cna_picture_album_copy_type_name) \
+    X(cna_picture_album_destroy) \
+    X(cna_picture_album_dispose) \
+    X(cna_picture_album_equals) \
+    X(cna_picture_album_get_albums) \
+    X(cna_picture_album_get_hash_code) \
+    X(cna_picture_album_get_is_disposed) \
+    X(cna_picture_album_get_name_size) \
+    X(cna_picture_album_get_parent) \
+    X(cna_picture_album_get_pictures) \
+    X(cna_picture_album_get_type_name_size) \
+    X(cna_picture_collection_copy_type_name) \
+    X(cna_picture_collection_destroy) \
+    X(cna_picture_collection_dispose) \
+    X(cna_picture_collection_get_at) \
+    X(cna_picture_collection_get_count) \
+    X(cna_picture_collection_get_is_disposed) \
+    X(cna_picture_collection_get_type_name_size) \
+    X(cna_picture_copy_image) \
+    X(cna_picture_copy_name) \
+    X(cna_picture_copy_thumbnail) \
+    X(cna_picture_copy_type_name) \
+    X(cna_picture_destroy) \
+    X(cna_picture_dispose) \
+    X(cna_picture_equals) \
+    X(cna_picture_get_album) \
+    X(cna_picture_get_date_unix_ticks) \
+    X(cna_picture_get_hash_code) \
+    X(cna_picture_get_height) \
+    X(cna_picture_get_image_size) \
+    X(cna_picture_get_is_disposed) \
+    X(cna_picture_get_name_size) \
+    X(cna_picture_get_thumbnail_size) \
+    X(cna_picture_get_type_name_size) \
+    X(cna_picture_get_width) \
     X(cna_song_dispose) \
     X(cna_song_destroy) \
     X(cna_song_equals) \

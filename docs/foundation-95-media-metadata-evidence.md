@@ -73,8 +73,17 @@ reach them.
 | table | planted | killed | survived |
 | --- | ---: | ---: | ---: |
 | managed | 29 | 29 | 0 |
-| native | 4 | 4 | 0 |
-| unqualified | 3 | 0 | 3 |
+| native | 5 | 5 | 0 |
+| equivalent | 1 | 0 | 1 |
+| unqualified | 1 | 0 | 1 |
+
+**Updated by Foundation 96.** Two of the three defects this milestone could not
+score are now scored, because the media library gives the collections an entry
+point and its stress slice seeds an isolated one with three songs and three
+pictures. `enumerator_starts_at_zero` is killed.
+`enumerator_rereads_the_count_each_step` turned out to be EQUIVALENT rather
+than unqualified: no collection in this family changes size during a walk, so
+re-reading the count cannot differ. Only the leak remains unscoreable.
 
 The first managed pass killed 16 of 33. Seventeen survivors: eleven were real
 test gaps — nil receivers tested on one type instead of ten, `Finalize`'s latch
@@ -101,11 +110,10 @@ unambiguously a WAV — the way the content slice authors its PNG. With it,
   managed latch before it would reach the handle. A functional slice cannot see
   this.
 - **`enumerator_starts_at_zero`** and **`enumerator_rereads_the_count_each_step`**
-  need a COLLECTION, and a song built from a URI has no artist until something
-  reads its tags. This host's media backend reports none —
-  `MEDIA_UNAVAILABLE_REFERENCES` counts exactly that, 60 of them — so
-  `MEDIA_COLLECTION_WALKS` is zero. A host with a populated music library would
-  score all three.
+  needed a COLLECTION, and a song built from a URI has no artist until something
+  reads its tags. Foundation 96 supplied one: `MediaLibrary` hands out
+  collections directly and its slice seeds an isolated library with three songs.
+  The first is now killed; the second is equivalent.
 
 They are in their own table whose expected result is survival, so the totals
 stay honest rather than quietly omitting them.

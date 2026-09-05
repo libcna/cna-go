@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               16
-MISSING_TYPE                    16
+TOTAL_DIAGNOSTICS               10
+MISSING_TYPE                    10
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 241
+COMPLETE_TYPES                 247
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         16
+GLOBAL_ACTIONABLE_LOCAL         10
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                512
+BOUND_FUNCTIONS                581
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -416,10 +416,28 @@ native slice walks, and it needed a fixture: CNA validates the file, which the
 first run measured as `CNA_RESULT_IO` for a URI naming nothing. The slice
 authors a 44-byte WAV, the way the content slice authors its PNG.
 
+Foundation 96 closed the **media library and the picture graph**: `MediaLibrary`,
+`MediaSource`, `Picture`, `PictureAlbum` and the two picture collections, over
+64 more routes. `BOUND_FUNCTIONS` 512 → 581.
+
+It is the entry point Foundation 95's ten types did not have. Those had one
+public factory between them, so their collections could never be walked; this
+one hands out eight collections directly, and **two of the three defects
+Foundation 95 had to record as unscoreable are now scored**.
+
+The slice that does it had to be contained first. An unisolated run found
+**forty-one of the user's photographs** and read their dimensions and dates,
+which is exactly the scanning of user media directories the standing constraint
+forbids. CNA resolves those directories from `HOME` -- measured:
+`XDG_PICTURES_DIR` does not move them and `HOME` does -- so the slice now
+enumerates nothing until `HOME` is a directory the run was explicitly given, and
+seeds that isolated library with its own three songs, three pictures and two
+sub-albums. A run without one skips loudly and says so in `MEDIA_HOME_SKIPS`.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 16 types it does not project
+projects, it projects completely; what remains is 10 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -437,10 +455,10 @@ in that registry:
 
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
    grow `ContentManager.Load<T>`'s closed set.
-2. Then the media **library and players** -- `MediaLibrary`'s 148 routes,
-   `MediaPlayer`'s 41 and `Video`/`VideoPlayer`'s 42 -- and after them **XACT**
-   and **GamerServices**. The content serializer attributes closed in Foundation
-   93, the Design converters in 94 and the media metadata graph in 95.
+2. Then media **playback** -- `MediaPlayer`'s 41 routes, `MediaQueue`, and
+   `Video`/`VideoPlayer`'s 42 -- and after it **XACT** and **GamerServices**.
+   The Design converters closed in Foundation 94, the media metadata graph in
+   95 and the library and picture graph in 96.
 
 **The Model family's native draw slice is measured and BLOCKED, which corrects
 what this section said before.** The route exists and is bindable:

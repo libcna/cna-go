@@ -3772,6 +3772,278 @@ CnaGoResult cna_go_storage_copy_root_ext(char* destination, uint64_t capacity, u
 /* Foundation 92 -- the content reader. */
 
 /* Foundation 95 -- the media metadata graph. */
+/* Foundation 96 -- the media library and the picture graph. */
+CnaGoResult cna_go_media_source_get_available_count(CnaGoHandle game, uint32_t* out_count) {
+    return api.cna_media_source_get_available_count((CNA_Handle)game, out_count);
+}
+CnaGoResult cna_go_media_source_get_type_at(CnaGoHandle game, uint32_t index, uint32_t* out_type) {
+    return api.cna_media_source_get_type_at((CNA_Handle)game, index, (CNA_MediaSourceType*)out_type);
+}
+CnaGoResult cna_go_media_source_get_name_size_at(CnaGoHandle game, uint32_t index, uint64_t* out_bytes) {
+    return api.cna_media_source_get_name_size_at((CNA_Handle)game, index, out_bytes);
+}
+CnaGoResult cna_go_media_source_copy_name_at(CnaGoHandle game, uint32_t index, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_media_source_copy_name_at((CNA_Handle)game, index, destination, capacity, out_bytes);
+}
+CnaGoResult cna_go_media_source_get_type_name_size_at(CnaGoHandle game, uint32_t index, uint64_t* out_bytes) {
+    return api.cna_media_source_get_type_name_size_at((CNA_Handle)game, index, out_bytes);
+}
+CnaGoResult cna_go_media_source_copy_type_name_at(CnaGoHandle game, uint32_t index, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_media_source_copy_type_name_at((CNA_Handle)game, index, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_media_library_copy_media_source_name(CnaGoHandle library, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_media_library_copy_media_source_name((CNA_MediaLibraryHandle)library, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_media_library_copy_type_name(CnaGoHandle library, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_media_library_copy_type_name((CNA_MediaLibraryHandle)library, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_media_library_create(CnaGoHandle game, CnaGoHandle* out_library) {
+    return api.cna_media_library_create((CNA_Handle)game, (CNA_MediaLibraryHandle*)out_library);
+}
+
+CnaGoResult cna_go_media_library_create_from_source(CnaGoHandle game, uint32_t source_index, CnaGoHandle* out_library) {
+    return api.cna_media_library_create_from_source((CNA_Handle)game, source_index, (CNA_MediaLibraryHandle*)out_library);
+}
+
+CnaGoResult cna_go_media_library_destroy(CnaGoHandle library) {
+    return api.cna_media_library_destroy((CNA_MediaLibraryHandle)library);
+}
+
+CnaGoResult cna_go_media_library_dispose(CnaGoHandle library) {
+    return api.cna_media_library_dispose((CNA_MediaLibraryHandle)library);
+}
+
+CnaGoResult cna_go_media_library_get_albums(CnaGoHandle library, CnaGoHandle* out_albums) {
+    return api.cna_media_library_get_albums((CNA_MediaLibraryHandle)library, (CNA_AlbumCollectionHandle*)out_albums);
+}
+
+CnaGoResult cna_go_media_library_get_artists(CnaGoHandle library, CnaGoHandle* out_artists) {
+    return api.cna_media_library_get_artists((CNA_MediaLibraryHandle)library, (CNA_ArtistCollectionHandle*)out_artists);
+}
+
+CnaGoResult cna_go_media_library_get_genres(CnaGoHandle library, CnaGoHandle* out_genres) {
+    return api.cna_media_library_get_genres((CNA_MediaLibraryHandle)library, (CNA_GenreCollectionHandle*)out_genres);
+}
+
+CnaGoResult cna_go_media_library_get_is_disposed(CnaGoHandle library, uint8_t* out_disposed) {
+    return api.cna_media_library_get_is_disposed((CNA_MediaLibraryHandle)library, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_media_library_get_media_source_name_size(CnaGoHandle library, uint64_t* out_bytes) {
+    return api.cna_media_library_get_media_source_name_size((CNA_MediaLibraryHandle)library, out_bytes);
+}
+
+CnaGoResult cna_go_media_library_get_media_source_type(CnaGoHandle library, uint32_t* out_type) {
+    return api.cna_media_library_get_media_source_type((CNA_MediaLibraryHandle)library, (CNA_MediaSourceType*)out_type);
+}
+
+CnaGoResult cna_go_media_library_get_picture_from_token(CnaGoHandle library, const char* token, uint64_t token_length, CnaGoHandle* out_picture, uint8_t* out_available) {
+    return api.cna_media_library_get_picture_from_token((CNA_MediaLibraryHandle)library, cna_go_view(token, token_length), (CNA_PictureHandle*)out_picture, (CNA_Bool*)out_available);
+}
+
+CnaGoResult cna_go_media_library_get_pictures(CnaGoHandle library, CnaGoHandle* out_pictures) {
+    return api.cna_media_library_get_pictures((CNA_MediaLibraryHandle)library, (CNA_PictureCollectionHandle*)out_pictures);
+}
+
+CnaGoResult cna_go_media_library_get_playlists(CnaGoHandle library, CnaGoHandle* out_playlists) {
+    return api.cna_media_library_get_playlists((CNA_MediaLibraryHandle)library, (CNA_PlaylistCollectionHandle*)out_playlists);
+}
+
+CnaGoResult cna_go_media_library_get_root_picture_album(CnaGoHandle library, CnaGoHandle* out_album, uint8_t* out_available) {
+    return api.cna_media_library_get_root_picture_album((CNA_MediaLibraryHandle)library, (CNA_PictureAlbumHandle*)out_album, (CNA_Bool*)out_available);
+}
+
+CnaGoResult cna_go_media_library_get_saved_pictures(CnaGoHandle library, CnaGoHandle* out_pictures) {
+    return api.cna_media_library_get_saved_pictures((CNA_MediaLibraryHandle)library, (CNA_PictureCollectionHandle*)out_pictures);
+}
+
+CnaGoResult cna_go_media_library_get_songs(CnaGoHandle library, CnaGoHandle* out_songs) {
+    return api.cna_media_library_get_songs((CNA_MediaLibraryHandle)library, (CNA_SongCollectionHandle*)out_songs);
+}
+
+CnaGoResult cna_go_media_library_get_type_name_size(CnaGoHandle library, uint64_t* out_bytes) {
+    return api.cna_media_library_get_type_name_size((CNA_MediaLibraryHandle)library, out_bytes);
+}
+
+CnaGoResult cna_go_media_library_save_picture(CnaGoHandle library, const char* name, uint64_t name_length, const uint8_t* image_data, uint64_t image_byte_count, CnaGoHandle* out_picture) {
+    return api.cna_media_library_save_picture((CNA_MediaLibraryHandle)library, cna_go_view(name, name_length), image_data, image_byte_count, (CNA_PictureHandle*)out_picture);
+}
+
+CnaGoResult cna_go_picture_album_collection_copy_type_name(CnaGoHandle collection, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_picture_album_collection_copy_type_name((CNA_PictureAlbumCollectionHandle)collection, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_picture_album_collection_destroy(CnaGoHandle collection) {
+    return api.cna_picture_album_collection_destroy((CNA_PictureAlbumCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_picture_album_collection_dispose(CnaGoHandle collection) {
+    return api.cna_picture_album_collection_dispose((CNA_PictureAlbumCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_picture_album_collection_get_at(CnaGoHandle collection, int32_t index, CnaGoHandle* out_album) {
+    return api.cna_picture_album_collection_get_at((CNA_PictureAlbumCollectionHandle)collection, index, (CNA_PictureAlbumHandle*)out_album);
+}
+
+CnaGoResult cna_go_picture_album_collection_get_count(CnaGoHandle collection, int32_t* out_count) {
+    return api.cna_picture_album_collection_get_count((CNA_PictureAlbumCollectionHandle)collection, out_count);
+}
+
+CnaGoResult cna_go_picture_album_collection_get_is_disposed(CnaGoHandle collection, uint8_t* out_disposed) {
+    return api.cna_picture_album_collection_get_is_disposed((CNA_PictureAlbumCollectionHandle)collection, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_picture_album_collection_get_type_name_size(CnaGoHandle collection, uint64_t* out_bytes) {
+    return api.cna_picture_album_collection_get_type_name_size((CNA_PictureAlbumCollectionHandle)collection, out_bytes);
+}
+
+CnaGoResult cna_go_picture_album_copy_name(CnaGoHandle album, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_picture_album_copy_name((CNA_PictureAlbumHandle)album, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_picture_album_copy_type_name(CnaGoHandle album, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_picture_album_copy_type_name((CNA_PictureAlbumHandle)album, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_picture_album_destroy(CnaGoHandle album) {
+    return api.cna_picture_album_destroy((CNA_PictureAlbumHandle)album);
+}
+
+CnaGoResult cna_go_picture_album_dispose(CnaGoHandle album) {
+    return api.cna_picture_album_dispose((CNA_PictureAlbumHandle)album);
+}
+
+CnaGoResult cna_go_picture_album_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal) {
+    return api.cna_picture_album_equals((CNA_PictureAlbumHandle)left, (CNA_PictureAlbumHandle)right, (CNA_Bool*)out_equal);
+}
+
+CnaGoResult cna_go_picture_album_get_albums(CnaGoHandle album, CnaGoHandle* out_albums) {
+    return api.cna_picture_album_get_albums((CNA_PictureAlbumHandle)album, (CNA_PictureAlbumCollectionHandle*)out_albums);
+}
+
+CnaGoResult cna_go_picture_album_get_hash_code(CnaGoHandle album, int32_t* out_hash) {
+    return api.cna_picture_album_get_hash_code((CNA_PictureAlbumHandle)album, out_hash);
+}
+
+CnaGoResult cna_go_picture_album_get_is_disposed(CnaGoHandle album, uint8_t* out_disposed) {
+    return api.cna_picture_album_get_is_disposed((CNA_PictureAlbumHandle)album, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_picture_album_get_name_size(CnaGoHandle album, uint64_t* out_bytes) {
+    return api.cna_picture_album_get_name_size((CNA_PictureAlbumHandle)album, out_bytes);
+}
+
+CnaGoResult cna_go_picture_album_get_parent(CnaGoHandle album, CnaGoHandle* out_parent, uint8_t* out_available) {
+    return api.cna_picture_album_get_parent((CNA_PictureAlbumHandle)album, (CNA_PictureAlbumHandle*)out_parent, (CNA_Bool*)out_available);
+}
+
+CnaGoResult cna_go_picture_album_get_pictures(CnaGoHandle album, CnaGoHandle* out_pictures) {
+    return api.cna_picture_album_get_pictures((CNA_PictureAlbumHandle)album, (CNA_PictureCollectionHandle*)out_pictures);
+}
+
+CnaGoResult cna_go_picture_album_get_type_name_size(CnaGoHandle album, uint64_t* out_bytes) {
+    return api.cna_picture_album_get_type_name_size((CNA_PictureAlbumHandle)album, out_bytes);
+}
+
+CnaGoResult cna_go_picture_collection_copy_type_name(CnaGoHandle collection, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_picture_collection_copy_type_name((CNA_PictureCollectionHandle)collection, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_picture_collection_destroy(CnaGoHandle collection) {
+    return api.cna_picture_collection_destroy((CNA_PictureCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_picture_collection_dispose(CnaGoHandle collection) {
+    return api.cna_picture_collection_dispose((CNA_PictureCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_picture_collection_get_at(CnaGoHandle collection, int32_t index, CnaGoHandle* out_picture) {
+    return api.cna_picture_collection_get_at((CNA_PictureCollectionHandle)collection, index, (CNA_PictureHandle*)out_picture);
+}
+
+CnaGoResult cna_go_picture_collection_get_count(CnaGoHandle collection, int32_t* out_count) {
+    return api.cna_picture_collection_get_count((CNA_PictureCollectionHandle)collection, out_count);
+}
+
+CnaGoResult cna_go_picture_collection_get_is_disposed(CnaGoHandle collection, uint8_t* out_disposed) {
+    return api.cna_picture_collection_get_is_disposed((CNA_PictureCollectionHandle)collection, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_picture_collection_get_type_name_size(CnaGoHandle collection, uint64_t* out_bytes) {
+    return api.cna_picture_collection_get_type_name_size((CNA_PictureCollectionHandle)collection, out_bytes);
+}
+
+CnaGoResult cna_go_picture_copy_image(CnaGoHandle picture, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_picture_copy_image((CNA_PictureHandle)picture, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_picture_copy_name(CnaGoHandle picture, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_picture_copy_name((CNA_PictureHandle)picture, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_picture_copy_thumbnail(CnaGoHandle picture, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_picture_copy_thumbnail((CNA_PictureHandle)picture, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_picture_copy_type_name(CnaGoHandle picture, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_picture_copy_type_name((CNA_PictureHandle)picture, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_picture_destroy(CnaGoHandle picture) {
+    return api.cna_picture_destroy((CNA_PictureHandle)picture);
+}
+
+CnaGoResult cna_go_picture_dispose(CnaGoHandle picture) {
+    return api.cna_picture_dispose((CNA_PictureHandle)picture);
+}
+
+CnaGoResult cna_go_picture_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal) {
+    return api.cna_picture_equals((CNA_PictureHandle)left, (CNA_PictureHandle)right, (CNA_Bool*)out_equal);
+}
+
+CnaGoResult cna_go_picture_get_album(CnaGoHandle picture, CnaGoHandle* out_album, uint8_t* out_available) {
+    return api.cna_picture_get_album((CNA_PictureHandle)picture, (CNA_PictureAlbumHandle*)out_album, (CNA_Bool*)out_available);
+}
+
+CnaGoResult cna_go_picture_get_date_unix_ticks(CnaGoHandle picture, int64_t* out_unix_ticks) {
+    return api.cna_picture_get_date_unix_ticks((CNA_PictureHandle)picture, out_unix_ticks);
+}
+
+CnaGoResult cna_go_picture_get_hash_code(CnaGoHandle picture, int32_t* out_hash) {
+    return api.cna_picture_get_hash_code((CNA_PictureHandle)picture, out_hash);
+}
+
+CnaGoResult cna_go_picture_get_height(CnaGoHandle picture, int32_t* out_height) {
+    return api.cna_picture_get_height((CNA_PictureHandle)picture, out_height);
+}
+
+CnaGoResult cna_go_picture_get_image_size(CnaGoHandle picture, uint64_t* out_bytes) {
+    return api.cna_picture_get_image_size((CNA_PictureHandle)picture, out_bytes);
+}
+
+CnaGoResult cna_go_picture_get_is_disposed(CnaGoHandle picture, uint8_t* out_disposed) {
+    return api.cna_picture_get_is_disposed((CNA_PictureHandle)picture, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_picture_get_name_size(CnaGoHandle picture, uint64_t* out_bytes) {
+    return api.cna_picture_get_name_size((CNA_PictureHandle)picture, out_bytes);
+}
+
+CnaGoResult cna_go_picture_get_thumbnail_size(CnaGoHandle picture, uint64_t* out_bytes) {
+    return api.cna_picture_get_thumbnail_size((CNA_PictureHandle)picture, out_bytes);
+}
+
+CnaGoResult cna_go_picture_get_type_name_size(CnaGoHandle picture, uint64_t* out_bytes) {
+    return api.cna_picture_get_type_name_size((CNA_PictureHandle)picture, out_bytes);
+}
+
+CnaGoResult cna_go_picture_get_width(CnaGoHandle picture, int32_t* out_width) {
+    return api.cna_picture_get_width((CNA_PictureHandle)picture, out_width);
+}
+
 CnaGoResult cna_go_song_dispose(CnaGoHandle song) {
     return api.cna_song_dispose((CNA_SongHandle)song);
 }

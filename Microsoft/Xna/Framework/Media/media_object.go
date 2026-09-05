@@ -186,3 +186,38 @@ func (p *PlaylistCollection) usable() error {
 	}
 	return p.mediaObject.usable()
 }
+
+func (p *Picture) usable() error {
+	if p == nil {
+		return errMediaDisposed
+	}
+	return p.mediaObject.usable()
+}
+
+func (p *PictureAlbum) usable() error {
+	if p == nil {
+		return errMediaDisposed
+	}
+	return p.mediaObject.usable()
+}
+
+func (p *PictureCollection) usable() error {
+	if p == nil {
+		return errMediaDisposed
+	}
+	return p.mediaObject.usable()
+}
+
+func (p *PictureAlbumCollection) usable() error {
+	if p == nil {
+		return errMediaDisposed
+	}
+	return p.mediaObject.usable()
+}
+
+func (m *MediaLibrary) usable() error {
+	if m == nil {
+		return errMediaDisposed
+	}
+	return m.mediaObject.usable()
+}

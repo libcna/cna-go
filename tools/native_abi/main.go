@@ -505,6 +505,16 @@ var unboundRouteClasses = map[string]string{
 // anything, including null.
 var deliberatelyUnboundRoutes = []unboundRoute{
 	{
+		Route:  "cna_media_library_save_picture_from_stream",
+		Member: "Microsoft.Xna.Framework.Media.MediaLibrary::SavePicture(System.String,System.IO.Stream)",
+		Class:  "SUBSUMED",
+		Detail: "the member is projected over the BYTE route instead. " +
+			"This one takes a native stream handle and a Go io.Reader has none -- the same wall " +
+			"Foundation 92 met with ContentReader -- so the projection reads the stream into memory " +
+			"and hands the bytes to cna_media_library_save_picture, which is what the reference's " +
+			"two overloads differ by anyway. The divergence is in the buffering, not the outcome.",
+	},
+	{
 		Route:  "cna_graphics_resource_get_name_byte_count",
 		Member: "Microsoft.Xna.Framework.Graphics.GraphicsResource::Name()",
 		Class:  "KIND_PARTIAL",
