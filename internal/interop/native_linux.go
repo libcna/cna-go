@@ -4991,3 +4991,359 @@ func mediaSourceTextAt(game uint64, index uint32, sizeRoute, copyRoute string) (
 	}
 	return string(buffer[:int(copied)]), nil
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 97. Media playback.
+//
+// MediaPlayer is entirely STATIC in the contract, and every route takes the
+// game -- so each wrapper resolves it from activeGame the way the media-source
+// enumeration does, and none takes one from the caller.
+// ---------------------------------------------------------------------------
+
+func nativeMediaPlayerPause(game uint64) error {
+	return resultError("cna_media_player_pause",
+		uint32(C.cna_go_media_player_pause(C.CnaGoHandle(game))))
+}
+
+func nativeMediaPlayerResume(game uint64) error {
+	return resultError("cna_media_player_resume",
+		uint32(C.cna_go_media_player_resume(C.CnaGoHandle(game))))
+}
+
+func nativeMediaPlayerStop(game uint64) error {
+	return resultError("cna_media_player_stop",
+		uint32(C.cna_go_media_player_stop(C.CnaGoHandle(game))))
+}
+
+func nativeMediaPlayerMoveNext(game uint64) error {
+	return resultError("cna_media_player_move_next",
+		uint32(C.cna_go_media_player_move_next(C.CnaGoHandle(game))))
+}
+
+func nativeMediaPlayerMovePrevious(game uint64) error {
+	return resultError("cna_media_player_move_previous",
+		uint32(C.cna_go_media_player_move_previous(C.CnaGoHandle(game))))
+}
+
+func nativeMediaPlayerIsShuffled(game uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_media_player_get_is_shuffled(C.CnaGoHandle(game), &value))
+	return value != 0, resultError("cna_media_player_get_is_shuffled", code)
+}
+
+func nativeMediaPlayerIsRepeating(game uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_media_player_get_is_repeating(C.CnaGoHandle(game), &value))
+	return value != 0, resultError("cna_media_player_get_is_repeating", code)
+}
+
+func nativeMediaPlayerIsMuted(game uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_media_player_get_is_muted(C.CnaGoHandle(game), &value))
+	return value != 0, resultError("cna_media_player_get_is_muted", code)
+}
+
+func nativeMediaPlayerIsVisualizationEnabled(game uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_media_player_get_is_visualization_enabled(C.CnaGoHandle(game), &value))
+	return value != 0, resultError("cna_media_player_get_is_visualization_enabled", code)
+}
+
+func nativeMediaPlayerGameHasControl(game uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_media_player_get_game_has_control(C.CnaGoHandle(game), &value))
+	return value != 0, resultError("cna_media_player_get_game_has_control", code)
+}
+
+func nativeMediaPlayerSetIsShuffled(game uint64, value bool) error {
+	return resultError("cna_media_player_set_is_shuffled",
+		uint32(C.cna_go_media_player_set_is_shuffled(C.CnaGoHandle(game), cnaBool(value))))
+}
+
+func nativeMediaPlayerSetIsRepeating(game uint64, value bool) error {
+	return resultError("cna_media_player_set_is_repeating",
+		uint32(C.cna_go_media_player_set_is_repeating(C.CnaGoHandle(game), cnaBool(value))))
+}
+
+func nativeMediaPlayerSetIsMuted(game uint64, value bool) error {
+	return resultError("cna_media_player_set_is_muted",
+		uint32(C.cna_go_media_player_set_is_muted(C.CnaGoHandle(game), cnaBool(value))))
+}
+
+func nativeMediaPlayerSetIsVisualizationEnabled(game uint64, value bool) error {
+	return resultError("cna_media_player_set_is_visualization_enabled",
+		uint32(C.cna_go_media_player_set_is_visualization_enabled(C.CnaGoHandle(game), cnaBool(value))))
+}
+
+func nativeMediaPlayerVolume(game uint64) (float32, error) {
+	var value C.float
+	code := uint32(C.cna_go_media_player_get_volume(C.CnaGoHandle(game), &value))
+	return float32(value), resultError("cna_media_player_get_volume", code)
+}
+
+func nativeMediaPlayerSetVolume(game uint64, value float32) error {
+	return resultError("cna_media_player_set_volume",
+		uint32(C.cna_go_media_player_set_volume(C.CnaGoHandle(game), C.float(value))))
+}
+
+func nativeMediaPlayerState(game uint64) (uint32, error) {
+	var value C.uint32_t
+	code := uint32(C.cna_go_media_player_get_state(C.CnaGoHandle(game), &value))
+	return uint32(value), resultError("cna_media_player_get_state", code)
+}
+
+func nativeMediaPlayerPlayPositionTicks(game uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_media_player_get_play_position_ticks(C.CnaGoHandle(game), &value))
+	return int64(value), resultError("cna_media_player_get_play_position_ticks", code)
+}
+
+func nativeMediaPlayerQueue(game uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_player_get_queue(C.CnaGoHandle(game), &value))
+	return uint64(value), resultError("cna_media_player_get_queue", code)
+}
+
+func nativeMediaPlayerPlaySong(game, song uint64) error {
+	return resultError("cna_media_player_play_song",
+		uint32(C.cna_go_media_player_play_song(C.CnaGoHandle(game), C.CnaGoHandle(song))))
+}
+
+func nativeMediaPlayerPlaySongs(game, songs uint64) error {
+	return resultError("cna_media_player_play_songs",
+		uint32(C.cna_go_media_player_play_songs(C.CnaGoHandle(game), C.CnaGoHandle(songs))))
+}
+
+func nativeMediaPlayerPlaySongsFrom(game, songs uint64, index int32) error {
+	return resultError("cna_media_player_play_songs_from",
+		uint32(C.cna_go_media_player_play_songs_from(
+			C.CnaGoHandle(game), C.CnaGoHandle(songs), C.int32_t(index))))
+}
+
+// nativeMediaPlayerVisualizationData fills two 256-value buffers. The bridge
+// owns the CNA struct, including its size/version prologue, so nothing about
+// that layout crosses into Go.
+func nativeMediaPlayerVisualizationData(game uint64) ([]float32, []float32, error) {
+	const size = 256
+	frequencies := make([]float32, size)
+	samples := make([]float32, size)
+	code := uint32(C.cna_go_media_player_get_visualization_data(C.CnaGoHandle(game),
+		(*C.float)(unsafe.Pointer(&frequencies[0])),
+		(*C.float)(unsafe.Pointer(&samples[0])), C.uint64_t(size)))
+	if err := resultError("cna_media_player_get_visualization_data", code); err != nil {
+		return nil, nil, err
+	}
+	return frequencies, samples, nil
+}
+
+// The two media-player event subscriptions. They take no game -- the events are
+// process-wide -- and answer a registration handle the caller releases.
+func nativeMediaPlayerSubscribeActiveSongChanged(context uintptr) (uint64, error) {
+	var registration C.CnaGoHandle
+	code := uint32(C.cna_go_media_player_subscribe_active_song_changed(
+		C.uintptr_t(context), &registration))
+	return uint64(registration), resultError("cna_media_player_subscribe_active_song_changed_ext", code)
+}
+
+func nativeMediaPlayerSubscribeMediaStateChanged(context uintptr) (uint64, error) {
+	var registration C.CnaGoHandle
+	code := uint32(C.cna_go_media_player_subscribe_media_state_changed(
+		C.uintptr_t(context), &registration))
+	return uint64(registration), resultError("cna_media_player_subscribe_media_state_changed_ext", code)
+}
+
+func nativeMediaPlayerUnsubscribe(registration uint64) error {
+	return resultError("cna_media_player_unsubscribe_ext",
+		uint32(C.cna_go_media_player_unsubscribe_ext(C.CnaGoHandle(registration))))
+}
+
+// The media queue, whose handle is BORROWED from the player rather than owned.
+func nativeMediaQueueCount(queue uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_media_queue_get_count(C.CnaGoHandle(queue), &value))
+	return int32(value), resultError("cna_media_queue_get_count", code)
+}
+
+func nativeMediaQueueActiveSongIndex(queue uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_media_queue_get_active_song_index(C.CnaGoHandle(queue), &value))
+	return int32(value), resultError("cna_media_queue_get_active_song_index", code)
+}
+
+func nativeMediaQueueActiveSong(queue uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_media_queue_get_active_song(C.CnaGoHandle(queue), &value, &available))
+	return uint64(value), available != 0, resultError("cna_media_queue_get_active_song", code)
+}
+
+func nativeMediaQueueAt(queue uint64, index int32) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_media_queue_get_at(C.CnaGoHandle(queue), C.int32_t(index), &value))
+	return uint64(value), resultError("cna_media_queue_get_at", code)
+}
+
+func nativeMediaQueueDestroy(queue uint64) error {
+	return resultError("cna_media_queue_destroy",
+		uint32(C.cna_go_media_queue_destroy(C.CnaGoHandle(queue))))
+}
+
+func nativeVideoDurationTicks(handle uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_video_get_duration(C.CnaGoHandle(handle), &value))
+	return int64(value), resultError("cna_video_get_duration", code)
+}
+
+func nativeVideoWidth(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_video_get_width(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_video_get_width", code)
+}
+
+func nativeVideoHeight(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_video_get_height(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_video_get_height", code)
+}
+
+func nativeVideoFramesPerSecond(handle uint64) (float32, error) {
+	var value C.float
+	code := uint32(C.cna_go_video_get_frames_per_second(C.CnaGoHandle(handle), &value))
+	return float32(value), resultError("cna_video_get_frames_per_second", code)
+}
+
+func nativeVideoSoundtrackType(handle uint64) (uint32, error) {
+	var value C.uint32_t
+	code := uint32(C.cna_go_video_get_soundtrack_type(C.CnaGoHandle(handle), &value))
+	return uint32(value), resultError("cna_video_get_soundtrack_type", code)
+}
+
+func nativeVideoDestroy(handle uint64) error {
+	return resultError("cna_video_destroy",
+		uint32(C.cna_go_video_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeVideoPlayerDispose(handle uint64) error {
+	return resultError("cna_video_player_dispose",
+		uint32(C.cna_go_video_player_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeVideoPlayerDestroy(handle uint64) error {
+	return resultError("cna_video_player_destroy",
+		uint32(C.cna_go_video_player_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeVideoPlayerPause(handle uint64) error {
+	return resultError("cna_video_player_pause",
+		uint32(C.cna_go_video_player_pause(C.CnaGoHandle(handle))))
+}
+
+func nativeVideoPlayerResume(handle uint64) error {
+	return resultError("cna_video_player_resume",
+		uint32(C.cna_go_video_player_resume(C.CnaGoHandle(handle))))
+}
+
+func nativeVideoPlayerStop(handle uint64) error {
+	return resultError("cna_video_player_stop",
+		uint32(C.cna_go_video_player_stop(C.CnaGoHandle(handle))))
+}
+
+func nativeVideoPlayerIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_video_player_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_video_player_get_is_disposed", code)
+}
+
+func nativeVideoPlayerIsLooped(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_video_player_get_is_looped(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_video_player_get_is_looped", code)
+}
+
+func nativeVideoPlayerIsMuted(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_video_player_get_is_muted(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_video_player_get_is_muted", code)
+}
+
+func nativeVideoPlayerVolume(handle uint64) (float32, error) {
+	var value C.float
+	code := uint32(C.cna_go_video_player_get_volume(C.CnaGoHandle(handle), &value))
+	return float32(value), resultError("cna_video_player_get_volume", code)
+}
+
+func nativeVideoPlayerState(handle uint64) (uint32, error) {
+	var value C.uint32_t
+	code := uint32(C.cna_go_video_player_get_state(C.CnaGoHandle(handle), &value))
+	return uint32(value), resultError("cna_video_player_get_state", code)
+}
+
+func nativeVideoPlayerPlayPositionTicks(handle uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_video_player_get_play_position_ticks(C.CnaGoHandle(handle), &value))
+	return int64(value), resultError("cna_video_player_get_play_position_ticks", code)
+}
+
+func nativeVideoPlayerCreate(game uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_video_player_create(C.CnaGoHandle(game), &value))
+	return uint64(value), resultError("cna_video_player_create", code)
+}
+
+func nativeVideoPlayerPlay(player, video uint64) error {
+	return resultError("cna_video_player_play",
+		uint32(C.cna_go_video_player_play(C.CnaGoHandle(player), C.CnaGoHandle(video))))
+}
+
+func nativeVideoPlayerSetIsLooped(player uint64, value bool) error {
+	return resultError("cna_video_player_set_is_looped",
+		uint32(C.cna_go_video_player_set_is_looped(C.CnaGoHandle(player), cnaBool(value))))
+}
+
+func nativeVideoPlayerSetIsMuted(player uint64, value bool) error {
+	return resultError("cna_video_player_set_is_muted",
+		uint32(C.cna_go_video_player_set_is_muted(C.CnaGoHandle(player), cnaBool(value))))
+}
+
+func nativeVideoPlayerSetVolume(player uint64, value float32) error {
+	return resultError("cna_video_player_set_volume",
+		uint32(C.cna_go_video_player_set_volume(C.CnaGoHandle(player), C.float(value))))
+}
+
+// nativeVideoPlayerVideo and nativeVideoPlayerTexture both report AVAILABILITY:
+// a player that has never been given a video has neither.
+func nativeVideoPlayerVideo(player uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_video_player_get_video(C.CnaGoHandle(player), &value, &available))
+	return uint64(value), available != 0, resultError("cna_video_player_get_video", code)
+}
+
+func nativeVideoPlayerTexture(player uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_video_player_get_texture(C.CnaGoHandle(player), &value, &available))
+	return uint64(value), available != 0, resultError("cna_video_player_get_texture", code)
+}
+
+//export cnaGoMediaPlayerEvent
+func cnaGoMediaPlayerEvent(event C.uint32_t, context C.uintptr_t) {
+	// A CNA_MediaPlayerEventCallback returns void, so nothing may cross the C
+	// frame -- the same constraint the game-event trampoline works under, and
+	// the same answer: record on the Runtime and surface it from Run.
+	var state *Runtime
+	defer func() {
+		if recovered := recover(); recovered != nil && state != nil {
+			state.recordCallbackFailure(
+				fmt.Errorf("panic in native media-player-event trampoline: %v", recovered))
+		}
+	}()
+	handle := cgo.Handle(context)
+	state = handle.Value().(*Runtime)
+	state.invokeMediaPlayerEvent(uint32(event))
+}
+
+func nativeMediaQueueSetActiveSongIndex(queue uint64, index int32) error {
+	return resultError("cna_media_queue_set_active_song_index",
+		uint32(C.cna_go_media_queue_set_active_song_index(C.CnaGoHandle(queue), C.int32_t(index))))
+}

@@ -886,3 +886,32 @@ func ReadManagerWindow(manager any) any {
 	}
 	return current(manager)
 }
+
+// Foundation 97. The Media package's reach into Graphics.
+//
+// VideoPlayer::GetTexture answers a Texture2D, and only the Graphics package
+// can build one -- the same wall the Content package met in Foundation 68. The
+// native resource crosses as `any` for the reason the content loaders' does:
+// naming *interop.Resource in a public signature is the raw-handle leak the
+// verifier refuses.
+type VideoFrameAdopter func(resource any, info any) any
+
+var videoFrameAdopter VideoFrameAdopter
+
+// SetVideoFrameAdopter installs the Graphics package's frame wrapper.
+func SetVideoFrameAdopter(adopt VideoFrameAdopter) {
+	mu.Lock()
+	defer mu.Unlock()
+	videoFrameAdopter = adopt
+}
+
+// AdoptVideoFrame wraps a native video frame as a Texture2D.
+func AdoptVideoFrame(resource any, info any) (any, error) {
+	mu.RLock()
+	current := videoFrameAdopter
+	mu.RUnlock()
+	if current == nil {
+		return nil, errors.New("no video frame adopter is installed")
+	}
+	return current(resource, info), nil
+}

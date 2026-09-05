@@ -3800,6 +3800,217 @@ CnaGoResult cna_go_media_library_copy_type_name(CnaGoHandle library, char* desti
     return api.cna_media_library_copy_type_name((CNA_MediaLibraryHandle)library, destination, capacity, out_bytes);
 }
 
+/* Foundation 97 -- media playback. */
+CnaGoResult cna_go_media_player_play_song(CnaGoHandle game, CnaGoHandle song) {
+    return api.cna_media_player_play_song((CNA_Handle)game, (CNA_SongHandle)song);
+}
+CnaGoResult cna_go_media_player_play_songs(CnaGoHandle game, CnaGoHandle songs) {
+    return api.cna_media_player_play_songs((CNA_Handle)game, (CNA_SongCollectionHandle)songs);
+}
+CnaGoResult cna_go_media_player_play_songs_from(CnaGoHandle game, CnaGoHandle songs, int32_t index) {
+    return api.cna_media_player_play_songs_from((CNA_Handle)game, (CNA_SongCollectionHandle)songs, index);
+}
+CnaGoResult cna_go_media_player_pause(CnaGoHandle game) {
+    return api.cna_media_player_pause((CNA_Handle)game);
+}
+CnaGoResult cna_go_media_player_resume(CnaGoHandle game) {
+    return api.cna_media_player_resume((CNA_Handle)game);
+}
+CnaGoResult cna_go_media_player_stop(CnaGoHandle game) {
+    return api.cna_media_player_stop((CNA_Handle)game);
+}
+CnaGoResult cna_go_media_player_move_next(CnaGoHandle game) {
+    return api.cna_media_player_move_next((CNA_Handle)game);
+}
+CnaGoResult cna_go_media_player_move_previous(CnaGoHandle game) {
+    return api.cna_media_player_move_previous((CNA_Handle)game);
+}
+/* The struct carries a size/version prologue the CALLER fills, so the bridge
+   owns it and hands back two plain float arrays. Exposing the struct across the
+   cgo boundary would put a layout the manifest already pins into Go's hands for
+   no gain. */
+CnaGoResult cna_go_media_player_get_visualization_data(CnaGoHandle game, float* frequencies, float* samples, uint64_t capacity) {
+    CNA_VisualizationData data;
+    memset(&data, 0, sizeof(data));
+    data.struct_size = (uint32_t)sizeof(data);
+    data.struct_version = 1;
+    CnaGoResult result = api.cna_media_player_get_visualization_data((CNA_Handle)game, &data);
+    if (result != 0) {
+        return result;
+    }
+    uint64_t count = capacity;
+    if (count > CNA_VISUALIZATION_DATA_SIZE) {
+        count = CNA_VISUALIZATION_DATA_SIZE;
+    }
+    for (uint64_t index = 0; index < count; index++) {
+        frequencies[index] = data.frequencies[index];
+        samples[index] = data.samples[index];
+    }
+    return result;
+}
+CnaGoResult cna_go_media_player_get_is_shuffled(CnaGoHandle game, uint8_t* out_shuffled) {
+    return api.cna_media_player_get_is_shuffled((CNA_Handle)game, (CNA_Bool*)out_shuffled);
+}
+CnaGoResult cna_go_media_player_set_is_shuffled(CnaGoHandle game, uint8_t shuffled) {
+    return api.cna_media_player_set_is_shuffled((CNA_Handle)game, (CNA_Bool)shuffled);
+}
+CnaGoResult cna_go_media_player_get_is_repeating(CnaGoHandle game, uint8_t* out_repeating) {
+    return api.cna_media_player_get_is_repeating((CNA_Handle)game, (CNA_Bool*)out_repeating);
+}
+CnaGoResult cna_go_media_player_set_is_repeating(CnaGoHandle game, uint8_t repeating) {
+    return api.cna_media_player_set_is_repeating((CNA_Handle)game, (CNA_Bool)repeating);
+}
+CnaGoResult cna_go_media_player_get_is_muted(CnaGoHandle game, uint8_t* out_muted) {
+    return api.cna_media_player_get_is_muted((CNA_Handle)game, (CNA_Bool*)out_muted);
+}
+CnaGoResult cna_go_media_player_set_is_muted(CnaGoHandle game, uint8_t muted) {
+    return api.cna_media_player_set_is_muted((CNA_Handle)game, (CNA_Bool)muted);
+}
+CnaGoResult cna_go_media_player_get_is_visualization_enabled(CnaGoHandle game, uint8_t* out_enabled) {
+    return api.cna_media_player_get_is_visualization_enabled((CNA_Handle)game, (CNA_Bool*)out_enabled);
+}
+CnaGoResult cna_go_media_player_set_is_visualization_enabled(CnaGoHandle game, uint8_t enabled) {
+    return api.cna_media_player_set_is_visualization_enabled((CNA_Handle)game, (CNA_Bool)enabled);
+}
+CnaGoResult cna_go_media_player_get_volume(CnaGoHandle game, float* out_volume) {
+    return api.cna_media_player_get_volume((CNA_Handle)game, out_volume);
+}
+CnaGoResult cna_go_media_player_set_volume(CnaGoHandle game, float volume) {
+    return api.cna_media_player_set_volume((CNA_Handle)game, volume);
+}
+CnaGoResult cna_go_media_player_get_queue(CnaGoHandle game, CnaGoHandle* out_queue) {
+    return api.cna_media_player_get_queue((CNA_Handle)game, (CNA_MediaQueueHandle*)out_queue);
+}
+CnaGoResult cna_go_media_player_get_state(CnaGoHandle game, uint32_t* out_state) {
+    return api.cna_media_player_get_state((CNA_Handle)game, (CNA_MediaState*)out_state);
+}
+CnaGoResult cna_go_media_player_get_play_position_ticks(CnaGoHandle game, int64_t* out_ticks) {
+    return api.cna_media_player_get_play_position_ticks((CNA_Handle)game, out_ticks);
+}
+CnaGoResult cna_go_media_player_get_game_has_control(CnaGoHandle game, uint8_t* out_has_control) {
+    return api.cna_media_player_get_game_has_control((CNA_Handle)game, (CNA_Bool*)out_has_control);
+}
+CnaGoResult cna_go_media_queue_set_active_song_index(CnaGoHandle queue, int32_t index) {
+    return api.cna_media_queue_set_active_song_index((CNA_MediaQueueHandle)queue, index);
+}
+
+CnaGoResult cna_go_media_queue_get_count(CnaGoHandle queue, int32_t* out_count) {
+    return api.cna_media_queue_get_count((CNA_MediaQueueHandle)queue, out_count);
+}
+CnaGoResult cna_go_media_queue_get_active_song_index(CnaGoHandle queue, int32_t* out_index) {
+    return api.cna_media_queue_get_active_song_index((CNA_MediaQueueHandle)queue, out_index);
+}
+CnaGoResult cna_go_media_queue_get_active_song(CnaGoHandle queue, CnaGoHandle* out_song, uint8_t* out_available) {
+    return api.cna_media_queue_get_active_song((CNA_MediaQueueHandle)queue, (CNA_SongHandle*)out_song, (CNA_Bool*)out_available);
+}
+CnaGoResult cna_go_media_queue_get_at(CnaGoHandle queue, int32_t index, CnaGoHandle* out_song) {
+    return api.cna_media_queue_get_at((CNA_MediaQueueHandle)queue, index, (CNA_SongHandle*)out_song);
+}
+CnaGoResult cna_go_media_queue_destroy(CnaGoHandle queue) {
+    return api.cna_media_queue_destroy((CNA_MediaQueueHandle)queue);
+}
+CnaGoResult cna_go_video_get_duration(CnaGoHandle video, int64_t* out_ticks) {
+    return api.cna_video_get_duration((CNA_VideoHandle)video, out_ticks);
+}
+CnaGoResult cna_go_video_get_width(CnaGoHandle video, int32_t* out_width) {
+    return api.cna_video_get_width((CNA_VideoHandle)video, out_width);
+}
+CnaGoResult cna_go_video_get_height(CnaGoHandle video, int32_t* out_height) {
+    return api.cna_video_get_height((CNA_VideoHandle)video, out_height);
+}
+CnaGoResult cna_go_video_get_frames_per_second(CnaGoHandle video, float* out_fps) {
+    return api.cna_video_get_frames_per_second((CNA_VideoHandle)video, out_fps);
+}
+CnaGoResult cna_go_video_get_soundtrack_type(CnaGoHandle video, uint32_t* out_type) {
+    return api.cna_video_get_soundtrack_type((CNA_VideoHandle)video, (CNA_VideoSoundtrackType*)out_type);
+}
+CnaGoResult cna_go_video_destroy(CnaGoHandle video) {
+    return api.cna_video_destroy((CNA_VideoHandle)video);
+}
+CnaGoResult cna_go_video_player_create(CnaGoHandle game, CnaGoHandle* out_player) {
+    return api.cna_video_player_create((CNA_Handle)game, (CNA_VideoPlayerHandle*)out_player);
+}
+CnaGoResult cna_go_video_player_dispose(CnaGoHandle player) {
+    return api.cna_video_player_dispose((CNA_VideoPlayerHandle)player);
+}
+CnaGoResult cna_go_video_player_destroy(CnaGoHandle player) {
+    return api.cna_video_player_destroy((CNA_VideoPlayerHandle)player);
+}
+CnaGoResult cna_go_video_player_play(CnaGoHandle player, CnaGoHandle video) {
+    return api.cna_video_player_play((CNA_VideoPlayerHandle)player, (CNA_VideoHandle)video);
+}
+CnaGoResult cna_go_video_player_pause(CnaGoHandle player) {
+    return api.cna_video_player_pause((CNA_VideoPlayerHandle)player);
+}
+CnaGoResult cna_go_video_player_resume(CnaGoHandle player) {
+    return api.cna_video_player_resume((CNA_VideoPlayerHandle)player);
+}
+CnaGoResult cna_go_video_player_stop(CnaGoHandle player) {
+    return api.cna_video_player_stop((CNA_VideoPlayerHandle)player);
+}
+CnaGoResult cna_go_video_player_get_texture(CnaGoHandle player, CnaGoHandle* out_texture, uint8_t* out_available) {
+    return api.cna_video_player_get_texture((CNA_VideoPlayerHandle)player, (CNA_Handle*)out_texture, (CNA_Bool*)out_available);
+}
+CnaGoResult cna_go_video_player_get_is_disposed(CnaGoHandle player, uint8_t* out_disposed) {
+    return api.cna_video_player_get_is_disposed((CNA_VideoPlayerHandle)player, (CNA_Bool*)out_disposed);
+}
+CnaGoResult cna_go_video_player_get_video(CnaGoHandle player, CnaGoHandle* out_video, uint8_t* out_available) {
+    return api.cna_video_player_get_video((CNA_VideoPlayerHandle)player, (CNA_VideoHandle*)out_video, (CNA_Bool*)out_available);
+}
+CnaGoResult cna_go_video_player_get_state(CnaGoHandle player, uint32_t* out_state) {
+    return api.cna_video_player_get_state((CNA_VideoPlayerHandle)player, (CNA_MediaState*)out_state);
+}
+CnaGoResult cna_go_video_player_get_is_looped(CnaGoHandle player, uint8_t* out_looped) {
+    return api.cna_video_player_get_is_looped((CNA_VideoPlayerHandle)player, (CNA_Bool*)out_looped);
+}
+CnaGoResult cna_go_video_player_set_is_looped(CnaGoHandle player, uint8_t looped) {
+    return api.cna_video_player_set_is_looped((CNA_VideoPlayerHandle)player, (CNA_Bool)looped);
+}
+CnaGoResult cna_go_video_player_get_is_muted(CnaGoHandle player, uint8_t* out_muted) {
+    return api.cna_video_player_get_is_muted((CNA_VideoPlayerHandle)player, (CNA_Bool*)out_muted);
+}
+CnaGoResult cna_go_video_player_set_is_muted(CnaGoHandle player, uint8_t muted) {
+    return api.cna_video_player_set_is_muted((CNA_VideoPlayerHandle)player, (CNA_Bool)muted);
+}
+CnaGoResult cna_go_video_player_get_volume(CnaGoHandle player, float* out_volume) {
+    return api.cna_video_player_get_volume((CNA_VideoPlayerHandle)player, out_volume);
+}
+CnaGoResult cna_go_video_player_set_volume(CnaGoHandle player, float volume) {
+    return api.cna_video_player_set_volume((CNA_VideoPlayerHandle)player, volume);
+}
+CnaGoResult cna_go_video_player_get_play_position_ticks(CnaGoHandle player, int64_t* out_ticks) {
+    return api.cna_video_player_get_play_position_ticks((CNA_VideoPlayerHandle)player, out_ticks);
+}
+
+/* Foundation 97 -- the two media-player events. CNA_MediaPlayerEventCallback
+   carries nothing but the caller context, exactly as CNA_GameEventCallback
+   does, so the identity comes from WHICH function was registered. */
+extern void cnaGoMediaPlayerEvent(uint32_t event, uintptr_t context);
+
+#define CNA_GO_MEDIA_EVENT_CALLBACK(name, event) \
+    static void name(void* context) { \
+        cnaGoMediaPlayerEvent((uint32_t)(event), (uintptr_t)context); \
+    }
+
+CNA_GO_MEDIA_EVENT_CALLBACK(media_event_active_song_changed, 0)
+CNA_GO_MEDIA_EVENT_CALLBACK(media_event_media_state_changed, 1)
+
+CnaGoResult cna_go_media_player_unsubscribe_ext(CnaGoHandle registration) {
+    return api.cna_media_player_unsubscribe_ext((CNA_MediaPlayerEventRegistrationHandle)registration);
+}
+
+CnaGoResult cna_go_media_player_subscribe_active_song_changed(uintptr_t context, CnaGoHandle* out_registration) {
+    return api.cna_media_player_subscribe_active_song_changed_ext(
+        media_event_active_song_changed, (void*)context,
+        (CNA_MediaPlayerEventRegistrationHandle*)out_registration);
+}
+
+CnaGoResult cna_go_media_player_subscribe_media_state_changed(uintptr_t context, CnaGoHandle* out_registration) {
+    return api.cna_media_player_subscribe_media_state_changed_ext(
+        media_event_media_state_changed, (void*)context,
+        (CNA_MediaPlayerEventRegistrationHandle*)out_registration);
+}
+
 CnaGoResult cna_go_media_library_create(CnaGoHandle game, CnaGoHandle* out_library) {
     return api.cna_media_library_create((CNA_Handle)game, (CNA_MediaLibraryHandle*)out_library);
 }

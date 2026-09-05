@@ -334,6 +334,21 @@ type counters struct {
 	// the library it is about to read is an isolated one.
 	MediaHomeChecks int `json:"MEDIA_HOME_CHECKS"`
 	MediaHomeSkips  int `json:"MEDIA_HOME_SKIPS"`
+	// Foundation 97. Playback. MEDIA_PLAYBACK_MUTE_CHECKS is the courtesy this
+	// slice owes the machine it runs on: it mutes before it plays anything and
+	// proves the mute took.
+	MediaPlaybackCycles     int `json:"MEDIA_PLAYBACK_CYCLES"`
+	MediaPlaybackMuteChecks int `json:"MEDIA_PLAYBACK_MUTE_CHECKS"`
+	MediaPlaybackReads      int `json:"MEDIA_PLAYBACK_READS"`
+	MediaPlaybackTransports int `json:"MEDIA_PLAYBACK_TRANSPORTS"`
+	MediaQueueReads         int `json:"MEDIA_QUEUE_READS"`
+	MediaVisualizationFills int `json:"MEDIA_VISUALIZATION_FILLS"`
+	// MEDIA_VISUALIZATION_SILENT counts fills where the backend reported
+	// nothing, which a muted player on a host with no visualiser does.
+	MediaVisualizationSilent int `json:"MEDIA_VISUALIZATION_SILENT"`
+	MediaVideoPlayerCycles   int `json:"MEDIA_VIDEO_PLAYER_CYCLES"`
+	MediaVideoPlayerReads    int `json:"MEDIA_VIDEO_PLAYER_READS"`
+	MediaPlaybackRefusals    int `json:"MEDIA_PLAYBACK_REFUSALS"`
 	// Foundation 85. The first VERIFIED_PIXEL draw. Every counter here is over
 	// the SOFTWARE artifact only, because HEADLESS has no back-buffer readback
 	// and records a refusal instead -- which is why the refusal column exists.
@@ -5102,6 +5117,11 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 97. Playback, over the same isolated library.
+	if err := g.exerciseMediaPlayback(); err != nil {
+		return err
+	}
+
 	// Foundation 88. The two types that finish the Audio namespace.
 	if err := g.exerciseDynamicSoundEffectInstance(); err != nil {
 		return err
@@ -9550,5 +9570,428 @@ func (g *stressGame) seedIsolatedPictures(home string) error {
 			return fmt.Errorf("writing a nested picture fixture: %w", err)
 		}
 	}
+	return nil
+}
+
+// exerciseMediaPlayback is Foundation 97's slice.
+//
+// # It MUTES before it plays, and proves the mute took
+//
+// MediaPlayer plays through the machine's real audio output. The slice is not
+// entitled to make noise on someone's desktop, so the first thing it does is
+// set IsMuted and read it back -- MEDIA_PLAYBACK_MUTE_CHECKS counts that, and
+// nothing is played until it has passed. It also sets the volume to zero, so a
+// host that ignores the mute flag still stays silent.
+//
+// # It runs inside the isolated library
+//
+// It is gated behind the same CNA_GO_MEDIA_HOME check the library slice makes,
+// because what it plays is the songs that library holds -- which, in an
+// isolated run, are the three WAVs the harness seeded.
+func (g *stressGame) exerciseMediaPlayback() error {
+	permitted := os.Getenv("CNA_GO_MEDIA_HOME")
+	if permitted == "" || os.Getenv("HOME") != permitted {
+		return nil
+	}
+
+	// SILENCE FIRST, and proved.
+	if err := media.SetMediaPlayerIsMuted(true); err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("muting the media player: %w", err)
+		}
+		g.result.MediaPlaybackRefusals++
+		fmt.Fprintf(os.Stderr, "media playback refused: %v\n", err)
+		return nil
+	}
+	muted, err := media.MediaPlayerIsMuted()
+	if err != nil {
+		return fmt.Errorf("MediaPlayer.IsMuted: %w", err)
+	}
+	if !muted {
+		return errors.New("the media player did not stay muted; refusing to play anything")
+	}
+	if err = media.SetMediaPlayerVolume(0); err != nil {
+		return fmt.Errorf("MediaPlayer.SetVolume: %w", err)
+	}
+	volume, err := media.MediaPlayerVolume()
+	if err != nil {
+		return fmt.Errorf("MediaPlayer.Volume: %w", err)
+	}
+	if volume != 0 {
+		return fmt.Errorf("the media player's volume read back as %v after being set to zero", volume)
+	}
+	g.result.MediaPlaybackMuteChecks++
+	g.result.MediaPlaybackCycles++
+
+	// The scalar round trips, each set and read back.
+	for name, pair := range map[string]struct {
+		set func(bool) error
+		get func() (bool, error)
+	}{
+		"IsShuffled":             {media.SetMediaPlayerIsShuffled, media.MediaPlayerIsShuffled},
+		"IsRepeating":            {media.SetMediaPlayerIsRepeating, media.MediaPlayerIsRepeating},
+		"IsVisualizationEnabled": {media.SetMediaPlayerIsVisualizationEnabled, media.MediaPlayerIsVisualizationEnabled},
+	} {
+		if err = pair.set(true); err != nil {
+			return fmt.Errorf("MediaPlayer.Set%s: %w", name, err)
+		}
+		on, err := pair.get()
+		if err != nil {
+			return fmt.Errorf("MediaPlayer.%s: %w", name, err)
+		}
+		if !on {
+			return fmt.Errorf("MediaPlayer.%s did not round-trip true", name)
+		}
+		if err = pair.set(false); err != nil {
+			return fmt.Errorf("MediaPlayer.Set%s(false): %w", name, err)
+		}
+		off, err := pair.get()
+		if err != nil {
+			return fmt.Errorf("MediaPlayer.%s after false: %w", name, err)
+		}
+		if off {
+			return fmt.Errorf("MediaPlayer.%s did not round-trip false", name)
+		}
+		g.result.MediaPlaybackReads++
+	}
+	for _, read := range []func() error{
+		func() error { _, e := media.MediaPlayerState(); return e },
+		func() error { _, e := media.MediaPlayerPlayPosition(); return e },
+		func() error { _, e := media.MediaPlayerGameHasControl(); return e },
+	} {
+		if err = read(); err != nil {
+			return fmt.Errorf("a MediaPlayer scalar read: %w", err)
+		}
+		g.result.MediaPlaybackReads++
+	}
+
+	// The queue, which is a BORROWED view and has no disposal.
+	queue, err := media.MediaPlayerQueue()
+	if err != nil {
+		return fmt.Errorf("MediaPlayer.Queue: %w", err)
+	}
+	count, err := queue.Count()
+	if err != nil {
+		return fmt.Errorf("MediaQueue.Count: %w", err)
+	}
+	g.result.MediaQueueReads++
+	// An index at the count is out of range whatever the count is.
+	// The refusal must be the PROJECTION's bound and not a native failure:
+	// CNA refuses too, and a projection that relied on that would give a caller
+	// a native error where the reference gives an ArgumentOutOfRangeException.
+	//
+	// It is matched on the MESSAGE and not on a sentinel, deliberately.
+	// Exporting the sentinel would put a member in the media package's public
+	// surface that the XNA contract does not declare, and the verifier is right
+	// to refuse that -- a test's convenience is not a reason to widen an API.
+	if _, err = queue.Item(count); err == nil {
+		return errors.New("the media queue accepted an index equal to its count")
+	} else if !strings.Contains(err.Error(), "is outside a collection of") {
+		return fmt.Errorf("the queue's index refusal was %v; want the projection's out-of-range one", err)
+	}
+	if err = queue.SetActiveSongIndex(count); err == nil {
+		return errors.New("the media queue accepted an active index equal to its count")
+	} else if !strings.Contains(err.Error(), "is outside a collection of") {
+		return fmt.Errorf("the queue's active-index refusal was %v; want the projection's out-of-range one", err)
+	}
+	if _, err = queue.ActiveSongIndex(); err != nil {
+		return fmt.Errorf("MediaQueue.ActiveSongIndex: %w", err)
+	}
+	activeIndex, err := queue.ActiveSongIndex()
+	if err != nil {
+		return fmt.Errorf("MediaQueue.ActiveSongIndex: %w", err)
+	}
+	active, err := queue.ActiveSong()
+	if err != nil {
+		return fmt.Errorf("MediaQueue.ActiveSong: %w", err)
+	}
+	// An EMPTY queue has no active song, and that absence has to be reported
+	// as one: a projection that ignored the availability flag would hand back
+	// an object over a handle CNA never gave it.
+	if count == 0 {
+		if active != nil {
+			return errors.New("an empty media queue reported an active song")
+		}
+		g.result.MediaUnavailableReferences++
+	} else if active == nil && activeIndex >= 0 {
+		return errors.New("a queue with an active index reported no active song")
+	}
+	g.result.MediaQueueReads++
+
+	// Now PLAY, muted, from the isolated library's own songs.
+	library, err := media.NewMediaLibraryByNone()
+	if err == nil && library != nil {
+		songs, songsErr := library.Songs()
+		if songsErr != nil {
+			return fmt.Errorf("MediaLibrary.Songs: %w", songsErr)
+		}
+		songCount, countErr := songs.Count()
+		if countErr != nil {
+			return fmt.Errorf("SongCollection.Count: %w", countErr)
+		}
+		if songCount > 0 {
+			if err = media.MediaPlayerPlayBySongCollection(songs); err != nil {
+				return fmt.Errorf("MediaPlayer.Play(SongCollection): %w", err)
+			}
+			g.result.MediaPlaybackTransports++
+
+			// The transport is checked by its STATE, not by whether the call
+			// returned. Pause and Resume are each other's inverse and so are
+			// MoveNext and MovePrevious -- a projection that wired one to the
+			// other would return success and land in the wrong place.
+			if err = g.expectMediaState("after Play", media.MediaStatePlaying); err != nil {
+				return err
+			}
+			if err = media.MediaPlayerPause(); err != nil {
+				return fmt.Errorf("MediaPlayer.Pause: %w", err)
+			}
+			if err = g.expectMediaState("after Pause", media.MediaStatePaused); err != nil {
+				return err
+			}
+			if err = media.MediaPlayerResume(); err != nil {
+				return fmt.Errorf("MediaPlayer.Resume: %w", err)
+			}
+			if err = g.expectMediaState("after Resume", media.MediaStatePlaying); err != nil {
+				return err
+			}
+
+			// MoveNext and MovePrevious are checked by the queue's ACTIVE
+			// INDEX, which is the only thing that separates them.
+			playing, queueErr := media.MediaPlayerQueue()
+			if queueErr != nil {
+				return fmt.Errorf("MediaPlayer.Queue while playing: %w", queueErr)
+			}
+			before, indexErr := playing.ActiveSongIndex()
+			if indexErr != nil {
+				return fmt.Errorf("MediaQueue.ActiveSongIndex while playing: %w", indexErr)
+			}
+			if err = media.MediaPlayerMoveNext(); err != nil {
+				return fmt.Errorf("MediaPlayer.MoveNext: %w", err)
+			}
+			afterNext, indexErr := playing.ActiveSongIndex()
+			if indexErr != nil {
+				return fmt.Errorf("MediaQueue.ActiveSongIndex after MoveNext: %w", indexErr)
+			}
+			if songCount > 1 && afterNext == before {
+				return fmt.Errorf("MoveNext left the active index at %d", before)
+			}
+			if err = media.MediaPlayerMovePrevious(); err != nil {
+				return fmt.Errorf("MediaPlayer.MovePrevious: %w", err)
+			}
+			afterPrevious, indexErr := playing.ActiveSongIndex()
+			if indexErr != nil {
+				return fmt.Errorf("MediaQueue.ActiveSongIndex after MovePrevious: %w", indexErr)
+			}
+			if songCount > 1 && afterPrevious == afterNext {
+				return fmt.Errorf("MovePrevious left the active index at %d", afterNext)
+			}
+			g.result.MediaPlaybackTransports += 4
+
+			// The visualization is read WHILE something is playing, which is
+			// the only time the backend has anything to report.
+			playingData := media.NewVisualizationData()
+			if err = media.MediaPlayerGetVisualizationData(playingData); err != nil {
+				return fmt.Errorf("GetVisualizationData while playing: %w", err)
+			}
+			if err = g.checkVisualizationBuffers(playingData); err != nil {
+				return err
+			}
+
+			if err = media.MediaPlayerStop(); err != nil {
+				return fmt.Errorf("MediaPlayer.Stop: %w", err)
+			}
+			if err = g.expectMediaState("after Stop", media.MediaStateStopped); err != nil {
+				return err
+			}
+			g.result.MediaPlaybackTransports++
+			// Playing from an INDEX, whose bound the projection checks.
+			if err = media.MediaPlayerPlayBySongCollectionAndInt32(songs, songCount); err == nil {
+				return errors.New("Play accepted an index equal to the collection's count")
+			}
+			if err = media.MediaPlayerPlayBySongCollectionAndInt32(songs, 0); err != nil {
+				return fmt.Errorf("MediaPlayer.Play(SongCollection, 0): %w", err)
+			}
+			g.result.MediaPlaybackTransports++
+			// A single song, from the same collection.
+			one, itemErr := songs.Item(0)
+			if itemErr != nil {
+				return fmt.Errorf("SongCollection.Item: %w", itemErr)
+			}
+			if err = media.MediaPlayerPlayBySong(one); err != nil {
+				return fmt.Errorf("MediaPlayer.Play(Song): %w", err)
+			}
+			g.result.MediaPlaybackTransports++
+			// A DISPOSED song is refused, which is what Play's usable() check
+			// is for: without it the disposed handle would reach CNA.
+			spent, itemErr := songs.Item(0)
+			if itemErr != nil {
+				return fmt.Errorf("SongCollection.Item for the disposal check: %w", itemErr)
+			}
+			if err = spent.Dispose(); err != nil {
+				return fmt.Errorf("disposing a song for the refusal check: %w", err)
+			}
+			// The refusal must be the PROJECTION's disposal check and not a
+			// native failure: CNA refuses a dead handle too, and relying on
+			// that would hand a caller a native error where the reference
+			// raises ObjectDisposedException -- and would pass a disposed
+			// handle across the boundary on every call.
+			if err = media.MediaPlayerPlayBySong(spent); err == nil {
+				return errors.New("MediaPlayer.Play accepted a disposed song")
+			} else if !strings.Contains(err.Error(), "the media object is disposed") {
+				return fmt.Errorf("Play refused a disposed song with %v; want the projection's disposal refusal", err)
+			}
+			if err = media.MediaPlayerStop(); err != nil {
+				return fmt.Errorf("MediaPlayer.Stop after a single song: %w", err)
+			}
+		}
+		if err = songs.Dispose(); err != nil {
+			return fmt.Errorf("SongCollection.Dispose: %w", err)
+		}
+		if err = library.Dispose(); err != nil {
+			return fmt.Errorf("MediaLibrary.Dispose: %w", err)
+		}
+	}
+
+	// The visualization buffers, which this milestone is the first to fill.
+	data := media.NewVisualizationData()
+	if err = media.MediaPlayerGetVisualizationData(data); err != nil {
+		return fmt.Errorf("MediaPlayer.GetVisualizationData: %w", err)
+	}
+	if data.Frequencies().Count() != 256 || data.Samples().Count() != 256 {
+		return errors.New("a filled VisualizationData changed the length of its buffers")
+	}
+	g.result.MediaVisualizationFills++
+
+	// The video player, which can be built and cannot be given a video: the
+	// contract declares no Video constructor and CNA has no load route for one.
+	player, err := media.NewVideoPlayer()
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("new VideoPlayer: %w", err)
+		}
+		g.result.MediaPlaybackRefusals++
+		fmt.Fprintf(os.Stderr, "video player refused: %v\n", err)
+		return nil
+	}
+	g.result.MediaVideoPlayerCycles++
+	if err = player.SetIsMuted(true); err != nil {
+		return fmt.Errorf("VideoPlayer.SetIsMuted: %w", err)
+	}
+	if err = player.SetVolume(0); err != nil {
+		return fmt.Errorf("VideoPlayer.SetVolume: %w", err)
+	}
+	for name, pair := range map[string]struct {
+		set func(bool) error
+		get func() (bool, error)
+	}{
+		"IsLooped": {player.SetIsLooped, player.IsLooped},
+		"IsMuted":  {player.SetIsMuted, player.IsMuted},
+	} {
+		if err = pair.set(true); err != nil {
+			return fmt.Errorf("VideoPlayer.Set%s: %w", name, err)
+		}
+		on, getErr := pair.get()
+		if getErr != nil {
+			return fmt.Errorf("VideoPlayer.%s: %w", name, getErr)
+		}
+		if !on {
+			return fmt.Errorf("VideoPlayer.%s did not round-trip", name)
+		}
+		g.result.MediaVideoPlayerReads++
+	}
+	for _, read := range []func() error{
+		func() error { _, e := player.State(); return e },
+		func() error { _, e := player.Volume(); return e },
+		func() error { _, e := player.PlayPosition(); return e },
+	} {
+		if err = read(); err != nil {
+			return fmt.Errorf("a VideoPlayer scalar read: %w", err)
+		}
+		g.result.MediaVideoPlayerReads++
+	}
+	// A player that was never given a video has neither a video nor a frame,
+	// and both answer NIL rather than failing.
+	video, err := player.Video()
+	if err != nil {
+		return fmt.Errorf("VideoPlayer.Video: %w", err)
+	}
+	if video == nil {
+		g.result.MediaUnavailableReferences++
+	}
+	frame, err := player.GetTexture()
+	if err != nil {
+		return fmt.Errorf("VideoPlayer.GetTexture: %w", err)
+	}
+	if frame == nil {
+		g.result.MediaUnavailableReferences++
+	}
+	// The transport works on a player with nothing loaded.
+	for name, call := range map[string]func() error{
+		"Pause":  player.Pause,
+		"Resume": player.Resume,
+		"Stop":   player.Stop,
+	} {
+		if err = call(); err != nil && !isNativeRefusal(err) {
+			return fmt.Errorf("VideoPlayer.%s: %w", name, err)
+		}
+		g.result.MediaVideoPlayerReads++
+	}
+	if player.IsDisposed() {
+		return errors.New("a live video player reported itself disposed")
+	}
+	if err = player.Dispose(); err != nil {
+		return fmt.Errorf("VideoPlayer.Dispose: %w", err)
+	}
+	if !player.IsDisposed() {
+		return errors.New("IsDisposed stayed false after Dispose")
+	}
+	return player.Dispose()
+}
+
+// expectMediaState reads the player's state and names what it expected, so a
+// transport defect reports which transition went wrong rather than that
+// something did.
+func (g *stressGame) expectMediaState(when string, want media.MediaState) error {
+	got, err := media.MediaPlayerState()
+	if err != nil {
+		return fmt.Errorf("MediaPlayer.State %s: %w", when, err)
+	}
+	if got != want {
+		return fmt.Errorf("MediaPlayer.State %s is %v, want %v", when, got, want)
+	}
+	g.result.MediaPlaybackReads++
+	return nil
+}
+
+// checkVisualizationBuffers proves BOTH buffers were written and that they were
+// not swapped.
+//
+// The two are read back through the live views. A backend that reports nothing
+// leaves both at zero, and that is counted rather than failed -- what cannot
+// pass is one buffer holding the other's data, which is checked by comparing
+// them only when they actually differ.
+func (g *stressGame) checkVisualizationBuffers(data *media.VisualizationData) error {
+	frequencies, samples := data.Frequencies(), data.Samples()
+	if frequencies.Count() != 256 || samples.Count() != 256 {
+		return errors.New("a filled VisualizationData changed the length of its buffers")
+	}
+	nonZero := 0
+	for index := int32(0); index < 256; index++ {
+		frequency, err := frequencies.Item(index)
+		if err != nil {
+			return fmt.Errorf("reading frequency %d: %w", index, err)
+		}
+		sample, err := samples.Item(index)
+		if err != nil {
+			return fmt.Errorf("reading sample %d: %w", index, err)
+		}
+		if frequency != 0 || sample != 0 {
+			nonZero++
+		}
+	}
+	if nonZero == 0 {
+		g.result.MediaVisualizationSilent++
+	}
+	g.result.MediaVisualizationFills++
 	return nil
 }

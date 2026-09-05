@@ -256,8 +256,13 @@ type Runtime struct {
 	// ends it: a session Run created is destroyed when Run returns, and one a
 	// frame step created outlives every call and is destroyed by Dispose.
 	callbackHandle cgo.Handle
-	sessionLive    bool
-	standalone     bool
+	// Foundation 97. The one media-player event handler and its delivery
+	// counts. Both events reach the same handler because the trampoline
+	// carries the identity.
+	mediaPlayerHandler         MediaPlayerEventHandler
+	mediaPlayerEventDeliveries [mediaPlayerEventCount]int
+	sessionLive                bool
+	standalone                 bool
 }
 
 // Resource is an internal generation-checked owned-handle control block.
@@ -6198,4 +6203,536 @@ func (r *Runtime) MediaLibraryCreateFromSource(sourceIndex uint32) (uint64, erro
 		return 0, err
 	}
 	return nativeMediaLibraryCreateFromSource(game, sourceIndex)
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 97. Media playback.
+//
+// Every MediaPlayer route takes the GAME and every MediaPlayer member is static
+// in the contract, so each wrapper resolves the handle from activeGame rather
+// than taking one -- the same rule the media-source enumeration follows.
+// ---------------------------------------------------------------------------
+
+// mediaPlayerEventCount is the two canonical events: ActiveSongChanged and
+// MediaStateChanged, in the order the bridge's trampolines number them.
+const mediaPlayerEventCount = 2
+
+// MediaPlayerEventHandler is what a subscriber installs. It takes no argument
+// because neither canonical event carries data -- CNA's callback receives only
+// its context, and XNA's two events are EventHandler<EventArgs> over
+// EventArgs.Empty.
+type MediaPlayerEventHandler func(event uint32)
+
+// invokeMediaPlayerEvent is the Go side of the media-event trampoline.
+//
+// It records a delivery and calls the installed handler under a recover, for
+// the reason invokeGameEvent does: the C frame it returns through cannot carry
+// a panic.
+func (r *Runtime) invokeMediaPlayerEvent(event uint32) {
+	r.mu.Lock()
+	alive := r.alive
+	handler := r.mediaPlayerHandler
+	if int(event) < mediaPlayerEventCount {
+		r.mediaPlayerEventDeliveries[event]++
+	}
+	r.mu.Unlock()
+	if !alive {
+		r.recordCallbackFailure(ErrStaleGeneration)
+		return
+	}
+	if handler == nil {
+		return
+	}
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			r.recordCallbackFailure(
+				fmt.Errorf("panic in MediaPlayer event handler: %v\n%s", recovered, debug.Stack()))
+		}
+	}()
+	handler(event)
+}
+
+// SetMediaPlayerEventHandler installs the one handler both events reach. It is
+// ONE handler and not two because the trampoline already carries the identity,
+// and two would need two cgo handles for a pair of events that never differ in
+// anything else.
+func (r *Runtime) SetMediaPlayerEventHandler(handler MediaPlayerEventHandler) {
+	r.mu.Lock()
+	r.mediaPlayerHandler = handler
+	r.mu.Unlock()
+}
+
+// MediaPlayerEventDeliveries reports what each event has delivered, which is
+// what a stress slice counts.
+func (r *Runtime) MediaPlayerEventDeliveries() [mediaPlayerEventCount]int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.mediaPlayerEventDeliveries
+}
+
+// MediaPlayerSubscribeActiveSongChanged is
+// cna_media_player_subscribe_active_song_changed_ext.
+func (r *Runtime) MediaPlayerSubscribeActiveSongChanged() (uint64, error) {
+	r.mu.Lock()
+	handle := r.callbackHandle
+	r.mu.Unlock()
+	return nativeMediaPlayerSubscribeActiveSongChanged(uintptr(handle))
+}
+
+// MediaPlayerSubscribeMediaStateChanged is
+// cna_media_player_subscribe_media_state_changed_ext.
+func (r *Runtime) MediaPlayerSubscribeMediaStateChanged() (uint64, error) {
+	r.mu.Lock()
+	handle := r.callbackHandle
+	r.mu.Unlock()
+	return nativeMediaPlayerSubscribeMediaStateChanged(uintptr(handle))
+}
+
+// MediaPlayerUnsubscribe is cna_media_player_unsubscribe_ext.
+func (r *Runtime) MediaPlayerUnsubscribe(registration uint64) error {
+	return nativeMediaPlayerUnsubscribe(registration)
+}
+
+// MediaPlayerPause is cna_media_player_pause.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerPause() error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerPause(game)
+}
+
+// MediaPlayerResume is cna_media_player_resume.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerResume() error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerResume(game)
+}
+
+// MediaPlayerStop is cna_media_player_stop.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerStop() error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerStop(game)
+}
+
+// MediaPlayerMoveNext is cna_media_player_move_next.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerMoveNext() error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerMoveNext(game)
+}
+
+// MediaPlayerMovePrevious is cna_media_player_move_previous.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerMovePrevious() error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerMovePrevious(game)
+}
+
+// MediaPlayerIsShuffled is cna_media_player_get_is_shuffled.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerIsShuffled() (bool, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return false, err
+	}
+	return nativeMediaPlayerIsShuffled(game)
+}
+
+// MediaPlayerIsRepeating is cna_media_player_get_is_repeating.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerIsRepeating() (bool, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return false, err
+	}
+	return nativeMediaPlayerIsRepeating(game)
+}
+
+// MediaPlayerIsMuted is cna_media_player_get_is_muted.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerIsMuted() (bool, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return false, err
+	}
+	return nativeMediaPlayerIsMuted(game)
+}
+
+// MediaPlayerIsVisualizationEnabled is cna_media_player_get_is_visualization_enabled.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerIsVisualizationEnabled() (bool, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return false, err
+	}
+	return nativeMediaPlayerIsVisualizationEnabled(game)
+}
+
+// MediaPlayerGameHasControl is cna_media_player_get_game_has_control.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerGameHasControl() (bool, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return false, err
+	}
+	return nativeMediaPlayerGameHasControl(game)
+}
+
+// MediaPlayerSetIsShuffled is cna_media_player_set_is_shuffled.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerSetIsShuffled(value bool) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerSetIsShuffled(game, value)
+}
+
+// MediaPlayerSetIsRepeating is cna_media_player_set_is_repeating.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerSetIsRepeating(value bool) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerSetIsRepeating(game, value)
+}
+
+// MediaPlayerSetIsMuted is cna_media_player_set_is_muted.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerSetIsMuted(value bool) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerSetIsMuted(game, value)
+}
+
+// MediaPlayerSetIsVisualizationEnabled is cna_media_player_set_is_visualization_enabled.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerSetIsVisualizationEnabled(value bool) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerSetIsVisualizationEnabled(game, value)
+}
+
+// MediaPlayerVolume is cna_media_player_get_volume.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerVolume() (float32, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMediaPlayerVolume(game)
+}
+
+// MediaPlayerSetVolume is cna_media_player_set_volume.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerSetVolume(value float32) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerSetVolume(game, value)
+}
+
+// MediaPlayerState is cna_media_player_get_state.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerState() (uint32, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMediaPlayerState(game)
+}
+
+// MediaPlayerPlayPositionTicks is cna_media_player_get_play_position_ticks.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerPlayPositionTicks() (int64, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMediaPlayerPlayPositionTicks(game)
+}
+
+// MediaPlayerQueue is cna_media_player_get_queue.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerQueue() (uint64, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeMediaPlayerQueue(game)
+}
+
+// MediaPlayerPlaySong is cna_media_player_play_song.
+func (r *Runtime) MediaPlayerPlaySong(song uint64) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerPlaySong(game, song)
+}
+
+// MediaPlayerPlaySongs is cna_media_player_play_songs.
+func (r *Runtime) MediaPlayerPlaySongs(songs uint64) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerPlaySongs(game, songs)
+}
+
+// MediaPlayerPlaySongsFrom is cna_media_player_play_songs_from.
+func (r *Runtime) MediaPlayerPlaySongsFrom(songs uint64, index int32) error {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return err
+	}
+	return nativeMediaPlayerPlaySongsFrom(game, songs, index)
+}
+
+// MediaPlayerVisualizationData is cna_media_player_get_visualization_data.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) MediaPlayerVisualizationData() ([]float32, []float32, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return nil, nil, err
+	}
+	return nativeMediaPlayerVisualizationData(game)
+}
+
+// MediaQueueCount is cna_media_queue_get_count.
+func (r *Runtime) MediaQueueCount(queue uint64) (int32, error) {
+	return nativeMediaQueueCount(queue)
+}
+
+// MediaQueueActiveSongIndex is cna_media_queue_get_active_song_index.
+func (r *Runtime) MediaQueueActiveSongIndex(queue uint64) (int32, error) {
+	return nativeMediaQueueActiveSongIndex(queue)
+}
+
+// MediaQueueActiveSong is cna_media_queue_get_active_song.
+func (r *Runtime) MediaQueueActiveSong(queue uint64) (uint64, bool, error) {
+	return nativeMediaQueueActiveSong(queue)
+}
+
+// MediaQueueAt is cna_media_queue_get_at.
+func (r *Runtime) MediaQueueAt(queue uint64, index int32) (uint64, error) {
+	return nativeMediaQueueAt(queue, index)
+}
+
+// MediaQueueDestroy is cna_media_queue_destroy.
+func (r *Runtime) MediaQueueDestroy(queue uint64) error {
+	return nativeMediaQueueDestroy(queue)
+}
+
+// VideoDurationTicks is cna_video_get_duration.
+func (r *Runtime) VideoDurationTicks(handle uint64) (int64, error) {
+	return nativeVideoDurationTicks(handle)
+}
+
+// VideoWidth is cna_video_get_width.
+func (r *Runtime) VideoWidth(handle uint64) (int32, error) {
+	return nativeVideoWidth(handle)
+}
+
+// VideoHeight is cna_video_get_height.
+func (r *Runtime) VideoHeight(handle uint64) (int32, error) {
+	return nativeVideoHeight(handle)
+}
+
+// VideoFramesPerSecond is cna_video_get_frames_per_second.
+func (r *Runtime) VideoFramesPerSecond(handle uint64) (float32, error) {
+	return nativeVideoFramesPerSecond(handle)
+}
+
+// VideoSoundtrackType is cna_video_get_soundtrack_type.
+func (r *Runtime) VideoSoundtrackType(handle uint64) (uint32, error) {
+	return nativeVideoSoundtrackType(handle)
+}
+
+// VideoDestroy is cna_video_destroy.
+func (r *Runtime) VideoDestroy(handle uint64) error {
+	return nativeVideoDestroy(handle)
+}
+
+// VideoPlayerDispose is cna_video_player_dispose.
+func (r *Runtime) VideoPlayerDispose(handle uint64) error {
+	return nativeVideoPlayerDispose(handle)
+}
+
+// VideoPlayerDestroy is cna_video_player_destroy.
+func (r *Runtime) VideoPlayerDestroy(handle uint64) error {
+	return nativeVideoPlayerDestroy(handle)
+}
+
+// VideoPlayerPause is cna_video_player_pause.
+func (r *Runtime) VideoPlayerPause(handle uint64) error {
+	return nativeVideoPlayerPause(handle)
+}
+
+// VideoPlayerResume is cna_video_player_resume.
+func (r *Runtime) VideoPlayerResume(handle uint64) error {
+	return nativeVideoPlayerResume(handle)
+}
+
+// VideoPlayerStop is cna_video_player_stop.
+func (r *Runtime) VideoPlayerStop(handle uint64) error {
+	return nativeVideoPlayerStop(handle)
+}
+
+// VideoPlayerIsDisposed is cna_video_player_get_is_disposed.
+func (r *Runtime) VideoPlayerIsDisposed(handle uint64) (bool, error) {
+	return nativeVideoPlayerIsDisposed(handle)
+}
+
+// VideoPlayerIsLooped is cna_video_player_get_is_looped.
+func (r *Runtime) VideoPlayerIsLooped(handle uint64) (bool, error) {
+	return nativeVideoPlayerIsLooped(handle)
+}
+
+// VideoPlayerIsMuted is cna_video_player_get_is_muted.
+func (r *Runtime) VideoPlayerIsMuted(handle uint64) (bool, error) {
+	return nativeVideoPlayerIsMuted(handle)
+}
+
+// VideoPlayerVolume is cna_video_player_get_volume.
+func (r *Runtime) VideoPlayerVolume(handle uint64) (float32, error) {
+	return nativeVideoPlayerVolume(handle)
+}
+
+// VideoPlayerState is cna_video_player_get_state.
+func (r *Runtime) VideoPlayerState(handle uint64) (uint32, error) {
+	return nativeVideoPlayerState(handle)
+}
+
+// VideoPlayerPlayPositionTicks is cna_video_player_get_play_position_ticks.
+func (r *Runtime) VideoPlayerPlayPositionTicks(handle uint64) (int64, error) {
+	return nativeVideoPlayerPlayPositionTicks(handle)
+}
+
+// VideoPlayerCreate is cna_video_player_create.
+//
+// The game comes from activeGame: every MediaPlayer member is static in the
+// contract and every route takes the handle, so the caller never supplies one.
+func (r *Runtime) VideoPlayerCreate() (uint64, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeVideoPlayerCreate(game)
+}
+
+// VideoPlayerPlay is cna_video_player_play.
+func (r *Runtime) VideoPlayerPlay(player, video uint64) error {
+	return nativeVideoPlayerPlay(player, video)
+}
+
+// VideoPlayerSetIsLooped is cna_video_player_set_is_looped.
+func (r *Runtime) VideoPlayerSetIsLooped(player uint64, value bool) error {
+	return nativeVideoPlayerSetIsLooped(player, value)
+}
+
+// VideoPlayerSetIsMuted is cna_video_player_set_is_muted.
+func (r *Runtime) VideoPlayerSetIsMuted(player uint64, value bool) error {
+	return nativeVideoPlayerSetIsMuted(player, value)
+}
+
+// VideoPlayerSetVolume is cna_video_player_set_volume.
+func (r *Runtime) VideoPlayerSetVolume(player uint64, value float32) error {
+	return nativeVideoPlayerSetVolume(player, value)
+}
+
+// VideoPlayerVideo is cna_video_player_get_video.
+func (r *Runtime) VideoPlayerVideo(player uint64) (uint64, bool, error) {
+	return nativeVideoPlayerVideo(player)
+}
+
+// VideoPlayerTexture is cna_video_player_get_texture.
+func (r *Runtime) VideoPlayerTexture(player uint64) (uint64, bool, error) {
+	return nativeVideoPlayerTexture(player)
+}
+
+// VideoPlayerFrame is cna_video_player_get_texture, adopted as a Texture2D
+// resource.
+//
+// The frame handle CNA answers is a texture the PLAYER owns and refreshes, so
+// the resource is registered with the video player's own kind rather than as an
+// independently created texture -- disposing the player is what releases it.
+func (r *Runtime) VideoPlayerFrame(player uint64) (*Resource, TextureInfo, bool, error) {
+	handle, available, err := nativeVideoPlayerTexture(player)
+	if err != nil || !available {
+		return nil, TextureInfo{}, false, err
+	}
+	resource := r.registerResource(handle, resourceTexture2D, nil)
+	info, infoErr := nativeTextureInfo(handle)
+	if infoErr != nil {
+		_ = resource.Dispose()
+		return nil, TextureInfo{}, false, infoErr
+	}
+	return resource, info, true, nil
+}
+
+// MediaQueueSetActiveSongIndex is cna_media_queue_set_active_song_index.
+func (r *Runtime) MediaQueueSetActiveSongIndex(queue uint64, index int32) error {
+	return nativeMediaQueueSetActiveSongIndex(queue, index)
 }

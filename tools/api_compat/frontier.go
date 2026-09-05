@@ -117,20 +117,9 @@ var frontierFamilies = []frontierFamily{
 		},
 	},
 	{
-		Name:           "Media and video",
-		Classification: frontierActionableLocal,
-		Note:           "Foundation 95 closed the metadata graph and Foundation 96 the LIBRARY and the picture graph, 169 routes between them. What remains is PLAYBACK: MediaPlayer's 41 routes, MediaQueue, and Video/VideoPlayer's 42. An empty host library is valid evidence for empty collections rather than for unimplementable ones, which is how both were qualified",
-		Types: []string{
-			"Microsoft.Xna.Framework.Media.MediaPlayer",
-			"Microsoft.Xna.Framework.Media.MediaQueue",
-			"Microsoft.Xna.Framework.Media.Video",
-			"Microsoft.Xna.Framework.Media.VideoPlayer",
-		},
-	},
-	{
 		Name:           "GamerServices",
 		Classification: frontierActionableLocal,
-		Note:           "one type over ~53 guide_* CNA routes; sign-in-dependent behaviour is a separate question from the component's Initialize/Update ordering",
+		Note:           "Foundation 97 re-measured this and the recorded blocker was wrong in its first half and right in its second. The GamerServices assembly IS in the IL cache and its dispatcher was read: Initialize's first two guards are an already-initialized latch and a null serviceProvider check, both reproducible. What is NOT reproducible is the dispatcher itself -- CNA has 107 gamer/guide routes and NONE of them is GamerServicesDispatcher.Initialize, .Update or .WindowHandle, which are three of Initialize's four steps and one of Update's two. The component's whole job is pumping that dispatcher every frame, so projecting it would put a component in Game.Components that a consumer adds and which cannot do the one thing it exists for",
 		Types:          []string{"Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"},
 	},
 }

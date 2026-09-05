@@ -1146,6 +1146,85 @@ typedef CNA_Result (*cna_media_source_get_name_size_at_fn)(CNA_Handle, uint32_t,
 typedef CNA_Result (*cna_media_source_copy_name_at_fn)(CNA_Handle, uint32_t, char*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_media_source_get_type_name_size_at_fn)(CNA_Handle, uint32_t, uint64_t*);
 typedef CNA_Result (*cna_media_source_copy_type_name_at_fn)(CNA_Handle, uint32_t, char*, uint64_t, uint64_t*);
+
+
+/* Foundation 97 -- media playback. Four types over 55 routes: the static media
+   player and its queue, and the video pair.
+
+   CNA_MediaState and CNA_VideoSoundtrackType are ENUMS the projection already
+   declares; CNA_VisualizationData is a struct the caller owns. */
+#ifndef CNA_C_MEDIA_PLAYER_H
+typedef CNA_Handle CNA_MediaQueueHandle;
+typedef CNA_Handle CNA_MediaPlayerEventRegistrationHandle;
+typedef CNA_Handle CNA_VideoHandle;
+typedef CNA_Handle CNA_VideoPlayerHandle;
+typedef uint32_t CNA_MediaState;
+typedef uint32_t CNA_VideoSoundtrackType;
+typedef void (*CNA_MediaPlayerEventCallback)(void*);
+#define CNA_VISUALIZATION_DATA_SIZE 256
+typedef struct CNA_VisualizationData {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    float frequencies[CNA_VISUALIZATION_DATA_SIZE];
+    float samples[CNA_VISUALIZATION_DATA_SIZE];
+} CNA_VisualizationData;
+#endif
+typedef CNA_Result (*cna_media_player_play_song_fn)(CNA_Handle, CNA_SongHandle);
+typedef CNA_Result (*cna_media_player_play_songs_fn)(CNA_Handle, CNA_SongCollectionHandle);
+typedef CNA_Result (*cna_media_player_play_songs_from_fn)(CNA_Handle, CNA_SongCollectionHandle, int32_t);
+typedef CNA_Result (*cna_media_player_pause_fn)(CNA_Handle);
+typedef CNA_Result (*cna_media_player_resume_fn)(CNA_Handle);
+typedef CNA_Result (*cna_media_player_stop_fn)(CNA_Handle);
+typedef CNA_Result (*cna_media_player_move_next_fn)(CNA_Handle);
+typedef CNA_Result (*cna_media_player_move_previous_fn)(CNA_Handle);
+typedef CNA_Result (*cna_media_player_get_visualization_data_fn)(CNA_Handle, CNA_VisualizationData*);
+typedef CNA_Result (*cna_media_player_get_is_shuffled_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_media_player_set_is_shuffled_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_media_player_get_is_repeating_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_media_player_set_is_repeating_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_media_player_get_is_muted_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_media_player_set_is_muted_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_media_player_get_is_visualization_enabled_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_media_player_set_is_visualization_enabled_fn)(CNA_Handle, CNA_Bool);
+typedef CNA_Result (*cna_media_player_get_volume_fn)(CNA_Handle, float*);
+typedef CNA_Result (*cna_media_player_set_volume_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_media_player_get_queue_fn)(CNA_Handle, CNA_MediaQueueHandle*);
+typedef CNA_Result (*cna_media_player_get_state_fn)(CNA_Handle, CNA_MediaState*);
+typedef CNA_Result (*cna_media_player_get_play_position_ticks_fn)(CNA_Handle, int64_t*);
+typedef CNA_Result (*cna_media_player_get_game_has_control_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_media_player_subscribe_active_song_changed_ext_fn)(CNA_MediaPlayerEventCallback, void*, CNA_MediaPlayerEventRegistrationHandle*);
+typedef CNA_Result (*cna_media_player_subscribe_media_state_changed_ext_fn)(CNA_MediaPlayerEventCallback, void*, CNA_MediaPlayerEventRegistrationHandle*);
+typedef CNA_Result (*cna_media_player_unsubscribe_ext_fn)(CNA_MediaPlayerEventRegistrationHandle);
+typedef CNA_Result (*cna_media_queue_get_count_fn)(CNA_MediaQueueHandle, int32_t*);
+typedef CNA_Result (*cna_media_queue_get_active_song_index_fn)(CNA_MediaQueueHandle, int32_t*);
+typedef CNA_Result (*cna_media_queue_get_active_song_fn)(CNA_MediaQueueHandle, CNA_SongHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_media_queue_get_at_fn)(CNA_MediaQueueHandle, int32_t, CNA_SongHandle*);
+typedef CNA_Result (*cna_media_queue_destroy_fn)(CNA_MediaQueueHandle);
+typedef CNA_Result (*cna_video_get_duration_fn)(CNA_VideoHandle, int64_t*);
+typedef CNA_Result (*cna_video_get_width_fn)(CNA_VideoHandle, int32_t*);
+typedef CNA_Result (*cna_video_get_height_fn)(CNA_VideoHandle, int32_t*);
+typedef CNA_Result (*cna_video_get_frames_per_second_fn)(CNA_VideoHandle, float*);
+typedef CNA_Result (*cna_video_get_soundtrack_type_fn)(CNA_VideoHandle, CNA_VideoSoundtrackType*);
+typedef CNA_Result (*cna_video_destroy_fn)(CNA_VideoHandle);
+typedef CNA_Result (*cna_video_player_create_fn)(CNA_Handle, CNA_VideoPlayerHandle*);
+typedef CNA_Result (*cna_video_player_dispose_fn)(CNA_VideoPlayerHandle);
+typedef CNA_Result (*cna_video_player_destroy_fn)(CNA_VideoPlayerHandle);
+typedef CNA_Result (*cna_video_player_play_fn)(CNA_VideoPlayerHandle, CNA_VideoHandle);
+typedef CNA_Result (*cna_video_player_pause_fn)(CNA_VideoPlayerHandle);
+typedef CNA_Result (*cna_video_player_resume_fn)(CNA_VideoPlayerHandle);
+typedef CNA_Result (*cna_video_player_stop_fn)(CNA_VideoPlayerHandle);
+typedef CNA_Result (*cna_video_player_get_texture_fn)(CNA_VideoPlayerHandle, CNA_Handle*, CNA_Bool*);
+typedef CNA_Result (*cna_video_player_get_is_disposed_fn)(CNA_VideoPlayerHandle, CNA_Bool*);
+typedef CNA_Result (*cna_video_player_get_video_fn)(CNA_VideoPlayerHandle, CNA_VideoHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_video_player_get_state_fn)(CNA_VideoPlayerHandle, CNA_MediaState*);
+typedef CNA_Result (*cna_video_player_get_is_looped_fn)(CNA_VideoPlayerHandle, CNA_Bool*);
+typedef CNA_Result (*cna_video_player_set_is_looped_fn)(CNA_VideoPlayerHandle, CNA_Bool);
+typedef CNA_Result (*cna_video_player_get_is_muted_fn)(CNA_VideoPlayerHandle, CNA_Bool*);
+typedef CNA_Result (*cna_video_player_set_is_muted_fn)(CNA_VideoPlayerHandle, CNA_Bool);
+typedef CNA_Result (*cna_video_player_get_volume_fn)(CNA_VideoPlayerHandle, float*);
+typedef CNA_Result (*cna_video_player_set_volume_fn)(CNA_VideoPlayerHandle, float);
+typedef CNA_Result (*cna_video_player_get_play_position_ticks_fn)(CNA_VideoPlayerHandle, int64_t*);
+typedef CNA_Result (*cna_media_queue_set_active_song_index_fn)(CNA_MediaQueueHandle, int32_t);
 typedef uint32_t (*cna_get_abi_version_fn)(void);
 typedef CNA_Result (*cna_error_get_last_message_size_fn)(uint64_t*);
 typedef CNA_Result (*cna_error_copy_last_message_fn)(char*, uint64_t, uint64_t*);
@@ -1951,6 +2030,62 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_media_source_copy_type_name_at) \
     X(cna_media_library_copy_media_source_name) \
     X(cna_media_library_copy_type_name) \
+    X(cna_media_player_play_song) \
+    X(cna_media_player_play_songs) \
+    X(cna_media_player_play_songs_from) \
+    X(cna_media_player_pause) \
+    X(cna_media_player_resume) \
+    X(cna_media_player_stop) \
+    X(cna_media_player_move_next) \
+    X(cna_media_player_move_previous) \
+    X(cna_media_player_get_visualization_data) \
+    X(cna_media_player_get_is_shuffled) \
+    X(cna_media_player_set_is_shuffled) \
+    X(cna_media_player_get_is_repeating) \
+    X(cna_media_player_set_is_repeating) \
+    X(cna_media_player_get_is_muted) \
+    X(cna_media_player_set_is_muted) \
+    X(cna_media_player_get_is_visualization_enabled) \
+    X(cna_media_player_set_is_visualization_enabled) \
+    X(cna_media_player_get_volume) \
+    X(cna_media_player_set_volume) \
+    X(cna_media_player_get_queue) \
+    X(cna_media_player_get_state) \
+    X(cna_media_player_get_play_position_ticks) \
+    X(cna_media_player_get_game_has_control) \
+    X(cna_media_player_subscribe_active_song_changed_ext) \
+    X(cna_media_player_subscribe_media_state_changed_ext) \
+    X(cna_media_player_unsubscribe_ext) \
+    X(cna_media_queue_set_active_song_index) \
+    X(cna_media_queue_get_count) \
+    X(cna_media_queue_get_active_song_index) \
+    X(cna_media_queue_get_active_song) \
+    X(cna_media_queue_get_at) \
+    X(cna_media_queue_destroy) \
+    X(cna_video_get_duration) \
+    X(cna_video_get_width) \
+    X(cna_video_get_height) \
+    X(cna_video_get_frames_per_second) \
+    X(cna_video_get_soundtrack_type) \
+    X(cna_video_destroy) \
+    X(cna_video_player_create) \
+    X(cna_video_player_dispose) \
+    X(cna_video_player_destroy) \
+    X(cna_video_player_play) \
+    X(cna_video_player_pause) \
+    X(cna_video_player_resume) \
+    X(cna_video_player_stop) \
+    X(cna_video_player_get_texture) \
+    X(cna_video_player_get_is_disposed) \
+    X(cna_video_player_get_video) \
+    X(cna_video_player_get_state) \
+    X(cna_video_player_get_is_looped) \
+    X(cna_video_player_set_is_looped) \
+    X(cna_video_player_get_is_muted) \
+    X(cna_video_player_set_is_muted) \
+    X(cna_video_player_get_volume) \
+    X(cna_video_player_set_volume) \
+    X(cna_video_player_get_play_position_ticks) \
     X(cna_media_library_create) \
     X(cna_media_library_create_from_source) \
     X(cna_media_library_destroy) \

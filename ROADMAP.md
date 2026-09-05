@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               10
-MISSING_TYPE                    10
+TOTAL_DIAGNOSTICS                6
+MISSING_TYPE                     6
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 247
+COMPLETE_TYPES                 251
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         10
+GLOBAL_ACTIONABLE_LOCAL          6
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                581
+BOUND_FUNCTIONS                637
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -434,10 +434,29 @@ enumerates nothing until `HOME` is a directory the run was explicitly given, and
 seeds that isolated library with its own three songs, three pictures and two
 sub-albums. A run without one skips loudly and says so in `MEDIA_HOME_SKIPS`.
 
+Foundation 97 closed **media playback** and with it the whole
+`Microsoft.Xna.Framework.Media` namespace: `MediaPlayer`, `MediaQueue`, `Video`
+and `VideoPlayer`, over 55 more routes. `BOUND_FUNCTIONS` 581 → 637.
+
+`MediaPlayer` is entirely STATIC -- all twenty members -- so it projects as an
+empty marker type plus package functions, the shape `TitleContainer` and
+`FrameworkDispatcher` already have. Its two events are the first STATIC events
+in the profile: their registration lists are process-wide because there is no
+instance to hang them on, and the native subscription is made once and shared
+because CNA's callback carries only a context.
+
+`Video` is complete and **unreachable**, exactly as the Model family is: the
+contract declares no constructor and CNA has no `load_video` route. That is
+recorded on the type rather than papered over with a factory nothing measured.
+
+The stress slice **mutes before it plays anything and proves the mute took** --
+`MEDIA_PLAYBACK_MUTE_CHECKS` -- because MediaPlayer plays through the machine's
+real audio output and a test is not entitled to make noise on someone's desktop.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 10 types it does not project
+projects, it projects completely; what remains is 6 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -455,10 +474,10 @@ in that registry:
 
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
    grow `ContentManager.Load<T>`'s closed set.
-2. Then media **playback** -- `MediaPlayer`'s 41 routes, `MediaQueue`, and
-   `Video`/`VideoPlayer`'s 42 -- and after it **XACT** and **GamerServices**.
-   The Design converters closed in Foundation 94, the media metadata graph in
-   95 and the library and picture graph in 96.
+2. **XACT** and **GamerServices**, which are what remain. The Design converters
+   closed in Foundation 94, the media metadata graph in 95, the library and
+   picture graph in 96 and playback in 97 -- so the whole
+   `Microsoft.Xna.Framework.Media` namespace is now projected.
 
 **The Model family's native draw slice is measured and BLOCKED, which corrects
 what this section said before.** The route exists and is bindable:

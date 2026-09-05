@@ -18,7 +18,7 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 247,
+    "COMPLETE_TYPES": 251,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
@@ -28,7 +28,7 @@
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 3,
+    "FRONTIER_FAMILIES": 2,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 10,
+    "GLOBAL_ACTIONABLE_LOCAL": 6,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 10,
-    "MISSING_TYPES": 10,
+    "MISSING_TYPE": 6,
+    "MISSING_TYPES": 6,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3669,
-    "TARGET_TYPES": 247,
-    "TOTAL_DIAGNOSTICS": 10,
+    "TARGET_MEMBERS": 3724,
+    "TARGET_TYPES": 251,
+    "TOTAL_DIAGNOSTICS": 6,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -138,30 +138,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/GamerServices:GamerServicesComponent",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.MediaPlayer",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:MediaPlayer",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.MediaQueue",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:MediaQueue",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.Video",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:Video",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.VideoPlayer",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:VideoPlayer",
       "message": "mapped Go type is absent"
     }
   ],
@@ -385,6 +361,8 @@
     "Microsoft.Xna.Framework.Media.Genre",
     "Microsoft.Xna.Framework.Media.GenreCollection",
     "Microsoft.Xna.Framework.Media.MediaLibrary",
+    "Microsoft.Xna.Framework.Media.MediaPlayer",
+    "Microsoft.Xna.Framework.Media.MediaQueue",
     "Microsoft.Xna.Framework.Media.MediaSource",
     "Microsoft.Xna.Framework.Media.MediaSourceType",
     "Microsoft.Xna.Framework.Media.MediaState",
@@ -396,6 +374,8 @@
     "Microsoft.Xna.Framework.Media.PlaylistCollection",
     "Microsoft.Xna.Framework.Media.Song",
     "Microsoft.Xna.Framework.Media.SongCollection",
+    "Microsoft.Xna.Framework.Media.Video",
+    "Microsoft.Xna.Framework.Media.VideoPlayer",
     "Microsoft.Xna.Framework.Media.VideoSoundtrackType",
     "Microsoft.Xna.Framework.Media.VisualizationData",
     "Microsoft.Xna.Framework.Plane",
@@ -421,11 +401,7 @@
     "Microsoft.Xna.Framework.Audio.Cue",
     "Microsoft.Xna.Framework.Audio.SoundBank",
     "Microsoft.Xna.Framework.Audio.WaveBank",
-    "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
-    "Microsoft.Xna.Framework.Media.MediaPlayer",
-    "Microsoft.Xna.Framework.Media.MediaQueue",
-    "Microsoft.Xna.Framework.Media.Video",
-    "Microsoft.Xna.Framework.Media.VideoPlayer"
+    "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
   ],
   "interfaceWitnessProjections": [
     {
@@ -6412,7 +6388,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 67,
+      "projectedTypes": 71,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6455,22 +6431,9 @@
       "verdict": "PASS"
     },
     {
-      "family": "Media and video",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "Foundation 95 closed the metadata graph and Foundation 96 the LIBRARY and the picture graph, 169 routes between them. What remains is PLAYBACK: MediaPlayer's 41 routes, MediaQueue, and Video/VideoPlayer's 42. An empty host library is valid evidence for empty collections rather than for unimplementable ones, which is how both were qualified",
-      "types": [
-        "Microsoft.Xna.Framework.Media.MediaPlayer",
-        "Microsoft.Xna.Framework.Media.MediaQueue",
-        "Microsoft.Xna.Framework.Media.Video",
-        "Microsoft.Xna.Framework.Media.VideoPlayer"
-      ],
-      "remaining": 4,
-      "verdict": "PASS"
-    },
-    {
       "family": "GamerServices",
       "classification": "ACTIONABLE_LOCAL",
-      "note": "one type over ~53 guide_* CNA routes; sign-in-dependent behaviour is a separate question from the component's Initialize/Update ordering",
+      "note": "Foundation 97 re-measured this and the recorded blocker was wrong in its first half and right in its second. The GamerServices assembly IS in the IL cache and its dispatcher was read: Initialize's first two guards are an already-initialized latch and a null serviceProvider check, both reproducible. What is NOT reproducible is the dispatcher itself -- CNA has 107 gamer/guide routes and NONE of them is GamerServicesDispatcher.Initialize, .Update or .WindowHandle, which are three of Initialize's four steps and one of Update's two. The component's whole job is pumping that dispatcher every frame, so projecting it would put a component in Game.Components that a consumer adds and which cannot do the one thing it exists for",
       "types": [
         "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
       ],
@@ -10086,7 +10049,7 @@
       "clrMembers": 1,
       "projectedMembers": 0,
       "declaringTypes": 29,
-      "projectedTypes": 24,
+      "projectedTypes": 25,
       "rationale": "adds no Go surface of its own: no Disposable interface, no Close alias, no io.Closer adaptation, and no finalizer. Twenty-eight of the twenty-nine declaring types already declare Dispose publicly and it maps as an ordinary member; GraphicsDeviceManager implements it explicitly, so its Dispose() is not public surface and nothing is projected for it. Ownership and lifetime remain a per-type question that this relationship does not answer.",
       "verdict": "PASS"
     },
@@ -11077,7 +11040,7 @@
       "derivedTypes": 1,
       "projectedDerivedTypes": 1,
       "positions": 17,
-      "positionsOnProjectedCarriers": 16,
+      "positionsOnProjectedCarriers": 17,
       "requirement": "LIVE",
       "rows": [
         {
@@ -12111,7 +12074,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "e233f7573a28fc6bf4b5375dc25e6514c98338551723186177eca77436c92531",
+    "mappingSha256": "ae47934e2bec50555c4d97f68d8b8cb3513d33e506066f0eafd0f0dd91d861cb",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

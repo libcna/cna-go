@@ -5371,3 +5371,76 @@ func TestTheMediaGraphIsReachableFromOutsideTheModule(t *testing.T) {
 		t.Fatal("a nil MediaSource opened a library")
 	}
 }
+
+// TestMediaPlaybackIsReachableFromOutsideTheModule is Foundation 97's canary.
+func TestMediaPlaybackIsReachableFromOutsideTheModule(t *testing.T) {
+	// MediaPlayer's twenty static members, as package declarations.
+	var _ func(*media.Song) error = media.MediaPlayerPlayBySong
+	var _ func(*media.SongCollection) error = media.MediaPlayerPlayBySongCollection
+	var _ func(*media.SongCollection, int32) error = media.MediaPlayerPlayBySongCollectionAndInt32
+	var _ func() error = media.MediaPlayerPause
+	var _ func() error = media.MediaPlayerResume
+	var _ func() error = media.MediaPlayerStop
+	var _ func() error = media.MediaPlayerMoveNext
+	var _ func() error = media.MediaPlayerMovePrevious
+	var _ func(*media.VisualizationData) error = media.MediaPlayerGetVisualizationData
+	var _ func() (bool, error) = media.MediaPlayerIsShuffled
+	var _ func(bool) error = media.SetMediaPlayerIsShuffled
+	var _ func() (float32, error) = media.MediaPlayerVolume
+	var _ func(float32) error = media.SetMediaPlayerVolume
+	var _ func() (media.MediaState, error) = media.MediaPlayerState
+	var _ func() (framework.TimeSpan, error) = media.MediaPlayerPlayPosition
+	var _ func() (*media.MediaQueue, error) = media.MediaPlayerQueue
+	var _ func() (bool, error) = media.MediaPlayerGameHasControl
+
+	// The two static events, on the settled two-accessor projection.
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = media.MediaPlayerAddActiveSongChangedHandler
+	var _ func(framework.EventSubscription) error = media.MediaPlayerRemoveActiveSongChangedHandler
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = media.MediaPlayerAddMediaStateChangedHandler
+	var _ func(framework.EventSubscription) error = media.MediaPlayerRemoveMediaStateChangedHandler
+
+	// A nil argument is refused BEFORE the runtime, which a consumer with no
+	// game can see and which is this family's settled order.
+	if err := media.MediaPlayerPlayBySong(nil); err == nil {
+		t.Fatal("Play(nil) was accepted outside the module")
+	}
+	if err := media.MediaPlayerGetVisualizationData(nil); err == nil {
+		t.Fatal("GetVisualizationData(nil) was accepted outside the module")
+	}
+	if _, err := media.MediaPlayerAddActiveSongChangedHandler(nil); err == nil {
+		t.Fatal("a nil event handler was accepted outside the module")
+	}
+
+	// VisualizationData is the one playback type a consumer can exercise with
+	// no runtime at all.
+	data := media.NewVisualizationData()
+	if data.Frequencies().Count() != 256 || data.Samples().Count() != 256 {
+		t.Fatal("VisualizationData did not allocate both 256-value buffers")
+	}
+
+	var queue *media.MediaQueue
+	var _ func() (int32, error) = queue.Count
+	var _ func() (int32, error) = queue.ActiveSongIndex
+	var _ func(int32) error = queue.SetActiveSongIndex
+	var _ func() (*media.Song, error) = queue.ActiveSong
+	var _ func(int32) (*media.Song, error) = queue.Item
+
+	var video *media.Video
+	var _ func() (int32, error) = video.Width
+	var _ func() (framework.TimeSpan, error) = video.Duration
+	var _ func() (media.VideoSoundtrackType, error) = video.VideoSoundtrackType
+
+	var player *media.VideoPlayer
+	var _ func(*media.Video) error = player.Play
+	var _ func() (*graphics.Texture2D, error) = player.GetTexture
+	var _ func() (*media.Video, error) = player.Video
+	var _ func() (media.MediaState, error) = player.State
+	var _ func() bool = player.IsDisposed
+	var _ func() error = player.Dispose
+	var _ func() (*media.VideoPlayer, error) = media.NewVideoPlayer
+
+	// A nil VideoPlayer reports itself disposed rather than panicking.
+	if !player.IsDisposed() {
+		t.Fatal("a nil VideoPlayer did not report itself disposed outside the module")
+	}
+}

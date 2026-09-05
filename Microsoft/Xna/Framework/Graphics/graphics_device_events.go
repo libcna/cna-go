@@ -130,6 +130,21 @@ func init() {
 		// effect carries the device its ContentManager resolved.
 		return newEffect(nil, effect)
 	})
+	// Foundation 97. The Media package's fifth reach: a video frame is a
+	// Texture2D, and only this package builds one. The device is left nil for
+	// the reason a loaded texture's is -- the frame belongs to the player, not
+	// to a device this package can name.
+	servicebridge.SetVideoFrameAdopter(func(resource any, info any) any {
+		typed, ok := resource.(*interop.Resource)
+		if !ok || typed == nil {
+			return nil
+		}
+		described, ok := info.(interop.TextureInfo)
+		if !ok {
+			return nil
+		}
+		return newTexture2D(nil, typed, described, nil)
+	})
 	servicebridge.SetDeviceFacadeSignalReleaser(func(facade any) error {
 		device, typed := facade.(*GraphicsDevice)
 		if !typed || device == nil {

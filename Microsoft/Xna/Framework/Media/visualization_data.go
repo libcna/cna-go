@@ -24,9 +24,14 @@ import (
 // Read-only means the caller cannot write through the view, not that the data
 // is frozen.
 //
-// Completing this type starts no playback. CNA-Go has no MediaPlayer, no Song,
-// and no media backend, so nothing ever writes into the buffers and both views
-// stay 256 zeros for their whole lifetime.
+// Foundation 97 is where something finally writes into them.
+//
+// When this type was projected the note here read "CNA-Go has no MediaPlayer,
+// no Song, and no media backend, so nothing ever writes into the buffers and
+// both views stay 256 zeros for their whole lifetime". All three of those are
+// now false: MediaPlayer::GetVisualizationData fills this object, and the views
+// being LIVE over the arrays is what makes a caller holding Frequencies see the
+// refresh without asking again.
 type VisualizationData struct {
 	frequencies []float32
 	samples     []float32
@@ -62,4 +67,34 @@ func (d *VisualizationData) Frequencies() *framework.ReadOnlyCollection[float32]
 // ldfld and cannot fail.
 func (d *VisualizationData) Samples() *framework.ReadOnlyCollection[float32] {
 	return d.samplesCollection
+}
+
+// setFrequencies and setSamples are how MediaPlayer::GetVisualizationData
+// fills this object.
+//
+// They copy INTO the existing arrays rather than replacing them, and that is
+// the whole point: the two ReadOnlyCollection views were built over those
+// arrays and store them rather than copying, so a caller holding a view sees
+// the new data. Assigning a fresh slice would leave every existing view
+// pointing at the old buffer.
+//
+// They are unexported because the reference's own fields are `assembly`: what
+// a consumer reaches is the two read-only views, and the writing is the media
+// backend's business.
+func (d *VisualizationData) setFrequencies(values []float32) {
+	copyVisualizationBuffer(d.frequencies, values)
+}
+
+func (d *VisualizationData) setSamples(values []float32) {
+	copyVisualizationBuffer(d.samples, values)
+}
+
+// copyVisualizationBuffer fills as much of the destination as the source has
+// and ZEROES the rest, so a shorter answer cannot leave stale values from a
+// previous fill visible through the view.
+func copyVisualizationBuffer(destination, source []float32) {
+	copied := copy(destination, source)
+	for index := copied; index < len(destination); index++ {
+		destination[index] = 0
+	}
 }

@@ -1422,6 +1422,10 @@ var runtimeReadMembers = map[string]map[string]bool{
 }
 
 var managedStoredMembers = map[string]map[string]bool{
+	// Foundation 97. VideoPlayer's, the last of them and the same `ldfld`.
+	"Microsoft.Xna.Framework.Media.VideoPlayer": {
+		"property-get|IsDisposed": true,
+	},
 	// Foundation 96. get_IsDisposed on the library and the picture graph,
 	// measured the same way Foundation 95's ten were: one `ldfld` with no
 	// native call.

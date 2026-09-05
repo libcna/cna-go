@@ -1609,6 +1609,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 94 | the thirteen Design converters, and the end of the deferred frontier | `foundation-94-design-converters-evidence.md` |
 | 95 | the media metadata graph: five entities, five collections, 105 routes | `foundation-95-media-metadata-evidence.md` |
 | 96 | the media library and the picture graph, and the containment that made them safe to walk | `foundation-96-media-library-evidence.md` |
+| 97 | media playback, closing the Media namespace | `foundation-97-media-playback-evidence.md` |
 
 **A recorded blocker is a claim, and claims get re-measured** (91).
 System.IO.BinaryReader had been DEFERRED since Foundation 29 partly because "the
@@ -1950,6 +1951,29 @@ Song.FromUri had it and so did MediaLibrary.SavePicture: a nil argument answered
 the argument next, and an invalid argument is invalid either way. Twice in two
 milestones, so it is written down.
 
+**A slice that plays audio mutes first and PROVES the mute** (97). MediaPlayer
+plays through the machine's real output; a test is not entitled to make noise on
+someone's desktop. Set the mute AND the volume, read both back, and count the
+check -- nothing plays until it has passed. Same shape as the media-home
+containment, and for the same reason.
+
+**A stress slice must ASSERT where it landed, not that the call returned** (97).
+Pause/Resume and MoveNext/MovePrevious are each other's inverse, so a projection
+wiring one to the other returns success. Seven of Foundation 97's native
+mutants survived on exactly that: the slice invoked the transport and never
+checked the state or the active index afterwards.
+
+**A test's convenience is not a reason to widen the public API** (97). Exporting
+two error sentinels so the stress tool could use errors.Is put two members in a
+package's surface that the XNA contract does not declare, and the verifier
+refused it. Match the message instead.
+
+**A guard order settled once must be APPLIED, not copied around** (97). The
+argument-before-runtime rule was written down in Foundation 96 after finding it
+twice; Foundation 97's first mutation run found it violated in five more
+members, because the surrounding pattern had been copied instead. When a rule
+lands, sweep the family it applies to.
+
 **A graphics state object freezes** (59). Every setter is fallible because
 `ThrowIfBound` is a refusal the reference really throws; every getter is one
 `ldfld`. The static presets are frozen from construction.
@@ -1959,10 +1983,9 @@ milestones, so it is written down.
 This section is a STATEMENT OF CURRENT STATE, not a permanent list, and it is
 rewritten whenever a milestone makes one of its entries false.
 
-Still deferred: XACT; media PLAYBACK and video; and GamerServices. Foundation 95
-closed the media metadata graph and Foundation 96 the library and the picture
-graph, so what remains of that namespace is MediaPlayer, MediaQueue, Video and
-VideoPlayer. Audio closed in
+Still deferred: XACT and GamerServices, and nothing else. Foundation 95 closed
+the media metadata graph, 96 the library and picture graph and 97 playback, so
+the whole Microsoft.Xna.Framework.Media namespace is projected. Audio closed in
 Foundation 88, Input and touch in 89, the Model family in 90, Storage in 91, the
 content plumbing in 92, the content serializer attributes in 93 and the Design
 converters in 94.
