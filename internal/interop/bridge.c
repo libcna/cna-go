@@ -3771,6 +3771,427 @@ CnaGoResult cna_go_storage_copy_root_ext(char* destination, uint64_t capacity, u
 
 /* Foundation 92 -- the content reader. */
 
+/* Foundation 95 -- the media metadata graph. */
+CnaGoResult cna_go_song_dispose(CnaGoHandle song) {
+    return api.cna_song_dispose((CNA_SongHandle)song);
+}
+
+CnaGoResult cna_go_song_destroy(CnaGoHandle song) {
+    return api.cna_song_destroy((CNA_SongHandle)song);
+}
+
+CnaGoResult cna_go_song_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal) {
+    return api.cna_song_equals((CNA_SongHandle)left, (CNA_SongHandle)right, (CNA_Bool*)out_equal);
+}
+
+CnaGoResult cna_go_song_get_hash_code(CnaGoHandle song, int32_t* out_hash) {
+    return api.cna_song_get_hash_code((CNA_SongHandle)song, out_hash);
+}
+
+CnaGoResult cna_go_song_get_is_disposed(CnaGoHandle song, uint8_t* out_disposed) {
+    return api.cna_song_get_is_disposed((CNA_SongHandle)song, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_song_get_name_size(CnaGoHandle song, uint64_t* out_bytes) {
+    return api.cna_song_get_name_size((CNA_SongHandle)song, out_bytes);
+}
+
+CnaGoResult cna_go_song_copy_name(CnaGoHandle song, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_song_copy_name((CNA_SongHandle)song, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_song_get_type_name_size(CnaGoHandle song, uint64_t* out_bytes) {
+    return api.cna_song_get_type_name_size((CNA_SongHandle)song, out_bytes);
+}
+
+CnaGoResult cna_go_song_copy_type_name(CnaGoHandle song, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_song_copy_type_name((CNA_SongHandle)song, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_song_get_artist(CnaGoHandle song, CnaGoHandle* out_artist, uint8_t* out_available) {
+    return api.cna_song_get_artist((CNA_SongHandle)song, (CNA_ArtistHandle*)out_artist, (CNA_Bool*)out_available);
+}
+
+CnaGoResult cna_go_song_get_album(CnaGoHandle song, CnaGoHandle* out_album, uint8_t* out_available) {
+    return api.cna_song_get_album((CNA_SongHandle)song, (CNA_AlbumHandle*)out_album, (CNA_Bool*)out_available);
+}
+
+CnaGoResult cna_go_song_get_genre(CnaGoHandle song, CnaGoHandle* out_genre, uint8_t* out_available) {
+    return api.cna_song_get_genre((CNA_SongHandle)song, (CNA_GenreHandle*)out_genre, (CNA_Bool*)out_available);
+}
+
+CnaGoResult cna_go_song_get_duration(CnaGoHandle song, int64_t* out_ticks) {
+    return api.cna_song_get_duration((CNA_SongHandle)song, out_ticks);
+}
+
+CnaGoResult cna_go_song_get_is_rated(CnaGoHandle song, uint8_t* out_rated) {
+    return api.cna_song_get_is_rated((CNA_SongHandle)song, (CNA_Bool*)out_rated);
+}
+
+CnaGoResult cna_go_song_get_rating(CnaGoHandle song, int32_t* out_rating) {
+    return api.cna_song_get_rating((CNA_SongHandle)song, out_rating);
+}
+
+CnaGoResult cna_go_song_get_play_count(CnaGoHandle song, int32_t* out_play_count) {
+    return api.cna_song_get_play_count((CNA_SongHandle)song, out_play_count);
+}
+
+CnaGoResult cna_go_song_get_track_number(CnaGoHandle song, int32_t* out_track_number) {
+    return api.cna_song_get_track_number((CNA_SongHandle)song, out_track_number);
+}
+
+CnaGoResult cna_go_song_get_is_protected(CnaGoHandle song, uint8_t* out_protected) {
+    return api.cna_song_get_is_protected((CNA_SongHandle)song, (CNA_Bool*)out_protected);
+}
+
+CnaGoResult cna_go_song_create_from_uri(CnaGoHandle game, const char* name, uint64_t name_length, const char* uri, uint64_t uri_length, CnaGoHandle* out_song) {
+    return api.cna_song_create_from_uri((CNA_Handle)game, cna_go_view(name, name_length), cna_go_view(uri, uri_length), (CNA_SongHandle*)out_song);
+}
+
+CnaGoResult cna_go_album_dispose(CnaGoHandle album) {
+    return api.cna_album_dispose((CNA_AlbumHandle)album);
+}
+
+CnaGoResult cna_go_album_destroy(CnaGoHandle album) {
+    return api.cna_album_destroy((CNA_AlbumHandle)album);
+}
+
+CnaGoResult cna_go_album_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal) {
+    return api.cna_album_equals((CNA_AlbumHandle)left, (CNA_AlbumHandle)right, (CNA_Bool*)out_equal);
+}
+
+CnaGoResult cna_go_album_get_hash_code(CnaGoHandle album, int32_t* out_hash) {
+    return api.cna_album_get_hash_code((CNA_AlbumHandle)album, out_hash);
+}
+
+CnaGoResult cna_go_album_get_is_disposed(CnaGoHandle album, uint8_t* out_disposed) {
+    return api.cna_album_get_is_disposed((CNA_AlbumHandle)album, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_album_get_name_size(CnaGoHandle album, uint64_t* out_bytes) {
+    return api.cna_album_get_name_size((CNA_AlbumHandle)album, out_bytes);
+}
+
+CnaGoResult cna_go_album_copy_name(CnaGoHandle album, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_album_copy_name((CNA_AlbumHandle)album, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_album_get_type_name_size(CnaGoHandle album, uint64_t* out_bytes) {
+    return api.cna_album_get_type_name_size((CNA_AlbumHandle)album, out_bytes);
+}
+
+CnaGoResult cna_go_album_copy_type_name(CnaGoHandle album, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_album_copy_type_name((CNA_AlbumHandle)album, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_album_get_artist(CnaGoHandle album, CnaGoHandle* out_artist, uint8_t* out_available) {
+    return api.cna_album_get_artist((CNA_AlbumHandle)album, (CNA_ArtistHandle*)out_artist, (CNA_Bool*)out_available);
+}
+
+CnaGoResult cna_go_album_get_songs(CnaGoHandle album, CnaGoHandle* out_songs) {
+    return api.cna_album_get_songs((CNA_AlbumHandle)album, (CNA_SongCollectionHandle*)out_songs);
+}
+
+CnaGoResult cna_go_album_get_genre(CnaGoHandle album, CnaGoHandle* out_genre, uint8_t* out_available) {
+    return api.cna_album_get_genre((CNA_AlbumHandle)album, (CNA_GenreHandle*)out_genre, (CNA_Bool*)out_available);
+}
+
+CnaGoResult cna_go_album_get_duration(CnaGoHandle album, int64_t* out_ticks) {
+    return api.cna_album_get_duration((CNA_AlbumHandle)album, out_ticks);
+}
+
+CnaGoResult cna_go_album_get_has_art(CnaGoHandle album, uint8_t* out_has_art) {
+    return api.cna_album_get_has_art((CNA_AlbumHandle)album, (CNA_Bool*)out_has_art);
+}
+
+CnaGoResult cna_go_album_get_art_size(CnaGoHandle album, uint64_t* out_bytes) {
+    return api.cna_album_get_art_size((CNA_AlbumHandle)album, out_bytes);
+}
+
+CnaGoResult cna_go_album_copy_art(CnaGoHandle album, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_album_copy_art((CNA_AlbumHandle)album, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_album_get_thumbnail_size(CnaGoHandle album, uint64_t* out_bytes) {
+    return api.cna_album_get_thumbnail_size((CNA_AlbumHandle)album, out_bytes);
+}
+
+CnaGoResult cna_go_album_copy_thumbnail(CnaGoHandle album, uint8_t* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_album_copy_thumbnail((CNA_AlbumHandle)album, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_artist_dispose(CnaGoHandle artist) {
+    return api.cna_artist_dispose((CNA_ArtistHandle)artist);
+}
+
+CnaGoResult cna_go_artist_destroy(CnaGoHandle artist) {
+    return api.cna_artist_destroy((CNA_ArtistHandle)artist);
+}
+
+CnaGoResult cna_go_artist_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal) {
+    return api.cna_artist_equals((CNA_ArtistHandle)left, (CNA_ArtistHandle)right, (CNA_Bool*)out_equal);
+}
+
+CnaGoResult cna_go_artist_get_hash_code(CnaGoHandle artist, int32_t* out_hash) {
+    return api.cna_artist_get_hash_code((CNA_ArtistHandle)artist, out_hash);
+}
+
+CnaGoResult cna_go_artist_get_is_disposed(CnaGoHandle artist, uint8_t* out_disposed) {
+    return api.cna_artist_get_is_disposed((CNA_ArtistHandle)artist, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_artist_get_name_size(CnaGoHandle artist, uint64_t* out_bytes) {
+    return api.cna_artist_get_name_size((CNA_ArtistHandle)artist, out_bytes);
+}
+
+CnaGoResult cna_go_artist_copy_name(CnaGoHandle artist, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_artist_copy_name((CNA_ArtistHandle)artist, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_artist_get_type_name_size(CnaGoHandle artist, uint64_t* out_bytes) {
+    return api.cna_artist_get_type_name_size((CNA_ArtistHandle)artist, out_bytes);
+}
+
+CnaGoResult cna_go_artist_copy_type_name(CnaGoHandle artist, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_artist_copy_type_name((CNA_ArtistHandle)artist, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_artist_get_songs(CnaGoHandle artist, CnaGoHandle* out_songs) {
+    return api.cna_artist_get_songs((CNA_ArtistHandle)artist, (CNA_SongCollectionHandle*)out_songs);
+}
+
+CnaGoResult cna_go_artist_get_albums(CnaGoHandle artist, CnaGoHandle* out_albums) {
+    return api.cna_artist_get_albums((CNA_ArtistHandle)artist, (CNA_AlbumCollectionHandle*)out_albums);
+}
+
+CnaGoResult cna_go_genre_dispose(CnaGoHandle genre) {
+    return api.cna_genre_dispose((CNA_GenreHandle)genre);
+}
+
+CnaGoResult cna_go_genre_destroy(CnaGoHandle genre) {
+    return api.cna_genre_destroy((CNA_GenreHandle)genre);
+}
+
+CnaGoResult cna_go_genre_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal) {
+    return api.cna_genre_equals((CNA_GenreHandle)left, (CNA_GenreHandle)right, (CNA_Bool*)out_equal);
+}
+
+CnaGoResult cna_go_genre_get_hash_code(CnaGoHandle genre, int32_t* out_hash) {
+    return api.cna_genre_get_hash_code((CNA_GenreHandle)genre, out_hash);
+}
+
+CnaGoResult cna_go_genre_get_is_disposed(CnaGoHandle genre, uint8_t* out_disposed) {
+    return api.cna_genre_get_is_disposed((CNA_GenreHandle)genre, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_genre_get_name_size(CnaGoHandle genre, uint64_t* out_bytes) {
+    return api.cna_genre_get_name_size((CNA_GenreHandle)genre, out_bytes);
+}
+
+CnaGoResult cna_go_genre_copy_name(CnaGoHandle genre, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_genre_copy_name((CNA_GenreHandle)genre, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_genre_get_type_name_size(CnaGoHandle genre, uint64_t* out_bytes) {
+    return api.cna_genre_get_type_name_size((CNA_GenreHandle)genre, out_bytes);
+}
+
+CnaGoResult cna_go_genre_copy_type_name(CnaGoHandle genre, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_genre_copy_type_name((CNA_GenreHandle)genre, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_genre_get_songs(CnaGoHandle genre, CnaGoHandle* out_songs) {
+    return api.cna_genre_get_songs((CNA_GenreHandle)genre, (CNA_SongCollectionHandle*)out_songs);
+}
+
+CnaGoResult cna_go_genre_get_albums(CnaGoHandle genre, CnaGoHandle* out_albums) {
+    return api.cna_genre_get_albums((CNA_GenreHandle)genre, (CNA_AlbumCollectionHandle*)out_albums);
+}
+
+CnaGoResult cna_go_playlist_dispose(CnaGoHandle playlist) {
+    return api.cna_playlist_dispose((CNA_PlaylistHandle)playlist);
+}
+
+CnaGoResult cna_go_playlist_destroy(CnaGoHandle playlist) {
+    return api.cna_playlist_destroy((CNA_PlaylistHandle)playlist);
+}
+
+CnaGoResult cna_go_playlist_equals(CnaGoHandle left, CnaGoHandle right, uint8_t* out_equal) {
+    return api.cna_playlist_equals((CNA_PlaylistHandle)left, (CNA_PlaylistHandle)right, (CNA_Bool*)out_equal);
+}
+
+CnaGoResult cna_go_playlist_get_hash_code(CnaGoHandle playlist, int32_t* out_hash) {
+    return api.cna_playlist_get_hash_code((CNA_PlaylistHandle)playlist, out_hash);
+}
+
+CnaGoResult cna_go_playlist_get_is_disposed(CnaGoHandle playlist, uint8_t* out_disposed) {
+    return api.cna_playlist_get_is_disposed((CNA_PlaylistHandle)playlist, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_playlist_get_name_size(CnaGoHandle playlist, uint64_t* out_bytes) {
+    return api.cna_playlist_get_name_size((CNA_PlaylistHandle)playlist, out_bytes);
+}
+
+CnaGoResult cna_go_playlist_copy_name(CnaGoHandle playlist, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_playlist_copy_name((CNA_PlaylistHandle)playlist, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_playlist_get_type_name_size(CnaGoHandle playlist, uint64_t* out_bytes) {
+    return api.cna_playlist_get_type_name_size((CNA_PlaylistHandle)playlist, out_bytes);
+}
+
+CnaGoResult cna_go_playlist_copy_type_name(CnaGoHandle playlist, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_playlist_copy_type_name((CNA_PlaylistHandle)playlist, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_playlist_get_songs(CnaGoHandle playlist, CnaGoHandle* out_songs) {
+    return api.cna_playlist_get_songs((CNA_PlaylistHandle)playlist, (CNA_SongCollectionHandle*)out_songs);
+}
+
+CnaGoResult cna_go_playlist_get_duration(CnaGoHandle playlist, int64_t* out_ticks) {
+    return api.cna_playlist_get_duration((CNA_PlaylistHandle)playlist, out_ticks);
+}
+
+CnaGoResult cna_go_song_collection_dispose(CnaGoHandle collection) {
+    return api.cna_song_collection_dispose((CNA_SongCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_song_collection_destroy(CnaGoHandle collection) {
+    return api.cna_song_collection_destroy((CNA_SongCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_song_collection_get_at(CnaGoHandle collection, int32_t index, CnaGoHandle* out_song) {
+    return api.cna_song_collection_get_at((CNA_SongCollectionHandle)collection, index, (CNA_SongHandle*)out_song);
+}
+
+CnaGoResult cna_go_song_collection_get_count(CnaGoHandle collection, int32_t* out_count) {
+    return api.cna_song_collection_get_count((CNA_SongCollectionHandle)collection, out_count);
+}
+
+CnaGoResult cna_go_song_collection_get_is_disposed(CnaGoHandle collection, uint8_t* out_disposed) {
+    return api.cna_song_collection_get_is_disposed((CNA_SongCollectionHandle)collection, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_song_collection_get_type_name_size(CnaGoHandle collection, uint64_t* out_bytes) {
+    return api.cna_song_collection_get_type_name_size((CNA_SongCollectionHandle)collection, out_bytes);
+}
+
+CnaGoResult cna_go_song_collection_copy_type_name(CnaGoHandle collection, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_song_collection_copy_type_name((CNA_SongCollectionHandle)collection, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_album_collection_dispose(CnaGoHandle collection) {
+    return api.cna_album_collection_dispose((CNA_AlbumCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_album_collection_destroy(CnaGoHandle collection) {
+    return api.cna_album_collection_destroy((CNA_AlbumCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_album_collection_get_at(CnaGoHandle collection, int32_t index, CnaGoHandle* out_album) {
+    return api.cna_album_collection_get_at((CNA_AlbumCollectionHandle)collection, index, (CNA_AlbumHandle*)out_album);
+}
+
+CnaGoResult cna_go_album_collection_get_count(CnaGoHandle collection, int32_t* out_count) {
+    return api.cna_album_collection_get_count((CNA_AlbumCollectionHandle)collection, out_count);
+}
+
+CnaGoResult cna_go_album_collection_get_is_disposed(CnaGoHandle collection, uint8_t* out_disposed) {
+    return api.cna_album_collection_get_is_disposed((CNA_AlbumCollectionHandle)collection, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_album_collection_get_type_name_size(CnaGoHandle collection, uint64_t* out_bytes) {
+    return api.cna_album_collection_get_type_name_size((CNA_AlbumCollectionHandle)collection, out_bytes);
+}
+
+CnaGoResult cna_go_album_collection_copy_type_name(CnaGoHandle collection, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_album_collection_copy_type_name((CNA_AlbumCollectionHandle)collection, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_artist_collection_dispose(CnaGoHandle collection) {
+    return api.cna_artist_collection_dispose((CNA_ArtistCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_artist_collection_destroy(CnaGoHandle collection) {
+    return api.cna_artist_collection_destroy((CNA_ArtistCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_artist_collection_get_at(CnaGoHandle collection, int32_t index, CnaGoHandle* out_artist) {
+    return api.cna_artist_collection_get_at((CNA_ArtistCollectionHandle)collection, index, (CNA_ArtistHandle*)out_artist);
+}
+
+CnaGoResult cna_go_artist_collection_get_count(CnaGoHandle collection, int32_t* out_count) {
+    return api.cna_artist_collection_get_count((CNA_ArtistCollectionHandle)collection, out_count);
+}
+
+CnaGoResult cna_go_artist_collection_get_is_disposed(CnaGoHandle collection, uint8_t* out_disposed) {
+    return api.cna_artist_collection_get_is_disposed((CNA_ArtistCollectionHandle)collection, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_artist_collection_get_type_name_size(CnaGoHandle collection, uint64_t* out_bytes) {
+    return api.cna_artist_collection_get_type_name_size((CNA_ArtistCollectionHandle)collection, out_bytes);
+}
+
+CnaGoResult cna_go_artist_collection_copy_type_name(CnaGoHandle collection, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_artist_collection_copy_type_name((CNA_ArtistCollectionHandle)collection, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_genre_collection_dispose(CnaGoHandle collection) {
+    return api.cna_genre_collection_dispose((CNA_GenreCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_genre_collection_destroy(CnaGoHandle collection) {
+    return api.cna_genre_collection_destroy((CNA_GenreCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_genre_collection_get_at(CnaGoHandle collection, int32_t index, CnaGoHandle* out_genre) {
+    return api.cna_genre_collection_get_at((CNA_GenreCollectionHandle)collection, index, (CNA_GenreHandle*)out_genre);
+}
+
+CnaGoResult cna_go_genre_collection_get_count(CnaGoHandle collection, int32_t* out_count) {
+    return api.cna_genre_collection_get_count((CNA_GenreCollectionHandle)collection, out_count);
+}
+
+CnaGoResult cna_go_genre_collection_get_is_disposed(CnaGoHandle collection, uint8_t* out_disposed) {
+    return api.cna_genre_collection_get_is_disposed((CNA_GenreCollectionHandle)collection, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_genre_collection_get_type_name_size(CnaGoHandle collection, uint64_t* out_bytes) {
+    return api.cna_genre_collection_get_type_name_size((CNA_GenreCollectionHandle)collection, out_bytes);
+}
+
+CnaGoResult cna_go_genre_collection_copy_type_name(CnaGoHandle collection, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_genre_collection_copy_type_name((CNA_GenreCollectionHandle)collection, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_playlist_collection_dispose(CnaGoHandle collection) {
+    return api.cna_playlist_collection_dispose((CNA_PlaylistCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_playlist_collection_destroy(CnaGoHandle collection) {
+    return api.cna_playlist_collection_destroy((CNA_PlaylistCollectionHandle)collection);
+}
+
+CnaGoResult cna_go_playlist_collection_get_at(CnaGoHandle collection, int32_t index, CnaGoHandle* out_playlist) {
+    return api.cna_playlist_collection_get_at((CNA_PlaylistCollectionHandle)collection, index, (CNA_PlaylistHandle*)out_playlist);
+}
+
+CnaGoResult cna_go_playlist_collection_get_count(CnaGoHandle collection, int32_t* out_count) {
+    return api.cna_playlist_collection_get_count((CNA_PlaylistCollectionHandle)collection, out_count);
+}
+
+CnaGoResult cna_go_playlist_collection_get_is_disposed(CnaGoHandle collection, uint8_t* out_disposed) {
+    return api.cna_playlist_collection_get_is_disposed((CNA_PlaylistCollectionHandle)collection, (CNA_Bool*)out_disposed);
+}
+
+CnaGoResult cna_go_playlist_collection_get_type_name_size(CnaGoHandle collection, uint64_t* out_bytes) {
+    return api.cna_playlist_collection_get_type_name_size((CNA_PlaylistCollectionHandle)collection, out_bytes);
+}
+
+CnaGoResult cna_go_playlist_collection_copy_type_name(CnaGoHandle collection, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_playlist_collection_copy_type_name((CNA_PlaylistCollectionHandle)collection, destination, capacity, out_bytes);
+}
+
 CnaGoResult cna_go_content_reader_create(
     CnaGoHandle content_manager, CnaGoHandle stream,
     const char* asset_name, uint64_t asset_name_length,

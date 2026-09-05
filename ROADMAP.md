@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS               26
-MISSING_TYPE                    26
+TOTAL_DIAGNOSTICS               16
+MISSING_TYPE                    16
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 231
+COMPLETE_TYPES                 241
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL         26
+GLOBAL_ACTIONABLE_LOCAL         16
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                407
+BOUND_FUNCTIONS                512
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -396,10 +396,30 @@ pass -- a count check never given too many components, a message checked for
 names but not for how they join, sixteen matrix cell descriptors never read.
 All fourteen are covered and the second pass killed 49 of 49.
 
+Foundation 95 closed the **media metadata graph**: `Song`, `Album`, `Artist`,
+`Genre`, `Playlist` and their five collections, over **105 CNA routes** -- the
+largest native binding in one milestone so far, taking `BOUND_FUNCTIONS` from
+407 to 512.
+
+Two fallibility rules gained a missing arm. `ToString`, `GetHashCode` and the
+operators are blanket-exempted because in this profile they had always read
+STORED state; `Song::ToString` is the first that does not, reaching a native
+name, so `runtimeReadMembers` answers the exemption. And `get_IsDisposed` is one
+`ldfld` on all ten, which is what `managedStoredMembers` is for.
+
+The tests found a real defect in the projection: `mediaObject.usable()`'s nil
+check could never fire through a nil outer pointer, because reaching the
+embedded field is itself the dereference. Each type now shadows it.
+
+The family has ONE public entry point -- `Song.FromUri` -- so that is what the
+native slice walks, and it needed a fixture: CNA validates the file, which the
+first run measured as `CNA_RESULT_IO` for a URI naming nothing. The slice
+authors a 44-byte WAV, the way the content slice authors its PNG.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 26 types it does not project
+projects, it projects completely; what remains is 16 types it does not project
 at all, and every one of them is classified.
 
 ## What is left, and why
@@ -417,9 +437,10 @@ in that registry:
 
 1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
    grow `ContentManager.Load<T>`'s closed set.
-2. Then **Media/XACT** and **GamerServices**, which are what remain. The
-   **content serializer attributes** closed in Foundation 93 and the **Design
-   converters** in Foundation 94.
+2. Then the media **library and players** -- `MediaLibrary`'s 148 routes,
+   `MediaPlayer`'s 41 and `Video`/`VideoPlayer`'s 42 -- and after them **XACT**
+   and **GamerServices**. The content serializer attributes closed in Foundation
+   93, the Design converters in 94 and the media metadata graph in 95.
 
 **The Model family's native draw slice is measured and BLOCKED, which corrects
 what this section said before.** The route exists and is bindable:

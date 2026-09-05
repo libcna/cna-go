@@ -5391,3 +5391,475 @@ func (r *Runtime) ContentReaderReadBytesExact(reader uint64, count int32, reader
 func (r *Runtime) ContentReaderDestroy(reader uint64) error {
 	return nativeContentReaderDestroy(reader)
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 95. The media metadata graph.
+//
+// One method per route, each forwarding to its cgo wrapper, and a Media prefix
+// so that ten types' worth of Name, Dispose and Count do not collide with every
+// other family that has them.
+// ---------------------------------------------------------------------------
+// MediaSongDispose is cna_song_dispose.
+func (r *Runtime) MediaSongDispose(handle uint64) error {
+	return nativeSongDispose(handle)
+}
+
+// MediaSongDestroy is cna_song_destroy.
+func (r *Runtime) MediaSongDestroy(handle uint64) error {
+	return nativeSongDestroy(handle)
+}
+
+// MediaSongIsDisposed is cna_song_get_is_disposed.
+func (r *Runtime) MediaSongIsDisposed(handle uint64) (bool, error) {
+	return nativeSongIsDisposed(handle)
+}
+
+// MediaSongHashCode is cna_song_get_hash_code.
+func (r *Runtime) MediaSongHashCode(handle uint64) (int32, error) {
+	return nativeSongHashCode(handle)
+}
+
+// MediaSongName pairs cna_song_get_name_size with cna_song_copy_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaSongName(handle uint64) (string, error) {
+	return nativeSongName(handle)
+}
+
+// MediaSongTypeName pairs cna_song_get_type_name_size with cna_song_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaSongTypeName(handle uint64) (string, error) {
+	return nativeSongTypeName(handle)
+}
+
+// MediaSongEquals is cna_song_equals.
+func (r *Runtime) MediaSongEquals(left, right uint64) (bool, error) {
+	return nativeSongEquals(left, right)
+}
+
+// MediaAlbumDispose is cna_album_dispose.
+func (r *Runtime) MediaAlbumDispose(handle uint64) error {
+	return nativeAlbumDispose(handle)
+}
+
+// MediaAlbumDestroy is cna_album_destroy.
+func (r *Runtime) MediaAlbumDestroy(handle uint64) error {
+	return nativeAlbumDestroy(handle)
+}
+
+// MediaAlbumIsDisposed is cna_album_get_is_disposed.
+func (r *Runtime) MediaAlbumIsDisposed(handle uint64) (bool, error) {
+	return nativeAlbumIsDisposed(handle)
+}
+
+// MediaAlbumHashCode is cna_album_get_hash_code.
+func (r *Runtime) MediaAlbumHashCode(handle uint64) (int32, error) {
+	return nativeAlbumHashCode(handle)
+}
+
+// MediaAlbumName pairs cna_album_get_name_size with cna_album_copy_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaAlbumName(handle uint64) (string, error) {
+	return nativeAlbumName(handle)
+}
+
+// MediaAlbumTypeName pairs cna_album_get_type_name_size with cna_album_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaAlbumTypeName(handle uint64) (string, error) {
+	return nativeAlbumTypeName(handle)
+}
+
+// MediaAlbumEquals is cna_album_equals.
+func (r *Runtime) MediaAlbumEquals(left, right uint64) (bool, error) {
+	return nativeAlbumEquals(left, right)
+}
+
+// MediaArtistDispose is cna_artist_dispose.
+func (r *Runtime) MediaArtistDispose(handle uint64) error {
+	return nativeArtistDispose(handle)
+}
+
+// MediaArtistDestroy is cna_artist_destroy.
+func (r *Runtime) MediaArtistDestroy(handle uint64) error {
+	return nativeArtistDestroy(handle)
+}
+
+// MediaArtistIsDisposed is cna_artist_get_is_disposed.
+func (r *Runtime) MediaArtistIsDisposed(handle uint64) (bool, error) {
+	return nativeArtistIsDisposed(handle)
+}
+
+// MediaArtistHashCode is cna_artist_get_hash_code.
+func (r *Runtime) MediaArtistHashCode(handle uint64) (int32, error) {
+	return nativeArtistHashCode(handle)
+}
+
+// MediaArtistName pairs cna_artist_get_name_size with cna_artist_copy_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaArtistName(handle uint64) (string, error) {
+	return nativeArtistName(handle)
+}
+
+// MediaArtistTypeName pairs cna_artist_get_type_name_size with cna_artist_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaArtistTypeName(handle uint64) (string, error) {
+	return nativeArtistTypeName(handle)
+}
+
+// MediaArtistEquals is cna_artist_equals.
+func (r *Runtime) MediaArtistEquals(left, right uint64) (bool, error) {
+	return nativeArtistEquals(left, right)
+}
+
+// MediaGenreDispose is cna_genre_dispose.
+func (r *Runtime) MediaGenreDispose(handle uint64) error {
+	return nativeGenreDispose(handle)
+}
+
+// MediaGenreDestroy is cna_genre_destroy.
+func (r *Runtime) MediaGenreDestroy(handle uint64) error {
+	return nativeGenreDestroy(handle)
+}
+
+// MediaGenreIsDisposed is cna_genre_get_is_disposed.
+func (r *Runtime) MediaGenreIsDisposed(handle uint64) (bool, error) {
+	return nativeGenreIsDisposed(handle)
+}
+
+// MediaGenreHashCode is cna_genre_get_hash_code.
+func (r *Runtime) MediaGenreHashCode(handle uint64) (int32, error) {
+	return nativeGenreHashCode(handle)
+}
+
+// MediaGenreName pairs cna_genre_get_name_size with cna_genre_copy_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaGenreName(handle uint64) (string, error) {
+	return nativeGenreName(handle)
+}
+
+// MediaGenreTypeName pairs cna_genre_get_type_name_size with cna_genre_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaGenreTypeName(handle uint64) (string, error) {
+	return nativeGenreTypeName(handle)
+}
+
+// MediaGenreEquals is cna_genre_equals.
+func (r *Runtime) MediaGenreEquals(left, right uint64) (bool, error) {
+	return nativeGenreEquals(left, right)
+}
+
+// MediaPlaylistDispose is cna_playlist_dispose.
+func (r *Runtime) MediaPlaylistDispose(handle uint64) error {
+	return nativePlaylistDispose(handle)
+}
+
+// MediaPlaylistDestroy is cna_playlist_destroy.
+func (r *Runtime) MediaPlaylistDestroy(handle uint64) error {
+	return nativePlaylistDestroy(handle)
+}
+
+// MediaPlaylistIsDisposed is cna_playlist_get_is_disposed.
+func (r *Runtime) MediaPlaylistIsDisposed(handle uint64) (bool, error) {
+	return nativePlaylistIsDisposed(handle)
+}
+
+// MediaPlaylistHashCode is cna_playlist_get_hash_code.
+func (r *Runtime) MediaPlaylistHashCode(handle uint64) (int32, error) {
+	return nativePlaylistHashCode(handle)
+}
+
+// MediaPlaylistName pairs cna_playlist_get_name_size with cna_playlist_copy_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPlaylistName(handle uint64) (string, error) {
+	return nativePlaylistName(handle)
+}
+
+// MediaPlaylistTypeName pairs cna_playlist_get_type_name_size with cna_playlist_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPlaylistTypeName(handle uint64) (string, error) {
+	return nativePlaylistTypeName(handle)
+}
+
+// MediaPlaylistEquals is cna_playlist_equals.
+func (r *Runtime) MediaPlaylistEquals(left, right uint64) (bool, error) {
+	return nativePlaylistEquals(left, right)
+}
+
+// MediaSongArtist is cna_song_get_artist.
+func (r *Runtime) MediaSongArtist(handle uint64) (uint64, bool, error) {
+	return nativeSongArtist(handle)
+}
+
+// MediaSongAlbum is cna_song_get_album.
+func (r *Runtime) MediaSongAlbum(handle uint64) (uint64, bool, error) {
+	return nativeSongAlbum(handle)
+}
+
+// MediaSongGenre is cna_song_get_genre.
+func (r *Runtime) MediaSongGenre(handle uint64) (uint64, bool, error) {
+	return nativeSongGenre(handle)
+}
+
+// MediaSongDurationTicks is cna_song_get_duration.
+func (r *Runtime) MediaSongDurationTicks(handle uint64) (int64, error) {
+	return nativeSongDurationTicks(handle)
+}
+
+// MediaSongIsRated is cna_song_get_is_rated.
+func (r *Runtime) MediaSongIsRated(handle uint64) (bool, error) {
+	return nativeSongIsRated(handle)
+}
+
+// MediaSongRating is cna_song_get_rating.
+func (r *Runtime) MediaSongRating(handle uint64) (int32, error) {
+	return nativeSongRating(handle)
+}
+
+// MediaSongPlayCount is cna_song_get_play_count.
+func (r *Runtime) MediaSongPlayCount(handle uint64) (int32, error) {
+	return nativeSongPlayCount(handle)
+}
+
+// MediaSongTrackNumber is cna_song_get_track_number.
+func (r *Runtime) MediaSongTrackNumber(handle uint64) (int32, error) {
+	return nativeSongTrackNumber(handle)
+}
+
+// MediaSongIsProtected is cna_song_get_is_protected.
+func (r *Runtime) MediaSongIsProtected(handle uint64) (bool, error) {
+	return nativeSongIsProtected(handle)
+}
+
+// MediaSongFromURI is cna_song_create_from_uri.
+//
+// It takes the game from activeGame rather than from the caller, for the reason
+// every other create route does: the handle is the runtime's to hand out, and a
+// caller that could pass its own could pass a stale one.
+func (r *Runtime) MediaSongFromURI(name, uri string) (uint64, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return 0, err
+	}
+	return nativeSongFromURI(game, name, uri)
+}
+
+// MediaAlbumArtist is cna_album_get_artist.
+func (r *Runtime) MediaAlbumArtist(handle uint64) (uint64, bool, error) {
+	return nativeAlbumArtist(handle)
+}
+
+// MediaAlbumGenre is cna_album_get_genre.
+func (r *Runtime) MediaAlbumGenre(handle uint64) (uint64, bool, error) {
+	return nativeAlbumGenre(handle)
+}
+
+// MediaAlbumSongs is cna_album_get_songs.
+func (r *Runtime) MediaAlbumSongs(handle uint64) (uint64, error) {
+	return nativeAlbumSongs(handle)
+}
+
+// MediaAlbumDurationTicks is cna_album_get_duration.
+func (r *Runtime) MediaAlbumDurationTicks(handle uint64) (int64, error) {
+	return nativeAlbumDurationTicks(handle)
+}
+
+// MediaAlbumHasArt is cna_album_get_has_art.
+func (r *Runtime) MediaAlbumHasArt(handle uint64) (bool, error) {
+	return nativeAlbumHasArt(handle)
+}
+
+// MediaAlbumArt pairs cna_album_get_art_size with cna_album_copy_art: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaAlbumArt(handle uint64) ([]byte, error) {
+	return nativeAlbumArt(handle)
+}
+
+// MediaAlbumThumbnail pairs cna_album_get_thumbnail_size with cna_album_copy_thumbnail: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaAlbumThumbnail(handle uint64) ([]byte, error) {
+	return nativeAlbumThumbnail(handle)
+}
+
+// MediaArtistSongs is cna_artist_get_songs.
+func (r *Runtime) MediaArtistSongs(handle uint64) (uint64, error) {
+	return nativeArtistSongs(handle)
+}
+
+// MediaArtistAlbums is cna_artist_get_albums.
+func (r *Runtime) MediaArtistAlbums(handle uint64) (uint64, error) {
+	return nativeArtistAlbums(handle)
+}
+
+// MediaGenreSongs is cna_genre_get_songs.
+func (r *Runtime) MediaGenreSongs(handle uint64) (uint64, error) {
+	return nativeGenreSongs(handle)
+}
+
+// MediaGenreAlbums is cna_genre_get_albums.
+func (r *Runtime) MediaGenreAlbums(handle uint64) (uint64, error) {
+	return nativeGenreAlbums(handle)
+}
+
+// MediaPlaylistSongs is cna_playlist_get_songs.
+func (r *Runtime) MediaPlaylistSongs(handle uint64) (uint64, error) {
+	return nativePlaylistSongs(handle)
+}
+
+// MediaPlaylistDurationTicks is cna_playlist_get_duration.
+func (r *Runtime) MediaPlaylistDurationTicks(handle uint64) (int64, error) {
+	return nativePlaylistDurationTicks(handle)
+}
+
+// MediaSongCollectionDispose is cna_song_collection_dispose.
+func (r *Runtime) MediaSongCollectionDispose(handle uint64) error {
+	return nativeSongCollectionDispose(handle)
+}
+
+// MediaSongCollectionDestroy is cna_song_collection_destroy.
+func (r *Runtime) MediaSongCollectionDestroy(handle uint64) error {
+	return nativeSongCollectionDestroy(handle)
+}
+
+// MediaSongCollectionIsDisposed is cna_song_collection_get_is_disposed.
+func (r *Runtime) MediaSongCollectionIsDisposed(handle uint64) (bool, error) {
+	return nativeSongCollectionIsDisposed(handle)
+}
+
+// MediaSongCollectionCount is cna_song_collection_get_count.
+func (r *Runtime) MediaSongCollectionCount(handle uint64) (int32, error) {
+	return nativeSongCollectionCount(handle)
+}
+
+// MediaSongCollectionTypeName pairs cna_song_collection_get_type_name_size with cna_song_collection_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaSongCollectionTypeName(handle uint64) (string, error) {
+	return nativeSongCollectionTypeName(handle)
+}
+
+// MediaSongCollectionAt is cna_song_collection_get_at.
+func (r *Runtime) MediaSongCollectionAt(handle uint64, index int32) (uint64, error) {
+	return nativeSongCollectionAt(handle, index)
+}
+
+// MediaAlbumCollectionDispose is cna_album_collection_dispose.
+func (r *Runtime) MediaAlbumCollectionDispose(handle uint64) error {
+	return nativeAlbumCollectionDispose(handle)
+}
+
+// MediaAlbumCollectionDestroy is cna_album_collection_destroy.
+func (r *Runtime) MediaAlbumCollectionDestroy(handle uint64) error {
+	return nativeAlbumCollectionDestroy(handle)
+}
+
+// MediaAlbumCollectionIsDisposed is cna_album_collection_get_is_disposed.
+func (r *Runtime) MediaAlbumCollectionIsDisposed(handle uint64) (bool, error) {
+	return nativeAlbumCollectionIsDisposed(handle)
+}
+
+// MediaAlbumCollectionCount is cna_album_collection_get_count.
+func (r *Runtime) MediaAlbumCollectionCount(handle uint64) (int32, error) {
+	return nativeAlbumCollectionCount(handle)
+}
+
+// MediaAlbumCollectionTypeName pairs cna_album_collection_get_type_name_size with cna_album_collection_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaAlbumCollectionTypeName(handle uint64) (string, error) {
+	return nativeAlbumCollectionTypeName(handle)
+}
+
+// MediaAlbumCollectionAt is cna_album_collection_get_at.
+func (r *Runtime) MediaAlbumCollectionAt(handle uint64, index int32) (uint64, error) {
+	return nativeAlbumCollectionAt(handle, index)
+}
+
+// MediaArtistCollectionDispose is cna_artist_collection_dispose.
+func (r *Runtime) MediaArtistCollectionDispose(handle uint64) error {
+	return nativeArtistCollectionDispose(handle)
+}
+
+// MediaArtistCollectionDestroy is cna_artist_collection_destroy.
+func (r *Runtime) MediaArtistCollectionDestroy(handle uint64) error {
+	return nativeArtistCollectionDestroy(handle)
+}
+
+// MediaArtistCollectionIsDisposed is cna_artist_collection_get_is_disposed.
+func (r *Runtime) MediaArtistCollectionIsDisposed(handle uint64) (bool, error) {
+	return nativeArtistCollectionIsDisposed(handle)
+}
+
+// MediaArtistCollectionCount is cna_artist_collection_get_count.
+func (r *Runtime) MediaArtistCollectionCount(handle uint64) (int32, error) {
+	return nativeArtistCollectionCount(handle)
+}
+
+// MediaArtistCollectionTypeName pairs cna_artist_collection_get_type_name_size with cna_artist_collection_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaArtistCollectionTypeName(handle uint64) (string, error) {
+	return nativeArtistCollectionTypeName(handle)
+}
+
+// MediaArtistCollectionAt is cna_artist_collection_get_at.
+func (r *Runtime) MediaArtistCollectionAt(handle uint64, index int32) (uint64, error) {
+	return nativeArtistCollectionAt(handle, index)
+}
+
+// MediaGenreCollectionDispose is cna_genre_collection_dispose.
+func (r *Runtime) MediaGenreCollectionDispose(handle uint64) error {
+	return nativeGenreCollectionDispose(handle)
+}
+
+// MediaGenreCollectionDestroy is cna_genre_collection_destroy.
+func (r *Runtime) MediaGenreCollectionDestroy(handle uint64) error {
+	return nativeGenreCollectionDestroy(handle)
+}
+
+// MediaGenreCollectionIsDisposed is cna_genre_collection_get_is_disposed.
+func (r *Runtime) MediaGenreCollectionIsDisposed(handle uint64) (bool, error) {
+	return nativeGenreCollectionIsDisposed(handle)
+}
+
+// MediaGenreCollectionCount is cna_genre_collection_get_count.
+func (r *Runtime) MediaGenreCollectionCount(handle uint64) (int32, error) {
+	return nativeGenreCollectionCount(handle)
+}
+
+// MediaGenreCollectionTypeName pairs cna_genre_collection_get_type_name_size with cna_genre_collection_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaGenreCollectionTypeName(handle uint64) (string, error) {
+	return nativeGenreCollectionTypeName(handle)
+}
+
+// MediaGenreCollectionAt is cna_genre_collection_get_at.
+func (r *Runtime) MediaGenreCollectionAt(handle uint64, index int32) (uint64, error) {
+	return nativeGenreCollectionAt(handle, index)
+}
+
+// MediaPlaylistCollectionDispose is cna_playlist_collection_dispose.
+func (r *Runtime) MediaPlaylistCollectionDispose(handle uint64) error {
+	return nativePlaylistCollectionDispose(handle)
+}
+
+// MediaPlaylistCollectionDestroy is cna_playlist_collection_destroy.
+func (r *Runtime) MediaPlaylistCollectionDestroy(handle uint64) error {
+	return nativePlaylistCollectionDestroy(handle)
+}
+
+// MediaPlaylistCollectionIsDisposed is cna_playlist_collection_get_is_disposed.
+func (r *Runtime) MediaPlaylistCollectionIsDisposed(handle uint64) (bool, error) {
+	return nativePlaylistCollectionIsDisposed(handle)
+}
+
+// MediaPlaylistCollectionCount is cna_playlist_collection_get_count.
+func (r *Runtime) MediaPlaylistCollectionCount(handle uint64) (int32, error) {
+	return nativePlaylistCollectionCount(handle)
+}
+
+// MediaPlaylistCollectionTypeName pairs cna_playlist_collection_get_type_name_size with cna_playlist_collection_copy_type_name: the size
+// first, then the copy into a buffer of exactly that size.
+func (r *Runtime) MediaPlaylistCollectionTypeName(handle uint64) (string, error) {
+	return nativePlaylistCollectionTypeName(handle)
+}
+
+// MediaPlaylistCollectionAt is cna_playlist_collection_get_at.
+func (r *Runtime) MediaPlaylistCollectionAt(handle uint64, index int32) (uint64, error) {
+	return nativePlaylistCollectionAt(handle, index)
+}

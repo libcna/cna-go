@@ -18,7 +18,7 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 231,
+    "COMPLETE_TYPES": 241,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 26,
+    "GLOBAL_ACTIONABLE_LOCAL": 16,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 26,
-    "MISSING_TYPES": 26,
+    "MISSING_TYPE": 16,
+    "MISSING_TYPES": 16,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3504,
-    "TARGET_TYPES": 231,
-    "TOTAL_DIAGNOSTICS": 26,
+    "TARGET_MEMBERS": 3607,
+    "TARGET_TYPES": 241,
+    "TOTAL_DIAGNOSTICS": 16,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -142,42 +142,6 @@
     },
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.Album",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:Album",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.AlbumCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:AlbumCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.Artist",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:Artist",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.ArtistCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:ArtistCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.Genre",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:Genre",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.GenreCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:GenreCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Media.MediaLibrary",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:MediaLibrary",
       "message": "mapped Go type is absent"
@@ -222,30 +186,6 @@
       "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.Media.PictureCollection",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:PictureCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.Playlist",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:Playlist",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.PlaylistCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:PlaylistCollection",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.Song",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:Song",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Media.SongCollection",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media:SongCollection",
       "message": "mapped Go type is absent"
     },
     {
@@ -474,8 +414,18 @@
     "Microsoft.Xna.Framework.LaunchParameters",
     "Microsoft.Xna.Framework.MathHelper",
     "Microsoft.Xna.Framework.Matrix",
+    "Microsoft.Xna.Framework.Media.Album",
+    "Microsoft.Xna.Framework.Media.AlbumCollection",
+    "Microsoft.Xna.Framework.Media.Artist",
+    "Microsoft.Xna.Framework.Media.ArtistCollection",
+    "Microsoft.Xna.Framework.Media.Genre",
+    "Microsoft.Xna.Framework.Media.GenreCollection",
     "Microsoft.Xna.Framework.Media.MediaSourceType",
     "Microsoft.Xna.Framework.Media.MediaState",
+    "Microsoft.Xna.Framework.Media.Playlist",
+    "Microsoft.Xna.Framework.Media.PlaylistCollection",
+    "Microsoft.Xna.Framework.Media.Song",
+    "Microsoft.Xna.Framework.Media.SongCollection",
     "Microsoft.Xna.Framework.Media.VideoSoundtrackType",
     "Microsoft.Xna.Framework.Media.VisualizationData",
     "Microsoft.Xna.Framework.Plane",
@@ -502,12 +452,6 @@
     "Microsoft.Xna.Framework.Audio.SoundBank",
     "Microsoft.Xna.Framework.Audio.WaveBank",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
-    "Microsoft.Xna.Framework.Media.Album",
-    "Microsoft.Xna.Framework.Media.AlbumCollection",
-    "Microsoft.Xna.Framework.Media.Artist",
-    "Microsoft.Xna.Framework.Media.ArtistCollection",
-    "Microsoft.Xna.Framework.Media.Genre",
-    "Microsoft.Xna.Framework.Media.GenreCollection",
     "Microsoft.Xna.Framework.Media.MediaLibrary",
     "Microsoft.Xna.Framework.Media.MediaPlayer",
     "Microsoft.Xna.Framework.Media.MediaQueue",
@@ -516,10 +460,6 @@
     "Microsoft.Xna.Framework.Media.PictureAlbum",
     "Microsoft.Xna.Framework.Media.PictureAlbumCollection",
     "Microsoft.Xna.Framework.Media.PictureCollection",
-    "Microsoft.Xna.Framework.Media.Playlist",
-    "Microsoft.Xna.Framework.Media.PlaylistCollection",
-    "Microsoft.Xna.Framework.Media.Song",
-    "Microsoft.Xna.Framework.Media.SongCollection",
     "Microsoft.Xna.Framework.Media.Video",
     "Microsoft.Xna.Framework.Media.VideoPlayer"
   ],
@@ -6508,7 +6448,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 51,
+      "projectedTypes": 61,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6553,14 +6493,8 @@
     {
       "family": "Media and video",
       "classification": "ACTIONABLE_LOCAL",
-      "note": "~31/23/53/46/50/55/19 CNA routes; the family splits into pure collection semantics, library enumeration, playback and video decode, and an empty host library is valid evidence for empty collections rather than for unimplementable ones",
+      "note": "Foundation 95 closed the metadata graph -- the five entities and their five collections, 105 routes. What remains is the LIBRARY that enumerates them, the two players, and video decode: MediaLibrary's 148 routes, MediaPlayer's 41 and Video/VideoPlayer's 42. An empty host library is valid evidence for empty collections rather than for unimplementable ones, which is how the metadata graph was qualified",
       "types": [
-        "Microsoft.Xna.Framework.Media.Album",
-        "Microsoft.Xna.Framework.Media.AlbumCollection",
-        "Microsoft.Xna.Framework.Media.Artist",
-        "Microsoft.Xna.Framework.Media.ArtistCollection",
-        "Microsoft.Xna.Framework.Media.Genre",
-        "Microsoft.Xna.Framework.Media.GenreCollection",
         "Microsoft.Xna.Framework.Media.MediaLibrary",
         "Microsoft.Xna.Framework.Media.MediaPlayer",
         "Microsoft.Xna.Framework.Media.MediaQueue",
@@ -6569,14 +6503,10 @@
         "Microsoft.Xna.Framework.Media.PictureAlbum",
         "Microsoft.Xna.Framework.Media.PictureAlbumCollection",
         "Microsoft.Xna.Framework.Media.PictureCollection",
-        "Microsoft.Xna.Framework.Media.Playlist",
-        "Microsoft.Xna.Framework.Media.PlaylistCollection",
-        "Microsoft.Xna.Framework.Media.Song",
-        "Microsoft.Xna.Framework.Media.SongCollection",
         "Microsoft.Xna.Framework.Media.Video",
         "Microsoft.Xna.Framework.Media.VideoPlayer"
       ],
-      "remaining": 20,
+      "remaining": 10,
       "verdict": "PASS"
     },
     {
@@ -10158,7 +10088,7 @@
       "clrMembers": 1,
       "projectedMembers": 0,
       "declaringTypes": 12,
-      "projectedTypes": 5,
+      "projectedTypes": 10,
       "rationale": "projected by the declared collection rule as GetEnumerator, returning either the collection's own public enumerator type or the Iterator\u003cT\u003e adapter",
       "verdict": "PASS"
     },
@@ -10198,7 +10128,7 @@
       "clrMembers": 1,
       "projectedMembers": 0,
       "declaringTypes": 29,
-      "projectedTypes": 9,
+      "projectedTypes": 19,
       "rationale": "adds no Go surface of its own: no Disposable interface, no Close alias, no io.Closer adaptation, and no finalizer. Twenty-eight of the twenty-nine declaring types already declare Dispose publicly and it maps as an ordinary member; GraphicsDeviceManager implements it explicitly, so its Dispose() is not public surface and nothing is projected for it. Ownership and lifetime remain a per-type question that this relationship does not answer.",
       "verdict": "PASS"
     },
@@ -10208,7 +10138,7 @@
       "clrMembers": 1,
       "projectedMembers": 0,
       "declaringTypes": 40,
-      "projectedTypes": 32,
+      "projectedTypes": 37,
       "rationale": "every declaring XNA type already declares the strongly typed Equals publicly, so the concrete method set is the whole projection",
       "verdict": "PASS"
     },
@@ -12223,7 +12153,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "49a3c0b79f519b0fdb6a9de198da7175d431d5f809de8d549f0a668152add220",
+    "mappingSha256": "d4a6a7acf7894d967037078cd1a12c74825d6ddeb5f3e158d139badc0f39ee14",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

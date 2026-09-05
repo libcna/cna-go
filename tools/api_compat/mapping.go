@@ -41,6 +41,20 @@ var bclTypes = map[string]string{
 	// FAKE async -- Begin invokes the callback before it returns -- so the
 	// projection is a value that is already complete rather than a promise.
 	"System.IAsyncResult": "*AsyncResult",
+	// Foundation 95. System.Uri, which the profile names at exactly ONE
+	// signature position -- Song::FromUri(String, Uri) -- and does exactly two
+	// things with.
+	//
+	// Measured: the member's whole body is `new Song(name, uri)`, and that
+	// constructor compares the Uri against null and then hands it to the
+	// P/Invoke, which marshals it as a string. Nothing reads a scheme, a host,
+	// a path or a query.
+	//
+	// So the settled role rule gives it `string`, and the null comparison
+	// becomes an empty-string check -- the same refusal for the only value a Go
+	// caller can pass in a null's place. A projected Uri type would be a parser
+	// the profile never asks for.
+	"System.Uri": "string",
 	// Foundation 94. The four BCL types the Design converters name in public
 	// signatures, each mapped from what the profile MEASURABLY reaches rather
 	// than from the CLR type's full surface.
@@ -1326,7 +1340,82 @@ func fallibilityKeys(m contractMember, accessor string) []string {
 // evidence is the same kind: the whole method, in the implementor the selected
 // profile ships. A member is admitted here on its BODY, never on the intuition
 // that it "should not fail".
+// runtimeReadMembers are the members the blanket ToString/GetHashCode/operator
+// exemption would call infallible and which actually REACH A RUNTIME.
+//
+// The exemption exists because those members have always read stored state in
+// this profile. The five media entities are the first that do not: each one's
+// ToString is `ThrowIfDisposed(); return get_Name()` over a native name, its
+// GetHashCode hashes that same name, and its two operators forward to an Equals
+// that asks CNA whether two handles denote the same object.
+//
+// The registry is keyed by member NAME rather than by the accessor keys
+// managedFallibleMembers uses, because the exemption it corrects is itself
+// keyed that way.
+var runtimeReadMembers = map[string]map[string]bool{
+	"Microsoft.Xna.Framework.Media.Song": {
+		"ToString": true, "GetHashCode": true,
+		"op_Equality": true, "op_Inequality": true,
+	},
+	"Microsoft.Xna.Framework.Media.Album": {
+		"ToString": true, "GetHashCode": true,
+		"op_Equality": true, "op_Inequality": true,
+	},
+	"Microsoft.Xna.Framework.Media.Artist": {
+		"ToString": true, "GetHashCode": true,
+		"op_Equality": true, "op_Inequality": true,
+	},
+	"Microsoft.Xna.Framework.Media.Genre": {
+		"ToString": true, "GetHashCode": true,
+		"op_Equality": true, "op_Inequality": true,
+	},
+	"Microsoft.Xna.Framework.Media.Playlist": {
+		"ToString": true, "GetHashCode": true,
+		"op_Equality": true, "op_Inequality": true,
+	},
+}
+
 var managedStoredMembers = map[string]map[string]bool{
+	// Foundation 95. get_IsDisposed on all ten media metadata types, measured
+	// the same way SoundEffect's was: one `ldfld` over a private bool field,
+	// with no disposal check and no native call.
+	//
+	// CNA has a `_get_is_disposed` route for every one of them and none is
+	// bound to this member. Asking CNA whether an object is disposed means
+	// touching a handle the consumer has already disposed, which is exactly
+	// what the latch exists to avoid -- the same REDUNDANT_READ judgement the
+	// audio mixer reads got.
+	"Microsoft.Xna.Framework.Media.Song": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.Album": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.Artist": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.Genre": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.Playlist": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.SongCollection": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.AlbumCollection": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.ArtistCollection": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.GenreCollection": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Media.PlaylistCollection": {
+		"property-get|IsDisposed": true,
+	},
+
 	// Foundation 87. SoundEffect's four static scalars and its three instance
 	// reads, every one of which is a FIELD in the reference.
 	//
@@ -3095,6 +3184,21 @@ func isFallible(t contractType, m contractMember, accessor string) bool {
 		if managedStoredMembers[t.Name][key] {
 			return false
 		}
+	}
+	// ToString, GetHashCode, the operators and every field are infallible by
+	// default, because in this profile they have always read STORED state --
+	// GraphicsResource::ToString answers a managed name or the CLR type name
+	// and reaches nothing.
+	//
+	// Foundation 95 found the first family where that is not true.
+	// Song::ToString is `ThrowIfDisposed(); return get_Name()` and the name is
+	// NATIVE; GetHashCode caches `get_Name().GetHashCode()`, which reaches it
+	// once; and the two operators forward to Equals, which asks CNA. A member
+	// that reaches a runtime can be refused by it, so the exemption has to be
+	// answerable -- and it is answered from a registry rather than by dropping
+	// the default, because the default is right for every other type.
+	if runtimeReadMembers[t.Name][m.Name] {
+		return true
 	}
 	if m.Kind == "field" || m.Name == "ToString" || m.Name == "GetHashCode" || strings.HasPrefix(m.Name, "op_") {
 		return false

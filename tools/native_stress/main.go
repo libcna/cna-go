@@ -28,6 +28,7 @@ import (
 	graphics "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Graphics"
 	input "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input"
 	touch "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Input/Touch"
+	media "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Media"
 	storage "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Storage"
 	"github.com/openeggbert/cna-go/internal/interop"
 	"github.com/openeggbert/cna-go/internal/servicebridge"
@@ -306,6 +307,17 @@ type counters struct {
 	StorageEnumerations    int `json:"STORAGE_ENUMERATIONS"`
 	StorageDirectoryCycles int `json:"STORAGE_DIRECTORY_CYCLES"`
 	StorageDisposalChecks  int `json:"STORAGE_DISPOSAL_CHECKS"`
+	// Foundation 95. The media metadata graph. MEDIA_SONG_CYCLES counts the
+	// songs built through the family's one public entry point; the rest count
+	// what each one could be asked. MEDIA_UNAVAILABLE_REFERENCES is not a
+	// failure column: a song built from a URI has no album, artist or genre
+	// until something reads its tags, and the reference answers null there too.
+	MediaSongCycles            int `json:"MEDIA_SONG_CYCLES"`
+	MediaSongReads             int `json:"MEDIA_SONG_READS"`
+	MediaUnavailableReferences int `json:"MEDIA_UNAVAILABLE_REFERENCES"`
+	MediaDisposalChecks        int `json:"MEDIA_DISPOSAL_CHECKS"`
+	MediaCollectionWalks       int `json:"MEDIA_COLLECTION_WALKS"`
+	MediaSongRefusals          int `json:"MEDIA_SONG_REFUSALS"`
 	// Foundation 85. The first VERIFIED_PIXEL draw. Every counter here is over
 	// the SOFTWARE artifact only, because HEADLESS has no back-buffer readback
 	// and records a refusal instead -- which is why the refusal column exists.
@@ -5063,6 +5075,12 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 		return err
 	}
 
+	// Foundation 95. The media metadata graph, which needs a game and no
+	// device.
+	if err := g.exerciseMediaMetadata(); err != nil {
+		return err
+	}
+
 	// Foundation 88. The two types that finish the Audio namespace.
 	if err := g.exerciseDynamicSoundEffectInstance(); err != nil {
 		return err
@@ -8856,4 +8874,233 @@ func (g *stressGame) exerciseOwnedDevice(device *graphics.GraphicsDevice) error 
 	}
 	g.result.OwnedDeviceDisposalChecks++
 	return nil
+}
+
+// exerciseMediaMetadata is Foundation 95's slice.
+//
+// # The family has ONE public entry point
+//
+// The pinned contract declares no constructor on any of the ten types, and the
+// MediaLibrary that would enumerate them is not projected yet. What IS declared
+// is `Song.FromUri(String, Uri)`, a public static -- so that is what this walks,
+// and it is the whole of what a consumer can reach today.
+//
+// # A missing album is not a failure
+//
+// A song built from a URI carries no tags until something reads them, so its
+// Artist, Album and Genre are legitimately absent. CNA reports that as an
+// AVAILABILITY flag beside the handle and the projection answers nil, which is
+// what the reference answers too. The slice counts those separately from
+// failures, because they are the expected outcome here rather than a gap.
+//
+// # A refusal is recorded, not worked around
+//
+// An artifact whose media backend is not present refuses the create. That is
+// counted and the slice returns, exactly as the microphone slice does for a
+// host with no capture device: a refusal is evidence about the artifact and not
+// a reason to fail the run.
+func (g *stressGame) exerciseMediaMetadata() error {
+	// CNA VALIDATES the file, which the first run of this slice measured: a
+	// URI naming nothing answers CNA_RESULT_IO with "Could not find file". So
+	// the slice authors one, the way the content slice authors its PNG.
+	//
+	// The fixture is a WAV because a WAV is fully specified in its own header
+	// and can be written correctly by hand -- 44 bytes of RIFF followed by
+	// silence. Whether CNA's media decoder accepts it is a measurement and not
+	// an assumption: a refusal is counted and the slice returns.
+	path, err := writeStressWave()
+	if err != nil {
+		return err
+	}
+	song, err := media.SongFromUri("stress", "file://"+path)
+	if err != nil {
+		if !isNativeRefusal(err) {
+			return fmt.Errorf("Song.FromUri: %w", err)
+		}
+		g.result.MediaSongRefusals++
+		fmt.Fprintf(os.Stderr, "media song refused: %v\n", err)
+		return nil
+	}
+	if song == nil {
+		return errors.New("Song.FromUri reported success and produced no song")
+	}
+	g.result.MediaSongCycles++
+
+	// The name round-trips through CNA, which is what says the handle is real
+	// rather than a number the projection invented.
+	if _, err = song.Name(); err != nil {
+		return fmt.Errorf("Song.Name: %w", err)
+	}
+	if _, err = song.ToString(); err != nil {
+		return fmt.Errorf("Song.ToString: %w", err)
+	}
+	if _, err = song.GetHashCode(); err != nil {
+		return fmt.Errorf("Song.GetHashCode: %w", err)
+	}
+	for _, read := range []func() error{
+		func() error { _, e := song.Duration(); return e },
+		func() error { _, e := song.IsRated(); return e },
+		func() error { _, e := song.Rating(); return e },
+		func() error { _, e := song.PlayCount(); return e },
+		func() error { _, e := song.TrackNumber(); return e },
+		func() error { _, e := song.IsProtected(); return e },
+	} {
+		if err = read(); err != nil {
+			return fmt.Errorf("a Song scalar read: %w", err)
+		}
+		g.result.MediaSongReads++
+	}
+
+	// The three optional references. Each is either an object or an absence,
+	// and an absence is counted rather than treated as a failure.
+	artist, err := song.Artist()
+	if err != nil {
+		return fmt.Errorf("Song.Artist: %w", err)
+	}
+	if artist == nil {
+		g.result.MediaUnavailableReferences++
+	} else if err = g.walkArtist(artist); err != nil {
+		return err
+	}
+	album, err := song.Album()
+	if err != nil {
+		return fmt.Errorf("Song.Album: %w", err)
+	}
+	if album == nil {
+		g.result.MediaUnavailableReferences++
+	}
+	genre, err := song.Genre()
+	if err != nil {
+		return fmt.Errorf("Song.Genre: %w", err)
+	}
+	if genre == nil {
+		g.result.MediaUnavailableReferences++
+	}
+
+	// Equality against ITSELF, which reaches CNA and must answer true. This is
+	// what separates a real handle comparison from a pointer one.
+	same, err := song.EqualsBySong(song)
+	if err != nil {
+		return fmt.Errorf("Song.Equals(self): %w", err)
+	}
+	if !same {
+		return errors.New("a song did not equal itself")
+	}
+
+	// A SECOND song from the same URI. CNA may or may not answer the same
+	// object; what is checked is that the comparison COMPLETES against a
+	// different handle, not what it answers.
+	other, err := media.SongFromUri("stress", "file:///nonexistent/stress.mp3")
+	if err == nil && other != nil {
+		if _, err = song.EqualsBySong(other); err != nil {
+			return fmt.Errorf("Song.Equals(other): %w", err)
+		}
+		if err = other.Dispose(); err != nil {
+			return fmt.Errorf("disposing the second song: %w", err)
+		}
+	}
+
+	// Disposal, and the latch afterwards.
+	if song.IsDisposed() {
+		return errors.New("a live song reported itself disposed")
+	}
+	if err = song.Dispose(); err != nil {
+		return fmt.Errorf("Song.Dispose: %w", err)
+	}
+	if !song.IsDisposed() {
+		return errors.New("IsDisposed stayed false after Dispose")
+	}
+	if _, err = song.Name(); err == nil {
+		return errors.New("a disposed song answered its name")
+	}
+	// A SECOND Dispose must be harmless. With a real handle this is the only
+	// place a double native teardown would show.
+	if err = song.Dispose(); err != nil {
+		return fmt.Errorf("a second Song.Dispose: %w", err)
+	}
+	g.result.MediaDisposalChecks++
+	return nil
+}
+
+// walkArtist exercises a collection when one is reachable. On a host whose
+// media backend reports no tags this does not run, and the slice says so
+// through MEDIA_UNAVAILABLE_REFERENCES rather than through a silent zero.
+func (g *stressGame) walkArtist(artist *media.Artist) error {
+	songs, err := artist.Songs()
+	if err != nil {
+		return fmt.Errorf("Artist.Songs: %w", err)
+	}
+	count, err := songs.Count()
+	if err != nil {
+		return fmt.Errorf("SongCollection.Count: %w", err)
+	}
+	// An index at the count is out of range whatever the count is, including
+	// zero -- which is the empty-collection case an empty library produces.
+	if _, err = songs.Item(count); err == nil {
+		return errors.New("a collection accepted an index equal to its count")
+	}
+	iterator, err := songs.GetEnumerator()
+	if err != nil {
+		return fmt.Errorf("SongCollection.GetEnumerator: %w", err)
+	}
+	walked := int32(0)
+	for {
+		item, ok, err := iterator.Next()
+		if err != nil {
+			return fmt.Errorf("walking a SongCollection: %w", err)
+		}
+		if !ok {
+			break
+		}
+		if item == nil {
+			return errors.New("a walk reported a value and produced none")
+		}
+		walked++
+	}
+	if walked != count {
+		return fmt.Errorf("a walk visited %d of %d songs", walked, count)
+	}
+	g.result.MediaCollectionWalks++
+	return songs.Dispose()
+}
+
+// writeStressWave authors the audio fixture the media slice needs, under the
+// project-controlled root the storage slice already proved containment for.
+//
+// It is 44 bytes of RIFF header plus a tenth of a second of silence at 8 kHz,
+// mono, 16-bit -- the smallest thing that is unambiguously a WAV. Nothing about
+// the audio matters; what matters is that the file exists and is well formed,
+// because CNA refuses a URI naming neither.
+func writeStressWave() (string, error) {
+	root := os.Getenv("CNA_GO_STORAGE_ROOT")
+	if root == "" {
+		root = os.TempDir()
+	}
+	path := filepath.Join(root, "cna-go-stress-song.wav")
+	const sampleRate = 8000
+	const samples = sampleRate / 10
+	data := make([]byte, samples*2)
+	header := make([]byte, 0, 44)
+	appendUint32 := func(dst []byte, value uint32) []byte {
+		return append(dst, byte(value), byte(value>>8), byte(value>>16), byte(value>>24))
+	}
+	appendUint16 := func(dst []byte, value uint16) []byte {
+		return append(dst, byte(value), byte(value>>8))
+	}
+	header = append(header, 'R', 'I', 'F', 'F')
+	header = appendUint32(header, uint32(36+len(data)))
+	header = append(header, 'W', 'A', 'V', 'E', 'f', 'm', 't', ' ')
+	header = appendUint32(header, 16)
+	header = appendUint16(header, 1)
+	header = appendUint16(header, 1)
+	header = appendUint32(header, sampleRate)
+	header = appendUint32(header, sampleRate*2)
+	header = appendUint16(header, 2)
+	header = appendUint16(header, 16)
+	header = append(header, 'd', 'a', 't', 'a')
+	header = appendUint32(header, uint32(len(data)))
+	if err := os.WriteFile(path, append(header, data...), 0o600); err != nil {
+		return "", fmt.Errorf("writing the media fixture: %w", err)
+	}
+	return path, nil
 }

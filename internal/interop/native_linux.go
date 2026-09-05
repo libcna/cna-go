@@ -3711,3 +3711,757 @@ func nativeContentReaderDestroy(reader uint64) error {
 	return resultError("cna_content_reader_destroy",
 		uint32(C.cna_go_content_reader_destroy(C.CnaGoHandle(reader))))
 }
+
+// ---------------------------------------------------------------------------
+// Foundation 95. The media metadata graph.
+//
+// Ten types over 105 routes, and every one of them is regular: an owned handle,
+// a disposal pair, a name, a type name, and whatever that type describes.
+//
+// The `_dispose` and `_destroy` routes are BOTH bound and they are not a
+// duplication. `_dispose` is XNA's IDisposable -- a consumer calls it and the
+// object stays queryable, answering true from IsDisposed -- and `_destroy`
+// releases the native memory, which the projection does when it is finished
+// with the handle. Binding only one would make either IsDisposed unanswerable
+// or the memory unreleasable.
+// ---------------------------------------------------------------------------
+
+func nativeSongDispose(handle uint64) error {
+	return resultError("cna_song_dispose",
+		uint32(C.cna_go_song_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeSongDestroy(handle uint64) error {
+	return resultError("cna_song_destroy",
+		uint32(C.cna_go_song_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeSongIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_song_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_song_get_is_disposed", code)
+}
+
+func nativeSongHashCode(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_song_get_hash_code(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_song_get_hash_code", code)
+}
+
+func nativeSongName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_song_get_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_song_get_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_song_copy_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_song_copy_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeSongTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_song_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_song_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_song_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_song_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeSongEquals(left, right uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_song_equals(C.CnaGoHandle(left), C.CnaGoHandle(right), &value))
+	return value != 0, resultError("cna_song_equals", code)
+}
+
+func nativeAlbumDispose(handle uint64) error {
+	return resultError("cna_album_dispose",
+		uint32(C.cna_go_album_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeAlbumDestroy(handle uint64) error {
+	return resultError("cna_album_destroy",
+		uint32(C.cna_go_album_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeAlbumIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_album_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_album_get_is_disposed", code)
+}
+
+func nativeAlbumHashCode(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_album_get_hash_code(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_album_get_hash_code", code)
+}
+
+func nativeAlbumName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_album_get_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_album_get_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_album_copy_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_album_copy_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeAlbumTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_album_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_album_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_album_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_album_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeAlbumEquals(left, right uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_album_equals(C.CnaGoHandle(left), C.CnaGoHandle(right), &value))
+	return value != 0, resultError("cna_album_equals", code)
+}
+
+func nativeArtistDispose(handle uint64) error {
+	return resultError("cna_artist_dispose",
+		uint32(C.cna_go_artist_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeArtistDestroy(handle uint64) error {
+	return resultError("cna_artist_destroy",
+		uint32(C.cna_go_artist_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeArtistIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_artist_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_artist_get_is_disposed", code)
+}
+
+func nativeArtistHashCode(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_artist_get_hash_code(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_artist_get_hash_code", code)
+}
+
+func nativeArtistName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_artist_get_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_artist_get_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_artist_copy_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_artist_copy_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeArtistTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_artist_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_artist_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_artist_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_artist_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeArtistEquals(left, right uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_artist_equals(C.CnaGoHandle(left), C.CnaGoHandle(right), &value))
+	return value != 0, resultError("cna_artist_equals", code)
+}
+
+func nativeGenreDispose(handle uint64) error {
+	return resultError("cna_genre_dispose",
+		uint32(C.cna_go_genre_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeGenreDestroy(handle uint64) error {
+	return resultError("cna_genre_destroy",
+		uint32(C.cna_go_genre_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeGenreIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_genre_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_genre_get_is_disposed", code)
+}
+
+func nativeGenreHashCode(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_genre_get_hash_code(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_genre_get_hash_code", code)
+}
+
+func nativeGenreName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_genre_get_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_genre_get_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_genre_copy_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_genre_copy_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeGenreTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_genre_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_genre_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_genre_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_genre_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeGenreEquals(left, right uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_genre_equals(C.CnaGoHandle(left), C.CnaGoHandle(right), &value))
+	return value != 0, resultError("cna_genre_equals", code)
+}
+
+func nativePlaylistDispose(handle uint64) error {
+	return resultError("cna_playlist_dispose",
+		uint32(C.cna_go_playlist_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativePlaylistDestroy(handle uint64) error {
+	return resultError("cna_playlist_destroy",
+		uint32(C.cna_go_playlist_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativePlaylistIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_playlist_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_playlist_get_is_disposed", code)
+}
+
+func nativePlaylistHashCode(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_playlist_get_hash_code(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_playlist_get_hash_code", code)
+}
+
+func nativePlaylistName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_playlist_get_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_playlist_get_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_playlist_copy_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_playlist_copy_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativePlaylistTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_playlist_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_playlist_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_playlist_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_playlist_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativePlaylistEquals(left, right uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_playlist_equals(C.CnaGoHandle(left), C.CnaGoHandle(right), &value))
+	return value != 0, resultError("cna_playlist_equals", code)
+}
+
+func nativeSongArtist(handle uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_song_get_artist(C.CnaGoHandle(handle), &value, &available))
+	return uint64(value), available != 0, resultError("cna_song_get_artist", code)
+}
+
+func nativeSongAlbum(handle uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_song_get_album(C.CnaGoHandle(handle), &value, &available))
+	return uint64(value), available != 0, resultError("cna_song_get_album", code)
+}
+
+func nativeSongGenre(handle uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_song_get_genre(C.CnaGoHandle(handle), &value, &available))
+	return uint64(value), available != 0, resultError("cna_song_get_genre", code)
+}
+
+func nativeSongDurationTicks(handle uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_song_get_duration(C.CnaGoHandle(handle), &value))
+	return int64(value), resultError("cna_song_get_duration", code)
+}
+
+func nativeSongIsRated(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_song_get_is_rated(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_song_get_is_rated", code)
+}
+
+func nativeSongRating(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_song_get_rating(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_song_get_rating", code)
+}
+
+func nativeSongPlayCount(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_song_get_play_count(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_song_get_play_count", code)
+}
+
+func nativeSongTrackNumber(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_song_get_track_number(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_song_get_track_number", code)
+}
+
+func nativeSongIsProtected(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_song_get_is_protected(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_song_get_is_protected", code)
+}
+
+func nativeSongFromURI(game uint64, name, uri string) (uint64, error) {
+	nameArg := storageStringArg(name)
+	uriArg := storageStringArg(uri)
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_song_create_from_uri(C.CnaGoHandle(game),
+		nameArg, C.uint64_t(len(name)),
+		uriArg, C.uint64_t(len(uri)), &value))
+	runtime.KeepAlive(name)
+	runtime.KeepAlive(uri)
+	return uint64(value), resultError("cna_song_create_from_uri", code)
+}
+
+func nativeAlbumArtist(handle uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_album_get_artist(C.CnaGoHandle(handle), &value, &available))
+	return uint64(value), available != 0, resultError("cna_album_get_artist", code)
+}
+
+func nativeAlbumGenre(handle uint64) (uint64, bool, error) {
+	var value C.CnaGoHandle
+	var available C.uint8_t
+	code := uint32(C.cna_go_album_get_genre(C.CnaGoHandle(handle), &value, &available))
+	return uint64(value), available != 0, resultError("cna_album_get_genre", code)
+}
+
+func nativeAlbumSongs(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_album_get_songs(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_album_get_songs", code)
+}
+
+func nativeAlbumDurationTicks(handle uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_album_get_duration(C.CnaGoHandle(handle), &value))
+	return int64(value), resultError("cna_album_get_duration", code)
+}
+
+func nativeAlbumHasArt(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_album_get_has_art(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_album_get_has_art", code)
+}
+
+func nativeAlbumArt(handle uint64) ([]byte, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_album_get_art_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_album_get_art_size", code); err != nil {
+		return nil, err
+	}
+	if byteCount == 0 {
+		return nil, nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_album_copy_art(C.CnaGoHandle(handle),
+		(*C.uint8_t)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_album_copy_art", code); err != nil {
+		return nil, err
+	}
+	return buffer[:int(copied)], nil
+}
+
+func nativeAlbumThumbnail(handle uint64) ([]byte, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_album_get_thumbnail_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_album_get_thumbnail_size", code); err != nil {
+		return nil, err
+	}
+	if byteCount == 0 {
+		return nil, nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_album_copy_thumbnail(C.CnaGoHandle(handle),
+		(*C.uint8_t)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_album_copy_thumbnail", code); err != nil {
+		return nil, err
+	}
+	return buffer[:int(copied)], nil
+}
+
+func nativeArtistSongs(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_artist_get_songs(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_artist_get_songs", code)
+}
+
+func nativeArtistAlbums(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_artist_get_albums(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_artist_get_albums", code)
+}
+
+func nativeGenreSongs(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_genre_get_songs(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_genre_get_songs", code)
+}
+
+func nativeGenreAlbums(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_genre_get_albums(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_genre_get_albums", code)
+}
+
+func nativePlaylistSongs(handle uint64) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_playlist_get_songs(C.CnaGoHandle(handle), &value))
+	return uint64(value), resultError("cna_playlist_get_songs", code)
+}
+
+func nativePlaylistDurationTicks(handle uint64) (int64, error) {
+	var value C.int64_t
+	code := uint32(C.cna_go_playlist_get_duration(C.CnaGoHandle(handle), &value))
+	return int64(value), resultError("cna_playlist_get_duration", code)
+}
+
+func nativeSongCollectionDispose(handle uint64) error {
+	return resultError("cna_song_collection_dispose",
+		uint32(C.cna_go_song_collection_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeSongCollectionDestroy(handle uint64) error {
+	return resultError("cna_song_collection_destroy",
+		uint32(C.cna_go_song_collection_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeSongCollectionIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_song_collection_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_song_collection_get_is_disposed", code)
+}
+
+func nativeSongCollectionCount(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_song_collection_get_count(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_song_collection_get_count", code)
+}
+
+func nativeSongCollectionTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_song_collection_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_song_collection_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_song_collection_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_song_collection_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeSongCollectionAt(handle uint64, index int32) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_song_collection_get_at(C.CnaGoHandle(handle), C.int32_t(index), &value))
+	return uint64(value), resultError("cna_song_collection_get_at", code)
+}
+
+func nativeAlbumCollectionDispose(handle uint64) error {
+	return resultError("cna_album_collection_dispose",
+		uint32(C.cna_go_album_collection_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeAlbumCollectionDestroy(handle uint64) error {
+	return resultError("cna_album_collection_destroy",
+		uint32(C.cna_go_album_collection_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeAlbumCollectionIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_album_collection_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_album_collection_get_is_disposed", code)
+}
+
+func nativeAlbumCollectionCount(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_album_collection_get_count(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_album_collection_get_count", code)
+}
+
+func nativeAlbumCollectionTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_album_collection_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_album_collection_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_album_collection_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_album_collection_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeAlbumCollectionAt(handle uint64, index int32) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_album_collection_get_at(C.CnaGoHandle(handle), C.int32_t(index), &value))
+	return uint64(value), resultError("cna_album_collection_get_at", code)
+}
+
+func nativeArtistCollectionDispose(handle uint64) error {
+	return resultError("cna_artist_collection_dispose",
+		uint32(C.cna_go_artist_collection_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeArtistCollectionDestroy(handle uint64) error {
+	return resultError("cna_artist_collection_destroy",
+		uint32(C.cna_go_artist_collection_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeArtistCollectionIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_artist_collection_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_artist_collection_get_is_disposed", code)
+}
+
+func nativeArtistCollectionCount(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_artist_collection_get_count(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_artist_collection_get_count", code)
+}
+
+func nativeArtistCollectionTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_artist_collection_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_artist_collection_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_artist_collection_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_artist_collection_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeArtistCollectionAt(handle uint64, index int32) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_artist_collection_get_at(C.CnaGoHandle(handle), C.int32_t(index), &value))
+	return uint64(value), resultError("cna_artist_collection_get_at", code)
+}
+
+func nativeGenreCollectionDispose(handle uint64) error {
+	return resultError("cna_genre_collection_dispose",
+		uint32(C.cna_go_genre_collection_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativeGenreCollectionDestroy(handle uint64) error {
+	return resultError("cna_genre_collection_destroy",
+		uint32(C.cna_go_genre_collection_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeGenreCollectionIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_genre_collection_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_genre_collection_get_is_disposed", code)
+}
+
+func nativeGenreCollectionCount(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_genre_collection_get_count(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_genre_collection_get_count", code)
+}
+
+func nativeGenreCollectionTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_genre_collection_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_genre_collection_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_genre_collection_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_genre_collection_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeGenreCollectionAt(handle uint64, index int32) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_genre_collection_get_at(C.CnaGoHandle(handle), C.int32_t(index), &value))
+	return uint64(value), resultError("cna_genre_collection_get_at", code)
+}
+
+func nativePlaylistCollectionDispose(handle uint64) error {
+	return resultError("cna_playlist_collection_dispose",
+		uint32(C.cna_go_playlist_collection_dispose(C.CnaGoHandle(handle))))
+}
+
+func nativePlaylistCollectionDestroy(handle uint64) error {
+	return resultError("cna_playlist_collection_destroy",
+		uint32(C.cna_go_playlist_collection_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativePlaylistCollectionIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_playlist_collection_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_playlist_collection_get_is_disposed", code)
+}
+
+func nativePlaylistCollectionCount(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_playlist_collection_get_count(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_playlist_collection_get_count", code)
+}
+
+func nativePlaylistCollectionTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_playlist_collection_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_playlist_collection_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_playlist_collection_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_playlist_collection_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativePlaylistCollectionAt(handle uint64, index int32) (uint64, error) {
+	var value C.CnaGoHandle
+	code := uint32(C.cna_go_playlist_collection_get_at(C.CnaGoHandle(handle), C.int32_t(index), &value))
+	return uint64(value), resultError("cna_playlist_collection_get_at", code)
+}

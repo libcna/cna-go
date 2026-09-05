@@ -308,7 +308,17 @@
       "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|PreferredBackBufferWidth",
       "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|PreferredDepthStencilFormat",
       "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|SupportedOrientations",
-      "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|SynchronizeWithVerticalRetrace"
+      "Microsoft.Xna.Framework.GraphicsDeviceManager|property-get|SynchronizeWithVerticalRetrace",
+      "Microsoft.Xna.Framework.Media.Song|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.Album|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.Artist|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.Genre|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.Playlist|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.SongCollection|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.AlbumCollection|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.ArtistCollection|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.GenreCollection|property-get|IsDisposed",
+      "Microsoft.Xna.Framework.Media.PlaylistCollection|property-get|IsDisposed"
     ],
     "managedArgumentFailure": "value-producing-operation-returns-value-then-error-and-void-operation-returns-error",
     "panicPolicy": "programmer-invariant-only-never-native-runtime-failure",

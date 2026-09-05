@@ -1607,6 +1607,7 @@ NORMATIVE rules those milestones added; the evidence for each is in its file.
 | 92 | the content plumbing: ContentReader, the type readers and ResourceContentManager | `foundation-92-content-plumbing-evidence.md` |
 | 93 | the five content serializer attributes, and System.Attribute as a composed base | `foundation-93-content-serializer-attributes-evidence.md` |
 | 94 | the thirteen Design converters, and the end of the deferred frontier | `foundation-94-design-converters-evidence.md` |
+| 95 | the media metadata graph: five entities, five collections, 105 routes | `foundation-95-media-metadata-evidence.md` |
 
 **A recorded blocker is a claim, and claims get re-measured** (91).
 System.IO.BinaryReader had been DEFERRED since Foundation 29 partly because "the
@@ -1909,6 +1910,24 @@ converters and is still required twice: both CanConvert members compare
 `typeof` it, and every leaf's ConvertTo constructs one. Read the BEHAVIOUR as
 well as the signatures before concluding a type is not needed.
 
+**A mutation harness must refuse to start over a dirty tree** (95). The restore
+is in a `finally`, and a SIGKILL does not run finally -- so a run killed by a
+timeout leaves its planted defect in the working tree. The next run then reports
+the anchor "not found", which looks like a harness bug and is a corrupted source
+file. Check every mutant's replacement text before starting and refuse by name.
+
+**A nil check on an EMBEDDED receiver cannot fire** (95). `mediaObject.usable()`
+tests `o == nil`, and reaching that embedded field through a nil outer pointer
+is itself the dereference. A shared guard behind a typed receiver has to be
+shadowed per type, or every member has to remember the check -- and the first is
+the one that cannot be forgotten.
+
+**A defect the host cannot score is named, not omitted** (95). Three of
+Foundation 95's mutants need a populated music library this machine does not
+have, and one needs a leak a functional slice cannot observe. They are in a
+table whose expected result is SURVIVAL, so the totals say what was measured
+instead of quietly leaving out what was not.
+
 **A graphics state object freezes** (59). Every setter is fallible because
 `ThrowIfBound` is a refusal the reference really throws; every getter is one
 `ldfld`. The static presets are frozen from construction.
@@ -1918,7 +1937,10 @@ well as the signatures before concluding a type is not needed.
 This section is a STATEMENT OF CURRENT STATE, not a permanent list, and it is
 rewritten whenever a milestone makes one of its entries false.
 
-Still deferred: XACT; media/video; and GamerServices. Audio closed in
+Still deferred: XACT; the media LIBRARY, players and video; and GamerServices.
+Foundation 95 closed the media metadata graph -- the five entities and their
+five collections -- and what remains of that namespace is enumeration and
+playback. Audio closed in
 Foundation 88, Input and touch in 89, the Model family in 90, Storage in 91, the
 content plumbing in 92, the content serializer attributes in 93 and the Design
 converters in 94.

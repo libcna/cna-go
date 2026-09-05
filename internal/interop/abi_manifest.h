@@ -932,6 +932,134 @@ typedef CNA_Result (*cna_content_reader_read_shared_resources_fn)(CNA_ContentRea
 typedef CNA_Result (*cna_content_reader_read_bytes_exact_fn)(CNA_ContentReaderHandle, int32_t, CNA_StringView, uint8_t*, uint64_t, uint64_t*);
 typedef CNA_Result (*cna_content_reader_destroy_fn)(CNA_ContentReaderHandle);
 
+
+
+/* Foundation 95 -- the media metadata graph. Ten types over 105 routes: the
+   five entities a music library describes and the five collections that carry
+   them.
+
+   Every handle here is an OWNED object: CNA hands one back and the projection
+   destroys it. The `_dispose` and `_destroy` pair is not a duplication -- the
+   first is XNA's IDisposable, which a consumer calls and which leaves the
+   object queryable for IsDisposed, and the second releases the native memory. */
+#ifndef CNA_C_MEDIA_H
+typedef CNA_Handle CNA_SongHandle;
+typedef CNA_Handle CNA_SongCollectionHandle;
+typedef CNA_Handle CNA_AlbumHandle;
+typedef CNA_Handle CNA_AlbumCollectionHandle;
+typedef CNA_Handle CNA_ArtistHandle;
+typedef CNA_Handle CNA_ArtistCollectionHandle;
+typedef CNA_Handle CNA_GenreHandle;
+typedef CNA_Handle CNA_GenreCollectionHandle;
+typedef CNA_Handle CNA_PlaylistHandle;
+typedef CNA_Handle CNA_PlaylistCollectionHandle;
+#endif
+typedef CNA_Result (*cna_song_dispose_fn)(CNA_SongHandle);
+typedef CNA_Result (*cna_song_destroy_fn)(CNA_SongHandle);
+typedef CNA_Result (*cna_song_equals_fn)(CNA_SongHandle, CNA_SongHandle, CNA_Bool*);
+typedef CNA_Result (*cna_song_get_hash_code_fn)(CNA_SongHandle, int32_t*);
+typedef CNA_Result (*cna_song_get_is_disposed_fn)(CNA_SongHandle, CNA_Bool*);
+typedef CNA_Result (*cna_song_get_name_size_fn)(CNA_SongHandle, uint64_t*);
+typedef CNA_Result (*cna_song_copy_name_fn)(CNA_SongHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_song_get_type_name_size_fn)(CNA_SongHandle, uint64_t*);
+typedef CNA_Result (*cna_song_copy_type_name_fn)(CNA_SongHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_song_get_artist_fn)(CNA_SongHandle, CNA_ArtistHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_song_get_album_fn)(CNA_SongHandle, CNA_AlbumHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_song_get_genre_fn)(CNA_SongHandle, CNA_GenreHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_song_get_duration_fn)(CNA_SongHandle, int64_t*);
+typedef CNA_Result (*cna_song_get_is_rated_fn)(CNA_SongHandle, CNA_Bool*);
+typedef CNA_Result (*cna_song_get_rating_fn)(CNA_SongHandle, int32_t*);
+typedef CNA_Result (*cna_song_get_play_count_fn)(CNA_SongHandle, int32_t*);
+typedef CNA_Result (*cna_song_get_track_number_fn)(CNA_SongHandle, int32_t*);
+typedef CNA_Result (*cna_song_get_is_protected_fn)(CNA_SongHandle, CNA_Bool*);
+typedef CNA_Result (*cna_song_create_from_uri_fn)(CNA_Handle, CNA_StringView, CNA_StringView, CNA_SongHandle*);
+typedef CNA_Result (*cna_album_dispose_fn)(CNA_AlbumHandle);
+typedef CNA_Result (*cna_album_destroy_fn)(CNA_AlbumHandle);
+typedef CNA_Result (*cna_album_equals_fn)(CNA_AlbumHandle, CNA_AlbumHandle, CNA_Bool*);
+typedef CNA_Result (*cna_album_get_hash_code_fn)(CNA_AlbumHandle, int32_t*);
+typedef CNA_Result (*cna_album_get_is_disposed_fn)(CNA_AlbumHandle, CNA_Bool*);
+typedef CNA_Result (*cna_album_get_name_size_fn)(CNA_AlbumHandle, uint64_t*);
+typedef CNA_Result (*cna_album_copy_name_fn)(CNA_AlbumHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_album_get_type_name_size_fn)(CNA_AlbumHandle, uint64_t*);
+typedef CNA_Result (*cna_album_copy_type_name_fn)(CNA_AlbumHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_album_get_artist_fn)(CNA_AlbumHandle, CNA_ArtistHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_album_get_songs_fn)(CNA_AlbumHandle, CNA_SongCollectionHandle*);
+typedef CNA_Result (*cna_album_get_genre_fn)(CNA_AlbumHandle, CNA_GenreHandle*, CNA_Bool*);
+typedef CNA_Result (*cna_album_get_duration_fn)(CNA_AlbumHandle, int64_t*);
+typedef CNA_Result (*cna_album_get_has_art_fn)(CNA_AlbumHandle, CNA_Bool*);
+typedef CNA_Result (*cna_album_get_art_size_fn)(CNA_AlbumHandle, uint64_t*);
+typedef CNA_Result (*cna_album_copy_art_fn)(CNA_AlbumHandle, uint8_t*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_album_get_thumbnail_size_fn)(CNA_AlbumHandle, uint64_t*);
+typedef CNA_Result (*cna_album_copy_thumbnail_fn)(CNA_AlbumHandle, uint8_t*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_artist_dispose_fn)(CNA_ArtistHandle);
+typedef CNA_Result (*cna_artist_destroy_fn)(CNA_ArtistHandle);
+typedef CNA_Result (*cna_artist_equals_fn)(CNA_ArtistHandle, CNA_ArtistHandle, CNA_Bool*);
+typedef CNA_Result (*cna_artist_get_hash_code_fn)(CNA_ArtistHandle, int32_t*);
+typedef CNA_Result (*cna_artist_get_is_disposed_fn)(CNA_ArtistHandle, CNA_Bool*);
+typedef CNA_Result (*cna_artist_get_name_size_fn)(CNA_ArtistHandle, uint64_t*);
+typedef CNA_Result (*cna_artist_copy_name_fn)(CNA_ArtistHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_artist_get_type_name_size_fn)(CNA_ArtistHandle, uint64_t*);
+typedef CNA_Result (*cna_artist_copy_type_name_fn)(CNA_ArtistHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_artist_get_songs_fn)(CNA_ArtistHandle, CNA_SongCollectionHandle*);
+typedef CNA_Result (*cna_artist_get_albums_fn)(CNA_ArtistHandle, CNA_AlbumCollectionHandle*);
+typedef CNA_Result (*cna_genre_dispose_fn)(CNA_GenreHandle);
+typedef CNA_Result (*cna_genre_destroy_fn)(CNA_GenreHandle);
+typedef CNA_Result (*cna_genre_equals_fn)(CNA_GenreHandle, CNA_GenreHandle, CNA_Bool*);
+typedef CNA_Result (*cna_genre_get_hash_code_fn)(CNA_GenreHandle, int32_t*);
+typedef CNA_Result (*cna_genre_get_is_disposed_fn)(CNA_GenreHandle, CNA_Bool*);
+typedef CNA_Result (*cna_genre_get_name_size_fn)(CNA_GenreHandle, uint64_t*);
+typedef CNA_Result (*cna_genre_copy_name_fn)(CNA_GenreHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_genre_get_type_name_size_fn)(CNA_GenreHandle, uint64_t*);
+typedef CNA_Result (*cna_genre_copy_type_name_fn)(CNA_GenreHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_genre_get_songs_fn)(CNA_GenreHandle, CNA_SongCollectionHandle*);
+typedef CNA_Result (*cna_genre_get_albums_fn)(CNA_GenreHandle, CNA_AlbumCollectionHandle*);
+typedef CNA_Result (*cna_playlist_dispose_fn)(CNA_PlaylistHandle);
+typedef CNA_Result (*cna_playlist_destroy_fn)(CNA_PlaylistHandle);
+typedef CNA_Result (*cna_playlist_equals_fn)(CNA_PlaylistHandle, CNA_PlaylistHandle, CNA_Bool*);
+typedef CNA_Result (*cna_playlist_get_hash_code_fn)(CNA_PlaylistHandle, int32_t*);
+typedef CNA_Result (*cna_playlist_get_is_disposed_fn)(CNA_PlaylistHandle, CNA_Bool*);
+typedef CNA_Result (*cna_playlist_get_name_size_fn)(CNA_PlaylistHandle, uint64_t*);
+typedef CNA_Result (*cna_playlist_copy_name_fn)(CNA_PlaylistHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_playlist_get_type_name_size_fn)(CNA_PlaylistHandle, uint64_t*);
+typedef CNA_Result (*cna_playlist_copy_type_name_fn)(CNA_PlaylistHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_playlist_get_songs_fn)(CNA_PlaylistHandle, CNA_SongCollectionHandle*);
+typedef CNA_Result (*cna_playlist_get_duration_fn)(CNA_PlaylistHandle, int64_t*);
+typedef CNA_Result (*cna_song_collection_dispose_fn)(CNA_SongCollectionHandle);
+typedef CNA_Result (*cna_song_collection_destroy_fn)(CNA_SongCollectionHandle);
+typedef CNA_Result (*cna_song_collection_get_at_fn)(CNA_SongCollectionHandle, int32_t, CNA_SongHandle*);
+typedef CNA_Result (*cna_song_collection_get_count_fn)(CNA_SongCollectionHandle, int32_t*);
+typedef CNA_Result (*cna_song_collection_get_is_disposed_fn)(CNA_SongCollectionHandle, CNA_Bool*);
+typedef CNA_Result (*cna_song_collection_get_type_name_size_fn)(CNA_SongCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_song_collection_copy_type_name_fn)(CNA_SongCollectionHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_album_collection_dispose_fn)(CNA_AlbumCollectionHandle);
+typedef CNA_Result (*cna_album_collection_destroy_fn)(CNA_AlbumCollectionHandle);
+typedef CNA_Result (*cna_album_collection_get_at_fn)(CNA_AlbumCollectionHandle, int32_t, CNA_AlbumHandle*);
+typedef CNA_Result (*cna_album_collection_get_count_fn)(CNA_AlbumCollectionHandle, int32_t*);
+typedef CNA_Result (*cna_album_collection_get_is_disposed_fn)(CNA_AlbumCollectionHandle, CNA_Bool*);
+typedef CNA_Result (*cna_album_collection_get_type_name_size_fn)(CNA_AlbumCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_album_collection_copy_type_name_fn)(CNA_AlbumCollectionHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_artist_collection_dispose_fn)(CNA_ArtistCollectionHandle);
+typedef CNA_Result (*cna_artist_collection_destroy_fn)(CNA_ArtistCollectionHandle);
+typedef CNA_Result (*cna_artist_collection_get_at_fn)(CNA_ArtistCollectionHandle, int32_t, CNA_ArtistHandle*);
+typedef CNA_Result (*cna_artist_collection_get_count_fn)(CNA_ArtistCollectionHandle, int32_t*);
+typedef CNA_Result (*cna_artist_collection_get_is_disposed_fn)(CNA_ArtistCollectionHandle, CNA_Bool*);
+typedef CNA_Result (*cna_artist_collection_get_type_name_size_fn)(CNA_ArtistCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_artist_collection_copy_type_name_fn)(CNA_ArtistCollectionHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_genre_collection_dispose_fn)(CNA_GenreCollectionHandle);
+typedef CNA_Result (*cna_genre_collection_destroy_fn)(CNA_GenreCollectionHandle);
+typedef CNA_Result (*cna_genre_collection_get_at_fn)(CNA_GenreCollectionHandle, int32_t, CNA_GenreHandle*);
+typedef CNA_Result (*cna_genre_collection_get_count_fn)(CNA_GenreCollectionHandle, int32_t*);
+typedef CNA_Result (*cna_genre_collection_get_is_disposed_fn)(CNA_GenreCollectionHandle, CNA_Bool*);
+typedef CNA_Result (*cna_genre_collection_get_type_name_size_fn)(CNA_GenreCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_genre_collection_copy_type_name_fn)(CNA_GenreCollectionHandle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_playlist_collection_dispose_fn)(CNA_PlaylistCollectionHandle);
+typedef CNA_Result (*cna_playlist_collection_destroy_fn)(CNA_PlaylistCollectionHandle);
+typedef CNA_Result (*cna_playlist_collection_get_at_fn)(CNA_PlaylistCollectionHandle, int32_t, CNA_PlaylistHandle*);
+typedef CNA_Result (*cna_playlist_collection_get_count_fn)(CNA_PlaylistCollectionHandle, int32_t*);
+typedef CNA_Result (*cna_playlist_collection_get_is_disposed_fn)(CNA_PlaylistCollectionHandle, CNA_Bool*);
+typedef CNA_Result (*cna_playlist_collection_get_type_name_size_fn)(CNA_PlaylistCollectionHandle, uint64_t*);
+typedef CNA_Result (*cna_playlist_collection_copy_type_name_fn)(CNA_PlaylistCollectionHandle, char*, uint64_t, uint64_t*);
+
 typedef uint32_t (*cna_get_abi_version_fn)(void);
 typedef CNA_Result (*cna_error_get_last_message_size_fn)(uint64_t*);
 typedef CNA_Result (*cna_error_copy_last_message_fn)(char*, uint64_t, uint64_t*);
@@ -1729,6 +1857,111 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_storage_stream_get_can_seek) \
     X(cna_storage_stream_flush) \
     X(cna_storage_stream_close) \
+    X(cna_song_dispose) \
+    X(cna_song_destroy) \
+    X(cna_song_equals) \
+    X(cna_song_get_hash_code) \
+    X(cna_song_get_is_disposed) \
+    X(cna_song_get_name_size) \
+    X(cna_song_copy_name) \
+    X(cna_song_get_type_name_size) \
+    X(cna_song_copy_type_name) \
+    X(cna_song_get_artist) \
+    X(cna_song_get_album) \
+    X(cna_song_get_genre) \
+    X(cna_song_get_duration) \
+    X(cna_song_get_is_rated) \
+    X(cna_song_get_rating) \
+    X(cna_song_get_play_count) \
+    X(cna_song_get_track_number) \
+    X(cna_song_get_is_protected) \
+    X(cna_song_create_from_uri) \
+    X(cna_album_dispose) \
+    X(cna_album_destroy) \
+    X(cna_album_equals) \
+    X(cna_album_get_hash_code) \
+    X(cna_album_get_is_disposed) \
+    X(cna_album_get_name_size) \
+    X(cna_album_copy_name) \
+    X(cna_album_get_type_name_size) \
+    X(cna_album_copy_type_name) \
+    X(cna_album_get_artist) \
+    X(cna_album_get_songs) \
+    X(cna_album_get_genre) \
+    X(cna_album_get_duration) \
+    X(cna_album_get_has_art) \
+    X(cna_album_get_art_size) \
+    X(cna_album_copy_art) \
+    X(cna_album_get_thumbnail_size) \
+    X(cna_album_copy_thumbnail) \
+    X(cna_artist_dispose) \
+    X(cna_artist_destroy) \
+    X(cna_artist_equals) \
+    X(cna_artist_get_hash_code) \
+    X(cna_artist_get_is_disposed) \
+    X(cna_artist_get_name_size) \
+    X(cna_artist_copy_name) \
+    X(cna_artist_get_type_name_size) \
+    X(cna_artist_copy_type_name) \
+    X(cna_artist_get_songs) \
+    X(cna_artist_get_albums) \
+    X(cna_genre_dispose) \
+    X(cna_genre_destroy) \
+    X(cna_genre_equals) \
+    X(cna_genre_get_hash_code) \
+    X(cna_genre_get_is_disposed) \
+    X(cna_genre_get_name_size) \
+    X(cna_genre_copy_name) \
+    X(cna_genre_get_type_name_size) \
+    X(cna_genre_copy_type_name) \
+    X(cna_genre_get_songs) \
+    X(cna_genre_get_albums) \
+    X(cna_playlist_dispose) \
+    X(cna_playlist_destroy) \
+    X(cna_playlist_equals) \
+    X(cna_playlist_get_hash_code) \
+    X(cna_playlist_get_is_disposed) \
+    X(cna_playlist_get_name_size) \
+    X(cna_playlist_copy_name) \
+    X(cna_playlist_get_type_name_size) \
+    X(cna_playlist_copy_type_name) \
+    X(cna_playlist_get_songs) \
+    X(cna_playlist_get_duration) \
+    X(cna_song_collection_dispose) \
+    X(cna_song_collection_destroy) \
+    X(cna_song_collection_get_at) \
+    X(cna_song_collection_get_count) \
+    X(cna_song_collection_get_is_disposed) \
+    X(cna_song_collection_get_type_name_size) \
+    X(cna_song_collection_copy_type_name) \
+    X(cna_album_collection_dispose) \
+    X(cna_album_collection_destroy) \
+    X(cna_album_collection_get_at) \
+    X(cna_album_collection_get_count) \
+    X(cna_album_collection_get_is_disposed) \
+    X(cna_album_collection_get_type_name_size) \
+    X(cna_album_collection_copy_type_name) \
+    X(cna_artist_collection_dispose) \
+    X(cna_artist_collection_destroy) \
+    X(cna_artist_collection_get_at) \
+    X(cna_artist_collection_get_count) \
+    X(cna_artist_collection_get_is_disposed) \
+    X(cna_artist_collection_get_type_name_size) \
+    X(cna_artist_collection_copy_type_name) \
+    X(cna_genre_collection_dispose) \
+    X(cna_genre_collection_destroy) \
+    X(cna_genre_collection_get_at) \
+    X(cna_genre_collection_get_count) \
+    X(cna_genre_collection_get_is_disposed) \
+    X(cna_genre_collection_get_type_name_size) \
+    X(cna_genre_collection_copy_type_name) \
+    X(cna_playlist_collection_dispose) \
+    X(cna_playlist_collection_destroy) \
+    X(cna_playlist_collection_get_at) \
+    X(cna_playlist_collection_get_count) \
+    X(cna_playlist_collection_get_is_disposed) \
+    X(cna_playlist_collection_get_type_name_size) \
+    X(cna_playlist_collection_copy_type_name) \
     X(cna_content_reader_create) \
     X(cna_content_reader_get_asset_name_size) \
     X(cna_content_reader_copy_asset_name) \
