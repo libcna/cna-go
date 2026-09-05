@@ -25,7 +25,7 @@ COMPLETE_TYPES                 256
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL          1
+GLOBAL_ACTIONABLE_LOCAL          0
 GLOBAL_UNREVIEWED                0
 BOUND_FUNCTIONS                696
 MANIFEST_LAYOUT_AGREEMENTS     457
@@ -502,10 +502,35 @@ and it is zero.
 The suggested order is dependency order, which is the order the families appear
 in that registry:
 
-**GamerServices** is the only family left. The Design converters closed in
-Foundation 94, the media metadata graph in 95, the library and picture graph in
-96, playback in 97 and XACT in 98 -- so the whole `Microsoft.Xna.Framework.Media`
-and `Microsoft.Xna.Framework.Audio` namespaces are now projected.
+**Nothing is left that this project can do.** `GLOBAL_ACTIONABLE_LOCAL` is
+**zero** and `GLOBAL_UNREVIEWED` is **zero**: every one of the 257 types in the
+profile is either projected completely or classified with a named blocker. The
+Design converters closed in Foundation 94, the media metadata graph in 95, the
+library and picture graph in 96, playback in 97 and XACT in 98 -- so the whole
+`Microsoft.Xna.Framework.Media` and `Microsoft.Xna.Framework.Audio` namespaces
+are projected.
+
+The one remaining type, `GamerServicesComponent`, was reclassified in Foundation
+99 from `ACTIONABLE_LOCAL` to **`BLOCKED_PLATFORM`** after its IL and its
+dependency's IL were read end to end. Foundation 97 had corrected the family's
+note and left the classification alone, so the entry claimed "nothing external
+blocks it" while its own note named a blocker; the reading settles it.
+
+The component is 94 bytes of IL over four members, and three of `Initialize`'s
+four steps plus the FIRST of `Update`'s two are `GamerServicesDispatcher` calls.
+That dispatcher spawns a Games for Windows LIVE proxy PROCESS and talks to it
+through the assembly's seven P/Invokes -- every one
+`pinvokeimpl("Kernel32.dll" winapi)`: `CreateEvent`, `SetEvent`,
+`WaitForMultipleObjects` and `CloseHandle` for the named events, and
+`CreateFileMapping`, `MapViewOfFile` and `UnmapViewOfFile` for the shared
+memory -- and `set_WindowHandle` installs a `WindowMessageHooker` on the game's
+HWND. That is a Windows subsystem this host does not have, not a missing CNA
+route: CNA's 107 gamer and guide routes are its own facility, and adding one
+would not make the projection the reference's behaviour either.
+
+Projecting it anyway would put a component in `Game.Components` that a consumer
+adds, that forwards to its base and does nothing else -- silently failing at the
+one thing it exists for, which is worse than its absence.
 
 **The Model family's native draw slice is measured and BLOCKED, which corrects
 what this section said before.** The route exists and is bindable:

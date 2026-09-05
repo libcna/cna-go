@@ -2401,6 +2401,25 @@ sound record's wave index a byte early answers 256 for a wave index of 1 and 0
 for a wave index of 0. A test that checked only the first cue passed against the
 wrong offset.
 
+**A note that names a blocker and a classification that says "nothing blocks
+this" cannot both be right** (99). Foundation 97 re-measured the GamerServices
+family, rewrote its NOTE to describe what stopped it, and left the
+CLASSIFICATION at `ACTIONABLE_LOCAL` -- which the registry documents as meaning
+"nothing external blocks the family". The entry contradicted itself for two
+milestones and the counters carried the classification, not the note, so
+`GLOBAL_ACTIONABLE_LOCAL` claimed a piece of work that did not exist. Reading
+the IL settled it in an hour. When a note grows a blocker, the classification is
+the thing to check.
+
+**Re-measuring can CONFIRM a blocker, and that is a result** (99). Seven
+blockers were overturned across 92-98 and the eighth was not: every one of
+GamerServices' seven P/Invokes is `pinvokeimpl("Kernel32.dll" winapi)`, the
+dispatcher spawns a LIVE proxy process, and `set_WindowHandle` hooks the game's
+HWND. The re-measurement's value was not that it changed the answer; it was that
+the answer is now the right KIND -- platform, not local, and not a missing CNA
+route either, because adding one would not make the projection the reference's
+behaviour.
+
 ## Next milestone selection rule
 
 After Foundation 16, regenerate the scoreboard and dependency graph before

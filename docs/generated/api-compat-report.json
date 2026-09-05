@@ -43,11 +43,11 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 1,
+    "GLOBAL_ACTIONABLE_LOCAL": 0,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
-    "GLOBAL_BLOCKED_PLATFORM": 0,
+    "GLOBAL_BLOCKED_PLATFORM": 1,
     "GLOBAL_BLOCKED_REFERENCE_ASSET": 0,
     "GLOBAL_BLOCKED_UPSTREAM_CNA": 0,
     "GLOBAL_DELIBERATE_NON_BINDING": 0,
@@ -6388,8 +6388,9 @@
   "frontier": [
     {
       "family": "GamerServices",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "Foundation 97 re-measured this and the recorded blocker was wrong in its first half and right in its second. The GamerServices assembly IS in the IL cache and its dispatcher was read: Initialize's first two guards are an already-initialized latch and a null serviceProvider check, both reproducible. What is NOT reproducible is the dispatcher itself -- CNA has 107 gamer/guide routes and NONE of them is GamerServicesDispatcher.Initialize, .Update or .WindowHandle, which are three of Initialize's four steps and one of Update's two. The component's whole job is pumping that dispatcher every frame, so projecting it would put a component in Game.Components that a consumer adds and which cannot do the one thing it exists for",
+      "classification": "BLOCKED_PLATFORM",
+      "blocker": "Games for Windows LIVE: the dispatcher the component exists to pump is a Win32 out-of-process proxy reached over Kernel32 named events and shared memory, and this profile's host is Linux",
+      "note": "Foundation 99 read the whole thing and RECLASSIFIED it. Foundation 97 had corrected this family's note and left the classification at ACTIONABLE_LOCAL, which claims 'nothing external blocks it' while the note itself named a blocker; the IL settles which is right. GamerServicesComponent is 94 bytes of IL over four members. Its .ctor is `base..ctor(game)`. Its Initialize has four steps and THREE are GamerServicesDispatcher -- set_WindowHandle(Game.Window.Handle), add_InstallingTitleUpdate, and Initialize(Game.Services) -- with `base.Initialize()` fourth. Its Update has two and the FIRST is GamerServicesDispatcher.Update(). So the component's whole job is pumping that dispatcher, and the dispatcher is not implementable here: GamerServicesDispatcher.Initialize reaches KernelMethods.Initialize, and KernelMethods works by spawning a LIVE proxy PROCESS and talking to it through the assembly's seven P/Invokes, every one of them pinvokeimpl(\"Kernel32.dll\" winapi) -- CreateEvent, SetEvent, WaitForMultipleObjects, CloseHandle for the named events, and CreateFileMapping, MapViewOfFile, UnmapViewOfFile for the shared memory. set_WindowHandle installs a WindowMessageHooker on the game's HWND. That is a Windows subsystem, not a missing CNA route: CNA's 107 gamer and guide routes are its own facility and none of them is this dispatcher, but adding one would not make the projection the reference's behaviour either. Projecting the component anyway would put a type in Game.Components that a consumer adds and that forwards to its base and does nothing else -- a component silently failing at the one thing it exists for, which is worse than its absence",
       "types": [
         "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
       ],
