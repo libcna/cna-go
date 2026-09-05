@@ -324,6 +324,30 @@ func NewReadOnlyCollectionOverReferences[T comparable](items []T) *ReadOnlyColle
 	return newReadOnlyCollectionOverSlice(items, func(a, b T) bool { return a == b })
 }
 
+// NewReadOnlyCollectionOverValues is the fifth element-kind constructor, for a
+// collection whose elements are CLR STRUCTS.
+//
+// It exists for AudioEngine::get_RendererDetails, whose CLR type is
+// ReadOnlyCollection<RendererDetail>: the element is a two-string struct that
+// lives in a different Go package, so the view has to be built from there.
+//
+// The element comparer is Go's `==` on the struct. That is
+// EqualityComparer<T>.Default for a value type whose Equals is a field-wise
+// comparison -- which is exactly what RendererDetail::op_Equality is, two
+// String::op_Equality calls over the same two fields Go compares. It is a fifth
+// constructor rather than a use of the reference one for the reason the
+// character constructor is a third: these elements are VALUES, and a name
+// saying "over references" would describe the opposite of what the collection
+// holds.
+//
+// A struct with a float field would NOT be admissible here, because Go's ==
+// leaves NaN unequal to itself where EqualityComparer<T>.Default finds it. The
+// constraint cannot express that, so it is stated: the caller is choosing Go's
+// comparer and must know it matches.
+func NewReadOnlyCollectionOverValues[T comparable](items []T) *ReadOnlyCollection[T] {
+	return newReadOnlyCollectionOverSlice(items, func(a, b T) bool { return a == b })
+}
+
 // NewReadOnlyCollectionOverCharacters is the third element-kind constructor,
 // for System.Char. It exists for the reason the second does -- the XNA type
 // that owns one, Microsoft.Xna.Framework.Graphics.SpriteFont, whose Characters

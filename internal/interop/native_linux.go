@@ -5347,3 +5347,526 @@ func nativeMediaQueueSetActiveSongIndex(queue uint64, index int32) error {
 	return resultError("cna_media_queue_set_active_song_index",
 		uint32(C.cna_go_media_queue_set_active_song_index(C.CnaGoHandle(queue), C.int32_t(index))))
 }
+
+// listenerFloatCount and emitterFloatCount are the flat shapes cna_go_fill_listener
+// and cna_go_fill_emitter consume: Position, Velocity, Forward, Up for a listener;
+// the same four plus a scalar DopplerScale for an emitter.
+const (
+	listenerFloatCount = 12
+	emitterFloatCount  = 13
+)
+
+// ---------------------------------------------------------------------------
+// Foundation 98. XACT.
+//
+// Five types over 62 routes. The engine takes the game; everything below it
+// takes its own owned handle.
+// ---------------------------------------------------------------------------
+
+func nativeAudioEngineCreate(game uint64, settingsFile string) (uint64, error) {
+	arg := storageStringArg(settingsFile)
+	var engine C.CnaGoHandle
+	code := uint32(C.cna_go_audio_engine_create(C.CnaGoHandle(game), arg,
+		C.uint64_t(len(settingsFile)), &engine))
+	runtime.KeepAlive(settingsFile)
+	return uint64(engine), resultError("cna_audio_engine_create", code)
+}
+
+func nativeAudioEngineCreateWithRenderer(game uint64, settingsFile string, lookAheadTicks int64, rendererID string) (uint64, error) {
+	settingsArg := storageStringArg(settingsFile)
+	rendererArg := storageStringArg(rendererID)
+	var engine C.CnaGoHandle
+	code := uint32(C.cna_go_audio_engine_create_with_renderer(C.CnaGoHandle(game),
+		settingsArg, C.uint64_t(len(settingsFile)),
+		C.int64_t(lookAheadTicks), rendererArg, C.uint64_t(len(rendererID)), &engine))
+	runtime.KeepAlive(settingsFile)
+	runtime.KeepAlive(rendererID)
+	return uint64(engine), resultError("cna_audio_engine_create_with_renderer", code)
+}
+
+func nativeAudioEngineGetCategory(engine uint64, name string) (uint64, error) {
+	arg := storageStringArg(name)
+	var category C.CnaGoHandle
+	code := uint32(C.cna_go_audio_engine_get_category(C.CnaGoHandle(engine), arg,
+		C.uint64_t(len(name)), &category))
+	runtime.KeepAlive(name)
+	return uint64(category), resultError("cna_audio_engine_get_category", code)
+}
+
+func nativeAudioEngineGlobalVariable(engine uint64, name string) (float32, error) {
+	arg := storageStringArg(name)
+	var value C.float
+	code := uint32(C.cna_go_audio_engine_get_global_variable(C.CnaGoHandle(engine), arg,
+		C.uint64_t(len(name)), &value))
+	runtime.KeepAlive(name)
+	return float32(value), resultError("cna_audio_engine_get_global_variable", code)
+}
+
+func nativeAudioEngineSetGlobalVariable(engine uint64, name string, value float32) error {
+	arg := storageStringArg(name)
+	code := uint32(C.cna_go_audio_engine_set_global_variable(C.CnaGoHandle(engine), arg,
+		C.uint64_t(len(name)), C.float(value)))
+	runtime.KeepAlive(name)
+	return resultError("cna_audio_engine_set_global_variable", code)
+}
+
+func nativeAudioEngineDestroy(handle uint64) error {
+	return resultError("cna_audio_engine_destroy",
+		uint32(C.cna_go_audio_engine_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeAudioEngineUpdate(handle uint64) error {
+	return resultError("cna_audio_engine_update",
+		uint32(C.cna_go_audio_engine_update(C.CnaGoHandle(handle))))
+}
+
+func nativeAudioEngineIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_audio_engine_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_audio_engine_get_is_disposed", code)
+}
+
+func nativeAudioEngineRendererCount(handle uint64) (int32, error) {
+	var value C.uint64_t
+	code := uint32(C.cna_go_audio_engine_get_renderer_count(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_audio_engine_get_renderer_count", code)
+}
+
+func nativeAudioEngineTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_audio_engine_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_audio_engine_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_audio_engine_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_audio_engine_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+// The two renderer strings, addressed by INDEX: CNA has no renderer handle.
+//
+// Only these TWO are bound. CNA also exports a renderer text, hash code and
+// equality, and all three are deliberately unbound: XNA's RendererDetail
+// answers ToString with its own type name, GetHashCode with the pinned mscorlib
+// hash of its two strings, and equality by comparing those strings -- so CNA
+// would be answering a different question in each case, and for the hash a
+// measurably wrong one.
+func nativeAudioEngineRendererFriendlyName(engine uint64, index uint64) (string, error) {
+	return audioEngineRendererText(engine, index,
+		"cna_audio_engine_get_renderer_friendly_name_size", "cna_audio_engine_copy_renderer_friendly_name")
+}
+
+func nativeAudioEngineRendererID(engine uint64, index uint64) (string, error) {
+	return audioEngineRendererText(engine, index,
+		"cna_audio_engine_get_renderer_id_size", "cna_audio_engine_copy_renderer_id")
+}
+
+// audioEngineRendererText is the shared size-then-copy. It dispatches on the
+// route NAME because cgo will not take a function value for a C symbol.
+func audioEngineRendererText(engine uint64, index uint64, sizeRoute, copyRoute string) (string, error) {
+	var byteCount C.uint64_t
+	var code uint32
+	if sizeRoute == "cna_audio_engine_get_renderer_friendly_name_size" {
+		code = uint32(C.cna_go_audio_engine_get_renderer_friendly_name_size(
+			C.CnaGoHandle(engine), C.uint64_t(index), &byteCount))
+	} else {
+		code = uint32(C.cna_go_audio_engine_get_renderer_id_size(
+			C.CnaGoHandle(engine), C.uint64_t(index), &byteCount))
+	}
+	if err := resultError(sizeRoute, code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	destination := (*C.char)(unsafe.Pointer(&buffer[0]))
+	if copyRoute == "cna_audio_engine_copy_renderer_friendly_name" {
+		code = uint32(C.cna_go_audio_engine_copy_renderer_friendly_name(
+			C.CnaGoHandle(engine), C.uint64_t(index), destination, byteCount, &copied))
+	} else {
+		code = uint32(C.cna_go_audio_engine_copy_renderer_id(
+			C.CnaGoHandle(engine), C.uint64_t(index), destination, byteCount, &copied))
+	}
+	if err := resultError(copyRoute, code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeAudioCategoryDestroy(handle uint64) error {
+	return resultError("cna_audio_category_destroy",
+		uint32(C.cna_go_audio_category_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeAudioCategoryPause(handle uint64) error {
+	return resultError("cna_audio_category_pause",
+		uint32(C.cna_go_audio_category_pause(C.CnaGoHandle(handle))))
+}
+
+func nativeAudioCategoryResume(handle uint64) error {
+	return resultError("cna_audio_category_resume",
+		uint32(C.cna_go_audio_category_resume(C.CnaGoHandle(handle))))
+}
+
+func nativeAudioCategoryHashCode(handle uint64) (int32, error) {
+	var value C.int32_t
+	code := uint32(C.cna_go_audio_category_get_hash_code(C.CnaGoHandle(handle), &value))
+	return int32(value), resultError("cna_audio_category_get_hash_code", code)
+}
+
+func nativeAudioCategoryName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_audio_category_get_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_audio_category_get_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_audio_category_copy_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_audio_category_copy_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeAudioCategorySetVolume(category uint64, volume float32) error {
+	return resultError("cna_audio_category_set_volume",
+		uint32(C.cna_go_audio_category_set_volume(C.CnaGoHandle(category), C.float(volume))))
+}
+
+func nativeAudioCategoryStop(category uint64, options uint32) error {
+	return resultError("cna_audio_category_stop",
+		uint32(C.cna_go_audio_category_stop(C.CnaGoHandle(category), C.uint32_t(options))))
+}
+
+func nativeAudioCategoryEquals(left, right uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_audio_category_equals(C.CnaGoHandle(left), C.CnaGoHandle(right), &value))
+	return value != 0, resultError("cna_audio_category_equals", code)
+}
+
+func nativeSoundBankDestroy(handle uint64) error {
+	return resultError("cna_sound_bank_destroy",
+		uint32(C.cna_go_sound_bank_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeSoundBankIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_sound_bank_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_sound_bank_get_is_disposed", code)
+}
+
+func nativeSoundBankIsInUse(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_sound_bank_get_is_in_use(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_sound_bank_get_is_in_use", code)
+}
+
+func nativeSoundBankTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_sound_bank_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_sound_bank_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_sound_bank_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_sound_bank_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeSoundBankCreate(engine uint64, filename string) (uint64, error) {
+	arg := storageStringArg(filename)
+	var bank C.CnaGoHandle
+	code := uint32(C.cna_go_sound_bank_create(C.CnaGoHandle(engine), arg,
+		C.uint64_t(len(filename)), &bank))
+	runtime.KeepAlive(filename)
+	return uint64(bank), resultError("cna_sound_bank_create", code)
+}
+
+func nativeSoundBankGetCue(bank uint64, name string) (uint64, error) {
+	arg := storageStringArg(name)
+	var cue C.CnaGoHandle
+	code := uint32(C.cna_go_sound_bank_get_cue(C.CnaGoHandle(bank), arg,
+		C.uint64_t(len(name)), &cue))
+	runtime.KeepAlive(name)
+	return uint64(cue), resultError("cna_sound_bank_get_cue", code)
+}
+
+func nativeSoundBankPlayCue(bank uint64, name string) error {
+	arg := storageStringArg(name)
+	code := uint32(C.cna_go_sound_bank_play_cue(C.CnaGoHandle(bank), arg, C.uint64_t(len(name))))
+	runtime.KeepAlive(name)
+	return resultError("cna_sound_bank_play_cue", code)
+}
+
+func nativeSoundBankPlayCue3D(bank uint64, name string, listener, emitter []float32) error {
+	// The two flat shapes the bridge's helpers fill: a listener is four Vector3s
+	// and an emitter is those four plus a DopplerScale. A wrong length here is a
+	// projection bug, not a caller's, so it fails the same way CNA would.
+	if len(listener) != listenerFloatCount || len(emitter) != emitterFloatCount {
+		return resultError("cna_sound_bank_play_cue_3d", resultInvalidArgument)
+	}
+	arg := storageStringArg(name)
+	code := uint32(C.cna_go_sound_bank_play_cue_3d(C.CnaGoHandle(bank), arg, C.uint64_t(len(name)),
+		(*C.float)(&listener[0]), (*C.float)(&emitter[0])))
+	runtime.KeepAlive(name)
+	runtime.KeepAlive(listener)
+	runtime.KeepAlive(emitter)
+	return resultError("cna_sound_bank_play_cue_3d", code)
+}
+
+func nativeWaveBankDestroy(handle uint64) error {
+	return resultError("cna_wave_bank_destroy",
+		uint32(C.cna_go_wave_bank_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeWaveBankIsDisposed(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_wave_bank_get_is_disposed(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_wave_bank_get_is_disposed", code)
+}
+
+func nativeWaveBankIsInUse(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_wave_bank_get_is_in_use(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_wave_bank_get_is_in_use", code)
+}
+
+func nativeWaveBankIsPrepared(handle uint64) (bool, error) {
+	var value C.uint8_t
+	code := uint32(C.cna_go_wave_bank_get_is_prepared(C.CnaGoHandle(handle), &value))
+	return value != 0, resultError("cna_wave_bank_get_is_prepared", code)
+}
+
+func nativeWaveBankTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_wave_bank_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_wave_bank_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_wave_bank_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_wave_bank_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeWaveBankCreate(engine uint64, filename string) (uint64, error) {
+	arg := storageStringArg(filename)
+	var bank C.CnaGoHandle
+	code := uint32(C.cna_go_wave_bank_create(C.CnaGoHandle(engine), arg,
+		C.uint64_t(len(filename)), &bank))
+	runtime.KeepAlive(filename)
+	return uint64(bank), resultError("cna_wave_bank_create", code)
+}
+
+func nativeWaveBankCreateStreaming(engine uint64, filename string, offset int32, packetsPerBuffer int16) (uint64, error) {
+	arg := storageStringArg(filename)
+	var bank C.CnaGoHandle
+	code := uint32(C.cna_go_wave_bank_create_streaming(C.CnaGoHandle(engine), arg,
+		C.uint64_t(len(filename)), C.int32_t(offset), C.int16_t(packetsPerBuffer), &bank))
+	runtime.KeepAlive(filename)
+	return uint64(bank), resultError("cna_wave_bank_create_streaming", code)
+}
+
+func nativeCueDestroy(handle uint64) error {
+	return resultError("cna_cue_destroy",
+		uint32(C.cna_go_cue_destroy(C.CnaGoHandle(handle))))
+}
+
+func nativeCuePause(handle uint64) error {
+	return resultError("cna_cue_pause",
+		uint32(C.cna_go_cue_pause(C.CnaGoHandle(handle))))
+}
+
+func nativeCuePlay(handle uint64) error {
+	return resultError("cna_cue_play",
+		uint32(C.cna_go_cue_play(C.CnaGoHandle(handle))))
+}
+
+func nativeCueResume(handle uint64) error {
+	return resultError("cna_cue_resume",
+		uint32(C.cna_go_cue_resume(C.CnaGoHandle(handle))))
+}
+
+func nativeCueName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_cue_get_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_cue_get_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_cue_copy_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_cue_copy_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeCueTypeName(handle uint64) (string, error) {
+	var byteCount C.uint64_t
+	code := uint32(C.cna_go_cue_get_type_name_size(C.CnaGoHandle(handle), &byteCount))
+	if err := resultError("cna_cue_get_type_name_size", code); err != nil {
+		return "", err
+	}
+	if byteCount == 0 {
+		return "", nil
+	}
+	buffer := make([]byte, int(byteCount))
+	var copied C.uint64_t
+	code = uint32(C.cna_go_cue_copy_type_name(C.CnaGoHandle(handle),
+		(*C.char)(unsafe.Pointer(&buffer[0])), byteCount, &copied))
+	if err := resultError("cna_cue_copy_type_name", code); err != nil {
+		return "", err
+	}
+	return string(buffer[:int(copied)]), nil
+}
+
+func nativeCueStop(cue uint64, options uint32) error {
+	return resultError("cna_cue_stop",
+		uint32(C.cna_go_cue_stop(C.CnaGoHandle(cue), C.uint32_t(options))))
+}
+
+func nativeCueVariable(cue uint64, name string) (float32, error) {
+	arg := storageStringArg(name)
+	var value C.float
+	code := uint32(C.cna_go_cue_get_variable(C.CnaGoHandle(cue), arg, C.uint64_t(len(name)), &value))
+	runtime.KeepAlive(name)
+	return float32(value), resultError("cna_cue_get_variable", code)
+}
+
+func nativeCueSetVariable(cue uint64, name string, value float32) error {
+	arg := storageStringArg(name)
+	code := uint32(C.cna_go_cue_set_variable(C.CnaGoHandle(cue), arg,
+		C.uint64_t(len(name)), C.float(value)))
+	runtime.KeepAlive(name)
+	return resultError("cna_cue_set_variable", code)
+}
+
+func nativeCueApply3D(cue uint64, listener, emitter []float32) error {
+	if len(listener) != listenerFloatCount || len(emitter) != emitterFloatCount {
+		return resultError("cna_cue_apply_3d", resultInvalidArgument)
+	}
+	code := uint32(C.cna_go_cue_apply_3d(C.CnaGoHandle(cue),
+		(*C.float)(&listener[0]), (*C.float)(&emitter[0])))
+	runtime.KeepAlive(listener)
+	runtime.KeepAlive(emitter)
+	return resultError("cna_cue_apply_3d", code)
+}
+
+// CueStates is the eight predicates cna_cue_get_info reports, in the canonical
+// header's own order. ONE observation answers all eight, which is why the route
+// exists: reading them one at a time would let a caller see a torn combination
+// that never existed.
+type CueStates struct {
+	IsCreated   bool
+	IsDisposed  bool
+	IsPaused    bool
+	IsPlaying   bool
+	IsPrepared  bool
+	IsPreparing bool
+	IsStopped   bool
+	IsStopping  bool
+}
+
+func nativeCueInfo(cue uint64) (CueStates, error) {
+	var states [8]C.uint8_t
+	code := uint32(C.cna_go_cue_get_info(C.CnaGoHandle(cue), &states[0]))
+	if err := resultError("cna_cue_get_info", code); err != nil {
+		return CueStates{}, err
+	}
+	return CueStates{
+		IsCreated:   states[0] != 0,
+		IsDisposed:  states[1] != 0,
+		IsPaused:    states[2] != 0,
+		IsPlaying:   states[3] != 0,
+		IsPrepared:  states[4] != 0,
+		IsPreparing: states[5] != 0,
+		IsStopped:   states[6] != 0,
+		IsStopping:  states[7] != 0,
+	}, nil
+}
+
+// nativeXactSubscribeDisposing registers one type's disposal notification. The
+// KIND selects the route, which is what keeps four near-identical wrappers from
+// being four near-identical bodies.
+func nativeXactSubscribeDisposing(kind XactKind, owner uint64, context uintptr) (uint64, error) {
+	var registration C.CnaGoHandle
+	var code uint32
+	var route string
+	switch kind {
+	case XactAudioEngine:
+		route = "cna_audio_engine_subscribe_disposing_ext"
+		code = uint32(C.cna_go_audio_engine_subscribe_disposing(
+			C.CnaGoHandle(owner), C.uintptr_t(context), &registration))
+	case XactSoundBank:
+		route = "cna_sound_bank_subscribe_disposing_ext"
+		code = uint32(C.cna_go_sound_bank_subscribe_disposing(
+			C.CnaGoHandle(owner), C.uintptr_t(context), &registration))
+	case XactWaveBank:
+		route = "cna_wave_bank_subscribe_disposing_ext"
+		code = uint32(C.cna_go_wave_bank_subscribe_disposing(
+			C.CnaGoHandle(owner), C.uintptr_t(context), &registration))
+	case XactCue:
+		route = "cna_cue_subscribe_disposing_ext"
+		code = uint32(C.cna_go_cue_subscribe_disposing(
+			C.CnaGoHandle(owner), C.uintptr_t(context), &registration))
+	default:
+		return 0, resultError("cna_audio_engine_subscribe_disposing_ext", resultInvalidArgument)
+	}
+	return uint64(registration), resultError(route, code)
+}
+
+func nativeAudioUnsubscribe(registration uint64) error {
+	return resultError("cna_audio_unsubscribe_ext",
+		uint32(C.cna_go_audio_unsubscribe(C.CnaGoHandle(registration))))
+}
+
+//export cnaGoXactDisposing
+func cnaGoXactDisposing(context C.uintptr_t) {
+	// CNA calls this SYNCHRONOUSLY while the object is being disposed, and the
+	// C frame it returns through cannot carry a panic -- so the same answer the
+	// media-player trampoline gives: recover, and record on the Runtime.
+	var subscription *xactDisposingSubscription
+	defer func() {
+		if recovered := recover(); recovered != nil && subscription != nil {
+			subscription.runtime.recordCallbackFailure(
+				fmt.Errorf("panic in native XACT disposing trampoline: %v", recovered))
+		}
+	}()
+	handle := cgo.Handle(context)
+	subscription = handle.Value().(*xactDisposingSubscription)
+	subscription.runtime.invokeXactDisposing(subscription)
+}

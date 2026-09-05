@@ -2345,6 +2345,62 @@ behind a getter would have projected a property the contract does not declare,
 which is the larger divergence -- so both limitations are written down and
 pinned by a test.
 
+**A blocker written from the FLOOR is a note about the floor** (98). The XACT
+family was recorded as reachable-but-empty because the smallest file each parser
+would look past held no cues, no categories and no waves. That measurement was
+correct and answered the wrong question: what matters is what the parser accepts
+when the file is COMPLETE. CNA's own demo ships a generator for all three
+formats, and reading it turned a family whose `Cue` could never be played into
+one whose every native path executes. Seven recorded blockers have now been
+overturned by re-measurement across 92-98; not one was overturned by re-reading
+the note.
+
+**Capability evidence from CNA is admissible; contract evidence is not** (98).
+Reading CNA's fixture generator answered "what will this parser accept", which
+is a question only CNA can answer and exactly what the authority rule admits it
+for. Nothing about XNA's contract or behaviour came from it -- `ContentVersion`
+is 39 because the pinned constant says 39, even though the file header CNA
+accepts says 46. The two numbers are true of different things and the projection
+reports the one the member means.
+
+**A CLR struct that holds a HANDLE breaks the fallibility default** (98).
+`isFallible` ends `return t.Kind == "class" || t.Kind == "interface"` -- a
+struct's members are infallible -- and that is right for every other struct in
+the profile because every other struct holds its state in its own fields.
+`AudioCategory` holds a handle, so all eleven of its members reach XACT,
+including the four a struct would normally answer from stored state. The whole
+type is registered rather than four of its members, and it is the first
+whole-type entry `runtimeReadMembers` carries.
+
+**A refusal that is merely present is not the claim** (98). Removing the
+zero-`AudioCategory` guard still produced an error, because
+`Resource.liveHandle` answers `ErrDisposed` on a nil receiver -- so the first
+version of the test passed with no guard at all and the mutation survived
+correctly. The claim worth making is that a value which was never constructed is
+refused as NIL and not as disposed, because telling a caller their
+`default(AudioCategory)` "has already been disposed" is a false statement about
+a value they just declared.
+
+**Bind the disposal notification when the runtime disposes things you did not**
+(98). All four disposable XACT types could have raised `Disposing` from their
+own `Dispose`. They do not, because destroying an `AudioEngine` disposes the
+banks and cues under it: a locally raised event would miss every one of those.
+The registration is released AFTER the native destroy, because the destroy is
+what raises the event.
+
+**Test the fixture writer when the parser reports through a LOG** (98). XACT's
+parsers never fail through the result code, so a malformed file becomes a
+refusal the slice records and moves past -- a broken layout would show up as a
+silently skipped slice with every counter at zero, not as a failure. Four tests
+pin the three layouts, and two of the defects they kill are the kind that still
+parse: a cue's sound code is an ABSOLUTE file offset, and a relative index is a
+small number that reads fine.
+
+**Assert the SECOND element when the first one is all zeros** (98). Reading the
+sound record's wave index a byte early answers 256 for a wave index of 1 and 0
+for a wave index of 0. A test that checked only the first cue passed against the
+wrong offset.
+
 ## Next milestone selection rule
 
 After Foundation 16, regenerate the scoreboard and dependency graph before

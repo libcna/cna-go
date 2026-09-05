@@ -18,7 +18,7 @@
     "BCL_SIGNATURE_ADAPTERS": 6,
     "BCL_SIGNATURE_ADAPTER_CARRIERS": 8,
     "BLOCKED_DECLARED_MEMBERS": 2,
-    "COMPLETE_TYPES": 251,
+    "COMPLETE_TYPES": 256,
     "DECLARED_INTERFACE_CARRIERS": 1,
     "DECLARED_INTERFACE_CONFORMANCE": 18,
     "ENUM_VALUE_MISMATCH": 0,
@@ -28,7 +28,7 @@
     "EXPECTED_GO_TYPES": 257,
     "FIELD_MAPPING_MISMATCH": 0,
     "FLAGS_MAPPING_MISMATCH": 0,
-    "FRONTIER_FAMILIES": 2,
+    "FRONTIER_FAMILIES": 1,
     "GAME_BASE_CALL_ADAPTERS": 5,
     "GAME_BASE_CALL_DEFERRED_STEPS": 4,
     "GAME_CALLBACKS_MEMBERS": 5,
@@ -43,7 +43,7 @@
     "GAME_NATIVE_SIGNALS_RUNTIME_DEFERRED": 1,
     "GAME_NATIVE_SIGNAL_RAISE_SITES": 3,
     "GENERIC_MAPPING_MISMATCH": 0,
-    "GLOBAL_ACTIONABLE_LOCAL": 6,
+    "GLOBAL_ACTIONABLE_LOCAL": 1,
     "GLOBAL_BCL_PROJECTION_BLOCKED_EXTERNAL": 0,
     "GLOBAL_BLOCKED_FIXTURE": 0,
     "GLOBAL_BLOCKED_HARDWARE": 0,
@@ -59,8 +59,8 @@
     "LANGUAGE_MAPPING_MISMATCH": 0,
     "METHOD_SIGNATURE_MAPPING_MISMATCH": 0,
     "MISSING_MEMBER": 0,
-    "MISSING_TYPE": 6,
-    "MISSING_TYPES": 6,
+    "MISSING_TYPE": 1,
+    "MISSING_TYPES": 1,
     "OPERATOR_MAPPING_MISMATCH": 0,
     "OVERLOAD_MAPPING_MISMATCH": 0,
     "PACKFROMVECTOR4_WITNESS_PROJECTIONS": 17,
@@ -74,9 +74,9 @@
     "REFERENCE_XNA_MEMBERS": 2964,
     "REF_OUT_MAPPING_MISMATCH": 0,
     "RETURN_MAPPING_MISMATCH": 0,
-    "TARGET_MEMBERS": 3724,
-    "TARGET_TYPES": 251,
-    "TOTAL_DIAGNOSTICS": 6,
+    "TARGET_MEMBERS": 3790,
+    "TARGET_TYPES": 256,
+    "TOTAL_DIAGNOSTICS": 1,
     "TOVECTOR4_WITNESS_PROJECTIONS": 8,
     "TYPE_KIND_MISMATCH": 0,
     "UNEXPECTED_MEMBER": 0,
@@ -106,46 +106,19 @@
   "diagnostics": [
     {
       "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.AudioCategory",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:AudioCategory",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.AudioEngine",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:AudioEngine",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.Cue",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:Cue",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.SoundBank",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:SoundBank",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
-      "xna": "Microsoft.Xna.Framework.Audio.WaveBank",
-      "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/Audio:WaveBank",
-      "message": "mapped Go type is absent"
-    },
-    {
-      "category": "MISSING_TYPE",
       "xna": "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent",
       "go": "github.com/openeggbert/cna-go/Microsoft/Xna/Framework/GamerServices:GamerServicesComponent",
       "message": "mapped Go type is absent"
     }
   ],
   "completeTypes": [
+    "Microsoft.Xna.Framework.Audio.AudioCategory",
     "Microsoft.Xna.Framework.Audio.AudioChannels",
     "Microsoft.Xna.Framework.Audio.AudioEmitter",
+    "Microsoft.Xna.Framework.Audio.AudioEngine",
     "Microsoft.Xna.Framework.Audio.AudioListener",
     "Microsoft.Xna.Framework.Audio.AudioStopOptions",
+    "Microsoft.Xna.Framework.Audio.Cue",
     "Microsoft.Xna.Framework.Audio.DynamicSoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.InstancePlayLimitException",
     "Microsoft.Xna.Framework.Audio.Microphone",
@@ -153,9 +126,11 @@
     "Microsoft.Xna.Framework.Audio.NoAudioHardwareException",
     "Microsoft.Xna.Framework.Audio.NoMicrophoneConnectedException",
     "Microsoft.Xna.Framework.Audio.RendererDetail",
+    "Microsoft.Xna.Framework.Audio.SoundBank",
     "Microsoft.Xna.Framework.Audio.SoundEffect",
     "Microsoft.Xna.Framework.Audio.SoundEffectInstance",
     "Microsoft.Xna.Framework.Audio.SoundState",
+    "Microsoft.Xna.Framework.Audio.WaveBank",
     "Microsoft.Xna.Framework.BoundingBox",
     "Microsoft.Xna.Framework.BoundingFrustum",
     "Microsoft.Xna.Framework.BoundingSphere",
@@ -396,11 +371,6 @@
   ],
   "partialTypes": null,
   "missingTypes": [
-    "Microsoft.Xna.Framework.Audio.AudioCategory",
-    "Microsoft.Xna.Framework.Audio.AudioEngine",
-    "Microsoft.Xna.Framework.Audio.Cue",
-    "Microsoft.Xna.Framework.Audio.SoundBank",
-    "Microsoft.Xna.Framework.Audio.WaveBank",
     "Microsoft.Xna.Framework.GamerServices.GamerServicesComponent"
   ],
   "interfaceWitnessProjections": [
@@ -6388,7 +6358,7 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 75,
-      "projectedTypes": 71,
+      "projectedTypes": 75,
       "exportedEmbeddings": 0,
       "rationale": "the universal CLR root; a Go struct or interface names no base and inherits nothing",
       "verdict": "PASS"
@@ -6409,27 +6379,13 @@
       "status": "IMPLIED",
       "addsProjectedSurface": false,
       "derivedTypes": 56,
-      "projectedTypes": 55,
+      "projectedTypes": 56,
       "exportedEmbeddings": 0,
       "rationale": "the CLR value root; the struct projection already carries value semantics",
       "verdict": "PASS"
     }
   ],
   "frontier": [
-    {
-      "family": "XACT",
-      "classification": "ACTIONABLE_LOCAL",
-      "note": "~32/12/10/17 CNA routes; needs project-authored legal bank fixtures, and structural state is not audibility",
-      "types": [
-        "Microsoft.Xna.Framework.Audio.AudioCategory",
-        "Microsoft.Xna.Framework.Audio.AudioEngine",
-        "Microsoft.Xna.Framework.Audio.Cue",
-        "Microsoft.Xna.Framework.Audio.SoundBank",
-        "Microsoft.Xna.Framework.Audio.WaveBank"
-      ],
-      "remaining": 5,
-      "verdict": "PASS"
-    },
     {
       "family": "GamerServices",
       "classification": "ACTIONABLE_LOCAL",
@@ -10049,7 +10005,7 @@
       "clrMembers": 1,
       "projectedMembers": 0,
       "declaringTypes": 29,
-      "projectedTypes": 25,
+      "projectedTypes": 29,
       "rationale": "adds no Go surface of its own: no Disposable interface, no Close alias, no io.Closer adaptation, and no finalizer. Twenty-eight of the twenty-nine declaring types already declare Dispose publicly and it maps as an ordinary member; GraphicsDeviceManager implements it explicitly, so its Dispose() is not public surface and nothing is projected for it. Ownership and lifetime remain a per-type question that this relationship does not answer.",
       "verdict": "PASS"
     },
@@ -10059,7 +10015,7 @@
       "clrMembers": 1,
       "projectedMembers": 0,
       "declaringTypes": 40,
-      "projectedTypes": 39,
+      "projectedTypes": 40,
       "rationale": "every declaring XNA type already declares the strongly typed Equals publicly, so the concrete method set is the whole projection",
       "verdict": "PASS"
     },
@@ -12074,7 +12030,7 @@
   ],
   "metadata": {
     "contractSha256": "7207908eb7926cc90a156d0370c907add4dda465421cea1cbec51afba2f97fdc",
-    "mappingSha256": "ae47934e2bec50555c4d97f68d8b8cb3513d33e506066f0eafd0f0dd91d861cb",
+    "mappingSha256": "86cb29605b782187dbc52aa8b308547939f1b847ee13b57ce3114f47897051e4",
     "extractor": "Go compiler exports + go/parser + go/ast + go/types",
     "typeCheckErrors": 0
   }

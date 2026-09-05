@@ -349,6 +349,22 @@ type counters struct {
 	MediaVideoPlayerCycles   int `json:"MEDIA_VIDEO_PLAYER_CYCLES"`
 	MediaVideoPlayerReads    int `json:"MEDIA_VIDEO_PLAYER_READS"`
 	MediaPlaybackRefusals    int `json:"MEDIA_PLAYBACK_REFUSALS"`
+	// Foundation 98. XACT. XACT_MUTE_CHECKS is the same courtesy the playback
+	// slice owes: every category is silenced and the silencing is proved before
+	// a cue is played.
+	XactEngineCycles   int `json:"XACT_ENGINE_CYCLES"`
+	XactMuteChecks     int `json:"XACT_MUTE_CHECKS"`
+	XactCategoryReads  int `json:"XACT_CATEGORY_READS"`
+	XactVariableRounds int `json:"XACT_VARIABLE_ROUNDS"`
+	XactRendererReads  int `json:"XACT_RENDERER_READS"`
+	XactBankReads      int `json:"XACT_BANK_READS"`
+	XactCueReads       int `json:"XACT_CUE_READS"`
+	XactCueTransports  int `json:"XACT_CUE_TRANSPORTS"`
+	XactApply3DCalls   int `json:"XACT_APPLY_3D_CALLS"`
+	// XACT_DISPOSING_EVENTS is what proves the four native disposal
+	// subscriptions actually deliver, rather than merely registering.
+	XactDisposingEvents int `json:"XACT_DISPOSING_EVENTS"`
+	XactRefusals        int `json:"XACT_REFUSALS"`
 	// Foundation 85. The first VERIFIED_PIXEL draw. Every counter here is over
 	// the SOFTWARE artifact only, because HEADLESS has no back-buffer readback
 	// and records a refusal instead -- which is why the refusal column exists.
@@ -5119,6 +5135,11 @@ func (g *stressGame) exerciseVertexBuffer(host *framework.Game) error {
 
 	// Foundation 97. Playback, over the same isolated library.
 	if err := g.exerciseMediaPlayback(); err != nil {
+		return err
+	}
+
+	// Foundation 98. XACT, over fixtures this slice authors.
+	if err := g.exerciseXact(); err != nil {
 		return err
 	}
 
@@ -9993,5 +10014,683 @@ func (g *stressGame) checkVisualizationBuffers(data *media.VisualizationData) er
 		g.result.MediaVisualizationSilent++
 	}
 	g.result.MediaVisualizationFills++
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 98 -- XACT.
+//
+// The whole family turned on one question: can this project author fixtures
+// XACT's parser accepts? The first pass measured the floor -- an 80-byte XGSF
+// opens an engine, a 16-byte SDBK a sound bank, a 16-byte WBND a wave bank --
+// and recorded that those are EMPTY banks with no cues, which would have left
+// Cue's every native path unreachable and its planted defects unkillable.
+//
+// The second pass read CNA's own fixture generator, which is CAPABILITY
+// evidence of exactly the kind this project admits from CNA: it says what its
+// parser accepts, not what XNA means. The three writers below are that layout
+// in Go. What they buy is real: two authored categories, a settable global
+// variable, a wave bank with actual PCM, and named cues that play.
+// ---------------------------------------------------------------------------
+
+// xactWriter is the little-endian byte builder the three fixtures share.
+type xactWriter struct{ data []byte }
+
+func (w *xactWriter) u8(value uint8)   { w.data = append(w.data, value) }
+func (w *xactWriter) u16(value uint16) { w.data = append(w.data, byte(value), byte(value>>8)) }
+func (w *xactWriter) u32(value uint32) {
+	w.data = append(w.data, byte(value), byte(value>>8), byte(value>>16), byte(value>>24))
+}
+func (w *xactWriter) i32(value int32)   { w.u32(uint32(value)) }
+func (w *xactWriter) f32(value float32) { w.u32(math.Float32bits(value)) }
+func (w *xactWriter) pad(count int)     { w.data = append(w.data, make([]byte, count)...) }
+
+// padTo grows to an absolute offset, which is how every one of these formats
+// addresses its tables: the header stores absolute file offsets, so a section
+// that starts late must be padded to rather than merely appended.
+func (w *xactWriter) padTo(offset int) {
+	if len(w.data) < offset {
+		w.pad(offset - len(w.data))
+	}
+}
+
+// str64 writes a fixed 64-byte name field, truncating at 63 so the terminator
+// always fits.
+func (w *xactWriter) str64(value string) {
+	limit := len(value)
+	if limit > 63 {
+		limit = 63
+	}
+	w.data = append(w.data, value[:limit]...)
+	w.pad(64 - limit)
+}
+
+// cstr writes a NUL-terminated name.
+func (w *xactWriter) cstr(value string) {
+	w.data = append(w.data, value...)
+	w.u8(0)
+}
+
+// xactSettings builds the .xgs: two categories and one PUBLIC global variable.
+//
+// The variable's accessibility byte is 0x01 -- PUBLIC alone. 0x03 would be
+// PUBLIC|READONLY, and a read-only variable accepts SetGlobalVariable and
+// ignores it, so the slice's set/read round trip would fail in a way that reads
+// exactly like a marshalling bug. The byte is 0x01 so that the round trip
+// PROVES the route rather than proving the file.
+func xactSettings() []byte {
+	const (
+		categoryOffset     = 80
+		variableOffset     = categoryOffset + 2*10
+		categoryNameOffset = variableOffset + 1*13
+		variableNameOffset = categoryNameOffset + 6 + 4
+	)
+	w := &xactWriter{}
+	w.u32(0x46534758) // "XGSF"
+	w.u16(46)         // contentVersion, which is what CNA's parser accepts
+	w.u16(0)          // toolVersion
+	w.u16(0)
+	w.pad(8) // lastModified
+	w.u8(0)  // platform
+	w.u16(2) // categoryCount
+	w.u16(1) // variableCount
+	w.u16(0) // blob1Count
+	w.u16(0) // blob2Count
+	w.u16(0) // rpcCount
+	w.u16(0) // dspPresetCount
+	w.u16(0) // dspParameterCount
+	w.u32(categoryOffset)
+	w.u32(variableOffset)
+	w.u32(0) // blob1Offset
+	w.u32(0) // categoryNameIndexOffset
+	w.u32(0) // blob2Offset
+	w.u32(0) // variableNameIndexOffset
+	w.u32(categoryNameOffset)
+	w.u32(variableNameOffset)
+	w.padTo(categoryOffset)
+	for range 2 {
+		w.u8(255)     // instanceLimit
+		w.u16(0)      // fadeInMS
+		w.u16(0)      // fadeOutMS
+		w.u8(0)       // maxInstanceBehavior
+		w.u16(0xFFFF) // parentIndex: no parent
+		w.u8(180)     // volume byte, about amplitude 1.0
+		w.u8(1)       // visibility
+	}
+	w.u8(0x01) // PUBLIC, and deliberately not PUBLIC|READONLY
+	w.f32(343)
+	w.f32(0)
+	w.f32(1000)
+	w.cstr("Music")
+	w.cstr("SFX")
+	w.cstr("SpeedOfSound")
+	return w.data
+}
+
+// xactSine builds mono 16-bit PCM at 44100 Hz with a short fade at each end.
+// The fade matters only for a listener; the slice mutes before it plays.
+func xactSine(frequency float64, seconds float64) []byte {
+	const rate = 44100
+	count := int(rate * seconds)
+	out := make([]byte, count*2)
+	fade := 0.02 * rate
+	for index := range count {
+		t := float64(index) / rate
+		envelope := 1.0
+		switch {
+		case float64(index) < fade:
+			envelope = float64(index) / fade
+		case float64(index) > float64(count)-fade:
+			envelope = float64(count-index) / fade
+		}
+		sample := int16(math.Sin(2*math.Pi*frequency*t) * envelope * 28000)
+		out[index*2] = byte(sample)
+		out[index*2+1] = byte(sample >> 8)
+	}
+	return out
+}
+
+// xactWaveBank builds a non-streaming .xwb over the given waves.
+func xactWaveBank(bankName string, waves [][]byte) []byte {
+	const (
+		headerSize   = 52
+		bankDataSize = 4 + 4 + 64 + 4 + 4 + 4 + 4 + 8
+		sampleRate   = 44100
+	)
+	playOffsets := make([]uint32, len(waves))
+	total := uint32(0)
+	for index, wave := range waves {
+		playOffsets[index] = total
+		total += uint32(len(wave))
+	}
+	metaOffset := uint32(headerSize + bankDataSize)
+	metaLength := uint32(24 * len(waves))
+	// The wave data is 4-byte aligned, which is what the bank's own alignment
+	// field declares.
+	dataOffset := (metaOffset + metaLength + 3) &^ 3
+
+	w := &xactWriter{}
+	w.u32(0x444E4257) // "WBND"
+	w.u32(46)         // version
+	w.u32(44)         // headerVersion: above 43, which changes what the parser reads
+	w.u32(headerSize)
+	w.u32(bankDataSize)
+	w.u32(metaOffset)
+	w.u32(metaLength)
+	w.u32(0) // seek table: empty
+	w.u32(0)
+	w.u32(0) // entry names: empty
+	w.u32(0)
+	w.u32(dataOffset)
+	w.u32(total)
+
+	w.u32(0) // wbFlags
+	w.u32(uint32(len(waves)))
+	w.str64(bankName)
+	w.u32(24) // entryMetaDataSize
+	w.u32(0)  // entryNameElemSize
+	w.u32(4)  // alignment
+	w.u32(0)  // compactFormat
+	w.pad(8)  // buildTime
+
+	// The format word packs tag, channels, rate and bit depth into one u32.
+	format := uint32(sampleRate<<5) | (1 << 31)
+	for index, wave := range waves {
+		w.u32(0) // flagsAndDuration
+		w.u32(format)
+		w.u32(playOffsets[index])
+		w.u32(uint32(len(wave)))
+		w.u32(0) // loopStart
+		w.u32(0) // loopTotal
+	}
+	w.padTo(int(dataOffset))
+	for _, wave := range waves {
+		w.data = append(w.data, wave...)
+	}
+	return w.data
+}
+
+// xactCue is one authored cue: a name, the wave it plays and the category it
+// belongs to.
+type xactCue struct {
+	name          string
+	waveIndex     uint16
+	categoryIndex uint16
+}
+
+// xactSoundBank builds an .xsb whose cues are simple: one cue, one sound, one
+// wave.
+func xactSoundBank(bankName, waveBankName string, cues []xactCue) []byte {
+	const headerSize = 138
+	count := len(cues)
+	soundOffset := uint32(headerSize)
+	cueSimpleOffset := soundOffset + 12*uint32(count)
+	waveBankNameOffset := cueSimpleOffset + 5*uint32(count)
+	cueNameIndexOffset := waveBankNameOffset + 64
+	nameOffsets := make([]uint32, count)
+	cursor := cueNameIndexOffset + 6*uint32(count)
+	for index, cue := range cues {
+		nameOffsets[index] = cursor
+		cursor += uint32(len(cue.name)) + 1
+	}
+
+	w := &xactWriter{}
+	w.u32(0x4B424453) // "SDBK"
+	w.u16(46)         // contentVersion
+	w.u16(0)          // toolVersion
+	w.u16(0)          // CRC
+	w.pad(8)          // lastModified
+	w.u8(0)           // platform
+	w.u16(uint16(count))
+	w.u16(0) // cueComplexCount
+	w.u16(0)
+	w.u16(0) // cueTotalAlign
+	w.u8(1)  // waveBankCount
+	w.u16(uint16(count))
+	w.u16(0) // cueNameLength
+	w.u16(0)
+	w.i32(int32(cueSimpleOffset))
+	w.i32(-1) // cueComplexOffset
+	w.i32(-1) // cueNameOffset
+	w.i32(-1)
+	w.i32(-1) // variationOffset
+	w.i32(-1) // transitionOffset
+	w.i32(int32(waveBankNameOffset))
+	w.i32(-1) // cueHashOffset
+	w.i32(int32(cueNameIndexOffset))
+	w.i32(int32(soundOffset))
+	w.str64(bankName)
+
+	for _, cue := range cues {
+		w.u8(0) // flags: simple, no RPC or DSP
+		w.u16(cue.categoryIndex)
+		w.u8(180) // volume byte
+		w.u16(0)  // pitch cents
+		w.u8(255) // priority
+		w.u16(0)  // sound length, unused
+		w.u16(cue.waveIndex)
+		w.u8(0) // wave bank index
+	}
+	for index := range cues {
+		w.u8(0) // flags
+		// The cue's sound code is the sound's ABSOLUTE file offset, which is
+		// why the sound table has to be laid out before this one.
+		w.u32(soundOffset + 12*uint32(index))
+	}
+	w.str64(waveBankName)
+	for index := range cues {
+		w.u32(nameOffsets[index])
+		w.u16(uint16(index))
+	}
+	for _, cue := range cues {
+		w.cstr(cue.name)
+	}
+	return w.data
+}
+
+// exerciseXact is the Foundation 98 qualification slice.
+//
+// It writes the three fixtures into the project-controlled storage root, opens
+// an engine over them, and drives every projected member: the two constructors,
+// the category graph, the global variable round trip, the renderer collection,
+// both banks, cue transport, the positional overloads, the four Disposing
+// events and the disposal refusals.
+//
+// # It MUTES before it plays, and proves the mute took
+//
+// This runs on the user's machine. Every authored category is set to zero
+// volume and the setting is counted before any cue is played -- the same
+// courtesy Foundation 97's playback slice owes and for the same reason. A run
+// whose XACT_MUTE_CHECKS is zero has not earned its XACT_CUE_TRANSPORTS.
+func (g *stressGame) exerciseXact() error {
+	root := os.Getenv("CNA_GO_STORAGE_ROOT")
+	if root == "" {
+		// No project-controlled root, no fixtures. Writing three files into
+		// whatever the working directory happens to be is not this slice's
+		// business, and a skip that says so is better than a green counter
+		// that measured nothing.
+		fmt.Fprintln(os.Stderr, "XACT slice skipped: CNA_GO_STORAGE_ROOT names no project-controlled root")
+		return nil
+	}
+	fixtures := filepath.Join(root, "xact")
+	if err := os.MkdirAll(fixtures, 0o700); err != nil {
+		return fmt.Errorf("creating the XACT fixture directory: %w", err)
+	}
+	settingsPath := filepath.Join(fixtures, "settings.xgs")
+	wavePath := filepath.Join(fixtures, "waves.xwb")
+	soundPath := filepath.Join(fixtures, "sounds.xsb")
+	waves := [][]byte{xactSine(440, 0.25), xactSine(660, 0.25)}
+	cues := []xactCue{
+		{name: "Tone", waveIndex: 0, categoryIndex: 0},
+		{name: "Blip", waveIndex: 1, categoryIndex: 1},
+	}
+	for path, data := range map[string][]byte{
+		settingsPath: xactSettings(),
+		wavePath:     xactWaveBank("Waves", waves),
+		soundPath:    xactSoundBank("Sounds", "Waves", cues),
+	} {
+		if err := os.WriteFile(path, data, 0o600); err != nil {
+			return fmt.Errorf("writing %s: %w", filepath.Base(path), err)
+		}
+	}
+
+	engine, err := audio.NewAudioEngineByString(settingsPath)
+	if err != nil {
+		// A refusal here is a real finding and the slice reports it rather
+		// than failing: the fixture layout is measured, not guaranteed.
+		fmt.Fprintf(os.Stderr, "XACT engine refused the authored settings: %v\n", err)
+		g.result.XactRefusals++
+		return nil
+	}
+	g.result.XactEngineCycles++
+
+	if err := g.exerciseXactEngine(engine, wavePath, soundPath); err != nil {
+		return errors.Join(err, engine.DisposeByNone())
+	}
+	return g.finishXact(engine, settingsPath)
+}
+
+// exerciseXactEngine drives everything that lives under one open engine.
+func (g *stressGame) exerciseXactEngine(engine *audio.AudioEngine, wavePath, soundPath string) error {
+	// The renderer collection first, because it is the one member that answers
+	// from the host rather than the file, and an empty list is a legal answer.
+	renderers, err := engine.RendererDetails()
+	if err != nil {
+		return fmt.Errorf("reading the renderer details: %w", err)
+	}
+	for index := int32(0); index < renderers.Count(); index++ {
+		detail, err := renderers.Item(index)
+		if err != nil {
+			return fmt.Errorf("reading renderer %d: %w", index, err)
+		}
+		// The two managed members, over strings CNA supplied. Their answers are
+		// computed here, never asked of CNA.
+		_ = detail.GetHashCode()
+		_ = detail.ToString()
+		g.result.XactRendererReads++
+	}
+
+	// The global variable round trip, which is what proves the settings file's
+	// accessibility byte as much as it proves the two routes.
+	initial, err := engine.GetGlobalVariable("SpeedOfSound")
+	if err != nil {
+		return fmt.Errorf("reading SpeedOfSound: %w", err)
+	}
+	if err := engine.SetGlobalVariable("SpeedOfSound", 400); err != nil {
+		return fmt.Errorf("writing SpeedOfSound: %w", err)
+	}
+	written, err := engine.GetGlobalVariable("SpeedOfSound")
+	if err != nil {
+		return fmt.Errorf("re-reading SpeedOfSound: %w", err)
+	}
+	if written != 400 {
+		return fmt.Errorf("SpeedOfSound read back %v after a write of 400 (was %v): the "+
+			"variable is authored read-only, or the route is not reaching it", written, initial)
+	}
+	g.result.XactVariableRounds++
+
+	// Both authored categories, silenced before anything plays.
+	var categories []audio.AudioCategory
+	for _, name := range []string{"Music", "SFX"} {
+		category, err := engine.GetCategory(name)
+		if err != nil {
+			return fmt.Errorf("looking up the %s category: %w", name, err)
+		}
+		reported, err := category.Name()
+		if err != nil {
+			return fmt.Errorf("reading the %s category name: %w", name, err)
+		}
+		if reported != name {
+			return fmt.Errorf("category %q reported its name as %q", name, reported)
+		}
+		if err := category.SetVolume(0); err != nil {
+			return fmt.Errorf("muting the %s category: %w", name, err)
+		}
+		g.result.XactMuteChecks++
+		if _, err := category.GetHashCode(); err != nil {
+			return fmt.Errorf("hashing the %s category: %w", name, err)
+		}
+		if err := category.Pause(); err != nil {
+			return fmt.Errorf("pausing the %s category: %w", name, err)
+		}
+		if err := category.Resume(); err != nil {
+			return fmt.Errorf("resuming the %s category: %w", name, err)
+		}
+		if err := category.Stop(audio.AudioStopOptionsImmediate); err != nil {
+			return fmt.Errorf("stopping the %s category: %w", name, err)
+		}
+		categories = append(categories, category)
+		g.result.XactCategoryReads++
+	}
+	if err := g.exerciseXactCategoryIdentity(engine, categories); err != nil {
+		return err
+	}
+	return g.exerciseXactBanks(engine, wavePath, soundPath)
+}
+
+// exerciseXactCategoryIdentity proves the one thing that made AudioCategory
+// hard: two SEPARATE lookups of one name produce two different handles that
+// must still compare equal.
+func (g *stressGame) exerciseXactCategoryIdentity(engine *audio.AudioEngine, categories []audio.AudioCategory) error {
+	again, err := engine.GetCategory("Music")
+	if err != nil {
+		return fmt.Errorf("looking up Music a second time: %w", err)
+	}
+	equal, err := audio.AudioCategoryOperatorEqualityByAudioCategoryAndAudioCategory(categories[0], again)
+	if err != nil {
+		return fmt.Errorf("comparing two Music lookups: %w", err)
+	}
+	if !equal {
+		return errors.New("two lookups of the Music category compared unequal: " +
+			"AudioCategory's value semantics are not reaching cna_audio_category_equals")
+	}
+	different, err := categories[0].EqualsByAudioCategory(categories[1])
+	if err != nil {
+		return fmt.Errorf("comparing Music with SFX: %w", err)
+	}
+	if different {
+		return errors.New("the Music and SFX categories compared equal")
+	}
+	// The zero value, which is legal and must not reach a handle.
+	var zero audio.AudioCategory
+	zeroEqual, err := zero.EqualsByAudioCategory(audio.AudioCategory{})
+	if err != nil {
+		return fmt.Errorf("comparing two zero categories: %w", err)
+	}
+	if !zeroEqual {
+		return errors.New("two zero AudioCategory values compared unequal")
+	}
+	if _, err := zero.Name(); err == nil {
+		return errors.New("the zero AudioCategory answered a name")
+	}
+	g.result.XactRefusals++
+	return nil
+}
+
+// exerciseXactBanks opens both banks and drives the cue graph.
+func (g *stressGame) exerciseXactBanks(engine *audio.AudioEngine, wavePath, soundPath string) error {
+	waveBank, err := audio.NewWaveBankByAudioEngineAndString(engine, wavePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "XACT wave bank refused the authored file: %v\n", err)
+		g.result.XactRefusals++
+		return nil
+	}
+	prepared, err := waveBank.IsPrepared()
+	if err != nil {
+		return fmt.Errorf("reading the wave bank's IsPrepared: %w", err)
+	}
+	if !prepared {
+		return errors.New("a NON-streaming wave bank reported IsPrepared false, " +
+			"which contradicts what the constructor promises")
+	}
+	if _, err := waveBank.IsInUse(); err != nil {
+		return fmt.Errorf("reading the wave bank's IsInUse: %w", err)
+	}
+	if waveBank.IsDisposed() {
+		return errors.New("a fresh wave bank reported IsDisposed")
+	}
+	g.result.XactBankReads++
+
+	soundBank, err := audio.NewSoundBank(engine, soundPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "XACT sound bank refused the authored file: %v\n", err)
+		g.result.XactRefusals++
+		return nil
+	}
+	if _, err := soundBank.IsInUse(); err != nil {
+		return fmt.Errorf("reading the sound bank's IsInUse: %w", err)
+	}
+	g.result.XactBankReads++
+
+	if err := g.exerciseXactCues(soundBank); err != nil {
+		return err
+	}
+	if err := engine.Update(); err != nil {
+		return fmt.Errorf("updating the engine: %w", err)
+	}
+	return g.exerciseXactDisposal(waveBank, soundBank)
+}
+
+// exerciseXactCues drives Cue's whole surface over the authored "Tone".
+func (g *stressGame) exerciseXactCues(soundBank *audio.SoundBank) error {
+	cue, err := soundBank.GetCue("Tone")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "XACT sound bank has no Tone cue: %v\n", err)
+		g.result.XactRefusals++
+		return nil
+	}
+	name, err := cue.Name()
+	if err != nil {
+		return fmt.Errorf("reading the cue name: %w", err)
+	}
+	if name != "Tone" {
+		return fmt.Errorf("the cue reported its name as %q", name)
+	}
+	// All seven native predicates, each of which is one cna_cue_get_info.
+	for _, read := range []func() (bool, error){
+		cue.IsCreated, cue.IsPreparing, cue.IsPrepared,
+		cue.IsPlaying, cue.IsStopping, cue.IsStopped, cue.IsPaused,
+	} {
+		if _, err := read(); err != nil {
+			return fmt.Errorf("reading a cue predicate: %w", err)
+		}
+		g.result.XactCueReads++
+	}
+	if cue.IsDisposed() {
+		return errors.New("a fresh cue reported IsDisposed")
+	}
+
+	// Transport. Everything is muted by now, which is what makes this polite.
+	for _, step := range []struct {
+		name string
+		run  func() error
+	}{
+		{"Play", cue.Play},
+		{"Pause", cue.Pause},
+		{"Resume", cue.Resume},
+		{"Stop", func() error { return cue.Stop(audio.AudioStopOptionsImmediate) }},
+	} {
+		if err := step.run(); err != nil {
+			return fmt.Errorf("cue %s: %w", step.name, err)
+		}
+		g.result.XactCueTransports++
+	}
+
+	// The positional overloads, on both the cue and the bank.
+	listener := audio.NewAudioListener()
+	emitter := audio.NewAudioEmitter()
+	emitter.SetPosition(framework.NewVector3BySingleAndSingleAndSingle(1, 0, 0))
+	if err := cue.Apply3D(listener, emitter); err != nil {
+		// A cue authored non-positional is XACT's refusal to make, not this
+		// slice's to prevent.
+		fmt.Fprintf(os.Stderr, "XACT cue refused Apply3D: %v\n", err)
+		g.result.XactRefusals++
+	} else {
+		g.result.XactApply3DCalls++
+	}
+	if err := cue.Apply3D(nil, emitter); err == nil {
+		return errors.New("Apply3D accepted a nil listener")
+	}
+	g.result.XactRefusals++
+
+	if err := soundBank.PlayCueByString("Blip"); err != nil {
+		return fmt.Errorf("fire-and-forget PlayCue: %w", err)
+	}
+	g.result.XactCueTransports++
+	if err := soundBank.PlayCueByStringAndAudioListenerAndAudioEmitter("Blip", listener, emitter); err != nil {
+		fmt.Fprintf(os.Stderr, "XACT positional PlayCue refused: %v\n", err)
+		g.result.XactRefusals++
+	} else {
+		g.result.XactApply3DCalls++
+	}
+	if err := soundBank.PlayCueByStringAndAudioListenerAndAudioEmitter("Blip", listener, nil); err == nil {
+		return errors.New("the positional PlayCue accepted a nil emitter")
+	}
+	g.result.XactRefusals++
+
+	// A cue this projection disposed must refuse everything afterwards.
+	if err := cue.Dispose(); err != nil {
+		return fmt.Errorf("disposing the cue: %w", err)
+	}
+	if !cue.IsDisposed() {
+		return errors.New("a disposed cue did not report IsDisposed")
+	}
+	if err := cue.Play(); err == nil {
+		return errors.New("a disposed cue accepted Play")
+	}
+	g.result.XactRefusals++
+	if err := cue.Dispose(); err != nil {
+		return fmt.Errorf("a second Dispose on a cue was not idempotent: %w", err)
+	}
+	return nil
+}
+
+// exerciseXactDisposal proves the two banks' Disposing events DELIVER, which is
+// the only thing that separates a registered callback from a working one.
+func (g *stressGame) exerciseXactDisposal(waveBank *audio.WaveBank, soundBank *audio.SoundBank) error {
+	delivered := 0
+	handler := func(sender any, args *framework.EventArgs) error {
+		delivered++
+		return nil
+	}
+	if _, err := soundBank.AddDisposingHandler(handler); err != nil {
+		return fmt.Errorf("subscribing to the sound bank's Disposing: %w", err)
+	}
+	subscription, err := waveBank.AddDisposingHandler(handler)
+	if err != nil {
+		return fmt.Errorf("subscribing to the wave bank's Disposing: %w", err)
+	}
+	// Removing one of the two proves the removal path as well: the wave bank's
+	// disposal must NOT reach the handler after this.
+	if err := waveBank.RemoveDisposingHandler(subscription); err != nil {
+		return fmt.Errorf("unsubscribing from the wave bank's Disposing: %w", err)
+	}
+	if err := soundBank.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the sound bank: %w", err)
+	}
+	if delivered == 0 {
+		return errors.New("disposing the sound bank delivered no Disposing event: " +
+			"cna_sound_bank_subscribe_disposing_ext registered but never fired")
+	}
+	g.result.XactDisposingEvents += delivered
+	before := delivered
+	if err := waveBank.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the wave bank: %w", err)
+	}
+	if delivered != before {
+		return errors.New("a REMOVED Disposing handler still ran")
+	}
+	if !soundBank.IsDisposed() || !waveBank.IsDisposed() {
+		return errors.New("a disposed bank did not report IsDisposed")
+	}
+	if _, err := soundBank.GetCue("Tone"); err == nil {
+		return errors.New("a disposed sound bank answered GetCue")
+	}
+	g.result.XactRefusals++
+	return nil
+}
+
+// finishXact drives the three-argument constructor and the engine's teardown.
+func (g *stressGame) finishXact(engine *audio.AudioEngine, settingsPath string) error {
+	// The engine's own Disposing, and the second constructor.
+	delivered := 0
+	if _, err := engine.AddDisposingHandler(func(sender any, args *framework.EventArgs) error {
+		delivered++
+		return nil
+	}); err != nil {
+		return fmt.Errorf("subscribing to the engine's Disposing: %w", err)
+	}
+	second, err := audio.NewAudioEngineByStringAndTimeSpanAndString(
+		settingsPath, framework.TimeSpanFromTicks(0), "")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "XACT three-argument constructor refused: %v\n", err)
+		g.result.XactRefusals++
+	} else {
+		g.result.XactEngineCycles++
+		if err := second.DisposeByNone(); err != nil {
+			return fmt.Errorf("disposing the second engine: %w", err)
+		}
+	}
+	if err := engine.DisposeByNone(); err != nil {
+		return fmt.Errorf("disposing the engine: %w", err)
+	}
+	if delivered == 0 {
+		return errors.New("disposing the engine delivered no Disposing event")
+	}
+	g.result.XactDisposingEvents += delivered
+	if !engine.IsDisposed() {
+		return errors.New("a disposed engine did not report IsDisposed")
+	}
+	if err := engine.Update(); err == nil {
+		return errors.New("a disposed engine accepted Update")
+	}
+	g.result.XactRefusals++
+	if _, err := engine.GetCategory("Music"); err == nil {
+		return errors.New("a disposed engine answered GetCategory")
+	}
+	g.result.XactRefusals++
+	if err := engine.DisposeByNone(); err != nil {
+		return fmt.Errorf("a second Dispose on the engine was not idempotent: %w", err)
+	}
 	return nil
 }

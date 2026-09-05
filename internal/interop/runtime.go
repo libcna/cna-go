@@ -127,6 +127,21 @@ const (
 	// makes the instance a CHILD resource of the effect rather than a sibling.
 	resourceSoundEffect
 	resourceSoundEffectInstance
+	// Foundation 98. XACT's five owned handles. The ordering CNA's header
+	// states -- banks and cues released before their engine -- is what makes a
+	// bank a CHILD of the engine and a cue a child of its sound bank, the same
+	// structure Foundation 87 gave SoundEffectInstance.
+	//
+	// A CATEGORY is here too even though XNA's AudioCategory is a VALUE type
+	// with no Dispose: CNA hands back an owned handle from every lookup, and
+	// something has to release it. Registering it under the engine is what
+	// makes the engine's teardown release it, which is the only lifetime a
+	// struct with no Dispose can have.
+	resourceAudioEngine
+	resourceAudioCategory
+	resourceSoundBank
+	resourceWaveBank
+	resourceCue
 )
 
 // effectViewResourceKinds maps a view kind onto its resource kind, in the order
@@ -261,6 +276,12 @@ type Runtime struct {
 	// carries the identity.
 	mediaPlayerHandler         MediaPlayerEventHandler
 	mediaPlayerEventDeliveries [mediaPlayerEventCount]int
+	// Foundation 98. The live XACT disposal subscriptions and what they have
+	// delivered. The set is held so a shutdown can release registrations a
+	// consumer forgot, which is what keeps a cgo handle from outliving its
+	// runtime.
+	xactDisposingSubscriptions map[*xactDisposingSubscription]struct{}
+	xactDisposingDeliveries    int
 	sessionLive                bool
 	standalone                 bool
 }
@@ -3821,6 +3842,16 @@ func destroyResource(kind resourceKind, handle uint64) error {
 		return nativeSoundEffectDestroy(handle)
 	case resourceSoundEffectInstance:
 		return nativeSoundInstanceDestroy(handle)
+	case resourceAudioEngine:
+		return nativeAudioEngineDestroy(handle)
+	case resourceAudioCategory:
+		return nativeAudioCategoryDestroy(handle)
+	case resourceSoundBank:
+		return nativeSoundBankDestroy(handle)
+	case resourceWaveBank:
+		return nativeWaveBankDestroy(handle)
+	case resourceCue:
+		return nativeCueDestroy(handle)
 	case resourceEffectTechniqueCollection:
 		return nativeEffectViewDestroy(effectViewTechniqueCollection, handle)
 	case resourceEffectTechnique:
@@ -6735,4 +6766,565 @@ func (r *Runtime) VideoPlayerFrame(player uint64) (*Resource, TextureInfo, bool,
 // MediaQueueSetActiveSongIndex is cna_media_queue_set_active_song_index.
 func (r *Runtime) MediaQueueSetActiveSongIndex(queue uint64, index int32) error {
 	return nativeMediaQueueSetActiveSongIndex(queue, index)
+}
+
+// ---------------------------------------------------------------------------
+// Foundation 98. XACT.
+//
+// Only the two AudioEngine constructors take the GAME. Everything below an
+// engine -- a category, a bank, a cue -- is addressed by its own owned handle,
+// so those wrappers take the handle rather than resolving one: an engine can
+// outlive the frame that made it, and a cue does not know which game it came
+// from.
+// ---------------------------------------------------------------------------
+
+// AudioEngineCreate is cna_audio_engine_create. The settings file is a path
+// CNA opens itself, which is why the projection never reads it: XACT's own
+// parser is the authority on whether an .xgs is well formed, and it reports a
+// bad one through its LOG rather than through the result code -- which is what
+// Foundation 98's fixture probe measured before any of this was bound.
+func (r *Runtime) AudioEngineCreate(settingsFile string) (*Resource, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return nil, err
+	}
+	handle, err := nativeAudioEngineCreate(game, settingsFile)
+	if err != nil {
+		return nil, err
+	}
+	return r.registerResource(handle, resourceAudioEngine, nil), nil
+}
+
+// AudioEngineCreateWithRenderer is cna_audio_engine_create_with_renderer, the
+// three-argument constructor. The look-ahead arrives as TICKS because the
+// reference's parameter is a TimeSpan and ticks are its exact storage.
+func (r *Runtime) AudioEngineCreateWithRenderer(settingsFile string, lookAheadTicks int64, rendererID string) (*Resource, error) {
+	game, err := r.activeGame(false)
+	if err != nil {
+		return nil, err
+	}
+	handle, err := nativeAudioEngineCreateWithRenderer(game, settingsFile, lookAheadTicks, rendererID)
+	if err != nil {
+		return nil, err
+	}
+	return r.registerResource(handle, resourceAudioEngine, nil), nil
+}
+
+func (resource *Resource) AudioEngineUpdate() error {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return err
+	}
+	return nativeAudioEngineUpdate(handle)
+}
+
+func (resource *Resource) AudioEngineIsDisposed() (bool, error) {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return false, err
+	}
+	return nativeAudioEngineIsDisposed(handle)
+}
+
+func (resource *Resource) AudioEngineTypeName() (string, error) {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return "", err
+	}
+	return nativeAudioEngineTypeName(handle)
+}
+
+// AudioEngineGetCategory is cna_audio_engine_get_category. A name XACT does not
+// know is the ROUTE's failure, not a nil answer: CNA reports it as an invalid
+// argument, which is the condition the reference's own InvalidOperationException
+// marks.
+//
+// Every call produces a NEW owned handle, registered under the engine. Two
+// lookups of one name are therefore two handles, and telling them apart is what
+// cna_audio_category_equals is for.
+func (resource *Resource) AudioEngineGetCategory(name string) (*Resource, error) {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return nil, err
+	}
+	category, err := nativeAudioEngineGetCategory(handle, name)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(category, resourceAudioCategory, resource), nil
+}
+
+func (resource *Resource) AudioEngineGlobalVariable(name string) (float32, error) {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return 0, err
+	}
+	return nativeAudioEngineGlobalVariable(handle, name)
+}
+
+func (resource *Resource) AudioEngineSetGlobalVariable(name string, value float32) error {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return err
+	}
+	return nativeAudioEngineSetGlobalVariable(handle, name, value)
+}
+
+// AudioEngineRendererCount is cna_audio_engine_get_renderer_count, the length
+// of the RendererDetails collection.
+func (resource *Resource) AudioEngineRendererCount() (int32, error) {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return 0, err
+	}
+	return nativeAudioEngineRendererCount(handle)
+}
+
+// AudioEngineRendererDetail answers BOTH of one renderer's strings in one call,
+// because a RendererDetail has no handle: it is addressed by index, and an
+// index that moved between two reads would silently pair one renderer's name
+// with another's id.
+//
+// It answers only the two STRINGS. CNA's renderer text, hash code and equality
+// are deliberately unbound -- XNA's RendererDetail derives all three from those
+// two fields, and its hash is the pinned mscorlib string hash that CNA has no
+// way to reproduce.
+func (resource *Resource) AudioEngineRendererDetail(index int32) (RendererDetail, error) {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return RendererDetail{}, err
+	}
+	if index < 0 {
+		return RendererDetail{}, resultError("cna_audio_engine_get_renderer_id_size", resultInvalidArgument)
+	}
+	position := uint64(index)
+	friendlyName, err := nativeAudioEngineRendererFriendlyName(handle, position)
+	if err != nil {
+		return RendererDetail{}, err
+	}
+	rendererID, err := nativeAudioEngineRendererID(handle, position)
+	if err != nil {
+		return RendererDetail{}, err
+	}
+	return RendererDetail{FriendlyName: friendlyName, RendererID: rendererID}, nil
+}
+
+// RendererDetail is one audio renderer's two strings as CNA reports them. It is
+// a VALUE with no handle, exactly like MediaSource.
+type RendererDetail struct {
+	FriendlyName string
+	RendererID   string
+}
+
+func (resource *Resource) AudioCategoryName() (string, error) {
+	handle, err := resource.liveHandle(resourceAudioCategory)
+	if err != nil {
+		return "", err
+	}
+	return nativeAudioCategoryName(handle)
+}
+
+func (resource *Resource) AudioCategoryHashCode() (int32, error) {
+	handle, err := resource.liveHandle(resourceAudioCategory)
+	if err != nil {
+		return 0, err
+	}
+	return nativeAudioCategoryHashCode(handle)
+}
+
+// AudioCategoryEquals is cna_audio_category_equals: whether two handles denote
+// the same authored category. It is what makes AudioCategory's value semantics
+// work across two separate lookups of one name.
+func (resource *Resource) AudioCategoryEquals(other *Resource) (bool, error) {
+	handle, err := resource.liveHandle(resourceAudioCategory)
+	if err != nil {
+		return false, err
+	}
+	if other == nil {
+		return false, nil
+	}
+	otherHandle, err := other.liveHandle(resourceAudioCategory)
+	if err != nil {
+		return false, err
+	}
+	return nativeAudioCategoryEquals(handle, otherHandle)
+}
+
+func (resource *Resource) AudioCategoryPause() error {
+	handle, err := resource.liveHandle(resourceAudioCategory)
+	if err != nil {
+		return err
+	}
+	return nativeAudioCategoryPause(handle)
+}
+
+func (resource *Resource) AudioCategoryResume() error {
+	handle, err := resource.liveHandle(resourceAudioCategory)
+	if err != nil {
+		return err
+	}
+	return nativeAudioCategoryResume(handle)
+}
+
+func (resource *Resource) AudioCategorySetVolume(volume float32) error {
+	handle, err := resource.liveHandle(resourceAudioCategory)
+	if err != nil {
+		return err
+	}
+	return nativeAudioCategorySetVolume(handle, volume)
+}
+
+// AudioCategoryStop is cna_audio_category_stop, whose options word is XNA's
+// AudioStopOptions. The projection passes it through rather than validating it:
+// XACT is what decides which combinations mean anything.
+func (resource *Resource) AudioCategoryStop(options uint32) error {
+	handle, err := resource.liveHandle(resourceAudioCategory)
+	if err != nil {
+		return err
+	}
+	return nativeAudioCategoryStop(handle, options)
+}
+
+// SoundBankCreate is cna_sound_bank_create. The bank is a CHILD of the engine,
+// which is what makes CNA's release ordering structural.
+func (resource *Resource) SoundBankCreate(filename string) (*Resource, error) {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return nil, err
+	}
+	bank, err := nativeSoundBankCreate(handle, filename)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(bank, resourceSoundBank, resource), nil
+}
+
+func (resource *Resource) SoundBankIsDisposed() (bool, error) {
+	handle, err := resource.liveHandle(resourceSoundBank)
+	if err != nil {
+		return false, err
+	}
+	return nativeSoundBankIsDisposed(handle)
+}
+
+func (resource *Resource) SoundBankIsInUse() (bool, error) {
+	handle, err := resource.liveHandle(resourceSoundBank)
+	if err != nil {
+		return false, err
+	}
+	return nativeSoundBankIsInUse(handle)
+}
+
+func (resource *Resource) SoundBankTypeName() (string, error) {
+	handle, err := resource.liveHandle(resourceSoundBank)
+	if err != nil {
+		return "", err
+	}
+	return nativeSoundBankTypeName(handle)
+}
+
+// SoundBankGetCue is cna_sound_bank_get_cue. The cue is a child of the BANK,
+// not of the engine: it is the bank that authored it.
+func (resource *Resource) SoundBankGetCue(name string) (*Resource, error) {
+	handle, err := resource.liveHandle(resourceSoundBank)
+	if err != nil {
+		return nil, err
+	}
+	cue, err := nativeSoundBankGetCue(handle, name)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(cue, resourceCue, resource), nil
+}
+
+func (resource *Resource) SoundBankPlayCue(name string) error {
+	handle, err := resource.liveHandle(resourceSoundBank)
+	if err != nil {
+		return err
+	}
+	return nativeSoundBankPlayCue(handle, name)
+}
+
+// SoundBankPlayCue3D is the positional PlayCue. The listener and emitter arrive
+// FLAT because the bridge fills CNA's structs from floats: a Go struct laid out
+// to match a C one would be a second copy of a layout the ABI census already
+// checks.
+func (resource *Resource) SoundBankPlayCue3D(name string, listener, emitter []float32) error {
+	handle, err := resource.liveHandle(resourceSoundBank)
+	if err != nil {
+		return err
+	}
+	return nativeSoundBankPlayCue3D(handle, name, listener, emitter)
+}
+
+func (resource *Resource) WaveBankCreate(filename string) (*Resource, error) {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return nil, err
+	}
+	bank, err := nativeWaveBankCreate(handle, filename)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(bank, resourceWaveBank, resource), nil
+}
+
+// WaveBankCreateStreaming is cna_wave_bank_create_streaming, the four-argument
+// constructor. The reference's own parameter is `packetsize`, a short.
+func (resource *Resource) WaveBankCreateStreaming(filename string, offset int32, packetSize int16) (*Resource, error) {
+	handle, err := resource.liveHandle(resourceAudioEngine)
+	if err != nil {
+		return nil, err
+	}
+	bank, err := nativeWaveBankCreateStreaming(handle, filename, offset, packetSize)
+	if err != nil {
+		return nil, err
+	}
+	return resource.runtime.registerResource(bank, resourceWaveBank, resource), nil
+}
+
+func (resource *Resource) WaveBankIsDisposed() (bool, error) {
+	handle, err := resource.liveHandle(resourceWaveBank)
+	if err != nil {
+		return false, err
+	}
+	return nativeWaveBankIsDisposed(handle)
+}
+
+func (resource *Resource) WaveBankIsInUse() (bool, error) {
+	handle, err := resource.liveHandle(resourceWaveBank)
+	if err != nil {
+		return false, err
+	}
+	return nativeWaveBankIsInUse(handle)
+}
+
+func (resource *Resource) WaveBankIsPrepared() (bool, error) {
+	handle, err := resource.liveHandle(resourceWaveBank)
+	if err != nil {
+		return false, err
+	}
+	return nativeWaveBankIsPrepared(handle)
+}
+
+func (resource *Resource) WaveBankTypeName() (string, error) {
+	handle, err := resource.liveHandle(resourceWaveBank)
+	if err != nil {
+		return "", err
+	}
+	return nativeWaveBankTypeName(handle)
+}
+
+func (resource *Resource) CueName() (string, error) {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return "", err
+	}
+	return nativeCueName(handle)
+}
+
+func (resource *Resource) CueTypeName() (string, error) {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return "", err
+	}
+	return nativeCueTypeName(handle)
+}
+
+// CueInfo is cna_cue_get_info: all eight predicates from ONE observation.
+//
+// XNA declares them as eight separate properties, and reading them through
+// eight routes would let a caller see a combination that never existed -- a cue
+// that reported IsPlaying and IsStopped together because it stopped between two
+// reads. One route is what makes the eight consistent.
+func (resource *Resource) CueInfo() (CueStates, error) {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return CueStates{}, err
+	}
+	return nativeCueInfo(handle)
+}
+
+func (resource *Resource) CuePlay() error {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return err
+	}
+	return nativeCuePlay(handle)
+}
+
+func (resource *Resource) CuePause() error {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return err
+	}
+	return nativeCuePause(handle)
+}
+
+func (resource *Resource) CueResume() error {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return err
+	}
+	return nativeCueResume(handle)
+}
+
+func (resource *Resource) CueStop(options uint32) error {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return err
+	}
+	return nativeCueStop(handle, options)
+}
+
+func (resource *Resource) CueVariable(name string) (float32, error) {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return 0, err
+	}
+	return nativeCueVariable(handle, name)
+}
+
+func (resource *Resource) CueSetVariable(name string, value float32) error {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return err
+	}
+	return nativeCueSetVariable(handle, name, value)
+}
+
+// CueApply3D is cna_cue_apply_3d, the flat-float positional update.
+func (resource *Resource) CueApply3D(listener, emitter []float32) error {
+	handle, err := resource.liveHandle(resourceCue)
+	if err != nil {
+		return err
+	}
+	return nativeCueApply3D(handle, listener, emitter)
+}
+
+// XactKind names which of the four disposable XACT types a subscription is for.
+// It exists because CNA has four distinct subscribe routes over one callback
+// shape, and the Go side has to remember which one it called.
+type XactKind uint32
+
+const (
+	XactAudioEngine XactKind = iota
+	XactSoundBank
+	XactWaveBank
+	XactCue
+)
+
+// xactResourceKinds maps a subscription's XactKind onto the resource kind whose
+// handle the route takes, in the order the constants declare them.
+var xactResourceKinds = [4]resourceKind{
+	resourceAudioEngine,
+	resourceSoundBank,
+	resourceWaveBank,
+	resourceCue,
+}
+
+// xactDisposingSubscription is what the trampoline's context resolves to. It
+// holds a cgo.Handle to ITSELF so that release can free the handle without a
+// second map: the registration and the handle die together or not at all.
+type xactDisposingSubscription struct {
+	runtime      *Runtime
+	handler      func()
+	self         cgo.Handle
+	registration uint64
+	kind         XactKind
+	released     bool
+}
+
+// invokeXactDisposing runs one disposal handler under a recover.
+//
+// It reads the handler under the lock and calls it OUTSIDE, because CNA raises
+// this while it is disposing the object and a handler that touched the runtime
+// would otherwise deadlock against the very call that is disposing it.
+func (r *Runtime) invokeXactDisposing(subscription *xactDisposingSubscription) {
+	r.mu.Lock()
+	alive := r.alive
+	handler := subscription.handler
+	r.xactDisposingDeliveries++
+	r.mu.Unlock()
+	if !alive {
+		r.recordCallbackFailure(ErrStaleGeneration)
+		return
+	}
+	if handler == nil {
+		return
+	}
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			r.recordCallbackFailure(
+				fmt.Errorf("panic in XACT Disposing handler: %v\n%s", recovered, debug.Stack()))
+		}
+	}()
+	handler()
+}
+
+// XactSubscribeDisposing registers a handler for one object's Disposing event.
+//
+// Binding this rather than raising Disposing from the projection's own Dispose
+// is not a preference: destroying an AudioEngine disposes the banks and cues
+// under it, and a projection that only raised its own Dispose would MISS every
+// one of those. CNA is the only thing that knows.
+func (resource *Resource) XactSubscribeDisposing(kind XactKind, handler func()) (*XactDisposingRegistration, error) {
+	if handler == nil {
+		return nil, fmt.Errorf("a Disposing handler must not be nil")
+	}
+	owner, err := resource.liveHandle(xactResourceKinds[kind])
+	if err != nil {
+		return nil, err
+	}
+	r := resource.runtime
+	subscription := &xactDisposingSubscription{runtime: r, handler: handler, kind: kind}
+	subscription.self = cgo.NewHandle(subscription)
+	registration, err := nativeXactSubscribeDisposing(kind, owner, uintptr(subscription.self))
+	if err != nil {
+		subscription.self.Delete()
+		return nil, err
+	}
+	subscription.registration = registration
+	r.mu.Lock()
+	if r.xactDisposingSubscriptions == nil {
+		r.xactDisposingSubscriptions = make(map[*xactDisposingSubscription]struct{})
+	}
+	r.xactDisposingSubscriptions[subscription] = struct{}{}
+	r.mu.Unlock()
+	return &XactDisposingRegistration{subscription: subscription}, nil
+}
+
+// XactDisposingRegistration is what a subscriber holds so it can unsubscribe.
+type XactDisposingRegistration struct {
+	subscription *xactDisposingSubscription
+}
+
+// Release is `-=`: it drops the native registration and frees the cgo handle.
+// It is idempotent, because a projection's Dispose and a consumer's explicit
+// unsubscribe can both reach it.
+func (g *XactDisposingRegistration) Release() error {
+	if g == nil || g.subscription == nil {
+		return nil
+	}
+	subscription := g.subscription
+	r := subscription.runtime
+	r.mu.Lock()
+	if subscription.released {
+		r.mu.Unlock()
+		return nil
+	}
+	subscription.released = true
+	delete(r.xactDisposingSubscriptions, subscription)
+	r.mu.Unlock()
+	err := nativeAudioUnsubscribe(subscription.registration)
+	subscription.self.Delete()
+	return err
+}
+
+// XactDisposingDeliveries reports how many disposal notifications have arrived,
+// which is what a stress slice counts to prove the callback actually ran.
+func (r *Runtime) XactDisposingDeliveries() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.xactDisposingDeliveries
 }

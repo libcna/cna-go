@@ -1387,6 +1387,24 @@ func fallibilityKeys(m contractMember, accessor string) []string {
 // managedFallibleMembers uses, because the exemption it corrects is itself
 // keyed that way.
 var runtimeReadMembers = map[string]map[string]bool{
+	// Foundation 98. AudioCategory, and it is the whole type rather than the
+	// four members the other entries here name.
+	//
+	// The default this overrides is `t.Kind == "class" || t.Kind == "interface"`
+	// -- a CLR STRUCT's members are infallible -- and it is right for every
+	// other struct in the profile, because every other struct holds its state
+	// in its own fields. AudioCategory holds a HANDLE. The reference's struct
+	// holds an engine reference and an index and answers get_Name from the
+	// engine's authored table; CNA has no index to hold, so the projection
+	// keeps the handle and every one of these eleven members asks XACT --
+	// including the four that a struct would normally answer from stored
+	// state, ToString and GetHashCode and the two operators.
+	"Microsoft.Xna.Framework.Audio.AudioCategory": {
+		"Name": true, "SetVolume": true, "Pause": true, "Resume": true,
+		"Stop": true, "ToString": true, "Equals": true, "GetHashCode": true,
+		"op_Equality": true, "op_Inequality": true,
+	},
+
 	// Foundation 96. The two picture entities, the same shape as Foundation
 	// 95's five: ToString answers a NATIVE name and the operators forward to an
 	// Equals that asks CNA.
@@ -1422,6 +1440,23 @@ var runtimeReadMembers = map[string]map[string]bool{
 }
 
 var managedStoredMembers = map[string]map[string]bool{
+	// Foundation 98. get_IsDisposed on the four disposable XACT types. Each is
+	// one `ldfld` over a private bool the type's own Dispose sets: a disposed
+	// bank knows it without asking XACT, and asking would be a second answer
+	// that could disagree -- the same measurement SoundEffect's got.
+	"Microsoft.Xna.Framework.Audio.AudioEngine": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Audio.SoundBank": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Audio.WaveBank": {
+		"property-get|IsDisposed": true,
+	},
+	"Microsoft.Xna.Framework.Audio.Cue": {
+		"property-get|IsDisposed": true,
+	},
+
 	// Foundation 97. VideoPlayer's, the last of them and the same `ldfld`.
 	"Microsoft.Xna.Framework.Media.VideoPlayer": {
 		"property-get|IsDisposed": true,
@@ -4830,6 +4865,12 @@ var bclSignatureAdapterConstructors = map[string]string{
 	// characters are values: a name saying "over references" would describe
 	// the opposite of what the collection holds.
 	"NewReadOnlyCollectionOverCharacters": "System.Collections.ObjectModel.ReadOnlyCollection`1",
+	// Foundation 98. The STRUCT-element counterpart, for
+	// AudioEngine::get_RendererDetails, whose CLR type is
+	// ReadOnlyCollection<RendererDetail>. A fifth constructor for the reason
+	// the third is a third: RendererDetail is a value, and the reference
+	// constructor's name would say the opposite of what the collection holds.
+	"NewReadOnlyCollectionOverValues": "System.Collections.ObjectModel.ReadOnlyCollection`1",
 	// Foundation 90. The LIVE reference-element counterpart, for
 	// ModelMesh::get_Effects, whose CLR collection wraps a `List<Effect>` that
 	// ModelMeshPart.set_Effect keeps adding to and removing from.

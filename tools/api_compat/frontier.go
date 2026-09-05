@@ -105,18 +105,6 @@ type frontierFamily struct {
 // than a stale paragraph.
 var frontierFamilies = []frontierFamily{
 	{
-		Name:           "XACT",
-		Classification: frontierActionableLocal,
-		Note:           "~32/12/10/17 CNA routes; needs project-authored legal bank fixtures, and structural state is not audibility",
-		Types: []string{
-			"Microsoft.Xna.Framework.Audio.AudioCategory",
-			"Microsoft.Xna.Framework.Audio.AudioEngine",
-			"Microsoft.Xna.Framework.Audio.Cue",
-			"Microsoft.Xna.Framework.Audio.SoundBank",
-			"Microsoft.Xna.Framework.Audio.WaveBank",
-		},
-	},
-	{
 		Name:           "GamerServices",
 		Classification: frontierActionableLocal,
 		Note:           "Foundation 97 re-measured this and the recorded blocker was wrong in its first half and right in its second. The GamerServices assembly IS in the IL cache and its dispatcher was read: Initialize's first two guards are an already-initialized latch and a null serviceProvider check, both reproducible. What is NOT reproducible is the dispatcher itself -- CNA has 107 gamer/guide routes and NONE of them is GamerServicesDispatcher.Initialize, .Update or .WindowHandle, which are three of Initialize's four steps and one of Update's two. The component's whole job is pumping that dispatcher every frame, so projecting it would put a component in Game.Components that a consumer adds and which cannot do the one thing it exists for",

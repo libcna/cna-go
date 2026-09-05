@@ -1225,6 +1225,10 @@ typedef CNA_Result (*cna_video_player_get_volume_fn)(CNA_VideoPlayerHandle, floa
 typedef CNA_Result (*cna_video_player_set_volume_fn)(CNA_VideoPlayerHandle, float);
 typedef CNA_Result (*cna_video_player_get_play_position_ticks_fn)(CNA_VideoPlayerHandle, int64_t*);
 typedef CNA_Result (*cna_media_queue_set_active_song_index_fn)(CNA_MediaQueueHandle, int32_t);
+/* Foundation 98 -- the XACT probe. Two routes, bound first so the settings-file
+   format can be MEASURED against the real parser rather than guessed at: the
+   whole family turns on whether a legal .xgs can be authored. */
+
 typedef uint32_t (*cna_get_abi_version_fn)(void);
 typedef CNA_Result (*cna_error_get_last_message_size_fn)(uint64_t*);
 typedef CNA_Result (*cna_error_copy_last_message_fn)(char*, uint64_t, uint64_t*);
@@ -1449,6 +1453,8 @@ typedef struct CNA_AudioEmitter {
     CNA_Vector3 up;
     CNA_Vector3 velocity;
 } CNA_AudioEmitter;
+
+
 typedef struct CNA_AudioListener {
     uint32_t struct_size;
     uint32_t struct_version;
@@ -1457,7 +1463,100 @@ typedef struct CNA_AudioListener {
     CNA_Vector3 up;
     CNA_Vector3 velocity;
 } CNA_AudioListener;
+
+/* Foundation 98 -- the three XACT routes reach for that audio.h owns. The
+   REGISTRATION handle and the callback are shared with the dynamic-buffer and
+   microphone subscriptions; the stop-options word is what both
+   cna_audio_category_stop and cna_cue_stop take. */
+typedef CNA_Handle CNA_AudioEventRegistrationHandle;
+typedef void (*CNA_AudioEventCallback)(void* context);
+typedef uint32_t CNA_AudioStopOptions;
 #endif
+
+/* Foundation 98 -- XACT. Five types over 62 routes.
+
+   The fixture question the frontier left open was MEASURED before any of this
+   was bound: CNA's parsers report through its log rather than through the
+   result code, and an 80-byte XGSF opens an engine, a 16-byte SDBK a sound bank
+   and a 16-byte WBND a wave bank. */
+#ifndef CNA_C_XACT_H
+/* The eight predicates in the canonical header's own ALPHABETICAL order, which
+   is not the order XNA's members are declared in. Mirrored field for field so
+   MANIFEST_LAYOUT_AGREEMENTS proves it against the canonical header. */
+typedef struct CNA_CueInfo {
+    uint32_t struct_size;
+    uint32_t struct_version;
+    CNA_Bool is_created;
+    CNA_Bool is_disposed;
+    CNA_Bool is_paused;
+    CNA_Bool is_playing;
+    CNA_Bool is_prepared;
+    CNA_Bool is_preparing;
+    CNA_Bool is_stopped;
+    CNA_Bool is_stopping;
+} CNA_CueInfo;
+#endif
+
+typedef CNA_Result (*cna_audio_unsubscribe_ext_fn)(CNA_AudioEventRegistrationHandle);
+typedef CNA_Result (*cna_audio_category_copy_name_fn)(CNA_Handle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_audio_category_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_audio_category_equals_fn)(CNA_Handle, CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_audio_category_get_hash_code_fn)(CNA_Handle, int32_t*);
+typedef CNA_Result (*cna_audio_category_get_name_size_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_audio_category_pause_fn)(CNA_Handle);
+typedef CNA_Result (*cna_audio_category_resume_fn)(CNA_Handle);
+typedef CNA_Result (*cna_audio_category_set_volume_fn)(CNA_Handle, float);
+typedef CNA_Result (*cna_audio_category_stop_fn)(CNA_Handle, CNA_AudioStopOptions);
+typedef CNA_Result (*cna_audio_engine_copy_renderer_friendly_name_fn)(CNA_Handle, uint64_t, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_audio_engine_copy_renderer_id_fn)(CNA_Handle, uint64_t, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_audio_engine_copy_type_name_fn)(CNA_Handle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_audio_engine_create_fn)(CNA_Handle, CNA_StringView, CNA_Handle*);
+typedef CNA_Result (*cna_audio_engine_create_with_renderer_fn)(CNA_Handle, CNA_StringView, int64_t, CNA_StringView, CNA_Handle*);
+typedef CNA_Result (*cna_audio_engine_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_audio_engine_get_category_fn)(CNA_Handle, CNA_StringView, CNA_Handle*);
+typedef CNA_Result (*cna_audio_engine_get_global_variable_fn)(CNA_Handle, CNA_StringView, float*);
+typedef CNA_Result (*cna_audio_engine_get_is_disposed_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_audio_engine_get_renderer_count_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_audio_engine_get_renderer_friendly_name_size_fn)(CNA_Handle, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_audio_engine_get_renderer_id_size_fn)(CNA_Handle, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_audio_engine_get_type_name_size_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_audio_engine_set_global_variable_fn)(CNA_Handle, CNA_StringView, float);
+typedef CNA_Result (*cna_audio_engine_subscribe_disposing_ext_fn)(CNA_Handle, CNA_AudioEventCallback, void*, CNA_AudioEventRegistrationHandle*);
+typedef CNA_Result (*cna_audio_engine_update_fn)(CNA_Handle);
+typedef CNA_Result (*cna_cue_apply_3d_fn)(CNA_Handle, const CNA_AudioListener*, const CNA_AudioEmitter*);
+typedef CNA_Result (*cna_cue_copy_name_fn)(CNA_Handle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_cue_copy_type_name_fn)(CNA_Handle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_cue_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_cue_get_info_fn)(CNA_Handle, CNA_CueInfo*);
+typedef CNA_Result (*cna_cue_get_name_size_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_cue_get_type_name_size_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_cue_get_variable_fn)(CNA_Handle, CNA_StringView, float*);
+typedef CNA_Result (*cna_cue_pause_fn)(CNA_Handle);
+typedef CNA_Result (*cna_cue_play_fn)(CNA_Handle);
+typedef CNA_Result (*cna_cue_resume_fn)(CNA_Handle);
+typedef CNA_Result (*cna_cue_set_variable_fn)(CNA_Handle, CNA_StringView, float);
+typedef CNA_Result (*cna_cue_stop_fn)(CNA_Handle, CNA_AudioStopOptions);
+typedef CNA_Result (*cna_cue_subscribe_disposing_ext_fn)(CNA_Handle, CNA_AudioEventCallback, void*, CNA_AudioEventRegistrationHandle*);
+typedef CNA_Result (*cna_sound_bank_copy_type_name_fn)(CNA_Handle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_sound_bank_create_fn)(CNA_Handle, CNA_StringView, CNA_Handle*);
+typedef CNA_Result (*cna_sound_bank_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_sound_bank_get_cue_fn)(CNA_Handle, CNA_StringView, CNA_Handle*);
+typedef CNA_Result (*cna_sound_bank_get_is_disposed_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_sound_bank_get_is_in_use_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_sound_bank_get_type_name_size_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_sound_bank_play_cue_fn)(CNA_Handle, CNA_StringView);
+typedef CNA_Result (*cna_sound_bank_play_cue_3d_fn)(CNA_Handle, CNA_StringView, const CNA_AudioListener*, const CNA_AudioEmitter*);
+typedef CNA_Result (*cna_sound_bank_subscribe_disposing_ext_fn)(CNA_Handle, CNA_AudioEventCallback, void*, CNA_AudioEventRegistrationHandle*);
+typedef CNA_Result (*cna_wave_bank_copy_type_name_fn)(CNA_Handle, char*, uint64_t, uint64_t*);
+typedef CNA_Result (*cna_wave_bank_create_fn)(CNA_Handle, CNA_StringView, CNA_Handle*);
+typedef CNA_Result (*cna_wave_bank_create_streaming_fn)(CNA_Handle, CNA_StringView, int32_t, int16_t, CNA_Handle*);
+typedef CNA_Result (*cna_wave_bank_destroy_fn)(CNA_Handle);
+typedef CNA_Result (*cna_wave_bank_get_is_disposed_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_wave_bank_get_is_in_use_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_wave_bank_get_is_prepared_fn)(CNA_Handle, CNA_Bool*);
+typedef CNA_Result (*cna_wave_bank_get_type_name_size_fn)(CNA_Handle, uint64_t*);
+typedef CNA_Result (*cna_wave_bank_subscribe_disposing_ext_fn)(CNA_Handle, CNA_AudioEventCallback, void*, CNA_AudioEventRegistrationHandle*);
+
 typedef CNA_Result (*cna_sound_effect_instance_apply_3d_multi_ext_fn)(CNA_Handle, const CNA_AudioListener*, uint64_t, const CNA_AudioEmitter*);
 /* Foundation 88 -- DynamicSoundEffectInstance. */
 typedef CNA_Result (*cna_dynamic_sound_effect_instance_create_fn)(CNA_Handle, int32_t, CNA_AudioChannels, CNA_Handle*);
@@ -2033,6 +2132,65 @@ typedef CNA_Result (*cna_game_window_subscribe_fn)(CNA_Handle, CNA_GameWindowEve
     X(cna_media_player_play_song) \
     X(cna_media_player_play_songs) \
     X(cna_media_player_play_songs_from) \
+    X(cna_audio_unsubscribe_ext) \
+    X(cna_audio_category_copy_name) \
+    X(cna_audio_category_destroy) \
+    X(cna_audio_category_equals) \
+    X(cna_audio_category_get_hash_code) \
+    X(cna_audio_category_get_name_size) \
+    X(cna_audio_category_pause) \
+    X(cna_audio_category_resume) \
+    X(cna_audio_category_set_volume) \
+    X(cna_audio_category_stop) \
+    X(cna_audio_engine_copy_renderer_friendly_name) \
+    X(cna_audio_engine_copy_renderer_id) \
+    X(cna_audio_engine_copy_type_name) \
+    X(cna_audio_engine_create) \
+    X(cna_audio_engine_create_with_renderer) \
+    X(cna_audio_engine_destroy) \
+    X(cna_audio_engine_get_category) \
+    X(cna_audio_engine_get_global_variable) \
+    X(cna_audio_engine_get_is_disposed) \
+    X(cna_audio_engine_get_renderer_count) \
+    X(cna_audio_engine_get_renderer_friendly_name_size) \
+    X(cna_audio_engine_get_renderer_id_size) \
+    X(cna_audio_engine_get_type_name_size) \
+    X(cna_audio_engine_set_global_variable) \
+    X(cna_audio_engine_subscribe_disposing_ext) \
+    X(cna_audio_engine_update) \
+    X(cna_cue_apply_3d) \
+    X(cna_cue_copy_name) \
+    X(cna_cue_copy_type_name) \
+    X(cna_cue_destroy) \
+    X(cna_cue_get_info) \
+    X(cna_cue_get_name_size) \
+    X(cna_cue_get_type_name_size) \
+    X(cna_cue_get_variable) \
+    X(cna_cue_pause) \
+    X(cna_cue_play) \
+    X(cna_cue_resume) \
+    X(cna_cue_set_variable) \
+    X(cna_cue_stop) \
+    X(cna_cue_subscribe_disposing_ext) \
+    X(cna_sound_bank_copy_type_name) \
+    X(cna_sound_bank_create) \
+    X(cna_sound_bank_destroy) \
+    X(cna_sound_bank_get_cue) \
+    X(cna_sound_bank_get_is_disposed) \
+    X(cna_sound_bank_get_is_in_use) \
+    X(cna_sound_bank_get_type_name_size) \
+    X(cna_sound_bank_play_cue) \
+    X(cna_sound_bank_play_cue_3d) \
+    X(cna_sound_bank_subscribe_disposing_ext) \
+    X(cna_wave_bank_copy_type_name) \
+    X(cna_wave_bank_create) \
+    X(cna_wave_bank_create_streaming) \
+    X(cna_wave_bank_destroy) \
+    X(cna_wave_bank_get_is_disposed) \
+    X(cna_wave_bank_get_is_in_use) \
+    X(cna_wave_bank_get_is_prepared) \
+    X(cna_wave_bank_get_type_name_size) \
+    X(cna_wave_bank_subscribe_disposing_ext) \
     X(cna_media_player_pause) \
     X(cna_media_player_resume) \
     X(cna_media_player_stop) \

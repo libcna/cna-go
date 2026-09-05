@@ -5444,3 +5444,111 @@ func TestMediaPlaybackIsReachableFromOutsideTheModule(t *testing.T) {
 		t.Fatal("a nil VideoPlayer did not report itself disposed outside the module")
 	}
 }
+
+// TestXactIsReachableFromOutsideTheModule is Foundation 98's canary.
+func TestXactIsReachableFromOutsideTheModule(t *testing.T) {
+	// AudioEngine: both constructors, and the whole surface.
+	var _ func(string) (*audio.AudioEngine, error) = audio.NewAudioEngineByString
+	var _ func(string, framework.TimeSpan, string) (*audio.AudioEngine, error) = audio.NewAudioEngineByStringAndTimeSpanAndString
+	var engine *audio.AudioEngine
+	var _ func() error = engine.Update
+	var _ func(string) (audio.AudioCategory, error) = engine.GetCategory
+	var _ func(string) (float32, error) = engine.GetGlobalVariable
+	var _ func(string, float32) error = engine.SetGlobalVariable
+	var _ func() (*framework.ReadOnlyCollection[audio.RendererDetail], error) = engine.RendererDetails
+	var _ func() bool = engine.IsDisposed
+	var _ func() error = engine.DisposeByNone
+	var _ func(bool) error = engine.DisposeByBoolean
+	var _ func() error = engine.Finalize
+
+	// The ContentVersion constant is reachable WITHOUT an instance, which is
+	// what makes it a projected `const` field rather than a getter.
+	if audio.AudioEngineContentVersion != 39 {
+		t.Fatalf("AudioEngine.ContentVersion is %d outside the module, want 39",
+			audio.AudioEngineContentVersion)
+	}
+
+	// AudioCategory is a VALUE, and its zero is usable from outside.
+	var category audio.AudioCategory
+	var _ func() (string, error) = category.Name
+	var _ func(float32) error = category.SetVolume
+	var _ func() error = category.Pause
+	var _ func() error = category.Resume
+	var _ func(audio.AudioStopOptions) error = category.Stop
+	var _ func() (int32, error) = category.GetHashCode
+	var _ func() (string, error) = category.ToString
+	var _ func(audio.AudioCategory) (bool, error) = category.EqualsByAudioCategory
+	var _ func(any) (bool, error) = category.EqualsByObject
+	var _ func(audio.AudioCategory, audio.AudioCategory) (bool, error) = audio.AudioCategoryOperatorEqualityByAudioCategoryAndAudioCategory
+	var _ func(audio.AudioCategory, audio.AudioCategory) (bool, error) = audio.AudioCategoryOperatorInequalityByAudioCategoryAndAudioCategory
+
+	// Two zero categories are equal without reaching a handle, which is the
+	// one thing a consumer with no engine can prove about this type.
+	equal, err := category.EqualsByAudioCategory(audio.AudioCategory{})
+	if err != nil || !equal {
+		t.Fatalf("two zero AudioCategory values compared %v, %v outside the module", equal, err)
+	}
+	if _, err := category.Name(); err == nil {
+		t.Fatal("a zero AudioCategory answered a name outside the module")
+	}
+
+	// SoundBank declares ONE constructor, so it takes no parameter-shape
+	// suffix where WaveBank's two do. A consumer sees the difference.
+	var _ func(*audio.AudioEngine, string) (*audio.SoundBank, error) = audio.NewSoundBank
+	var soundBank *audio.SoundBank
+	var _ func(string) (*audio.Cue, error) = soundBank.GetCue
+	var _ func(string) error = soundBank.PlayCueByString
+	var _ func(string, *audio.AudioListener, *audio.AudioEmitter) error = soundBank.PlayCueByStringAndAudioListenerAndAudioEmitter
+	var _ func() (bool, error) = soundBank.IsInUse
+	var _ func() bool = soundBank.IsDisposed
+	var _ func() error = soundBank.DisposeByNone
+	var _ func(bool) error = soundBank.DisposeByBoolean
+	var _ func(framework.EventHandler[*framework.EventArgs]) (framework.EventSubscription, error) = soundBank.AddDisposingHandler
+	var _ func(framework.EventSubscription) error = soundBank.RemoveDisposingHandler
+
+	var _ func(*audio.AudioEngine, string) (*audio.WaveBank, error) = audio.NewWaveBankByAudioEngineAndString
+	var _ func(*audio.AudioEngine, string, int32, int16) (*audio.WaveBank, error) = audio.NewWaveBankByAudioEngineAndStringAndInt32AndInt16
+	var waveBank *audio.WaveBank
+	var _ func() (bool, error) = waveBank.IsInUse
+	var _ func() (bool, error) = waveBank.IsPrepared
+	var _ func() bool = waveBank.IsDisposed
+
+	// Cue has no protected Dispose(Boolean) -- it is `sealed` -- which is the
+	// one place the four disposable XACT types differ, and a consumer can see
+	// it because there is no DisposeByNone to name.
+	var cue *audio.Cue
+	var _ func() (string, error) = cue.Name
+	var _ func() (bool, error) = cue.IsCreated
+	var _ func() (bool, error) = cue.IsPreparing
+	var _ func() (bool, error) = cue.IsPrepared
+	var _ func() (bool, error) = cue.IsPlaying
+	var _ func() (bool, error) = cue.IsStopping
+	var _ func() (bool, error) = cue.IsStopped
+	var _ func() (bool, error) = cue.IsPaused
+	var _ func() bool = cue.IsDisposed
+	var _ func() error = cue.Play
+	var _ func() error = cue.Pause
+	var _ func() error = cue.Resume
+	var _ func(audio.AudioStopOptions) error = cue.Stop
+	var _ func(string) (float32, error) = cue.GetVariable
+	var _ func(string, float32) error = cue.SetVariable
+	var _ func(*audio.AudioListener, *audio.AudioEmitter) error = cue.Apply3D
+	var _ func() error = cue.Dispose
+	var _ func() error = cue.Finalize
+
+	// Every nil XACT object reports itself disposed rather than panicking, and
+	// a nil engine is refused by the bank constructors BEFORE the filename is
+	// looked at -- both of which a consumer with no runtime can see.
+	if !engine.IsDisposed() || !soundBank.IsDisposed() || !waveBank.IsDisposed() || !cue.IsDisposed() {
+		t.Fatal("a nil XACT object did not report itself disposed outside the module")
+	}
+	if _, err := audio.NewSoundBank(nil, "sounds.xsb"); err == nil {
+		t.Fatal("NewSoundBank accepted a nil engine outside the module")
+	}
+	if _, err := audio.NewWaveBankByAudioEngineAndString(nil, "waves.xwb"); err == nil {
+		t.Fatal("the WaveBank constructor accepted a nil engine outside the module")
+	}
+	if err := cue.Apply3D(nil, audio.NewAudioEmitter()); err == nil {
+		t.Fatal("Cue.Apply3D accepted a nil listener outside the module")
+	}
+}

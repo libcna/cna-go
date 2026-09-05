@@ -3810,6 +3810,335 @@ CnaGoResult cna_go_media_player_play_songs(CnaGoHandle game, CnaGoHandle songs) 
 CnaGoResult cna_go_media_player_play_songs_from(CnaGoHandle game, CnaGoHandle songs, int32_t index) {
     return api.cna_media_player_play_songs_from((CNA_Handle)game, (CNA_SongCollectionHandle)songs, index);
 }
+/* Foundation 98 -- XACT. */
+CnaGoResult cna_go_audio_category_copy_name(CnaGoHandle category, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_audio_category_copy_name((CNA_Handle)category, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_audio_category_destroy(CnaGoHandle category) {
+    return api.cna_audio_category_destroy((CNA_Handle)category);
+}
+
+CnaGoResult cna_go_audio_category_equals(CnaGoHandle category, CnaGoHandle other, uint8_t* out_equals) {
+    return api.cna_audio_category_equals((CNA_Handle)category, (CNA_Handle)other, (CNA_Bool*)out_equals);
+}
+
+CnaGoResult cna_go_audio_category_get_hash_code(CnaGoHandle category, int32_t* out_hash_code) {
+    return api.cna_audio_category_get_hash_code((CNA_Handle)category, out_hash_code);
+}
+
+CnaGoResult cna_go_audio_category_get_name_size(CnaGoHandle category, uint64_t* out_bytes) {
+    return api.cna_audio_category_get_name_size((CNA_Handle)category, out_bytes);
+}
+
+CnaGoResult cna_go_audio_category_pause(CnaGoHandle category) {
+    return api.cna_audio_category_pause((CNA_Handle)category);
+}
+
+CnaGoResult cna_go_audio_category_resume(CnaGoHandle category) {
+    return api.cna_audio_category_resume((CNA_Handle)category);
+}
+
+CnaGoResult cna_go_audio_category_set_volume(CnaGoHandle category, float volume) {
+    return api.cna_audio_category_set_volume((CNA_Handle)category, volume);
+}
+
+CnaGoResult cna_go_audio_category_stop(CnaGoHandle category, uint32_t options) {
+    return api.cna_audio_category_stop((CNA_Handle)category, (CNA_AudioStopOptions)options);
+}
+
+CnaGoResult cna_go_audio_engine_copy_renderer_friendly_name(CnaGoHandle engine, uint64_t renderer_index, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_audio_engine_copy_renderer_friendly_name((CNA_Handle)engine, renderer_index, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_audio_engine_copy_renderer_id(CnaGoHandle engine, uint64_t renderer_index, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_audio_engine_copy_renderer_id((CNA_Handle)engine, renderer_index, destination, capacity, out_bytes);
+}
+
+
+CnaGoResult cna_go_audio_engine_copy_type_name(CnaGoHandle engine, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_audio_engine_copy_type_name((CNA_Handle)engine, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_audio_engine_create(CnaGoHandle game, const char* settings_file, uint64_t settings_file_length, CnaGoHandle* out_engine) {
+    return api.cna_audio_engine_create((CNA_Handle)game, cna_go_view(settings_file, settings_file_length), (CNA_Handle*)out_engine);
+}
+
+CnaGoResult cna_go_audio_engine_create_with_renderer(CnaGoHandle game, const char* settings_file, uint64_t settings_file_length, int64_t look_ahead_ticks, const char* renderer_id, uint64_t renderer_id_length, CnaGoHandle* out_engine) {
+    return api.cna_audio_engine_create_with_renderer((CNA_Handle)game, cna_go_view(settings_file, settings_file_length), look_ahead_ticks, cna_go_view(renderer_id, renderer_id_length), (CNA_Handle*)out_engine);
+}
+
+CnaGoResult cna_go_audio_engine_destroy(CnaGoHandle engine) {
+    return api.cna_audio_engine_destroy((CNA_Handle)engine);
+}
+
+CnaGoResult cna_go_audio_engine_get_category(CnaGoHandle engine, const char* name, uint64_t name_length, CnaGoHandle* out_category) {
+    return api.cna_audio_engine_get_category((CNA_Handle)engine, cna_go_view(name, name_length), (CNA_Handle*)out_category);
+}
+
+CnaGoResult cna_go_audio_engine_get_global_variable(CnaGoHandle engine, const char* name, uint64_t name_length, float* out_value) {
+    return api.cna_audio_engine_get_global_variable((CNA_Handle)engine, cna_go_view(name, name_length), out_value);
+}
+
+CnaGoResult cna_go_audio_engine_get_is_disposed(CnaGoHandle engine, uint8_t* out_is_disposed) {
+    return api.cna_audio_engine_get_is_disposed((CNA_Handle)engine, (CNA_Bool*)out_is_disposed);
+}
+
+CnaGoResult cna_go_audio_engine_get_renderer_count(CnaGoHandle engine, uint64_t* out_count) {
+    return api.cna_audio_engine_get_renderer_count((CNA_Handle)engine, out_count);
+}
+
+CnaGoResult cna_go_audio_engine_get_renderer_friendly_name_size(CnaGoHandle engine, uint64_t renderer_index, uint64_t* out_bytes) {
+    return api.cna_audio_engine_get_renderer_friendly_name_size((CNA_Handle)engine, renderer_index, out_bytes);
+}
+
+
+CnaGoResult cna_go_audio_engine_get_renderer_id_size(CnaGoHandle engine, uint64_t renderer_index, uint64_t* out_bytes) {
+    return api.cna_audio_engine_get_renderer_id_size((CNA_Handle)engine, renderer_index, out_bytes);
+}
+
+
+CnaGoResult cna_go_audio_engine_get_type_name_size(CnaGoHandle engine, uint64_t* out_bytes) {
+    return api.cna_audio_engine_get_type_name_size((CNA_Handle)engine, out_bytes);
+}
+
+
+CnaGoResult cna_go_audio_engine_set_global_variable(CnaGoHandle engine, const char* name, uint64_t name_length, float value) {
+    return api.cna_audio_engine_set_global_variable((CNA_Handle)engine, cna_go_view(name, name_length), value);
+}
+
+CnaGoResult cna_go_audio_engine_update(CnaGoHandle engine) {
+    return api.cna_audio_engine_update((CNA_Handle)engine);
+}
+
+static void cna_go_fill_listener(CNA_AudioListener* built, const float* source) {
+    memset(built, 0, sizeof(*built));
+    built->struct_size = (uint32_t)sizeof(*built);
+    built->struct_version = 1;
+    built->forward.x = source[0];
+    built->forward.y = source[1];
+    built->forward.z = source[2];
+    built->position.x = source[3];
+    built->position.y = source[4];
+    built->position.z = source[5];
+    built->up.x = source[6];
+    built->up.y = source[7];
+    built->up.z = source[8];
+    built->velocity.x = source[9];
+    built->velocity.y = source[10];
+    built->velocity.z = source[11];
+}
+
+static void cna_go_fill_emitter(CNA_AudioEmitter* built, const float* source) {
+    memset(built, 0, sizeof(*built));
+    built->struct_size = (uint32_t)sizeof(*built);
+    built->struct_version = 1;
+    built->doppler_scale = source[0];
+    built->forward.x = source[1];
+    built->forward.y = source[2];
+    built->forward.z = source[3];
+    built->position.x = source[4];
+    built->position.y = source[5];
+    built->position.z = source[6];
+    built->up.x = source[7];
+    built->up.y = source[8];
+    built->up.z = source[9];
+    built->velocity.x = source[10];
+    built->velocity.y = source[11];
+    built->velocity.z = source[12];
+}
+
+CnaGoResult cna_go_cue_apply_3d(CnaGoHandle cue, const float* listener, const float* emitter) {
+    CNA_AudioListener built_listener;
+    CNA_AudioEmitter built_emitter;
+    if (listener == NULL || emitter == NULL) {
+        return CNA_GO_RESULT_INVALID_ARGUMENT;
+    }
+    cna_go_fill_listener(&built_listener, listener);
+    cna_go_fill_emitter(&built_emitter, emitter);
+    return api.cna_cue_apply_3d((CNA_Handle)cue, &built_listener, &built_emitter);
+}
+
+CnaGoResult cna_go_cue_copy_name(CnaGoHandle cue, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_cue_copy_name((CNA_Handle)cue, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_cue_copy_type_name(CnaGoHandle cue, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_cue_copy_type_name((CNA_Handle)cue, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_cue_destroy(CnaGoHandle cue) {
+    return api.cna_cue_destroy((CNA_Handle)cue);
+}
+
+CnaGoResult cna_go_cue_get_info(CnaGoHandle cue, uint8_t* out_states) {
+    CNA_CueInfo info;
+    CnaGoResult result;
+    memset(&info, 0, sizeof(info));
+    info.struct_size = (uint32_t)sizeof(info);
+    info.struct_version = 1;
+    result = api.cna_cue_get_info((CNA_Handle)cue, &info);
+    if (result != 0) {
+        return result;
+    }
+    /* In the canonical header's own order, which the Go side mirrors. */
+    out_states[0] = (uint8_t)info.is_created;
+    out_states[1] = (uint8_t)info.is_disposed;
+    out_states[2] = (uint8_t)info.is_paused;
+    out_states[3] = (uint8_t)info.is_playing;
+    out_states[4] = (uint8_t)info.is_prepared;
+    out_states[5] = (uint8_t)info.is_preparing;
+    out_states[6] = (uint8_t)info.is_stopped;
+    out_states[7] = (uint8_t)info.is_stopping;
+    return result;
+}
+
+/* Foundation 98 -- XACT disposal notifications.
+
+   CNA_AudioEventCallback carries nothing but the caller context, exactly as the
+   media-player and game callbacks do, so ONE trampoline serves all four types
+   and the Go side reads the identity out of the context it registered. */
+extern void cnaGoXactDisposing(uintptr_t context);
+
+static void xact_disposing_callback(void* context) {
+    cnaGoXactDisposing((uintptr_t)context);
+}
+
+CnaGoResult cna_go_audio_engine_subscribe_disposing(CnaGoHandle engine, uintptr_t context, CnaGoHandle* out_registration) {
+    return api.cna_audio_engine_subscribe_disposing_ext(
+        (CNA_Handle)engine, xact_disposing_callback, (void*)context,
+        (CNA_AudioEventRegistrationHandle*)out_registration);
+}
+
+CnaGoResult cna_go_sound_bank_subscribe_disposing(CnaGoHandle bank, uintptr_t context, CnaGoHandle* out_registration) {
+    return api.cna_sound_bank_subscribe_disposing_ext(
+        (CNA_Handle)bank, xact_disposing_callback, (void*)context,
+        (CNA_AudioEventRegistrationHandle*)out_registration);
+}
+
+CnaGoResult cna_go_wave_bank_subscribe_disposing(CnaGoHandle bank, uintptr_t context, CnaGoHandle* out_registration) {
+    return api.cna_wave_bank_subscribe_disposing_ext(
+        (CNA_Handle)bank, xact_disposing_callback, (void*)context,
+        (CNA_AudioEventRegistrationHandle*)out_registration);
+}
+
+CnaGoResult cna_go_cue_subscribe_disposing(CnaGoHandle cue, uintptr_t context, CnaGoHandle* out_registration) {
+    return api.cna_cue_subscribe_disposing_ext(
+        (CNA_Handle)cue, xact_disposing_callback, (void*)context,
+        (CNA_AudioEventRegistrationHandle*)out_registration);
+}
+
+CnaGoResult cna_go_audio_unsubscribe(CnaGoHandle registration) {
+    return api.cna_audio_unsubscribe_ext((CNA_AudioEventRegistrationHandle)registration);
+}
+
+CnaGoResult cna_go_cue_get_name_size(CnaGoHandle cue, uint64_t* out_bytes) {
+    return api.cna_cue_get_name_size((CNA_Handle)cue, out_bytes);
+}
+
+CnaGoResult cna_go_cue_get_type_name_size(CnaGoHandle cue, uint64_t* out_bytes) {
+    return api.cna_cue_get_type_name_size((CNA_Handle)cue, out_bytes);
+}
+
+CnaGoResult cna_go_cue_get_variable(CnaGoHandle cue, const char* name, uint64_t name_length, float* out_value) {
+    return api.cna_cue_get_variable((CNA_Handle)cue, cna_go_view(name, name_length), out_value);
+}
+
+CnaGoResult cna_go_cue_pause(CnaGoHandle cue) {
+    return api.cna_cue_pause((CNA_Handle)cue);
+}
+
+CnaGoResult cna_go_cue_play(CnaGoHandle cue) {
+    return api.cna_cue_play((CNA_Handle)cue);
+}
+
+CnaGoResult cna_go_cue_resume(CnaGoHandle cue) {
+    return api.cna_cue_resume((CNA_Handle)cue);
+}
+
+CnaGoResult cna_go_cue_set_variable(CnaGoHandle cue, const char* name, uint64_t name_length, float value) {
+    return api.cna_cue_set_variable((CNA_Handle)cue, cna_go_view(name, name_length), value);
+}
+
+CnaGoResult cna_go_cue_stop(CnaGoHandle cue, uint32_t options) {
+    return api.cna_cue_stop((CNA_Handle)cue, (CNA_AudioStopOptions)options);
+}
+
+CnaGoResult cna_go_sound_bank_copy_type_name(CnaGoHandle sound_bank, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_sound_bank_copy_type_name((CNA_Handle)sound_bank, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_sound_bank_create(CnaGoHandle engine, const char* filename, uint64_t filename_length, CnaGoHandle* out_sound_bank) {
+    return api.cna_sound_bank_create((CNA_Handle)engine, cna_go_view(filename, filename_length), (CNA_Handle*)out_sound_bank);
+}
+
+CnaGoResult cna_go_sound_bank_destroy(CnaGoHandle sound_bank) {
+    return api.cna_sound_bank_destroy((CNA_Handle)sound_bank);
+}
+
+CnaGoResult cna_go_sound_bank_get_cue(CnaGoHandle sound_bank, const char* name, uint64_t name_length, CnaGoHandle* out_cue) {
+    return api.cna_sound_bank_get_cue((CNA_Handle)sound_bank, cna_go_view(name, name_length), (CNA_Handle*)out_cue);
+}
+
+CnaGoResult cna_go_sound_bank_get_is_disposed(CnaGoHandle sound_bank, uint8_t* out_is_disposed) {
+    return api.cna_sound_bank_get_is_disposed((CNA_Handle)sound_bank, (CNA_Bool*)out_is_disposed);
+}
+
+CnaGoResult cna_go_sound_bank_get_is_in_use(CnaGoHandle sound_bank, uint8_t* out_is_in_use) {
+    return api.cna_sound_bank_get_is_in_use((CNA_Handle)sound_bank, (CNA_Bool*)out_is_in_use);
+}
+
+CnaGoResult cna_go_sound_bank_get_type_name_size(CnaGoHandle sound_bank, uint64_t* out_bytes) {
+    return api.cna_sound_bank_get_type_name_size((CNA_Handle)sound_bank, out_bytes);
+}
+
+CnaGoResult cna_go_sound_bank_play_cue(CnaGoHandle sound_bank, const char* name, uint64_t name_length) {
+    return api.cna_sound_bank_play_cue((CNA_Handle)sound_bank, cna_go_view(name, name_length));
+}
+
+CnaGoResult cna_go_sound_bank_play_cue_3d(CnaGoHandle bank, const char* name, uint64_t name_length, const float* listener, const float* emitter) {
+    CNA_AudioListener built_listener;
+    CNA_AudioEmitter built_emitter;
+    if (listener == NULL || emitter == NULL) {
+        return CNA_GO_RESULT_INVALID_ARGUMENT;
+    }
+    cna_go_fill_listener(&built_listener, listener);
+    cna_go_fill_emitter(&built_emitter, emitter);
+    return api.cna_sound_bank_play_cue_3d((CNA_Handle)bank, cna_go_view(name, name_length), &built_listener, &built_emitter);
+}
+
+CnaGoResult cna_go_wave_bank_copy_type_name(CnaGoHandle wave_bank, char* destination, uint64_t capacity, uint64_t* out_bytes) {
+    return api.cna_wave_bank_copy_type_name((CNA_Handle)wave_bank, destination, capacity, out_bytes);
+}
+
+CnaGoResult cna_go_wave_bank_create(CnaGoHandle engine, const char* filename, uint64_t filename_length, CnaGoHandle* out_wave_bank) {
+    return api.cna_wave_bank_create((CNA_Handle)engine, cna_go_view(filename, filename_length), (CNA_Handle*)out_wave_bank);
+}
+
+CnaGoResult cna_go_wave_bank_create_streaming(CnaGoHandle engine, const char* filename, uint64_t filename_length, int32_t offset, int16_t packet_size, CnaGoHandle* out_wave_bank) {
+    return api.cna_wave_bank_create_streaming((CNA_Handle)engine, cna_go_view(filename, filename_length), offset, packet_size, (CNA_Handle*)out_wave_bank);
+}
+
+CnaGoResult cna_go_wave_bank_destroy(CnaGoHandle wave_bank) {
+    return api.cna_wave_bank_destroy((CNA_Handle)wave_bank);
+}
+
+CnaGoResult cna_go_wave_bank_get_is_disposed(CnaGoHandle wave_bank, uint8_t* out_is_disposed) {
+    return api.cna_wave_bank_get_is_disposed((CNA_Handle)wave_bank, (CNA_Bool*)out_is_disposed);
+}
+
+CnaGoResult cna_go_wave_bank_get_is_in_use(CnaGoHandle wave_bank, uint8_t* out_is_in_use) {
+    return api.cna_wave_bank_get_is_in_use((CNA_Handle)wave_bank, (CNA_Bool*)out_is_in_use);
+}
+
+CnaGoResult cna_go_wave_bank_get_is_prepared(CnaGoHandle wave_bank, uint8_t* out_is_prepared) {
+    return api.cna_wave_bank_get_is_prepared((CNA_Handle)wave_bank, (CNA_Bool*)out_is_prepared);
+}
+
+CnaGoResult cna_go_wave_bank_get_type_name_size(CnaGoHandle wave_bank, uint64_t* out_bytes) {
+    return api.cna_wave_bank_get_type_name_size((CNA_Handle)wave_bank, out_bytes);
+}
+
 CnaGoResult cna_go_media_player_pause(CnaGoHandle game) {
     return api.cna_media_player_pause((CNA_Handle)game);
 }

@@ -505,6 +505,44 @@ var unboundRouteClasses = map[string]string{
 // anything, including null.
 var deliberatelyUnboundRoutes = []unboundRoute{
 	{
+		Route:  "cna_audio_engine_get_renderer_hash_code",
+		Member: "Microsoft.Xna.Framework.Audio.RendererDetail::GetHashCode()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "RendererDetail::GetHashCode is 60 bytes of pure managed arithmetic over the " +
+			"struct's two string fields -- `(IsNullOrEmpty(_name) ? 0 : _name.GetHashCode()) ^ " +
+			"(IsNullOrEmpty(_id) ? 0 : _id.GetHashCode())` -- and the string hash it calls is the " +
+			"pinned mscorlib algorithm, which is what bclhash.String reproduces. CNA cannot answer " +
+			"that: whatever its renderer hash is, it is not that expression over those two strings, " +
+			"so binding it would replace a hash the projection computes CORRECTLY with one that is " +
+			"measurably wrong. The type has been projected as pure managed since before XACT existed " +
+			"in this module and nothing here changes that.",
+	},
+	{
+		Route:  "cna_audio_engine_get_renderer_text_size",
+		Member: "Microsoft.Xna.Framework.Audio.RendererDetail::ToString()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "RendererDetail::ToString is 17 bytes -- box, then ValueType::ToString -- so it " +
+			"answers the CLR TYPE NAME and nothing about the renderer, for every value including the " +
+			"zero one. A renderer text from CNA would be a second, different answer to a member whose " +
+			"reference body reads neither field.",
+	},
+	{
+		Route:  "cna_audio_engine_copy_renderer_text",
+		Member: "Microsoft.Xna.Framework.Audio.RendererDetail::ToString()",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "the copy half of the renderer text, unbound for the same reason as its size route.",
+	},
+	{
+		Route:  "cna_audio_engine_renderers_equal",
+		Member: "Microsoft.Xna.Framework.Audio.RendererDetail::op_Equality(RendererDetail,RendererDetail)",
+		Class:  "MANAGED_REFERENCE",
+		Detail: "op_Equality compares the two STRINGS by value and short-circuits on the name, so two " +
+			"renderers that report the same friendly name and id ARE equal in the reference however " +
+			"they are indexed. CNA's route compares two INDICES into the engine's own collection, " +
+			"which is a different relation: it can only ever answer true for i == i. Binding it would " +
+			"make a value-typed equality depend on collection position.",
+	},
+	{
 		Route:  "cna_media_library_save_picture_from_stream",
 		Member: "Microsoft.Xna.Framework.Media.MediaLibrary::SavePicture(System.String,System.IO.Stream)",
 		Class:  "SUBSUMED",

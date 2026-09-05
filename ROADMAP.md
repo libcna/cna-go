@@ -18,16 +18,16 @@ go run ./tools/external_consumer -source .
 
 <!-- cna-go:scoreboard -->
 ```text
-TOTAL_DIAGNOSTICS                6
-MISSING_TYPE                     6
+TOTAL_DIAGNOSTICS                1
+MISSING_TYPE                     1
 MISSING_MEMBER                   0
-COMPLETE_TYPES                 251
+COMPLETE_TYPES                 256
 PARTIAL_TYPES                    0
 UNEXPECTED_MEMBER                0
 ALLOWLIST_ENTRIES                0
-GLOBAL_ACTIONABLE_LOCAL          6
+GLOBAL_ACTIONABLE_LOCAL          1
 GLOBAL_UNREVIEWED                0
-BOUND_FUNCTIONS                637
+BOUND_FUNCTIONS                696
 MANIFEST_LAYOUT_AGREEMENTS     457
 ABI_MISMATCHES                   0
 ```
@@ -453,11 +453,41 @@ The stress slice **mutes before it plays anything and proves the mute took** --
 `MEDIA_PLAYBACK_MUTE_CHECKS` -- because MediaPlayer plays through the machine's
 real audio output and a test is not entitled to make noise on someone's desktop.
 
+Foundation 98 closed **XACT** -- `AudioEngine`, `AudioCategory`, `SoundBank`,
+`WaveBank` and `Cue` -- and with it the whole `Microsoft.Xna.Framework.Audio`
+namespace. `BOUND_FUNCTIONS` 637 → 696, and **`GamerServicesComponent` is the
+only type left in the profile.**
+
+**The recorded blocker was overturned by measuring it a second time.** The
+earlier note said the fixtures were reachable but EMPTY -- no cues, no
+categories, no waves -- which was an honest measurement of the FLOOR and the
+wrong question. CNA's own XACT demo ships a generator for all three formats, and
+reading it is capability evidence of the kind this project admits from CNA: it
+says what CNA's parser accepts and nothing about what XNA means. The
+qualification now loads two authored categories, a settable global variable, two
+real PCM waves and two named cues that play.
+
+`AudioCategory` is the first STRUCT in the profile whose every member reaches a
+runtime. The reference's copy holds an engine reference and an index; CNA has no
+index, so the projected value holds a HANDLE, and two lookups of one name are
+two handles that must still compare equal -- which is what
+`cna_audio_category_equals` is for, and what the qualification asserts.
+
+Four renderer routes are deliberately unbound. `RendererDetail`'s `ToString`,
+`GetHashCode` and equality are pure managed and already projected; CNA's answers
+for all three are different questions, and its hash could not reproduce the
+pinned mscorlib string hash. Binding them would have made a value type's
+identity depend on its position in a collection.
+
+The slice mutes every authored category and counts the muting --
+`XACT_MUTE_CHECKS` -- before it plays a cue, for the reason Foundation 97's
+playback slice does.
+
 ## No partial types, and no missing members
 
 **`PARTIAL_TYPES` and `MISSING_MEMBER` are both zero.** Every type CNA-Go
-projects, it projects completely; what remains is 6 types it does not project
-at all, and every one of them is classified.
+projects, it projects completely; what remains is ONE type it does not project
+at all, and it is classified.
 
 ## What is left, and why
 
@@ -472,12 +502,10 @@ and it is zero.
 The suggested order is dependency order, which is the order the families appear
 in that registry:
 
-1. **`SoundEffect` / `SoundEffectInstance`** and the audio family, which also
-   grow `ContentManager.Load<T>`'s closed set.
-2. **XACT** and **GamerServices**, which are what remain. The Design converters
-   closed in Foundation 94, the media metadata graph in 95, the library and
-   picture graph in 96 and playback in 97 -- so the whole
-   `Microsoft.Xna.Framework.Media` namespace is now projected.
+**GamerServices** is the only family left. The Design converters closed in
+Foundation 94, the media metadata graph in 95, the library and picture graph in
+96, playback in 97 and XACT in 98 -- so the whole `Microsoft.Xna.Framework.Media`
+and `Microsoft.Xna.Framework.Audio` namespaces are now projected.
 
 **The Model family's native draw slice is measured and BLOCKED, which corrects
 what this section said before.** The route exists and is bindable:

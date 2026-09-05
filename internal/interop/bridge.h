@@ -1011,6 +1011,83 @@ CnaGoResult cna_go_media_library_copy_type_name(CnaGoHandle library, char* desti
 CnaGoResult cna_go_media_player_play_song(CnaGoHandle game, CnaGoHandle song);
 CnaGoResult cna_go_media_player_play_songs(CnaGoHandle game, CnaGoHandle songs);
 CnaGoResult cna_go_media_player_play_songs_from(CnaGoHandle game, CnaGoHandle songs, int32_t index);
+CnaGoResult cna_go_sound_bank_create(CnaGoHandle engine, const char* filename, uint64_t filename_length, CnaGoHandle* out_bank);
+CnaGoResult cna_go_sound_bank_destroy(CnaGoHandle bank);
+CnaGoResult cna_go_wave_bank_create(CnaGoHandle engine, const char* filename, uint64_t filename_length, CnaGoHandle* out_bank);
+CnaGoResult cna_go_wave_bank_destroy(CnaGoHandle bank);
+CnaGoResult cna_go_audio_engine_create(CnaGoHandle game, const char* settings_file, uint64_t settings_file_length, CnaGoHandle* out_engine);
+CnaGoResult cna_go_audio_engine_destroy(CnaGoHandle engine);
+/* Foundation 98 -- XACT. */
+CnaGoResult cna_go_audio_category_copy_name(CnaGoHandle category, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_audio_category_destroy(CnaGoHandle category);
+CnaGoResult cna_go_audio_category_equals(CnaGoHandle category, CnaGoHandle other, uint8_t* out_equals);
+CnaGoResult cna_go_audio_category_get_hash_code(CnaGoHandle category, int32_t* out_hash_code);
+CnaGoResult cna_go_audio_category_get_name_size(CnaGoHandle category, uint64_t* out_bytes);
+CnaGoResult cna_go_audio_category_pause(CnaGoHandle category);
+CnaGoResult cna_go_audio_category_resume(CnaGoHandle category);
+CnaGoResult cna_go_audio_category_set_volume(CnaGoHandle category, float volume);
+CnaGoResult cna_go_audio_category_stop(CnaGoHandle category, uint32_t options);
+CnaGoResult cna_go_audio_engine_copy_renderer_friendly_name(CnaGoHandle engine, uint64_t renderer_index, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_audio_engine_copy_renderer_id(CnaGoHandle engine, uint64_t renderer_index, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_audio_engine_copy_type_name(CnaGoHandle engine, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_audio_engine_create(CnaGoHandle game, const char* settings_file, uint64_t settings_file_length, CnaGoHandle* out_engine);
+CnaGoResult cna_go_audio_engine_create_with_renderer(CnaGoHandle game, const char* settings_file, uint64_t settings_file_length, int64_t look_ahead_ticks, const char* renderer_id, uint64_t renderer_id_length, CnaGoHandle* out_engine);
+CnaGoResult cna_go_audio_engine_destroy(CnaGoHandle engine);
+CnaGoResult cna_go_audio_engine_get_category(CnaGoHandle engine, const char* name, uint64_t name_length, CnaGoHandle* out_category);
+CnaGoResult cna_go_audio_engine_get_global_variable(CnaGoHandle engine, const char* name, uint64_t name_length, float* out_value);
+CnaGoResult cna_go_audio_engine_get_is_disposed(CnaGoHandle engine, uint8_t* out_is_disposed);
+CnaGoResult cna_go_audio_engine_get_renderer_count(CnaGoHandle engine, uint64_t* out_count);
+CnaGoResult cna_go_audio_engine_get_renderer_friendly_name_size(CnaGoHandle engine, uint64_t renderer_index, uint64_t* out_bytes);
+CnaGoResult cna_go_audio_engine_get_renderer_id_size(CnaGoHandle engine, uint64_t renderer_index, uint64_t* out_bytes);
+CnaGoResult cna_go_audio_engine_get_type_name_size(CnaGoHandle engine, uint64_t* out_bytes);
+CnaGoResult cna_go_audio_engine_set_global_variable(CnaGoHandle engine, const char* name, uint64_t name_length, float value);
+CnaGoResult cna_go_audio_engine_update(CnaGoHandle engine);
+/* Apply3D and PlayCue3D take ONE listener and one emitter as flat floats, the
+   same shape cna_go_sound_effect_instance_apply_3d uses: twelve for the
+   listener and thirteen for the emitter, its Doppler scale first. */
+CnaGoResult cna_go_cue_apply_3d(CnaGoHandle cue, const float* listener, const float* emitter);
+CnaGoResult cna_go_cue_copy_name(CnaGoHandle cue, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_cue_copy_type_name(CnaGoHandle cue, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_cue_destroy(CnaGoHandle cue);
+/* The eight predicates come back as eight bytes, so the CNA struct and its
+   size/version prologue stay inside the bridge. */
+CnaGoResult cna_go_cue_get_info(CnaGoHandle cue, uint8_t* out_states);
+
+/* Foundation 98 -- XACT's four disposing subscriptions and their shared
+   release. One trampoline serves all four: the callback carries only the
+   context, so the identity lives on the Go side. */
+CnaGoResult cna_go_audio_engine_subscribe_disposing(CnaGoHandle engine, uintptr_t context, CnaGoHandle* out_registration);
+CnaGoResult cna_go_sound_bank_subscribe_disposing(CnaGoHandle bank, uintptr_t context, CnaGoHandle* out_registration);
+CnaGoResult cna_go_wave_bank_subscribe_disposing(CnaGoHandle bank, uintptr_t context, CnaGoHandle* out_registration);
+CnaGoResult cna_go_cue_subscribe_disposing(CnaGoHandle cue, uintptr_t context, CnaGoHandle* out_registration);
+CnaGoResult cna_go_audio_unsubscribe(CnaGoHandle registration);
+
+CnaGoResult cna_go_cue_get_name_size(CnaGoHandle cue, uint64_t* out_bytes);
+CnaGoResult cna_go_cue_get_type_name_size(CnaGoHandle cue, uint64_t* out_bytes);
+CnaGoResult cna_go_cue_get_variable(CnaGoHandle cue, const char* name, uint64_t name_length, float* out_value);
+CnaGoResult cna_go_cue_pause(CnaGoHandle cue);
+CnaGoResult cna_go_cue_play(CnaGoHandle cue);
+CnaGoResult cna_go_cue_resume(CnaGoHandle cue);
+CnaGoResult cna_go_cue_set_variable(CnaGoHandle cue, const char* name, uint64_t name_length, float value);
+CnaGoResult cna_go_cue_stop(CnaGoHandle cue, uint32_t options);
+CnaGoResult cna_go_sound_bank_copy_type_name(CnaGoHandle sound_bank, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_sound_bank_create(CnaGoHandle engine, const char* filename, uint64_t filename_length, CnaGoHandle* out_sound_bank);
+CnaGoResult cna_go_sound_bank_destroy(CnaGoHandle sound_bank);
+CnaGoResult cna_go_sound_bank_get_cue(CnaGoHandle sound_bank, const char* name, uint64_t name_length, CnaGoHandle* out_cue);
+CnaGoResult cna_go_sound_bank_get_is_disposed(CnaGoHandle sound_bank, uint8_t* out_is_disposed);
+CnaGoResult cna_go_sound_bank_get_is_in_use(CnaGoHandle sound_bank, uint8_t* out_is_in_use);
+CnaGoResult cna_go_sound_bank_get_type_name_size(CnaGoHandle sound_bank, uint64_t* out_bytes);
+CnaGoResult cna_go_sound_bank_play_cue(CnaGoHandle sound_bank, const char* name, uint64_t name_length);
+CnaGoResult cna_go_sound_bank_play_cue_3d(CnaGoHandle sound_bank, const char* name, uint64_t name_length, const float* listener, const float* emitter);
+CnaGoResult cna_go_wave_bank_copy_type_name(CnaGoHandle wave_bank, char* destination, uint64_t capacity, uint64_t* out_bytes);
+CnaGoResult cna_go_wave_bank_create(CnaGoHandle engine, const char* filename, uint64_t filename_length, CnaGoHandle* out_wave_bank);
+CnaGoResult cna_go_wave_bank_create_streaming(CnaGoHandle engine, const char* filename, uint64_t filename_length, int32_t offset, int16_t packet_size, CnaGoHandle* out_wave_bank);
+CnaGoResult cna_go_wave_bank_destroy(CnaGoHandle wave_bank);
+CnaGoResult cna_go_wave_bank_get_is_disposed(CnaGoHandle wave_bank, uint8_t* out_is_disposed);
+CnaGoResult cna_go_wave_bank_get_is_in_use(CnaGoHandle wave_bank, uint8_t* out_is_in_use);
+CnaGoResult cna_go_wave_bank_get_is_prepared(CnaGoHandle wave_bank, uint8_t* out_is_prepared);
+CnaGoResult cna_go_wave_bank_get_type_name_size(CnaGoHandle wave_bank, uint64_t* out_bytes);
+
 CnaGoResult cna_go_media_player_pause(CnaGoHandle game);
 CnaGoResult cna_go_media_player_resume(CnaGoHandle game);
 CnaGoResult cna_go_media_player_stop(CnaGoHandle game);
